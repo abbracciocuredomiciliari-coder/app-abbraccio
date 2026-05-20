@@ -1,0 +1,471 @@
+import { useEffect, useRef, useState } from 'react';
+import api from '../api/api';
+import {
+  FileText,
+  Search,
+  Upload,
+  Download,
+  Printer,
+  Trash2,
+  Eye,
+  RefreshCw,
+  AlertCircle,
+  Loader2,
+  X,
+} from 'lucide-react';
+
+interface DocumentItem {
+  _id: string;
+  category: 'protocol';
+  fileName: string;
+  contentType: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function Protocolli() {
+  const [protocolFile, setProtocolFile] = useState<File | null>(null);
+  const [protocolDocs, setProtocolDocs] = useState<DocumentItem[]>([]);
+  const [protocolMessage, setProtocolMessage] = useState('');
+  const [downloadMessage, setDownloadMessage] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredDocs, setFilteredDocs] = useState<DocumentItem[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [updatingDocId, setUpdatingDocId] = useState<string | null>(null);
+  const protocolInputRef = useRef<HTMLInputElement | null>(null);
+  const updateInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    loadProtocolDocuments();
+  }, []);
+
+  useEffect(() => {
+    filterDocuments();
+  }, [searchTerm, protocolDocs]);
+
+  const loadProtocolDocuments = async () => {
+    try {
+      const response = await api.get('/procedure-documents?category=protocol');
+      setProtocolDocs(response.data);
+    } catch (error) {
+      console.error('Errore caricamento protocolli sanitari', error);
+    }
+  };
+
+  const filterDocuments = () => {
+    if (!searchTerm.trim()) {
+      setFilteredDocs(protocolDocs);
+      return;
+    }
+    const term = searchTerm.toLowerCase();
+    const filtered = protocolDocs.filter(doc =>
+      doc.fileName.toLowerCase().includes(term) ||
+      new Date(doc.createdAt).toLocaleDateString('it-IT').includes(term)
+    );
+    setFilteredDocs(filtered);
+  };
+
+  const openProtocolFileDialog = () => {
+    protocolInputRef.current?.click();
+  };
+
+  const handleProtocolFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setProtocolFile(event.target.files?.[0] || null);
+    setProtocolMessage('');
+  };
+
+  const uploadDocument = async (file: File | null) => {
+    if (!file) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('document', file);
+    formData.append('category', 'protocol');
+
+    setUploading(true);
+    try {
+      const response = await api.post('/procedure-documents', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      setProtocolMessage('File protocollo caricato con successo.');
+      setProtocolFile(null);
+      loadProtocolDocuments();
+
+      if (response.status !== 201) {
+        throw new Error('Risposta inattesa dal server');
+      }
+    } catch (error: any) {
+      console.error('Errore caricamento documento', error);
+      const serverMessage = error?.response?.data?.message || error?.message || 'Errore generico';
+      setProtocolMessage(`Errore durante il caricamento del protocollo: ${serverMessage}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const openUpdateDialog = (documentId: string) => {
+    setUpdatingDocId(documentId);
+    updateInputRef.current?.click();
+  };
+
+  const handleUpdateFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !updatingDocId) return;
+
+    const formData = new FormData();
+    formData.append('document', file);
+    formData.append('category', 'protocol');
+
+    setUploading(true);
+    try {
+      await api.put(`/procedure-documents/${updatingDocId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setProtocolMessage('Protocollo aggiornato con successo!');
+      setUpdatingDocId(null);
+      loadProtocolDocuments();
+    } catch (error: any) {
+      console.error('Errore aggiornamento documento', error);
+      setProtocolMessage(`Errore durante l'aggiornamento: ${error?.response?.data?.message || error?.message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const deleteDocument = async (documentId: string) => {
+    if (!confirm('Sei sicuro di voler eliminare questo protocollo?')) return;
+    try {
+      await api.delete(`/procedure-documents/${documentId}`);
+      loadProtocolDocuments();
+    } catch (error) {
+      console.error('Errore eliminazione documento', error);
+    }
+  };
+
+  const previewLocalFile = (file: File | null) => {
+    if (!file) {
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const isPdf = file.type.toLowerCase().includes('pdf');
+    if (isPdf) {
+      window.open(url, '_blank');
+    } else {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = file.name;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  };
+
+  const downloadDocument = async (documentId: string, fileName: string) => {
+    try {
+      setDownloadMessage('');
+      const response = await api.get(`/procedure-documents/${documentId}/download`, {
+        responseType: 'blob'
+      });
+      const contentType = response.headers['content-type'];
+      const blob = new Blob([response.data], { type: typeof contentType === 'string' ? contentType : 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Errore download documento', error);
+      setDownloadMessage('Impossibile scaricare il documento.');
+    }
+  };
+
+  const openDocument = async (documentId: string, contentType: string, fileName: string) => {
+    try {
+      setDownloadMessage('');
+      const response = await api.get(`/procedure-documents/${documentId}/download`, {
+        responseType: 'blob'
+      });
+      const blob = new Blob([response.data], { type: typeof contentType === 'string' ? contentType : 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const isPdf = typeof contentType === 'string' && contentType.toLowerCase().includes('pdf');
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      if (!isPdf) {
+        link.download = fileName;
+      }
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      if (!isPdf) {
+        setDownloadMessage('Il documento è stato scaricato. Aprilo con Word per visualizzarlo.');
+      }
+    } catch (error) {
+      console.error('Errore apertura documento', error);
+      setDownloadMessage('Impossibile aprire il documento.');
+    }
+  };
+
+  const printDocument = async (documentId: string, contentType: string, fileName: string) => {
+    try {
+      setDownloadMessage('');
+      const response = await api.get(`/procedure-documents/${documentId}/download`, {
+        responseType: 'blob'
+      });
+      const blob = new Blob([response.data], { type: typeof contentType === 'string' ? contentType : 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const isPdf = typeof contentType === 'string' && contentType.toLowerCase().includes('pdf');
+      if (isPdf) {
+        const newWindow = window.open(url, '_blank');
+        if (newWindow) {
+          newWindow.focus();
+          newWindow.onload = () => {
+            newWindow.print();
+          };
+        }
+      } else {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setDownloadMessage('Documento non in formato PDF: è stato scaricato per la stampa da Word.');
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (error) {
+      console.error('Errore stampa documento', error);
+      setDownloadMessage('Impossibile stampare o visualizzare il documento.');
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('it-IT', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+  };
+
+  return (
+    <section>
+      <h2>
+        <FileText size={28} />
+        Protocolli Sanitari
+      </h2>
+
+      {protocolMessage && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '12px 16px',
+          backgroundColor: protocolMessage.includes('successo') ? 'var(--success-bg)' : 'var(--danger-bg)',
+          border: `1px solid ${protocolMessage.includes('successo') ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+          borderRadius: 'var(--radius-md)',
+          color: protocolMessage.includes('successo') ? 'var(--success)' : 'var(--danger)',
+          marginBottom: '16px',
+        }}>
+          <AlertCircle size={18} />
+          {protocolMessage}
+          <button onClick={() => setProtocolMessage('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      <div className="dashboard-folder">
+        {/* Search Bar */}
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          marginBottom: '20px',
+          alignItems: 'center',
+        }}>
+          <div style={{
+            flex: 1,
+            position: 'relative',
+          }}>
+            <Search
+              size={18}
+              style={{
+                position: 'absolute',
+                left: '14px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--gray-400)',
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Cerca protocollo per nome o data..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 14px 12px 44px',
+                border: '1px solid var(--gray-300)',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.95rem',
+                outline: 'none',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Upload Section */}
+        <div style={{ marginBottom: '24px', padding: '20px', border: '2px dashed var(--gray-300)', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--gray-50)' }}>
+          <h4 style={{ margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Upload size={18} />
+            Carica Nuovo Protocollo
+          </h4>
+          <p style={{ marginBottom: '16px', color: 'var(--gray-600)', fontSize: '0.92rem' }}>
+            Trova sul computer e carica il file del protocollo sanitario.
+          </p>
+          
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <input
+              ref={protocolInputRef}
+              type="file"
+              accept="*/*"
+              style={{ display: 'none' }}
+              onChange={handleProtocolFileChange}
+            />
+            <button type="button" onClick={openProtocolFileDialog} disabled={uploading}>
+              Cerca file
+            </button>
+            {protocolFile && (
+              <span style={{ color: 'var(--gray-600)', fontSize: '0.92rem' }}>
+                {protocolFile.name}
+              </span>
+            )}
+          </div>
+
+          {protocolFile && (
+            <div style={{ marginTop: '16px', padding: '12px', border: '1px solid #0078d4', borderRadius: '8px', backgroundColor: '#eef6ff' }}>
+              <p style={{ margin: '0 0 12px' }}>
+                <strong>File selezionato:</strong> {protocolFile.name}
+              </p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button type="button" onClick={() => previewLocalFile(protocolFile)} style={{ background: 'var(--secondary)' }}>
+                  <Eye size={16} />
+                  Anteprima
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => uploadDocument(protocolFile)} 
+                  disabled={uploading}
+                  style={{ background: 'var(--primary)', opacity: uploading ? 0.6 : 1 }}
+                >
+                  {uploading ? (
+                    <>
+                      <Loader2 size={16} className="spin" />
+                      Caricamento...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={16} />
+                      Carica protocollo
+                    </>
+                  )}
+                </button>
+              </div>
+              <p style={{ margin: '8px 0 0', fontSize: '0.85rem', color: 'var(--gray-500)' }}>
+                Usa <strong>Anteprima</strong> per verificare il contenuto prima del caricamento.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Documents List */}
+        {filteredDocs.length > 0 ? (
+          <div className="document-list">
+            <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <FileText size={20} />
+              Protocolli Salvati ({filteredDocs.length})
+            </h4>
+            <ul>
+              {filteredDocs.map((document) => (
+                <li key={document._id} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  padding: '16px',
+                  border: '1px solid var(--gray-200)',
+                  borderRadius: 'var(--radius-lg)',
+                  backgroundColor: 'white',
+                }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'var(--info-bg)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <FileText size={24} color="var(--info)" />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                      {document.fileName}
+                    </strong>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--gray-500)' }}>
+                      Caricato: {formatDate(document.createdAt)}
+                      {document.updatedAt !== document.createdAt && ` • Aggiornato: ${formatDate(document.updatedAt)}`}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
+                    <button type="button" onClick={() => openDocument(document._id, document.contentType, document.fileName)} style={{ background: 'var(--info)' }}>
+                      <Eye size={16} />
+                      Visualizza
+                    </button>
+                    <button type="button" onClick={() => printDocument(document._id, document.contentType, document.fileName)} style={{ background: 'var(--secondary)' }}>
+                      <Printer size={16} />
+                      Stampa
+                    </button>
+                    <button type="button" onClick={() => downloadDocument(document._id, document.fileName)} style={{ background: 'var(--success)' }}>
+                      <Download size={16} />
+                      Scarica
+                    </button>
+                    <button type="button" onClick={() => openUpdateDialog(document._id)} style={{ background: 'var(--warning)' }}>
+                      <RefreshCw size={16} />
+                      Aggiorna
+                    </button>
+                    <button type="button" onClick={() => deleteDocument(document._id)} style={{ background: 'var(--danger)' }}>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <p style={{ textAlign: 'center', padding: '32px', color: 'var(--gray-500)' }}>
+            {searchTerm ? 'Nessun protocollo trovato.' : 'Nessun protocollo presente.'}
+          </p>
+        )}
+
+        {/* Hidden input for file updates */}
+        <input
+          ref={updateInputRef}
+          type="file"
+          accept="*/*"
+          style={{ display: 'none' }}
+          onChange={handleUpdateFileChange}
+        />
+      </div>
+    </section>
+  );
+}
+
+export default Protocolli;

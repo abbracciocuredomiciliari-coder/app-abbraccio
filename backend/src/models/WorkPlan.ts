@@ -1,0 +1,66 @@
+import { Document, Schema, model, Types } from 'mongoose';
+
+export interface IGiornoSettimana {
+  giorno: 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0=Dom, 1=Lun, ..., 6=Sab
+  accessiAlGiorno?: number;       // per prestazionale: quanti accessi quel giorno
+  minutiPerAccesso?: number;      // per assistenziale: minuti per accesso
+}
+
+export interface IWorkPlan extends Document {
+  type: 'prestazionale' | 'assistenziale';
+  category: string;
+  patient: Types.ObjectId;
+  staff: Types.ObjectId;
+  date: Date;           // data inizio piano
+  dataFine?: Date;      // data fine piano
+  time?: string;
+  duration?: number;
+  task: string;
+  notes?: string;
+  status: 'pending' | 'completed' | 'cancelled';
+  // Pianificazione settimanale
+  giorniSettimana?: IGiornoSettimana[];  // giorni attivi con dettagli
+  // Compenso
+  tipoCompenso?: 'orario' | 'fisso' | 'nessuno';
+  tariffa?: number;
+  compensoTotale?: number;
+  compensoPagato?: boolean;
+}
+
+const workPlanSchema = new Schema<IWorkPlan>(
+  {
+    type: { 
+      type: String, 
+      required: true, 
+      enum: ['prestazionale', 'assistenziale'],
+      default: 'prestazionale'
+    },
+    category: { type: String, required: true },
+    patient: { type: Schema.Types.ObjectId, ref: 'Patient', required: true },
+    staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: true },
+    date: { type: Date, required: true },
+    dataFine: { type: Date },
+    time: { type: String },
+    duration: { type: Number, default: 60 },
+    giorniSettimana: [{
+      giorno: { type: Number, required: true, min: 0, max: 6 },
+      accessiAlGiorno: { type: Number, default: 1 },
+      minutiPerAccesso: { type: Number, default: 60 },
+    }],
+    task: { type: String, required: true, trim: true },
+    notes: { type: String, trim: true },
+    status: { 
+      type: String, 
+      required: true, 
+      enum: ['pending', 'completed', 'cancelled'], 
+      default: 'pending' 
+    },
+    tipoCompenso: { type: String, enum: ['orario', 'fisso', 'nessuno'], default: 'nessuno' },
+    tariffa: { type: Number, default: 0 },
+    compensoTotale: { type: Number, default: 0 },
+    compensoPagato: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+export default model<IWorkPlan>('WorkPlan', workPlanSchema);

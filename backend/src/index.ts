@@ -1,0 +1,77 @@
+import './config/env';
+import express, { Application, Request, Response } from 'express';
+import cors from 'cors';
+import path from 'path';
+import connectDB from './config/db';
+import authRouter from './routes/auth';
+import patientsRouter from './routes/patients';
+import staffRouter from './routes/staff';
+import workplanRouter from './routes/workplan';
+import dashboardRouter from './routes/dashboard';
+import procedureDocumentsRouter from './routes/procedureDocuments';
+import equipmentRouter from './routes/equipment';
+import suppliesRouter from './routes/supplies';
+import patientDocumentsRouter from './routes/patientDocuments';
+import workplanAccessRouter from './routes/workplanAccess';
+import diarioClinicoRouter from './routes/diarioClinico';
+import obiettiviRouter from './routes/obiettivi';
+import allegatiRouter from './routes/allegati';
+
+if (!process.env.JWT_SECRET) {
+  console.error('ERRORE: JWT_SECRET non è impostato. Configurare la variabile d\'ambiente nel file .env prima di avviare il server.');
+  process.exit(1);
+}
+
+const app: Application = express();
+const port = process.env.PORT || 4000;
+
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:4173',
+  process.env.FRONTEND_URL,
+].filter(Boolean) as string[];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Permetti richieste senza origin (es. app mobile, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.some(o => origin.startsWith(o))) {
+      return callback(null, true);
+    }
+    // In produzione permetti qualsiasi origine HTTPS (Vercel genera sottodomini dinamici)
+    if (process.env.NODE_ENV === 'production' && origin.startsWith('https://')) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS: origine non consentita: ${origin}`));
+  },
+  credentials: true,
+}));
+app.use(express.json());
+
+connectDB();
+
+app.get('/api/health', (req: Request, res: Response) => {
+  res.json({ status: 'ok', message: 'App Abbraccio API in esecuzione' });
+});
+
+app.use('/api/auth', authRouter);
+app.use('/api/dashboard', dashboardRouter);
+app.use('/api/patients', patientsRouter);
+app.use('/api/staff', staffRouter);
+app.use('/api/workplan', workplanRouter);
+app.use('/api/procedure-documents', procedureDocumentsRouter);
+app.use('/api/equipment', equipmentRouter);
+app.use('/api/supplies', suppliesRouter);
+app.use('/api/documents', patientDocumentsRouter);
+app.use('/api/workplan-access', workplanAccessRouter);
+app.use('/api/diario', diarioClinicoRouter);
+app.use('/api/obiettivi', obiettiviRouter);
+app.use('/api/allegati', allegatiRouter);
+
+// Serve file statici uploads (con autenticazione gestita lato route)
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+app.listen(port, () => {
+  console.log(`Backend avviato su http://localhost:${port}`);
+});
