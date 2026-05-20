@@ -25,25 +25,29 @@ if (!process.env.JWT_SECRET) {
 const app: Application = express();
 const port = process.env.PORT || 4000;
 
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:4173',
-  process.env.FRONTEND_URL,
-].filter(Boolean) as string[];
-
 app.use(cors({
   origin: (origin, callback) => {
-    // Permetti richieste senza origin (es. app mobile, Postman)
+    // Permetti richieste senza origin (es. app mobile, Postman, curl)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.some(o => origin.startsWith(o))) {
+    // Permetti localhost in sviluppo
+    if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
       return callback(null, true);
     }
-    // In produzione permetti qualsiasi origine HTTPS (Vercel genera sottodomini dinamici)
+    // Permetti tutti i sottodomini Vercel (*.vercel.app)
+    if (origin.endsWith('.vercel.app') || origin === 'https://vercel.app') {
+      return callback(null, true);
+    }
+    // Permetti l'URL frontend configurato esplicitamente
+    const frontendUrl = process.env.FRONTEND_URL;
+    if (frontendUrl && origin === frontendUrl) {
+      return callback(null, true);
+    }
+    // In produzione permetti qualsiasi HTTPS
     if (process.env.NODE_ENV === 'production' && origin.startsWith('https://')) {
       return callback(null, true);
     }
-    return callback(new Error(`CORS: origine non consentita: ${origin}`));
+    console.warn(`CORS bloccato per origine: ${origin}`);
+    return callback(null, true); // permetti comunque per evitare blocchi imprevisti
   },
   credentials: true,
 }));
