@@ -14,7 +14,7 @@ da qualsiasi dispositivo (PC, tablet, smartphone) tramite browser web.
         │
         ▼
 [Vercel] — Frontend React (GRATUITO)
-   https://app-abbraccio.vercel.app
+   https://app-abbraccio-frontend-rw2c.vercel.app
         │
         ▼
 [Render] — Backend Node.js/Express (GRATUITO o $7/mese)
@@ -96,7 +96,7 @@ git push -u origin main
    | `PORT` | `4000` |
    | `MONGODB_URI` | `mongodb+srv://abbraccio-admin:PASSWORD@cluster0.xxxxx.mongodb.net/app-abbraccio?retryWrites=true&w=majority` |
    | `JWT_SECRET` | `una-stringa-segreta-lunga-almeno-32-caratteri-CAMBIALA` |
-   | `FRONTEND_URL` | `https://app-abbraccio.vercel.app` (lo aggiungi dopo il deploy Vercel) |
+   | `FRONTEND_URL` | `https://app-abbraccio-frontend-rw2c.vercel.app` (lo aggiungi dopo il deploy Vercel) |
 
 6. Clicca **"Create Web Service"**
 7. Aspetta il deploy (5-10 minuti)
@@ -138,24 +138,24 @@ git push
 5. **Environment Variables**:
    | Key | Value |
    |-----|-------|
-   | `VITE_API_URL` | `https://app-abbraccio-backend.onrender.com/api` |
+   | `VITE_API_BASE_URL` | `https://app-abbraccio.onrender.com/api` |
 6. Clicca **"Deploy"**
 7. Aspetta 2-3 minuti
-8. Il tuo URL sarà: `https://app-abbraccio.vercel.app`
+8. Il tuo URL sarà: `https://app-abbraccio-frontend-rw2c.vercel.app`
 
 ---
 
 ## PASSO 5 — Aggiorna FRONTEND_URL su Render
 
 Ora che hai l'URL di Vercel, torna su Render:
-1. **Environment** → modifica `FRONTEND_URL` con l'URL esatto di Vercel
+1. **Environment** → modifica `FRONTEND_URL` con `https://app-abbraccio-frontend-rw2c.vercel.app`
 2. Render riavvierà automaticamente il backend
 
 ---
 
 ## ✅ Verifica finale
 
-Apri `https://app-abbraccio.vercel.app` nel browser.
+Apri `https://app-abbraccio-frontend-rw2c.vercel.app` nel browser.
 Dovresti vedere la pagina di login dell'app.
 
 Testa:
@@ -171,13 +171,13 @@ Testa:
 L'app è già una **Progressive Web App (PWA)**. Da smartphone:
 
 **iPhone/iPad:**
-1. Apri Safari → vai su `https://app-abbraccio.vercel.app`
+1. Apri Safari → vai su `https://app-abbraccio-frontend-rw2c.vercel.app`
 2. Tocca il pulsante **Condividi** (quadrato con freccia)
 3. Scorri e tocca **"Aggiungi a schermata Home"**
 4. L'app apparirà come icona sul telefono!
 
 **Android:**
-1. Apri Chrome → vai su `https://app-abbraccio.vercel.app`
+1. Apri Chrome → vai su `https://app-abbraccio-frontend-rw2c.vercel.app`
 2. Tocca i tre puntini in alto a destra
 3. Tocca **"Aggiungi a schermata Home"**
 
