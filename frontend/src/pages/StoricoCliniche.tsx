@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { Search, BookOpen, Activity, Printer, ChevronDown, ChevronUp, Lock, Paperclip, FileText, Image, File, ExternalLink, Eye } from 'lucide-react';
 
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
 
 interface CartellaSummary {
   _id: { patient: string; workPlan: string };

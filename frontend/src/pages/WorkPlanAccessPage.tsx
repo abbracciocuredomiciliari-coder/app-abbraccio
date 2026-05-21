@@ -35,7 +35,7 @@ const statoObiettivoConfig: Record<string, { label: string; color: string; bg: s
   rivalutato:    { label: 'Rivalutato 🔄',  color: '#7c3aed', bg: '#fdf4ff' },
 };
 
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
 
 export default function WorkPlanAccessPage() {
   const { workPlanId } = useParams<{ workPlanId: string }>();

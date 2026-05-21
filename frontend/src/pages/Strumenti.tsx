@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import FarmaciSection from '../components/FarmaciSection';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
 
 // Interfacce per le apparecchiature elettromedicali
 interface Apparecchiatura {
