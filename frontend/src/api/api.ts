@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api',
+  timeout: 60000, // 60 secondi per gestire il cold start di Render (piano gratuito)
 });
 
 api.interceptors.request.use((config) => {

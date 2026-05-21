@@ -1,8 +1,9 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { Heart, Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
+import { Heart, Mail, Lock, LogIn, AlertCircle, Clock } from 'lucide-react';
 
 function Login() {
   const navigate = useNavigate();
@@ -11,18 +12,44 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isWakingUp, setIsWakingUp] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
+    setIsWakingUp(false);
     setLoading(true);
+
+    // Dopo 5 secondi senza risposta, avvisa che il server si sta svegliando
+    const wakeUpTimer = setTimeout(() => {
+      setIsWakingUp(true);
+    }, 5000);
 
     try {
       const response = await api.post('/auth/login', { email, password });
+      clearTimeout(wakeUpTimer);
       login(response.data.token, response.data.user);
       navigate('/dashboard');
     } catch (err) {
-      setError('Credenziali non valide. Riprova.');
+      clearTimeout(wakeUpTimer);
+      setIsWakingUp(false);
+
+      if (axios.isAxiosError(err)) {
+        if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+          setError('Il server sta impiegando troppo tempo a rispondere. Riprova tra qualche secondo.');
+        } else if (!err.response) {
+          // Nessuna risposta dal server (rete assente o server irraggiungibile)
+          setError('Impossibile raggiungere il server. Controlla la connessione e riprova.');
+        } else if (err.response.status === 401) {
+          setError('Credenziali non valide. Controlla email e password.');
+        } else if (err.response.status >= 500) {
+          setError('Errore del server. Riprova tra qualche istante.');
+        } else {
+          setError('Errore durante il login. Riprova.');
+        }
+      } else {
+        setError('Errore imprevisto. Riprova.');
+      }
     } finally {
       setLoading(false);
     }
@@ -67,8 +94,27 @@ function Login() {
               fontSize: '0.92rem',
             }}
           >
-            <AlertCircle size={18} />
+            <AlertCircle size={18} style={{ flexShrink: 0 }} />
             {error}
+          </div>
+        )}
+
+        {isWakingUp && !error && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 16px',
+              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: 'var(--radius-md)',
+              color: '#b45309',
+              fontSize: '0.92rem',
+            }}
+          >
+            <Clock size={18} style={{ flexShrink: 0 }} />
+            Il server si sta avviando, attendi qualche secondo…
           </div>
         )}
 
@@ -111,7 +157,7 @@ function Login() {
                 borderRadius: '50%',
                 animation: 'spin 0.8s linear infinite',
               }} />
-              Accesso in corso...
+              {isWakingUp ? 'Avvio server in corso…' : 'Accesso in corso...'}
             </>
           ) : (
             <>
