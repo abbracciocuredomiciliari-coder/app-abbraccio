@@ -160,6 +160,8 @@ export default function FarmaciSection({ getToken, canEdit, formatData, formatDa
           scortaMinima: 0,
         });
         alert('Farmaco aggiunto con successo!');
+      } else if (response.status === 403) {
+        alert('Non hai i permessi per aggiungere farmaci. Contatta un amministratore.');
       } else {
         const error = await response.json();
         alert(error.message || 'Errore nell\'aggiunta del farmaco');

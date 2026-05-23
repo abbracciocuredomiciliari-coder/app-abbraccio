@@ -18,8 +18,8 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
   }
 });
 
-// Crea una nuova apparecchiatura
-router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
+// Crea una nuova apparecchiatura (tutti gli utenti autenticati)
+router.post('/', authenticateToken, async (req: Request, res: Response) => {
   const { tipo, matricola, controlloEseguito, dataControllo } = req.body;
 
   if (!tipo?.trim() || !matricola?.trim()) {

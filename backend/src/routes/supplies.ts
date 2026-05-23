@@ -24,8 +24,8 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
   }
 });
 
-// Crea un nuovo presidio o farmaco
-router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
+// Crea un nuovo presidio o farmaco (tutti gli utenti autenticati)
+router.post('/', authenticateToken, async (req: Request, res: Response) => {
   const { nome, quantita, scadenza, unitaMisura, scortaMinima, category, dosaggio } = req.body;
 
   if (!nome?.trim()) {
