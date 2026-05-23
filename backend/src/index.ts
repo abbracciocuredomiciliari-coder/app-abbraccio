@@ -72,6 +72,8 @@ app.use('/api/workplan-access', workplanAccessRouter);
 app.use('/api/diario', diarioClinicoRouter);
 app.use('/api/obiettivi', obiettiviRouter);
 app.use('/api/allegati', allegatiRouter);
+// Alias senza prefisso /api per compatibilità con URL diretti degli allegati
+app.use('/allegati', allegatiRouter);
 
 // Serve file statici uploads (con autenticazione gestita lato route)
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));

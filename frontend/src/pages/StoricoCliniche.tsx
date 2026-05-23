@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { Search, BookOpen, Activity, Printer, ChevronDown, ChevronUp, Lock, Paperclip, FileText, Image, File, ExternalLink, Eye } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+// Assicura che API_BASE termini sempre con /api
+const _rawBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+const API_BASE = _rawBase.endsWith('/api') ? _rawBase : _rawBase.replace(/\/$/, '') + '/api';
 
 interface CartellaSummary {
   _id: { patient: string; workPlan: string };
