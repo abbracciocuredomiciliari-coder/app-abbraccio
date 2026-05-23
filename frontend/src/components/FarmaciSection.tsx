@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+// Assicura che API_BASE_URL termini sempre con /api
+const _rawBaseFarmaci = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+const API_BASE_URL = _rawBaseFarmaci.endsWith('/api') ? _rawBaseFarmaci : _rawBaseFarmaci.replace(/\/$/, '') + '/api';
 
 interface Farmaco {
   _id?: string;

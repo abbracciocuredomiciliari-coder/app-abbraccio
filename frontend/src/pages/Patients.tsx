@@ -17,7 +17,9 @@ import {
   Loader2,
 } from 'lucide-react';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+// Assicura che API_BASE_URL termini sempre con /api
+const _rawBasePatients = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+const API_BASE_URL = _rawBasePatients.endsWith('/api') ? _rawBasePatients : _rawBasePatients.replace(/\/$/, '') + '/api';
 
 interface Patient {
   _id: string;
