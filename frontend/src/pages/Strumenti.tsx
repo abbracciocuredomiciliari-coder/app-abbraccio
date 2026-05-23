@@ -6,6 +6,23 @@ import FarmaciSection from '../components/FarmaciSection';
 const _rawBaseStrumenti = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
 const API_BASE_URL = _rawBaseStrumenti.endsWith('/api') ? _rawBaseStrumenti : _rawBaseStrumenti.replace(/\/$/, '') + '/api';
 
+// Fetch con timeout (gestisce cold start Render ~30s)
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 60000): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return response;
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      throw new Error('Il server sta impiegando troppo tempo a rispondere (cold start). Riprova tra 30 secondi.');
+    }
+    throw new Error('Errore di connessione al server. Verifica la connessione internet e riprova.');
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 // Interfacce per le apparecchiature elettromedicali
 interface Apparecchiatura {
   _id?: string;
@@ -256,7 +273,7 @@ function Strumenti() {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/equipment`, {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/equipment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -281,8 +298,8 @@ function Strumenti() {
         const error = await response.json();
         alert(error.message || 'Errore nell\'aggiunta dell\'apparecchiatura');
       }
-    } catch (err) {
-      alert('Errore di connessione');
+    } catch (err: any) {
+      alert(err.message || 'Errore di connessione');
     }
   };
 
@@ -335,7 +352,7 @@ function Strumenti() {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/supplies`, {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/supplies`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -361,8 +378,8 @@ function Strumenti() {
         const error = await response.json();
         alert(error.message || 'Errore nell\'aggiunta del presidio');
       }
-    } catch (err) {
-      alert('Errore di connessione');
+    } catch (err: any) {
+      alert(err.message || 'Errore di connessione');
     }
   };
 

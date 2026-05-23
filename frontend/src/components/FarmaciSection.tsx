@@ -4,6 +4,23 @@ import { useState, useEffect } from 'react';
 const _rawBaseFarmaci = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
 const API_BASE_URL = _rawBaseFarmaci.endsWith('/api') ? _rawBaseFarmaci : _rawBaseFarmaci.replace(/\/$/, '') + '/api';
 
+// Fetch con timeout (gestisce cold start Render ~30s)
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 60000): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return response;
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      throw new Error('Il server sta impiegando troppo tempo a rispondere (cold start). Riprova tra 30 secondi.');
+    }
+    throw new Error('Errore di connessione al server. Verifica la connessione internet e riprova.');
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 interface Farmaco {
   _id?: string;
   id: string;
@@ -119,7 +136,7 @@ export default function FarmaciSection({ getToken, canEdit, formatData, formatDa
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/supplies`, {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/supplies`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -147,8 +164,8 @@ export default function FarmaciSection({ getToken, canEdit, formatData, formatDa
         const error = await response.json();
         alert(error.message || 'Errore nell\'aggiunta del farmaco');
       }
-    } catch (err) {
-      alert('Errore di connessione');
+    } catch (err: any) {
+      alert(err.message || 'Errore di connessione');
     }
   };
 
