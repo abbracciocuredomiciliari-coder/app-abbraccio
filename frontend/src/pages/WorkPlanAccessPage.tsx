@@ -20,7 +20,7 @@ interface DiarioEntry {
   firmaLogin: string; firmato: boolean; dataFirma?: string;
   parametriVitali?: { pressioneSistolica?: number; pressioneDiastolica?: number; frequenzaCardiaca?: number; frequenzaRespiratoria?: number; temperatura?: number; saturazione?: number; glicemia?: number; peso?: number; dolore?: number; };
 }
-interface AllegatoInfo { _id: string; nomeFile: string; mimeType: string; dimensione: number; descrizione?: string; caricatoDa: string; dataCaricamento: string; }
+interface AllegatoInfo { _id: string; nomeFile: string; mimeType: string; dimensione: number; descrizione?: string; caricatoDa: string; dataCaricamento: string; urlCloudinary?: string; }
 interface Obiettivo {
   _id: string; descrizione: string; stato: 'attivo' | 'raggiunto' | 'parziale' | 'non_raggiunto' | 'rivalutato';
   dataInizio: string; dataRivalutazione?: string; createdBy: string;
@@ -180,13 +180,19 @@ export default function WorkPlanAccessPage() {
     } catch (err: any) { setError(err.response?.data?.message || 'Errore eliminazione allegato'); }
   };
 
-  const apriAllegato = (id: string) => {
+  const apriAllegato = (allegato: AllegatoInfo) => {
+    // Se l'allegato è su Cloudinary, apri direttamente l'URL (nessun token necessario)
+    if (allegato.urlCloudinary) {
+      window.open(allegato.urlCloudinary, '_blank');
+      return;
+    }
+    // Fallback: usa l'endpoint backend con token (storage locale)
     const token = localStorage.getItem('authToken');
     if (!token) {
       alert('Sessione scaduta. Effettua nuovamente il login.');
       return;
     }
-    window.open(`${API_BASE}/allegati/file/${id}?token=${encodeURIComponent(token)}`, '_blank');
+    window.open(`${API_BASE}/allegati/file/${allegato._id}?token=${encodeURIComponent(token)}`, '_blank');
   };
 
   const formatDimensione = (bytes: number) => {
@@ -474,7 +480,7 @@ export default function WorkPlanAccessPage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                  <button type="button" onClick={() => apriAllegato(all._id)} style={{ background: '#0284c7', border: 'none', cursor: 'pointer', color: 'white', padding: '5px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.72rem' }}>
+                  <button type="button" onClick={() => apriAllegato(all)} style={{ background: '#0284c7', border: 'none', cursor: 'pointer', color: 'white', padding: '5px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.72rem' }}>
                     <ExternalLink size={12} /> Apri
                   </button>
                   {canDeleteAllegato && <button type="button" onClick={() => eliminaAllegato(all._id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', padding: '5px' }}><Trash2 size={13} /></button>}

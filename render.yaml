@@ -12,3 +12,11 @@ services:
         sync: false   # da impostare manualmente su Render dashboard
       - key: JWT_SECRET
         sync: false   # da impostare manualmente su Render dashboard
+      # Cloudinary — storage persistente per gli allegati (piano gratuito disponibile)
+      # Registrarsi su https://cloudinary.com e copiare le credenziali dal dashboard
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false   # da impostare manualmente su Render dashboard
+      - key: CLOUDINARY_API_KEY
+        sync: false   # da impostare manualmente su Render dashboard
+      - key: CLOUDINARY_API_SECRET
+        sync: false   # da impostare manualmente su Render dashboard

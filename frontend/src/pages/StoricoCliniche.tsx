@@ -44,6 +44,7 @@ interface AllegatoInfo {
   descrizione?: string;
   caricatoDa: string;
   dataCaricamento: string;
+  urlCloudinary?: string;
 }
 
 export default function StoricoCliniche() {
@@ -102,13 +103,19 @@ export default function StoricoCliniche() {
     }
   };
 
-  const apriAllegato = (id: string) => {
+  const apriAllegato = (allegato: AllegatoInfo) => {
+    // Se l'allegato è su Cloudinary, apri direttamente l'URL (nessun token necessario)
+    if (allegato.urlCloudinary) {
+      window.open(allegato.urlCloudinary, '_blank');
+      return;
+    }
+    // Fallback: usa l'endpoint backend con token (storage locale)
     const token = localStorage.getItem('authToken');
     if (!token) {
       alert('Sessione scaduta. Effettua nuovamente il login.');
       return;
     }
-    window.open(`${API_BASE}/allegati/file/${id}?token=${encodeURIComponent(token)}`, '_blank');
+    window.open(`${API_BASE}/allegati/file/${allegato._id}?token=${encodeURIComponent(token)}`, '_blank');
   };
 
   const formatDimensione = (bytes: number) => {
@@ -367,7 +374,7 @@ export default function StoricoCliniche() {
                                   {all.descrizione && <span style={{ fontStyle: 'italic' }}>{all.descrizione}</span>}
                                 </div>
                               </div>
-                              <button type="button" onClick={() => apriAllegato(all._id)} style={{ background: '#0284c7', border: 'none', cursor: 'pointer', color: 'white', padding: '5px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.72rem', flexShrink: 0 }}>
+                              <button type="button" onClick={() => apriAllegato(all)} style={{ background: '#0284c7', border: 'none', cursor: 'pointer', color: 'white', padding: '5px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.72rem', flexShrink: 0 }}>
                                 <ExternalLink size={12} /> Apri
                               </button>
                             </div>

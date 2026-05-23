@@ -4,13 +4,16 @@ export interface IAllegatoCartella extends Document {
   workPlan: Types.ObjectId;
   patient: Types.ObjectId;
   nomeFile: string;         // nome originale del file
-  nomeFileServer: string;   // nome salvato sul server (univoco)
+  nomeFileServer: string;   // nome salvato sul server (univoco) o public_id Cloudinary
   mimeType: string;
   dimensione: number;       // bytes
   descrizione?: string;
   caricatoDa: string;       // nome utente
   caricatoDaId: Types.ObjectId;
   dataCaricamento: Date;
+  // Cloudinary
+  urlCloudinary?: string;   // URL diretto al file su Cloudinary
+  publicIdCloudinary?: string; // public_id per eliminazione su Cloudinary
 }
 
 const allegatoCartellaSchema = new Schema<IAllegatoCartella>(
@@ -25,6 +28,9 @@ const allegatoCartellaSchema = new Schema<IAllegatoCartella>(
     caricatoDa: { type: String, required: true },
     caricatoDaId: { type: Schema.Types.ObjectId, required: true },
     dataCaricamento: { type: Date, default: Date.now },
+    // Cloudinary
+    urlCloudinary: { type: String },
+    publicIdCloudinary: { type: String },
   },
   { timestamps: true }
 );
