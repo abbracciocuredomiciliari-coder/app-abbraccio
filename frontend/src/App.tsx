@@ -14,6 +14,7 @@ import Strumenti from './pages/Strumenti';
 import WorkPlanAccessPage from './pages/WorkPlanAccessPage';
 import StoricoCliniche from './pages/StoricoCliniche';
 import ArchivioCartelle from './pages/ArchivioCartelle';
+import CheckList from './pages/CheckList';
 import {
   Heart,
   LayoutDashboard,
@@ -27,6 +28,7 @@ import {
   User,
   BookOpen,
   Archive,
+  CheckSquare,
 } from 'lucide-react';
 
 function AppShell() {
@@ -108,6 +110,12 @@ function AppShell() {
               Archivio cartelle
             </Link>
           )}
+          {user && (
+            <Link to="/checklist" className={isActive('/checklist') ? 'active' : ''}>
+              <CheckSquare size={18} />
+              Check List
+            </Link>
+          )}
         </nav>
         {user && (
           <div className="user-area">
@@ -137,6 +145,7 @@ function AppShell() {
           <Route path="/strumenti" element={<ProtectedRoute><Strumenti /></ProtectedRoute>} />
           <Route path="/storico-cliniche" element={<ProtectedRoute><StoricoCliniche /></ProtectedRoute>} />
           <Route path="/archivio-cartelle" element={<ProtectedRoute><ArchivioCartelle /></ProtectedRoute>} />
+          <Route path="/checklist" element={<ProtectedRoute><CheckList /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>
