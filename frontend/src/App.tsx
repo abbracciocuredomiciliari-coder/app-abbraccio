@@ -15,6 +15,7 @@ import WorkPlanAccessPage from './pages/WorkPlanAccessPage';
 import StoricoCliniche from './pages/StoricoCliniche';
 import ArchivioCartelle from './pages/ArchivioCartelle';
 import CheckList from './pages/CheckList';
+import GestioneUtenti from './pages/GestioneUtenti';
 import {
   Heart,
   LayoutDashboard,
@@ -29,6 +30,7 @@ import {
   BookOpen,
   Archive,
   CheckSquare,
+  ShieldCheck,
 } from 'lucide-react';
 
 function AppShell() {
@@ -116,6 +118,12 @@ function AppShell() {
               Check List
             </Link>
           )}
+          {user && user.role === 'admin' && (
+            <Link to="/gestione-utenti" className={isActive('/gestione-utenti') ? 'active' : ''}>
+              <ShieldCheck size={18} />
+              Gestione Utenti
+            </Link>
+          )}
         </nav>
         {user && (
           <div className="user-area">
@@ -146,6 +154,7 @@ function AppShell() {
           <Route path="/storico-cliniche" element={<ProtectedRoute><StoricoCliniche /></ProtectedRoute>} />
           <Route path="/archivio-cartelle" element={<ProtectedRoute><ArchivioCartelle /></ProtectedRoute>} />
           <Route path="/checklist" element={<ProtectedRoute><CheckList /></ProtectedRoute>} />
+          <Route path="/gestione-utenti" element={<ProtectedRoute><GestioneUtenti /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>
