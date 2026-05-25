@@ -42,10 +42,13 @@ function Login() {
           setError('Impossibile raggiungere il server. Controlla la connessione e riprova.');
         } else if (err.response.status === 401) {
           setError('Credenziali non valide. Controlla email e password.');
+        } else if (err.response.status === 403) {
+          // Account pending o rejected — mostra il messaggio del server
+          setError(err.response.data?.message || 'Accesso non autorizzato.');
         } else if (err.response.status >= 500) {
           setError('Errore del server. Riprova tra qualche istante.');
         } else {
-          setError('Errore durante il login. Riprova.');
+          setError(err.response.data?.message || 'Errore durante il login. Riprova.');
         }
       } else {
         setError('Errore imprevisto. Riprova.');
