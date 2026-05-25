@@ -23,10 +23,6 @@ export interface IArchivioCartella extends Document {
     date: string;
     dataFine?: string;
     status: string;
-    tipoCompenso?: string;
-    tariffa?: number;
-    compensoTotale?: number;
-    compensoPagato?: boolean;
     notes?: string;
   };
 
@@ -44,7 +40,6 @@ export interface IArchivioCartella extends Document {
     oraEntrata: Date;
     oraUscita?: Date;
     durataMinuti?: number;
-    compensoMaturato?: number;
     note?: string;
     firmaLogin: string;
   }>;
@@ -110,10 +105,6 @@ const archivioCartellaSchema = new Schema<IArchivioCartella>(
       date: { type: String },
       dataFine: { type: String },
       status: { type: String },
-      tipoCompenso: { type: String },
-      tariffa: { type: Number },
-      compensoTotale: { type: Number },
-      compensoPagato: { type: Boolean },
       notes: { type: String },
     },
 
@@ -129,7 +120,6 @@ const archivioCartellaSchema = new Schema<IArchivioCartella>(
       oraEntrata: { type: Date },
       oraUscita: { type: Date },
       durataMinuti: { type: Number },
-      compensoMaturato: { type: Number },
       note: { type: String },
       firmaLogin: { type: String },
     }],

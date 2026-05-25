@@ -67,10 +67,6 @@ router.post('/:workPlanId', authenticateToken, async (req: Request, res: Respons
         date: workplan.date?.toISOString(),
         dataFine: workplan.dataFine?.toISOString(),
         status: workplan.status,
-        tipoCompenso: workplan.tipoCompenso,
-        tariffa: workplan.tariffa,
-        compensoTotale: workplan.compensoTotale,
-        compensoPagato: workplan.compensoPagato,
         notes: workplan.notes,
       },
 
@@ -86,7 +82,6 @@ router.post('/:workPlanId', authenticateToken, async (req: Request, res: Respons
         oraEntrata: a.oraEntrata,
         oraUscita: a.oraUscita,
         durataMinuti: (a as any).durataMinuti || 0,
-        compensoMaturato: (a as any).compensoMaturato || 0,
         note: a.note,
         firmaLogin: a.firmaLogin,
       })),

@@ -16,7 +16,6 @@ import {
   Image,
   File,
   ExternalLink,
-  Euro,
   AlertCircle,
   CheckCircle,
 } from 'lucide-react';
@@ -31,10 +30,6 @@ interface ArchivioSummary {
     date: string;
     dataFine?: string;
     status: string;
-    tipoCompenso?: string;
-    tariffa?: number;
-    compensoTotale?: number;
-    compensoPagato?: boolean;
     notes?: string;
   };
   operatore: { firstName: string; lastName: string; role: string };
@@ -50,7 +45,6 @@ interface ArchivioDettaglio extends ArchivioSummary {
     oraEntrata: string;
     oraUscita?: string;
     durataMinuti?: number;
-    compensoMaturato?: number;
     note?: string;
     firmaLogin: string;
   }>;
@@ -220,7 +214,6 @@ export default function ArchivioCartelle() {
     <div class="info-block"><strong>Periodo:</strong> ${archivio.workPlan.date ? formatData(archivio.workPlan.date) : '—'}${archivio.workPlan.dataFine ? ` → ${formatData(archivio.workPlan.dataFine)}` : ''}</div>
     <div class="info-block"><strong>Operatore:</strong> ${archivio.operatore.firstName} ${archivio.operatore.lastName} (${archivio.operatore.role})</div>
     <div class="info-block"><strong>Archiviato il:</strong> ${formatData(archivio.dataArchiviazione)} da ${archivio.archiviatoDa}</div>
-    ${archivio.workPlan.tipoCompenso && archivio.workPlan.tipoCompenso !== 'nessuno' ? `<div class="info-block"><strong>Compenso:</strong> €${archivio.workPlan.compensoTotale || 0} ${archivio.workPlan.compensoPagato ? '✓ Pagato' : '(da pagare)'}</div>` : ''}
   </div>
 
   <h2>📋 Accessi Registrati (${archivio.accessi.length})</h2>
@@ -228,7 +221,6 @@ export default function ArchivioCartelle() {
   <div class="accesso-row">
     <strong>${a.staffName}</strong> (${a.staffRole}) — 
     🟢 ${formatOra(a.oraEntrata)} ${a.oraUscita ? `→ 🔴 ${formatOra(a.oraUscita)} — ⏱️ ${calcolaDurata(a.oraEntrata, a.oraUscita)}` : '(aperto)'}
-    ${a.compensoMaturato && a.compensoMaturato > 0 ? ` — 💶 €${a.compensoMaturato}` : ''}
     — 📅 ${formatData(a.oraEntrata)}
     ${a.note ? `<br/><em>📝 ${a.note}</em>` : ''}
   </div>`).join('')}
@@ -345,11 +337,6 @@ export default function ArchivioCartelle() {
                       <span style={{ fontSize: '0.72rem', padding: '2px 8px', backgroundColor: '#f0fdf4', color: '#16a34a', borderRadius: '10px', fontWeight: '600' }}>
                         🗄️ Archiviato
                       </span>
-                      {archivio.workPlan.tipoCompenso && archivio.workPlan.tipoCompenso !== 'nessuno' && (
-                        <span style={{ fontSize: '0.72rem', padding: '2px 8px', backgroundColor: archivio.workPlan.compensoPagato ? '#f0fdf4' : '#fdf4ff', color: archivio.workPlan.compensoPagato ? '#16a34a' : '#7c3aed', borderRadius: '10px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                          <Euro size={10} /> €{archivio.workPlan.compensoTotale || 0} {archivio.workPlan.compensoPagato ? '✓ Pagato' : ''}
-                        </span>
-                      )}
                     </div>
                     <div style={{ fontSize: '0.85rem', color: '#555' }}>
                       📋 {archivio.workPlan.task}
@@ -415,11 +402,6 @@ export default function ArchivioCartelle() {
                                       <span style={{ marginLeft: '12px' }}>🟢 {formatOra(acc.oraEntrata)}</span>
                                       {acc.oraUscita && <span style={{ marginLeft: '8px' }}>🔴 {formatOra(acc.oraUscita)}</span>}
                                       {acc.oraUscita && <span style={{ marginLeft: '8px', color: '#7c3aed' }}>⏱️ {calcolaDurata(acc.oraEntrata, acc.oraUscita)}</span>}
-                                      {acc.compensoMaturato !== undefined && acc.compensoMaturato > 0 && (
-                                        <span style={{ marginLeft: '8px', color: '#16a34a', fontWeight: '700', backgroundColor: '#f0fdf4', padding: '1px 8px', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
-                                          💶 €{acc.compensoMaturato}
-                                        </span>
-                                      )}
                                     </div>
                                     <div style={{ fontSize: '0.75rem', color: '#888' }}>
                                       📅 {formatData(acc.oraEntrata)} — ✍️ {acc.firmaLogin}
