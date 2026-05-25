@@ -3,6 +3,7 @@ import { Document, Schema, model } from 'mongoose';
 export interface IProcedureDocument extends Document {
   category: 'procedure' | 'protocol';
   fileName: string;
+  displayName?: string;
   contentType: string;
   data: Buffer;
   createdAt: Date;
@@ -17,6 +18,7 @@ const procedureDocumentSchema = new Schema<IProcedureDocument>(
       enum: ['procedure', 'protocol']
     },
     fileName: { type: String, required: true, trim: true },
+    displayName: { type: String, trim: true, default: '' },
     contentType: { type: String, required: true },
     data: { type: Buffer, required: true }
   },
