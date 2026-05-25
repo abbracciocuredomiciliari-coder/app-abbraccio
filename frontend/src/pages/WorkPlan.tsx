@@ -120,6 +120,21 @@ function WorkPlan() {
   const [riepilogo, setRiepilogo] = useState<RiepilogoAccessi | null>(null);
   const [loadingAccessi, setLoadingAccessi] = useState(false);
 
+  // Diario clinico nel modal
+  const [diarioModal, setDiarioModal] = useState<any[]>([]);
+  const [showDiarioModal, setShowDiarioModal] = useState(false);
+
+  // Obiettivi nel modal
+  const [obiettiviModal, setObiettiviModal] = useState<any[]>([]);
+  const [showObiettiviModal, setShowObiettiviModal] = useState(false);
+
+  // Export PDF nel modal
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportDaData, setExportDaData] = useState('');
+  const [exportAData, setExportAData] = useState('');
+  const [exportDataModal, setExportDataModal] = useState<any>(null);
+  const [loadingExportModal, setLoadingExportModal] = useState(false);
+
   // Form compenso
   const [editCompenso, setEditCompenso] = useState(false);
   const [formTipoCompenso, setFormTipoCompenso] = useState<'orario' | 'fisso' | 'nessuno'>('nessuno');
@@ -298,15 +313,92 @@ function WorkPlan() {
     setEditCompenso(false);
     setLoadingAccessi(true);
     setShowAccessiModal(true);
+    setShowDiarioModal(false);
+    setShowObiettiviModal(false);
+    setShowExportModal(false);
+    setExportDataModal(null);
+    setExportDaData('');
+    setExportAData('');
     try {
-      const res = await api.get(`/workplan/${item._id}/accessi`);
-      setAccessi(res.data.accessi);
-      setRiepilogo(res.data.riepilogo);
+      const [accessiRes, diarioRes, obiettiviRes] = await Promise.allSettled([
+        api.get(`/workplan/${item._id}/accessi`),
+        api.get(`/diario/${item._id}`),
+        api.get(`/obiettivi/${item._id}`),
+      ]);
+      if (accessiRes.status === 'fulfilled') {
+        setAccessi(accessiRes.value.data.accessi);
+        setRiepilogo(accessiRes.value.data.riepilogo);
+      }
+      if (diarioRes.status === 'fulfilled') setDiarioModal(diarioRes.value.data || []);
+      if (obiettiviRes.status === 'fulfilled') setObiettiviModal(obiettiviRes.value.data || []);
     } catch (err) {
       console.error('Errore caricamento accessi', err);
     } finally {
       setLoadingAccessi(false);
     }
+  };
+
+  // Carica export PDF nel modal
+  const caricaExportModal = async () => {
+    if (!selectedWorkPlan) return;
+    setLoadingExportModal(true);
+    try {
+      const params: any = {};
+      if (exportDaData) params.dataInizio = exportDaData;
+      if (exportAData) params.dataFine = exportAData;
+      const res = await api.get(`/workplan/${selectedWorkPlan._id}/accessi/export`, { params });
+      setExportDataModal(res.data);
+    } catch (err: any) {
+      console.error('Errore export', err);
+    } finally {
+      setLoadingExportModal(false);
+    }
+  };
+
+  const stampaExportModal = () => {
+    if (!exportDataModal) return;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    const tipoCompensoLabel = exportDataModal.piano.tipoCompenso !== 'nessuno';
+    win.document.write(`<html><head><title>Registro Accessi</title>
+    <style>
+      body{font-family:Arial,sans-serif;font-size:12px;color:#222;margin:20px}
+      h1{font-size:18px;color:#1e4d8c;margin-bottom:4px}
+      h2{font-size:14px;color:#444;margin:0 0 16px}
+      table{width:100%;border-collapse:collapse;margin-top:16px}
+      th{background:#1e4d8c;color:#fff;padding:8px;text-align:left;font-size:11px}
+      td{padding:7px 8px;border-bottom:1px solid #e2e8f0;font-size:11px}
+      tr:nth-child(even) td{background:#f8fafc}
+      .riepilogo{margin-top:20px;background:#f1f5f9;padding:12px;border-radius:6px}
+      .riepilogo p{margin:4px 0}
+      @media print{body{margin:0}}
+    </style></head><body>
+    <h1>Registro Accessi — ${exportDataModal.piano.paziente}</h1>
+    <h2>Operatore: ${exportDataModal.piano.operatore} (${exportDataModal.piano.ruoloOperatore})</h2>
+    <p><strong>Attività:</strong> ${exportDataModal.piano.task}</p>
+    <p><strong>Periodo:</strong> ${exportDataModal.periodo.da} — ${exportDataModal.periodo.a}</p>
+    <table>
+      <thead><tr>
+        <th>Data</th><th>Entrata</th><th>Uscita</th><th>Durata</th><th>Note</th>
+        ${tipoCompensoLabel ? '<th>Compenso</th>' : ''}
+      </tr></thead>
+      <tbody>
+        ${exportDataModal.accessi.map((acc: any) => `<tr>
+          <td>${acc.data}</td><td>${acc.oraEntrata}</td><td>${acc.oraUscita}</td>
+          <td>${acc.durataOre}</td><td>${acc.note || '—'}</td>
+          ${tipoCompensoLabel ? `<td>${acc.compenso}</td>` : ''}
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <div class="riepilogo">
+      <p><strong>Totale accessi:</strong> ${exportDataModal.riepilogo.totaleAccessi}</p>
+      <p><strong>Ore totali:</strong> ${exportDataModal.riepilogo.oreTotali}</p>
+      ${tipoCompensoLabel ? `<p><strong>Compenso totale:</strong> ${exportDataModal.riepilogo.compensoTotale}</p>` : ''}
+    </div>
+    </body></html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); win.close(); }, 500);
   };
 
   // Salva compenso
@@ -843,6 +935,134 @@ function WorkPlan() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* ── SEZIONE DIARIO CLINICO ── */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', marginTop: '20px', overflow: 'hidden' }}>
+                  <button type="button" onClick={() => setShowDiarioModal(!showDiarioModal)}
+                    style={{ width: '100%', background: '#f8fafc', border: 'none', padding: '12px 16px', textAlign: 'left', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem', color: '#374151', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>📓 Diario clinico ({diarioModal.length} voci)</span>
+                    <span>{showDiarioModal ? '▲' : '▼'}</span>
+                  </button>
+                  {showDiarioModal && (
+                    <div style={{ padding: '16px', maxHeight: '400px', overflowY: 'auto' }}>
+                      {diarioModal.length === 0 ? (
+                        <p style={{ color: '#888', fontStyle: 'italic', margin: 0 }}>Nessuna voce nel diario.</p>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {diarioModal.map((entry: any) => (
+                            <div key={entry._id} style={{ padding: '12px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '6px' }}>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap' }}>
+                                <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>
+                                  📅 {new Date(entry.dataRegistrazione).toLocaleDateString('it-IT')} {new Date(entry.dataRegistrazione).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                                <span style={{ fontSize: '0.8rem', color: '#888' }}>✍️ {entry.staffName}</span>
+                                {entry.firmato && (
+                                  <span style={{ background: 'rgba(5,150,105,0.1)', color: '#065f46', border: '1px solid #059669', borderRadius: '10px', padding: '1px 8px', fontSize: '0.72rem', fontWeight: '700' }}>✅ Firmato</span>
+                                )}
+                              </div>
+                              <p style={{ margin: '0 0 8px', color: '#374151', fontSize: '0.88rem', whiteSpace: 'pre-wrap' }}>{entry.testo}</p>
+                              {entry.parametriVitali && Object.values(entry.parametriVitali).some((v: any) => v !== undefined && v !== null) && (
+                                <div style={{ background: '#f1f5f9', borderRadius: '6px', padding: '6px 10px', fontSize: '0.8rem', color: '#555', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                  {entry.parametriVitali.pressioneSistolica !== undefined && <span>🩸 {entry.parametriVitali.pressioneSistolica}/{entry.parametriVitali.pressioneDiastolica} mmHg</span>}
+                                  {entry.parametriVitali.frequenzaCardiaca !== undefined && <span>❤️ {entry.parametriVitali.frequenzaCardiaca} bpm</span>}
+                                  {entry.parametriVitali.frequenzaRespiratoria !== undefined && <span>🫁 {entry.parametriVitali.frequenzaRespiratoria} atti/min</span>}
+                                  {entry.parametriVitali.temperatura !== undefined && <span>🌡️ {entry.parametriVitali.temperatura}°C</span>}
+                                  {entry.parametriVitali.saturazione !== undefined && <span>💨 SpO2 {entry.parametriVitali.saturazione}%</span>}
+                                  {entry.parametriVitali.glicemia !== undefined && <span>🍬 {entry.parametriVitali.glicemia} mg/dL</span>}
+                                  {entry.parametriVitali.peso !== undefined && <span>⚖️ {entry.parametriVitali.peso} kg</span>}
+                                  {entry.parametriVitali.dolore !== undefined && <span>😣 Dolore {entry.parametriVitali.dolore}/10</span>}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* ── SEZIONE OBIETTIVI ── */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', marginTop: '12px', overflow: 'hidden' }}>
+                  <button type="button" onClick={() => setShowObiettiviModal(!showObiettiviModal)}
+                    style={{ width: '100%', background: '#f8fafc', border: 'none', padding: '12px 16px', textAlign: 'left', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem', color: '#374151', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>🎯 Obiettivi del piano ({obiettiviModal.length})</span>
+                    <span>{showObiettiviModal ? '▲' : '▼'}</span>
+                  </button>
+                  {showObiettiviModal && (
+                    <div style={{ padding: '16px' }}>
+                      {obiettiviModal.length === 0 ? (
+                        <p style={{ color: '#888', fontStyle: 'italic', margin: 0 }}>Nessun obiettivo definito.</p>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {obiettiviModal.map((ob: any) => {
+                            const statoColors: Record<string, { bg: string; color: string; label: string }> = {
+                              attivo:        { bg: 'rgba(30,77,140,0.08)',  color: '#1e4d8c', label: '🎯 Attivo' },
+                              raggiunto:     { bg: 'rgba(5,150,105,0.08)',  color: '#065f46', label: '✅ Raggiunto' },
+                              parziale:      { bg: 'rgba(245,158,11,0.08)', color: '#92400e', label: '⚠️ Parziale' },
+                              non_raggiunto: { bg: 'rgba(220,38,38,0.08)',  color: '#7f1d1d', label: '❌ Non raggiunto' },
+                              rivalutato:    { bg: 'rgba(107,114,128,0.08)',color: '#374151', label: '🔄 Rivalutato' },
+                            };
+                            const badge = statoColors[ob.stato] || statoColors.attivo;
+                            return (
+                              <div key={ob._id} style={{ background: badge.bg, border: `1px solid ${badge.color}30`, borderRadius: '6px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                                <div style={{ flex: 1 }}>
+                                  <p style={{ margin: '0 0 4px', fontWeight: '600', fontSize: '0.88rem', color: '#374151' }}>{ob.descrizione}</p>
+                                  <div style={{ fontSize: '0.78rem', color: '#888', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                    <span>📅 {new Date(ob.dataInizio).toLocaleDateString('it-IT')}</span>
+                                    {ob.dataRivalutazione && <span>🔄 Rivalutazione: {new Date(ob.dataRivalutazione).toLocaleDateString('it-IT')}</span>}
+                                    {ob.valutazioni?.length > 0 && <span>📋 {ob.valutazioni.length} valutazioni</span>}
+                                  </div>
+                                </div>
+                                <span style={{ color: badge.color, fontWeight: '700', fontSize: '0.8rem', background: badge.bg, border: `1px solid ${badge.color}`, borderRadius: '10px', padding: '2px 8px', whiteSpace: 'nowrap' }}>{badge.label}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* ── EXPORT PDF ACCESSI ── */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', marginTop: '12px', overflow: 'hidden' }}>
+                  <button type="button" onClick={() => setShowExportModal(!showExportModal)}
+                    style={{ width: '100%', background: '#f8fafc', border: 'none', padding: '12px 16px', textAlign: 'left', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem', color: '#374151', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>📄 Esporta registro accessi (PDF)</span>
+                    <span>{showExportModal ? '▲' : '▼'}</span>
+                  </button>
+                  {showExportModal && (
+                    <div style={{ padding: '16px' }}>
+                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '8px' }}>
+                        <label style={{ flex: 1, minWidth: '130px', fontSize: '0.85rem' }}>
+                          Da data
+                          <input type="date" value={exportDaData} onChange={e => setExportDaData(e.target.value)} style={{ marginTop: '4px', padding: '7px 10px', border: '1px solid #ced4da', borderRadius: '4px', width: '100%' }} />
+                        </label>
+                        <label style={{ flex: 1, minWidth: '130px', fontSize: '0.85rem' }}>
+                          A data
+                          <input type="date" value={exportAData} onChange={e => setExportAData(e.target.value)} style={{ marginTop: '4px', padding: '7px 10px', border: '1px solid #ced4da', borderRadius: '4px', width: '100%' }} />
+                        </label>
+                        <button type="button" onClick={caricaExportModal} disabled={loadingExportModal}
+                          style={{ background: '#1e4d8c', padding: '9px 16px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                          {loadingExportModal ? '⏳' : '🔍 Carica'}
+                        </button>
+                        {exportDataModal && (
+                          <button type="button" onClick={stampaExportModal}
+                            style={{ background: '#059669', padding: '9px 16px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                            🖨️ Stampa PDF
+                          </button>
+                        )}
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.78rem', color: '#888' }}>Lascia vuoto per il mese corrente</p>
+                      {exportDataModal && (
+                        <div style={{ marginTop: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '12px', fontSize: '0.82rem' }}>
+                          <p style={{ margin: '0 0 4px' }}><strong>Periodo:</strong> {exportDataModal.periodo.da} — {exportDataModal.periodo.a}</p>
+                          <p style={{ margin: '0 0 4px' }}><strong>Accessi:</strong> {exportDataModal.riepilogo.totaleAccessi} | <strong>Ore:</strong> {exportDataModal.riepilogo.oreTotali}</p>
+                          {exportDataModal.piano.tipoCompenso !== 'nessuno' && <p style={{ margin: 0 }}><strong>Compenso totale:</strong> {exportDataModal.riepilogo.compensoTotale}</p>}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
