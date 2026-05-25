@@ -1,4 +1,4 @@
-import { Link, useLocation, Route, Routes } from 'react-router-dom';
+import { Link, useLocation, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Patients from './pages/Patients';
@@ -16,6 +16,8 @@ import StoricoCliniche from './pages/StoricoCliniche';
 import ArchivioCartelle from './pages/ArchivioCartelle';
 import CheckList from './pages/CheckList';
 import GestioneUtenti from './pages/GestioneUtenti';
+import PortaleOperatore from './pages/PortaleOperatore';
+import ProfiloPersonale from './pages/ProfiloPersonale';
 import {
   Heart,
   LayoutDashboard,
@@ -31,13 +33,25 @@ import {
   Archive,
   CheckSquare,
   ShieldCheck,
+  Briefcase,
+  UserCircle,
 } from 'lucide-react';
+
+// Ruoli con accesso completo (admin/coordinamento/direzione)
+const RUOLI_PRIVILEGIATI = ['admin', 'coordinator', 'direttore'];
+// Ruoli operativi (vedono solo il portale operatore)
+const RUOLI_OPERATORI = ['caregiver', 'infermiere', 'oss', 'fisioterapista', 'medico'];
+
+function isPrivilegiato(role: string) {
+  return RUOLI_PRIVILEGIATI.includes(role);
+}
 
 function AppShell() {
   const { user, logout } = useAuth();
   const location = useLocation();
 
   const isActive = (path: string) => location.pathname === path;
+  const operatore = user && !isPrivilegiato(user.role);
 
   return (
     <div className="app-shell">
@@ -46,6 +60,7 @@ function AppShell() {
           <img src="/logo.png" alt="Abbraccio Cure Domiciliari" style={{ width: '100%', maxWidth: '160px', height: 'auto', display: 'block', margin: '0 auto' }} />
         </div>
         <nav>
+          {/* Link non autenticati */}
           {!user && (
             <Link to="/" className={isActive('/') ? 'active' : ''}>
               <LayoutDashboard size={18} />
@@ -58,71 +73,81 @@ function AppShell() {
               Registrati
             </Link>
           )}
-          {user && (user.role === 'admin' || user.role === 'coordinator') && (
-            <Link to="/dashboard" className={isActive('/dashboard') ? 'active' : ''}>
-              <LayoutDashboard size={18} />
-              Dashboard
-            </Link>
+
+          {/* ===== MENU OPERATORI (infermieristico, oss, riabilitativo, medico) ===== */}
+          {user && operatore && (
+            <>
+              <Link to="/portale-operatore" className={isActive('/portale-operatore') ? 'active' : ''}>
+                <Briefcase size={18} />
+                Il mio Piano
+              </Link>
+              <Link to="/protocolli" className={isActive('/protocolli') ? 'active' : ''}>
+                <ClipboardList size={18} />
+                Protocolli
+              </Link>
+              <Link to="/procedure" className={isActive('/procedure') ? 'active' : ''}>
+                <FileText size={18} />
+                Procedure
+              </Link>
+              <Link to="/profilo-personale" className={isActive('/profilo-personale') ? 'active' : ''}>
+                <UserCircle size={18} />
+                Il mio profilo
+              </Link>
+            </>
           )}
-          {user && (
-            <Link to="/patients" className={isActive('/patients') ? 'active' : ''}>
-              <Users size={18} />
-              Pazienti
-            </Link>
-          )}
-          {user && (
-            <Link to="/staff" className={isActive('/staff') ? 'active' : ''}>
-              <UserPlus size={18} />
-              Personale
-            </Link>
-          )}
-          {user && (
-            <Link to="/protocolli" className={isActive('/protocolli') ? 'active' : ''}>
-              <ClipboardList size={18} />
-              Protocolli sanitari
-            </Link>
-          )}
-          {user && (
-            <Link to="/procedure" className={isActive('/procedure') ? 'active' : ''}>
-              <FileText size={18} />
-              Procedure sanitarie
-            </Link>
-          )}
-          {user && (
-            <Link to="/workplan" className={isActive('/workplan') ? 'active' : ''}>
-              <Calendar size={18} />
-              Piano di lavoro
-            </Link>
-          )}
-          {user && (
-            <Link to="/strumenti" className={isActive('/strumenti') ? 'active' : ''}>
-              <Stethoscope size={18} />
-              Strumenti e presidi
-            </Link>
-          )}
-          {user && (user.role === 'admin' || user.role === 'coordinator' || user.role === 'direttore') && (
-            <Link to="/storico-cliniche" className={isActive('/storico-cliniche') ? 'active' : ''}>
-              <BookOpen size={18} />
-              Storico cartelle cliniche
-            </Link>
-          )}
-          {user && (user.role === 'admin' || user.role === 'coordinator' || user.role === 'direttore') && (
-            <Link to="/archivio-cartelle" className={isActive('/archivio-cartelle') ? 'active' : ''}>
-              <Archive size={18} />
-              Archivio cartelle
-            </Link>
-          )}
-          {user && (
-            <Link to="/checklist" className={isActive('/checklist') ? 'active' : ''}>
-              <CheckSquare size={18} />
-              Check List
-            </Link>
-          )}
-          {user && user.role === 'admin' && (
-            <Link to="/gestione-utenti" className={isActive('/gestione-utenti') ? 'active' : ''}>
-              <ShieldCheck size={18} />
-              Gestione Utenti
-            </Link>
+
+          {/* ===== MENU PRIVILEGIATI (admin, coordinator, direttore) ===== */}
+          {user && isPrivilegiato(user.role) && (
+            <>
+              {(user.role === 'admin' || user.role === 'coordinator') && (
+                <Link to="/dashboard" className={isActive('/dashboard') ? 'active' : ''}>
+                  <LayoutDashboard size={18} />
+                  Dashboard
+                </Link>
+              )}
+              <Link to="/patients" className={isActive('/patients') ? 'active' : ''}>
+                <Users size={18} />
+                Pazienti
+              </Link>
+              <Link to="/staff" className={isActive('/staff') ? 'active' : ''}>
+                <UserPlus size={18} />
+                Personale
+              </Link>
+              <Link to="/protocolli" className={isActive('/protocolli') ? 'active' : ''}>
+                <ClipboardList size={18} />
+                Protocolli sanitari
+              </Link>
+              <Link to="/procedure" className={isActive('/procedure') ? 'active' : ''}>
+                <FileText size={18} />
+                Procedure sanitarie
+              </Link>
+              <Link to="/workplan" className={isActive('/workplan') ? 'active' : ''}>
+                <Calendar size={18} />
+                Piano di lavoro
+              </Link>
+              <Link to="/strumenti" className={isActive('/strumenti') ? 'active' : ''}>
+                <Stethoscope size={18} />
+                Strumenti e presidi
+              </Link>
+              <Link to="/storico-cliniche" className={isActive('/storico-cliniche') ? 'active' : ''}>
+                <BookOpen size={18} />
+                Storico cartelle cliniche
+              </Link>
+              <Link to="/archivio-cartelle" className={isActive('/archivio-cartelle') ? 'active' : ''}>
+                <Archive size={18} />
+                Archivio cartelle
+              </Link>
+              <Link to="/checklist" className={isActive('/checklist') ? 'active' : ''}>
+                <CheckSquare size={18} />
+                Check List
+              </Link>
+              {user.role === 'admin' && (
+                <Link to="/gestione-utenti" className={isActive('/gestione-utenti') ? 'active' : ''}>
+                  <ShieldCheck size={18} />
+                  Gestione Utenti
+                </Link>
+              )}
+            </>
           )}
         </nav>
         {user && (
@@ -142,11 +167,11 @@ function AppShell() {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
+
+          {/* Route privilegiati */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
           <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
-          <Route path="/protocolli" element={<ProtectedRoute><Protocolli /></ProtectedRoute>} />
-          <Route path="/procedure" element={<ProtectedRoute><Procedure /></ProtectedRoute>} />
           <Route path="/workplan" element={<ProtectedRoute><WorkPlan /></ProtectedRoute>} />
           <Route path="/accesso/:workPlanId" element={<ProtectedRoute><WorkPlanAccessPage /></ProtectedRoute>} />
           <Route path="/workplan-access/:workPlanId" element={<ProtectedRoute><WorkPlanAccessPage /></ProtectedRoute>} />
@@ -155,6 +180,14 @@ function AppShell() {
           <Route path="/archivio-cartelle" element={<ProtectedRoute><ArchivioCartelle /></ProtectedRoute>} />
           <Route path="/checklist" element={<ProtectedRoute><CheckList /></ProtectedRoute>} />
           <Route path="/gestione-utenti" element={<ProtectedRoute><GestioneUtenti /></ProtectedRoute>} />
+
+          {/* Route condivise (tutti gli utenti autenticati) */}
+          <Route path="/protocolli" element={<ProtectedRoute><Protocolli /></ProtectedRoute>} />
+          <Route path="/procedure" element={<ProtectedRoute><Procedure /></ProtectedRoute>} />
+
+          {/* Route operatori */}
+          <Route path="/portale-operatore" element={<ProtectedRoute><PortaleOperatore /></ProtectedRoute>} />
+          <Route path="/profilo-personale" element={<ProtectedRoute><ProfiloPersonale /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>

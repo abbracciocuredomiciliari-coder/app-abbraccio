@@ -1,63 +1,15 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import nodemailer from 'nodemailer';
 import User from '../models/User';
+import Staff from '../models/Staff';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
+import { inviaEmailNotificaAdmin } from '../utils/email';
 
 const router = Router();
 const jwtSecret = process.env.JWT_SECRET as string;
 const tokenExpiration = '30d';
-
-// Funzione per inviare email di notifica all'admin
-async function inviaEmailNotificaAdmin(nomeUtente: string, emailUtente: string, professione: string) {
-  const adminEmail = process.env.ADMIN_EMAIL;
-  const smtpHost = process.env.SMTP_HOST;
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
-
-  if (!adminEmail || !smtpHost || !smtpUser || !smtpPass) {
-    console.log('⚠️ Configurazione email non presente — notifica admin saltata');
-    return;
-  }
-
-  try {
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: false,
-      auth: { user: smtpUser, pass: smtpPass },
-    });
-
-    const frontendUrl = process.env.FRONTEND_URL || 'https://app-abbraccio-frontend-rw2c.vercel.app';
-
-    await transporter.sendMail({
-      from: `"App Abbraccio" <${smtpUser}>`,
-      to: adminEmail,
-      subject: '🔔 Nuova richiesta di registrazione — App Abbraccio',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
-          <h2 style="color: #1e4d8c; margin-top: 0;">🔔 Nuova richiesta di registrazione</h2>
-          <p>Un nuovo utente ha richiesto l'accesso all'app <strong>Abbraccio Cure Domiciliari</strong>.</p>
-          <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-            <tr><td style="padding: 8px; background: #f8fafc; font-weight: bold; width: 140px;">Nome:</td><td style="padding: 8px;">${nomeUtente}</td></tr>
-            <tr><td style="padding: 8px; background: #f1f5f9; font-weight: bold;">Email:</td><td style="padding: 8px;">${emailUtente}</td></tr>
-            <tr><td style="padding: 8px; background: #f8fafc; font-weight: bold;">Professione:</td><td style="padding: 8px;">${professione || 'Non specificata'}</td></tr>
-          </table>
-          <p>Per approvare o rifiutare la richiesta, accedi alla sezione <strong>Gestione Utenti</strong> dell'app:</p>
-          <a href="${frontendUrl}/gestione-utenti" style="display: inline-block; background: #1e4d8c; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
-            Vai a Gestione Utenti →
-          </a>
-          <p style="margin-top: 24px; font-size: 12px; color: #888;">Abbraccio Cure Domiciliari — Sistema di gestione</p>
-        </div>
-      `,
-    });
-    console.log(`✅ Email notifica inviata a ${adminEmail}`);
-  } catch (err) {
-    console.error('❌ Errore invio email notifica admin:', err);
-  }
-}
 
 // REGISTRAZIONE — crea utente con status "pending"
 router.post('/register', async (req: Request, res: Response) => {
@@ -230,6 +182,17 @@ router.put('/approve/:userId', authenticateToken, authorizeRole('admin'), async 
 
     if (!user) {
       return res.status(404).json({ message: 'Utente non trovato' });
+    }
+
+    // Collega automaticamente User↔Staff tramite email
+    try {
+      await Staff.findOneAndUpdate(
+        { email: user.email },
+        { $set: { userId: user._id } },
+        { new: true }
+      );
+    } catch (linkErr) {
+      console.warn('⚠️ Impossibile collegare User↔Staff:', linkErr);
     }
 
     return res.json({ message: 'Utente approvato con successo', user });

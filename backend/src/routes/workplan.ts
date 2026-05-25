@@ -1,26 +1,46 @@
 import { Router, Request, Response } from 'express';
 import WorkPlan from '../models/WorkPlan';
 import WorkPlanAccess from '../models/WorkPlanAccess';
+import Staff from '../models/Staff';
 import { authenticateToken } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
+import { inviaEmailNuovoPianoDiLavoro } from '../utils/email';
 
 const router = Router();
 
-// Get all workplan items (operatore vede solo i propri, admin/coordinator vedono tutti)
+// Ruoli operativi (non admin/coordinator/direttore)
+const RUOLI_OPERATORI = ['caregiver', 'infermiere', 'oss', 'fisioterapista'];
+function isOperatore(role: string) {
+  return !['admin', 'coordinator', 'direttore'].includes(role);
+}
+
+// Helper: trova lo Staff dell'utente loggato
+async function getStaffByUser(userId: string, userEmail?: string) {
+  let staff = await Staff.findOne({ userId });
+  if (!staff && userEmail) {
+    staff = await Staff.findOne({ email: userEmail });
+    // Collega automaticamente se trovato per email
+    if (staff) {
+      staff.userId = userId as any;
+      await staff.save();
+    }
+  }
+  return staff;
+}
+
+// GET / — lista piani (operatore vede solo i propri, admin/coordinator vedono tutti)
 router.get('/', authenticateToken, async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const isAdminOrCoord = user.role === 'admin' || user.role === 'coordinator';
+    const isPrivileged = ['admin', 'coordinator', 'direttore'].includes(user.role);
 
     let filter: any = {};
 
-    if (!isAdminOrCoord) {
-      // Operatore: trova il suo profilo Staff tramite userId
-      const staffMember = await (await import('../models/Staff')).default.findOne({ userId: user.id || user._id });
+    if (!isPrivileged) {
+      const staffMember = await getStaffByUser(user.id || user.userId, user.email);
       if (staffMember) {
         filter.staff = staffMember._id;
       } else {
-        // Se non ha profilo staff, non vede nulla
         return res.json([]);
       }
     }
@@ -35,10 +55,81 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
   }
 });
 
+// GET /miei-pazienti — pazienti assegnati all'operatore loggato
+router.get('/miei-pazienti', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const staffMember = await getStaffByUser(user.id || user.userId, user.email);
+    if (!staffMember) {
+      return res.json([]);
+    }
+
+    const piani = await WorkPlan.find({ staff: staffMember._id, status: { $ne: 'cancelled' } })
+      .populate('patient', 'firstName lastName birthDate address contactPhone assistanceNeeds')
+      .sort({ date: -1 });
+
+    // Deduplica pazienti
+    const pazientiMap = new Map();
+    for (const piano of piani) {
+      const p = piano.patient as any;
+      if (p && !pazientiMap.has(p._id.toString())) {
+        pazientiMap.set(p._id.toString(), {
+          ...p.toObject(),
+          pianiAssegnati: piani.filter(pl => (pl.patient as any)?._id?.toString() === p._id.toString()).length,
+        });
+      }
+    }
+
+    return res.json(Array.from(pazientiMap.values()));
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore nel recupero dei pazienti assegnati', error });
+  }
+});
+
+// GET /mio-profilo-staff — profilo Staff dell'operatore loggato
+router.get('/mio-profilo-staff', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const staffMember = await getStaffByUser(user.id || user.userId, user.email);
+    if (!staffMember) {
+      return res.status(404).json({ message: 'Profilo staff non trovato' });
+    }
+    return res.json(staffMember);
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore nel recupero del profilo staff', error });
+  }
+});
+
 // Create new workplan item
 router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
   try {
     const workplan = await WorkPlan.create(req.body);
+
+    // Invia email notifica all'operatore assegnato
+    try {
+      const populated = await WorkPlan.findById(workplan._id)
+        .populate('patient', 'firstName lastName')
+        .populate('staff', 'firstName lastName email');
+
+      if (populated) {
+        const staffDoc = populated.staff as any;
+        const patientDoc = populated.patient as any;
+        if (staffDoc?.email) {
+          const nomePaziente = `${patientDoc?.firstName || ''} ${patientDoc?.lastName || ''}`.trim();
+          const dataInizio = new Date(workplan.date).toLocaleDateString('it-IT');
+          await inviaEmailNuovoPianoDiLavoro(
+            staffDoc.email,
+            `${staffDoc.firstName} ${staffDoc.lastName}`,
+            nomePaziente,
+            dataInizio,
+            workplan.task
+          );
+        }
+      }
+    } catch (emailErr) {
+      console.warn('⚠️ Errore invio email notifica piano:', emailErr);
+    }
+
     return res.status(201).json(workplan);
   } catch (error) {
     return res.status(400).json({ message: 'Errore nella creazione dell incarico', error });
@@ -78,12 +169,22 @@ router.delete('/:id', authenticateToken, authorizeRole('admin', 'coordinator'), 
 router.get('/:id/accessi', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const user = (req as any).user;
+
     const workplan = await WorkPlan.findById(id)
       .populate('patient', 'firstName lastName')
       .populate('staff', 'firstName lastName role');
 
     if (!workplan) {
       return res.status(404).json({ message: 'Incarico non trovato' });
+    }
+
+    // Verifica che l'operatore possa vedere questo piano
+    if (isOperatore(user.role)) {
+      const staffMember = await getStaffByUser(user.id || user.userId, user.email);
+      if (!staffMember || workplan.staff?.toString() !== staffMember._id.toString()) {
+        return res.status(403).json({ message: 'Non autorizzato a vedere questo piano' });
+      }
     }
 
     const accessi = await WorkPlanAccess.find({ workPlan: id }).sort({ oraEntrata: -1 });
@@ -109,7 +210,6 @@ router.get('/:id/accessi', authenticateToken, async (req: Request, res: Response
     // Compenso maturato per ogni accesso (per visualizzazione)
     const accessiConCompenso = accessi.map(acc => {
       let compensoAcc = (acc as any).compensoMaturato || 0;
-      // Se non ancora calcolato (accessi vecchi), calcolalo al volo
       if (!compensoAcc && acc.oraUscita && workplan.tariffa && workplan.tipoCompenso !== 'nessuno') {
         const minuti = Math.round((acc.oraUscita.getTime() - acc.oraEntrata.getTime()) / 60000);
         if (workplan.tipoCompenso === 'orario') {
@@ -150,6 +250,113 @@ router.get('/:id/accessi', authenticateToken, async (req: Request, res: Response
   }
 });
 
+// GET /api/workplan/:id/accessi/export — Export accessi per periodo (PDF-ready JSON)
+router.get('/:id/accessi/export', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { dataInizio, dataFine } = req.query;
+    const user = (req as any).user;
+
+    const workplan = await WorkPlan.findById(id)
+      .populate('patient', 'firstName lastName birthDate address')
+      .populate('staff', 'firstName lastName role email');
+
+    if (!workplan) {
+      return res.status(404).json({ message: 'Incarico non trovato' });
+    }
+
+    // Verifica autorizzazione: admin, coordinator, direttore, o l'operatore affidatario
+    if (isOperatore(user.role)) {
+      const staffMember = await getStaffByUser(user.id || user.userId, user.email);
+      if (!staffMember || workplan.staff?.toString() !== staffMember._id.toString()) {
+        return res.status(403).json({ message: 'Non autorizzato' });
+      }
+    }
+
+    // Filtro per periodo
+    const filter: any = { workPlan: id };
+    if (dataInizio || dataFine) {
+      filter.oraEntrata = {};
+      if (dataInizio) filter.oraEntrata.$gte = new Date(dataInizio as string);
+      if (dataFine) {
+        const fine = new Date(dataFine as string);
+        fine.setHours(23, 59, 59, 999);
+        filter.oraEntrata.$lte = fine;
+      }
+    } else {
+      // Default: mese corrente
+      const ora = new Date();
+      filter.oraEntrata = {
+        $gte: new Date(ora.getFullYear(), ora.getMonth(), 1),
+        $lte: new Date(ora.getFullYear(), ora.getMonth() + 1, 0, 23, 59, 59),
+      };
+    }
+
+    const accessi = await WorkPlanAccess.find(filter).sort({ oraEntrata: 1 });
+
+    let minutiTotali = 0;
+    let compensoTotale = 0;
+    const accessiFormattati = accessi.map(acc => {
+      const durata = acc.oraUscita
+        ? Math.round((acc.oraUscita.getTime() - acc.oraEntrata.getTime()) / 60000)
+        : 0;
+      minutiTotali += durata;
+
+      let compenso = (acc as any).compensoMaturato || 0;
+      if (!compenso && acc.oraUscita && workplan.tariffa && workplan.tipoCompenso !== 'nessuno') {
+        if (workplan.tipoCompenso === 'orario') {
+          compenso = Math.round((durata / 60) * workplan.tariffa * 100) / 100;
+        } else if (workplan.tipoCompenso === 'fisso') {
+          compenso = workplan.tariffa;
+        }
+      }
+      compensoTotale += compenso;
+
+      return {
+        data: acc.oraEntrata.toLocaleDateString('it-IT'),
+        oraEntrata: acc.oraEntrata.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+        oraUscita: acc.oraUscita ? acc.oraUscita.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '—',
+        durataMinuti: durata,
+        durataOre: durata > 0 ? `${Math.floor(durata / 60)}h ${durata % 60}m` : '—',
+        operatore: acc.staffName,
+        ruolo: acc.staffRole,
+        note: acc.note || '',
+        compenso: compenso > 0 ? `€ ${compenso.toFixed(2)}` : '—',
+      };
+    });
+
+    const staffDoc = workplan.staff as any;
+    const patientDoc = workplan.patient as any;
+
+    return res.json({
+      piano: {
+        id: workplan._id,
+        paziente: `${patientDoc?.firstName || ''} ${patientDoc?.lastName || ''}`.trim(),
+        operatore: `${staffDoc?.firstName || ''} ${staffDoc?.lastName || ''}`.trim(),
+        ruoloOperatore: staffDoc?.role || '',
+        task: workplan.task,
+        dataInizio: workplan.date ? new Date(workplan.date).toLocaleDateString('it-IT') : '',
+        dataFine: workplan.dataFine ? new Date(workplan.dataFine).toLocaleDateString('it-IT') : '',
+        tipoCompenso: workplan.tipoCompenso || 'nessuno',
+        tariffa: workplan.tariffa || 0,
+      },
+      periodo: {
+        da: dataInizio ? new Date(dataInizio as string).toLocaleDateString('it-IT') : `01/${new Date().getMonth() + 1}/${new Date().getFullYear()}`,
+        a: dataFine ? new Date(dataFine as string).toLocaleDateString('it-IT') : new Date().toLocaleDateString('it-IT'),
+      },
+      accessi: accessiFormattati,
+      riepilogo: {
+        totaleAccessi: accessi.length,
+        minutiTotali,
+        oreTotali: `${Math.floor(minutiTotali / 60)}h ${minutiTotali % 60}m`,
+        compensoTotale: compensoTotale > 0 ? `€ ${compensoTotale.toFixed(2)}` : '—',
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore nell\'export degli accessi', error });
+  }
+});
+
 // PATCH /api/workplan/:id/compenso - Aggiorna compenso (calcola o imposta manualmente)
 router.patch('/:id/compenso', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
   try {
@@ -161,12 +368,10 @@ router.patch('/:id/compenso', authenticateToken, authorizeRole('admin', 'coordin
       return res.status(404).json({ message: 'Incarico non trovato' });
     }
 
-    // Aggiorna i campi compenso
     if (tipoCompenso !== undefined) workplan.tipoCompenso = tipoCompenso;
     if (tariffa !== undefined) workplan.tariffa = tariffa;
     if (compensoPagato !== undefined) workplan.compensoPagato = compensoPagato;
 
-    // Se ricalcola=true, calcola automaticamente dagli accessi
     if (ricalcola || compensoTotale === undefined) {
       const accessi = await WorkPlanAccess.find({ workPlan: id });
       let minutiTotali = 0;

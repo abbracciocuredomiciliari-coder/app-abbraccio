@@ -1,4 +1,4 @@
-import { Document, Schema, model } from 'mongoose';
+import { Document, Schema, model, Types } from 'mongoose';
 
 // Categorie di ruolo
 export type StaffCategory = 'infermieristico' | 'oss' | 'riabilitativo' | 'medico' | 'coordinamento' | 'direzione';
@@ -14,6 +14,7 @@ export interface IStaff extends Document {
   dataInizioCollaborazione?: Date;
   dataFineCollaborazione?: Date;
   note?: string;
+  userId?: Types.ObjectId; // collegamento con l'account di login (User)
 }
 
 const staffSchema = new Schema<IStaff>(
@@ -32,7 +33,8 @@ const staffSchema = new Schema<IStaff>(
     active: { type: Boolean, default: true },
     dataInizioCollaborazione: { type: Date },
     dataFineCollaborazione: { type: Date },
-    note: { type: String, trim: true }
+    note: { type: String, trim: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
 );
