@@ -6,6 +6,46 @@ import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
+// Funzione helper: ricalcola compensoTotale sul WorkPlan sommando tutti gli accessi completati
+async function ricalcolaCompensoTotale(workPlanId: string): Promise<void> {
+  const workplan = await WorkPlan.findById(workPlanId);
+  if (!workplan) return;
+
+  const accessi = await WorkPlanAccess.find({ workPlan: workPlanId, oraUscita: { $exists: true } });
+
+  if (workplan.tipoCompenso === 'nessuno' || !workplan.tariffa) {
+    workplan.compensoTotale = 0;
+  } else if (workplan.tipoCompenso === 'orario') {
+    // Somma i compensi maturati da ogni accesso
+    let totale = 0;
+    for (const acc of accessi) {
+      totale += acc.compensoMaturato || 0;
+    }
+    workplan.compensoTotale = Math.round(totale * 100) / 100;
+  } else if (workplan.tipoCompenso === 'fisso') {
+    // Compenso fisso: vale per ogni accesso completato
+    workplan.compensoTotale = Math.round(accessi.length * (workplan.tariffa || 0) * 100) / 100;
+  }
+
+  await workplan.save();
+}
+
+// Funzione helper: calcola compenso per un singolo accesso
+function calcolaCompensoAccesso(
+  tipoCompenso: string | undefined,
+  tariffa: number | undefined,
+  durataMinuti: number
+): number {
+  if (!tipoCompenso || tipoCompenso === 'nessuno' || !tariffa) return 0;
+  if (tipoCompenso === 'orario') {
+    return Math.round((durataMinuti / 60) * tariffa * 100) / 100;
+  }
+  if (tipoCompenso === 'fisso') {
+    return tariffa; // ogni accesso vale la tariffa fissa
+  }
+  return 0;
+}
+
 // GET /api/workplan-access/:workPlanId - Ottieni tutti gli accessi per un piano di lavoro
 router.get('/:workPlanId', authenticateToken, async (req: Request, res: Response) => {
   try {
@@ -66,6 +106,8 @@ router.post('/:workPlanId/entrata', authenticateToken, async (req: Request, res:
       note: note?.trim(),
       firmaLogin: user.name || user.email || 'Utente',
       ipAddress: ipAddress.toString().split(',')[0].trim(),
+      durataMinuti: 0,
+      compensoMaturato: 0,
     });
 
     return res.status(201).json({ 
@@ -78,7 +120,7 @@ router.post('/:workPlanId/entrata', authenticateToken, async (req: Request, res:
   }
 });
 
-// PATCH /api/workplan-access/:accessId/uscita - Registra uscita
+// PATCH /api/workplan-access/:accessId/uscita - Registra uscita + calcola compenso maturato
 router.patch('/:accessId/uscita', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { accessId } = req.params;
@@ -107,16 +149,32 @@ router.patch('/:accessId/uscita', authenticateToken, async (req: Request, res: R
     const oraUscita = new Date();
     const durataMinuti = Math.round((oraUscita.getTime() - accesso.oraEntrata.getTime()) / 60000);
 
+    // Recupera il piano di lavoro per calcolare il compenso
+    const workplan = await WorkPlan.findById(accesso.workPlan);
+    const compensoMaturato = workplan
+      ? calcolaCompensoAccesso(workplan.tipoCompenso, workplan.tariffa, durataMinuti)
+      : 0;
+
     accesso.oraUscita = oraUscita;
+    accesso.durataMinuti = durataMinuti;
+    accesso.compensoMaturato = compensoMaturato;
     if (note?.trim()) {
       accesso.note = note.trim();
     }
     await accesso.save();
 
+    // Aggiorna il compensoTotale sul WorkPlan sommando tutti gli accessi
+    await ricalcolaCompensoTotale(accesso.workPlan.toString());
+
+    // Ricarica il workplan aggiornato
+    const workplanAggiornato = await WorkPlan.findById(accesso.workPlan);
+
     return res.json({ 
       message: 'Uscita registrata con successo',
       accesso,
-      durataMinuti
+      durataMinuti,
+      compensoMaturato,
+      compensoTotaleAggiornato: workplanAggiornato?.compensoTotale || 0,
     });
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore nella registrazione dell\'uscita', error: error?.message });

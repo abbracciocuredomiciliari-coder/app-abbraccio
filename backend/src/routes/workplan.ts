@@ -99,18 +99,44 @@ router.get('/:id/accessi', authenticateToken, async (req: Request, res: Response
 
     // Calcola compenso in base al tipo
     let compensoCalcolato = 0;
+    const accessiCompletati = accessi.filter(a => a.oraUscita);
     if (workplan.tipoCompenso === 'orario' && workplan.tariffa) {
       compensoCalcolato = Math.round(oreTotali * workplan.tariffa * 100) / 100;
     } else if (workplan.tipoCompenso === 'fisso' && workplan.tariffa) {
-      compensoCalcolato = workplan.tariffa;
+      compensoCalcolato = Math.round(accessiCompletati.length * workplan.tariffa * 100) / 100;
     }
+
+    // Compenso maturato per ogni accesso (per visualizzazione)
+    const accessiConCompenso = accessi.map(acc => {
+      let compensoAcc = (acc as any).compensoMaturato || 0;
+      // Se non ancora calcolato (accessi vecchi), calcolalo al volo
+      if (!compensoAcc && acc.oraUscita && workplan.tariffa && workplan.tipoCompenso !== 'nessuno') {
+        const minuti = Math.round((acc.oraUscita.getTime() - acc.oraEntrata.getTime()) / 60000);
+        if (workplan.tipoCompenso === 'orario') {
+          compensoAcc = Math.round((minuti / 60) * workplan.tariffa * 100) / 100;
+        } else if (workplan.tipoCompenso === 'fisso') {
+          compensoAcc = workplan.tariffa;
+        }
+      }
+      return {
+        _id: acc._id,
+        staffName: acc.staffName,
+        staffRole: acc.staffRole,
+        oraEntrata: acc.oraEntrata,
+        oraUscita: acc.oraUscita,
+        note: acc.note,
+        firmaLogin: acc.firmaLogin,
+        durataMinuti: (acc as any).durataMinuti || (acc.oraUscita ? Math.round((acc.oraUscita.getTime() - acc.oraEntrata.getTime()) / 60000) : 0),
+        compensoMaturato: compensoAcc,
+      };
+    });
 
     return res.json({
       workplan,
-      accessi,
+      accessi: accessiConCompenso,
       riepilogo: {
         totaleAccessi: accessi.length,
-        accessiCompletati: accessi.filter(a => a.oraUscita).length,
+        accessiCompletati: accessiCompletati.length,
         accessiAperti: accessi.filter(a => !a.oraUscita).length,
         minutiTotali,
         oreTotali: Math.round(oreTotali * 100) / 100,

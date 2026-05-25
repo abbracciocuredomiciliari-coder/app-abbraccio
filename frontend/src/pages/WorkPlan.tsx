@@ -71,6 +71,8 @@ interface Accesso {
   oraUscita?: string;
   note?: string;
   firmaLogin: string;
+  durataMinuti?: number;
+  compensoMaturato?: number;
 }
 
 interface RiepilogoAccessi {
@@ -800,6 +802,11 @@ function WorkPlan() {
                                 }
                                 {acc.oraUscita && (
                                   <span style={{ color: '#7c3aed' }}>⏱️ <strong>{calcolaDurata(acc.oraEntrata, acc.oraUscita)}</strong></span>
+                                )}
+                                {acc.oraUscita && acc.compensoMaturato !== undefined && acc.compensoMaturato > 0 && (
+                                  <span style={{ color: '#16a34a', fontWeight: '700', backgroundColor: '#f0fdf4', padding: '1px 8px', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
+                                    💶 €{acc.compensoMaturato}
+                                  </span>
                                 )}
                               </div>
                               {acc.note && <div style={{ fontSize: '0.8rem', color: '#555', marginTop: '4px', fontStyle: 'italic' }}>📝 {acc.note}</div>}

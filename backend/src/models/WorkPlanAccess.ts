@@ -10,6 +10,8 @@ export interface IWorkPlanAccess extends Document {
   note?: string;
   firmaLogin: string; // nome utente che ha firmato
   ipAddress?: string;
+  durataMinuti?: number;       // durata in minuti (calcolata all'uscita)
+  compensoMaturato?: number;   // compenso guadagnato per questo singolo accesso
 }
 
 const workPlanAccessSchema = new Schema<IWorkPlanAccess>(
@@ -23,6 +25,8 @@ const workPlanAccessSchema = new Schema<IWorkPlanAccess>(
     note: { type: String, trim: true },
     firmaLogin: { type: String, required: true },
     ipAddress: { type: String },
+    durataMinuti: { type: Number, default: 0 },
+    compensoMaturato: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
