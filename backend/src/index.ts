@@ -16,6 +16,7 @@ import workplanAccessRouter from './routes/workplanAccess';
 import diarioClinicoRouter from './routes/diarioClinico';
 import obiettiviRouter from './routes/obiettivi';
 import allegatiRouter from './routes/allegati';
+import archivioRouter from './routes/archivio';
 
 if (!process.env.JWT_SECRET) {
   console.error('ERRORE: JWT_SECRET non è impostato. Configurare la variabile d\'ambiente nel file .env prima di avviare il server.');
@@ -72,6 +73,7 @@ app.use('/api/workplan-access', workplanAccessRouter);
 app.use('/api/diario', diarioClinicoRouter);
 app.use('/api/obiettivi', obiettiviRouter);
 app.use('/api/allegati', allegatiRouter);
+app.use('/api/archivio', archivioRouter);
 // Alias senza prefisso /api per compatibilità con URL diretti degli allegati
 app.use('/allegati', allegatiRouter);
 

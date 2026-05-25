@@ -13,6 +13,7 @@ import Procedure from './pages/Procedure';
 import Strumenti from './pages/Strumenti';
 import WorkPlanAccessPage from './pages/WorkPlanAccessPage';
 import StoricoCliniche from './pages/StoricoCliniche';
+import ArchivioCartelle from './pages/ArchivioCartelle';
 import {
   Heart,
   LayoutDashboard,
@@ -25,6 +26,7 @@ import {
   LogOut,
   User,
   BookOpen,
+  Archive,
 } from 'lucide-react';
 
 function AppShell() {
@@ -100,6 +102,12 @@ function AppShell() {
               Storico cartelle cliniche
             </Link>
           )}
+          {user && (user.role === 'admin' || user.role === 'coordinator' || user.role === 'direttore') && (
+            <Link to="/archivio-cartelle" className={isActive('/archivio-cartelle') ? 'active' : ''}>
+              <Archive size={18} />
+              Archivio cartelle
+            </Link>
+          )}
         </nav>
         {user && (
           <div className="user-area">
@@ -128,6 +136,7 @@ function AppShell() {
           <Route path="/workplan-access/:workPlanId" element={<ProtectedRoute><WorkPlanAccessPage /></ProtectedRoute>} />
           <Route path="/strumenti" element={<ProtectedRoute><Strumenti /></ProtectedRoute>} />
           <Route path="/storico-cliniche" element={<ProtectedRoute><StoricoCliniche /></ProtectedRoute>} />
+          <Route path="/archivio-cartelle" element={<ProtectedRoute><ArchivioCartelle /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>

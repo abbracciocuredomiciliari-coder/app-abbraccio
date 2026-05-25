@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
+import { useAuth } from '../context/AuthContext';
 import {
   Calendar,
   Plus,
@@ -19,6 +20,7 @@ import {
   Euro,
   ClipboardList,
   X,
+  Archive,
 } from 'lucide-react';
 
 interface PatientOption {
@@ -100,6 +102,7 @@ const assistenzaCategories = [
 
 function WorkPlan() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [workplans, setWorkplans] = useState<WorkPlanItem[]>([]);
   const [patients, setPatients] = useState<PatientOption[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
@@ -252,6 +255,23 @@ function WorkPlan() {
   };
 
   const apriAccesso = (id: string) => navigate(`/accesso/${id}`);
+
+  // Archivia incarico (snapshot completo in archivio permanente)
+  const archiviaIncarico = async (item: WorkPlanItem) => {
+    if (!confirm(`Archiviare definitivamente la cartella clinica di ${item.patient.firstName} ${item.patient.lastName}?\n\nVerrà creato uno snapshot permanente di tutto il piano, diario clinico, accessi e allegati.\nL'incarico rimarrà anche nel Piano di Lavoro.`)) return;
+    try {
+      await api.post(`/archivio/${item._id}`);
+      setSuccess(`✅ Cartella di ${item.patient.firstName} ${item.patient.lastName} archiviata con successo!`);
+      setTimeout(() => setSuccess(''), 4000);
+    } catch (err: any) {
+      if (err.response?.status === 400) {
+        setError('Questo incarico è già stato archiviato.');
+      } else {
+        setError(err.response?.data?.message || 'Errore durante l\'archiviazione.');
+      }
+      setTimeout(() => setError(''), 4000);
+    }
+  };
 
   const copiaLink = async (id: string) => {
     const url = `${window.location.origin}/accesso/${id}`;
@@ -626,6 +646,11 @@ function WorkPlan() {
                       {item.status === 'pending' && (
                         <button type="button" onClick={() => completeWorkplan(item._id)} style={{ background: 'var(--success)', padding: '7px' }} title="Segna come completato">
                           <CheckCircle size={15} />
+                        </button>
+                      )}
+                      {(user?.role === 'admin' || user?.role === 'coordinator') && (
+                        <button type="button" onClick={() => archiviaIncarico(item)} style={{ background: '#7c3aed', padding: '7px' }} title="Archivia cartella clinica">
+                          <Archive size={15} />
                         </button>
                       )}
                       <button type="button" onClick={() => deleteWorkplan(item._id)} style={{ background: 'var(--danger)', padding: '7px' }} title="Elimina">
