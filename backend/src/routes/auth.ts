@@ -130,14 +130,18 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Credenziali non valide' });
     }
 
-    if (user.status === 'pending') {
+    // Gli utenti creati prima dell'aggiornamento non hanno il campo status:
+    // li trattiamo come approvati per retrocompatibilità
+    const status = user.status || 'approved';
+
+    if (status === 'pending') {
       return res.status(403).json({
         message: 'Il tuo account è in attesa di approvazione da parte dell\'amministratore.',
         status: 'pending',
       });
     }
 
-    if (user.status === 'rejected') {
+    if (status === 'rejected') {
       return res.status(403).json({
         message: 'La tua richiesta di accesso è stata rifiutata. Contatta l\'amministratore per maggiori informazioni.',
         status: 'rejected',
