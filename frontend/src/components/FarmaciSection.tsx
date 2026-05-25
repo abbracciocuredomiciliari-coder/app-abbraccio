@@ -210,18 +210,28 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
   <title>Elenco Farmaci</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 24px; color: #222; }
-    h1 { font-size: 20px; margin-bottom: 4px; }
+    .intestazione { display: flex; align-items: center; gap: 20px; border-bottom: 3px solid #2c5f8a; padding-bottom: 14px; margin-bottom: 18px; }
+    .intestazione img { height: 70px; width: auto; }
+    .intestazione .testo h1 { margin: 0; font-size: 20px; color: #2c5f8a; }
+    .intestazione .testo p { margin: 3px 0 0; font-size: 12px; color: #666; }
     .subtitle { color: #666; font-size: 13px; margin-bottom: 20px; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th { background: #2c5f8a; color: #fff; padding: 8px 10px; text-align: left; }
     td { padding: 7px 10px; border-bottom: 1px solid #ddd; }
     tr:nth-child(even) td { background: #f5f8fc; }
-    .footer { margin-top: 20px; font-size: 11px; color: #888; }
+    .footer { margin-top: 20px; font-size: 11px; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
+    @media print { body { margin: 10mm; } }
   </style>
 </head>
 <body>
-  <h1>💊 Elenco Farmaci</h1>
-  <div class="subtitle">Stampato il: ${oggi} — Totale: ${farmaci.length} farmaci</div>
+  <div class="intestazione">
+    <img src="${window.location.origin}/logo.jpg" alt="Abbraccio Cure Domiciliari" onerror="this.style.display='none'" />
+    <div class="testo">
+      <h1>💊 Elenco Farmaci</h1>
+      <p>Abbraccio Cure Domiciliari — Documento generato il ${oggi}</p>
+    </div>
+  </div>
+  <div class="subtitle">Totale: ${farmaci.length} farmaci in elenco</div>
   <table>
     <thead>
       <tr>
