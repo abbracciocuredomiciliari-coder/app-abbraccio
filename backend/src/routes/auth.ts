@@ -163,6 +163,27 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 });
 
+// GET /migrate-status — migrazione una-tantum: approva tutti gli utenti senza status
+// Questa route è temporanea e può essere rimossa dopo la migrazione
+router.get('/migrate-status', async (req: Request, res: Response) => {
+  try {
+    const result = await (User as any).updateMany(
+      { status: { $exists: false } },
+      { $set: { status: 'approved' } }
+    );
+    const result2 = await (User as any).updateMany(
+      { status: null },
+      { $set: { status: 'approved' } }
+    );
+    return res.json({
+      message: 'Migrazione completata',
+      aggiornati: result.modifiedCount + result2.modifiedCount,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore migrazione', error });
+  }
+});
+
 // GET /me
 router.get('/me', authenticateToken, async (req: AuthRequest, res: Response) => {
   if (!req.user || typeof req.user === 'string') {
