@@ -8,7 +8,6 @@ interface CheckListEntry {
   nSerieAED: string;
   ubicazioneAED: string;
   unitaAccessoriNonDanneggiati: boolean;
-  batterieElettrodiScorta: boolean;
   batterieElettrodiScortaNonScaduti: boolean;
   asiLampeggiaVerde: boolean;
   commenti: string;
@@ -20,10 +19,6 @@ const vociChecklist = [
   {
     key: 'unitaAccessoriNonDanneggiati' as const,
     label: "Controllare che l'unità e gli accessori non siano danneggiati, sporchi o contaminati. Pulire o sostituire se necessario",
-  },
-  {
-    key: 'batterieElettrodiScorta' as const,
-    label: 'Controllare che vi siano pacchi batteria e elettrodi di scorta',
   },
   {
     key: 'batterieElettrodiScortaNonScaduti' as const,
@@ -49,7 +44,6 @@ function CheckList() {
     nSerieAED: '',
     ubicazioneAED: '',
     unitaAccessoriNonDanneggiati: false,
-    batterieElettrodiScorta: false,
     batterieElettrodiScortaNonScaduti: false,
     asiLampeggiaVerde: false,
     commenti: '',
@@ -77,7 +71,6 @@ function CheckList() {
       nSerieAED: '',
       ubicazioneAED: '',
       unitaAccessoriNonDanneggiati: false,
-      batterieElettrodiScorta: false,
       batterieElettrodiScortaNonScaduti: false,
       asiLampeggiaVerde: false,
       commenti: '',
@@ -125,7 +118,6 @@ function CheckList() {
 
   const tutteSpuntate = (entry: CheckListEntry) =>
     entry.unitaAccessoriNonDanneggiati &&
-    entry.batterieElettrodiScorta &&
     entry.batterieElettrodiScortaNonScaduti &&
     entry.asiLampeggiaVerde;
 
@@ -204,7 +196,6 @@ function CheckList() {
 
   const tutteVociForm =
     form.unitaAccessoriNonDanneggiati &&
-    form.batterieElettrodiScorta &&
     form.batterieElettrodiScortaNonScaduti &&
     form.asiLampeggiaVerde;
 
@@ -410,7 +401,7 @@ function CheckList() {
                               border: `1px solid ${ok ? '#28a745' : '#ffc107'}`,
                             }}
                           >
-                            {ok ? '✅ Completa' : `⚠️ ${vociOk}/4 voci`}
+                            {ok ? '✅ Completa' : `⚠️ ${vociOk}/3 voci`}
                           </span>
                         </div>
                         {entry.commenti && (

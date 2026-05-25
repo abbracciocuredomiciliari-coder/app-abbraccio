@@ -5,7 +5,6 @@ export interface ICheckListDefibrillatore extends Document {
   nSerieAED: string;
   ubicazioneAED: string;
   unitaAccessoriNonDanneggiati: boolean;
-  batterieElettrodiScorta: boolean;
   batterieElettrodiScortaNonScaduti: boolean;
   asiLampeggiaVerde: boolean;
   commenti: string;
@@ -20,7 +19,6 @@ const checkListDefibrillatoreSchema = new Schema<ICheckListDefibrillatore>(
     nSerieAED: { type: String, trim: true, default: '' },
     ubicazioneAED: { type: String, trim: true, default: '' },
     unitaAccessoriNonDanneggiati: { type: Boolean, default: false },
-    batterieElettrodiScorta: { type: Boolean, default: false },
     batterieElettrodiScortaNonScaduti: { type: Boolean, default: false },
     asiLampeggiaVerde: { type: Boolean, default: false },
     commenti: { type: String, trim: true, default: '' },
