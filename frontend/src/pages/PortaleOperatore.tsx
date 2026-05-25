@@ -213,9 +213,9 @@ export default function PortaleOperatore() {
         const data = accessiRes.value.data;
         setAccessi(data.accessi || []);
         setRiepilogo(data.riepilogo || null);
-        const aperto = (data.accessi || []).find(
-          (a: Accesso) => !a.oraUscita && a.firmaLogin === user?.name
-        );
+        // Cerca accesso aperto: prima per staffId (via route dedicata), poi fallback su firmaLogin
+        const tuttiAccessi: Accesso[] = data.accessi || [];
+        const aperto = tuttiAccessi.find((a: Accesso) => !a.oraUscita);
         setAccessoAperto(aperto || null);
       }
       if (diarioRes.status === 'fulfilled') setDiario(diarioRes.value.data || []);
