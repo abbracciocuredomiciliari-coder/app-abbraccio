@@ -92,10 +92,28 @@ function Strumenti() {
     dataControllo: '',
   });
 
+  // Stato per modifica apparecchiatura
+  const [editingApparecchiatura, setEditingApparecchiatura] = useState<Apparecchiatura | null>(null);
+  const [editAppForm, setEditAppForm] = useState({
+    tipo: '',
+    matricola: '',
+    controlloEseguito: false,
+    dataControllo: '',
+  });
+
   // Form stati per i presidi sanitari
   const [nuovoPresidio, setNuovoPresidio] = useState({
     nome: '',
     quantita: 0,
+    scadenza: '',
+    unitaMisura: 'pezzi',
+    scortaMinima: 0,
+  });
+
+  // Stato per modifica presidio
+  const [editingPresidio, setEditingPresidio] = useState<PresidioSanitario | null>(null);
+  const [editPresForm, setEditPresForm] = useState({
+    nome: '',
     scadenza: '',
     unitaMisura: 'pezzi',
     scortaMinima: 0,
@@ -192,6 +210,44 @@ function Strumenti() {
     }
   };
 
+  // Apri modal modifica apparecchiatura
+  const apriModificaApparecchiatura = (app: Apparecchiatura) => {
+    setEditingApparecchiatura(app);
+    setEditAppForm({
+      tipo: app.tipo,
+      matricola: app.matricola,
+      controlloEseguito: app.controlloEseguito,
+      dataControllo: app.dataControllo ? app.dataControllo.substring(0, 10) : '',
+    });
+  };
+
+  const chiudiModificaApparecchiatura = () => {
+    setEditingApparecchiatura(null);
+  };
+
+  const salvaModificaApparecchiatura = async () => {
+    if (!editingApparecchiatura) return;
+    if (!editAppForm.tipo || !editAppForm.matricola) {
+      alert('Tipo e matricola sono obbligatori');
+      return;
+    }
+    try {
+      const res = await api.put(`/equipment/${editingApparecchiatura.id}`, {
+        tipo: editAppForm.tipo,
+        matricola: editAppForm.matricola,
+        controlloEseguito: editAppForm.controlloEseguito,
+        dataControllo: editAppForm.controlloEseguito ? editAppForm.dataControllo : null,
+      });
+      setApparecchiature(apparecchiature.map(a =>
+        a.id === editingApparecchiatura.id ? { ...res.data, id: res.data._id } : a
+      ));
+      setEditingApparecchiatura(null);
+      alert('Apparecchiatura aggiornata con successo!');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore di connessione');
+    }
+  };
+
   // Aggiungere nuovo presidio
   const aggiungiPresidio = async () => {
     if (!nuovoPresidio.nome) {
@@ -214,6 +270,44 @@ function Strumenti() {
     try {
       await api.delete(`/supplies/${id}`);
       setPresidi(presidi.filter((p) => p.id !== id));
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore di connessione');
+    }
+  };
+
+  // Apri modal modifica presidio
+  const apriModificaPresidio = (presidio: PresidioSanitario) => {
+    setEditingPresidio(presidio);
+    setEditPresForm({
+      nome: presidio.nome,
+      scadenza: presidio.scadenza ? presidio.scadenza.substring(0, 10) : '',
+      unitaMisura: presidio.unitaMisura || 'pezzi',
+      scortaMinima: presidio.scortaMinima || 0,
+    });
+  };
+
+  const chiudiModificaPresidio = () => {
+    setEditingPresidio(null);
+  };
+
+  const salvaModificaPresidio = async () => {
+    if (!editingPresidio) return;
+    if (!editPresForm.nome) {
+      alert('Il nome è obbligatorio');
+      return;
+    }
+    try {
+      const res = await api.put(`/supplies/${editingPresidio.id}`, {
+        nome: editPresForm.nome,
+        scadenza: editPresForm.scadenza || null,
+        unitaMisura: editPresForm.unitaMisura,
+        scortaMinima: editPresForm.scortaMinima,
+      });
+      setPresidi(presidi.map(p =>
+        p.id === editingPresidio.id ? { ...res.data, id: res.data._id } : p
+      ));
+      setEditingPresidio(null);
+      alert('Presidio aggiornato con successo!');
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore di connessione');
     }
@@ -286,7 +380,6 @@ function Strumenti() {
       const formData = new FormData();
       formData.append('document', file);
       formData.append('documentType', documentType);
-      // Per FormData usiamo axios senza Content-Type (lo imposta automaticamente)
       await api.post(`/equipment/${selectedEquipment}/documents`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -335,6 +428,123 @@ function Strumenti() {
     }
   };
 
+  // Stampa PDF apparecchiature
+  const stampaPDFApparecchiature = () => {
+    const oggi = new Date().toLocaleDateString('it-IT');
+    const righe = apparecchiature.map(a => {
+      const controllo = a.controlloEseguito
+        ? `<span style="color:#28a745;font-weight:bold;">✓ Sì — ${a.dataControllo ? formatData(a.dataControllo) : 'N/A'}</span>`
+        : `<span style="color:#dc3545;font-weight:bold;">✗ Da fare</span>`;
+      return `
+        <tr>
+          <td>${a.tipo}</td>
+          <td>${a.matricola}</td>
+          <td>${controllo}</td>
+        </tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Elenco Apparecchiature Elettromedicali</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; color: #222; }
+    h1 { font-size: 20px; margin-bottom: 4px; }
+    .subtitle { color: #666; font-size: 13px; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #2c5f8a; color: #fff; padding: 8px 10px; text-align: left; }
+    td { padding: 7px 10px; border-bottom: 1px solid #ddd; vertical-align: middle; }
+    tr:nth-child(even) td { background: #f5f8fc; }
+    .footer { margin-top: 20px; font-size: 11px; color: #888; }
+  </style>
+</head>
+<body>
+  <h1>⚙️ Elenco Apparecchiature Elettromedicali</h1>
+  <div class="subtitle">Stampato il: ${oggi} — Totale: ${apparecchiature.length} apparecchiature</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Tipo apparecchiatura</th>
+        <th>Matricola / N° serie</th>
+        <th>Controllo eseguito</th>
+      </tr>
+    </thead>
+    <tbody>${righe}</tbody>
+  </table>
+  <div class="footer">Documento generato automaticamente da Abbraccio Cure Domiciliari</div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => win.print(), 400);
+    }
+  };
+
+  // Stampa PDF presidi
+  const stampaPDFPresidi = () => {
+    const oggi = new Date().toLocaleDateString('it-IT');
+    const righe = presidi.map(p => {
+      const unita = p.unitaMisura || 'pezzi';
+      const sottoScorta = p.scortaMinima && p.quantita <= p.scortaMinima;
+      const scad = p.scadenza ? formatData(p.scadenza) : 'N/A';
+      const inScadenza = p.scadenza && eScadutoOProssimo(p.scadenza) ? ' ⚠️ IN SCADENZA' : '';
+      return `
+        <tr>
+          <td>${p.nome}</td>
+          <td style="text-align:center;${sottoScorta ? 'color:#dc3545;font-weight:bold;' : ''}">${p.quantita} ${unita}${sottoScorta ? ' ⚠️ SOTTO SCORTA' : ''}</td>
+          <td style="${p.scadenza && eScadutoOProssimo(p.scadenza) ? 'color:#dc3545;font-weight:bold;' : ''}">${scad}${inScadenza}</td>
+          <td style="text-align:center;">${p.scortaMinima || 0} ${unita}</td>
+        </tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Elenco Presidi Sanitari</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; color: #222; }
+    h1 { font-size: 20px; margin-bottom: 4px; }
+    .subtitle { color: #666; font-size: 13px; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #2c5f8a; color: #fff; padding: 8px 10px; text-align: left; }
+    td { padding: 7px 10px; border-bottom: 1px solid #ddd; }
+    tr:nth-child(even) td { background: #f5f8fc; }
+    .footer { margin-top: 20px; font-size: 11px; color: #888; }
+  </style>
+</head>
+<body>
+  <h1>🏥 Elenco Presidi Sanitari</h1>
+  <div class="subtitle">Stampato il: ${oggi} — Totale: ${presidi.length} presidi</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Nome presidio</th>
+        <th>Quantità</th>
+        <th>Scadenza</th>
+        <th>Scorta minima</th>
+      </tr>
+    </thead>
+    <tbody>${righe}</tbody>
+  </table>
+  <div class="footer">Documento generato automaticamente da Abbraccio Cure Domiciliari</div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => win.print(), 400);
+    }
+  };
+
   const canEdit = !!(user);
 
   return (
@@ -364,7 +574,7 @@ function Strumenti() {
                   />
                 </label>
                 <label>
-                  Matricola
+                  Matricola / N° serie
                   <input
                     type="text"
                     value={nuovaApparecchiatura.matricola}
@@ -399,7 +609,12 @@ function Strumenti() {
 
             {apparecchiature.length > 0 ? (
               <div className="document-list">
-                <h4>Elenco apparecchiature ({apparecchiature.length})</h4>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                  <h4 style={{ margin: 0 }}>Elenco apparecchiature ({apparecchiature.length})</h4>
+                  <button type="button" onClick={stampaPDFApparecchiature} style={{ background: '#6c757d', fontSize: '0.85rem', padding: '6px 14px' }}>
+                    🖨️ Stampa lista PDF
+                  </button>
+                </div>
                 <ul>
                   {apparecchiature.map((apparecchiatura) => (
                     <li key={apparecchiatura.id}>
@@ -420,9 +635,14 @@ function Strumenti() {
                             📎 Documenti
                           </button>
                           {canEdit && (
-                            <button type="button" onClick={() => eliminaApparecchiatura(apparecchiatura.id)} style={{ background: '#dc3545' }}>
-                              Elimina
-                            </button>
+                            <>
+                              <button type="button" onClick={() => apriModificaApparecchiatura(apparecchiatura)} style={{ background: '#fd7e14' }}>
+                                ✏️ Modifica
+                              </button>
+                              <button type="button" onClick={() => eliminaApparecchiatura(apparecchiatura.id)} style={{ background: '#dc3545' }}>
+                                Elimina
+                              </button>
+                            </>
                           )}
                         </div>
                       </div>
@@ -507,7 +727,12 @@ function Strumenti() {
 
         {presidi.length > 0 ? (
           <div className="document-list">
-            <h4>Elenco presidi ({presidi.length})</h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+              <h4 style={{ margin: 0 }}>Elenco presidi ({presidi.length})</h4>
+              <button type="button" onClick={stampaPDFPresidi} style={{ background: '#6c757d', fontSize: '0.85rem', padding: '6px 14px' }}>
+                🖨️ Stampa lista PDF
+              </button>
+            </div>
             <ul>
               {presidi.map((presidio) => {
                 const unita = presidio.unitaMisura || 'pezzi';
@@ -532,9 +757,14 @@ function Strumenti() {
                           📦 Movimenti
                         </button>
                         {canEdit && (
-                          <button type="button" onClick={() => eliminaPresidio(presidio.id)} style={{ background: '#dc3545' }}>
-                            Elimina
-                          </button>
+                          <>
+                            <button type="button" onClick={() => apriModificaPresidio(presidio)} style={{ background: '#fd7e14' }}>
+                              ✏️ Modifica
+                            </button>
+                            <button type="button" onClick={() => eliminaPresidio(presidio.id)} style={{ background: '#dc3545' }}>
+                              Elimina
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -547,6 +777,131 @@ function Strumenti() {
           <p>Nessun presidio presente.</p>
         )}
       </div>
+
+      {/* Modal modifica apparecchiatura */}
+      {editingApparecchiatura && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="modal-content" style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '8px', maxWidth: '500px', width: '90%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0 }}>✏️ Modifica Apparecchiatura</h3>
+              <button type="button" onClick={chiudiModificaApparecchiatura} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#666' }}>×</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontWeight: '600' }}>Tipo apparecchiatura *</span>
+                <input
+                  type="text"
+                  value={editAppForm.tipo}
+                  onChange={(e) => setEditAppForm({ ...editAppForm, tipo: e.target.value })}
+                  style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontWeight: '600' }}>Matricola / N° serie *</span>
+                <input
+                  type="text"
+                  value={editAppForm.matricola}
+                  onChange={(e) => setEditAppForm({ ...editAppForm, matricola: e.target.value })}
+                  style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
+                <input
+                  type="checkbox"
+                  checked={editAppForm.controlloEseguito}
+                  onChange={(e) => setEditAppForm({ ...editAppForm, controlloEseguito: e.target.checked })}
+                  style={{ width: 'auto', margin: 0 }}
+                />
+                <span style={{ fontWeight: '600' }}>Controllo eseguito</span>
+              </label>
+              {editAppForm.controlloEseguito && (
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontWeight: '600' }}>Data controllo</span>
+                  <input
+                    type="date"
+                    value={editAppForm.dataControllo}
+                    onChange={(e) => setEditAppForm({ ...editAppForm, dataControllo: e.target.value })}
+                    style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
+                  />
+                </label>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+              <button type="button" onClick={salvaModificaApparecchiatura} style={{ flex: 1, background: '#28a745', padding: '10px', fontSize: '15px' }}>
+                💾 Salva modifiche
+              </button>
+              <button type="button" onClick={chiudiModificaApparecchiatura} style={{ flex: 1, background: '#6c757d', padding: '10px', fontSize: '15px' }}>
+                Annulla
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal modifica presidio */}
+      {editingPresidio && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="modal-content" style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '8px', maxWidth: '500px', width: '90%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0 }}>✏️ Modifica Presidio</h3>
+              <button type="button" onClick={chiudiModificaPresidio} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#666' }}>×</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontWeight: '600' }}>Nome presidio *</span>
+                <input
+                  type="text"
+                  value={editPresForm.nome}
+                  onChange={(e) => setEditPresForm({ ...editPresForm, nome: e.target.value })}
+                  style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontWeight: '600' }}>Data scadenza</span>
+                <input
+                  type="date"
+                  value={editPresForm.scadenza}
+                  onChange={(e) => setEditPresForm({ ...editPresForm, scadenza: e.target.value })}
+                  style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontWeight: '600' }}>Unità di misura</span>
+                <select
+                  value={editPresForm.unitaMisura}
+                  onChange={(e) => setEditPresForm({ ...editPresForm, unitaMisura: e.target.value })}
+                  style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
+                >
+                  <option value="pezzi">Pezzi</option>
+                  <option value="confezioni">Confezioni</option>
+                  <option value="scatole">Scatole</option>
+                  <option value="ml">Metri lineari</option>
+                  <option value="kg">Kg</option>
+                  <option value="l">Litri</option>
+                </select>
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontWeight: '600' }}>Scorta minima</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={editPresForm.scortaMinima}
+                  onChange={(e) => setEditPresForm({ ...editPresForm, scortaMinima: parseInt(e.target.value) || 0 })}
+                  style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
+                />
+              </label>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+              <button type="button" onClick={salvaModificaPresidio} style={{ flex: 1, background: '#28a745', padding: '10px', fontSize: '15px' }}>
+                💾 Salva modifiche
+              </button>
+              <button type="button" onClick={chiudiModificaPresidio} style={{ flex: 1, background: '#6c757d', padding: '10px', fontSize: '15px' }}>
+                Annulla
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal documenti apparecchiature */}
       {showDocumentsModal && selectedEquipment && (

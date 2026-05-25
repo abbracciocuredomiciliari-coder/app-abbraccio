@@ -42,6 +42,10 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
   const [movementNote, setMovementNote] = useState('');
   const [movements, setMovements] = useState<SupplyMovement[]>([]);
 
+  // Stato per modifica farmaco
+  const [editingFarmaco, setEditingFarmaco] = useState<Farmaco | null>(null);
+  const [editForm, setEditForm] = useState({ nome: '', dosaggio: '', scadenza: '', scortaMinima: 0 });
+
   const [nuovoFarmaco, setNuovoFarmaco] = useState({
     nome: '',
     dosaggio: '',
@@ -108,6 +112,42 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
     }
   };
 
+  // Apri modal modifica farmaco
+  const apriModifica = (farmaco: Farmaco) => {
+    setEditingFarmaco(farmaco);
+    setEditForm({
+      nome: farmaco.nome,
+      dosaggio: farmaco.dosaggio,
+      scadenza: farmaco.scadenza ? farmaco.scadenza.substring(0, 10) : '',
+      scortaMinima: farmaco.scortaMinima || 0,
+    });
+  };
+
+  const chiudiModifica = () => {
+    setEditingFarmaco(null);
+  };
+
+  const salvaModifica = async () => {
+    if (!editingFarmaco) return;
+    if (!editForm.nome || !editForm.dosaggio) {
+      alert('Nome e dosaggio sono obbligatori');
+      return;
+    }
+    try {
+      const res = await api.put(`/supplies/${editingFarmaco.id}`, {
+        nome: editForm.nome,
+        dosaggio: editForm.dosaggio,
+        scadenza: editForm.scadenza || null,
+        scortaMinima: editForm.scortaMinima,
+      });
+      setFarmaci(farmaci.map(f => f.id === editingFarmaco.id ? { ...res.data, id: res.data._id } : f));
+      setEditingFarmaco(null);
+      alert('Farmaco aggiornato con successo!');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore di connessione');
+    }
+  };
+
   const apriMovimenti = async (farmaco: Farmaco) => {
     setSelectedFarmaco(farmaco);
     setMovementType('carico');
@@ -143,6 +183,67 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
       alert(`Movimento registrato! Nuova quantità: ${res.data.supply.quantita} confezioni`);
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore di connessione');
+    }
+  };
+
+  // Stampa PDF lista farmaci
+  const stampaPDF = () => {
+    const oggi = new Date().toLocaleDateString('it-IT');
+    const righe = farmaci.map(f => {
+      const scad = f.scadenza ? formatData(f.scadenza) : 'N/A';
+      const inScadenza = f.scadenza && eScadutoOProssimo(f.scadenza) ? ' ⚠️ IN SCADENZA' : '';
+      const sottoScorta = f.scortaMinima && f.quantita <= f.scortaMinima ? ' ⚠️ SOTTO SCORTA' : '';
+      return `
+        <tr>
+          <td>${f.nome}</td>
+          <td>${f.dosaggio}</td>
+          <td style="text-align:center;${f.scortaMinima && f.quantita <= f.scortaMinima ? 'color:#dc3545;font-weight:bold;' : ''}">${f.quantita} conf.${sottoScorta}</td>
+          <td style="${f.scadenza && eScadutoOProssimo(f.scadenza) ? 'color:#dc3545;font-weight:bold;' : ''}">${scad}${inScadenza}</td>
+          <td style="text-align:center;">${f.scortaMinima || 0}</td>
+        </tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Elenco Farmaci</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; color: #222; }
+    h1 { font-size: 20px; margin-bottom: 4px; }
+    .subtitle { color: #666; font-size: 13px; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #2c5f8a; color: #fff; padding: 8px 10px; text-align: left; }
+    td { padding: 7px 10px; border-bottom: 1px solid #ddd; }
+    tr:nth-child(even) td { background: #f5f8fc; }
+    .footer { margin-top: 20px; font-size: 11px; color: #888; }
+  </style>
+</head>
+<body>
+  <h1>💊 Elenco Farmaci</h1>
+  <div class="subtitle">Stampato il: ${oggi} — Totale: ${farmaci.length} farmaci</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Dosaggio</th>
+        <th>Quantità</th>
+        <th>Scadenza</th>
+        <th>Scorta minima</th>
+      </tr>
+    </thead>
+    <tbody>${righe}</tbody>
+  </table>
+  <div class="footer">Documento generato automaticamente da Abbraccio Cure Domiciliari</div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => win.print(), 400);
     }
   };
 
@@ -188,7 +289,12 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
 
         {!loading && farmaci.length > 0 ? (
           <div className="document-list">
-            <h4>Elenco farmaci ({farmaci.length})</h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+              <h4 style={{ margin: 0 }}>Elenco farmaci ({farmaci.length})</h4>
+              <button type="button" onClick={stampaPDF} style={{ background: '#6c757d', fontSize: '0.85rem', padding: '6px 14px' }}>
+                🖨️ Stampa lista PDF
+              </button>
+            </div>
             <ul>
               {farmaci.map((farmaco) => {
                 const sottoScorta = farmaco.scortaMinima && farmaco.quantita <= farmaco.scortaMinima;
@@ -212,7 +318,12 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
                       </div>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <button type="button" onClick={() => apriMovimenti(farmaco)} style={{ background: '#17a2b8' }}>📦 Movimenti</button>
-                        {canEdit && <button type="button" onClick={() => eliminaFarmaco(farmaco.id)} style={{ background: '#dc3545' }}>Elimina</button>}
+                        {canEdit && (
+                          <>
+                            <button type="button" onClick={() => apriModifica(farmaco)} style={{ background: '#fd7e14' }}>✏️ Modifica</button>
+                            <button type="button" onClick={() => eliminaFarmaco(farmaco.id)} style={{ background: '#dc3545' }}>Elimina</button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </li>
@@ -224,6 +335,65 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
           !loading && <p>Nessun farmaco presente.</p>
         )}
       </div>
+
+      {/* Modal modifica farmaco */}
+      {editingFarmaco && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="modal-content" style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '8px', maxWidth: '500px', width: '90%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0 }}>✏️ Modifica Farmaco</h3>
+              <button type="button" onClick={chiudiModifica} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#666' }}>×</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontWeight: '600' }}>Nome farmaco *</span>
+                <input
+                  type="text"
+                  value={editForm.nome}
+                  onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })}
+                  style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontWeight: '600' }}>Dosaggio *</span>
+                <input
+                  type="text"
+                  value={editForm.dosaggio}
+                  onChange={(e) => setEditForm({ ...editForm, dosaggio: e.target.value })}
+                  style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontWeight: '600' }}>Data scadenza</span>
+                <input
+                  type="date"
+                  value={editForm.scadenza}
+                  onChange={(e) => setEditForm({ ...editForm, scadenza: e.target.value })}
+                  style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontWeight: '600' }}>Scorta minima</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={editForm.scortaMinima}
+                  onChange={(e) => setEditForm({ ...editForm, scortaMinima: parseInt(e.target.value) || 0 })}
+                  style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
+                />
+              </label>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+              <button type="button" onClick={salvaModifica} style={{ flex: 1, background: '#28a745', padding: '10px', fontSize: '15px' }}>
+                💾 Salva modifiche
+              </button>
+              <button type="button" onClick={chiudiModifica} style={{ flex: 1, background: '#6c757d', padding: '10px', fontSize: '15px' }}>
+                Annulla
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal movimenti farmaci */}
       {showMovementModal && selectedFarmaco && (

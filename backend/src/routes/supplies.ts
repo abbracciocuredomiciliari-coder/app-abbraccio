@@ -50,7 +50,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
 });
 
 // Aggiorna un presidio (solo metadati, non la quantità)
-router.put('/:supplyId', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
+router.put('/:supplyId', authenticateToken, async (req: Request, res: Response) => {
   try {
     const supplyId = req.params.supplyId;
     const { nome, scadenza, unitaMisura, scortaMinima, dosaggio } = req.body;

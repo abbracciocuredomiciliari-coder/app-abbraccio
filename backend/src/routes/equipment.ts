@@ -41,7 +41,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
 });
 
 // Aggiorna un'apparecchiatura
-router.put('/:equipmentId', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
+router.put('/:equipmentId', authenticateToken, async (req: Request, res: Response) => {
   try {
     const equipmentId = req.params.equipmentId;
     const { tipo, matricola, controlloEseguito, dataControllo } = req.body;
