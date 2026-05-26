@@ -9,13 +9,23 @@ const router = Router();
 
 router.get('/', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
   try {
-    const [patientsCount, staffCount, workplanCount] = await Promise.all([
+    const [patientsCount, staffCount, workplanCount, activePatientsCount, activeWorkplanCount] = await Promise.all([
       Patient.countDocuments(),
-      Staff.countDocuments(),
-      WorkPlan.countDocuments()
+      Staff.countDocuments({ active: true }),
+      WorkPlan.countDocuments(),
+      // Pazienti con almeno un piano attivo (pending)
+      WorkPlan.distinct('patient', { status: 'pending' }).then(ids => ids.length),
+      // Incarichi attivi
+      WorkPlan.countDocuments({ status: 'pending' }),
     ]);
 
-    return res.json({ patientsCount, staffCount, workplanCount });
+    return res.json({
+      patientsCount,
+      staffCount,
+      workplanCount,
+      activePatientsCount,
+      activeWorkplanCount,
+    });
   } catch (error) {
     return res.status(500).json({ message: 'Errore nel recupero dei dati della dashboard', error });
   }

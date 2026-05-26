@@ -511,6 +511,14 @@ export default function PortaleOperatore() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {pazienti.map(paz => {
                   const pianiPaz = tuttiIPiani.filter(p => p.patient?._id === paz._id && p.status === 'pending');
+                  // Compenso totale maturato per questo paziente (somma compensoTotale dei piani con compenso)
+                  const compensoTotale = tuttiIPiani
+                    .filter(p => p.patient?._id === paz._id && p.tipoCompenso && p.tipoCompenso !== 'nessuno')
+                    .reduce((sum, p) => sum + (p.compensoTotale || 0), 0);
+                  const compensoPagato = tuttiIPiani
+                    .filter(p => p.patient?._id === paz._id && p.tipoCompenso && p.tipoCompenso !== 'nessuno' && p.compensoPagato)
+                    .reduce((sum, p) => sum + (p.compensoTotale || 0), 0);
+                  const haCompenso = tuttiIPiani.some(p => p.patient?._id === paz._id && p.tipoCompenso && p.tipoCompenso !== 'nessuno');
                   return (
                     <button
                       key={paz._id}
@@ -541,18 +549,28 @@ export default function PortaleOperatore() {
                           {paz.assistanceNeeds && <span>🩺 {paz.assistanceNeeds}</span>}
                         </div>
                       </div>
-                      <span style={{
-                        background: pianiPaz.length > 0 ? 'rgba(5,150,105,0.1)' : 'rgba(107,114,128,0.1)',
-                        color: pianiPaz.length > 0 ? '#065f46' : '#6b7280',
-                        border: `1px solid ${pianiPaz.length > 0 ? '#059669' : '#9ca3af'}`,
-                        borderRadius: '20px',
-                        padding: '4px 12px',
-                        fontSize: '0.82rem',
-                        fontWeight: '700',
-                        flexShrink: 0,
-                      }}>
-                        {pianiPaz.length} {pianiPaz.length === 1 ? 'piano attivo' : 'piani attivi'}
-                      </span>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', flexShrink: 0 }}>
+                        {haCompenso && (
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '0.72rem', color: '#7c3aed', fontWeight: '600', textTransform: 'uppercase' }}>Compenso maturato</div>
+                            <div style={{ fontWeight: '800', color: '#7c3aed', fontSize: '1rem' }}>€ {compensoTotale.toFixed(2)}</div>
+                            {compensoPagato > 0 && (
+                              <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: '600' }}>✅ € {compensoPagato.toFixed(2)} pagato</div>
+                            )}
+                          </div>
+                        )}
+                        <span style={{
+                          background: pianiPaz.length > 0 ? 'rgba(5,150,105,0.1)' : 'rgba(107,114,128,0.1)',
+                          color: pianiPaz.length > 0 ? '#065f46' : '#6b7280',
+                          border: `1px solid ${pianiPaz.length > 0 ? '#059669' : '#9ca3af'}`,
+                          borderRadius: '20px',
+                          padding: '4px 12px',
+                          fontSize: '0.82rem',
+                          fontWeight: '700',
+                        }}>
+                          {pianiPaz.length} {pianiPaz.length === 1 ? 'piano attivo' : 'piani attivi'}
+                        </span>
+                      </div>
                     </button>
                   );
                 })}

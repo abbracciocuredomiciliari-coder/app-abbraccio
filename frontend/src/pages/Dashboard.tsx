@@ -1,9 +1,23 @@
 import { useEffect, useState } from 'react';
 import api from '../api/api';
-import { Users, UserPlus, Calendar, Activity, Stethoscope, FileText } from 'lucide-react';
+import { Users, UserPlus, Calendar, Activity, CheckCircle, ClipboardList } from 'lucide-react';
+
+interface DashboardCounts {
+  patientsCount: number;
+  staffCount: number;
+  workplanCount: number;
+  activePatientsCount: number;
+  activeWorkplanCount: number;
+}
 
 function Dashboard() {
-  const [counts, setCounts] = useState({ patientsCount: 0, staffCount: 0, workplanCount: 0 });
+  const [counts, setCounts] = useState<DashboardCounts>({
+    patientsCount: 0,
+    staffCount: 0,
+    workplanCount: 0,
+    activePatientsCount: 0,
+    activeWorkplanCount: 0,
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,25 +37,36 @@ function Dashboard() {
 
   const dashboardCards = [
     {
-      title: 'Pazienti',
-      value: counts.patientsCount,
-      icon: Users,
-      color: '#4f46e5',
-      bgColor: 'rgba(79, 70, 229, 0.1)',
+      title: 'Pazienti attivi',
+      subtitle: `${counts.patientsCount} totali`,
+      value: counts.activePatientsCount,
+      icon: CheckCircle,
+      color: '#059669',
+      bgColor: 'rgba(5, 150, 105, 0.1)',
     },
     {
-      title: 'Staff',
+      title: 'Incarichi attivi',
+      subtitle: `${counts.workplanCount} totali`,
+      value: counts.activeWorkplanCount,
+      icon: ClipboardList,
+      color: '#f59e0b',
+      bgColor: 'rgba(245, 158, 11, 0.1)',
+    },
+    {
+      title: 'Personale attivo',
+      subtitle: 'operatori',
       value: counts.staffCount,
       icon: UserPlus,
       color: '#06b6d4',
       bgColor: 'rgba(6, 182, 212, 0.1)',
     },
     {
-      title: 'Incarichi',
-      value: counts.workplanCount,
-      icon: Calendar,
-      color: '#f59e0b',
-      bgColor: 'rgba(245, 158, 11, 0.1)',
+      title: 'Pazienti totali',
+      subtitle: 'in archivio',
+      value: counts.patientsCount,
+      icon: Users,
+      color: '#4f46e5',
+      bgColor: 'rgba(79, 70, 229, 0.1)',
     },
   ];
 
@@ -65,7 +90,10 @@ function Dashboard() {
                   marginBottom: '12px',
                 }}
               >
-                <h3 style={{ margin: 0, color: 'var(--gray-500)' }}>{card.title}</h3>
+                <div>
+                  <h3 style={{ margin: 0, color: 'var(--gray-500)', fontSize: '0.9rem' }}>{card.title}</h3>
+                  <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: 'var(--gray-400)' }}>{card.subtitle}</p>
+                </div>
                 <div
                   style={{
                     width: '40px',
@@ -75,6 +103,7 @@ function Dashboard() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    flexShrink: 0,
                   }}
                 >
                   <card.icon size={20} color={card.color} />
