@@ -181,9 +181,9 @@ export default function PortaleOperatore() {
   const [loading, setLoading] = useState(true);
   const [loadingPiano, setLoadingPiano] = useState(false);
 
-  // ─── Caricamento iniziale ──────────────────────────────────────────────────
+  // ─── Caricamento iniziale + polling ogni 30s ───────────────────────────────
 
-  const caricaDati = async () => {
+  const caricaDati = async (silent = false) => {
     try {
       const [pazientiRes, pianiRes] = await Promise.all([
         api.get('/workplan/miei-pazienti'),
@@ -197,11 +197,14 @@ export default function PortaleOperatore() {
       );
       setPazienti(pazientiConPianoAttivo);
     } catch {}
-    finally { setLoading(false); }
+    finally { if (!silent) setLoading(false); }
   };
 
   useEffect(() => {
     caricaDati();
+    // Polling ogni 30 secondi per aggiornare pazienti e incarichi
+    const interval = setInterval(() => caricaDati(true), 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // ─── Selezione paziente ────────────────────────────────────────────────────
@@ -476,16 +479,43 @@ export default function PortaleOperatore() {
   if (loading) return <section><p>Caricamento...</p></section>;
 
   const pianiAttiviTutti = tuttiIPiani.filter(p => p.status === 'pending');
+  const compensoTotaleGlobale = tuttiIPiani
+    .filter(p => p.tipoCompenso && p.tipoCompenso !== 'nessuno')
+    .reduce((sum, p) => sum + (p.compensoTotale || 0), 0);
+  const compensoPagatoGlobale = tuttiIPiani
+    .filter(p => p.tipoCompenso && p.tipoCompenso !== 'nessuno' && p.compensoPagato)
+    .reduce((sum, p) => sum + (p.compensoTotale || 0), 0);
 
   return (
     <section>
       <h2>🏥 Il mio Piano di Lavoro</h2>
 
       {/* ══════════════════════════════════════════════════════════════════════
-          DASHBOARD: Pazienti in carico
+          DASHBOARD OPERATORE — sempre visibile in cima
       ══════════════════════════════════════════════════════════════════════ */}
       {!pazienteSelezionato && !mostraTuttiPiani && (
         <div>
+          {/* Card statistiche */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+            <div style={{ background: 'rgba(5,150,105,0.07)', border: '1px solid rgba(5,150,105,0.3)', borderRadius: '10px', padding: '14px 16px', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Pazienti attivi</div>
+              <div style={{ fontSize: '2rem', fontWeight: '800', color: '#059669', lineHeight: 1 }}>{pazienti.length}</div>
+            </div>
+            <div style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '10px', padding: '14px 16px', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.72rem', color: '#d97706', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Incarichi attivi</div>
+              <div style={{ fontSize: '2rem', fontWeight: '800', color: '#d97706', lineHeight: 1 }}>{pianiAttiviTutti.length}</div>
+            </div>
+            {compensoTotaleGlobale > 0 && (
+              <div style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: '10px', padding: '14px 16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.72rem', color: '#7c3aed', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Compenso maturato</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#7c3aed', lineHeight: 1 }}>€ {compensoTotaleGlobale.toFixed(2)}</div>
+                {compensoPagatoGlobale > 0 && (
+                  <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: '600', marginTop: '2px' }}>✅ € {compensoPagatoGlobale.toFixed(2)} pagato</div>
+                )}
+              </div>
+            )}
+          </div>
+
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
             <p style={{ color: 'var(--gray-500)', margin: 0, fontSize: '0.95rem' }}>
               Seleziona un paziente per operare, oppure visualizza tutti i piani attivi.

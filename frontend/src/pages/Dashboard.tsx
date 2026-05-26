@@ -53,14 +53,6 @@ function Dashboard() {
       bgColor: 'rgba(245, 158, 11, 0.1)',
     },
     {
-      title: 'Personale attivo',
-      subtitle: 'operatori',
-      value: counts.staffCount,
-      icon: UserPlus,
-      color: '#06b6d4',
-      bgColor: 'rgba(6, 182, 212, 0.1)',
-    },
-    {
       title: 'Pazienti totali',
       subtitle: 'in archivio',
       value: counts.patientsCount,
