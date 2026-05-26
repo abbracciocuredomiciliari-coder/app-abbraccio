@@ -5,13 +5,17 @@ function getTransporter() {
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
 
-  if (!smtpHost || !smtpUser || !smtpPass) return null;
+  if (!smtpHost || !smtpUser || !smtpPass) {
+    console.warn(`⚠️ SMTP non configurato — SMTP_HOST=${smtpHost || 'MANCANTE'}, SMTP_USER=${smtpUser || 'MANCANTE'}, SMTP_PASS=${smtpPass ? '***' : 'MANCANTE'}`);
+    return null;
+  }
 
   return nodemailer.createTransport({
     host: smtpHost,
     port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false,
+    secure: process.env.SMTP_SECURE === 'true',
     auth: { user: smtpUser, pass: smtpPass },
+    tls: { rejectUnauthorized: false },
   });
 }
 
