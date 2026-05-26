@@ -355,11 +355,15 @@ function WorkPlan() {
     }
   };
 
+  // Stampa PDF senza tariffa (solo rendicontazione accessi)
   const stampaExportModal = () => {
     if (!exportDataModal) return;
     const win = window.open('', '_blank');
     if (!win) return;
-    const tipoCompensoLabel = exportDataModal.piano.tipoCompenso !== 'nessuno';
+    const righe = exportDataModal.accessi.map((acc: any) => `<tr>
+      <td>${acc.data}</td><td>${acc.oraEntrata}</td><td>${acc.oraUscita || '—'}</td>
+      <td>${acc.durataOre}</td><td>${acc.note || '—'}</td>
+    </tr>`).join('');
     win.document.write(`<html><head><title>Registro Accessi</title>
     <style>
       body{font-family:Arial,sans-serif;font-size:12px;color:#222;margin:20px}
@@ -380,20 +384,12 @@ function WorkPlan() {
     <table>
       <thead><tr>
         <th>Data</th><th>Entrata</th><th>Uscita</th><th>Durata</th><th>Note</th>
-        ${tipoCompensoLabel ? '<th>Compenso</th>' : ''}
       </tr></thead>
-      <tbody>
-        ${exportDataModal.accessi.map((acc: any) => `<tr>
-          <td>${acc.data}</td><td>${acc.oraEntrata}</td><td>${acc.oraUscita}</td>
-          <td>${acc.durataOre}</td><td>${acc.note || '—'}</td>
-          ${tipoCompensoLabel ? `<td>${acc.compenso}</td>` : ''}
-        </tr>`).join('')}
-      </tbody>
+      <tbody>${righe}</tbody>
     </table>
     <div class="riepilogo">
       <p><strong>Totale accessi:</strong> ${exportDataModal.riepilogo.totaleAccessi}</p>
       <p><strong>Ore totali:</strong> ${exportDataModal.riepilogo.oreTotali}</p>
-      ${tipoCompensoLabel ? `<p><strong>Compenso totale:</strong> ${exportDataModal.riepilogo.compensoTotale}</p>` : ''}
     </div>
     </body></html>`);
     win.document.close();
@@ -498,7 +494,7 @@ function WorkPlan() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 380px) 1fr', gap: '24px' }}>
         {/* Form Section */}
         <div className="dashboard-folder">
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: 0 }}>
@@ -1056,11 +1052,10 @@ function WorkPlan() {
                         )}
                       </div>
                       <p style={{ margin: 0, fontSize: '0.78rem', color: '#888' }}>Lascia vuoto per il mese corrente</p>
-                      {exportDataModal && (
-                        <div style={{ marginTop: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '12px', fontSize: '0.82rem' }}>
+                        {exportDataModal && (
+                          <div style={{ marginTop: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '12px', fontSize: '0.82rem' }}>
                           <p style={{ margin: '0 0 4px' }}><strong>Periodo:</strong> {exportDataModal.periodo.da} — {exportDataModal.periodo.a}</p>
-                          <p style={{ margin: '0 0 4px' }}><strong>Accessi:</strong> {exportDataModal.riepilogo.totaleAccessi} | <strong>Ore:</strong> {exportDataModal.riepilogo.oreTotali}</p>
-                          {exportDataModal.piano.tipoCompenso !== 'nessuno' && <p style={{ margin: 0 }}><strong>Compenso totale:</strong> {exportDataModal.riepilogo.compensoTotale}</p>}
+                          <p style={{ margin: 0 }}><strong>Accessi:</strong> {exportDataModal.riepilogo.totaleAccessi} | <strong>Ore:</strong> {exportDataModal.riepilogo.oreTotali}</p>
                         </div>
                       )}
                     </div>

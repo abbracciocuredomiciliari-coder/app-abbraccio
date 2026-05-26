@@ -18,6 +18,7 @@ import CheckList from './pages/CheckList';
 import GestioneUtenti from './pages/GestioneUtenti';
 import PortaleOperatore from './pages/PortaleOperatore';
 import ProfiloPersonale from './pages/ProfiloPersonale';
+import CompensoIncarichi from './pages/CompensoIncarichi';
 import {
   Heart,
   LayoutDashboard,
@@ -35,6 +36,7 @@ import {
   ShieldCheck,
   Briefcase,
   UserCircle,
+  Euro,
 } from 'lucide-react';
 
 // Ruoli con accesso completo (admin/coordinamento/direzione)
@@ -141,6 +143,10 @@ function AppShell() {
                 <CheckSquare size={18} />
                 Check List
               </Link>
+              <Link to="/compenso-incarichi" className={isActive('/compenso-incarichi') ? 'active' : ''}>
+                <Euro size={18} />
+                Compenso per incarichi
+              </Link>
               {user.role === 'admin' && (
                 <Link to="/gestione-utenti" className={isActive('/gestione-utenti') ? 'active' : ''}>
                   <ShieldCheck size={18} />
@@ -188,6 +194,7 @@ function AppShell() {
           {/* Route operatori */}
           <Route path="/portale-operatore" element={<ProtectedRoute><PortaleOperatore /></ProtectedRoute>} />
           <Route path="/profilo-personale" element={<ProtectedRoute><ProfiloPersonale /></ProtectedRoute>} />
+          <Route path="/compenso-incarichi" element={<ProtectedRoute><CompensoIncarichi /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>

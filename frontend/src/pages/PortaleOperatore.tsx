@@ -97,6 +97,18 @@ const statoObiettivoBadge: Record<string, { bg: string; color: string; label: st
 
 const STATI_OBIETTIVO = ['attivo', 'raggiunto', 'parziale', 'non_raggiunto', 'rivalutato'];
 
+const PARAMETRI_VITALI = [
+  { key: 'pressioneSistolica',    label: '🩸 P. Sistolica',    unit: 'mmHg',     step: '1' },
+  { key: 'pressioneDiastolica',   label: '🩸 P. Diastolica',   unit: 'mmHg',     step: '1' },
+  { key: 'frequenzaCardiaca',     label: '❤️ Freq. Cardiaca',  unit: 'bpm',      step: '1' },
+  { key: 'frequenzaRespiratoria', label: '🫁 Freq. Resp.',      unit: 'atti/min', step: '1' },
+  { key: 'temperatura',           label: '🌡️ Temperatura',     unit: '°C',       step: '0.1' },
+  { key: 'saturazione',           label: '💨 Saturazione',      unit: '%',        step: '1' },
+  { key: 'glicemia',              label: '🍬 Glicemia',         unit: 'mg/dL',    step: '1' },
+  { key: 'peso',                  label: '⚖️ Peso',             unit: 'kg',       step: '0.1' },
+  { key: 'dolore',                label: '😣 Dolore (0-10)',    unit: '/10',      step: '1' },
+];
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDurata(min: number) {
@@ -125,6 +137,8 @@ export default function PortaleOperatore() {
   const [pazienteSelezionato, setPazienteSelezionato] = useState<Paziente | null>(null);
   const [piani, setPiani] = useState<Piano[]>([]);
   const [pianoSelezionato, setPianoSelezionato] = useState<Piano | null>(null);
+  const [tuttiIPiani, setTuttiIPiani] = useState<Piano[]>([]);
+  const [mostraTuttiPiani, setMostraTuttiPiani] = useState(false);
 
   // Accessi
   const [accessi, setAccessi] = useState<Accesso[]>([]);
@@ -170,8 +184,14 @@ export default function PortaleOperatore() {
   // ─── Caricamento iniziale ──────────────────────────────────────────────────
 
   useEffect(() => {
-    api.get('/workplan/miei-pazienti')
-      .then(r => setPazienti(r.data))
+    Promise.all([
+      api.get('/workplan/miei-pazienti'),
+      api.get('/workplan'),
+    ])
+      .then(([pazientiRes, pianiRes]) => {
+        setPazienti(pazientiRes.data);
+        setTuttiIPiani(pianiRes.data || []);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -181,10 +201,16 @@ export default function PortaleOperatore() {
   const selezionaPaziente = async (paz: Paziente) => {
     setPazienteSelezionato(paz);
     setPianoSelezionato(null);
+    setMostraTuttiPiani(false);
     resetDettagliPiano();
     try {
       const res = await api.get('/workplan');
-      setPiani(res.data.filter((p: Piano) => p.patient?._id === paz._id));
+      const pianiPaz = res.data.filter((p: Piano) => p.patient?._id === paz._id);
+      setPiani(pianiPaz);
+      const pianiAttivi = pianiPaz.filter((p: Piano) => p.status === 'pending');
+      if (pianiAttivi.length === 1) {
+        selezionaPiano(pianiAttivi[0]);
+      }
     } catch {}
   };
 
@@ -193,6 +219,26 @@ export default function PortaleOperatore() {
     setDiario([]); setAllegati([]); setObiettivi([]);
     setShowDiario(false); setShowAllegati(false); setShowObiettivi(false);
     setShowExport(false); setExportData(null);
+  };
+
+  // ─── Vista tutti i piani attivi ───────────────────────────────────────────
+
+  const apriTuttiPiani = () => {
+    setMostraTuttiPiani(true);
+    setPazienteSelezionato(null);
+    setPianoSelezionato(null);
+    resetDettagliPiano();
+  };
+
+  const selezionaPianoDaLista = async (piano: Piano) => {
+    setMostraTuttiPiani(false);
+    const paz = pazienti.find(p => p._id === piano.patient._id);
+    if (paz) {
+      setPazienteSelezionato(paz);
+      const res = await api.get('/workplan');
+      setPiani(res.data.filter((p: Piano) => p.patient?._id === paz._id));
+    }
+    selezionaPiano(piano);
   };
 
   // ─── Selezione piano ───────────────────────────────────────────────────────
@@ -208,15 +254,12 @@ export default function PortaleOperatore() {
         api.get(`/allegati/${piano._id}`),
         api.get(`/obiettivi/${piano._id}`),
       ]);
-
       if (accessiRes.status === 'fulfilled') {
         const data = accessiRes.value.data;
         setAccessi(data.accessi || []);
         setRiepilogo(data.riepilogo || null);
-        // Cerca accesso aperto: prima per staffId (via route dedicata), poi fallback su firmaLogin
         const tuttiAccessi: Accesso[] = data.accessi || [];
-        const aperto = tuttiAccessi.find((a: Accesso) => !a.oraUscita);
-        setAccessoAperto(aperto || null);
+        setAccessoAperto(tuttiAccessi.find((a: Accesso) => !a.oraUscita) || null);
       }
       if (diarioRes.status === 'fulfilled') setDiario(diarioRes.value.data || []);
       if (allegatiRes.status === 'fulfilled') setAllegati(allegatiRes.value.data || []);
@@ -232,9 +275,14 @@ export default function PortaleOperatore() {
     if (!pianoSelezionato) return;
     setRegistrandoAccesso(true);
     try {
-      await api.post(`/workplan-access/${pianoSelezionato._id}/entrata`, { note: noteAccesso });
+      const res = await api.post(`/workplan-access/${pianoSelezionato._id}/entrata`, { note: noteAccesso });
       setNoteAccesso('');
-      await selezionaPiano(pianoSelezionato);
+      // Imposta subito l'accesso aperto dalla risposta
+      setAccessoAperto(res.data);
+      // Ricarica la lista accessi
+      const accessiRes = await api.get(`/workplan/${pianoSelezionato._id}/accessi`);
+      setAccessi(accessiRes.data.accessi || []);
+      setRiepilogo(accessiRes.data.riepilogo || null);
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore nella registrazione entrata');
     } finally {
@@ -246,10 +294,13 @@ export default function PortaleOperatore() {
     if (!pianoSelezionato || !accessoAperto) return;
     setRegistrandoAccesso(true);
     try {
-      // La route uscita è PATCH /workplan-access/:accessId/uscita
       await api.patch(`/workplan-access/${accessoAperto._id}/uscita`, { note: noteAccesso });
       setNoteAccesso('');
-      await selezionaPiano(pianoSelezionato);
+      setAccessoAperto(null);
+      // Ricarica la lista accessi
+      const accessiRes = await api.get(`/workplan/${pianoSelezionato._id}/accessi`);
+      setAccessi(accessiRes.data.accessi || []);
+      setRiepilogo(accessiRes.data.riepilogo || null);
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore nella registrazione uscita');
     } finally {
@@ -264,9 +315,7 @@ export default function PortaleOperatore() {
     setSalvandoDiario(true);
     try {
       const pv: Record<string, number> = {};
-      Object.entries(parametri).forEach(([k, v]) => {
-        if (v !== '') pv[k] = parseFloat(v);
-      });
+      Object.entries(parametri).forEach(([k, v]) => { if (v !== '') pv[k] = parseFloat(v); });
       await api.post(`/diario/${pianoSelezionato._id}`, {
         testo: testoDiario,
         parametriVitali: Object.keys(pv).length > 0 ? pv : undefined,
@@ -347,7 +396,7 @@ export default function PortaleOperatore() {
     }
   };
 
-  // ─── Export PDF ────────────────────────────────────────────────────────────
+  // ─── Export PDF — senza tariffa ────────────────────────────────────────────
 
   const caricaExport = async () => {
     if (!pianoSelezionato) return;
@@ -366,9 +415,19 @@ export default function PortaleOperatore() {
   };
 
   const stampaPDF = () => {
-    if (!printRef.current) return;
+    if (!exportData) return;
     const win = window.open('', '_blank');
     if (!win) return;
+    // Costruiamo il PDF senza tariffa e senza compenso
+    const righe = exportData.accessi.map((acc: any) => `
+      <tr>
+        <td>${acc.data}</td>
+        <td>${acc.oraEntrata}</td>
+        <td>${acc.oraUscita || '—'}</td>
+        <td>${acc.durataOre}</td>
+        <td>${acc.note || '—'}</td>
+      </tr>`).join('');
+
     win.document.write(`<html><head><title>Registro Accessi</title>
     <style>
       body{font-family:Arial,sans-serif;font-size:12px;color:#222;margin:20px}
@@ -381,7 +440,24 @@ export default function PortaleOperatore() {
       .riepilogo{margin-top:20px;background:#f1f5f9;padding:12px;border-radius:6px}
       .riepilogo p{margin:4px 0}
       @media print{body{margin:0}}
-    </style></head><body>${printRef.current.innerHTML}</body></html>`);
+    </style></head><body>
+    <h1>Registro Accessi — ${exportData.piano.paziente}</h1>
+    <h2>Operatore: ${exportData.piano.operatore} (${exportData.piano.ruoloOperatore})</h2>
+    <p><strong>Attività:</strong> ${exportData.piano.task}</p>
+    <p><strong>Periodo:</strong> ${exportData.periodo.da} — ${exportData.periodo.a}</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th><th>Entrata</th><th>Uscita</th><th>Durata</th><th>Note</th>
+        </tr>
+      </thead>
+      <tbody>${righe}</tbody>
+    </table>
+    <div class="riepilogo">
+      <p><strong>Totale accessi:</strong> ${exportData.riepilogo.totaleAccessi}</p>
+      <p><strong>Ore totali:</strong> ${exportData.riepilogo.oreTotali}</p>
+    </div>
+    </body></html>`);
     win.document.close();
     win.focus();
     setTimeout(() => { win.print(); win.close(); }, 500);
@@ -391,89 +467,250 @@ export default function PortaleOperatore() {
 
   if (loading) return <section><p>Caricamento...</p></section>;
 
+  const pianiAttiviTutti = tuttiIPiani.filter(p => p.status === 'pending');
+
   return (
     <section>
       <h2>🏥 Il mio Piano di Lavoro</h2>
-      <p style={{ color: 'var(--gray-500)', marginBottom: '24px', fontSize: '0.95rem' }}>
-        Seleziona un paziente per visualizzare i piani assegnati e operare.
-      </p>
 
-      {/* ── Dropdown pazienti ── */}
-      <div style={{ marginBottom: '20px' }}>
-        <label style={{ fontWeight: '600', display: 'block', marginBottom: '8px' }}>
-          👤 Pazienti assegnati ({pazienti.length})
-        </label>
-        {pazienti.length === 0 ? (
-          <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid #f59e0b', borderRadius: '8px', padding: '16px', color: '#92400e' }}>
-            ⚠️ Nessun paziente assegnato. Contatta il coordinatore.
+      {/* ══════════════════════════════════════════════════════════════════════
+          DASHBOARD: Pazienti in carico
+      ══════════════════════════════════════════════════════════════════════ */}
+      {!pazienteSelezionato && !mostraTuttiPiani && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+            <p style={{ color: 'var(--gray-500)', margin: 0, fontSize: '0.95rem' }}>
+              Seleziona un paziente per operare, oppure visualizza tutti i piani attivi.
+            </p>
+            <button
+              type="button"
+              onClick={apriTuttiPiani}
+              style={{ background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 18px', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem' }}
+            >
+              📋 Tutti i piani attivi ({pianiAttiviTutti.length})
+            </button>
           </div>
-        ) : (
-          <select
-            value={pazienteSelezionato?._id || ''}
-            onChange={e => { const p = pazienti.find(x => x._id === e.target.value); if (p) selezionaPaziente(p); }}
-            style={{ width: '100%', maxWidth: '480px', padding: '10px 14px', border: '1px solid #ced4da', borderRadius: '6px', fontSize: '1rem' }}
-          >
-            <option value="">— Seleziona paziente —</option>
-            {pazienti.map(p => (
-              <option key={p._id} value={p._id}>{p.firstName} {p.lastName}{p.pianiAssegnati ? ` (${p.pianiAssegnati} piani)` : ''}</option>
-            ))}
-          </select>
-        )}
-      </div>
 
-      {/* ── Info paziente ── */}
-      {pazienteSelezionato && (
-        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', marginBottom: '20px' }}>
-          <strong>📋 {pazienteSelezionato.firstName} {pazienteSelezionato.lastName}</strong>
-          <div style={{ fontSize: '0.88rem', color: '#555', marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-            {pazienteSelezionato.address && <span>📍 {pazienteSelezionato.address}</span>}
-            {pazienteSelezionato.contactPhone && <span>📞 {pazienteSelezionato.contactPhone}</span>}
-            {pazienteSelezionato.assistanceNeeds && <span>🩺 {pazienteSelezionato.assistanceNeeds}</span>}
-          </div>
+          {pazienti.length === 0 ? (
+            <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid #f59e0b', borderRadius: '8px', padding: '16px', color: '#92400e' }}>
+              ⚠️ Nessun paziente assegnato. Contatta il coordinatore.
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontWeight: '600', marginBottom: '12px', fontSize: '0.95rem', color: '#374151' }}>
+                👤 Pazienti in carico ({pazienti.length})
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {pazienti.map(paz => {
+                  const pianiPaz = tuttiIPiani.filter(p => p.patient?._id === paz._id && p.status === 'pending');
+                  return (
+                    <button
+                      key={paz._id}
+                      type="button"
+                      onClick={() => selezionaPaziente(paz)}
+                      style={{
+                        background: '#fff',
+                        border: '1px solid #e2e8f0',
+                        borderLeft: '4px solid #1e4d8c',
+                        borderRadius: '8px',
+                        padding: '14px 16px',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '12px',
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '700', fontSize: '1rem', color: '#1e4d8c', marginBottom: '4px' }}>
+                          👤 {paz.firstName} {paz.lastName}
+                        </div>
+                        <div style={{ fontSize: '0.83rem', color: '#555', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                          {paz.address && <span>📍 {paz.address}</span>}
+                          {paz.contactPhone && <span>📞 {paz.contactPhone}</span>}
+                          {paz.assistanceNeeds && <span>🩺 {paz.assistanceNeeds}</span>}
+                        </div>
+                      </div>
+                      <span style={{
+                        background: pianiPaz.length > 0 ? 'rgba(5,150,105,0.1)' : 'rgba(107,114,128,0.1)',
+                        color: pianiPaz.length > 0 ? '#065f46' : '#6b7280',
+                        border: `1px solid ${pianiPaz.length > 0 ? '#059669' : '#9ca3af'}`,
+                        borderRadius: '20px',
+                        padding: '4px 12px',
+                        fontSize: '0.82rem',
+                        fontWeight: '700',
+                        flexShrink: 0,
+                      }}>
+                        {pianiPaz.length} {pianiPaz.length === 1 ? 'piano attivo' : 'piani attivi'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* ── Lista piani ── */}
-      {pazienteSelezionato && piani.length > 0 && (
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ fontWeight: '600', display: 'block', marginBottom: '8px' }}>📋 Piani di lavoro ({piani.length})</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-            {piani.map(piano => (
-              <button key={piano._id} type="button" onClick={() => selezionaPiano(piano)}
-                style={{ background: pianoSelezionato?._id === piano._id ? '#1e4d8c' : '#f1f5f9', color: pianoSelezionato?._id === piano._id ? '#fff' : '#374151', border: `1px solid ${pianoSelezionato?._id === piano._id ? '#1e4d8c' : '#e2e8f0'}`, borderRadius: '6px', padding: '8px 16px', cursor: 'pointer', fontSize: '0.9rem', textAlign: 'left' }}>
-                <div style={{ fontWeight: '600' }}>{piano.category}</div>
-                <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>{formatData(piano.date)}{piano.dataFine ? ` → ${formatData(piano.dataFine)}` : ''}</div>
-              </button>
-            ))}
+      {/* ══════════════════════════════════════════════════════════════════════
+          VISTA: Tutti i piani attivi
+      ══════════════════════════════════════════════════════════════════════ */}
+      {mostraTuttiPiani && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setMostraTuttiPiani(false)}
+              style={{ background: '#f1f5f9', color: '#374151', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px 14px', cursor: 'pointer', fontSize: '0.88rem' }}
+            >
+              ← Torna ai pazienti
+            </button>
+            <h3 style={{ margin: 0, color: '#1e4d8c', fontSize: '1.05rem' }}>
+              📋 Tutti i piani attivi ({pianiAttiviTutti.length})
+            </h3>
           </div>
+
+          {pianiAttiviTutti.length === 0 ? (
+            <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid #f59e0b', borderRadius: '8px', padding: '16px', color: '#92400e' }}>
+              ⚠️ Nessun piano attivo al momento.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {pianiAttiviTutti.map(piano => (
+                <button
+                  key={piano._id}
+                  type="button"
+                  onClick={() => selezionaPianoDaLista(piano)}
+                  style={{
+                    background: '#fff',
+                    border: '1px solid #e2e8f0',
+                    borderLeft: '4px solid #059669',
+                    borderRadius: '8px',
+                    padding: '14px 16px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '12px',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: '700', fontSize: '0.95rem', color: '#1e4d8c', marginBottom: '3px' }}>
+                      👤 {piano.patient.firstName} {piano.patient.lastName}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#374151', marginBottom: '2px' }}>
+                      {piano.category} — {piano.task}
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: '#888' }}>
+                      📅 {formatData(piano.date)}{piano.dataFine ? ` → ${formatData(piano.dataFine)}` : ''}
+                    </div>
+                  </div>
+                  <span style={{ background: 'rgba(5,150,105,0.1)', color: '#065f46', border: '1px solid #059669', borderRadius: '20px', padding: '4px 12px', fontSize: '0.8rem', fontWeight: '700', flexShrink: 0 }}>
+                    ✅ Attivo
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* ── Dettaglio piano ── */}
+      {/* ══════════════════════════════════════════════════════════════════════
+          PAZIENTE SELEZIONATO: info + lista piani
+      ══════════════════════════════════════════════════════════════════════ */}
+      {pazienteSelezionato && !pianoSelezionato && (
+        <div>
+          <div style={{ marginBottom: '12px' }}>
+            <button
+              type="button"
+              onClick={() => { setPazienteSelezionato(null); setPianoSelezionato(null); resetDettagliPiano(); }}
+              style={{ background: '#f1f5f9', color: '#374151', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px 14px', cursor: 'pointer', fontSize: '0.88rem' }}
+            >
+              ← Torna ai pazienti
+            </button>
+          </div>
+
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', marginBottom: '20px' }}>
+            <strong>📋 {pazienteSelezionato.firstName} {pazienteSelezionato.lastName}</strong>
+            <div style={{ fontSize: '0.88rem', color: '#555', marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+              {pazienteSelezionato.address && <span>📍 {pazienteSelezionato.address}</span>}
+              {pazienteSelezionato.contactPhone && <span>📞 {pazienteSelezionato.contactPhone}</span>}
+              {pazienteSelezionato.assistanceNeeds && <span>🩺 {pazienteSelezionato.assistanceNeeds}</span>}
+            </div>
+          </div>
+
+          {piani.length === 0 ? (
+            <p style={{ color: '#888', fontStyle: 'italic' }}>Nessun piano assegnato per questo paziente.</p>
+          ) : (
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ fontWeight: '600', marginBottom: '10px', fontSize: '0.95rem', color: '#374151' }}>
+                📋 Piani di lavoro ({piani.length})
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                {piani.map(piano => (
+                  <button
+                    key={piano._id}
+                    type="button"
+                    onClick={() => selezionaPiano(piano)}
+                    style={{
+                      background: piano.status === 'pending' ? '#fff' : '#f9fafb',
+                      border: `1px solid ${piano.status === 'pending' ? '#059669' : '#e2e8f0'}`,
+                      borderLeft: `4px solid ${piano.status === 'pending' ? '#059669' : '#9ca3af'}`,
+                      borderRadius: '6px',
+                      padding: '10px 16px',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      textAlign: 'left',
+                      minWidth: '180px',
+                    }}
+                  >
+                    <div style={{ fontWeight: '600', color: '#1e4d8c' }}>{piano.category}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#555', marginTop: '2px' }}>
+                      {formatData(piano.date)}{piano.dataFine ? ` → ${formatData(piano.dataFine)}` : ''}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', marginTop: '3px', color: piano.status === 'pending' ? '#059669' : '#6b7280', fontWeight: '600' }}>
+                      {piano.status === 'pending' ? '✅ Attivo' : piano.status === 'completed' ? '✔ Completato' : '✕ Annullato'}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          DETTAGLIO PIANO
+      ══════════════════════════════════════════════════════════════════════ */}
       {pianoSelezionato && (
         loadingPiano ? <p>Caricamento piano...</p> : (
           <div>
+            {/* Breadcrumb */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => { setPianoSelezionato(null); resetDettagliPiano(); }}
+                style={{ background: '#f1f5f9', color: '#374151', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '0.85rem' }}
+              >
+                ← Torna ai piani
+              </button>
+              {pazienteSelezionato && (
+                <span style={{ fontSize: '0.85rem', color: '#888' }}>
+                  {pazienteSelezionato.firstName} {pazienteSelezionato.lastName} › {pianoSelezionato.category}
+                </span>
+              )}
+            </div>
+
             {/* Info piano */}
             <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
               <h3 style={{ margin: '0 0 6px', color: '#1e4d8c' }}>📋 {pianoSelezionato.category}</h3>
               <p style={{ margin: '0 0 4px', color: '#374151' }}>{pianoSelezionato.task}</p>
               {pianoSelezionato.notes && <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>📝 {pianoSelezionato.notes}</p>}
             </div>
-
-            {/* ── Compenso (sola lettura) ── */}
-            {riepilogo && pianoSelezionato.tipoCompenso && pianoSelezionato.tipoCompenso !== 'nessuno' && (
-              <div style={{ background: 'rgba(5,150,105,0.06)', border: '1px solid rgba(5,150,105,0.2)', borderRadius: '8px', padding: '14px 16px', marginBottom: '16px' }}>
-                <h4 style={{ margin: '0 0 8px', color: '#065f46' }}>💰 Compenso (sola lettura)</h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', fontSize: '0.9rem', color: '#374151' }}>
-                  <span>📊 {pianoSelezionato.tipoCompenso === 'orario' ? 'Orario' : 'Fisso'}</span>
-                  <span>💵 Tariffa: <strong>€ {pianoSelezionato.tariffa?.toFixed(2) || '0.00'}</strong></span>
-                  <span>🕐 Ore: <strong>{formatDurata(riepilogo.minutiTotali)}</strong></span>
-                  <span>✅ Accessi: <strong>{riepilogo.accessiCompletati}</strong></span>
-                  <span>💰 Maturato: <strong style={{ color: '#059669' }}>€ {riepilogo.compensoCalcolato?.toFixed(2) || '0.00'}</strong></span>
-                  {pianoSelezionato.compensoPagato && <span style={{ color: '#059669', fontWeight: '700' }}>✅ Pagato</span>}
-                </div>
-              </div>
-            )}
 
             {/* ── Registrazione accesso ── */}
             <div style={{ background: accessoAperto ? 'rgba(5,150,105,0.06)' : 'rgba(30,77,140,0.04)', border: `1px solid ${accessoAperto ? 'rgba(5,150,105,0.3)' : 'rgba(30,77,140,0.2)'}`, borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
@@ -485,23 +722,60 @@ export default function PortaleOperatore() {
                   Entrata: <strong>{formatOra(accessoAperto.oraEntrata)}</strong> del <strong>{formatData(accessoAperto.oraEntrata)}</strong>
                 </p>
               )}
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                <label style={{ flex: 1, minWidth: '200px' }}>
-                  Note accesso (opzionale)
-                  <input value={noteAccesso} onChange={e => setNoteAccesso(e.target.value)} placeholder="Es. parametri rilevati, attività svolte..." style={{ marginTop: '4px' }} />
-                </label>
-                {!accessoAperto ? (
-                  <button type="button" onClick={registraEntrata} disabled={registrandoAccesso}
-                    style={{ background: '#1e4d8c', padding: '10px 20px', whiteSpace: 'nowrap' }}>
-                    {registrandoAccesso ? '⏳' : '▶️ Registra entrata'}
-                  </button>
-                ) : (
-                  <button type="button" onClick={registraUscita} disabled={registrandoAccesso}
-                    style={{ background: '#dc2626', padding: '10px 20px', whiteSpace: 'nowrap' }}>
-                    {registrandoAccesso ? '⏳' : '⏹️ Registra uscita'}
-                  </button>
-                )}
+              <label style={{ display: 'block', marginBottom: '12px' }}>
+                Note accesso (opzionale)
+                <input value={noteAccesso} onChange={e => setNoteAccesso(e.target.value)} placeholder="Es. parametri rilevati, attività svolte..." style={{ marginTop: '4px' }} />
+              </label>
+              {/* Entrambi i pulsanti sempre visibili — stessa logica di WorkPlanAccessPage */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={registraEntrata}
+                  disabled={!!accessoAperto || registrandoAccesso}
+                  style={{
+                    padding: '14px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    cursor: accessoAperto ? 'not-allowed' : 'pointer',
+                    backgroundColor: accessoAperto ? '#d1fae5' : '#16a34a',
+                    color: 'white',
+                    fontWeight: '700',
+                    fontSize: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    opacity: accessoAperto ? 0.6 : 1,
+                  }}
+                >
+                  ▶️ ENTRATA
+                </button>
+                <button
+                  type="button"
+                  onClick={registraUscita}
+                  disabled={!accessoAperto || registrandoAccesso}
+                  style={{
+                    padding: '14px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    cursor: !accessoAperto ? 'not-allowed' : 'pointer',
+                    backgroundColor: !accessoAperto ? '#fee2e2' : '#dc2626',
+                    color: 'white',
+                    fontWeight: '700',
+                    fontSize: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    opacity: !accessoAperto ? 0.6 : 1,
+                  }}
+                >
+                  ⏹️ USCITA
+                </button>
               </div>
+              {registrandoAccesso && (
+                <p style={{ margin: '8px 0 0', fontSize: '0.85rem', color: '#888', textAlign: 'center' }}>⏳ Registrazione in corso...</p>
+              )}
             </div>
 
             {/* ── SEZIONE DIARIO CLINICO ── */}
@@ -513,7 +787,6 @@ export default function PortaleOperatore() {
               </button>
               {showDiario && (
                 <div style={{ padding: '16px' }}>
-                  {/* Form nuova voce */}
                   <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
                     <h5 style={{ margin: '0 0 12px', color: '#1e4d8c' }}>✏️ Nuova voce diario</h5>
                     <label style={{ display: 'block', marginBottom: '12px' }}>
@@ -526,21 +799,9 @@ export default function PortaleOperatore() {
                         style={{ width: '100%', marginTop: '4px', padding: '8px 12px', border: '1px solid #ced4da', borderRadius: '6px', fontSize: '0.9rem', resize: 'vertical', boxSizing: 'border-box' }}
                       />
                     </label>
-
-                    {/* Parametri vitali */}
                     <h6 style={{ margin: '0 0 10px', color: '#374151', fontWeight: '600' }}>📊 Parametri vitali (opzionali)</h6>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px', marginBottom: '12px' }}>
-                      {[
-                        { key: 'pressioneSistolica',   label: '🩸 P. Sistolica',   unit: 'mmHg', step: '1' },
-                        { key: 'pressioneDiastolica',  label: '🩸 P. Diastolica',  unit: 'mmHg', step: '1' },
-                        { key: 'frequenzaCardiaca',    label: '❤️ Freq. Cardiaca', unit: 'bpm',  step: '1' },
-                        { key: 'frequenzaRespiratoria',label: '🫁 Freq. Resp.',    unit: 'atti/min', step: '1' },
-                        { key: 'temperatura',          label: '🌡️ Temperatura',   unit: '°C',   step: '0.1' },
-                        { key: 'saturazione',          label: '💨 Saturazione',    unit: '%',    step: '1' },
-                        { key: 'glicemia',             label: '🍬 Glicemia',       unit: 'mg/dL',step: '1' },
-                        { key: 'peso',                 label: '⚖️ Peso',           unit: 'kg',   step: '0.1' },
-                        { key: 'dolore',               label: '😣 Dolore (0-10)',  unit: '/10',  step: '1' },
-                      ].map(({ key, label, unit, step }) => (
+                      {PARAMETRI_VITALI.map(({ key, label, unit, step }) => (
                         <label key={key} style={{ fontSize: '0.82rem' }}>
                           {label}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
@@ -559,14 +820,12 @@ export default function PortaleOperatore() {
                         </label>
                       ))}
                     </div>
-
                     <button type="button" onClick={salvaDiario} disabled={salvandoDiario || !testoDiario.trim()}
                       style={{ background: '#1e4d8c', padding: '9px 20px', opacity: !testoDiario.trim() ? 0.5 : 1 }}>
                       {salvandoDiario ? '⏳ Salvataggio...' : '💾 Salva voce diario'}
                     </button>
                   </div>
 
-                  {/* Lista voci diario */}
                   {diario.length === 0 ? (
                     <p style={{ color: '#888', fontStyle: 'italic' }}>Nessuna voce nel diario.</p>
                   ) : (
@@ -624,7 +883,6 @@ export default function PortaleOperatore() {
               </button>
               {showAllegati && (
                 <div style={{ padding: '16px' }}>
-                  {/* Upload */}
                   <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
                     <h5 style={{ margin: '0 0 12px', color: '#1e4d8c' }}>📤 Carica documento</h5>
                     <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
@@ -646,8 +904,6 @@ export default function PortaleOperatore() {
                     </div>
                     <p style={{ margin: '8px 0 0', fontSize: '0.8rem', color: '#888' }}>Formati accettati: PDF, immagini, Word, Excel, testo. Max 20 MB.</p>
                   </div>
-
-                  {/* Lista allegati */}
                   {allegati.length === 0 ? (
                     <p style={{ color: '#888', fontStyle: 'italic' }}>Nessun allegato.</p>
                   ) : (
@@ -716,8 +972,6 @@ export default function PortaleOperatore() {
                                 </button>
                               </div>
                             </div>
-
-                            {/* Form rivalutazione */}
                             {isRivalutando && (
                               <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '12px', marginTop: '8px' }}>
                                 <h6 style={{ margin: '0 0 10px', color: '#374151' }}>🔄 Rivaluta obiettivo</h6>
@@ -745,8 +999,6 @@ export default function PortaleOperatore() {
                                 </div>
                               </div>
                             )}
-
-                            {/* Storico valutazioni */}
                             {ob.valutazioni && ob.valutazioni.length > 0 && (
                               <details style={{ marginTop: '8px' }}>
                                 <summary style={{ cursor: 'pointer', fontSize: '0.82rem', color: '#888' }}>📋 Storico valutazioni ({ob.valutazioni.length})</summary>
@@ -780,10 +1032,10 @@ export default function PortaleOperatore() {
                 </button>
               </div>
 
-              {/* Export PDF */}
+              {/* Export PDF — senza tariffa */}
               {showExport && (
                 <div style={{ padding: '16px', borderTop: '1px solid #e2e8f0', background: '#fafafa' }}>
-                  <h5 style={{ margin: '0 0 12px', color: '#374151' }}>📄 Esporta registro accessi</h5>
+                  <h5 style={{ margin: '0 0 12px', color: '#374151' }}>📄 Esporta registro accessi (rendicontazione)</h5>
                   <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '8px' }}>
                     <label style={{ flex: 1, minWidth: '140px' }}>
                       Da data
@@ -804,7 +1056,7 @@ export default function PortaleOperatore() {
                       </button>
                     )}
                   </div>
-                  <p style={{ margin: 0, fontSize: '0.82rem', color: '#888' }}>Lascia vuoto per il mese corrente</p>
+                  <p style={{ margin: 0, fontSize: '0.82rem', color: '#888' }}>Lascia vuoto per il mese corrente. Il PDF non include le tariffe (solo per rendicontazione accessi).</p>
 
                   {exportData && (
                     <div ref={printRef} style={{ marginTop: '16px', background: '#fff', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
@@ -816,15 +1068,16 @@ export default function PortaleOperatore() {
                         <thead>
                           <tr>
                             <th>Data</th><th>Entrata</th><th>Uscita</th><th>Durata</th><th>Note</th>
-                            {exportData.piano.tipoCompenso !== 'nessuno' && <th>Compenso</th>}
                           </tr>
                         </thead>
                         <tbody>
                           {exportData.accessi.map((acc: any, i: number) => (
                             <tr key={i}>
-                              <td>{acc.data}</td><td>{acc.oraEntrata}</td><td>{acc.oraUscita}</td>
-                              <td>{acc.durataOre}</td><td>{acc.note || '—'}</td>
-                              {exportData.piano.tipoCompenso !== 'nessuno' && <td>{acc.compenso}</td>}
+                              <td>{acc.data}</td>
+                              <td>{acc.oraEntrata}</td>
+                              <td>{acc.oraUscita || '—'}</td>
+                              <td>{acc.durataOre}</td>
+                              <td>{acc.note || '—'}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -832,7 +1085,6 @@ export default function PortaleOperatore() {
                       <div className="riepilogo">
                         <p><strong>Totale accessi:</strong> {exportData.riepilogo.totaleAccessi}</p>
                         <p><strong>Ore totali:</strong> {exportData.riepilogo.oreTotali}</p>
-                        {exportData.piano.tipoCompenso !== 'nessuno' && <p><strong>Compenso totale:</strong> {exportData.riepilogo.compensoTotale}</p>}
                       </div>
                     </div>
                   )}
@@ -856,7 +1108,6 @@ export default function PortaleOperatore() {
                               </div>
                               <div style={{ fontSize: '0.85rem', color: '#555', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                                 {acc.durataMinuti > 0 && <span>⏱️ {formatDurata(acc.durataMinuti)}</span>}
-                                {acc.compensoMaturato > 0 && <span>💰 € {acc.compensoMaturato.toFixed(2)}</span>}
                                 {acc.note && <span>📝 {acc.note}</span>}
                               </div>
                             </div>

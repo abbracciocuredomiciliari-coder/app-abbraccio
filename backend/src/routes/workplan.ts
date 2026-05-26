@@ -182,7 +182,13 @@ router.get('/:id/accessi', authenticateToken, async (req: Request, res: Response
     // Verifica che l'operatore possa vedere questo piano
     if (isOperatore(user.role)) {
       const staffMember = await getStaffByUser(user.id || user.userId, user.email);
-      if (!staffMember || workplan.staff?.toString() !== staffMember._id.toString()) {
+      if (!staffMember) {
+        return res.status(403).json({ message: 'Non autorizzato: profilo staff non trovato' });
+      }
+      const staffId = (workplan.staff as any)?._id
+        ? (workplan.staff as any)._id.toString()
+        : workplan.staff?.toString();
+      if (staffId !== staffMember._id.toString()) {
         return res.status(403).json({ message: 'Non autorizzato a vedere questo piano' });
       }
     }
@@ -268,8 +274,15 @@ router.get('/:id/accessi/export', authenticateToken, async (req: Request, res: R
     // Verifica autorizzazione: admin, coordinator, direttore, o l'operatore affidatario
     if (isOperatore(user.role)) {
       const staffMember = await getStaffByUser(user.id || user.userId, user.email);
-      if (!staffMember || workplan.staff?.toString() !== staffMember._id.toString()) {
-        return res.status(403).json({ message: 'Non autorizzato' });
+      if (!staffMember) {
+        return res.status(403).json({ message: 'Non autorizzato: profilo staff non trovato' });
+      }
+      // workplan.staff può essere un oggetto popolato o un ObjectId — estraiamo sempre l'_id
+      const staffId = (workplan.staff as any)?._id
+        ? (workplan.staff as any)._id.toString()
+        : workplan.staff?.toString();
+      if (staffId !== staffMember._id.toString()) {
+        return res.status(403).json({ message: 'Non autorizzato: questo piano non è assegnato a te' });
       }
     }
 
