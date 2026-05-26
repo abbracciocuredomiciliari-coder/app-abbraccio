@@ -183,17 +183,25 @@ export default function PortaleOperatore() {
 
   // ─── Caricamento iniziale ──────────────────────────────────────────────────
 
+  const caricaDati = async () => {
+    try {
+      const [pazientiRes, pianiRes] = await Promise.all([
+        api.get('/workplan/miei-pazienti'),
+        api.get('/workplan'),
+      ]);
+      const tuttiPiani: Piano[] = pianiRes.data || [];
+      setTuttiIPiani(tuttiPiani);
+      // Mostra solo pazienti con almeno un piano attivo (pending)
+      const pazientiConPianoAttivo = pazientiRes.data.filter((paz: Paziente) =>
+        tuttiPiani.some(p => p.patient?._id === paz._id && p.status === 'pending')
+      );
+      setPazienti(pazientiConPianoAttivo);
+    } catch {}
+    finally { setLoading(false); }
+  };
+
   useEffect(() => {
-    Promise.all([
-      api.get('/workplan/miei-pazienti'),
-      api.get('/workplan'),
-    ])
-      .then(([pazientiRes, pianiRes]) => {
-        setPazienti(pazientiRes.data);
-        setTuttiIPiani(pianiRes.data || []);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    caricaDati();
   }, []);
 
   // ─── Selezione paziente ────────────────────────────────────────────────────
@@ -711,6 +719,62 @@ export default function PortaleOperatore() {
               <p style={{ margin: '0 0 4px', color: '#374151' }}>{pianoSelezionato.task}</p>
               {pianoSelezionato.notes && <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>📝 {pianoSelezionato.notes}</p>}
             </div>
+
+            {/* ── COMPENSO MATURATO ── */}
+            {pianoSelezionato.tipoCompenso && pianoSelezionato.tipoCompenso !== 'nessuno' && (
+              <div style={{ background: riepilogo?.compensoPagato ? 'rgba(5,150,105,0.06)' : 'rgba(124,58,237,0.06)', border: `1px solid ${riepilogo?.compensoPagato ? 'rgba(5,150,105,0.3)' : 'rgba(124,58,237,0.3)'}`, borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
+                <h4 style={{ margin: '0 0 12px', color: riepilogo?.compensoPagato ? '#065f46' : '#7c3aed', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  💰 Compenso maturato
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
+                  {/* Tariffa */}
+                  <div style={{ background: '#f5f3ff', borderRadius: '8px', padding: '10px 14px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.72rem', color: '#7c3aed', fontWeight: '600', marginBottom: '2px', textTransform: 'uppercase' }}>
+                      {pianoSelezionato.tipoCompenso === 'orario' ? 'Tariffa/ora' : 'Compenso fisso'}
+                    </div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#7c3aed' }}>
+                      € {(pianoSelezionato.tariffa || 0).toFixed(2)}
+                      {pianoSelezionato.tipoCompenso === 'orario' && <span style={{ fontSize: '0.7rem', fontWeight: '400' }}>/h</span>}
+                    </div>
+                  </div>
+                  {/* Ore lavorate */}
+                  {pianoSelezionato.tipoCompenso === 'orario' && riepilogo && (
+                    <div style={{ background: '#f0f9ff', borderRadius: '8px', padding: '10px 14px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#0284c7', fontWeight: '600', marginBottom: '2px', textTransform: 'uppercase' }}>Ore lavorate</div>
+                      <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#0284c7' }}>{riepilogo.oreTotali}h</div>
+                    </div>
+                  )}
+                  {/* Accessi completati */}
+                  {riepilogo && (
+                    <div style={{ background: '#fefce8', borderRadius: '8px', padding: '10px 14px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#d97706', fontWeight: '600', marginBottom: '2px', textTransform: 'uppercase' }}>Accessi</div>
+                      <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#d97706' }}>{riepilogo.accessiCompletati}</div>
+                    </div>
+                  )}
+                  {/* Compenso maturato */}
+                  {riepilogo && (
+                    <div style={{ background: riepilogo.compensoPagato ? '#f0fdf4' : '#fdf4ff', borderRadius: '8px', padding: '10px 14px', textAlign: 'center', border: `1px solid ${riepilogo.compensoPagato ? '#bbf7d0' : '#e9d5ff'}` }}>
+                      <div style={{ fontSize: '0.72rem', color: riepilogo.compensoPagato ? '#059669' : '#7c3aed', fontWeight: '600', marginBottom: '2px', textTransform: 'uppercase' }}>
+                        {riepilogo.compensoPagato ? '✅ Pagato' : '💰 Maturato'}
+                      </div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: '800', color: riepilogo.compensoPagato ? '#059669' : '#7c3aed' }}>
+                        € {(riepilogo.compensoSalvato > 0 ? riepilogo.compensoSalvato : riepilogo.compensoCalcolato).toFixed(2)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {riepilogo && !riepilogo.compensoPagato && (
+                  <p style={{ margin: '10px 0 0', fontSize: '0.8rem', color: '#888', fontStyle: 'italic' }}>
+                    ⏳ In attesa di pagamento da parte del coordinatore.
+                  </p>
+                )}
+                {riepilogo?.compensoPagato && (
+                  <p style={{ margin: '10px 0 0', fontSize: '0.8rem', color: '#059669', fontWeight: '600' }}>
+                    ✅ Compenso già pagato.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* ── Registrazione accesso ── */}
             <div style={{ background: accessoAperto ? 'rgba(5,150,105,0.06)' : 'rgba(30,77,140,0.04)', border: `1px solid ${accessoAperto ? 'rgba(5,150,105,0.3)' : 'rgba(30,77,140,0.2)'}`, borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
