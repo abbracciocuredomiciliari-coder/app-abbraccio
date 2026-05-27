@@ -1,11 +1,17 @@
 import nodemailer from 'nodemailer';
+import dns from 'dns';
+import net from 'net';
+
+// Forza risoluzione DNS in IPv4 (fix per ENETUNREACH su Render free tier)
+dns.setDefaultResultOrder('ipv4first');
 
 // ─── Crea il transporter SMTP ─────────────────────────────────────────────────
 function getTransporter() {
   const smtpHost = process.env.SMTP_HOST;
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
-  const smtpPort = parseInt(process.env.SMTP_PORT || '587');
+  // Usa porta 465 (SSL) come default per Gmail su Render — più affidabile di 587
+  const smtpPort = parseInt(process.env.SMTP_PORT || '465');
 
   if (!smtpHost || !smtpUser || !smtpPass) {
     console.warn(
@@ -17,11 +23,10 @@ function getTransporter() {
 
   console.log(`📧 SMTP configurato: host=${smtpHost}, port=${smtpPort}, user=${smtpUser}`);
 
-  // Gmail richiede port 465 con secure:true oppure port 587 con STARTTLS
-  const isGmail = smtpHost.includes('gmail');
+  // Porta 465 → secure:true (SSL diretto), porta 587 → secure:false (STARTTLS)
   const secure = smtpPort === 465;
 
-  return nodemailer.createTransport({
+  const transportOptions: any = {
     host: smtpHost,
     port: smtpPort,
     secure,
@@ -29,15 +34,20 @@ function getTransporter() {
       user: smtpUser,
       pass: smtpPass,
     },
-    ...(isGmail ? {
-      service: 'gmail',
-    } : {}),
     tls: {
       rejectUnauthorized: false,
     },
+    // Timeout più lunghi per connessioni lente su Render
+    connectionTimeout: 30000,
+    greetingTimeout: 30000,
+    socketTimeout: 30000,
+    // Forza IPv4 tramite socket factory
+    socketFactory: () => net.createConnection({ host: smtpHost, port: smtpPort, family: 4 }),
     debug: true,
     logger: false,
-  });
+  };
+
+  return nodemailer.createTransport(transportOptions);
 }
 
 // ─── Verifica connessione SMTP all'avvio ──────────────────────────────────────
