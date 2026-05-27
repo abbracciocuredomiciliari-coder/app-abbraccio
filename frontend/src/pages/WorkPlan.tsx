@@ -45,20 +45,9 @@ interface GiornoSettimana {
   minutiPerAccesso: number;
 }
 
-// Esami strumentali disponibili
-const ESAMI_STRUMENTALI = [
-  { value: 'ECG', label: 'ECG' },
-  { value: 'Holter ECG', label: 'Holter ECG' },
-  { value: 'Holter pressorio', label: 'Holter pressorio' },
-  { value: 'Glicemia', label: 'Glicemia' },
-  { value: 'EGA', label: 'EGA (Emogasanalisi)' },
-  { value: 'Polisonnografia', label: 'Polisonnografia' },
-  { value: 'Titolazione CPAP', label: 'Titolazione CPAP' },
-];
-
 interface WorkPlanItem {
   _id: string;
-  type: 'prestazionale' | 'assistenziale' | 'esami_strumentali';
+  type: 'prestazionale' | 'assistenziale';
   category: string;
   tipoEsame?: string;
   patient: PatientOption;
@@ -119,9 +108,7 @@ function WorkPlan() {
   const [workplans, setWorkplans] = useState<WorkPlanItem[]>([]);
   const [patients, setPatients] = useState<PatientOption[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
-  const [activeTab, setActiveTab] = useState<'prestazionale' | 'assistenziale' | 'esami_strumentali'>('prestazionale');
-  // Stato specifico per esami strumentali
-  const [tipoEsame, setTipoEsame] = useState('');
+  const [activeTab, setActiveTab] = useState<'prestazionale' | 'assistenziale'>('prestazionale');
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredWorkplans, setFilteredWorkplans] = useState<WorkPlanItem[]>([]);
   const [error, setError] = useState('');
@@ -226,15 +213,11 @@ function WorkPlan() {
         setError('Compila tutti i campi obbligatori.');
         return;
       }
-      if (activeTab === 'esami_strumentali' && !tipoEsame) {
-        setError('Seleziona il tipo di esame strumentale.');
-        return;
-      }
-      if (activeTab !== 'esami_strumentali' && !task) {
+      if (!task) {
         setError('Compila il campo Attività / Descrizione.');
         return;
       }
-      if (activeTab !== 'esami_strumentali' && !category) {
+      if (!category) {
         setError('Seleziona una categoria.');
         return;
       }
@@ -248,11 +231,10 @@ function WorkPlan() {
 
       await api.post('/workplan', {
         type: activeTab,
-        category: activeTab === 'esami_strumentali' ? 'esame_strumentale' : category,
-        tipoEsame: activeTab === 'esami_strumentali' ? tipoEsame : undefined,
+        category,
         patient,
         staff,
-        task: activeTab === 'esami_strumentali' ? (tipoEsame + (task ? ` — ${task}` : '')) : task,
+        task,
         date,
         dataFine: dataFine || undefined,
         time,
@@ -265,7 +247,7 @@ function WorkPlan() {
       await loadData();
       setTask(''); setDate(''); setDataFine(''); setTime(''); setDuration(60);
       setPatient(''); setStaff(''); setCategory(''); setNotes('');
-      setTipoCompenso('nessuno'); setTariffa(0); setTipoEsame('');
+      setTipoCompenso('nessuno'); setTariffa(0);
       setGiorniForm(prev => prev.map(g => ({ ...g, attivo: false, accessiAlGiorno: 1, minutiPerAccesso: 60 })));
       setSuccess('Incarico aggiunto con successo!');
       setTimeout(() => setSuccess(''), 3000);
@@ -542,10 +524,6 @@ function WorkPlan() {
           <Users size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
           Assistenziale
         </button>
-        <button type="button" onClick={() => setActiveTab('esami_strumentali')} style={{ padding: '12px 24px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: activeTab === 'esami_strumentali' ? '600' : '400', color: activeTab === 'esami_strumentali' ? '#e11d48' : 'var(--gray-500)', borderBottom: activeTab === 'esami_strumentali' ? '2px solid #e11d48' : '2px solid transparent', marginBottom: '-10px' }}>
-          <HeartPulse size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-          Esami Strumentali
-        </button>
       </div>
 
       {/* Search Bar */}
@@ -561,7 +539,7 @@ function WorkPlan() {
         <div className="dashboard-folder">
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: 0 }}>
             <Plus size={20} />
-            {activeTab === 'prestazionale' ? 'Nuovo Incarico Prestazionale' : activeTab === 'assistenziale' ? 'Nuovo Incarico Assistenziale' : '🫀 Nuovo Esame Strumentale'}
+            {activeTab === 'prestazionale' ? 'Nuovo Incarico Prestazionale' : 'Nuovo Incarico Assistenziale'}
           </h3>
 
           <form onSubmit={handleSubmit} className="user-form" noValidate>
@@ -662,30 +640,15 @@ function WorkPlan() {
               </div>
             </div>
 
-            {/* Tipo esame (solo per esami strumentali) */}
-            {activeTab === 'esami_strumentali' && (
-              <label>
-                Tipo Esame *
-                <select value={tipoEsame} onChange={(e) => setTipoEsame(e.target.value)} required>
-                  <option value="">Seleziona tipo di esame</option>
-                  {ESAMI_STRUMENTALI.map((e) => (
-                    <option key={e.value} value={e.value}>{e.label}</option>
-                  ))}
-                </select>
-              </label>
-            )}
-
-            {activeTab !== 'esami_strumentali' && (
-              <label>
-                Categoria *
-                <select value={category} onChange={(e) => setCategory(e.target.value)} required>
-                  <option value="">Seleziona categoria</option>
-                  {currentCategories.map((cat) => (
-                    <option key={cat.value} value={cat.value}>{cat.label}</option>
-                  ))}
-                </select>
-              </label>
-            )}
+            <label>
+              Categoria *
+              <select value={category} onChange={(e) => setCategory(e.target.value)} required>
+                <option value="">Seleziona categoria</option>
+                {currentCategories.map((cat) => (
+                  <option key={cat.value} value={cat.value}>{cat.label}</option>
+                ))}
+              </select>
+            </label>
 
             <label>
               Attività / Descrizione *
@@ -693,13 +656,11 @@ function WorkPlan() {
                 value={task}
                 onChange={(e) => setTask(e.target.value)}
                 placeholder={
-                  activeTab === 'esami_strumentali'
-                    ? 'Es. Note aggiuntive sull\'esame...'
-                    : activeTab === 'prestazionale'
+                  activeTab === 'prestazionale'
                     ? 'Es. Prelievo ematico, Medicazione...'
                     : 'Es. Assistenza igienica, Cambio postura...'
                 }
-                required={activeTab !== 'esami_strumentali'}
+                required
               />
             </label>
 
@@ -754,8 +715,8 @@ function WorkPlan() {
         {/* List Section */}
         <div className="dashboard-folder">
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: 0 }}>
-            {activeTab === 'esami_strumentali' ? <HeartPulse size={20} color="#e11d48" /> : <Calendar size={20} />}
-            {activeTab === 'prestazionale' ? `Incarichi Prestazionali (${filteredWorkplans.length})` : activeTab === 'assistenziale' ? `Incarichi Assistenziali (${filteredWorkplans.length})` : `🫀 Esami Strumentali (${filteredWorkplans.length})`}
+            <Calendar size={20} />
+            {activeTab === 'prestazionale' ? `Incarichi Prestazionali (${filteredWorkplans.length})` : `Incarichi Assistenziali (${filteredWorkplans.length})`}
           </h3>
 
           {filteredWorkplans.length === 0 ? (
@@ -807,40 +768,18 @@ function WorkPlan() {
                       {item.notes && <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: 'var(--gray-600)', fontStyle: 'italic' }}>{item.notes}</p>}
                     </div>
                     <div style={{ display: 'flex', gap: '5px', flexShrink: 0, flexDirection: 'column' }}>
-                      {/* Storico accessi + compenso (solo per non-esami) */}
-                      {item.type !== 'esami_strumentali' && (
-                        <button type="button" onClick={() => apriStorico(item)} style={{ background: '#8b5cf6', padding: '7px' }} title="Storico accessi e compenso">
-                          <ClipboardList size={15} />
-                        </button>
-                      )}
-                      {/* Accesso remoto e copia link (solo per non-esami) */}
-                      {item.type !== 'esami_strumentali' && (
-                        <>
-                          <button type="button" onClick={() => apriAccesso(item._id)} style={{ background: '#3b82f6', padding: '7px' }} title="Apri pagina registrazione accessi">
-                            <Link2 size={15} />
-                          </button>
-                          <button type="button" onClick={() => copiaLink(item._id)} style={{ background: copiedId === item._id ? '#10b981' : '#6c757d', padding: '7px' }} title={copiedId === item._id ? 'Link copiato!' : 'Copia link accesso'}>
-                            <Copy size={15} />
-                          </button>
-                        </>
-                      )}
-                      {/* Checkbox accesso eseguito (solo per esami strumentali) */}
-                      {item.type === 'esami_strumentali' && (
-                        <button
-                          type="button"
-                          onClick={() => segnaEsameEseguito(item._id, item.status)}
-                          title={item.status === 'completed' ? 'Esame già eseguito' : 'Segna accesso come eseguito'}
-                          style={{
-                            background: item.status === 'completed' ? '#10b981' : '#e11d48',
-                            padding: '7px',
-                            cursor: item.status === 'completed' ? 'default' : 'pointer',
-                            opacity: item.status === 'completed' ? 0.8 : 1,
-                          }}
-                        >
-                          <CheckCircle size={15} />
-                        </button>
-                      )}
-                      {item.type !== 'esami_strumentali' && item.status === 'pending' && (
+                      {/* Storico accessi + compenso */}
+                      <button type="button" onClick={() => apriStorico(item)} style={{ background: '#8b5cf6', padding: '7px' }} title="Storico accessi e compenso">
+                        <ClipboardList size={15} />
+                      </button>
+                      {/* Accesso remoto e copia link */}
+                      <button type="button" onClick={() => apriAccesso(item._id)} style={{ background: '#3b82f6', padding: '7px' }} title="Apri pagina registrazione accessi">
+                        <Link2 size={15} />
+                      </button>
+                      <button type="button" onClick={() => copiaLink(item._id)} style={{ background: copiedId === item._id ? '#10b981' : '#6c757d', padding: '7px' }} title={copiedId === item._id ? 'Link copiato!' : 'Copia link accesso'}>
+                        <Copy size={15} />
+                      </button>
+                      {item.status === 'pending' && (
                         <button type="button" onClick={() => completeWorkplan(item._id)} style={{ background: 'var(--success)', padding: '7px' }} title="Segna come completato">
                           <CheckCircle size={15} />
                         </button>
