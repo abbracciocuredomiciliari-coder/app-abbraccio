@@ -302,7 +302,7 @@ function SchedaControlloDefibrillatore() {
 
   return (
     <section>
-      <h2>🫀 Scheda Controllo Defibrillatore</h2>
+      <h2>🫀 Scheda Controllo Apparecchiature Elettromedicali</h2>
       <p style={{ color: 'var(--gray-500)', marginBottom: '24px', fontSize: '0.95rem' }}>
         Scheda di Controllo Periodico Apparecchiature — Procedura Manutenzione Rev. 01/2026
       </p>

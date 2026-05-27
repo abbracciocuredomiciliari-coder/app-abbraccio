@@ -147,7 +147,7 @@ function AppShell() {
               </Link>
               <Link to="/scheda-controllo-defibrillatore" className={isActive('/scheda-controllo-defibrillatore') ? 'active' : ''}>
                 <CheckSquare size={18} />
-                Scheda Controllo Defibrillatore
+                Scheda Controllo Apparecchiature Elettromedicali
               </Link>
               <Link to="/checklist-glucometro" className={isActive('/checklist-glucometro') ? 'active' : ''}>
                 <CheckSquare size={18} />
