@@ -3,6 +3,7 @@ import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import connectDB from './config/db';
+import { verificaConnessioneSMTP, inviaEmailNuovoPianoDiLavoro } from './utils/email';
 import authRouter from './routes/auth';
 import patientsRouter from './routes/patients';
 import staffRouter from './routes/staff';
@@ -82,6 +83,26 @@ app.use('/allegati', allegatiRouter);
 // Serve file statici uploads (con autenticazione gestita lato route)
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
-app.listen(port, () => {
+// ─── Endpoint test email (per diagnostica SMTP) ───────────────────────────────
+app.get('/api/test-email', async (req: Request, res: Response) => {
+  const { to } = req.query;
+  if (!to) return res.status(400).json({ message: 'Parametro ?to=email richiesto' });
+  try {
+    await inviaEmailNuovoPianoDiLavoro(
+      to as string,
+      'Operatore Test',
+      'Paziente Test',
+      new Date().toLocaleDateString('it-IT'),
+      'Test connessione SMTP — App Abbraccio'
+    );
+    return res.json({ success: true, to, message: 'Email di test inviata — controlla i log del server per dettagli' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || String(err) });
+  }
+});
+
+app.listen(port, async () => {
   console.log(`Backend avviato su http://localhost:${port}`);
+  // Verifica connessione SMTP all'avvio
+  await verificaConnessioneSMTP();
 });
