@@ -627,4 +627,37 @@ router.get('/:id/pdf-data', authenticateToken, async (req: Request, res: Respons
   }
 });
 
+// ─── PATCH /:id/segna-eseguito — Segna esame come eseguito con firma ─────────
+router.patch('/:id/segna-eseguito', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const user = (req as any).user;
+
+    const esame = await EsameStrumentale.findById(id);
+    if (!esame) return res.status(404).json({ message: 'Esame non trovato.' });
+    if (esame.archiviato) return res.status(400).json({ message: 'Esame già archiviato.' });
+    if (esame.status !== 'pianificato') {
+      return res.status(400).json({ message: 'L\'esame è già stato segnato come eseguito.' });
+    }
+
+    const nomeOperatore = user?.name || user?.email || 'Operatore';
+    const now = new Date();
+
+    esame.status = 'eseguito';
+    esame.dataEsecuzione = now;
+    esame.eseguitoDa = nomeOperatore;
+    (esame as any).eseguitoDaId = user?.id || user?._id;
+
+    await esame.save();
+
+    const esamePopulato = await EsameStrumentale.findById(id)
+      .populate('patient', 'firstName lastName')
+      .populate('staff', 'firstName lastName role');
+
+    return res.json(esamePopulato);
+  } catch (error: any) {
+    return res.status(500).json({ message: error?.message || 'Errore nel segnare l\'esame come eseguito', error });
+  }
+});
+
 export default router;

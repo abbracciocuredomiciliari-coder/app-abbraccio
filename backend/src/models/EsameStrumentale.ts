@@ -65,6 +65,11 @@ export interface IEsameStrumentale extends Document {
   // Allegati generici
   allegati: IAllegatoEsame[];
 
+  // Conferma esecuzione
+  dataEsecuzione?: Date;
+  eseguitoDa?: string;
+  eseguitoDaId?: Types.ObjectId;
+
   // Archiviazione
   archiviato?: boolean;
   dataArchiviazione?: Date;
@@ -136,6 +141,9 @@ const esameStrumentaleSchema = new Schema<IEsameStrumentale>(
     diaria: [diariaSchema],
     referto: refertoSchema,
     allegati: [allegatoEsameSchema],
+    dataEsecuzione: { type: Date },
+    eseguitoDa: { type: String },
+    eseguitoDaId: { type: Schema.Types.ObjectId },
     archiviato: { type: Boolean, default: false },
     dataArchiviazione: { type: Date },
     archiviatoDa: { type: String },

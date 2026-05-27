@@ -89,6 +89,11 @@ interface EsameItem {
   dataArchiviazione?: string;
   archiviatoDa?: string;
   workPlan?: string;
+  // Conferma esecuzione
+  eseguito?: boolean;
+  dataEsecuzione?: string;
+  eseguitoDa?: string;
+  firmaEsecuzione?: string;
 }
 
 // ─── Colori status ────────────────────────────────────────────────────────────
@@ -156,6 +161,9 @@ export default function EsamiStrumentali() {
   const allegatoFileRef = useRef<HTMLInputElement>(null);
   const [descrizioneAllegato, setDescrizioneAllegato] = useState('');
   const [uploadingAllegato, setUploadingAllegato] = useState(false);
+
+  // Segna eseguito
+  const [segnandoEseguito, setSegnandoEseguito] = useState(false);
 
   // PDF
   const [loadingPdf, setLoadingPdf] = useState(false);
@@ -398,6 +406,25 @@ export default function EsamiStrumentali() {
     } catch (err: any) {
       setError(err.response?.data?.message || 'Errore nell\'eliminazione.');
       setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  // ─── Segna eseguito / Firma esecuzione ─────────────────────────────────────
+  const segnaEseguito = async () => {
+    if (!selectedEsame) return;
+    if (!confirm('Confermare e firmare l\'esame come ESEGUITO? L\'operazione registrerà data, ora e operatore.')) return;
+    setSegnandoEseguito(true);
+    try {
+      await api.patch(`/esami-strumentali/${selectedEsame._id}/segna-eseguito`);
+      await refreshEsame();
+      await loadData();
+      setSuccess('✅ Esame segnato come eseguito e firmato!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Errore nel segnare l\'esame come eseguito.');
+      setTimeout(() => setError(''), 4000);
+    } finally {
+      setSegnandoEseguito(false);
     }
   };
 
@@ -847,8 +874,49 @@ export default function EsamiStrumentali() {
 
               {/* Note esame */}
               {selectedEsame.note && (
-                <div style={{ padding: '10px 14px', backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', marginBottom: '20px', fontSize: '0.9rem' }}>
+                <div style={{ padding: '10px 14px', backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', marginBottom: '16px', fontSize: '0.9rem' }}>
                   <strong>Note:</strong> {selectedEsame.note}
+                </div>
+              )}
+
+              {/* ── PULSANTE SEGNA ESEGUITO ── */}
+              {!selectedEsame.archiviato && selectedEsame.status === 'pianificato' && (
+                <div style={{ background: 'rgba(5,150,105,0.06)', border: '2px solid #059669', borderRadius: '10px', padding: '16px 20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <div style={{ fontWeight: '700', color: '#065f46', fontSize: '1rem', marginBottom: '4px' }}>
+                      ✅ Conferma esecuzione esame
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#374151' }}>
+                      Clicca per segnare l'esame come <strong>ESEGUITO</strong> e firmare digitalmente con data e ora.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={segnaEseguito}
+                    disabled={segnandoEseguito}
+                    style={{ background: '#059669', padding: '12px 24px', fontSize: '1rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: '8px', whiteSpace: 'nowrap', minWidth: '200px', justifyContent: 'center' }}
+                  >
+                    <CheckCircle size={20} />
+                    {segnandoEseguito ? '⏳ Registrazione...' : '✅ Segna Eseguito / Firma'}
+                  </button>
+                </div>
+              )}
+
+              {/* ── BADGE ESEGUITO (se già eseguito) ── */}
+              {(selectedEsame.status === 'eseguito' || selectedEsame.status === 'refertato') && (
+                <div style={{ background: '#d1fae5', border: '1px solid #059669', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <CheckCircle size={22} color="#059669" />
+                  <div>
+                    <div style={{ fontWeight: '700', color: '#065f46', fontSize: '0.95rem' }}>
+                      ✅ Esame eseguito
+                    </div>
+                    {selectedEsame.dataEsecuzione && (
+                      <div style={{ fontSize: '0.82rem', color: '#374151', marginTop: '2px' }}>
+                        Eseguito il <strong>{fmtDateTime(selectedEsame.dataEsecuzione)}</strong>
+                        {selectedEsame.eseguitoDa && <> da <strong>{selectedEsame.eseguitoDa}</strong></>}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
