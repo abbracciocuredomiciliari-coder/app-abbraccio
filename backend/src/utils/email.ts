@@ -1,17 +1,11 @@
 import nodemailer from 'nodemailer';
-import dns from 'dns';
-import net from 'net';
 
-// Forza risoluzione DNS in IPv4 (fix per ENETUNREACH su Render free tier)
-dns.setDefaultResultOrder('ipv4first');
-
-// ─── Crea il transporter SMTP ─────────────────────────────────────────────────
+// ─── Crea il transporter SMTP (configurazione standard — compatibile con Brevo/Gmail/altri) ──
 function getTransporter() {
   const smtpHost = process.env.SMTP_HOST;
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
-  // Usa porta 465 (SSL) come default per Gmail su Render — più affidabile di 587
-  const smtpPort = parseInt(process.env.SMTP_PORT || '465');
+  const smtpPort = parseInt(process.env.SMTP_PORT || '587');
 
   if (!smtpHost || !smtpUser || !smtpPass) {
     console.warn(
@@ -21,33 +15,17 @@ function getTransporter() {
     return null;
   }
 
-  console.log(`📧 SMTP configurato: host=${smtpHost}, port=${smtpPort}, user=${smtpUser}`);
+  console.log(`📧 SMTP: host=${smtpHost}, port=${smtpPort}, user=${smtpUser}`);
 
-  // Porta 465 → secure:true (SSL diretto), porta 587 → secure:false (STARTTLS)
-  const secure = smtpPort === 465;
-
-  const transportOptions: any = {
+  return nodemailer.createTransport({
     host: smtpHost,
     port: smtpPort,
-    secure,
+    secure: smtpPort === 465,
     auth: {
       user: smtpUser,
       pass: smtpPass,
     },
-    tls: {
-      rejectUnauthorized: false,
-    },
-    // Timeout più lunghi per connessioni lente su Render
-    connectionTimeout: 30000,
-    greetingTimeout: 30000,
-    socketTimeout: 30000,
-    // Forza IPv4 tramite socket factory
-    socketFactory: () => net.createConnection({ host: smtpHost, port: smtpPort, family: 4 }),
-    debug: true,
-    logger: false,
-  };
-
-  return nodemailer.createTransport(transportOptions);
+  });
 }
 
 // ─── Verifica connessione SMTP all'avvio ──────────────────────────────────────
@@ -63,6 +41,7 @@ export async function verificaConnessioneSMTP() {
     return true;
   } catch (err: any) {
     console.error('❌ Verifica SMTP fallita:', err?.message || err);
+    if (err?.code) console.error(`   Codice: ${err.code}`);
     return false;
   }
 }
@@ -85,8 +64,7 @@ async function invia(to: string, subject: string, html: string): Promise<boolean
     return true;
   } catch (err: any) {
     console.error(`❌ Errore invio email a ${to}:`, err?.message || err);
-    // Log dettagliato per debug
-    if (err?.code) console.error(`   Codice errore: ${err.code}`);
+    if (err?.code) console.error(`   Codice: ${err.code}`);
     if (err?.response) console.error(`   Risposta SMTP: ${err.response}`);
     if (err?.responseCode) console.error(`   Codice risposta: ${err.responseCode}`);
     return false;
