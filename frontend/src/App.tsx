@@ -22,6 +22,7 @@ import GestioneUtenti from './pages/GestioneUtenti';
 import PortaleOperatore from './pages/PortaleOperatore';
 import ProfiloPersonale from './pages/ProfiloPersonale';
 import CompensoIncarichi from './pages/CompensoIncarichi';
+import EsamiStrumentali from './pages/EsamiStrumentali';
 import {
   Heart,
   LayoutDashboard,
@@ -40,6 +41,7 @@ import {
   Briefcase,
   UserCircle,
   Euro,
+  HeartPulse,
 } from 'lucide-react';
 
 // Ruoli con accesso completo (admin/coordinamento/direzione)
@@ -93,6 +95,10 @@ function AppShell() {
               <Link to="/procedure" className={isActive('/procedure') ? 'active' : ''}>
                 <FileText size={18} />
                 Procedure
+              </Link>
+              <Link to="/esami-strumentali" className={isActive('/esami-strumentali') ? 'active' : ''}>
+                <HeartPulse size={18} />
+                Esami Strumentali
               </Link>
               <Link to="/profilo-personale" className={isActive('/profilo-personale') ? 'active' : ''}>
                 <UserCircle size={18} />
@@ -149,6 +155,10 @@ function AppShell() {
                 <CheckSquare size={18} />
                 Check List
               </Link>
+              <Link to="/esami-strumentali" className={isActive('/esami-strumentali') ? 'active' : ''}>
+                <HeartPulse size={18} />
+                Esami Strumentali
+              </Link>
               <Link to="/compenso-incarichi" className={isActive('/compenso-incarichi') ? 'active' : ''}>
                 <Euro size={18} />
                 Compenso per incarichi
@@ -201,6 +211,9 @@ function AppShell() {
           {/* Route condivise (tutti gli utenti autenticati) */}
           <Route path="/protocolli" element={<ProtectedRoute><Protocolli /></ProtectedRoute>} />
           <Route path="/procedure" element={<ProtectedRoute><Procedure /></ProtectedRoute>} />
+
+          {/* Esami Strumentali */}
+          <Route path="/esami-strumentali" element={<ProtectedRoute><EsamiStrumentali /></ProtectedRoute>} />
 
           {/* Route operatori */}
           <Route path="/portale-operatore" element={<ProtectedRoute><PortaleOperatore /></ProtectedRoute>} />

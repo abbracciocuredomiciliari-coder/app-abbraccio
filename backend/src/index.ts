@@ -21,6 +21,7 @@ import archivioRouter from './routes/archivio';
 import checklistDefibrillatoreRouter from './routes/checklistDefibrillatore';
 import schedaControlloDefibrillatoreRouter from './routes/schedaControlloDefibrillatore';
 import checklistGlucometroRouter from './routes/checklistGlucometro';
+import esamiStrumentaliRouter from './routes/esamiStrumentali';
 
 if (!process.env.JWT_SECRET) {
   console.error('ERRORE: JWT_SECRET non è impostato. Configurare la variabile d\'ambiente nel file .env prima di avviare il server.');
@@ -81,6 +82,7 @@ app.use('/api/archivio', archivioRouter);
 app.use('/api/checklist-defibrillatore', checklistDefibrillatoreRouter);
 app.use('/api/scheda-controllo-defibrillatore', schedaControlloDefibrillatoreRouter);
 app.use('/api/checklist-glucometro', checklistGlucometroRouter);
+app.use('/api/esami-strumentali', esamiStrumentaliRouter);
 // Alias senza prefisso /api per compatibilità con URL diretti degli allegati
 app.use('/allegati', allegatiRouter);
 
