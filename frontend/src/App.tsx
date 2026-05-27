@@ -80,8 +80,8 @@ function AppShell() {
           {user && operatore && (
             <>
               <Link to="/portale-operatore" className={isActive('/portale-operatore') ? 'active' : ''}>
-                <Briefcase size={18} />
-                Il mio Piano
+                <LayoutDashboard size={18} />
+                Dashboard
               </Link>
               <Link to="/protocolli" className={isActive('/protocolli') ? 'active' : ''}>
                 <ClipboardList size={18} />

@@ -488,7 +488,9 @@ export default function PortaleOperatore() {
 
   return (
     <section>
-      <h2>🏥 Il mio Piano di Lavoro</h2>
+      <h2>
+        {pazienteSelezionato || mostraTuttiPiani ? '🏥 Il mio Piano di Lavoro' : '📊 Dashboard'}
+      </h2>
 
       {/* ══════════════════════════════════════════════════════════════════════
           DASHBOARD OPERATORE — sempre visibile in cima
