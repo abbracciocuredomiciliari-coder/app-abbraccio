@@ -121,7 +121,7 @@ const allegatoEsameSchema = new Schema<IAllegatoEsame>(
 
 const esameStrumentaleSchema = new Schema<IEsameStrumentale>(
   {
-    workPlan: { type: Schema.Types.ObjectId, ref: 'WorkPlan', required: true },
+    workPlan: { type: Schema.Types.ObjectId, ref: 'WorkPlan', required: false },
     patient: { type: Schema.Types.ObjectId, ref: 'Patient', required: true },
     staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: true },
     tipoEsame: { type: String, required: true, trim: true },
