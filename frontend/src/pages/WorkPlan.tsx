@@ -789,18 +789,23 @@ function WorkPlan() {
                       {item.notes && <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: 'var(--gray-600)', fontStyle: 'italic' }}>{item.notes}</p>}
                     </div>
                     <div style={{ display: 'flex', gap: '5px', flexShrink: 0, flexDirection: 'column' }}>
-                      {/* Storico accessi + compenso */}
-                      <button type="button" onClick={() => apriStorico(item)} style={{ background: '#8b5cf6', padding: '7px' }} title="Storico accessi e compenso">
-                        <ClipboardList size={15} />
-                      </button>
-                      {/* Accesso remoto */}
-                      <button type="button" onClick={() => apriAccesso(item._id)} style={{ background: '#3b82f6', padding: '7px' }} title="Apri pagina registrazione accessi">
-                        <Link2 size={15} />
-                      </button>
-                      {/* Copia link */}
-                      <button type="button" onClick={() => copiaLink(item._id)} style={{ background: copiedId === item._id ? '#10b981' : '#6c757d', padding: '7px' }} title={copiedId === item._id ? 'Link copiato!' : 'Copia link accesso'}>
-                        <Copy size={15} />
-                      </button>
+                      {/* Storico accessi + compenso (solo per non-esami) */}
+                      {item.type !== 'esami_strumentali' && (
+                        <button type="button" onClick={() => apriStorico(item)} style={{ background: '#8b5cf6', padding: '7px' }} title="Storico accessi e compenso">
+                          <ClipboardList size={15} />
+                        </button>
+                      )}
+                      {/* Accesso remoto e copia link (solo per non-esami) */}
+                      {item.type !== 'esami_strumentali' && (
+                        <>
+                          <button type="button" onClick={() => apriAccesso(item._id)} style={{ background: '#3b82f6', padding: '7px' }} title="Apri pagina registrazione accessi">
+                            <Link2 size={15} />
+                          </button>
+                          <button type="button" onClick={() => copiaLink(item._id)} style={{ background: copiedId === item._id ? '#10b981' : '#6c757d', padding: '7px' }} title={copiedId === item._id ? 'Link copiato!' : 'Copia link accesso'}>
+                            <Copy size={15} />
+                          </button>
+                        </>
+                      )}
                       {item.status === 'pending' && (
                         <button type="button" onClick={() => completeWorkplan(item._id)} style={{ background: 'var(--success)', padding: '7px' }} title="Segna come completato">
                           <CheckCircle size={15} />

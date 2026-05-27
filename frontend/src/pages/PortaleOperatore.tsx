@@ -109,6 +109,67 @@ const PARAMETRI_VITALI = [
   { key: 'dolore',                label: '😣 Dolore (0-10)',    unit: '/10',      step: '1' },
 ];
 
+// ─── Componente EsameStrumentaleBox ──────────────────────────────────────────
+
+function EsameStrumentaleBox({ pianoId, status, onEseguito }: { pianoId: string; status: string; onEseguito: () => void }) {
+  const [dataEsecuzione, setDataEsecuzione] = useState(new Date().toISOString().substring(0, 10));
+  const [orario, setOrario] = useState(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }));
+  const [note, setNote] = useState('');
+  const [salvando, setSalvando] = useState(false);
+
+  const segnaEseguito = async () => {
+    if (!confirm('Confermi che l\'esame è stato eseguito?')) return;
+    setSalvando(true);
+    try {
+      await api.patch(`/workplan/${pianoId}/eseguito`, { dataEsecuzione, orario, note });
+      onEseguito();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nel segnare l\'esame come eseguito');
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  if (status === 'completed') {
+    return (
+      <div style={{ background: 'rgba(5,150,105,0.08)', border: '2px solid #16a34a', borderRadius: '10px', padding: '18px', marginBottom: '16px', textAlign: 'center' }}>
+        <div style={{ fontSize: '2rem', marginBottom: '6px' }}>✅</div>
+        <div style={{ fontWeight: '700', color: '#14532d', fontSize: '1.05rem' }}>Esame eseguito</div>
+        <div style={{ color: '#555', fontSize: '0.88rem', marginTop: '4px' }}>L'esame strumentale è stato segnato come eseguito.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: 'rgba(225,29,72,0.05)', border: '2px solid #e11d48', borderRadius: '10px', padding: '18px', marginBottom: '16px' }}>
+      <h4 style={{ margin: '0 0 14px', color: '#be123c', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        🫀 Segna esame come eseguito
+      </h4>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.88rem' }}>
+          Data esecuzione *
+          <input type="date" value={dataEsecuzione} onChange={e => setDataEsecuzione(e.target.value)}
+            style={{ padding: '8px', border: '1px solid #fecdd3', borderRadius: '6px' }} />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.88rem' }}>
+          Orario
+          <input type="time" value={orario} onChange={e => setOrario(e.target.value)}
+            style={{ padding: '8px', border: '1px solid #fecdd3', borderRadius: '6px' }} />
+        </label>
+      </div>
+      <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.88rem', marginBottom: '14px' }}>
+        Note (opzionale)
+        <input value={note} onChange={e => setNote(e.target.value)} placeholder="Es. Esame eseguito senza complicazioni..."
+          style={{ padding: '8px', border: '1px solid #fecdd3', borderRadius: '6px' }} />
+      </label>
+      <button type="button" onClick={segnaEseguito} disabled={salvando}
+        style={{ background: '#e11d48', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 24px', fontWeight: '700', fontSize: '1rem', cursor: 'pointer', width: '100%', opacity: salvando ? 0.7 : 1 }}>
+        {salvando ? '⏳ Salvataggio...' : '✅ Segna esame come eseguito'}
+      </button>
+    </div>
+  );
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDurata(min: number) {
@@ -826,7 +887,11 @@ export default function PortaleOperatore() {
               </div>
             )}
 
-            {/* ── Registrazione accesso ── */}
+            {/* ── Registrazione accesso / Segna eseguito ── */}
+            {pianoSelezionato.type === 'esami_strumentali' ? (
+              /* ── ESAMI STRUMENTALI: solo spunta eseguito ── */
+              <EsameStrumentaleBox pianoId={pianoSelezionato._id} status={pianoSelezionato.status} onEseguito={async () => { await caricaDati(true); await selezionaPiano(pianoSelezionato); }} />
+            ) : (<>
             <div style={{ background: accessoAperto ? 'rgba(5,150,105,0.06)' : 'rgba(30,77,140,0.04)', border: `1px solid ${accessoAperto ? 'rgba(5,150,105,0.3)' : 'rgba(30,77,140,0.2)'}`, borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
               <h4 style={{ margin: '0 0 10px', color: accessoAperto ? '#065f46' : '#1e4d8c' }}>
                 {accessoAperto ? '🟢 Accesso in corso' : '🔵 Registra accesso'}
@@ -1235,6 +1300,7 @@ export default function PortaleOperatore() {
               </div>
             </div>
 
+            </>)}
           </div>
         )
       )}

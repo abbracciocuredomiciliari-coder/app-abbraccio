@@ -370,6 +370,29 @@ router.get('/:id/accessi/export', authenticateToken, async (req: Request, res: R
   }
 });
 
+// PATCH /api/workplan/:id/eseguito - Segna esame strumentale come eseguito
+router.patch('/:id/eseguito', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { dataEsecuzione, orario, note } = req.body;
+    const workplan = await WorkPlan.findById(id);
+    if (!workplan) {
+      return res.status(404).json({ message: 'Incarico non trovato' });
+    }
+    if (workplan.type !== 'esami_strumentali') {
+      return res.status(400).json({ message: 'Questo endpoint è solo per esami strumentali' });
+    }
+    workplan.status = 'completed';
+    if (dataEsecuzione) workplan.date = new Date(dataEsecuzione);
+    if (orario) workplan.time = orario;
+    if (note) workplan.notes = note;
+    await workplan.save();
+    return res.json(workplan);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore nel segnare l\'esame come eseguito', error: error?.message });
+  }
+});
+
 // PATCH /api/workplan/:id/compenso - Aggiorna compenso (calcola o imposta manualmente)
 router.patch('/:id/compenso', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
   try {
