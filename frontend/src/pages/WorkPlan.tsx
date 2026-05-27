@@ -234,6 +234,10 @@ function WorkPlan() {
         setError('Compila il campo Attività / Descrizione.');
         return;
       }
+      if (activeTab !== 'esami_strumentali' && !category) {
+        setError('Seleziona una categoria.');
+        return;
+      }
       const giorniAttivi = giorniForm
         .filter(g => g.attivo)
         .map(g => ({
@@ -248,7 +252,7 @@ function WorkPlan() {
         tipoEsame: activeTab === 'esami_strumentali' ? tipoEsame : undefined,
         patient,
         staff,
-        task: activeTab === 'esami_strumentali' ? (tipoEsame || task) : task,
+        task: activeTab === 'esami_strumentali' ? (tipoEsame + (task ? ` — ${task}` : '')) : task,
         date,
         dataFine: dataFine || undefined,
         time,
@@ -542,7 +546,7 @@ function WorkPlan() {
             {activeTab === 'prestazionale' ? 'Nuovo Incarico Prestazionale' : activeTab === 'assistenziale' ? 'Nuovo Incarico Assistenziale' : '🫀 Nuovo Esame Strumentale'}
           </h3>
 
-          <form onSubmit={handleSubmit} className="user-form">
+          <form onSubmit={handleSubmit} className="user-form" noValidate>
             <label>
               Paziente *
               <select value={patient} onChange={(e) => setPatient(e.target.value)} required>
