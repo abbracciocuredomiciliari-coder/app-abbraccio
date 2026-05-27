@@ -1313,8 +1313,29 @@ export default function PortaleOperatore() {
 
             {/* ── Registrazione accesso / Segna eseguito ── */}
             {pianoSelezionato.type === 'esami_strumentali' ? (
-              /* ── ESAMI STRUMENTALI: solo spunta eseguito ── */
-              <EsameStrumentaleDettaglio piano={pianoSelezionato} userRole={user?.role || ''} userName={user?.name || ''} onEseguito={async () => { await caricaDati(true); await selezionaPiano(pianoSelezionato); }} onArchivia={async () => { if (!confirm(Archiviare la cartella clinica di  ?)) return; try { await api.post(/archivio/); alert('? Cartella archiviata!'); } catch (err: any) { alert(err?.response?.data?.message || 'Errore archiviazione.'); } }} />
+              /* ── ESAMI STRUMENTALI: diaria, referto, allegati ── */
+              (() => {
+                const handleEseguito = async () => { await caricaDati(true); await selezionaPiano(pianoSelezionato); };
+                const nomePaz = (pazienteSelezionato?.firstName || '') + ' ' + (pazienteSelezionato?.lastName || '');
+                const handleArchivia = async () => {
+                  if (!confirm('Archiviare la cartella clinica di ' + nomePaz + '?')) return;
+                  try {
+                    await api.post('/workplan/' + pianoSelezionato._id + '/archivio');
+                    alert('Cartella archiviata!');
+                  } catch (err: any) {
+                    alert(err?.response?.data?.message || 'Errore archiviazione.');
+                  }
+                };
+                return (
+                  <EsameStrumentaleDettaglio
+                    piano={pianoSelezionato}
+                    userRole={user?.role || ''}
+                    userName={user?.name || ''}
+                    onEseguito={handleEseguito}
+                    onArchivia={handleArchivia}
+                  />
+                );
+              })()
             ) : (<>
             <div style={{ background: accessoAperto ? 'rgba(5,150,105,0.06)' : 'rgba(30,77,140,0.04)', border: `1px solid ${accessoAperto ? 'rgba(5,150,105,0.3)' : 'rgba(30,77,140,0.2)'}`, borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
               <h4 style={{ margin: '0 0 10px', color: accessoAperto ? '#065f46' : '#1e4d8c' }}>
