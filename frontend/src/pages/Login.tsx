@@ -28,8 +28,15 @@ function Login() {
     try {
       const response = await api.post('/auth/login', { email, password });
       clearTimeout(wakeUpTimer);
-      login(response.data.token, response.data.user);
-      navigate('/dashboard');
+      const loggedUser = response.data.user;
+      login(response.data.token, loggedUser);
+      // Redirect in base al ruolo
+      const ruoliPrivilegiati = ['admin', 'coordinator', 'direttore'];
+      if (ruoliPrivilegiati.includes(loggedUser.role)) {
+        navigate('/dashboard');
+      } else {
+        navigate('/portale-operatore');
+      }
     } catch (err) {
       clearTimeout(wakeUpTimer);
       setIsWakingUp(false);
