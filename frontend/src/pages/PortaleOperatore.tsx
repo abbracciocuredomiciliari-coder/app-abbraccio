@@ -109,491 +109,6 @@ const PARAMETRI_VITALI = [
   { key: 'dolore',                label: '😣 Dolore (0-10)',    unit: '/10',      step: '1' },
 ];
 
-// ─── Componente EsameStrumentaleDettaglio ────────────────────────────────────
-
-function EsameStrumentaleDettaglio({
-  piano,
-  userRole,
-  userName,
-  onEseguito,
-  onArchivia,
-}: {
-  piano: Piano;
-  userRole: string;
-  userName: string;
-  onEseguito: () => void;
-  onArchivia: () => void;
-}) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Stato accesso eseguito
-  const [noteEseguito, setNoteEseguito] = useState('');
-  const [salvandoEseguito, setSalvandoEseguito] = useState(false);
-
-  // Allegati
-  const [allegati, setAllegati] = useState<Allegato[]>([]);
-  const [fileAllegato, setFileAllegato] = useState<File | null>(null);
-  const [descrizioneAllegato, setDescrizioneAllegato] = useState('');
-  const [caricandoAllegato, setCaricandoAllegato] = useState(false);
-  const [showAllegati, setShowAllegati] = useState(true);
-
-  // Diario
-  const [diario, setDiario] = useState<DiarioEntry[]>([]);
-  const [testoDiario, setTestoDiario] = useState('');
-  const [salvandoDiario, setSalvandoDiario] = useState(false);
-  const [showDiario, setShowDiario] = useState(false);
-
-  // Referto medico
-  const [referto, setReferto] = useState('');
-  const [refertoSalvato, setRefertoSalvato] = useState('');
-  const [refertoData, setRefertoData] = useState('');
-  const [salvandoReferto, setSalvandoReferto] = useState(false);
-  const [showReferto, setShowReferto] = useState(false);
-  const [editReferto, setEditReferto] = useState(false);
-
-  // Compenso
-  const [compenso, setCompenso] = useState<number>(piano.compensoTotale || 0);
-  const [editCompenso, setEditCompenso] = useState(false);
-  const [nuovoCompenso, setNuovoCompenso] = useState<number>(piano.compensoTotale || 0);
-  const [salvandoCompenso, setSalvandoCompenso] = useState(false);
-
-  // Caricamento iniziale
-  useEffect(() => {
-    caricaAllegati();
-    caricaDiario();
-    caricaReferto();
-  }, [piano._id]);
-
-  const caricaAllegati = async () => {
-    try {
-      const res = await api.get(`/allegati/${piano._id}`);
-      setAllegati(res.data || []);
-    } catch {}
-  };
-
-  const caricaDiario = async () => {
-    try {
-      const res = await api.get(`/diario/${piano._id}`);
-      setDiario(res.data || []);
-    } catch {}
-  };
-
-  const caricaReferto = async () => {
-    try {
-      const res = await api.get(`/workplan/${piano._id}/referto`);
-      if (res.data?.testo) {
-        setRefertoSalvato(res.data.testo);
-        setReferto(res.data.testo);
-        setRefertoData(res.data.dataReferto || '');
-      }
-    } catch {}
-  };
-
-  // Segna eseguito
-  const segnaEseguito = async () => {
-    if (!confirm('Confermi che l\'accesso/esame è stato eseguito?')) return;
-    setSalvandoEseguito(true);
-    try {
-      await api.patch(`/workplan/${piano._id}/eseguito`, {
-        dataEsecuzione: new Date().toISOString().substring(0, 10),
-        orario: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
-        note: noteEseguito,
-      });
-      onEseguito();
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Errore nel segnare l\'accesso come eseguito');
-    } finally {
-      setSalvandoEseguito(false);
-    }
-  };
-
-  // Upload allegato
-  const caricaAllegato = async () => {
-    if (!fileAllegato) return;
-    setCaricandoAllegato(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', fileAllegato);
-      if (descrizioneAllegato) formData.append('descrizione', descrizioneAllegato);
-      await api.post(`/allegati/${piano._id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setFileAllegato(null);
-      setDescrizioneAllegato('');
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      await caricaAllegati();
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Errore nel caricamento allegato');
-    } finally {
-      setCaricandoAllegato(false);
-    }
-  };
-
-  const apriAllegato = (all: Allegato) => {
-    if (all.urlCloudinary) {
-      window.open(all.urlCloudinary, '_blank');
-    } else {
-      const token = localStorage.getItem('authToken');
-      window.open(`${import.meta.env.VITE_API_BASE_URL}/allegati/file/${all._id}?token=${token}`, '_blank');
-    }
-  };
-
-  const stampaAllegato = (all: Allegato) => {
-    const url = all.urlCloudinary || `${import.meta.env.VITE_API_BASE_URL}/allegati/file/${all._id}?token=${localStorage.getItem('authToken')}`;
-    if (all.mimeType === 'application/pdf' || all.mimeType.startsWith('image/')) {
-      const win = window.open(url, '_blank');
-      if (win) setTimeout(() => win.print(), 800);
-    } else {
-      window.open(url, '_blank');
-    }
-  };
-
-  // Salva diario
-  const salvaDiario = async () => {
-    if (!testoDiario.trim()) return;
-    setSalvandoDiario(true);
-    try {
-      await api.post(`/diario/${piano._id}`, { testo: testoDiario });
-      setTestoDiario('');
-      await caricaDiario();
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Errore nel salvataggio del diario');
-    } finally {
-      setSalvandoDiario(false);
-    }
-  };
-
-  // Salva referto
-  const salvaReferto = async () => {
-    if (!referto.trim()) return;
-    setSalvandoReferto(true);
-    try {
-      await api.post(`/workplan/${piano._id}/referto`, { testo: referto });
-      setRefertoSalvato(referto);
-      setEditReferto(false);
-      await caricaReferto();
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Errore nel salvataggio del referto');
-    } finally {
-      setSalvandoReferto(false);
-    }
-  };
-
-  // Aggiorna compenso
-  const salvaCompenso = async () => {
-    setSalvandoCompenso(true);
-    try {
-      await api.patch(`/workplan/${piano._id}/compenso`, {
-        tipoCompenso: piano.tipoCompenso || 'fisso',
-        tariffa: nuovoCompenso,
-        compensoPagato: piano.compensoPagato || false,
-        ricalcola: false,
-      });
-      setCompenso(nuovoCompenso);
-      setEditCompenso(false);
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Errore nel salvataggio compenso');
-    } finally {
-      setSalvandoCompenso(false);
-    }
-  };
-
-  // Stampa PDF accesso esame
-  const stampaAccessoPDF = () => {
-    const win = window.open('', '_blank');
-    if (!win) return;
-    win.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"/>
-    <title>Accesso Esame — ${piano.task}</title>
-    <style>
-      body{font-family:Arial,sans-serif;font-size:13px;color:#222;margin:24px}
-      h1{font-size:18px;color:#1e4d8c;margin-bottom:4px}
-      h2{font-size:14px;color:#444;margin:0 0 16px}
-      .box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:12px 16px;margin-bottom:14px}
-      .label{font-size:11px;color:#888;text-transform:uppercase;font-weight:600;margin-bottom:2px}
-      .value{font-size:14px;color:#222;font-weight:600}
-      .badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700}
-      .ok{background:rgba(5,150,105,0.1);color:#065f46;border:1px solid #059669}
-      .pending{background:rgba(245,158,11,0.1);color:#92400e;border:1px solid #f59e0b}
-      .section{margin-top:16px;border-top:1px solid #e2e8f0;padding-top:12px}
-      @media print{body{margin:10mm}}
-    </style></head><body>
-    <h1>🫀 Accesso Esame Strumentale</h1>
-    <h2>${piano.patient.firstName} ${piano.patient.lastName}</h2>
-    <div class="box">
-      <div class="label">Tipo esame</div><div class="value">${piano.task}</div>
-    </div>
-    <div class="box">
-      <div class="label">Operatore</div><div class="value">${piano.staff.firstName} ${piano.staff.lastName} (${piano.staff.role})</div>
-    </div>
-    <div class="box">
-      <div class="label">Data</div><div class="value">${new Date(piano.date).toLocaleDateString('it-IT')}</div>
-    </div>
-    <div class="box">
-      <div class="label">Stato</div>
-      <div><span class="badge ${piano.status === 'completed' ? 'ok' : 'pending'}">${piano.status === 'completed' ? '✅ Eseguito' : '⏳ In attesa'}</span></div>
-    </div>
-    ${piano.notes ? `<div class="box"><div class="label">Note</div><div class="value">${piano.notes}</div></div>` : ''}
-    ${refertoSalvato ? `<div class="section"><h3 style="color:#1e4d8c;font-size:14px">📋 Referto Medico</h3><p style="white-space:pre-wrap">${refertoSalvato}</p></div>` : ''}
-    ${diario.length > 0 ? `<div class="section"><h3 style="color:#1e4d8c;font-size:14px">📓 Diario Clinico</h3>${diario.map(d => `<div style="margin-bottom:10px;padding:8px;background:#f9fafb;border-radius:4px"><div style="font-size:11px;color:#888">${new Date(d.dataRegistrazione).toLocaleString('it-IT')} — ${d.staffName}</div><p style="margin:4px 0;white-space:pre-wrap">${d.testo}</p></div>`).join('')}</div>` : ''}
-    <div style="margin-top:24px;font-size:10px;color:#aaa;border-top:1px solid #eee;padding-top:8px">Documento generato da Abbraccio Cure Domiciliari — ${new Date().toLocaleString('it-IT')}</div>
-    </body></html>`);
-    win.document.close();
-    win.focus();
-    setTimeout(() => { win.print(); win.close(); }, 600);
-  };
-
-  const isMedico = userRole === 'medico' || userRole === 'admin' || userRole === 'coordinator';
-
-  return (
-    <div>
-      {/* ── Checkbox accesso eseguito ── */}
-      {piano.status === 'completed' ? (
-        <div style={{ background: 'rgba(5,150,105,0.08)', border: '2px solid #16a34a', borderRadius: '10px', padding: '16px 20px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ color: '#fff', fontSize: '1.2rem' }}>✓</span>
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: '700', color: '#14532d', fontSize: '1rem' }}>Accesso eseguito</div>
-            <div style={{ color: '#555', fontSize: '0.85rem', marginTop: '2px' }}>L'esame strumentale è stato segnato come eseguito.</div>
-          </div>
-          <button type="button" onClick={stampaAccessoPDF}
-            style={{ background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px 14px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', whiteSpace: 'nowrap' }}>
-            🖨️ Stampa PDF
-          </button>
-        </div>
-      ) : (
-        <div style={{ background: 'rgba(225,29,72,0.05)', border: '2px solid #e11d48', borderRadius: '10px', padding: '20px', marginBottom: '16px' }}>
-          <h4 style={{ margin: '0 0 12px', color: '#be123c', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1rem' }}>
-            <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: '#fff', border: '2px solid #e11d48', flexShrink: 0 }} />
-            🫀 Segna accesso come eseguito
-          </h4>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.88rem', marginBottom: '12px' }}>
-            Note (opzionale)
-            <input value={noteEseguito} onChange={e => setNoteEseguito(e.target.value)}
-              placeholder="Es. Esame eseguito senza complicazioni..."
-              style={{ padding: '8px', border: '1px solid #fecdd3', borderRadius: '6px' }} />
-          </label>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button type="button" onClick={segnaEseguito} disabled={salvandoEseguito}
-              style={{ flex: 1, background: '#e11d48', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 20px', fontWeight: '700', fontSize: '0.95rem', cursor: 'pointer', opacity: salvandoEseguito ? 0.7 : 1 }}>
-              {salvandoEseguito ? '⏳ Salvataggio...' : '✓ Accesso eseguito'}
-            </button>
-            <button type="button" onClick={stampaAccessoPDF}
-              style={{ background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 16px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: '600' }}>
-              🖨️ Stampa PDF
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Compenso ── */}
-      {piano.tipoCompenso && piano.tipoCompenso !== 'nessuno' && (
-        <div style={{ background: '#fdf4ff', border: '1px solid #e9d5ff', borderRadius: '8px', padding: '14px 16px', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <h4 style={{ margin: 0, color: '#7c3aed', fontSize: '0.95rem' }}>💰 Compenso esame</h4>
-            {!editCompenso && (
-              <button type="button" onClick={() => { setEditCompenso(true); setNuovoCompenso(compenso); }}
-                style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '6px', padding: '5px 12px', cursor: 'pointer', fontSize: '0.82rem' }}>
-                Modifica
-              </button>
-            )}
-          </div>
-          {!editCompenso ? (
-            <div style={{ fontSize: '1.4rem', fontWeight: '800', color: '#7c3aed' }}>€ {compenso.toFixed(2)}</div>
-          ) : (
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <input type="number" min="0" step="0.5" value={nuovoCompenso}
-                onChange={e => setNuovoCompenso(parseFloat(e.target.value) || 0)}
-                style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: '6px', width: '120px', fontSize: '1rem' }} />
-              <button type="button" onClick={salvaCompenso} disabled={salvandoCompenso}
-                style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '6px', padding: '7px 14px', cursor: 'pointer', fontSize: '0.88rem' }}>
-                {salvandoCompenso ? '⏳' : '💾 Salva'}
-              </button>
-              <button type="button" onClick={() => setEditCompenso(false)}
-                style={{ background: '#6c757d', color: '#fff', border: 'none', borderRadius: '6px', padding: '7px 14px', cursor: 'pointer', fontSize: '0.88rem' }}>
-                Annulla
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Allegati (referto file / foto) ── */}
-      <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '14px', overflow: 'hidden' }}>
-        <button type="button" onClick={() => setShowAllegati(!showAllegati)}
-          style={{ width: '100%', background: '#f8fafc', border: 'none', padding: '13px 16px', textAlign: 'left', cursor: 'pointer', fontWeight: '600', fontSize: '0.92rem', color: '#374151', display: 'flex', justifyContent: 'space-between' }}>
-          <span>📎 Allegati referto ({allegati.length})</span>
-          <span>{showAllegati ? '▲' : '▼'}</span>
-        </button>
-        {showAllegati && (
-          <div style={{ padding: '16px' }}>
-            {/* Upload */}
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', marginBottom: '14px' }}>
-              <h5 style={{ margin: '0 0 10px', color: '#1e4d8c', fontSize: '0.9rem' }}>📤 Carica referto / foto</h5>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                <label style={{ flex: 2, minWidth: '200px', fontSize: '0.85rem' }}>
-                  File (PDF, immagine, foto da smartphone) *
-                  <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx"
-                    capture="environment"
-                    onChange={e => setFileAllegato(e.target.files?.[0] || null)}
-                    style={{ marginTop: '4px', display: 'block' }} />
-                </label>
-                <label style={{ flex: 2, minWidth: '160px', fontSize: '0.85rem' }}>
-                  Descrizione
-                  <input value={descrizioneAllegato} onChange={e => setDescrizioneAllegato(e.target.value)}
-                    placeholder="Es. Referto ECG, Tracciato..." style={{ marginTop: '4px' }} />
-                </label>
-                <button type="button" onClick={caricaAllegato} disabled={caricandoAllegato || !fileAllegato}
-                  style={{ background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '6px', padding: '9px 16px', cursor: 'pointer', opacity: !fileAllegato ? 0.5 : 1, whiteSpace: 'nowrap', fontWeight: '600' }}>
-                  {caricandoAllegato ? '⏳' : '📤 Carica'}
-                </button>
-              </div>
-              <p style={{ margin: '6px 0 0', fontSize: '0.78rem', color: '#888' }}>
-                📱 Su smartphone puoi scattare una foto del referto direttamente dalla fotocamera.
-              </p>
-            </div>
-            {/* Lista allegati */}
-            {allegati.length === 0 ? (
-              <p style={{ color: '#888', fontStyle: 'italic', margin: 0 }}>Nessun allegato caricato.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {allegati.map(all => (
-                  <div key={all._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '6px', flexWrap: 'wrap', gap: '8px' }}>
-                    <div>
-                      <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>
-                        {all.mimeType.startsWith('image/') ? '🖼️' : '📄'} {all.nomeFile}
-                      </div>
-                      <div style={{ fontSize: '0.78rem', color: '#888', display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '2px' }}>
-                        {all.descrizione && <span>{all.descrizione}</span>}
-                        <span>{formatBytes(all.dimensione)}</span>
-                        <span>📅 {formatData(all.dataCaricamento)}</span>
-                        <span>👤 {all.caricatoDa}</span>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button type="button" onClick={() => apriAllegato(all)}
-                        style={{ background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '0.82rem' }}>
-                        👁️ Apri
-                      </button>
-                      <button type="button" onClick={() => stampaAllegato(all)}
-                        style={{ background: '#059669', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '0.82rem' }}>
-                        🖨️ Stampa
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ── Referto medico (solo medico/admin/coordinator) ── */}
-      {isMedico && (
-        <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '14px', overflow: 'hidden' }}>
-          <button type="button" onClick={() => setShowReferto(!showReferto)}
-            style={{ width: '100%', background: '#f8fafc', border: 'none', padding: '13px 16px', textAlign: 'left', cursor: 'pointer', fontWeight: '600', fontSize: '0.92rem', color: '#374151', display: 'flex', justifyContent: 'space-between' }}>
-            <span>📋 Referto medico {refertoSalvato ? '✅' : '(non compilato)'}</span>
-            <span>{showReferto ? '▲' : '▼'}</span>
-          </button>
-          {showReferto && (
-            <div style={{ padding: '16px' }}>
-              {refertoSalvato && !editReferto ? (
-                <div>
-                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '12px 16px', marginBottom: '10px' }}>
-                    {refertoData && <div style={{ fontSize: '0.78rem', color: '#888', marginBottom: '6px' }}>📅 {new Date(refertoData).toLocaleString('it-IT')}</div>}
-                    <p style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: '0.9rem', color: '#374151' }}>{refertoSalvato}</p>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button type="button" onClick={() => setEditReferto(true)}
-                      style={{ background: '#f59e0b', color: '#fff', border: 'none', borderRadius: '6px', padding: '7px 14px', cursor: 'pointer', fontSize: '0.85rem' }}>
-                      ✏️ Modifica
-                    </button>
-                    <button type="button" onClick={stampaAccessoPDF}
-                      style={{ background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '6px', padding: '7px 14px', cursor: 'pointer', fontSize: '0.85rem' }}>
-                      🖨️ Stampa PDF
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.88rem', marginBottom: '10px' }}>
-                    Testo referto *
-                    <textarea value={referto} onChange={e => setReferto(e.target.value)}
-                      placeholder="Inserire il referto medico dell'esame strumentale..."
-                      rows={6}
-                      style={{ padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.9rem', resize: 'vertical' }} />
-                  </label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button type="button" onClick={salvaReferto} disabled={salvandoReferto || !referto.trim()}
-                      style={{ background: '#059669', color: '#fff', border: 'none', borderRadius: '6px', padding: '9px 18px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: '600', opacity: !referto.trim() ? 0.5 : 1 }}>
-                      {salvandoReferto ? '⏳ Salvataggio...' : '💾 Salva referto'}
-                    </button>
-                    {editReferto && (
-                      <button type="button" onClick={() => { setEditReferto(false); setReferto(refertoSalvato); }}
-                        style={{ background: '#6c757d', color: '#fff', border: 'none', borderRadius: '6px', padding: '9px 14px', cursor: 'pointer', fontSize: '0.88rem' }}>
-                        Annulla
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Diario clinico ── */}
-      <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '14px', overflow: 'hidden' }}>
-        <button type="button" onClick={() => setShowDiario(!showDiario)}
-          style={{ width: '100%', background: '#f8fafc', border: 'none', padding: '13px 16px', textAlign: 'left', cursor: 'pointer', fontWeight: '600', fontSize: '0.92rem', color: '#374151', display: 'flex', justifyContent: 'space-between' }}>
-          <span>📓 Diario clinico ({diario.length} voci)</span>
-          <span>{showDiario ? '▲' : '▼'}</span>
-        </button>
-        {showDiario && (
-          <div style={{ padding: '16px' }}>
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', marginBottom: '14px' }}>
-              <h5 style={{ margin: '0 0 10px', color: '#1e4d8c', fontSize: '0.9rem' }}>✏️ Nuova voce diario</h5>
-              <textarea value={testoDiario} onChange={e => setTestoDiario(e.target.value)}
-                placeholder="Descrivi le osservazioni cliniche, le condizioni del paziente durante l'esame..."
-                rows={3}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #ced4da', borderRadius: '6px', fontSize: '0.9rem', resize: 'vertical', boxSizing: 'border-box', marginBottom: '10px' }} />
-              <button type="button" onClick={salvaDiario} disabled={salvandoDiario || !testoDiario.trim()}
-                style={{ background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px 18px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: '600', opacity: !testoDiario.trim() ? 0.5 : 1 }}>
-                {salvandoDiario ? '⏳ Salvataggio...' : '💾 Salva voce diario'}
-              </button>
-            </div>
-            {diario.length === 0 ? (
-              <p style={{ color: '#888', fontStyle: 'italic', margin: 0 }}>Nessuna voce nel diario.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {diario.map(entry => (
-                  <div key={entry._id} style={{ padding: '12px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '6px' }}>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap' }}>
-                      <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>📅 {formatData(entry.dataRegistrazione)} {formatOra(entry.dataRegistrazione)}</span>
-                      <span style={{ fontSize: '0.78rem', color: '#888' }}>✍️ {entry.staffName}</span>
-                      {entry.firmato && <span style={{ background: 'rgba(5,150,105,0.1)', color: '#065f46', border: '1px solid #059669', borderRadius: '10px', padding: '1px 8px', fontSize: '0.72rem', fontWeight: '700' }}>✅ Firmato</span>}
-                    </div>
-                    <p style={{ margin: 0, color: '#374151', fontSize: '0.88rem', whiteSpace: 'pre-wrap' }}>{entry.testo}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ── Archivia cartella ── */}
-      {piano.status === 'completed' && (
-        <div style={{ marginTop: '8px' }}>
-          <button type="button" onClick={onArchivia}
-            style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 20px', cursor: 'pointer', fontWeight: '600', fontSize: '0.92rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            🗄️ Archivia cartella clinica esame
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDurata(min: number) {
@@ -676,7 +191,6 @@ export default function PortaleOperatore() {
       ]);
       const tuttiPiani: Piano[] = pianiRes.data || [];
       setTuttiIPiani(tuttiPiani);
-      // Mostra solo pazienti con almeno un piano attivo (pending)
       const pazientiConPianoAttivo = pazientiRes.data.filter((paz: Paziente) =>
         tuttiPiani.some(p => p.patient?._id === paz._id && p.status === 'pending')
       );
@@ -687,7 +201,6 @@ export default function PortaleOperatore() {
 
   useEffect(() => {
     caricaDati();
-    // Polling ogni 30 secondi per aggiornare pazienti e incarichi
     const interval = setInterval(() => caricaDati(true), 30000);
     return () => clearInterval(interval);
   }, []);
@@ -773,9 +286,7 @@ export default function PortaleOperatore() {
     try {
       const res = await api.post(`/workplan-access/${pianoSelezionato._id}/entrata`, { note: noteAccesso });
       setNoteAccesso('');
-      // Imposta subito l'accesso aperto dalla risposta
       setAccessoAperto(res.data);
-      // Ricarica la lista accessi
       const accessiRes = await api.get(`/workplan/${pianoSelezionato._id}/accessi`);
       setAccessi(accessiRes.data.accessi || []);
       setRiepilogo(accessiRes.data.riepilogo || null);
@@ -793,7 +304,6 @@ export default function PortaleOperatore() {
       await api.patch(`/workplan-access/${accessoAperto._id}/uscita`, { note: noteAccesso });
       setNoteAccesso('');
       setAccessoAperto(null);
-      // Ricarica la lista accessi
       const accessiRes = await api.get(`/workplan/${pianoSelezionato._id}/accessi`);
       setAccessi(accessiRes.data.accessi || []);
       setRiepilogo(accessiRes.data.riepilogo || null);
@@ -892,7 +402,7 @@ export default function PortaleOperatore() {
     }
   };
 
-  // ─── Export PDF — senza tariffa ────────────────────────────────────────────
+  // ─── Export PDF ────────────────────────────────────────────────────────────
 
   const caricaExport = async () => {
     if (!pianoSelezionato) return;
@@ -914,7 +424,6 @@ export default function PortaleOperatore() {
     if (!exportData) return;
     const win = window.open('', '_blank');
     if (!win) return;
-    // Costruiamo il PDF senza tariffa e senza compenso
     const righe = exportData.accessi.map((acc: any) => `
       <tr>
         <td>${acc.data}</td>
@@ -942,11 +451,7 @@ export default function PortaleOperatore() {
     <p><strong>Attività:</strong> ${exportData.piano.task}</p>
     <p><strong>Periodo:</strong> ${exportData.periodo.da} — ${exportData.periodo.a}</p>
     <table>
-      <thead>
-        <tr>
-          <th>Data</th><th>Entrata</th><th>Uscita</th><th>Durata</th><th>Note</th>
-        </tr>
-      </thead>
+      <thead><tr><th>Data</th><th>Entrata</th><th>Uscita</th><th>Durata</th><th>Note</th></tr></thead>
       <tbody>${righe}</tbody>
     </table>
     <div class="riepilogo">
@@ -978,11 +483,10 @@ export default function PortaleOperatore() {
       </h2>
 
       {/* ══════════════════════════════════════════════════════════════════════
-          DASHBOARD OPERATORE — sempre visibile in cima
+          DASHBOARD OPERATORE
       ══════════════════════════════════════════════════════════════════════ */}
       {!pazienteSelezionato && !mostraTuttiPiani && (
         <div>
-          {/* Card statistiche */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px' }}>
             <div style={{ background: 'rgba(5,150,105,0.07)', border: '1px solid rgba(5,150,105,0.3)', borderRadius: '10px', padding: '14px 16px', textAlign: 'center' }}>
               <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Pazienti attivi</div>
@@ -1028,7 +532,6 @@ export default function PortaleOperatore() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {pazienti.map(paz => {
                   const pianiPaz = tuttiIPiani.filter(p => p.patient?._id === paz._id && p.status === 'pending');
-                  // Compenso totale maturato per questo paziente (somma compensoTotale dei piani con compenso)
                   const compensoTotale = tuttiIPiani
                     .filter(p => p.patient?._id === paz._id && p.tipoCompenso && p.tipoCompenso !== 'nessuno')
                     .reduce((sum, p) => sum + (p.compensoTotale || 0), 0);
@@ -1042,18 +545,9 @@ export default function PortaleOperatore() {
                       type="button"
                       onClick={() => selezionaPaziente(paz)}
                       style={{
-                        background: '#fff',
-                        border: '1px solid #e2e8f0',
-                        borderLeft: '4px solid #1e4d8c',
-                        borderRadius: '8px',
-                        padding: '14px 16px',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: '12px',
-                        flexWrap: 'wrap',
+                        background: '#fff', border: '1px solid #e2e8f0', borderLeft: '4px solid #1e4d8c',
+                        borderRadius: '8px', padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
                       }}
                     >
                       <div style={{ flex: 1 }}>
@@ -1080,10 +574,7 @@ export default function PortaleOperatore() {
                           background: pianiPaz.length > 0 ? 'rgba(5,150,105,0.1)' : 'rgba(107,114,128,0.1)',
                           color: pianiPaz.length > 0 ? '#065f46' : '#6b7280',
                           border: `1px solid ${pianiPaz.length > 0 ? '#059669' : '#9ca3af'}`,
-                          borderRadius: '20px',
-                          padding: '4px 12px',
-                          fontSize: '0.82rem',
-                          fontWeight: '700',
+                          borderRadius: '20px', padding: '4px 12px', fontSize: '0.82rem', fontWeight: '700',
                         }}>
                           {pianiPaz.length} {pianiPaz.length === 1 ? 'piano attivo' : 'piani attivi'}
                         </span>
@@ -1127,18 +618,9 @@ export default function PortaleOperatore() {
                   type="button"
                   onClick={() => selezionaPianoDaLista(piano)}
                   style={{
-                    background: '#fff',
-                    border: '1px solid #e2e8f0',
-                    borderLeft: '4px solid #059669',
-                    borderRadius: '8px',
-                    padding: '14px 16px',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: '12px',
-                    flexWrap: 'wrap',
+                    background: '#fff', border: '1px solid #e2e8f0', borderLeft: '4px solid #059669',
+                    borderRadius: '8px', padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
                   }}
                 >
                   <div style={{ flex: 1 }}>
@@ -1203,12 +685,8 @@ export default function PortaleOperatore() {
                       background: piano.status === 'pending' ? '#fff' : '#f9fafb',
                       border: `1px solid ${piano.status === 'pending' ? '#059669' : '#e2e8f0'}`,
                       borderLeft: `4px solid ${piano.status === 'pending' ? '#059669' : '#9ca3af'}`,
-                      borderRadius: '6px',
-                      padding: '10px 16px',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem',
-                      textAlign: 'left',
-                      minWidth: '180px',
+                      borderRadius: '6px', padding: '10px 16px', cursor: 'pointer', fontSize: '0.9rem',
+                      textAlign: 'left', minWidth: '180px',
                     }}
                   >
                     <div style={{ fontWeight: '600', color: '#1e4d8c' }}>{piano.category}</div>
@@ -1262,7 +740,6 @@ export default function PortaleOperatore() {
                   💰 Compenso maturato
                 </h4>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
-                  {/* Tariffa */}
                   <div style={{ background: '#f5f3ff', borderRadius: '8px', padding: '10px 14px', textAlign: 'center' }}>
                     <div style={{ fontSize: '0.72rem', color: '#7c3aed', fontWeight: '600', marginBottom: '2px', textTransform: 'uppercase' }}>
                       {pianoSelezionato.tipoCompenso === 'orario' ? 'Tariffa/ora' : 'Compenso fisso'}
@@ -1272,21 +749,18 @@ export default function PortaleOperatore() {
                       {pianoSelezionato.tipoCompenso === 'orario' && <span style={{ fontSize: '0.7rem', fontWeight: '400' }}>/h</span>}
                     </div>
                   </div>
-                  {/* Ore lavorate */}
                   {pianoSelezionato.tipoCompenso === 'orario' && riepilogo && (
                     <div style={{ background: '#f0f9ff', borderRadius: '8px', padding: '10px 14px', textAlign: 'center' }}>
                       <div style={{ fontSize: '0.72rem', color: '#0284c7', fontWeight: '600', marginBottom: '2px', textTransform: 'uppercase' }}>Ore lavorate</div>
                       <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#0284c7' }}>{riepilogo.oreTotali}h</div>
                     </div>
                   )}
-                  {/* Accessi completati */}
                   {riepilogo && (
                     <div style={{ background: '#fefce8', borderRadius: '8px', padding: '10px 14px', textAlign: 'center' }}>
                       <div style={{ fontSize: '0.72rem', color: '#d97706', fontWeight: '600', marginBottom: '2px', textTransform: 'uppercase' }}>Accessi</div>
                       <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#d97706' }}>{riepilogo.accessiCompletati}</div>
                     </div>
                   )}
-                  {/* Compenso maturato */}
                   {riepilogo && (
                     <div style={{ background: riepilogo.compensoPagato ? '#f0fdf4' : '#fdf4ff', borderRadius: '8px', padding: '10px 14px', textAlign: 'center', border: `1px solid ${riepilogo.compensoPagato ? '#bbf7d0' : '#e9d5ff'}` }}>
                       <div style={{ fontSize: '0.72rem', color: riepilogo.compensoPagato ? '#059669' : '#7c3aed', fontWeight: '600', marginBottom: '2px', textTransform: 'uppercase' }}>
@@ -1311,32 +785,7 @@ export default function PortaleOperatore() {
               </div>
             )}
 
-            {/* ── Registrazione accesso / Segna eseguito ── */}
-            {pianoSelezionato.type === 'esami_strumentali' ? (
-              /* ── ESAMI STRUMENTALI: diaria, referto, allegati ── */
-              (() => {
-                const handleEseguito = async () => { await caricaDati(true); await selezionaPiano(pianoSelezionato); };
-                const nomePaz = (pazienteSelezionato?.firstName || '') + ' ' + (pazienteSelezionato?.lastName || '');
-                const handleArchivia = async () => {
-                  if (!confirm('Archiviare la cartella clinica di ' + nomePaz + '?')) return;
-                  try {
-                    await api.post('/workplan/' + pianoSelezionato._id + '/archivio');
-                    alert('Cartella archiviata!');
-                  } catch (err: any) {
-                    alert(err?.response?.data?.message || 'Errore archiviazione.');
-                  }
-                };
-                return (
-                  <EsameStrumentaleDettaglio
-                    piano={pianoSelezionato}
-                    userRole={user?.role || ''}
-                    userName={user?.name || ''}
-                    onEseguito={handleEseguito}
-                    onArchivia={handleArchivia}
-                  />
-                );
-              })()
-            ) : (<>
+            {/* ── REGISTRAZIONE ACCESSO (tutti i tipi di piano) ── */}
             <div style={{ background: accessoAperto ? 'rgba(5,150,105,0.06)' : 'rgba(30,77,140,0.04)', border: `1px solid ${accessoAperto ? 'rgba(5,150,105,0.3)' : 'rgba(30,77,140,0.2)'}`, borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
               <h4 style={{ margin: '0 0 10px', color: accessoAperto ? '#065f46' : '#1e4d8c' }}>
                 {accessoAperto ? '🟢 Accesso in corso' : '🔵 Registra accesso'}
@@ -1350,25 +799,17 @@ export default function PortaleOperatore() {
                 Note accesso (opzionale)
                 <input value={noteAccesso} onChange={e => setNoteAccesso(e.target.value)} placeholder="Es. parametri rilevati, attività svolte..." style={{ marginTop: '4px' }} />
               </label>
-              {/* Entrambi i pulsanti sempre visibili — stessa logica di WorkPlanAccessPage */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <button
                   type="button"
                   onClick={registraEntrata}
                   disabled={!!accessoAperto || registrandoAccesso}
                   style={{
-                    padding: '14px',
-                    borderRadius: '10px',
-                    border: 'none',
+                    padding: '14px', borderRadius: '10px', border: 'none',
                     cursor: accessoAperto ? 'not-allowed' : 'pointer',
                     backgroundColor: accessoAperto ? '#d1fae5' : '#16a34a',
-                    color: 'white',
-                    fontWeight: '700',
-                    fontSize: '1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
+                    color: 'white', fontWeight: '700', fontSize: '1rem',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                     opacity: accessoAperto ? 0.6 : 1,
                   }}
                 >
@@ -1379,18 +820,11 @@ export default function PortaleOperatore() {
                   onClick={registraUscita}
                   disabled={!accessoAperto || registrandoAccesso}
                   style={{
-                    padding: '14px',
-                    borderRadius: '10px',
-                    border: 'none',
+                    padding: '14px', borderRadius: '10px', border: 'none',
                     cursor: !accessoAperto ? 'not-allowed' : 'pointer',
                     backgroundColor: !accessoAperto ? '#fee2e2' : '#dc2626',
-                    color: 'white',
-                    fontWeight: '700',
-                    fontSize: '1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
+                    color: 'white', fontWeight: '700', fontSize: '1rem',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                     opacity: !accessoAperto ? 0.6 : 1,
                   }}
                 >
@@ -1656,7 +1090,6 @@ export default function PortaleOperatore() {
                 </button>
               </div>
 
-              {/* Export PDF — senza tariffa */}
               {showExport && (
                 <div style={{ padding: '16px', borderTop: '1px solid #e2e8f0', background: '#fafafa' }}>
                   <h5 style={{ margin: '0 0 12px', color: '#374151' }}>📄 Esporta registro accessi (rendicontazione)</h5>
@@ -1680,7 +1113,7 @@ export default function PortaleOperatore() {
                       </button>
                     )}
                   </div>
-                  <p style={{ margin: 0, fontSize: '0.82rem', color: '#888' }}>Lascia vuoto per il mese corrente. Il PDF non include le tariffe (solo per rendicontazione accessi).</p>
+                  <p style={{ margin: 0, fontSize: '0.82rem', color: '#888' }}>Lascia vuoto per il mese corrente. Il PDF non include le tariffe.</p>
 
                   {exportData && (
                     <div ref={printRef} style={{ marginTop: '16px', background: '#fff', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
@@ -1690,9 +1123,7 @@ export default function PortaleOperatore() {
                       <p><strong>Periodo:</strong> {exportData.periodo.da} — {exportData.periodo.a}</p>
                       <table>
                         <thead>
-                          <tr>
-                            <th>Data</th><th>Entrata</th><th>Uscita</th><th>Durata</th><th>Note</th>
-                          </tr>
+                          <tr><th>Data</th><th>Entrata</th><th>Uscita</th><th>Durata</th><th>Note</th></tr>
                         </thead>
                         <tbody>
                           {exportData.accessi.map((acc: any, i: number) => (
@@ -1715,7 +1146,6 @@ export default function PortaleOperatore() {
                 </div>
               )}
 
-              {/* Lista accessi */}
               <div style={{ padding: accessi.length > 0 ? '0' : '16px' }}>
                 {accessi.length === 0 ? (
                   <p style={{ color: '#888', fontStyle: 'italic', margin: 0 }}>Nessun accesso registrato.</p>
@@ -1745,11 +1175,9 @@ export default function PortaleOperatore() {
               </div>
             </div>
 
-            </>)}
           </div>
         )
       )}
     </section>
   );
 }
-
