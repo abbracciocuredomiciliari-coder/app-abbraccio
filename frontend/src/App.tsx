@@ -17,6 +17,7 @@ import ArchivioCartelle from './pages/ArchivioCartelle';
 import CheckList from './pages/CheckList';
 import SchedaControlloDefibrillatore from './pages/SchedaControlloDefibrillatore';
 import CheckListGlucometro from './pages/CheckListGlucometro';
+import CheckListHub from './pages/CheckListHub';
 import GestioneUtenti from './pages/GestioneUtenti';
 import PortaleOperatore from './pages/PortaleOperatore';
 import ProfiloPersonale from './pages/ProfiloPersonale';
@@ -141,17 +142,12 @@ function AppShell() {
                 <Archive size={18} />
                 Archivio cartelle
               </Link>
-              <Link to="/checklist" className={isActive('/checklist') ? 'active' : ''}>
+              <Link
+                to="/checklist-hub"
+                className={location.pathname.startsWith('/checklist') || location.pathname.startsWith('/scheda-controllo') ? 'active' : ''}
+              >
                 <CheckSquare size={18} />
                 Check List
-              </Link>
-              <Link to="/scheda-controllo-defibrillatore" className={isActive('/scheda-controllo-defibrillatore') ? 'active' : ''}>
-                <CheckSquare size={18} />
-                Scheda Controllo Apparecchiature Elettromedicali
-              </Link>
-              <Link to="/checklist-glucometro" className={isActive('/checklist-glucometro') ? 'active' : ''}>
-                <CheckSquare size={18} />
-                Check List Glucometro
               </Link>
               <Link to="/compenso-incarichi" className={isActive('/compenso-incarichi') ? 'active' : ''}>
                 <Euro size={18} />
@@ -194,9 +190,12 @@ function AppShell() {
           <Route path="/strumenti" element={<ProtectedRoute><Strumenti /></ProtectedRoute>} />
           <Route path="/storico-cliniche" element={<ProtectedRoute><StoricoCliniche /></ProtectedRoute>} />
           <Route path="/archivio-cartelle" element={<ProtectedRoute><ArchivioCartelle /></ProtectedRoute>} />
-          <Route path="/checklist" element={<ProtectedRoute><CheckList /></ProtectedRoute>} />
-          <Route path="/scheda-controllo-defibrillatore" element={<ProtectedRoute><SchedaControlloDefibrillatore /></ProtectedRoute>} />
-          <Route path="/checklist-glucometro" element={<ProtectedRoute><CheckListGlucometro /></ProtectedRoute>} />
+          {/* Hub Check List (unico punto di accesso dalla sidebar) */}
+          <Route path="/checklist-hub" element={<ProtectedRoute><CheckListHub /></ProtectedRoute>} />
+          {/* Redirect vecchie URL → hub (compatibilità link esistenti) */}
+          <Route path="/checklist" element={<Navigate to="/checklist-hub" replace />} />
+          <Route path="/scheda-controllo-defibrillatore" element={<Navigate to="/checklist-hub" replace />} />
+          <Route path="/checklist-glucometro" element={<Navigate to="/checklist-hub" replace />} />
           <Route path="/gestione-utenti" element={<ProtectedRoute><GestioneUtenti /></ProtectedRoute>} />
 
           {/* Route condivise (tutti gli utenti autenticati) */}
