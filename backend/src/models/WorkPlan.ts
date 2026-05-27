@@ -7,8 +7,9 @@ export interface IGiornoSettimana {
 }
 
 export interface IWorkPlan extends Document {
-  type: 'prestazionale' | 'assistenziale';
+  type: 'prestazionale' | 'assistenziale' | 'esami_strumentali';
   category: string;
+  tipoEsame?: string;   // per esami_strumentali: ECG, Holter ECG, ecc.
   patient: Types.ObjectId;
   staff: Types.ObjectId;
   date: Date;           // data inizio piano
@@ -32,10 +33,11 @@ const workPlanSchema = new Schema<IWorkPlan>(
     type: { 
       type: String, 
       required: true, 
-      enum: ['prestazionale', 'assistenziale'],
+      enum: ['prestazionale', 'assistenziale', 'esami_strumentali'],
       default: 'prestazionale'
     },
     category: { type: String, required: true },
+    tipoEsame: { type: String, trim: true },
     patient: { type: Schema.Types.ObjectId, ref: 'Patient', required: true },
     staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: true },
     date: { type: Date, required: true },

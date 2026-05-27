@@ -15,6 +15,8 @@ import WorkPlanAccessPage from './pages/WorkPlanAccessPage';
 import StoricoCliniche from './pages/StoricoCliniche';
 import ArchivioCartelle from './pages/ArchivioCartelle';
 import CheckList from './pages/CheckList';
+import SchedaControlloDefibrillatore from './pages/SchedaControlloDefibrillatore';
+import CheckListGlucometro from './pages/CheckListGlucometro';
 import GestioneUtenti from './pages/GestioneUtenti';
 import PortaleOperatore from './pages/PortaleOperatore';
 import ProfiloPersonale from './pages/ProfiloPersonale';
@@ -143,6 +145,14 @@ function AppShell() {
                 <CheckSquare size={18} />
                 Check List
               </Link>
+              <Link to="/scheda-controllo-defibrillatore" className={isActive('/scheda-controllo-defibrillatore') ? 'active' : ''}>
+                <CheckSquare size={18} />
+                Scheda Controllo Defibrillatore
+              </Link>
+              <Link to="/checklist-glucometro" className={isActive('/checklist-glucometro') ? 'active' : ''}>
+                <CheckSquare size={18} />
+                Check List Glucometro
+              </Link>
               <Link to="/compenso-incarichi" className={isActive('/compenso-incarichi') ? 'active' : ''}>
                 <Euro size={18} />
                 Compenso per incarichi
@@ -185,6 +195,8 @@ function AppShell() {
           <Route path="/storico-cliniche" element={<ProtectedRoute><StoricoCliniche /></ProtectedRoute>} />
           <Route path="/archivio-cartelle" element={<ProtectedRoute><ArchivioCartelle /></ProtectedRoute>} />
           <Route path="/checklist" element={<ProtectedRoute><CheckList /></ProtectedRoute>} />
+          <Route path="/scheda-controllo-defibrillatore" element={<ProtectedRoute><SchedaControlloDefibrillatore /></ProtectedRoute>} />
+          <Route path="/checklist-glucometro" element={<ProtectedRoute><CheckListGlucometro /></ProtectedRoute>} />
           <Route path="/gestione-utenti" element={<ProtectedRoute><GestioneUtenti /></ProtectedRoute>} />
 
           {/* Route condivise (tutti gli utenti autenticati) */}

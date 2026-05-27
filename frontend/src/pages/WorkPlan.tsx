@@ -21,6 +21,7 @@ import {
   ClipboardList,
   X,
   Archive,
+  HeartPulse,
 } from 'lucide-react';
 
 interface PatientOption {
@@ -44,10 +45,22 @@ interface GiornoSettimana {
   minutiPerAccesso: number;
 }
 
+// Esami strumentali disponibili
+const ESAMI_STRUMENTALI = [
+  { value: 'ECG', label: 'ECG' },
+  { value: 'Holter ECG', label: 'Holter ECG' },
+  { value: 'Holter pressorio', label: 'Holter pressorio' },
+  { value: 'Glicemia', label: 'Glicemia' },
+  { value: 'EGA', label: 'EGA (Emogasanalisi)' },
+  { value: 'Polisonnografia', label: 'Polisonnografia' },
+  { value: 'Titolazione CPAP', label: 'Titolazione CPAP' },
+];
+
 interface WorkPlanItem {
   _id: string;
-  type: 'prestazionale' | 'assistenziale';
+  type: 'prestazionale' | 'assistenziale' | 'esami_strumentali';
   category: string;
+  tipoEsame?: string;
   patient: PatientOption;
   staff: StaffMember;
   date: string;
@@ -106,7 +119,9 @@ function WorkPlan() {
   const [workplans, setWorkplans] = useState<WorkPlanItem[]>([]);
   const [patients, setPatients] = useState<PatientOption[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
-  const [activeTab, setActiveTab] = useState<'prestazionale' | 'assistenziale'>('prestazionale');
+  const [activeTab, setActiveTab] = useState<'prestazionale' | 'assistenziale' | 'esami_strumentali'>('prestazionale');
+  // Stato specifico per esami strumentali
+  const [tipoEsame, setTipoEsame] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredWorkplans, setFilteredWorkplans] = useState<WorkPlanItem[]>([]);
   const [error, setError] = useState('');
@@ -207,8 +222,16 @@ function WorkPlan() {
     setError('');
     setSuccess('');
     try {
-      if (!patient || !staff || !task || !date) {
+      if (!patient || !staff || !date) {
         setError('Compila tutti i campi obbligatori.');
+        return;
+      }
+      if (activeTab === 'esami_strumentali' && !tipoEsame) {
+        setError('Seleziona il tipo di esame strumentale.');
+        return;
+      }
+      if (activeTab !== 'esami_strumentali' && !task) {
+        setError('Compila il campo Attività / Descrizione.');
         return;
       }
       const giorniAttivi = giorniForm
@@ -221,10 +244,11 @@ function WorkPlan() {
 
       await api.post('/workplan', {
         type: activeTab,
-        category,
+        category: activeTab === 'esami_strumentali' ? 'esame_strumentale' : category,
+        tipoEsame: activeTab === 'esami_strumentali' ? tipoEsame : undefined,
         patient,
         staff,
-        task,
+        task: activeTab === 'esami_strumentali' ? (tipoEsame || task) : task,
         date,
         dataFine: dataFine || undefined,
         time,
@@ -237,7 +261,7 @@ function WorkPlan() {
       await loadData();
       setTask(''); setDate(''); setDataFine(''); setTime(''); setDuration(60);
       setPatient(''); setStaff(''); setCategory(''); setNotes('');
-      setTipoCompenso('nessuno'); setTariffa(0);
+      setTipoCompenso('nessuno'); setTariffa(0); setTipoEsame('');
       setGiorniForm(prev => prev.map(g => ({ ...g, attivo: false, accessiAlGiorno: 1, minutiPerAccesso: 60 })));
       setSuccess('Incarico aggiunto con successo!');
       setTimeout(() => setSuccess(''), 3000);
@@ -454,11 +478,23 @@ function WorkPlan() {
   };
 
   const getCategoryInfo = (catValue: string) => {
-    const allCategories = [...prestazioneCategories, ...assistenzaCategories];
+    const allCategories = [
+      ...prestazioneCategories,
+      ...assistenzaCategories,
+      { value: 'esame_strumentale', label: 'Esame Strumentale', icon: HeartPulse, color: '#e11d48' },
+    ];
     return allCategories.find(c => c.value === catValue) || { label: catValue, icon: Calendar, color: '#6b7280' };
   };
 
-  const currentCategories = activeTab === 'prestazionale' ? prestazioneCategories : assistenzaCategories;
+  const esamiCategories = [
+    { value: 'esame_strumentale', label: 'Esame Strumentale', icon: HeartPulse, color: '#e11d48' },
+  ];
+
+  const currentCategories = activeTab === 'prestazionale'
+    ? prestazioneCategories
+    : activeTab === 'assistenziale'
+    ? assistenzaCategories
+    : esamiCategories;
 
   return (
     <section>
@@ -484,6 +520,10 @@ function WorkPlan() {
           <Users size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
           Assistenziale
         </button>
+        <button type="button" onClick={() => setActiveTab('esami_strumentali')} style={{ padding: '12px 24px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: activeTab === 'esami_strumentali' ? '600' : '400', color: activeTab === 'esami_strumentali' ? '#e11d48' : 'var(--gray-500)', borderBottom: activeTab === 'esami_strumentali' ? '2px solid #e11d48' : '2px solid transparent', marginBottom: '-10px' }}>
+          <HeartPulse size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+          Esami Strumentali
+        </button>
       </div>
 
       {/* Search Bar */}
@@ -499,7 +539,7 @@ function WorkPlan() {
         <div className="dashboard-folder">
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: 0 }}>
             <Plus size={20} />
-            Nuovo Incarico {activeTab === 'prestazionale' ? 'Prestazionale' : 'Assistenziale'}
+            {activeTab === 'prestazionale' ? 'Nuovo Incarico Prestazionale' : activeTab === 'assistenziale' ? 'Nuovo Incarico Assistenziale' : '🫀 Nuovo Esame Strumentale'}
           </h3>
 
           <form onSubmit={handleSubmit} className="user-form">
@@ -600,19 +640,45 @@ function WorkPlan() {
               </div>
             </div>
 
-            <label>
-              Categoria *
-              <select value={category} onChange={(e) => setCategory(e.target.value)} required>
-                <option value="">Seleziona categoria</option>
-                {currentCategories.map((cat) => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
-                ))}
-              </select>
-            </label>
+            {/* Tipo esame (solo per esami strumentali) */}
+            {activeTab === 'esami_strumentali' && (
+              <label>
+                Tipo Esame *
+                <select value={tipoEsame} onChange={(e) => setTipoEsame(e.target.value)} required>
+                  <option value="">Seleziona tipo di esame</option>
+                  {ESAMI_STRUMENTALI.map((e) => (
+                    <option key={e.value} value={e.value}>{e.label}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            {activeTab !== 'esami_strumentali' && (
+              <label>
+                Categoria *
+                <select value={category} onChange={(e) => setCategory(e.target.value)} required>
+                  <option value="">Seleziona categoria</option>
+                  {currentCategories.map((cat) => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  ))}
+                </select>
+              </label>
+            )}
 
             <label>
               Attività / Descrizione *
-              <input value={task} onChange={(e) => setTask(e.target.value)} placeholder={activeTab === 'prestazionale' ? 'Es. Prelievo ematico, Medicazione...' : 'Es. Assistenza igienica, Cambio postura...'} required />
+              <input
+                value={task}
+                onChange={(e) => setTask(e.target.value)}
+                placeholder={
+                  activeTab === 'esami_strumentali'
+                    ? 'Es. Note aggiuntive sull\'esame...'
+                    : activeTab === 'prestazionale'
+                    ? 'Es. Prelievo ematico, Medicazione...'
+                    : 'Es. Assistenza igienica, Cambio postura...'
+                }
+                required={activeTab !== 'esami_strumentali'}
+              />
             </label>
 
             {activeTab === 'assistenziale' && (
@@ -666,8 +732,8 @@ function WorkPlan() {
         {/* List Section */}
         <div className="dashboard-folder">
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: 0 }}>
-            <Calendar size={20} />
-            Incarichi {activeTab === 'prestazionale' ? 'Prestazionali' : 'Assistenziali'} ({filteredWorkplans.length})
+            {activeTab === 'esami_strumentali' ? <HeartPulse size={20} color="#e11d48" /> : <Calendar size={20} />}
+            {activeTab === 'prestazionale' ? `Incarichi Prestazionali (${filteredWorkplans.length})` : activeTab === 'assistenziale' ? `Incarichi Assistenziali (${filteredWorkplans.length})` : `🫀 Esami Strumentali (${filteredWorkplans.length})`}
           </h3>
 
           {filteredWorkplans.length === 0 ? (
