@@ -297,6 +297,24 @@ function WorkPlan() {
     }
   };
 
+  // Segna esame strumentale come eseguito (accesso eseguito)
+  const segnaEsameEseguito = async (id: string, currentStatus: string) => {
+    if (currentStatus === 'completed') return; // già eseguito
+    if (!confirm('Confermi che l\'accesso/esame è stato eseguito?')) return;
+    try {
+      await api.patch(`/workplan/${id}/eseguito`, {
+        dataEsecuzione: new Date().toISOString().substring(0, 10),
+        orario: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+      });
+      await loadData();
+      setSuccess('✅ Accesso segnato come eseguito!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Errore nel segnare l\'accesso come eseguito.');
+      setTimeout(() => setError(''), 4000);
+    }
+  };
+
   const apriAccesso = (id: string) => navigate(`/accesso/${id}`);
 
   // Archivia incarico (snapshot completo in archivio permanente)
@@ -806,7 +824,23 @@ function WorkPlan() {
                           </button>
                         </>
                       )}
-                      {item.status === 'pending' && (
+                      {/* Checkbox accesso eseguito (solo per esami strumentali) */}
+                      {item.type === 'esami_strumentali' && (
+                        <button
+                          type="button"
+                          onClick={() => segnaEsameEseguito(item._id, item.status)}
+                          title={item.status === 'completed' ? 'Esame già eseguito' : 'Segna accesso come eseguito'}
+                          style={{
+                            background: item.status === 'completed' ? '#10b981' : '#e11d48',
+                            padding: '7px',
+                            cursor: item.status === 'completed' ? 'default' : 'pointer',
+                            opacity: item.status === 'completed' ? 0.8 : 1,
+                          }}
+                        >
+                          <CheckCircle size={15} />
+                        </button>
+                      )}
+                      {item.type !== 'esami_strumentali' && item.status === 'pending' && (
                         <button type="button" onClick={() => completeWorkplan(item._id)} style={{ background: 'var(--success)', padding: '7px' }} title="Segna come completato">
                           <CheckCircle size={15} />
                         </button>
