@@ -68,7 +68,6 @@ function Strumenti() {
   const [apparecchiature, setApparecchiature] = useState<Apparecchiatura[]>([]);
   const [presidi, setPresidi] = useState<PresidioSanitario[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // Stato per la gestione dei documenti
   const [selectedEquipment, setSelectedEquipment] = useState<string | null>(null);
@@ -605,8 +604,6 @@ function Strumenti() {
 
         {loading ? (
           <p>Caricamento apparecchiature...</p>
-        ) : error ? (
-          <p style={{ color: '#dc3545' }}>{error}</p>
         ) : (
           <>
             {canEdit && (
