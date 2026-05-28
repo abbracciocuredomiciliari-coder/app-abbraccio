@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import FarmaciSection from '../components/FarmaciSection';
 import api from '../api/api';
+import GestioneRichiestePresidi from '../components/GestioneRichiestePresidi';
 
 // Interfacce per le apparecchiature elettromedicali
 interface Apparecchiatura {
@@ -1069,6 +1070,17 @@ function Strumenti() {
               )}
             </div>
           </div>
+        </div>
+      )}
+      {/* ══════════════════════════════════════════════════════════════════════
+          GESTIONE RICHIESTE OPERATORI (solo admin/coordinator)
+      ══════════════════════════════════════════════════════════════════════ */}
+      {(user?.role === 'admin' || user?.role === 'coordinator') && (
+        <div style={{ marginTop: '32px' }}>
+          <h3 style={{ color: '#1e4d8c', marginBottom: '16px', borderBottom: '2px solid #e2e8f0', paddingBottom: '8px' }}>
+            📦 Gestione Richieste Presidi/Farmaci dagli Operatori
+          </h3>
+          <GestioneRichiestePresidi />
         </div>
       )}
     </section>

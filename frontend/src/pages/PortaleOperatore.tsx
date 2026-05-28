@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
+import RichiestaPresidi from '../components/RichiestaPresidi';
 
 // ─── Interfacce ───────────────────────────────────────────────────────────────
 
@@ -518,6 +519,19 @@ export default function PortaleOperatore() {
             >
               📋 Tutti i piani attivi ({pianiAttiviTutti.length})
             </button>
+          </div>
+
+          {/* ── RICHIESTA PRESIDI/FARMACI ── */}
+          <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '20px', overflow: 'hidden' }}>
+            <details>
+              <summary style={{ background: '#f8fafc', padding: '14px 16px', cursor: 'pointer', fontWeight: '600', fontSize: '0.95rem', color: '#374151', listStyle: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>📦 Richiesta Presidi / Farmaci</span>
+                <span style={{ fontSize: '0.8rem', color: '#888' }}>▼</span>
+              </summary>
+              <div style={{ padding: '16px' }}>
+                <RichiestaPresidi />
+              </div>
+            </details>
           </div>
 
           {pazienti.length === 0 ? (
