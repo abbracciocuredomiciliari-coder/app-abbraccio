@@ -501,6 +501,7 @@ function Strumenti() {
     const righe = presidi.map(p => {
       const unita = p.unitaMisura || 'pezzi';
       const sottoScorta = p.scortaMinima && p.quantita < p.scortaMinima;
+      const mancanti = sottoScorta ? (p.scortaMinima! - p.quantita) : 0;
       const scad = p.scadenza ? formatData(p.scadenza) : 'N/A';
       const inScadenza = p.scadenza && eScadutoOProssimo(p.scadenza) ? ' ⚠️ IN SCADENZA' : '';
       return `
@@ -509,6 +510,7 @@ function Strumenti() {
           <td style="text-align:center;${sottoScorta ? 'color:#dc3545;font-weight:bold;' : ''}">${p.quantita} ${unita}${sottoScorta ? ' ⚠️ SOTTO SCORTA' : ''}</td>
           <td style="${p.scadenza && eScadutoOProssimo(p.scadenza) ? 'color:#dc3545;font-weight:bold;' : ''}">${scad}${inScadenza}</td>
           <td style="text-align:center;">${p.scortaMinima || 0} ${unita}</td>
+          <td style="text-align:center;${sottoScorta ? 'color:#dc3545;font-weight:bold;' : 'color:#28a745;'}">${sottoScorta ? `⚠️ mancano ${mancanti} ${unita}` : '✅ OK'}</td>
         </tr>`;
     }).join('');
 
@@ -548,6 +550,7 @@ function Strumenti() {
         <th>Quantità</th>
         <th>Scadenza</th>
         <th>Scorta minima</th>
+        <th>Differenza</th>
       </tr>
     </thead>
     <tbody>${righe}</tbody>
@@ -757,6 +760,7 @@ function Strumenti() {
               {presidi.map((presidio) => {
                 const unita = presidio.unitaMisura || 'pezzi';
                 const sottoScorta = presidio.scortaMinima && presidio.quantita < presidio.scortaMinima;
+                const mancanti = sottoScorta ? (presidio.scortaMinima! - presidio.quantita) : 0;
                 return (
                   <li key={presidio.id}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
@@ -764,7 +768,7 @@ function Strumenti() {
                         <strong>{presidio.nome}</strong>
                         <span style={{ marginLeft: '12px', color: '#666' }}>
                           Qta: <span style={{ fontWeight: '700', color: sottoScorta ? '#dc3545' : '#28a745', fontSize: '1.1em' }}>{presidio.quantita}</span> {unita}
-                          {sottoScorta && <span style={{ color: '#dc3545', fontWeight: '600', marginLeft: '8px' }}>⚠️ Sotto scorta!</span>}
+                          {sottoScorta && <span style={{ color: '#dc3545', fontWeight: '600', marginLeft: '8px' }}>⚠️ Sotto scorta! (mancano {mancanti} {unita})</span>}
                         </span>
                         {presidio.scadenza && (
                           <span style={{ marginLeft: '12px', color: eScadutoOProssimo(presidio.scadenza) ? '#dc3545' : '#666' }}>

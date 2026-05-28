@@ -192,14 +192,16 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
     const righe = farmaci.map(f => {
       const scad = f.scadenza ? formatData(f.scadenza) : 'N/A';
       const inScadenza = f.scadenza && eScadutoOProssimo(f.scadenza) ? ' ⚠️ IN SCADENZA' : '';
-      const sottoScorta = f.scortaMinima && f.quantita < f.scortaMinima ? ' ⚠️ SOTTO SCORTA' : '';
+      const isSottoScorta = !!(f.scortaMinima && f.quantita < f.scortaMinima);
+      const mancanti = isSottoScorta ? (f.scortaMinima! - f.quantita) : 0;
       return `
         <tr>
           <td>${f.nome}</td>
           <td>${f.dosaggio}</td>
-          <td style="text-align:center;${f.scortaMinima && f.quantita < f.scortaMinima ? 'color:#dc3545;font-weight:bold;' : ''}">${f.quantita} conf.${sottoScorta}</td>
+          <td style="text-align:center;${isSottoScorta ? 'color:#dc3545;font-weight:bold;' : ''}">${f.quantita} conf.${isSottoScorta ? ' ⚠️ SOTTO SCORTA' : ''}</td>
           <td style="${f.scadenza && eScadutoOProssimo(f.scadenza) ? 'color:#dc3545;font-weight:bold;' : ''}">${scad}${inScadenza}</td>
           <td style="text-align:center;">${f.scortaMinima || 0}</td>
+          <td style="text-align:center;${isSottoScorta ? 'color:#dc3545;font-weight:bold;' : 'color:#28a745;'}">${isSottoScorta ? `⚠️ mancano ${mancanti} conf.` : '✅ OK'}</td>
         </tr>`;
     }).join('');
 
@@ -240,6 +242,7 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
         <th>Quantità</th>
         <th>Scadenza</th>
         <th>Scorta minima</th>
+        <th>Differenza</th>
       </tr>
     </thead>
     <tbody>${righe}</tbody>
@@ -308,6 +311,7 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
             <ul>
               {farmaci.map((farmaco) => {
                 const sottoScorta = farmaco.scortaMinima && farmaco.quantita < farmaco.scortaMinima;
+                const mancanti = sottoScorta ? (farmaco.scortaMinima! - farmaco.quantita) : 0;
                 return (
                   <li key={farmaco.id}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
@@ -318,7 +322,7 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
                         </span>
                         <span style={{ marginLeft: '12px', color: '#666' }}>
                           Qta: <span style={{ fontWeight: '700', color: sottoScorta ? '#dc3545' : '#28a745', fontSize: '1.1em' }}>{farmaco.quantita}</span> conf.
-                          {sottoScorta && <span style={{ color: '#dc3545', fontWeight: '600', marginLeft: '8px' }}>⚠️ Sotto scorta!</span>}
+                          {sottoScorta && <span style={{ color: '#dc3545', fontWeight: '600', marginLeft: '8px' }}>⚠️ Sotto scorta! (mancano {mancanti} conf.)</span>}
                         </span>
                         {farmaco.scadenza && (
                           <span style={{ marginLeft: '12px', color: eScadutoOProssimo(farmaco.scadenza) ? '#dc3545' : '#666' }}>
