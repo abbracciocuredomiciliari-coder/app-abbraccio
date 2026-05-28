@@ -1,3 +1,4 @@
+// Componente per la gestione delle richieste presidi/farmaci dagli operatori
 import { useState, useEffect } from 'react';
 import api from '../api/api';
 
