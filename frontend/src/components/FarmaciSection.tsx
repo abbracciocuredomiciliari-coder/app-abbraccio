@@ -31,6 +31,17 @@ interface FarmaciSectionProps {
   eScadutoOProssimo: (scadenza: string) => boolean;
 }
 
+// Scade entro 10 giorni (non ancora scaduto)
+const eInScadenzaBreve = (scadenza: string) => {
+  const oggi = new Date();
+  const dataScadenza = new Date(scadenza);
+  const diff = Math.ceil((dataScadenza.getTime() - oggi.getTime()) / (1000 * 60 * 60 * 24));
+  return diff >= 0 && diff <= 10;
+};
+
+// Già scaduto
+const eScaduto = (scadenza: string) => new Date(scadenza) < new Date();
+
 export default function FarmaciSection({ canEdit, formatData, formatDataOra, eScadutoOProssimo }: FarmaciSectionProps) {
   const [farmaci, setFarmaci] = useState<Farmaco[]>([]);
   const [loading, setLoading] = useState(false);
@@ -191,15 +202,26 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
     const oggi = new Date().toLocaleDateString('it-IT');
     const righe = farmaci.map(f => {
       const scad = f.scadenza ? formatData(f.scadenza) : 'N/A';
-      const inScadenza = f.scadenza && eScadutoOProssimo(f.scadenza) ? ' ⚠️ IN SCADENZA' : '';
       const isSottoScorta = !!(f.scortaMinima && f.quantita < f.scortaMinima);
       const mancanti = isSottoScorta ? (f.scortaMinima! - f.quantita) : 0;
+      const fScaduto = f.scadenza && eScaduto(f.scadenza);
+      const fInScadenzaBreve = f.scadenza && !fScaduto && eInScadenzaBreve(f.scadenza);
+      const scadStyle = fScaduto
+        ? 'color:#dc3545;font-weight:bold;'
+        : fInScadenzaBreve
+          ? 'color:#856404;font-weight:bold;background:#fff3cd;padding:2px 4px;border-radius:3px;'
+          : '';
+      const scadLabel = fScaduto
+        ? `🔴 SCADUTO: ${scad}`
+        : fInScadenzaBreve
+          ? `🟡 SCADE TRA POCO: ${scad} (⚠️ entro 10gg)`
+          : scad;
       return `
         <tr>
           <td>${f.nome}</td>
           <td>${f.dosaggio}</td>
           <td style="text-align:center;${isSottoScorta ? 'color:#dc3545;font-weight:bold;' : ''}">${f.quantita} conf.${isSottoScorta ? ' ⚠️ SOTTO SCORTA' : ''}</td>
-          <td style="${f.scadenza && eScadutoOProssimo(f.scadenza) ? 'color:#dc3545;font-weight:bold;' : ''}">${scad}${inScadenza}</td>
+          <td style="${scadStyle}">${scadLabel}</td>
           <td style="text-align:center;">${f.scortaMinima || 0}</td>
           <td style="text-align:center;${isSottoScorta ? 'color:#dc3545;font-weight:bold;' : 'color:#28a745;'}">${isSottoScorta ? `⚠️ mancano ${mancanti} conf.` : '✅ OK'}</td>
         </tr>`;
@@ -312,6 +334,8 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
               {farmaci.map((farmaco) => {
                 const sottoScorta = farmaco.scortaMinima && farmaco.quantita < farmaco.scortaMinima;
                 const mancanti = sottoScorta ? (farmaco.scortaMinima! - farmaco.quantita) : 0;
+                const scaduto = farmaco.scadenza && eScaduto(farmaco.scadenza);
+                const inScadenzaBreve = farmaco.scadenza && !scaduto && eInScadenzaBreve(farmaco.scadenza);
                 return (
                   <li key={farmaco.id}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
@@ -325,8 +349,21 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
                           {sottoScorta && <span style={{ color: '#dc3545', fontWeight: '600', marginLeft: '8px' }}>⚠️ Sotto scorta! (mancano {mancanti} conf.)</span>}
                         </span>
                         {farmaco.scadenza && (
-                          <span style={{ marginLeft: '12px', color: eScadutoOProssimo(farmaco.scadenza) ? '#dc3545' : '#666' }}>
-                            Scad.: {formatData(farmaco.scadenza)}{eScadutoOProssimo(farmaco.scadenza) && ' ⚠️'}
+                          <span
+                            style={{
+                              marginLeft: '12px',
+                              fontWeight: (scaduto || inScadenzaBreve) ? '700' : 'normal',
+                              color: scaduto ? '#dc3545' : inScadenzaBreve ? '#856404' : '#666',
+                              background: inScadenzaBreve ? '#fff3cd' : scaduto ? 'rgba(220,53,69,0.08)' : 'transparent',
+                              border: inScadenzaBreve ? '1px solid #ffc107' : scaduto ? '1px solid #dc3545' : 'none',
+                              borderRadius: '4px',
+                              padding: (scaduto || inScadenzaBreve) ? '2px 7px' : '0',
+                              display: 'inline-block',
+                            }}
+                          >
+                            {scaduto ? '🔴 SCADUTO: ' : inScadenzaBreve ? '🟡 SCADE TRA POCO: ' : 'Scad.: '}
+                            {formatData(farmaco.scadenza)}
+                            {inScadenzaBreve && ' (⚠️ entro 10 giorni)'}
                           </span>
                         )}
                       </div>

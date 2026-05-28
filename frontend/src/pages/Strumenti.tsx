@@ -179,6 +179,19 @@ function Strumenti() {
     return differenzaGiorni <= 30;
   };
 
+  // Restituisce true se scade entro 10 giorni (ma non ancora scaduto)
+  const eInScadenzaBreve = (scadenza: string) => {
+    const oggi = new Date();
+    const dataScadenza = new Date(scadenza);
+    const differenzaGiorni = Math.ceil((dataScadenza.getTime() - oggi.getTime()) / (1000 * 60 * 60 * 24));
+    return differenzaGiorni >= 0 && differenzaGiorni <= 10;
+  };
+
+  // Restituisce true se già scaduto
+  const eScaduto = (scadenza: string) => {
+    return new Date(scadenza) < new Date();
+  };
+
   // Aggiungere nuova apparecchiatura
   const aggiungiApparecchiatura = async () => {
     if (!nuovaApparecchiatura.tipo || !nuovaApparecchiatura.matricola) {
@@ -365,7 +378,7 @@ function Strumenti() {
     setMovements([]);
   };
 
-  // Carica un documento (usa fetch per FormData con token da localStorage)
+  // Carica un documento
   const caricaDocumento = async (documentType: 'conformita' | 'manutenzione' | 'manuale') => {
     const fileInput = fileInputRef.current;
     if (!fileInput?.files?.length) { alert('Seleziona un file da caricare'); return; }
@@ -503,12 +516,23 @@ function Strumenti() {
       const sottoScorta = p.scortaMinima && p.quantita < p.scortaMinima;
       const mancanti = sottoScorta ? (p.scortaMinima! - p.quantita) : 0;
       const scad = p.scadenza ? formatData(p.scadenza) : 'N/A';
-      const inScadenza = p.scadenza && eScadutoOProssimo(p.scadenza) ? ' ⚠️ IN SCADENZA' : '';
+      const pScaduto = p.scadenza && eScaduto(p.scadenza);
+      const pInScadenzaBreve = p.scadenza && !pScaduto && eInScadenzaBreve(p.scadenza);
+      const scadStyle = pScaduto
+        ? 'color:#dc3545;font-weight:bold;'
+        : pInScadenzaBreve
+          ? 'color:#856404;font-weight:bold;background:#fff3cd;padding:2px 4px;border-radius:3px;'
+          : '';
+      const scadLabel = pScaduto
+        ? `🔴 SCADUTO: ${scad}`
+        : pInScadenzaBreve
+          ? `🟡 SCADE TRA POCO: ${scad} (⚠️ entro 10gg)`
+          : scad;
       return `
         <tr>
           <td>${p.nome}</td>
           <td style="text-align:center;${sottoScorta ? 'color:#dc3545;font-weight:bold;' : ''}">${p.quantita} ${unita}${sottoScorta ? ' ⚠️ SOTTO SCORTA' : ''}</td>
-          <td style="${p.scadenza && eScadutoOProssimo(p.scadenza) ? 'color:#dc3545;font-weight:bold;' : ''}">${scad}${inScadenza}</td>
+          <td style="${scadStyle}">${scadLabel}</td>
           <td style="text-align:center;">${p.scortaMinima || 0} ${unita}</td>
           <td style="text-align:center;${sottoScorta ? 'color:#dc3545;font-weight:bold;' : 'color:#28a745;'}">${sottoScorta ? `⚠️ mancano ${mancanti} ${unita}` : '✅ OK'}</td>
         </tr>`;
@@ -761,6 +785,8 @@ function Strumenti() {
                 const unita = presidio.unitaMisura || 'pezzi';
                 const sottoScorta = presidio.scortaMinima && presidio.quantita < presidio.scortaMinima;
                 const mancanti = sottoScorta ? (presidio.scortaMinima! - presidio.quantita) : 0;
+                const scaduto = presidio.scadenza && eScaduto(presidio.scadenza);
+                const inScadenzaBreve = presidio.scadenza && !scaduto && eInScadenzaBreve(presidio.scadenza);
                 return (
                   <li key={presidio.id}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
@@ -771,8 +797,21 @@ function Strumenti() {
                           {sottoScorta && <span style={{ color: '#dc3545', fontWeight: '600', marginLeft: '8px' }}>⚠️ Sotto scorta! (mancano {mancanti} {unita})</span>}
                         </span>
                         {presidio.scadenza && (
-                          <span style={{ marginLeft: '12px', color: eScadutoOProssimo(presidio.scadenza) ? '#dc3545' : '#666' }}>
-                            Scad.: {formatData(presidio.scadenza)}{eScadutoOProssimo(presidio.scadenza) && ' ⚠️'}
+                          <span
+                            style={{
+                              marginLeft: '12px',
+                              fontWeight: (scaduto || inScadenzaBreve) ? '700' : 'normal',
+                              color: scaduto ? '#dc3545' : inScadenzaBreve ? '#856404' : '#666',
+                              background: inScadenzaBreve ? '#fff3cd' : scaduto ? 'rgba(220,53,69,0.08)' : 'transparent',
+                              border: inScadenzaBreve ? '1px solid #ffc107' : scaduto ? '1px solid #dc3545' : 'none',
+                              borderRadius: '4px',
+                              padding: (scaduto || inScadenzaBreve) ? '2px 7px' : '0',
+                              display: 'inline-block',
+                            }}
+                          >
+                            {scaduto ? '🔴 SCADUTO: ' : inScadenzaBreve ? '🟡 SCADE TRA POCO: ' : 'Scad.: '}
+                            {formatData(presidio.scadenza)}
+                            {inScadenzaBreve && ' (⚠️ entro 10 giorni)'}
                           </span>
                         )}
                       </div>
@@ -813,50 +852,26 @@ function Strumenti() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span style={{ fontWeight: '600' }}>Tipo apparecchiatura *</span>
-                <input
-                  type="text"
-                  value={editAppForm.tipo}
-                  onChange={(e) => setEditAppForm({ ...editAppForm, tipo: e.target.value })}
-                  style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
-                />
+                <input type="text" value={editAppForm.tipo} onChange={(e) => setEditAppForm({ ...editAppForm, tipo: e.target.value })} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }} />
               </label>
               <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span style={{ fontWeight: '600' }}>Matricola / N° serie *</span>
-                <input
-                  type="text"
-                  value={editAppForm.matricola}
-                  onChange={(e) => setEditAppForm({ ...editAppForm, matricola: e.target.value })}
-                  style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
-                />
+                <input type="text" value={editAppForm.matricola} onChange={(e) => setEditAppForm({ ...editAppForm, matricola: e.target.value })} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }} />
               </label>
               <label style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
-                <input
-                  type="checkbox"
-                  checked={editAppForm.controlloEseguito}
-                  onChange={(e) => setEditAppForm({ ...editAppForm, controlloEseguito: e.target.checked })}
-                  style={{ width: 'auto', margin: 0 }}
-                />
+                <input type="checkbox" checked={editAppForm.controlloEseguito} onChange={(e) => setEditAppForm({ ...editAppForm, controlloEseguito: e.target.checked })} style={{ width: 'auto', margin: 0 }} />
                 <span style={{ fontWeight: '600' }}>Controllo eseguito</span>
               </label>
               {editAppForm.controlloEseguito && (
                 <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <span style={{ fontWeight: '600' }}>Data controllo</span>
-                  <input
-                    type="date"
-                    value={editAppForm.dataControllo}
-                    onChange={(e) => setEditAppForm({ ...editAppForm, dataControllo: e.target.value })}
-                    style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
-                  />
+                  <input type="date" value={editAppForm.dataControllo} onChange={(e) => setEditAppForm({ ...editAppForm, dataControllo: e.target.value })} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }} />
                 </label>
               )}
             </div>
             <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-              <button type="button" onClick={salvaModificaApparecchiatura} style={{ flex: 1, background: '#28a745', padding: '10px', fontSize: '15px' }}>
-                💾 Salva modifiche
-              </button>
-              <button type="button" onClick={chiudiModificaApparecchiatura} style={{ flex: 1, background: '#6c757d', padding: '10px', fontSize: '15px' }}>
-                Annulla
-              </button>
+              <button type="button" onClick={salvaModificaApparecchiatura} style={{ flex: 1, background: '#28a745', padding: '10px', fontSize: '15px' }}>💾 Salva modifiche</button>
+              <button type="button" onClick={chiudiModificaApparecchiatura} style={{ flex: 1, background: '#6c757d', padding: '10px', fontSize: '15px' }}>Annulla</button>
             </div>
           </div>
         </div>
@@ -873,29 +888,15 @@ function Strumenti() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span style={{ fontWeight: '600' }}>Nome presidio *</span>
-                <input
-                  type="text"
-                  value={editPresForm.nome}
-                  onChange={(e) => setEditPresForm({ ...editPresForm, nome: e.target.value })}
-                  style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
-                />
+                <input type="text" value={editPresForm.nome} onChange={(e) => setEditPresForm({ ...editPresForm, nome: e.target.value })} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }} />
               </label>
               <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span style={{ fontWeight: '600' }}>Data scadenza</span>
-                <input
-                  type="date"
-                  value={editPresForm.scadenza}
-                  onChange={(e) => setEditPresForm({ ...editPresForm, scadenza: e.target.value })}
-                  style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
-                />
+                <input type="date" value={editPresForm.scadenza} onChange={(e) => setEditPresForm({ ...editPresForm, scadenza: e.target.value })} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }} />
               </label>
               <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span style={{ fontWeight: '600' }}>Unità di misura</span>
-                <select
-                  value={editPresForm.unitaMisura}
-                  onChange={(e) => setEditPresForm({ ...editPresForm, unitaMisura: e.target.value })}
-                  style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
-                >
+                <select value={editPresForm.unitaMisura} onChange={(e) => setEditPresForm({ ...editPresForm, unitaMisura: e.target.value })} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}>
                   <option value="pezzi">Pezzi</option>
                   <option value="confezioni">Confezioni</option>
                   <option value="scatole">Scatole</option>
@@ -906,22 +907,12 @@ function Strumenti() {
               </label>
               <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span style={{ fontWeight: '600' }}>Scorta minima</span>
-                <input
-                  type="number"
-                  min="0"
-                  value={editPresForm.scortaMinima}
-                  onChange={(e) => setEditPresForm({ ...editPresForm, scortaMinima: parseInt(e.target.value) || 0 })}
-                  style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }}
-                />
+                <input type="number" min="0" value={editPresForm.scortaMinima} onChange={(e) => setEditPresForm({ ...editPresForm, scortaMinima: parseInt(e.target.value) || 0 })} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px' }} />
               </label>
             </div>
             <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-              <button type="button" onClick={salvaModificaPresidio} style={{ flex: 1, background: '#28a745', padding: '10px', fontSize: '15px' }}>
-                💾 Salva modifiche
-              </button>
-              <button type="button" onClick={chiudiModificaPresidio} style={{ flex: 1, background: '#6c757d', padding: '10px', fontSize: '15px' }}>
-                Annulla
-              </button>
+              <button type="button" onClick={salvaModificaPresidio} style={{ flex: 1, background: '#28a745', padding: '10px', fontSize: '15px' }}>💾 Salva modifiche</button>
+              <button type="button" onClick={chiudiModificaPresidio} style={{ flex: 1, background: '#6c757d', padding: '10px', fontSize: '15px' }}>Annulla</button>
             </div>
           </div>
         </div>
@@ -935,7 +926,6 @@ function Strumenti() {
               <h3 style={{ margin: 0 }}>Gestione Documenti</h3>
               <button type="button" onClick={chiudiDocumenti} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#666' }}>×</button>
             </div>
-
             {(() => {
               const eq = apparecchiature.find(a => a.id === selectedEquipment);
               return eq ? (
@@ -945,9 +935,7 @@ function Strumenti() {
                 </div>
               ) : null;
             })()}
-
             <input ref={fileInputRef} type="file" style={{ display: 'none' }} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
-
             {canEdit && (
               <div style={{ marginBottom: '24px', padding: '16px', border: '2px dashed #dee2e6', borderRadius: '4px' }}>
                 <h4 style={{ marginTop: 0, marginBottom: '12px' }}>Carica nuovo documento</h4>
@@ -959,13 +947,7 @@ function Strumenti() {
                   <label style={{ display: 'block', marginBottom: '8px' }}>2. Seleziona il tipo di documento</label>
                   <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                     {(['conformita', 'manutenzione', 'manuale'] as const).map((type) => (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => caricaDocumento(type)}
-                        disabled={uploading}
-                        style={{ background: documentTypeColors[type], opacity: uploading ? 0.6 : 1 }}
-                      >
+                      <button key={type} type="button" onClick={() => caricaDocumento(type)} disabled={uploading} style={{ background: documentTypeColors[type], opacity: uploading ? 0.6 : 1 }}>
                         {uploading ? 'Caricamento...' : documentTypeLabels[type]}
                       </button>
                     ))}
@@ -974,7 +956,6 @@ function Strumenti() {
                 <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>Nota: se esiste già un documento dello stesso tipo, verrà sostituito.</p>
               </div>
             )}
-
             <div>
               <h4 style={{ marginTop: 0, marginBottom: '12px' }}>Documenti archiviati</h4>
               {documents.length === 0 ? (
@@ -1013,7 +994,6 @@ function Strumenti() {
               <h3 style={{ margin: 0 }}>Gestione Movimenti - {selectedPresidio.nome}</h3>
               <button type="button" onClick={chiudiMovimenti} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#666' }}>×</button>
             </div>
-
             <div style={{ marginBottom: '20px', padding: '12px', backgroundColor: '#f8f9fa', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <span style={{ color: '#666' }}>Quantità attuale: </span>
@@ -1023,7 +1003,6 @@ function Strumenti() {
                 <div><span style={{ color: '#666' }}>Scadenza: </span><strong>{formatData(selectedPresidio.scadenza)}</strong></div>
               )}
             </div>
-
             <div style={{ marginBottom: '24px', padding: '16px', border: '2px dashed #dee2e6', borderRadius: '4px', backgroundColor: '#f8f9fa' }}>
               <h4 style={{ marginTop: 0, marginBottom: '16px' }}>Nuovo Movimento</h4>
               <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
@@ -1062,7 +1041,6 @@ function Strumenti() {
                 Conferma {movementType === 'carico' ? 'Carico' : 'Scarico'}
               </button>
             </div>
-
             <div>
               <h4 style={{ marginTop: 0, marginBottom: '12px' }}>Storico Movimenti</h4>
               {movements.length === 0 ? (
