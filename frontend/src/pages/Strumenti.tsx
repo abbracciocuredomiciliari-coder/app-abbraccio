@@ -500,7 +500,7 @@ function Strumenti() {
     const oggi = new Date().toLocaleDateString('it-IT');
     const righe = presidi.map(p => {
       const unita = p.unitaMisura || 'pezzi';
-      const sottoScorta = p.scortaMinima && p.quantita <= p.scortaMinima;
+      const sottoScorta = p.scortaMinima && p.quantita < p.scortaMinima;
       const scad = p.scadenza ? formatData(p.scadenza) : 'N/A';
       const inScadenza = p.scadenza && eScadutoOProssimo(p.scadenza) ? ' ⚠️ IN SCADENZA' : '';
       return `
@@ -756,7 +756,7 @@ function Strumenti() {
             <ul>
               {presidi.map((presidio) => {
                 const unita = presidio.unitaMisura || 'pezzi';
-                const sottoScorta = presidio.scortaMinima && presidio.quantita <= presidio.scortaMinima;
+                const sottoScorta = presidio.scortaMinima && presidio.quantita < presidio.scortaMinima;
                 return (
                   <li key={presidio.id}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>

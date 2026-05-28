@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
 import User from '../models/User';
 import Staff from '../models/Staff';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
@@ -9,14 +10,37 @@ import { inviaEmailNotificaAdmin } from '../utils/email';
 
 const router = Router();
 const jwtSecret = process.env.JWT_SECRET as string;
-const tokenExpiration = '30d';
+const tokenExpiration = '8h'; // Ridotto da 30d a 8h per sicurezza dati sanitari
+
+// Rate limiting: max 10 tentativi di login ogni 15 minuti per IP
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { message: 'Troppi tentativi di accesso. Riprova tra 15 minuti.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiting: max 5 registrazioni ogni ora per IP
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { message: 'Troppi tentativi di registrazione. Riprova tra un\'ora.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // REGISTRAZIONE — crea utente con status "pending"
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', registerLimiter, async (req: Request, res: Response) => {
   const { name, email, password, role, professione, categoria } = req.body;
 
   if (!name?.trim() || !email?.trim() || !password) {
     return res.status(400).json({ message: 'Nome, email e password sono obbligatori' });
+  }
+
+  // Validazione password: minimo 8 caratteri, almeno una lettera e un numero
+  if (password.length < 8 || !/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+    return res.status(400).json({ message: 'La password deve essere di almeno 8 caratteri e contenere almeno una lettera e un numero.' });
   }
 
   try {
@@ -68,7 +92,7 @@ router.post('/register', async (req: Request, res: Response) => {
 });
 
 // LOGIN — blocca utenti pending o rejected
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', loginLimiter, async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
@@ -112,27 +136,6 @@ router.post('/login', async (req: Request, res: Response) => {
     });
   } catch (error) {
     return res.status(500).json({ message: 'Errore durante il login', error });
-  }
-});
-
-// GET /migrate-status — migrazione una-tantum: approva tutti gli utenti senza status
-// Questa route è temporanea e può essere rimossa dopo la migrazione
-router.get('/migrate-status', async (req: Request, res: Response) => {
-  try {
-    const result = await (User as any).updateMany(
-      { status: { $exists: false } },
-      { $set: { status: 'approved' } }
-    );
-    const result2 = await (User as any).updateMany(
-      { status: null },
-      { $set: { status: 'approved' } }
-    );
-    return res.json({
-      message: 'Migrazione completata',
-      aggiornati: result.modifiedCount + result2.modifiedCount,
-    });
-  } catch (error) {
-    return res.status(500).json({ message: 'Errore migrazione', error });
   }
 });
 

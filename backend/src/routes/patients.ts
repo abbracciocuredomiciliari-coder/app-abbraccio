@@ -2,12 +2,13 @@ import { Router, Request, Response } from 'express';
 import Patient from '../models/Patient';
 import { authenticateToken } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
+import { auditLog } from '../middleware/audit';
 
 const router = Router();
 
 router.use(authenticateToken);
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', auditLog('patients', 'READ'), async (req: Request, res: Response) => {
   try {
     const patients = await Patient.find().sort({ lastName: 1, firstName: 1 });
     return res.json(patients);
@@ -16,7 +17,7 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/', authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
+router.post('/', authorizeRole('admin', 'coordinator'), auditLog('patients', 'CREATE'), async (req: Request, res: Response) => {
   const { firstName, lastName, birthDate, address, assistanceNeeds } = req.body;
 
   if (!firstName?.trim() || !lastName?.trim() || !birthDate || !address?.trim() || !assistanceNeeds?.trim()) {

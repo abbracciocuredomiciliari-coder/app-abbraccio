@@ -3,11 +3,12 @@ import DiarioClinico from '../models/DiarioClinico';
 import WorkPlan from '../models/WorkPlan';
 import Staff from '../models/Staff';
 import { authenticateToken } from '../middleware/auth';
+import { auditLog } from '../middleware/audit';
 
 const router = Router();
 
 // GET /api/diario/:workPlanId - Ottieni diario clinico per un piano di lavoro
-router.get('/:workPlanId', authenticateToken, async (req: Request, res: Response) => {
+router.get('/:workPlanId', authenticateToken, auditLog('diario', 'READ', req => req.params.workPlanId), async (req: Request, res: Response) => {
   try {
     const { workPlanId } = req.params;
     const entries = await DiarioClinico.find({ workPlan: workPlanId })
@@ -19,7 +20,7 @@ router.get('/:workPlanId', authenticateToken, async (req: Request, res: Response
 });
 
 // GET /api/diario/paziente/:patientId - Diario clinico completo del paziente (storico cartelle)
-router.get('/paziente/:patientId', authenticateToken, async (req: Request, res: Response) => {
+router.get('/paziente/:patientId', authenticateToken, auditLog('diario-paziente', 'READ', req => req.params.patientId), async (req: Request, res: Response) => {
   try {
     const { patientId } = req.params;
     const entries = await DiarioClinico.find({ patient: patientId })
@@ -32,7 +33,7 @@ router.get('/paziente/:patientId', authenticateToken, async (req: Request, res: 
 });
 
 // POST /api/diario/:workPlanId - Aggiungi voce al diario (non firmata, modificabile)
-router.post('/:workPlanId', authenticateToken, async (req: Request, res: Response) => {
+router.post('/:workPlanId', authenticateToken, auditLog('diario', 'CREATE', req => req.params.workPlanId), async (req: Request, res: Response) => {
   try {
     const { workPlanId } = req.params;
     const { testo, parametriVitali, workPlanAccess } = req.body;
@@ -95,7 +96,7 @@ router.post('/firma/:entryId', authenticateToken, async (req: Request, res: Resp
 });
 
 // DELETE /api/diario/entry/:entryId - Elimina voce (solo admin o direttore sanitario)
-router.delete('/entry/:entryId', authenticateToken, async (req: Request, res: Response) => {
+router.delete('/entry/:entryId', authenticateToken, auditLog('diario', 'DELETE', req => req.params.entryId), async (req: Request, res: Response) => {
   try {
     const { entryId } = req.params;
     const user = (req as any).user;
@@ -117,7 +118,7 @@ router.delete('/entry/:entryId', authenticateToken, async (req: Request, res: Re
 });
 
 // GET /api/diario/storico/tutti - Storico cartelle cliniche (tutti i pazienti, solo admin/coord/direttore)
-router.get('/storico/tutti', authenticateToken, async (req: Request, res: Response) => {
+router.get('/storico/tutti', authenticateToken, auditLog('diario-storico', 'READ'), async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
     if (user.role !== 'admin' && user.role !== 'coordinator' && user.role !== 'direttore') {

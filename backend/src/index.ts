@@ -1,7 +1,9 @@
 import './config/env';
-import express, { Application, Request, Response } from 'express';
+import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import path from 'path';
+import jwt from 'jsonwebtoken';
 import connectDB from './config/db';
 import { verificaConnessioneSMTP, inviaEmailNuovoPianoDiLavoro } from './utils/email';
 import authRouter from './routes/auth';
@@ -22,6 +24,7 @@ import checklistDefibrillatoreRouter from './routes/checklistDefibrillatore';
 import schedaControlloDefibrillatoreRouter from './routes/schedaControlloDefibrillatore';
 import checklistGlucometroRouter from './routes/checklistGlucometro';
 import esamiStrumentaliRouter from './routes/esamiStrumentali';
+import auditLogRouter from './routes/auditLog';
 
 if (!process.env.JWT_SECRET) {
   console.error('ERRORE: JWT_SECRET non è impostato. Configurare la variabile d\'ambiente nel file .env prima di avviare il server.');
@@ -31,33 +34,53 @@ if (!process.env.JWT_SECRET) {
 const app: Application = express();
 const port = process.env.PORT || 4000;
 
+// ─── Security headers (Helmet) ────────────────────────────────────────────────
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }, // necessario per Vercel→Render
+  contentSecurityPolicy: false, // gestito da Vercel sul frontend
+}));
+
+// ─── CORS — solo origini autorizzate ─────────────────────────────────────────
+const allowedOrigins: string[] = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+];
+// Aggiungi FRONTEND_URL da env (es. https://app-abbraccio-frontend-rw2c.vercel.app)
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Permetti richieste senza origin (es. app mobile, Postman, curl)
+    // Permetti richieste senza origin (Postman, curl, app mobile)
     if (!origin) return callback(null, true);
-    // Permetti localhost in sviluppo
-    if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
-      return callback(null, true);
-    }
-    // Permetti tutti i sottodomini Vercel (*.vercel.app)
-    if (origin.endsWith('.vercel.app') || origin === 'https://vercel.app') {
-      return callback(null, true);
-    }
-    // Permetti l'URL frontend configurato esplicitamente
-    const frontendUrl = process.env.FRONTEND_URL;
-    if (frontendUrl && origin === frontendUrl) {
-      return callback(null, true);
-    }
-    // In produzione permetti qualsiasi HTTPS
-    if (process.env.NODE_ENV === 'production' && origin.startsWith('https://')) {
-      return callback(null, true);
-    }
-    console.warn(`CORS bloccato per origine: ${origin}`);
-    return callback(null, true); // permetti comunque per evitare blocchi imprevisti
+    // Controlla lista allowlist
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Permetti tutti i sottodomini *.vercel.app (preview deployments)
+    if (origin.endsWith('.vercel.app')) return callback(null, true);
+    console.warn(`CORS bloccato per origine non autorizzata: ${origin}`);
+    return callback(new Error(`Origine non autorizzata: ${origin}`));
   },
   credentials: true,
 }));
-app.use(express.json());
+
+app.use(express.json({ limit: '10mb' }));
+
+// ─── Middleware autenticazione per file statici /uploads ──────────────────────
+const proteggiUploads = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
+  if (!token) {
+    return res.status(401).json({ message: 'Autenticazione richiesta per accedere ai file' });
+  }
+  try {
+    jwt.verify(token, process.env.JWT_SECRET as string);
+    return next();
+  } catch {
+    return res.status(401).json({ message: 'Token non valido' });
+  }
+};
 
 connectDB();
 
@@ -83,11 +106,12 @@ app.use('/api/checklist-defibrillatore', checklistDefibrillatoreRouter);
 app.use('/api/scheda-controllo-defibrillatore', schedaControlloDefibrillatoreRouter);
 app.use('/api/checklist-glucometro', checklistGlucometroRouter);
 app.use('/api/esami-strumentali', esamiStrumentaliRouter);
+app.use('/api/audit-log', auditLogRouter);
 // Alias senza prefisso /api per compatibilità con URL diretti degli allegati
 app.use('/allegati', allegatiRouter);
 
-// Serve file statici uploads (con autenticazione gestita lato route)
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+// Serve file statici uploads — protetti da autenticazione JWT
+app.use('/uploads', proteggiUploads, express.static(path.join(process.cwd(), 'uploads')));
 
 // ─── Endpoint test email (per diagnostica SMTP) ───────────────────────────────
 app.get('/api/test-email', async (req: Request, res: Response) => {

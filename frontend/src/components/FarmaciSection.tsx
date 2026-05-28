@@ -192,12 +192,12 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
     const righe = farmaci.map(f => {
       const scad = f.scadenza ? formatData(f.scadenza) : 'N/A';
       const inScadenza = f.scadenza && eScadutoOProssimo(f.scadenza) ? ' ⚠️ IN SCADENZA' : '';
-      const sottoScorta = f.scortaMinima && f.quantita <= f.scortaMinima ? ' ⚠️ SOTTO SCORTA' : '';
+      const sottoScorta = f.scortaMinima && f.quantita < f.scortaMinima ? ' ⚠️ SOTTO SCORTA' : '';
       return `
         <tr>
           <td>${f.nome}</td>
           <td>${f.dosaggio}</td>
-          <td style="text-align:center;${f.scortaMinima && f.quantita <= f.scortaMinima ? 'color:#dc3545;font-weight:bold;' : ''}">${f.quantita} conf.${sottoScorta}</td>
+          <td style="text-align:center;${f.scortaMinima && f.quantita < f.scortaMinima ? 'color:#dc3545;font-weight:bold;' : ''}">${f.quantita} conf.${sottoScorta}</td>
           <td style="${f.scadenza && eScadutoOProssimo(f.scadenza) ? 'color:#dc3545;font-weight:bold;' : ''}">${scad}${inScadenza}</td>
           <td style="text-align:center;">${f.scortaMinima || 0}</td>
         </tr>`;
@@ -307,7 +307,7 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
             </div>
             <ul>
               {farmaci.map((farmaco) => {
-                const sottoScorta = farmaco.scortaMinima && farmaco.quantita <= farmaco.scortaMinima;
+                const sottoScorta = farmaco.scortaMinima && farmaco.quantita < farmaco.scortaMinima;
                 return (
                   <li key={farmaco.id}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>

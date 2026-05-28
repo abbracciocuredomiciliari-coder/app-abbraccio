@@ -5,11 +5,12 @@ import WorkPlanAccess from '../models/WorkPlanAccess';
 import DiarioClinico from '../models/DiarioClinico';
 import AllegatoCartella from '../models/AllegatoCartella';
 import { authenticateToken } from '../middleware/auth';
+import { auditLog } from '../middleware/audit';
 
 const router = Router();
 
 // POST /api/archivio/:workPlanId - Archivia un piano di lavoro (snapshot completo)
-router.post('/:workPlanId', authenticateToken, async (req: Request, res: Response) => {
+router.post('/:workPlanId', authenticateToken, auditLog('archivio', 'CREATE', req => req.params.workPlanId), async (req: Request, res: Response) => {
   try {
     const { workPlanId } = req.params;
     const { note } = req.body;
@@ -121,7 +122,7 @@ router.post('/:workPlanId', authenticateToken, async (req: Request, res: Respons
 });
 
 // GET /api/archivio - Lista di tutte le cartelle archiviate
-router.get('/', authenticateToken, async (req: Request, res: Response) => {
+router.get('/', authenticateToken, auditLog('archivio', 'READ'), async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
     const { paziente } = req.query;
@@ -152,7 +153,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
 });
 
 // GET /api/archivio/:id - Dettaglio completo di una cartella archiviata
-router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
+router.get('/:id', authenticateToken, auditLog('archivio-dettaglio', 'READ', req => req.params.id), async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
 
@@ -172,7 +173,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
 });
 
 // DELETE /api/archivio/:id - Elimina una cartella archiviata (solo admin e direttore)
-router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
+router.delete('/:id', authenticateToken, auditLog('archivio', 'DELETE', req => req.params.id), async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
 
