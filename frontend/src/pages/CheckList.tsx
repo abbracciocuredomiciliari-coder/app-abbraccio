@@ -121,6 +121,105 @@ function CheckList() {
     entry.batterieElettrodiScortaNonScaduti &&
     entry.asiLampeggiaVerde;
 
+  // Stampa report completo di tutti i controlli in un unico PDF
+  const stampaPDFReport = () => {
+    if (storico.length === 0) {
+      alert('Nessuna checklist da stampare.');
+      return;
+    }
+    const oggi = new Date().toLocaleDateString('it-IT');
+
+    const righe = storico.map((entry) => {
+      const ok = tutteSpuntate(entry);
+      const data = new Date(entry.data).toLocaleDateString('it-IT');
+      const vociOk = vociChecklist.filter((v) => entry[v.key]).length;
+      const esito = ok
+        ? `<span style="color:#155724;font-weight:bold;">✅ Completa (3/3)</span>`
+        : `<span style="color:#856404;font-weight:bold;">⚠️ Parziale (${vociOk}/3)</span>`;
+
+      const dettaglioVoci = vociChecklist.map((v) => {
+        const spuntata = entry[v.key];
+        return `<div style="font-size:11px;color:${spuntata ? '#155724' : '#721c24'};margin-top:2px;">
+          ${spuntata ? '✅' : '☐'} ${v.label}
+        </div>`;
+      }).join('');
+
+      return `<tr>
+        <td style="padding:8px 10px;border-bottom:1px solid #ddd;white-space:nowrap;">${data}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #ddd;">${entry.nSerieAED || '—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #ddd;">${entry.ubicazioneAED || '—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #ddd;">${esito}${dettaglioVoci}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #ddd;">${entry.ispezionatoDa}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #ddd;font-style:italic;color:#666;">${entry.commenti || '—'}</td>
+      </tr>`;
+    }).join('');
+
+    const totale = storico.length;
+    const complete = storico.filter(tutteSpuntate).length;
+    const parziali = totale - complete;
+
+    const html = `<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Report Completo Checklist Defibrillatore</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; color: #222; font-size: 12px; }
+    .intestazione { display: flex; align-items: center; gap: 20px; border-bottom: 3px solid #1e4d8c; padding-bottom: 14px; margin-bottom: 18px; }
+    .intestazione img { height: 70px; width: auto; }
+    .intestazione .testo h1 { margin: 0; font-size: 18px; color: #1e4d8c; }
+    .intestazione .testo p { margin: 3px 0 0; font-size: 11px; color: #666; }
+    .riepilogo { display: flex; gap: 20px; margin-bottom: 18px; flex-wrap: wrap; }
+    .stat { background: #f5f8fc; border: 1px solid #d0dff0; border-radius: 6px; padding: 10px 18px; text-align: center; }
+    .stat .num { font-size: 22px; font-weight: bold; color: #1e4d8c; }
+    .stat .lab { font-size: 11px; color: #666; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th { background: #1e4d8c; color: #fff; padding: 8px 10px; text-align: left; }
+    td { vertical-align: top; }
+    tr:nth-child(even) td { background: #f5f8fc; }
+    .footer { margin-top: 20px; font-size: 10px; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
+    @media print { body { margin: 8mm; } }
+  </style>
+</head>
+<body>
+  <div class="intestazione">
+    <img src="${window.location.origin}/logo.png" alt="Abbraccio Cure Domiciliari" onerror="this.style.display='none'" />
+    <div class="testo">
+      <h1>📋 Report Completo — Checklist Defibrillatore</h1>
+      <p>Abbraccio Cure Domiciliari — Documento generato il ${oggi} — Totale controlli: ${totale}</p>
+    </div>
+  </div>
+  <div class="riepilogo">
+    <div class="stat"><div class="num">${totale}</div><div class="lab">Controlli totali</div></div>
+    <div class="stat" style="border-color:#28a745;"><div class="num" style="color:#28a745;">${complete}</div><div class="lab">✅ Completi</div></div>
+    <div class="stat" style="border-color:#ffc107;"><div class="num" style="color:#856404;">${parziali}</div><div class="lab">⚠️ Parziali</div></div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>N° Serie AED</th>
+        <th>Ubicazione</th>
+        <th>Esito / Voci</th>
+        <th>Operatore</th>
+        <th>Commenti</th>
+      </tr>
+    </thead>
+    <tbody>${righe}</tbody>
+  </table>
+  <div class="footer">Documento generato automaticamente da Abbraccio Cure Domiciliari — Lista operativa DAC-510E-IT Rev. G, Sez. 5.6</div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => win.print(), 400);
+    }
+  };
+
   const stampaChecklist = (entry: CheckListEntry) => {
     const oggi = new Date(entry.data).toLocaleDateString('it-IT');
     const voci = vociChecklist
@@ -368,7 +467,18 @@ function CheckList() {
 
       {/* Storico checklist */}
       <div className="dashboard-folder">
-        <h3>📂 Storico checklist compilate</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+          <h3 style={{ margin: 0 }}>📂 Storico checklist compilate</h3>
+          {storico.length > 0 && (
+            <button
+              type="button"
+              onClick={stampaPDFReport}
+              style={{ background: '#6c757d', fontSize: '0.85rem', padding: '7px 16px' }}
+            >
+              🖨️ Stampa report completo PDF
+            </button>
+          )}
+        </div>
 
         {loading ? (
           <p>Caricamento...</p>
