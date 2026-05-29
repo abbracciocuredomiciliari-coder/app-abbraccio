@@ -23,6 +23,8 @@ import PortaleOperatore from './pages/PortaleOperatore';
 import ProfiloPersonale from './pages/ProfiloPersonale';
 import CompensoIncarichi from './pages/CompensoIncarichi';
 import EsamiStrumentali from './pages/EsamiStrumentali';
+import RichiestePresidiPage from './pages/RichiestePresidiPage';
+import GestioneRichiestePresidiPage from './pages/GestioneRichiestePresidiPage';
 import {
   Heart,
   LayoutDashboard,
@@ -100,6 +102,10 @@ function AppShell() {
                 <HeartPulse size={18} />
                 Esami Strumentali
               </Link>
+              <Link to="/richieste-presidi" className={isActive('/richieste-presidi') ? 'active' : ''}>
+                <Briefcase size={18} />
+                Richiesta Presidi/Farmaci
+              </Link>
               <Link to="/profilo-personale" className={isActive('/profilo-personale') ? 'active' : ''}>
                 <UserCircle size={18} />
                 Il mio profilo
@@ -158,6 +164,10 @@ function AppShell() {
               <Link to="/esami-strumentali" className={isActive('/esami-strumentali') ? 'active' : ''}>
                 <HeartPulse size={18} />
                 Esami Strumentali
+              </Link>
+              <Link to="/gestione-richieste-presidi" className={isActive('/gestione-richieste-presidi') ? 'active' : ''}>
+                <Briefcase size={18} />
+                Richieste Presidi/Farmaci
               </Link>
               <Link to="/compenso-incarichi" className={isActive('/compenso-incarichi') ? 'active' : ''}>
                 <Euro size={18} />
@@ -235,6 +245,10 @@ function AppShell() {
 
           {/* Esami Strumentali */}
           <Route path="/esami-strumentali" element={<ProtectedRoute><EsamiStrumentali /></ProtectedRoute>} />
+
+          {/* Richieste Presidi/Farmaci */}
+          <Route path="/richieste-presidi" element={<ProtectedRoute><RichiestePresidiPage /></ProtectedRoute>} />
+          <Route path="/gestione-richieste-presidi" element={<ProtectedRoute><GestioneRichiestePresidiPage /></ProtectedRoute>} />
 
           {/* Route operatori */}
           <Route path="/portale-operatore" element={<ProtectedRoute><PortaleOperatore /></ProtectedRoute>} />

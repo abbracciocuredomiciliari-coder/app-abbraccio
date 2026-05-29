@@ -152,6 +152,62 @@ router.patch('/:id/gestisci', auth, isAdminOrCoord, async (req: Request, res: Re
   }
 });
 
+// ─── PATCH /api/supply-requests/:id/consegna ─────────────────────────────────
+// Admin/coord segna la richiesta come consegnata e scarica dal magazzino
+router.patch('/:id/consegna', auth, isAdminOrCoord, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const richiesta = await SupplyRequest.findById(req.params.id);
+    if (!richiesta) return res.status(404).json({ message: 'Richiesta non trovata' });
+    if (richiesta.stato !== 'gestita') {
+      return res.status(400).json({ message: 'Solo le richieste gestite possono essere segnate come consegnate' });
+    }
+
+    // Recupera nome admin
+    const dbAdmin = await User.findById(user.userId || user.id).select('name email').lean();
+    const adminNome = (dbAdmin as any)?.name || user.email;
+
+    // Scarica dal magazzino per ogni item autorizzato/parziale
+    for (const item of richiesta.items) {
+      if (item.statoItem === 'autorizzato' || item.statoItem === 'parziale') {
+        const qtaScaricare = item.quantitaAutorizzata ?? 0;
+        if (qtaScaricare <= 0) continue;
+        try {
+          const supply = await MedicalSupply.findById(item.supplyId);
+          if (supply) {
+            const qtaPrecedente = supply.quantita;
+            const qtaNuova = Math.max(0, qtaPrecedente - qtaScaricare);
+            supply.quantita = qtaNuova;
+            await supply.save();
+            // Registra movimento scarico
+            try {
+              const SupplyMovement = (await import('../models/SupplyMovement')).default;
+              await SupplyMovement.create({
+                supply: supply._id,
+                tipo: 'scarico',
+                quantita: qtaScaricare,
+                motivazione: `Consegna a ${richiesta.operatoreNome} (richiesta #${richiesta._id})`,
+                eseguitoDa: user.userId || user.id,
+                eseguitoDaNome: adminNome,
+                quantitaPrecedente: qtaPrecedente,
+                quantitaSuccessiva: qtaNuova,
+              });
+            } catch (_) { /* SupplyMovement opzionale */ }
+          }
+        } catch (_) { /* supply non trovato, continua */ }
+      }
+    }
+
+    richiesta.stato = 'consegnata';
+    richiesta.dataConsegna = new Date();
+    richiesta.consegnataDa = adminNome;
+    await richiesta.save();
+    return res.json(richiesta);
+  } catch (err: any) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
 // ─── DELETE /api/supply-requests/:id ─────────────────────────────────────────
 // Operatore può eliminare solo richieste proprie in_attesa
 router.delete('/:id', auth, async (req: Request, res: Response) => {

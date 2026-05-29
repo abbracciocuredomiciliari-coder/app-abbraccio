@@ -36,8 +36,9 @@ interface Richiesta {
 
 const statoColori: Record<string, { bg: string; color: string; label: string }> = {
   in_attesa:  { bg: '#fff3cd', color: '#856404', label: '⏳ In attesa' },
-  gestita:    { bg: '#d1fae5', color: '#065f46', label: '✅ Gestita' },
+  gestita:    { bg: '#d1fae5', color: '#065f46', label: '✅ Autorizzata' },
   rifiutata:  { bg: '#fee2e2', color: '#7f1d1d', label: '❌ Rifiutata' },
+  consegnata: { bg: '#e0f2fe', color: '#0369a1', label: '🚚 Consegnata' },
 };
 
 const statoItemColori: Record<string, { color: string; label: string }> = {

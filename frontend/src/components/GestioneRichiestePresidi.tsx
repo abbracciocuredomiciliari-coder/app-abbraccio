@@ -17,19 +17,22 @@ interface Richiesta {
   _id: string;
   operatoreId: string;
   operatoreNome: string;
-  stato: 'in_attesa' | 'gestita' | 'rifiutata';
+  stato: 'in_attesa' | 'gestita' | 'rifiutata' | 'consegnata';
   noteOperatore?: string;
   noteAdmin?: string;
   items: RichiestaItem[];
   dataRichiesta: string;
   dataGestione?: string;
   gestitaDa?: string;
+  dataConsegna?: string;
+  consegnataDa?: string;
 }
 
 const statoColori: Record<string, { bg: string; color: string; label: string }> = {
-  in_attesa: { bg: '#fff3cd', color: '#856404', label: '⏳ In attesa' },
-  gestita:   { bg: '#d1fae5', color: '#065f46', label: '✅ Gestita' },
-  rifiutata: { bg: '#fee2e2', color: '#7f1d1d', label: '❌ Rifiutata' },
+  in_attesa:  { bg: '#fff3cd', color: '#856404', label: '⏳ In attesa' },
+  gestita:    { bg: '#d1fae5', color: '#065f46', label: '✅ Gestita' },
+  rifiutata:  { bg: '#fee2e2', color: '#7f1d1d', label: '❌ Rifiutata' },
+  consegnata: { bg: '#e0f2fe', color: '#0369a1', label: '🚚 Consegnata' },
 };
 
 const STATI_ITEM = [
@@ -46,6 +49,7 @@ export default function GestioneRichiestePresidi() {
   const [itemsGestione, setItemsGestione] = useState<Record<string, { quantitaAutorizzata: number; statoItem: string; noteAdmin: string }>>({});
   const [noteAdminGlobale, setNoteAdminGlobale] = useState('');
   const [salvando, setSalvando] = useState(false);
+  const [consegnando, setConsegnando] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRichieste();
@@ -116,6 +120,20 @@ export default function GestioneRichiestePresidi() {
       alert(err?.response?.data?.message || 'Errore nel salvataggio');
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const segnaComeConsegnata = async (richiestaId: string) => {
+    if (!confirm('Segnare come consegnata? Verrà effettuato lo scarico automatico dal magazzino.')) return;
+    setConsegnando(richiestaId);
+    try {
+      const res = await api.patch(`/supply-requests/${richiestaId}/consegna`, {});
+      setRichieste(prev => prev.map(r => r._id === richiestaId ? res.data : r));
+      alert('Consegna registrata! Il magazzino è stato aggiornato.');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nella registrazione della consegna');
+    } finally {
+      setConsegnando(null);
     }
   };
 
@@ -190,6 +208,13 @@ export default function GestioneRichiestePresidi() {
                       <button type="button" onClick={() => apriGestione(r)}
                         style={{ background: '#1e4d8c', padding: '6px 14px', fontSize: '0.85rem' }}>
                         ✏️ Gestisci
+                      </button>
+                    )}
+                    {r.stato === 'gestita' && (
+                      <button type="button" onClick={() => segnaComeConsegnata(r._id)}
+                        disabled={consegnando === r._id}
+                        style={{ background: '#0369a1', padding: '6px 14px', fontSize: '0.85rem', opacity: consegnando === r._id ? 0.6 : 1 }}>
+                        {consegnando === r._id ? '⏳...' : '🚚 Segna consegnato'}
                       </button>
                     )}
                     {isInGestione && (

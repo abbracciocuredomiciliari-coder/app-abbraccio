@@ -14,13 +14,15 @@ export interface ISupplyRequestItem {
 export interface ISupplyRequest extends Document {
   operatoreId: mongoose.Types.ObjectId;
   operatoreNome: string;
-  stato: 'in_attesa' | 'gestita' | 'rifiutata';
+  stato: 'in_attesa' | 'gestita' | 'rifiutata' | 'consegnata';
   noteOperatore?: string;
   noteAdmin?: string;
   items: ISupplyRequestItem[];
   dataRichiesta: Date;
   dataGestione?: Date;
   gestitaDa?: string;
+  dataConsegna?: Date;
+  consegnataDa?: string;
 }
 
 const SupplyRequestItemSchema = new Schema<ISupplyRequestItem>({
@@ -37,13 +39,15 @@ const SupplyRequestItemSchema = new Schema<ISupplyRequestItem>({
 const SupplyRequestSchema = new Schema<ISupplyRequest>({
   operatoreId: { type: Schema.Types.ObjectId, ref: 'Staff', required: true },
   operatoreNome: { type: String, required: true },
-  stato: { type: String, enum: ['in_attesa', 'gestita', 'rifiutata'], default: 'in_attesa' },
+  stato: { type: String, enum: ['in_attesa', 'gestita', 'rifiutata', 'consegnata'], default: 'in_attesa' },
   noteOperatore: { type: String },
   noteAdmin: { type: String },
   items: [SupplyRequestItemSchema],
   dataRichiesta: { type: Date, default: Date.now },
   dataGestione: { type: Date },
   gestitaDa: { type: String },
+  dataConsegna: { type: Date },
+  consegnataDa: { type: String },
 }, { timestamps: true });
 
 export default mongoose.model<ISupplyRequest>('SupplyRequest', SupplyRequestSchema);
