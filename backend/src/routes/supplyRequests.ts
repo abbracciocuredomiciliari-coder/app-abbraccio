@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import SupplyRequest from '../models/SupplyRequest';
 import MedicalSupply from '../models/MedicalSupply';
 import User from '../models/User';
@@ -71,10 +72,21 @@ router.post('/', auth, async (req: Request, res: Response) => {
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'Inserire almeno un articolo nella richiesta' });
     }
-    // Recupera il nome reale dell'utente dal DB (il JWT contiene solo userId/email/role)
-    const operatoreId = user.staffId || user.userId || user.id;
-    const dbUser = await User.findById(user.userId || user.id).select('name email').lean();
-    const operatoreNome = (dbUser as any)?.name || user.email;
+    // Il JWT contiene { userId, email, role } — recupera l'utente dal DB tramite email come fallback sicuro
+    let operatoreId = user.staffId || user.userId || user.id;
+    let dbUser: any = null;
+    if (operatoreId && mongoose.Types.ObjectId.isValid(operatoreId)) {
+      dbUser = await User.findById(operatoreId).select('name email').lean();
+    }
+    // Fallback: cerca per email (sempre presente nel JWT)
+    if (!dbUser && user.email) {
+      dbUser = await User.findOne({ email: user.email }).select('_id name email').lean();
+      if (dbUser) operatoreId = dbUser._id;
+    }
+    if (!operatoreId) {
+      return res.status(400).json({ message: 'Impossibile identificare l\'operatore. Effettua nuovamente il login.' });
+    }
+    const operatoreNome = dbUser?.name || user.email;
     const richiesta = new SupplyRequest({
       operatoreId,
       operatoreNome,
