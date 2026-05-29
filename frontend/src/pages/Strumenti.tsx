@@ -82,7 +82,9 @@ function Strumenti() {
   const [movementType, setMovementType] = useState<'carico' | 'scarico'>('carico');
   const [movementQuantity, setMovementQuantity] = useState<number>(1);
   const [movementNote, setMovementNote] = useState('');
+  const [movementScadenza, setMovementScadenza] = useState('');
   const [movements, setMovements] = useState<SupplyMovement[]>([]);
+  const [cercaPresidio, setCercaPresidio] = useState('');
 
   // Form stati per le apparecchiature
   const [nuovaApparecchiatura, setNuovaApparecchiatura] = useState({
@@ -335,12 +337,22 @@ function Strumenti() {
       return;
     }
     try {
-      const res = await api.post(`/supplies/${selectedPresidio.id}/movements`, {
+      const payload: any = {
         tipo: movementType,
         quantita: movementQuantity,
         motivazione: movementNote,
-      });
-      setPresidi(presidi.map(p => p.id === selectedPresidio.id ? { ...p, quantita: res.data.supply.quantita } : p));
+        nuovaScadenza: movementScadenza || null,
+      };
+      const res = await api.post(`/supplies/${selectedPresidio.id}/movements`, payload);
+      const nuovaScadenzaAggiornata = res.data.supply.scadenza || '';
+      // Aggiorna la lista presidi con nuova quantità e nuova scadenza
+      setPresidi(presidi.map(p =>
+        p.id === selectedPresidio.id
+          ? { ...p, quantita: res.data.supply.quantita, scadenza: nuovaScadenzaAggiornata }
+          : p
+      ));
+      // Aggiorna anche il presidio selezionato nel modal
+      setSelectedPresidio(prev => prev ? { ...prev, quantita: res.data.supply.quantita, scadenza: nuovaScadenzaAggiornata } : prev);
       await fetchMovements(selectedPresidio.id);
       setMovementQuantity(1);
       setMovementNote('');
@@ -368,6 +380,7 @@ function Strumenti() {
     setMovementType('carico');
     setMovementQuantity(1);
     setMovementNote('');
+    setMovementScadenza(presidio.scadenza ? presidio.scadenza.substring(0, 10) : '');
     await fetchMovements(presidio.id);
     setShowMovementModal(true);
   };
@@ -772,14 +785,40 @@ function Strumenti() {
 
         {presidi.length > 0 ? (
           <div className="document-list">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
               <h4 style={{ margin: 0 }}>Elenco presidi ({presidi.length})</h4>
               <button type="button" onClick={stampaPDFPresidi} style={{ background: '#6c757d', fontSize: '0.85rem', padding: '6px 14px' }}>
                 🖨️ Stampa lista PDF
               </button>
             </div>
+            {/* Barra di ricerca presidi */}
+            <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '16px' }}>🔍</span>
+              <input
+                type="text"
+                value={cercaPresidio}
+                onChange={(e) => setCercaPresidio(e.target.value)}
+                placeholder="Cerca presidio per nome..."
+                style={{ flex: 1, padding: '8px 12px', border: '1px solid #ced4da', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
+              />
+              {cercaPresidio && (
+                <button
+                  type="button"
+                  onClick={() => setCercaPresidio('')}
+                  style={{ background: 'none', border: 'none', color: '#6c757d', cursor: 'pointer', fontSize: '18px', padding: '0 4px', lineHeight: 1 }}
+                  title="Cancella ricerca"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+            {cercaPresidio && (
+              <p style={{ margin: '0 0 8px', fontSize: '13px', color: '#666' }}>
+                {presidi.filter(p => p.nome.toLowerCase().includes(cercaPresidio.toLowerCase())).length} risultati per "{cercaPresidio}"
+              </p>
+            )}
             <ul>
-              {presidi.map((presidio) => {
+              {presidi.filter(p => !cercaPresidio || p.nome.toLowerCase().includes(cercaPresidio.toLowerCase())).map((presidio) => {
                 const unita = presidio.unitaMisura || 'pezzi';
                 const sottoScorta = presidio.scortaMinima && presidio.quantita < presidio.scortaMinima;
                 const mancanti = sottoScorta ? (presidio.scortaMinima! - presidio.quantita) : 0;
@@ -1019,6 +1058,30 @@ function Strumenti() {
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Motivazione (opzionale)</label>
                 <input type="text" value={movementNote} onChange={(e) => setMovementNote(e.target.value)} placeholder={movementType === 'carico' ? 'Es. Fornitura, acquisto...' : 'Es. Consegnato a reparto, scaduto...'} style={{ width: '100%', padding: '10px' }} />
+              </div>
+              <div style={{ marginBottom: '16px', padding: '12px', background: '#e8f4fd', border: '1px solid #bee3f8', borderRadius: '6px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#1e4d8c' }}>
+                  📅 Aggiorna data di scadenza (opzionale)
+                </label>
+                <p style={{ margin: '0 0 8px', fontSize: '12px', color: '#555' }}>
+                  Lascia vuoto per mantenere la scadenza attuale
+                  {selectedPresidio.scadenza ? ` (${formatData(selectedPresidio.scadenza)})` : ' (nessuna scadenza impostata)'}.
+                </p>
+                <input
+                  type="date"
+                  value={movementScadenza}
+                  onChange={(e) => setMovementScadenza(e.target.value)}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '14px', boxSizing: 'border-box' }}
+                />
+                {movementScadenza && (
+                  <button
+                    type="button"
+                    onClick={() => setMovementScadenza('')}
+                    style={{ marginTop: '6px', background: 'none', border: 'none', color: '#dc3545', cursor: 'pointer', fontSize: '12px', padding: 0 }}
+                  >
+                    ✕ Rimuovi data scadenza
+                  </button>
+                )}
               </div>
               {movementType === 'scarico' && (
                 <div style={{ padding: '10px', backgroundColor: movementQuantity > selectedPresidio.quantita ? '#f8d7da' : '#d4edda', borderRadius: '4px', marginBottom: '16px', color: movementQuantity > selectedPresidio.quantita ? '#721c24' : '#155724' }}>

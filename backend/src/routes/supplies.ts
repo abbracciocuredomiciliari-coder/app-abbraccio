@@ -103,7 +103,7 @@ router.delete('/:supplyId', authenticateToken, async (req: Request, res: Respons
 router.post('/:supplyId/movements', authenticateToken, async (req: Request, res: Response) => {
   try {
     const supplyId = req.params.supplyId;
-    const { tipo, quantita, motivazione } = req.body;
+    const { tipo, quantita, motivazione, nuovaScadenza } = req.body;
 
     if (!tipo || !['carico', 'scarico'].includes(tipo)) {
       return res.status(400).json({ message: 'Tipo di movimento non valido. Usare: carico, scarico' });
@@ -132,8 +132,11 @@ router.post('/:supplyId/movements', authenticateToken, async (req: Request, res:
       quantitaSuccessiva = quantitaPrecedente - quantita;
     }
 
-    // Aggiorna la quantità del presidio
+    // Aggiorna la quantità e, se fornita, la data di scadenza
     supply.quantita = quantitaSuccessiva;
+    if (nuovaScadenza !== undefined) {
+      supply.scadenza = nuovaScadenza ? new Date(nuovaScadenza) : undefined;
+    }
     await supply.save();
 
     // Crea il movimento

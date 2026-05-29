@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import SupplyRequest from '../models/SupplyRequest';
 import MedicalSupply from '../models/MedicalSupply';
+import User from '../models/User';
 
 const router = Router();
 
@@ -52,7 +53,7 @@ router.get('/', auth, async (req: Request, res: Response) => {
     const user = (req as any).user;
     let query: any = {};
     if (!['admin', 'coordinator'].includes(user.role)) {
-      query.operatoreId = user.staffId || user.id;
+      query.operatoreId = user.staffId || user.userId || user.id;
     }
     const richieste = await SupplyRequest.find(query).sort({ dataRichiesta: -1 }).lean();
     return res.json(richieste);
@@ -70,9 +71,13 @@ router.post('/', auth, async (req: Request, res: Response) => {
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'Inserire almeno un articolo nella richiesta' });
     }
+    // Recupera il nome reale dell'utente dal DB (il JWT contiene solo userId/email/role)
+    const operatoreId = user.staffId || user.userId || user.id;
+    const dbUser = await User.findById(user.userId || user.id).select('name email').lean();
+    const operatoreNome = (dbUser as any)?.name || user.email;
     const richiesta = new SupplyRequest({
-      operatoreId: user.staffId || user.id,
-      operatoreNome: user.name || user.email,
+      operatoreId,
+      operatoreNome,
       stato: 'in_attesa',
       noteOperatore,
       items: items.map((item: any) => ({
@@ -119,7 +124,9 @@ router.patch('/:id/gestisci', auth, isAdminOrCoord, async (req: Request, res: Re
 
     richiesta.noteAdmin = noteAdmin || '';
     richiesta.dataGestione = new Date();
-    richiesta.gestitaDa = user.name || user.email;
+    // Recupera il nome reale dal DB (il JWT contiene solo userId/email/role)
+    const dbAdmin = await User.findById(user.userId || user.id).select('name email').lean();
+    richiesta.gestitaDa = (dbAdmin as any)?.name || user.email;
 
     // Determina stato globale
     const tuttiAutorizzati = richiesta.items.every((i: any) => i.statoItem === 'autorizzato');
@@ -140,7 +147,7 @@ router.delete('/:id', auth, async (req: Request, res: Response) => {
     const user = (req as any).user;
     const richiesta = await SupplyRequest.findById(req.params.id);
     if (!richiesta) return res.status(404).json({ message: 'Richiesta non trovata' });
-    const isOwner = richiesta.operatoreId.toString() === (user.staffId || user.id);
+    const isOwner = richiesta.operatoreId.toString() === (user.staffId || user.userId || user.id);
     const isAdmin = ['admin', 'coordinator'].includes(user.role);
     if (!isOwner && !isAdmin) return res.status(403).json({ message: 'Non autorizzato' });
     if (!isAdmin && richiesta.stato !== 'in_attesa') {
