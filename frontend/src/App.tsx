@@ -186,6 +186,27 @@ function AppShell() {
         )}
       </aside>
       <main className="content">
+        {/* ── Tasto "Torna al menu principale" ── */}
+        {user && (() => {
+          const homePath = operatore ? '/portale-operatore' : '/dashboard';
+          const noBackPaths = ['/', '/register', homePath];
+          if (noBackPaths.includes(location.pathname)) return null;
+          return (
+            <div style={{ padding: '10px 16px 0', marginBottom: '-4px' }}>
+              <Link
+                to={homePath}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  background: '#f1f5f9', color: '#374151', border: '1px solid #e2e8f0',
+                  borderRadius: '6px', padding: '7px 14px', fontSize: '0.88rem',
+                  fontWeight: '600', textDecoration: 'none', cursor: 'pointer',
+                }}
+              >
+                ← Menu principale
+              </Link>
+            </div>
+          );
+        })()}
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />

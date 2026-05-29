@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { Search, BookOpen, Activity, Printer, ChevronDown, ChevronUp, Lock, Paperclip, FileText, Image, File, ExternalLink, Eye } from 'lucide-react';
@@ -213,7 +213,7 @@ export default function StoricoCliniche() {
     win.document.write(html);
     win.document.close();
     win.focus();
-    setTimeout(() => win.print(), 500);
+    win.focus();
   };
 
   const formatData = (d: string) => new Date(d).toLocaleDateString('it-IT');

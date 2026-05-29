@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import api from '../api/api';
 
 interface Farmaco {
@@ -197,7 +197,7 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
     }
   };
 
-  // Stampa PDF lista farmaci
+  // Visualizza PDF lista farmaci
   const stampaPDF = () => {
     const oggi = new Date().toLocaleDateString('it-IT');
     const righe = farmaci.map(f => {
@@ -278,7 +278,7 @@ export default function FarmaciSection({ canEdit, formatData, formatDataOra, eSc
       win.document.write(html);
       win.document.close();
       win.focus();
-      setTimeout(() => win.print(), 400);
+      win.focus();
     }
   };
 

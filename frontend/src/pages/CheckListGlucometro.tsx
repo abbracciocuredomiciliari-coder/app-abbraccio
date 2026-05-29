@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 
@@ -174,7 +174,7 @@ function CheckListGlucometro() {
     }
   };
 
-  // ─── Stampa PDF ───────────────────────────────────────────────────────────────
+  // ─── Visualizza PDF ───────────────────────────────────────────────────────────────
 
   const stampaChecklist = (entry: CheckListGlucometroEntry) => {
     const dataStr = new Date(entry.dataControllo).toLocaleDateString('it-IT');
@@ -266,7 +266,7 @@ function CheckListGlucometro() {
       win.document.write(html);
       win.document.close();
       win.focus();
-      setTimeout(() => win.print(), 400);
+      win.focus();
     }
   };
 
@@ -344,7 +344,7 @@ function CheckListGlucometro() {
       win.document.write(html);
       win.document.close();
       win.focus();
-      setTimeout(() => win.print(), 400);
+      win.focus();
     }
   };
 
@@ -718,7 +718,7 @@ function CheckListGlucometro() {
                           onClick={() => stampaChecklist(entry)}
                           style={{ background: '#1e4d8c', fontSize: '0.85rem', padding: '6px 14px' }}
                         >
-                          🖨️ Stampa PDF
+                          🖨️ Visualizza PDF
                         </button>
                         {user && (user.role === 'admin' || user.role === 'coordinator') && (
                           <button

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 
@@ -216,7 +216,7 @@ function CheckList() {
       win.document.write(html);
       win.document.close();
       win.focus();
-      setTimeout(() => win.print(), 400);
+      win.focus();
     }
   };
 
@@ -289,7 +289,7 @@ function CheckList() {
       win.document.write(html);
       win.document.close();
       win.focus();
-      setTimeout(() => win.print(), 400);
+      win.focus();
     }
   };
 
@@ -526,7 +526,7 @@ function CheckList() {
                           onClick={() => stampaChecklist(entry)}
                           style={{ background: '#1e4d8c', fontSize: '0.85rem', padding: '6px 14px' }}
                         >
-                          🖨️ Stampa PDF
+                          🖨️ Visualizza PDF
                         </button>
                         {user && (user.role === 'admin' || user.role === 'coordinator') && (
                           <button

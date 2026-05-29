@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useRef, useState } from 'react';
+﻿import { FormEvent, useEffect, useRef, useState } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -459,7 +459,7 @@ export default function EsamiStrumentali() {
     }
   };
 
-  // ─── Stampa PDF ─────────────────────────────────────────────────────────────
+  // ─── Visualizza PDF ─────────────────────────────────────────────────────────────
   const stampaPDF = async (esame: EsameItem) => {
     setLoadingPdf(true);
     try {
@@ -584,7 +584,7 @@ export default function EsamiStrumentali() {
       win.document.write(html);
       win.document.close();
       win.focus();
-      setTimeout(() => { win.print(); }, 600);
+      win.focus();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Errore nella generazione del PDF.');
       setTimeout(() => setError(''), 4000);
@@ -794,7 +794,7 @@ export default function EsamiStrumentali() {
                         type="button"
                         onClick={() => stampaPDF(esame)}
                         style={{ background: '#059669', padding: '7px' }}
-                        title="Stampa PDF"
+                        title="Visualizza PDF"
                         disabled={loadingPdf}
                       >
                         <Printer size={15} />
@@ -862,7 +862,7 @@ export default function EsamiStrumentali() {
                   disabled={loadingPdf}
                 >
                   <Printer size={15} />
-                  {loadingPdf ? 'Generazione...' : 'Stampa PDF'}
+                  {loadingPdf ? 'Generazione...' : 'Visualizza PDF'}
                 </button>
                 <button type="button" onClick={chiudiModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', padding: '4px' }}>
                   <X size={22} />

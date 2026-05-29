@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+﻿import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
@@ -383,7 +383,7 @@ function WorkPlan() {
     }
   };
 
-  // Stampa PDF senza tariffa (solo rendicontazione accessi)
+  // Visualizza PDF senza tariffa (solo rendicontazione accessi)
   const stampaExportModal = () => {
     if (!exportDataModal) return;
     const win = window.open('', '_blank');
@@ -422,7 +422,7 @@ function WorkPlan() {
     </body></html>`);
     win.document.close();
     win.focus();
-    setTimeout(() => { win.print(); win.close(); }, 500);
+    win.focus();
   };
 
   // Salva compenso
@@ -1095,7 +1095,7 @@ function WorkPlan() {
                         {exportDataModal && (
                           <button type="button" onClick={stampaExportModal}
                             style={{ background: '#059669', padding: '9px 16px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
-                            🖨️ Stampa PDF
+                            🖨️ Visualizza PDF
                           </button>
                         )}
                       </div>

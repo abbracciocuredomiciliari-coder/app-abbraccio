@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+﻿import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import FarmaciSection from '../components/FarmaciSection';
 import api from '../api/api';
@@ -454,7 +454,7 @@ function Strumenti() {
     }
   };
 
-  // Stampa PDF apparecchiature
+  // Visualizza PDF apparecchiature
   const stampaPDFApparecchiature = () => {
     const oggi = new Date().toLocaleDateString('it-IT');
     const righe = apparecchiature.map(a => {
@@ -517,11 +517,10 @@ function Strumenti() {
       win.document.write(html);
       win.document.close();
       win.focus();
-      setTimeout(() => win.print(), 400);
     }
   };
 
-  // Stampa PDF presidi
+  // Visualizza PDF presidi
   const stampaPDFPresidi = () => {
     const oggi = new Date().toLocaleDateString('it-IT');
     const righe = presidi.map(p => {
@@ -601,7 +600,7 @@ function Strumenti() {
       win.document.write(html);
       win.document.close();
       win.focus();
-      setTimeout(() => win.print(), 400);
+      win.focus();
     }
   };
 

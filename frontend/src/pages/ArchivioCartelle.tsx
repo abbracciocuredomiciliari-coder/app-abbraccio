@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -262,7 +262,7 @@ export default function ArchivioCartelle() {
     win.document.write(html);
     win.document.close();
     win.focus();
-    setTimeout(() => win.print(), 500);
+    win.focus();
   };
 
   return (
@@ -354,7 +354,7 @@ export default function ArchivioCartelle() {
                         onClick={() => stampaCartella(dettaglio)}
                         style={{ padding: '8px 12px', background: '#7c3aed', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.82rem' }}
                       >
-                        <Printer size={15} /> Stampa PDF
+                        <Printer size={15} /> Visualizza PDF
                       </button>
                     )}
                     {canDelete && (

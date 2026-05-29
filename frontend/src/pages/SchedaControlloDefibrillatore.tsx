@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 
@@ -173,7 +173,7 @@ function SchedaControlloDefibrillatore() {
     }
   };
 
-  // ─── Stampa PDF ───────────────────────────────────────────────────────────────
+  // ─── Visualizza PDF ───────────────────────────────────────────────────────────────
 
   const stampaScheda = (entry: SchedaEntry) => {
     const dataComp = new Date(entry.dataCompilazione).toLocaleDateString('it-IT');
@@ -277,7 +277,7 @@ function SchedaControlloDefibrillatore() {
       win.document.write(html);
       win.document.close();
       win.focus();
-      setTimeout(() => win.print(), 400);
+      win.focus();
     }
   };
 
@@ -666,7 +666,7 @@ function SchedaControlloDefibrillatore() {
                           onClick={() => stampaScheda(entry)}
                           style={{ background: '#1e4d8c', fontSize: '0.85rem', padding: '6px 14px' }}
                         >
-                          🖨️ Stampa PDF
+                          🖨️ Visualizza PDF
                         </button>
                         {user && (user.role === 'admin' || user.role === 'coordinator') && (
                           <button

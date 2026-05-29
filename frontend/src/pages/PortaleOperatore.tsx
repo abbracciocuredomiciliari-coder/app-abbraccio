@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+﻿import { useEffect, useState, useRef } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import RichiestaPresidi from '../components/RichiestaPresidi';
@@ -462,7 +462,7 @@ export default function PortaleOperatore() {
     </body></html>`);
     win.document.close();
     win.focus();
-    setTimeout(() => { win.print(); win.close(); }, 500);
+    win.focus();
   };
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -1100,7 +1100,7 @@ export default function PortaleOperatore() {
                 <span style={{ fontWeight: '600', fontSize: '0.95rem', color: '#374151' }}>📅 Storico accessi ({accessi.length})</span>
                 <button type="button" onClick={() => setShowExport(!showExport)}
                   style={{ background: '#f1f5f9', color: '#374151', border: '1px solid #e2e8f0', padding: '6px 14px', fontSize: '0.85rem' }}>
-                  📄 Esporta / Stampa PDF
+                  📄 Esporta / Visualizza PDF
                 </button>
               </div>
 
@@ -1123,7 +1123,7 @@ export default function PortaleOperatore() {
                     {exportData && (
                       <button type="button" onClick={stampaPDF}
                         style={{ background: '#059669', padding: '10px 18px', whiteSpace: 'nowrap' }}>
-                        🖨️ Stampa PDF
+                        🖨️ Visualizza PDF
                       </button>
                     )}
                   </div>
