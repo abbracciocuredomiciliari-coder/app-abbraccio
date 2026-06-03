@@ -521,19 +521,6 @@ export default function PortaleOperatore() {
             </button>
           </div>
 
-          {/* ── RICHIESTA PRESIDI/FARMACI ── */}
-          <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '20px', overflow: 'hidden' }}>
-            <details>
-              <summary style={{ background: '#f8fafc', padding: '14px 16px', cursor: 'pointer', fontWeight: '600', fontSize: '0.95rem', color: '#374151', listStyle: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>📦 Richiesta Presidi / Farmaci</span>
-                <span style={{ fontSize: '0.8rem', color: '#888' }}>▼</span>
-              </summary>
-              <div style={{ padding: '16px' }}>
-                <RichiestaPresidi />
-              </div>
-            </details>
-          </div>
-
           {pazienti.length === 0 ? (
             <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid #f59e0b', borderRadius: '8px', padding: '16px', color: '#92400e' }}>
               ⚠️ Nessun paziente assegnato. Contatta il coordinatore.

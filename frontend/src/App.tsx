@@ -25,6 +25,7 @@ import ProfiloPersonale from './pages/ProfiloPersonale';
 import CompensoIncarichi from './pages/CompensoIncarichi';
 import EsamiStrumentali from './pages/EsamiStrumentali';
 import RichiestePresidiPage from './pages/RichiestePresidiPage';
+import ProtocolliProcedure from './pages/ProtocolliProcedure';
 import {
   Heart,
   LayoutDashboard,
@@ -110,13 +111,9 @@ function AppShell() {
                 <LayoutDashboard size={18} />
                 Dashboard
               </Link>
-              <Link to="/protocolli" className={isActive('/protocolli') ? 'active' : ''}>
+              <Link to="/protocolli-procedure" className={isActive('/protocolli-procedure') ? 'active' : ''}>
                 <ClipboardList size={18} />
-                Protocolli
-              </Link>
-              <Link to="/procedure" className={isActive('/procedure') ? 'active' : ''}>
-                <FileText size={18} />
-                Procedure
+                Protocolli e Procedure
               </Link>
               <Link to="/esami-strumentali" className={isActive('/esami-strumentali') ? 'active' : ''}>
                 <HeartPulse size={18} />
@@ -150,13 +147,9 @@ function AppShell() {
                 <UserPlus size={18} />
                 Personale
               </Link>
-              <Link to="/protocolli" className={isActive('/protocolli') ? 'active' : ''}>
+              <Link to="/protocolli-procedure" className={isActive('/protocolli-procedure') ? 'active' : ''}>
                 <ClipboardList size={18} />
-                Protocolli sanitari
-              </Link>
-              <Link to="/procedure" className={isActive('/procedure') ? 'active' : ''}>
-                <FileText size={18} />
-                Procedure sanitarie
+                Protocolli e Procedure
               </Link>
               <Link to="/workplan" className={isActive('/workplan') ? 'active' : ''}>
                 <Calendar size={18} />
@@ -252,8 +245,10 @@ function AppShell() {
           <Route path="/gestione-utenti" element={<ProtectedRoute><GestioneUtenti /></ProtectedRoute>} />
 
           {/* Route condivise (tutti gli utenti autenticati) */}
-          <Route path="/protocolli" element={<ProtectedRoute><Protocolli /></ProtectedRoute>} />
-          <Route path="/procedure" element={<ProtectedRoute><Procedure /></ProtectedRoute>} />
+          <Route path="/protocolli-procedure" element={<ProtectedRoute><ProtocolliProcedure /></ProtectedRoute>} />
+          {/* Redirect vecchie URL protocolli/procedure → pagina unificata */}
+          <Route path="/protocolli" element={<Navigate to="/protocolli-procedure" replace />} />
+          <Route path="/procedure" element={<Navigate to="/protocolli-procedure" replace />} />
 
           {/* Esami Strumentali */}
           <Route path="/esami-strumentali" element={<ProtectedRoute><EsamiStrumentali /></ProtectedRoute>} />
