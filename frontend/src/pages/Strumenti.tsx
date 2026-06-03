@@ -63,11 +63,18 @@ const documentTypeColors: Record<string, string> = {
   manuale: '#6c757d',
 };
 
+// Schede della pagina Strumenti e Presidi
+type StrumentiTab = 'magazzino' | 'apparecchiature' | 'richieste';
+
 function Strumenti() {
   const { user, getToken } = useAuth();
   const [apparecchiature, setApparecchiature] = useState<Apparecchiatura[]>([]);
   const [presidi, setPresidi] = useState<PresidioSanitario[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Navigazione a schede: magazzino (presidi+farmaci), apparecchiature, richieste operatori
+  const isGestoreRichieste = user?.role === 'admin' || user?.role === 'coordinator';
+  const [activeTab, setActiveTab] = useState<StrumentiTab>('magazzino');
 
   // Stato per la gestione dei documenti
   const [selectedEquipment, setSelectedEquipment] = useState<string | null>(null);
@@ -610,7 +617,36 @@ function Strumenti() {
     <section>
       <h2>Strumenti e Presidi</h2>
 
+      {/* Navigazione a schede */}
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '24px', borderBottom: '2px solid #e2e8f0' }}>
+        {([
+          { key: 'magazzino' as const, label: '💊 Presidi e Farmaci' },
+          { key: 'apparecchiature' as const, label: '⚙️ Apparecchiature Elettromedicali' },
+          ...(isGestoreRichieste ? [{ key: 'richieste' as const, label: '📦 Richieste dagli Operatori' }] : []),
+        ]).map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setActiveTab(tab.key)}
+            style={{
+              background: activeTab === tab.key ? '#1e4d8c' : 'transparent',
+              color: activeTab === tab.key ? '#fff' : '#1e4d8c',
+              border: 'none',
+              borderRadius: '8px 8px 0 0',
+              padding: '10px 18px',
+              fontSize: '0.95rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              marginBottom: '-2px',
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Sezione Apparecchiature Elettromedicali */}
+      {activeTab === 'apparecchiature' && (
       <div className="dashboard-folder" style={{ marginBottom: '32px' }}>
         <h3>Apparecchiature Elettromedicali</h3>
 
@@ -713,7 +749,11 @@ function Strumenti() {
           </>
         )}
       </div>
+      )}
 
+      {/* Sezione Presidi e Farmaci (magazzino) */}
+      {activeTab === 'magazzino' && (
+      <>
       {/* Sezione Farmaci */}
       <FarmaciSection
         getToken={getToken}
@@ -876,6 +916,8 @@ function Strumenti() {
           <p>Nessun presidio presente.</p>
         )}
       </div>
+      </>
+      )}
 
       {/* Modal modifica apparecchiatura */}
       {editingApparecchiatura && (
@@ -1134,8 +1176,8 @@ function Strumenti() {
       {/* ══════════════════════════════════════════════════════════════════════
           GESTIONE RICHIESTE OPERATORI (solo admin/coordinator)
       ══════════════════════════════════════════════════════════════════════ */}
-      {(user?.role === 'admin' || user?.role === 'coordinator') && (
-        <div style={{ marginTop: '32px' }}>
+      {activeTab === 'richieste' && isGestoreRichieste && (
+        <div style={{ marginTop: '8px' }}>
           <h3 style={{ color: '#1e4d8c', marginBottom: '16px', borderBottom: '2px solid #e2e8f0', paddingBottom: '8px' }}>
             📦 Gestione Richieste Presidi/Farmaci dagli Operatori
           </h3>
