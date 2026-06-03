@@ -160,7 +160,7 @@ function AppShell() {
               </Link>
               <Link to="/workplan" className={isActive('/workplan') ? 'active' : ''}>
                 <Calendar size={18} />
-                Piano di lavoro
+                Piano lavoro e esami strumentali
               </Link>
               <Link to="/strumenti" className={isActive('/strumenti') ? 'active' : ''}>
                 <Stethoscope size={18} />
@@ -180,10 +180,6 @@ function AppShell() {
               >
                 <CheckSquare size={18} />
                 Check List
-              </Link>
-              <Link to="/esami-strumentali" className={isActive('/esami-strumentali') ? 'active' : ''}>
-                <HeartPulse size={18} />
-                Esami Strumentali
               </Link>
               <Link to="/compenso-incarichi" className={isActive('/compenso-incarichi') ? 'active' : ''}>
                 <Euro size={18} />

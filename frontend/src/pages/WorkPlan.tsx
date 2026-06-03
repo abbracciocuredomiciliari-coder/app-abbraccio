@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
+import EsamiStrumentali from './EsamiStrumentali';
 import {
   Calendar,
   Plus,
@@ -105,6 +106,8 @@ const assistenzaCategories = [
 function WorkPlan() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  // Tab principale: piano di lavoro (prestazionale/assistenziale) oppure esami strumentali
+  const [mainTab, setMainTab] = useState<'piano' | 'esami'>('piano');
   const [workplans, setWorkplans] = useState<WorkPlanItem[]>([]);
   const [patients, setPatients] = useState<PatientOption[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
@@ -502,6 +505,37 @@ function WorkPlan() {
 
   return (
     <section>
+      {/* Tab principali: Piano di lavoro vs Esami strumentali */}
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '24px', borderBottom: '2px solid var(--gray-200)' }}>
+        {([
+          { key: 'piano' as const, label: '📋 Prestazionale / Assistenziale' },
+          { key: 'esami' as const, label: '🫀 Esami Strumentali' },
+        ]).map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setMainTab(tab.key)}
+            style={{
+              background: mainTab === tab.key ? 'var(--primary)' : 'transparent',
+              color: mainTab === tab.key ? '#fff' : 'var(--primary)',
+              border: 'none',
+              borderRadius: '8px 8px 0 0',
+              padding: '10px 18px',
+              fontSize: '0.95rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              marginBottom: '-2px',
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {mainTab === 'esami' ? (
+        <EsamiStrumentali />
+      ) : (
+      <>
       <h2>
         <Calendar size={28} />
         Piano di Lavoro
@@ -1124,6 +1158,8 @@ function WorkPlan() {
             )}
           </div>
         </div>
+      )}
+      </>
       )}
     </section>
   );
