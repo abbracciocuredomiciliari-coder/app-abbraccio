@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link, useLocation, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -43,6 +44,8 @@ import {
   UserCircle,
   Euro,
   HeartPulse,
+  Menu,
+  X,
 } from 'lucide-react';
 
 // Ruoli con accesso completo (admin/coordinamento/direzione)
@@ -57,17 +60,35 @@ function isPrivilegiato(role: string) {
 function AppShell() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
   const operatore = user && !isPrivilegiato(user.role);
 
+  // Chiudi il menu mobile a ogni cambio pagina
+  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
+
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      {/* Barra superiore mobile con hamburger */}
+      <header className="mobile-topbar">
+        <button type="button" className="hamburger" onClick={() => setMenuOpen(true)} aria-label="Apri menu">
+          <Menu size={24} />
+        </button>
+        <img src="/logo.png" alt="Abbraccio Cure Domiciliari" className="mobile-topbar-logo" />
+      </header>
+
+      {/* Overlay scuro quando il menu mobile è aperto */}
+      {menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} />}
+
+      <aside className={`sidebar${menuOpen ? ' open' : ''}`}>
+        <button type="button" className="sidebar-close" onClick={() => setMenuOpen(false)} aria-label="Chiudi menu">
+          <X size={22} />
+        </button>
         <div style={{ padding: '16px 12px 8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.15)', marginBottom: '8px' }}>
           <img src="/logo.png" alt="Abbraccio Cure Domiciliari" style={{ width: '100%', maxWidth: '160px', height: 'auto', display: 'block', margin: '0 auto' }} />
         </div>
-        <nav>
+        <nav onClick={() => setMenuOpen(false)}>
           {/* Link non autenticati */}
           {!user && (
             <Link to="/" className={isActive('/') ? 'active' : ''}>
