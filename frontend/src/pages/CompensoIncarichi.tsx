@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/api';
-import { Euro, TrendingUp, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Euro, TrendingUp, CheckCircle, Clock, AlertCircle, Receipt, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface WorkPlanItem {
   _id: string;
@@ -43,6 +43,7 @@ export default function CompensoIncarichi() {
   const [filtroPagato, setFiltroPagato] = useState<'tutti' | 'pagato' | 'da_pagare'>('tutti');
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [showFatturazione, setShowFatturazione] = useState(false);
 
   useEffect(() => {
     caricaDati();
@@ -181,10 +182,10 @@ export default function CompensoIncarichi() {
       )}
 
       {/* ── Riepilogo totali ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '28px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '20px' }}>
         <div style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', borderRadius: '12px', padding: '20px', color: '#fff', textAlign: 'center' }}>
           <div style={{ fontSize: '2rem', fontWeight: '800' }}>€ {totaleGuadagnato.toFixed(2)}</div>
-          <div style={{ fontSize: '0.85rem', opacity: 0.9, marginTop: '4px' }}>💰 Totale guadagnato</div>
+          <div style={{ fontSize: '0.85rem', opacity: 0.9, marginTop: '4px' }}>💰 Compensi operatori</div>
         </div>
         <div style={{ background: 'linear-gradient(135deg, #dc2626, #b91c1c)', borderRadius: '12px', padding: '20px', color: '#fff', textAlign: 'center' }}>
           <div style={{ fontSize: '2rem', fontWeight: '800' }}>€ {totaleDaPagare.toFixed(2)}</div>
@@ -199,6 +200,118 @@ export default function CompensoIncarichi() {
           <div style={{ fontSize: '0.85rem', opacity: 0.9, marginTop: '4px' }}>📋 Incarichi con compenso</div>
         </div>
       </div>
+
+      {/* ── PANNELLO GESTIONE FATTURAZIONE AL PAZIENTE ── */}
+      {(() => {
+        const totaleCostiPazienti = riepilogosFiltrati.reduce((sum, r) => sum + r.costoPrestazione, 0);
+        const totaleCompensatiOperatori = riepilogosFiltrati.reduce((sum, r) => sum + (r.compensoSalvato > 0 ? r.compensoSalvato : r.compensoCalcolato), 0);
+        const utileAdmin = Math.round((totaleCostiPazienti - totaleCompensatiOperatori) * 100) / 100;
+        const incarichiConCosto = riepilogosFiltrati.filter(r => r.costoPrestazione > 0);
+        return (
+          <div style={{ marginBottom: '28px', border: '2px solid #166534', borderRadius: '12px', overflow: 'hidden' }}>
+            {/* Header pulsante */}
+            <button
+              type="button"
+              onClick={() => setShowFatturazione(!showFatturazione)}
+              style={{
+                width: '100%',
+                background: showFatturazione ? 'linear-gradient(135deg, #166534, #14532d)' : 'linear-gradient(135deg, #16a34a, #15803d)',
+                border: 'none',
+                padding: '16px 20px',
+                cursor: 'pointer',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                color: '#fff',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Receipt size={22} />
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontWeight: '800', fontSize: '1.05rem' }}>💼 Gestione Fatturazione al Paziente</div>
+                  <div style={{ fontSize: '0.82rem', opacity: 0.9 }}>
+                    Ricavi totali, compensi operatori e utile admin
+                    {totaleCostiPazienti > 0 && ` — Ricavi: €${totaleCostiPazienti.toFixed(2)} | Utile: €${utileAdmin.toFixed(2)}`}
+                  </div>
+                </div>
+              </div>
+              {showFatturazione ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            </button>
+
+            {showFatturazione && (
+              <div style={{ padding: '20px', background: '#f0fdf4' }}>
+                {/* Card riepilogo finanziario admin */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '14px', marginBottom: '20px' }}>
+                  <div style={{ background: 'linear-gradient(135deg, #166534, #14532d)', borderRadius: '10px', padding: '16px', color: '#fff', textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.8rem', fontWeight: '800' }}>€ {totaleCostiPazienti.toFixed(2)}</div>
+                    <div style={{ fontSize: '0.82rem', opacity: 0.9, marginTop: '4px' }}>💰 Totale ricavi da pazienti</div>
+                    <div style={{ fontSize: '0.75rem', opacity: 0.75, marginTop: '2px' }}>{incarichiConCosto.length} prestazioni fatturate</div>
+                  </div>
+                  <div style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', borderRadius: '10px', padding: '16px', color: '#fff', textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.8rem', fontWeight: '800' }}>€ {totaleCompensatiOperatori.toFixed(2)}</div>
+                    <div style={{ fontSize: '0.82rem', opacity: 0.9, marginTop: '4px' }}>👤 Totale compensi operatori</div>
+                    <div style={{ fontSize: '0.75rem', opacity: 0.75, marginTop: '2px' }}>costo del personale</div>
+                  </div>
+                  <div style={{ background: utileAdmin >= 0 ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'linear-gradient(135deg, #dc2626, #b91c1c)', borderRadius: '10px', padding: '16px', color: '#fff', textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.8rem', fontWeight: '800' }}>€ {utileAdmin.toFixed(2)}</div>
+                    <div style={{ fontSize: '0.82rem', opacity: 0.9, marginTop: '4px' }}>📊 Utile netto admin</div>
+                    <div style={{ fontSize: '0.75rem', opacity: 0.75, marginTop: '2px' }}>ricavi − compensi</div>
+                  </div>
+                </div>
+
+                {/* Dettaglio per paziente */}
+                {incarichiConCosto.length === 0 ? (
+                  <div style={{ background: '#fff', borderRadius: '8px', padding: '16px', color: '#888', fontStyle: 'italic', textAlign: 'center', border: '1px solid #bbf7d0' }}>
+                    ℹ️ Nessun incarico ha ancora un costo prestazione al paziente impostato.<br />
+                    <span style={{ fontSize: '0.85rem' }}>Imposta il "Costo prestazione al paziente" nel form di creazione piano o nella sezione Gestione Compenso.</span>
+                  </div>
+                ) : (
+                  <div>
+                    <h4 style={{ margin: '0 0 12px', color: '#166534', fontSize: '0.95rem', fontWeight: '700' }}>
+                      📋 Dettaglio per prestazione
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {incarichiConCosto.map(r => {
+                        const compensoOp = r.compensoSalvato > 0 ? r.compensoSalvato : r.compensoCalcolato;
+                        const utile = Math.round((r.costoPrestazione - compensoOp) * 100) / 100;
+                        return (
+                          <div key={r.workPlan._id} style={{ background: '#fff', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                            <div style={{ flex: 1, minWidth: '180px' }}>
+                              <div style={{ fontWeight: '700', color: '#1e4d8c', fontSize: '0.92rem' }}>
+                                👤 {r.workPlan.patient.firstName} {r.workPlan.patient.lastName}
+                              </div>
+                              <div style={{ fontSize: '0.8rem', color: '#555' }}>
+                                {r.workPlan.category} — {r.workPlan.task}
+                              </div>
+                              <div style={{ fontSize: '0.75rem', color: '#888' }}>
+                                🏥 {r.workPlan.staff.firstName} {r.workPlan.staff.lastName} | 📅 {formatData(r.workPlan.date)}
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                              <div style={{ textAlign: 'center', minWidth: '80px' }}>
+                                <div style={{ fontSize: '0.68rem', color: '#166534', fontWeight: '700', textTransform: 'uppercase' }}>Costo al pz.</div>
+                                <div style={{ fontWeight: '800', color: '#166534', fontSize: '1.05rem' }}>€ {r.costoPrestazione.toFixed(2)}</div>
+                              </div>
+                              <div style={{ textAlign: 'center', minWidth: '80px' }}>
+                                <div style={{ fontSize: '0.68rem', color: '#7c3aed', fontWeight: '700', textTransform: 'uppercase' }}>Compenso op.</div>
+                                <div style={{ fontWeight: '800', color: '#7c3aed', fontSize: '1.05rem' }}>€ {compensoOp.toFixed(2)}</div>
+                              </div>
+                              <div style={{ textAlign: 'center', minWidth: '80px', background: utile >= 0 ? '#dcfce7' : '#fee2e2', borderRadius: '6px', padding: '4px 10px' }}>
+                                <div style={{ fontSize: '0.68rem', color: utile >= 0 ? '#166534' : '#dc2626', fontWeight: '700', textTransform: 'uppercase' }}>Utile</div>
+                                <div style={{ fontWeight: '800', color: utile >= 0 ? '#166534' : '#dc2626', fontSize: '1.05rem' }}>€ {utile.toFixed(2)}</div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── Riepilogo per operatore ── */}
       {Object.keys(perOperatore).length > 0 && (
