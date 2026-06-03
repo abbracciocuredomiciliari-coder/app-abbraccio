@@ -111,6 +111,10 @@ function AppShell() {
                 <LayoutDashboard size={18} />
                 Dashboard
               </Link>
+              <Link to="/piani-lavorativi" className={isActive('/piani-lavorativi') ? 'active' : ''}>
+                <Calendar size={18} />
+                Piani lavorativi
+              </Link>
               <Link to="/protocolli-procedure" className={isActive('/protocolli-procedure') ? 'active' : ''}>
                 <ClipboardList size={18} />
                 Protocolli e Procedure
@@ -259,7 +263,8 @@ function AppShell() {
           <Route path="/gestione-richieste-presidi" element={<Navigate to="/strumenti" replace />} />
 
           {/* Route operatori */}
-          <Route path="/portale-operatore" element={<ProtectedRoute><PortaleOperatore /></ProtectedRoute>} />
+          <Route path="/portale-operatore" element={<ProtectedRoute><PortaleOperatore mode="dashboard" /></ProtectedRoute>} />
+          <Route path="/piani-lavorativi" element={<ProtectedRoute><PortaleOperatore mode="piani" /></ProtectedRoute>} />
           <Route path="/profilo-personale" element={<ProtectedRoute><ProfiloPersonale /></ProtectedRoute>} />
           <Route path="/compenso-incarichi" element={<ProtectedRoute><CompensoIncarichi /></ProtectedRoute>} />
         </Routes>

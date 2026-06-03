@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import RichiestaPresidi from '../components/RichiestaPresidi';
 
 // ─── Interfacce ───────────────────────────────────────────────────────────────
 
@@ -130,8 +130,13 @@ function formatBytes(b: number) {
 
 // ─── Componente principale ────────────────────────────────────────────────────
 
-export default function PortaleOperatore() {
+interface PortaleOperatoreProps {
+  mode?: 'dashboard' | 'piani';
+}
+
+export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperatoreProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Selezione paziente / piano
   const [pazienti, setPazienti] = useState<Paziente[]>([]);
@@ -140,6 +145,7 @@ export default function PortaleOperatore() {
   const [pianoSelezionato, setPianoSelezionato] = useState<Piano | null>(null);
   const [tuttiIPiani, setTuttiIPiani] = useState<Piano[]>([]);
   const [mostraTuttiPiani, setMostraTuttiPiani] = useState(false);
+  const [esamiAttivi, setEsamiAttivi] = useState(0);
 
   // Accessi
   const [accessi, setAccessi] = useState<Accesso[]>([]);
@@ -186,9 +192,10 @@ export default function PortaleOperatore() {
 
   const caricaDati = async (silent = false) => {
     try {
-      const [pazientiRes, pianiRes] = await Promise.all([
+      const [pazientiRes, pianiRes, esamiRes] = await Promise.all([
         api.get('/workplan/miei-pazienti'),
         api.get('/workplan'),
+        api.get('/esami-strumentali').catch(() => ({ data: [] })),
       ]);
       const tuttiPiani: Piano[] = pianiRes.data || [];
       setTuttiIPiani(tuttiPiani);
@@ -196,6 +203,8 @@ export default function PortaleOperatore() {
         tuttiPiani.some(p => p.patient?._id === paz._id && p.status === 'pending')
       );
       setPazienti(pazientiConPianoAttivo);
+      const esami: any[] = esamiRes.data || [];
+      setEsamiAttivi(esami.filter(e => e.status === 'pianificato' && !e.archiviato).length);
     } catch {}
     finally { if (!silent) setLoading(false); }
   };
@@ -480,31 +489,51 @@ export default function PortaleOperatore() {
   return (
     <section>
       <h2>
-        {pazienteSelezionato || mostraTuttiPiani ? '🏥 Il mio Piano di Lavoro' : '📊 Dashboard'}
+        {mode === 'piani' ? '📋 Piani Lavorativi' : (pazienteSelezionato || mostraTuttiPiani ? '🏥 Il mio Piano di Lavoro' : '📊 Dashboard')}
       </h2>
 
       {/* ══════════════════════════════════════════════════════════════════════
-          DASHBOARD OPERATORE
+          DASHBOARD OPERATORE (solo mode=dashboard)
       ══════════════════════════════════════════════════════════════════════ */}
-      {!pazienteSelezionato && !mostraTuttiPiani && (
+      {mode === 'dashboard' && !pazienteSelezionato && !mostraTuttiPiani && (
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-            <div style={{ background: 'rgba(5,150,105,0.07)', border: '1px solid rgba(5,150,105,0.3)', borderRadius: '10px', padding: '14px 16px', textAlign: 'center' }}>
+            <button
+              type="button"
+              onClick={() => navigate('/piani-lavorativi')}
+              style={{ background: 'rgba(5,150,105,0.07)', border: '1px solid rgba(5,150,105,0.3)', borderRadius: '10px', padding: '14px 16px', textAlign: 'center', cursor: 'pointer' }}
+            >
               <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Pazienti attivi</div>
               <div style={{ fontSize: '2rem', fontWeight: '800', color: '#059669', lineHeight: 1 }}>{pazienti.length}</div>
-            </div>
-            <div style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '10px', padding: '14px 16px', textAlign: 'center' }}>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/piani-lavorativi')}
+              style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '10px', padding: '14px 16px', textAlign: 'center', cursor: 'pointer' }}
+            >
               <div style={{ fontSize: '0.72rem', color: '#d97706', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Incarichi attivi</div>
               <div style={{ fontSize: '2rem', fontWeight: '800', color: '#d97706', lineHeight: 1 }}>{pianiAttiviTutti.length}</div>
-            </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/esami-strumentali')}
+              style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.3)', borderRadius: '10px', padding: '14px 16px', textAlign: 'center', cursor: 'pointer' }}
+            >
+              <div style={{ fontSize: '0.72rem', color: '#dc2626', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Esami strumentali attivi</div>
+              <div style={{ fontSize: '2rem', fontWeight: '800', color: '#dc2626', lineHeight: 1 }}>{esamiAttivi}</div>
+            </button>
             {compensoTotaleGlobale > 0 && (
-              <div style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: '10px', padding: '14px 16px', textAlign: 'center' }}>
+              <button
+                type="button"
+                onClick={() => navigate('/compenso-incarichi')}
+                style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: '10px', padding: '14px 16px', textAlign: 'center', cursor: 'pointer' }}
+              >
                 <div style={{ fontSize: '0.72rem', color: '#7c3aed', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Compenso maturato</div>
                 <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#7c3aed', lineHeight: 1 }}>€ {compensoTotaleGlobale.toFixed(2)}</div>
                 {compensoPagatoGlobale > 0 && (
                   <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: '600', marginTop: '2px' }}>✅ € {compensoPagatoGlobale.toFixed(2)} pagato</div>
                 )}
-              </div>
+              </button>
             )}
           </div>
 
@@ -520,7 +549,25 @@ export default function PortaleOperatore() {
               📋 Tutti i piani attivi ({pianiAttiviTutti.length})
             </button>
           </div>
+        </div>
+      )}
 
+      {/* ══════════════════════════════════════════════════════════════════════
+          LISTA PAZIENTI/PIANI (mode=piani o dopo click "Tutti i piani attivi")
+      ══════════════════════════════════════════════════════════════════════ */}
+      {(mode === 'piani' || mostraTuttiPiani) && !pazienteSelezionato && (
+        <div>
+          {mode === 'piani' && (
+            <div style={{ marginBottom: '16px' }}>
+              <button
+                type="button"
+                onClick={() => navigate('/portale-operatore')}
+                style={{ background: '#f1f5f9', color: '#374151', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px 14px', cursor: 'pointer', fontSize: '0.88rem' }}
+              >
+                ← Torna alla dashboard
+              </button>
+            </div>
+          )}
           {pazienti.length === 0 ? (
             <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid #f59e0b', borderRadius: '8px', padding: '16px', color: '#92400e' }}>
               ⚠️ Nessun paziente assegnato. Contatta il coordinatore.
