@@ -245,9 +245,9 @@ function WorkPlan() {
         task,
         date,
         dataFine: dataFine || undefined,
-        time,
+        time: time || undefined,
         duration,
-        notes,
+        notes: notes || undefined,
         giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined,
         tipoCompenso,
         tariffa: tipoCompenso !== 'nessuno' ? tariffa : 0,
@@ -261,7 +261,9 @@ function WorkPlan() {
       setSuccess('Incarico aggiunto con successo!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Impossibile salvare l\'incarico. Riprova.');
+      console.error('Errore creazione piano:', err.response?.data || err.message);
+      const msg = err.response?.data?.message || err.response?.data?.error?.message || err.message || 'Impossibile salvare l\'incarico. Riprova.';
+      setError(typeof msg === 'string' ? msg : JSON.stringify(err.response?.data));
     }
   };
 
