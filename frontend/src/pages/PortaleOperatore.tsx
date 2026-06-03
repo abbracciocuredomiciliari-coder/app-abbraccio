@@ -29,6 +29,7 @@ interface Piano {
   tariffa?: number;
   compensoTotale?: number;
   compensoPagato?: boolean;
+  costoPrestazione?: number;
   patient: { _id: string; firstName: string; lastName: string };
   staff: { _id: string; firstName: string; lastName: string; role: string };
 }

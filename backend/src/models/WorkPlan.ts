@@ -21,11 +21,13 @@ export interface IWorkPlan extends Document {
   status: 'pending' | 'completed' | 'cancelled';
   // Pianificazione settimanale
   giorniSettimana?: IGiornoSettimana[];  // giorni attivi con dettagli
-  // Compenso
+  // Compenso operatore
   tipoCompenso?: 'orario' | 'fisso' | 'nessuno';
   tariffa?: number;
   compensoTotale?: number;
   compensoPagato?: boolean;
+  // Costo prestazione al paziente (ricavo admin)
+  costoPrestazione?: number;
 }
 
 const workPlanSchema = new Schema<IWorkPlan>(
@@ -61,6 +63,7 @@ const workPlanSchema = new Schema<IWorkPlan>(
     tariffa: { type: Number, default: 0 },
     compensoTotale: { type: Number, default: 0 },
     compensoPagato: { type: Boolean, default: false },
+    costoPrestazione: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

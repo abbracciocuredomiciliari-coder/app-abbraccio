@@ -249,6 +249,8 @@ router.get('/:id/accessi', authenticateToken, async (req: Request, res: Response
         compensoCalcolato,
         compensoSalvato: workplan.compensoTotale || 0,
         compensoPagato: workplan.compensoPagato || false,
+        costoPrestazione: workplan.costoPrestazione || 0,
+        utile: Math.round(((workplan.costoPrestazione || 0) - (workplan.compensoTotale || 0)) * 100) / 100,
       }
     });
   } catch (error) {
@@ -397,7 +399,7 @@ router.patch('/:id/eseguito', authenticateToken, async (req: Request, res: Respo
 router.patch('/:id/compenso', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { tipoCompenso, tariffa, compensoTotale, compensoPagato, ricalcola } = req.body;
+    const { tipoCompenso, tariffa, compensoTotale, compensoPagato, ricalcola, costoPrestazione } = req.body;
 
     const workplan = await WorkPlan.findById(id);
     if (!workplan) {
@@ -407,6 +409,7 @@ router.patch('/:id/compenso', authenticateToken, authorizeRole('admin', 'coordin
     if (tipoCompenso !== undefined) workplan.tipoCompenso = tipoCompenso;
     if (tariffa !== undefined) workplan.tariffa = tariffa;
     if (compensoPagato !== undefined) workplan.compensoPagato = compensoPagato;
+    if (costoPrestazione !== undefined) workplan.costoPrestazione = costoPrestazione;
 
     if (ricalcola || compensoTotale === undefined) {
       const accessi = await WorkPlanAccess.find({ workPlan: id });

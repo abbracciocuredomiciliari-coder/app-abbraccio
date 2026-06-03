@@ -66,6 +66,7 @@ interface WorkPlanItem {
   tariffa?: number;
   compensoTotale?: number;
   compensoPagato?: boolean;
+  costoPrestazione?: number;
 }
 
 interface Accesso {
@@ -89,6 +90,8 @@ interface RiepilogoAccessi {
   compensoCalcolato: number;
   compensoSalvato: number;
   compensoPagato: boolean;
+  costoPrestazione: number;
+  utile: number;
 }
 
 const prestazioneCategories = [
@@ -145,6 +148,7 @@ function WorkPlan() {
   const [formTipoCompenso, setFormTipoCompenso] = useState<'orario' | 'fisso' | 'nessuno'>('nessuno');
   const [formTariffa, setFormTariffa] = useState<number>(0);
   const [formCompensoPagato, setFormCompensoPagato] = useState(false);
+  const [formCostoPrestazione, setFormCostoPrestazione] = useState<number>(0);
 
   // Form stati per nuovo incarico
   const [task, setTask] = useState('');
@@ -158,6 +162,7 @@ function WorkPlan() {
   const [notes, setNotes] = useState('');
   const [tipoCompenso, setTipoCompenso] = useState<'orario' | 'fisso' | 'nessuno'>('nessuno');
   const [tariffa, setTariffa] = useState<number>(0);
+  const [costoPrestazione, setCostoPrestazione] = useState<number>(0);
   // Giorni settimana: array di {giorno, attivo, accessiAlGiorno, minutiPerAccesso}
   const [giorniForm, setGiorniForm] = useState([
     { giorno: 1, label: 'Lun', attivo: false, accessiAlGiorno: 1, minutiPerAccesso: 60 },
@@ -246,11 +251,12 @@ function WorkPlan() {
         giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined,
         tipoCompenso,
         tariffa: tipoCompenso !== 'nessuno' ? tariffa : 0,
+        costoPrestazione: costoPrestazione > 0 ? costoPrestazione : 0,
       });
       await loadData();
       setTask(''); setDate(''); setDataFine(''); setTime(''); setDuration(60);
       setPatient(''); setStaff(''); setCategory(''); setNotes('');
-      setTipoCompenso('nessuno'); setTariffa(0);
+      setTipoCompenso('nessuno'); setTariffa(0); setCostoPrestazione(0);
       setGiorniForm(prev => prev.map(g => ({ ...g, attivo: false, accessiAlGiorno: 1, minutiPerAccesso: 60 })));
       setSuccess('Incarico aggiunto con successo!');
       setTimeout(() => setSuccess(''), 3000);
@@ -341,6 +347,7 @@ function WorkPlan() {
     setFormTipoCompenso(item.tipoCompenso || 'nessuno');
     setFormTariffa(item.tariffa || 0);
     setFormCompensoPagato(item.compensoPagato || false);
+    setFormCostoPrestazione(item.costoPrestazione || 0);
     setEditCompenso(false);
     setLoadingAccessi(true);
     setShowAccessiModal(true);
@@ -436,12 +443,13 @@ function WorkPlan() {
         tipoCompenso: formTipoCompenso,
         tariffa: formTariffa,
         compensoPagato: formCompensoPagato,
+        costoPrestazione: formCostoPrestazione,
         ricalcola,
       });
       // Ricarica
       const res = await api.get(`/workplan/${selectedWorkPlan._id}/accessi`);
       setRiepilogo(res.data.riepilogo);
-      setSelectedWorkPlan({ ...selectedWorkPlan, tipoCompenso: formTipoCompenso, tariffa: formTariffa, compensoPagato: formCompensoPagato, compensoTotale: res.data.riepilogo.compensoSalvato });
+      setSelectedWorkPlan({ ...selectedWorkPlan, tipoCompenso: formTipoCompenso, tariffa: formTariffa, compensoPagato: formCompensoPagato, compensoTotale: res.data.riepilogo.compensoSalvato, costoPrestazione: formCostoPrestazione });
       await loadData();
       setEditCompenso(false);
       setSuccess('Compenso aggiornato!');
@@ -730,6 +738,16 @@ function WorkPlan() {
                   <input type="number" min="0" step="0.5" value={tariffa} onChange={(e) => setTariffa(parseFloat(e.target.value) || 0)} placeholder="0.00" />
                 </label>
               )}
+              <label style={{ marginTop: '8px' }}>
+                💰 Costo prestazione al paziente (€) — ricavo admin
+                <input type="number" min="0" step="0.5" value={costoPrestazione} onChange={(e) => setCostoPrestazione(parseFloat(e.target.value) || 0)} placeholder="0.00" />
+              </label>
+              {costoPrestazione > 0 && tipoCompenso !== 'nessuno' && tariffa > 0 && (
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '8px 12px', fontSize: '0.82rem', color: '#166534' }}>
+                  📊 Utile stimato: <strong>€{(costoPrestazione - tariffa).toFixed(2)}</strong>
+                  <span style={{ color: '#888', marginLeft: '8px' }}>(costo {costoPrestazione}€ − compenso {tariffa}€)</span>
+                </div>
+              )}
             </div>
 
             {error && (
@@ -901,33 +919,54 @@ function WorkPlan() {
                   </div>
 
                   {!editCompenso ? (
-                    <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', fontSize: '0.9rem' }}>
-                      <div>
-                        <span style={{ color: '#666' }}>Tipo: </span>
-                        <strong>{selectedWorkPlan.tipoCompenso === 'orario' ? 'Tariffa oraria' : selectedWorkPlan.tipoCompenso === 'fisso' ? 'Compenso fisso' : 'Nessuno'}</strong>
-                      </div>
-                      {selectedWorkPlan.tipoCompenso !== 'nessuno' && (
+                    <div>
+                      <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', fontSize: '0.9rem', marginBottom: '12px' }}>
                         <div>
-                          <span style={{ color: '#666' }}>Tariffa: </span>
-                          <strong>€{selectedWorkPlan.tariffa}{selectedWorkPlan.tipoCompenso === 'orario' ? '/ora' : ''}</strong>
+                          <span style={{ color: '#666' }}>Tipo: </span>
+                          <strong>{selectedWorkPlan.tipoCompenso === 'orario' ? 'Tariffa oraria' : selectedWorkPlan.tipoCompenso === 'fisso' ? 'Compenso fisso' : 'Nessuno'}</strong>
+                        </div>
+                        {selectedWorkPlan.tipoCompenso !== 'nessuno' && (
+                          <div>
+                            <span style={{ color: '#666' }}>Tariffa: </span>
+                            <strong>€{selectedWorkPlan.tariffa}{selectedWorkPlan.tipoCompenso === 'orario' ? '/ora' : ''}</strong>
+                          </div>
+                        )}
+                        {riepilogo && riepilogo.compensoCalcolato > 0 && (
+                          <div>
+                            <span style={{ color: '#666' }}>Calcolato dagli accessi: </span>
+                            <strong style={{ color: '#7c3aed' }}>€{riepilogo.compensoCalcolato}</strong>
+                          </div>
+                        )}
+                        <div>
+                          <span style={{ color: '#666' }}>Compenso salvato: </span>
+                          <strong style={{ color: '#16a34a' }}>€{selectedWorkPlan.compensoTotale || 0}</strong>
+                        </div>
+                        <div>
+                          <span style={{ color: '#666' }}>Stato pagamento: </span>
+                          <strong style={{ color: selectedWorkPlan.compensoPagato ? '#16a34a' : '#dc2626' }}>
+                            {selectedWorkPlan.compensoPagato ? '✓ Pagato' : '⏳ Da pagare'}
+                          </strong>
+                        </div>
+                      </div>
+                      {/* Pannello finanziario admin */}
+                      {(selectedWorkPlan.costoPrestazione || 0) > 0 && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginTop: '8px', padding: '12px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.72rem', color: '#166534', fontWeight: '700', textTransform: 'uppercase', marginBottom: '2px' }}>💰 Costo al paziente</div>
+                            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: '#166534' }}>€{(selectedWorkPlan.costoPrestazione || 0).toFixed(2)}</div>
+                          </div>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.72rem', color: '#7c3aed', fontWeight: '700', textTransform: 'uppercase', marginBottom: '2px' }}>👤 Compenso operatore</div>
+                            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: '#7c3aed' }}>€{(selectedWorkPlan.compensoTotale || 0).toFixed(2)}</div>
+                          </div>
+                          <div style={{ textAlign: 'center', background: riepilogo && riepilogo.utile >= 0 ? '#dcfce7' : '#fee2e2', borderRadius: '6px', padding: '6px' }}>
+                            <div style={{ fontSize: '0.72rem', color: riepilogo && riepilogo.utile >= 0 ? '#166534' : '#dc2626', fontWeight: '700', textTransform: 'uppercase', marginBottom: '2px' }}>📊 Utile</div>
+                            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: riepilogo && riepilogo.utile >= 0 ? '#166534' : '#dc2626' }}>
+                              €{riepilogo ? riepilogo.utile.toFixed(2) : ((selectedWorkPlan.costoPrestazione || 0) - (selectedWorkPlan.compensoTotale || 0)).toFixed(2)}
+                            </div>
+                          </div>
                         </div>
                       )}
-                      {riepilogo && riepilogo.compensoCalcolato > 0 && (
-                        <div>
-                          <span style={{ color: '#666' }}>Calcolato dagli accessi: </span>
-                          <strong style={{ color: '#7c3aed' }}>€{riepilogo.compensoCalcolato}</strong>
-                        </div>
-                      )}
-                      <div>
-                        <span style={{ color: '#666' }}>Compenso salvato: </span>
-                        <strong style={{ color: '#16a34a' }}>€{selectedWorkPlan.compensoTotale || 0}</strong>
-                      </div>
-                      <div>
-                        <span style={{ color: '#666' }}>Stato pagamento: </span>
-                        <strong style={{ color: selectedWorkPlan.compensoPagato ? '#16a34a' : '#dc2626' }}>
-                          {selectedWorkPlan.compensoPagato ? '✓ Pagato' : '⏳ Da pagare'}
-                        </strong>
-                      </div>
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -947,6 +986,15 @@ function WorkPlan() {
                           </label>
                         )}
                       </div>
+                      <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.88rem' }}>
+                        💰 Costo prestazione al paziente (€) — ricavo admin
+                        <input type="number" min="0" step="0.5" value={formCostoPrestazione} onChange={(e) => setFormCostoPrestazione(parseFloat(e.target.value) || 0)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }} placeholder="0.00" />
+                      </label>
+                      {formCostoPrestazione > 0 && formTipoCompenso !== 'nessuno' && formTariffa > 0 && (
+                        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '8px 12px', fontSize: '0.82rem', color: '#166534' }}>
+                          📊 Utile stimato: <strong>€{(formCostoPrestazione - formTariffa).toFixed(2)}</strong>
+                        </div>
+                      )}
                       <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.88rem', cursor: 'pointer' }}>
                         <input type="checkbox" checked={formCompensoPagato} onChange={(e) => setFormCompensoPagato(e.target.checked)} />
                         Compenso pagato

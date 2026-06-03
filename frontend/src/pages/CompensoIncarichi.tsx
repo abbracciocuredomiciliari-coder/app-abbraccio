@@ -14,6 +14,7 @@ interface WorkPlanItem {
   tariffa?: number;
   compensoTotale?: number;
   compensoPagato?: boolean;
+  costoPrestazione?: number;
   patient: { _id: string; firstName: string; lastName: string };
   staff: { _id: string; firstName: string; lastName: string; role: string };
 }
@@ -25,6 +26,8 @@ interface RiepilogoItem {
   compensoCalcolato: number;
   compensoSalvato: number;
   compensoPagato: boolean;
+  costoPrestazione: number;
+  utile: number;
 }
 
 function formatData(d: string) {
@@ -69,6 +72,8 @@ export default function CompensoIncarichi() {
         try {
           const res = await api.get(`/workplan/${p._id}/accessi`);
           const r = res.data.riepilogo;
+          const compensoOp = r?.compensoSalvato > 0 ? r.compensoSalvato : (r?.compensoCalcolato || 0);
+          const costo = r?.costoPrestazione || p.costoPrestazione || 0;
           risultati.push({
             workPlan: p,
             oreTotali: r?.oreTotali || 0,
@@ -76,15 +81,21 @@ export default function CompensoIncarichi() {
             compensoCalcolato: r?.compensoCalcolato || 0,
             compensoSalvato: r?.compensoSalvato || 0,
             compensoPagato: r?.compensoPagato || false,
+            costoPrestazione: costo,
+            utile: Math.round((costo - compensoOp) * 100) / 100,
           });
         } catch {
+          const costo = p.costoPrestazione || 0;
+          const compensoOp = p.compensoTotale || 0;
           risultati.push({
             workPlan: p,
             oreTotali: 0,
             accessiCompletati: 0,
             compensoCalcolato: 0,
-            compensoSalvato: p.compensoTotale || 0,
+            compensoSalvato: compensoOp,
             compensoPagato: p.compensoPagato || false,
+            costoPrestazione: costo,
+            utile: Math.round((costo - compensoOp) * 100) / 100,
           });
         }
       })
@@ -364,6 +375,24 @@ export default function CompensoIncarichi() {
                       </button>
                     </div>
                   </div>
+
+                  {/* Pannello finanziario admin: costo prestazione + utile */}
+                  {r.costoPrestazione > 0 && (
+                    <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', padding: '12px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#166534', fontWeight: '700', textTransform: 'uppercase', marginBottom: '2px' }}>💰 Costo al paziente</div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#166534' }}>€ {r.costoPrestazione.toFixed(2)}</div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#7c3aed', fontWeight: '700', textTransform: 'uppercase', marginBottom: '2px' }}>👤 Compenso operatore</div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#7c3aed' }}>€ {importo.toFixed(2)}</div>
+                      </div>
+                      <div style={{ textAlign: 'center', background: r.utile >= 0 ? '#dcfce7' : '#fee2e2', borderRadius: '6px', padding: '6px' }}>
+                        <div style={{ fontSize: '0.72rem', color: r.utile >= 0 ? '#166534' : '#dc2626', fontWeight: '700', textTransform: 'uppercase', marginBottom: '2px' }}>📊 Utile</div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: '800', color: r.utile >= 0 ? '#166534' : '#dc2626' }}>€ {r.utile.toFixed(2)}</div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Nota se compenso calcolato vs salvato */}
                   {r.compensoCalcolato > 0 && r.compensoSalvato === 0 && (
