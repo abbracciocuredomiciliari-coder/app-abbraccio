@@ -1,31 +1,37 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { Link, useLocation, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import Patients from './pages/Patients';
-import Staff from './pages/Staff';
-import WorkPlan from './pages/WorkPlan';
+import LoadingScreen from './components/LoadingScreen';
+import Breadcrumb from './components/Breadcrumb';
+
+// Eager load per pagine leggere (login, dashboard)
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import Documentazione from './pages/Documentazione';
-import Protocolli from './pages/Protocolli';
-import Procedure from './pages/Procedure';
-import Strumenti from './pages/Strumenti';
-import WorkPlanAccessPage from './pages/WorkPlanAccessPage';
-import StoricoCliniche from './pages/StoricoCliniche';
-import ArchivioCartelle from './pages/ArchivioCartelle';
-import CheckList from './pages/CheckList';
-import SchedaControlloDefibrillatore from './pages/SchedaControlloDefibrillatore';
-import CheckListGlucometro from './pages/CheckListGlucometro';
-import CheckListHub from './pages/CheckListHub';
-import GestioneUtenti from './pages/GestioneUtenti';
-import PortaleOperatore from './pages/PortaleOperatore';
-import ProfiloPersonale from './pages/ProfiloPersonale';
-import CompensoIncarichi from './pages/CompensoIncarichi';
-import EsamiStrumentali from './pages/EsamiStrumentali';
-import RichiestePresidiPage from './pages/RichiestePresidiPage';
-import ProtocolliProcedure from './pages/ProtocolliProcedure';
+
+// Lazy load per pagine pesanti
+const Patients = lazy(() => import('./pages/Patients'));
+const Staff = lazy(() => import('./pages/Staff'));
+const WorkPlan = lazy(() => import('./pages/WorkPlan'));
+const Documentazione = lazy(() => import('./pages/Documentazione'));
+const Protocolli = lazy(() => import('./pages/Protocolli'));
+const Procedure = lazy(() => import('./pages/Procedure'));
+const Strumenti = lazy(() => import('./pages/Strumenti'));
+const WorkPlanAccessPage = lazy(() => import('./pages/WorkPlanAccessPage'));
+const StoricoCliniche = lazy(() => import('./pages/StoricoCliniche'));
+const ArchivioCartelle = lazy(() => import('./pages/ArchivioCartelle'));
+const CheckList = lazy(() => import('./pages/CheckList'));
+const SchedaControlloDefibrillatore = lazy(() => import('./pages/SchedaControlloDefibrillatore'));
+const CheckListGlucometro = lazy(() => import('./pages/CheckListGlucometro'));
+const CheckListHub = lazy(() => import('./pages/CheckListHub'));
+const GestioneUtenti = lazy(() => import('./pages/GestioneUtenti'));
+const PortaleOperatore = lazy(() => import('./pages/PortaleOperatore'));
+const ProfiloPersonale = lazy(() => import('./pages/ProfiloPersonale'));
+const CompensoIncarichi = lazy(() => import('./pages/CompensoIncarichi'));
+const EsamiStrumentali = lazy(() => import('./pages/EsamiStrumentali'));
+const RichiestePresidiPage = lazy(() => import('./pages/RichiestePresidiPage'));
+const ProtocolliProcedure = lazy(() => import('./pages/ProtocolliProcedure'));
 import {
   Heart,
   LayoutDashboard,
@@ -205,27 +211,10 @@ function AppShell() {
         )}
       </aside>
       <main className="content">
-        {/* ── Tasto "Torna al menu principale" ── */}
-        {user && (() => {
-          const homePath = operatore ? '/portale-operatore' : '/dashboard';
-          const noBackPaths = ['/', '/register', homePath];
-          if (noBackPaths.includes(location.pathname)) return null;
-          return (
-            <div style={{ padding: '10px 16px 0', marginBottom: '-4px' }}>
-              <Link
-                to={homePath}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '6px',
-                  background: '#f1f5f9', color: '#374151', border: '1px solid #e2e8f0',
-                  borderRadius: '6px', padding: '7px 14px', fontSize: '0.88rem',
-                  fontWeight: '600', textDecoration: 'none', cursor: 'pointer',
-                }}
-              >
-                ← Menu principale
-              </Link>
-            </div>
-          );
-        })()}
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb />
+        
+        <Suspense fallback={<LoadingScreen />}>
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -268,6 +257,7 @@ function AppShell() {
           <Route path="/profilo-personale" element={<ProtectedRoute><ProfiloPersonale /></ProtectedRoute>} />
           <Route path="/compenso-incarichi" element={<ProtectedRoute><CompensoIncarichi /></ProtectedRoute>} />
         </Routes>
+        </Suspense>
       </main>
     </div>
   );
