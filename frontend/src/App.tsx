@@ -33,6 +33,7 @@ const EsamiStrumentali = lazy(() => import('./pages/EsamiStrumentali'));
 const RichiestePresidiPage = lazy(() => import('./pages/RichiestePresidiPage'));
 const ProtocolliProcedure = lazy(() => import('./pages/ProtocolliProcedure'));
 const ReportConsegne = lazy(() => import('./pages/ReportConsegne'));
+const GestioneFatturazione = lazy(() => import('./pages/GestioneFatturazione'));
 import {
   Heart,
   LayoutDashboard,
@@ -51,6 +52,7 @@ import {
   Briefcase,
   UserCircle,
   Euro,
+  Receipt,
   HeartPulse,
   Menu,
   X,
@@ -194,6 +196,10 @@ function AppShell() {
                 <Package size={18} />
                 Report Consegne
               </Link>
+              <Link to="/gestione-fatturazione" className={isActive('/gestione-fatturazione') ? 'active' : ''}>
+                <Receipt size={18} />
+                Fatturazione
+              </Link>
               {user.role === 'admin' && (
                 <Link to="/gestione-utenti" className={isActive('/gestione-utenti') ? 'active' : ''}>
                   <ShieldCheck size={18} />
@@ -263,6 +269,7 @@ function AppShell() {
           <Route path="/profilo-personale" element={<ProtectedRoute><ProfiloPersonale /></ProtectedRoute>} />
           <Route path="/compenso-incarichi" element={<ProtectedRoute><CompensoIncarichi /></ProtectedRoute>} />
           <Route path="/report-consegne" element={<ProtectedRoute><ReportConsegne /></ProtectedRoute>} />
+          <Route path="/gestione-fatturazione" element={<ProtectedRoute><GestioneFatturazione /></ProtectedRoute>} />
         </Routes>
         </Suspense>
       </main>
