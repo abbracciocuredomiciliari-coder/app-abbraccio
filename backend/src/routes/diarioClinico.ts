@@ -4,6 +4,7 @@ import WorkPlan from '../models/WorkPlan';
 import Staff from '../models/Staff';
 import { authenticateToken } from '../middleware/auth';
 import { auditLog } from '../middleware/audit';
+import { addTimestampToDocument } from '../utils/timestamp';
 
 const router = Router();
 
@@ -69,8 +70,8 @@ router.post('/:workPlanId', authenticateToken, auditLog('diario', 'CREATE', req 
   }
 });
 
-// POST /api/diario/firma/:entryId - Firma una voce del diario (blocca definitivamente)
-router.post('/firma/:entryId', authenticateToken, async (req: Request, res: Response) => {
+// POST /api/diario/firma/:entryId - Firma una voce del diario (blocca definitivamente) con marcatura temporale
+router.post('/firma/:entryId', authenticateToken, auditLog('diario', 'UPDATE', req => req.params.entryId), async (req: Request, res: Response) => {
   try {
     const { entryId } = req.params;
     const user = (req as any).user;
@@ -84,13 +85,55 @@ router.post('/firma/:entryId', authenticateToken, async (req: Request, res: Resp
       return res.status(400).json({ message: 'Questa voce è già stata firmata e non può essere modificata' });
     }
 
+    // Prepara documento per marcatura temporale
+    const docContent = {
+      _id: entry._id.toString(),
+      workPlan: entry.workPlan.toString(),
+      patient: entry.patient.toString(),
+      staff: entry.staff.toString(),
+      staffName: entry.staffName,
+      dataRegistrazione: entry.dataRegistrazione,
+      testo: entry.testo,
+      parametriVitali: entry.parametriVitali,
+    };
+
+    // Genera marcatura temporale e prepara firma digitale futura
+    const { hash, timestamp, signaturePlaceholder } = await addTimestampToDocument(
+      docContent,
+      { includeSignature: true }
+    );
+
+    // Aggiorna entry con firma semplice + marcatura temporale
     entry.firmato = true;
     entry.dataFirma = new Date();
     entry.firmaLogin = user.name || user.email || 'Operatore';
+    entry.documentHash = hash;
+    entry.timestamp = {
+      timestamp: timestamp.timestamp,
+      timestampToken: timestamp.timestampToken,
+      serialNumber: timestamp.serialNumber,
+      tsaName: timestamp.tsaName,
+      hashAlgorithm: timestamp.hashAlgorithm,
+      hashValue: timestamp.hashValue,
+    };
+    entry.firmaDigitale = {
+      tipo: 'FEA', // Preparato per Firma Elettronica Avanzata
+      hashToSign: signaturePlaceholder,
+    };
+
     await entry.save();
 
-    return res.json(entry);
+    return res.json({
+      entry,
+      message: 'Voce firmata con marcatura temporale',
+      timestampInfo: {
+        tsa: timestamp.tsaName,
+        serialNumber: timestamp.serialNumber,
+        timestamp: timestamp.timestamp,
+      },
+    });
   } catch (error: any) {
+    console.error('[Diario] Errore firma con timestamp:', error);
     return res.status(500).json({ message: 'Errore nella firma', error: error?.message });
   }
 });
