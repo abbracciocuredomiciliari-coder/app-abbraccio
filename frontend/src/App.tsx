@@ -35,6 +35,7 @@ const ProtocolliProcedure = lazy(() => import('./pages/ProtocolliProcedure'));
 const ReportConsegne = lazy(() => import('./pages/ReportConsegne'));
 const GestioneFatturazione = lazy(() => import('./pages/GestioneFatturazione'));
 const GestioneConsensiGDPR = lazy(() => import('./pages/GestioneConsensiGDPR'));
+const EsportazioneSIAT = lazy(() => import('./pages/EsportazioneSIAT'));
 import {
   Heart,
   LayoutDashboard,
@@ -212,6 +213,10 @@ function AppShell() {
                     <Shield size={18} />
                     Consensi GDPR
                   </Link>
+                  <Link to="/esportazione-siat" className={isActive('/esportazione-siat') ? 'active' : ''}>
+                    <FileText size={18} />
+                    Esportazione SIAT
+                  </Link>
                 </>
               )}
             </>
@@ -280,6 +285,8 @@ function AppShell() {
           <Route path="/gestione-fatturazione" element={<ProtectedRoute><GestioneFatturazione /></ProtectedRoute>} />
           {/* GDPR Compliance - Gestione Consensi */}
           <Route path="/gestione-consensi-gdpr" element={<ProtectedRoute><GestioneConsensiGDPR /></ProtectedRoute>} />
+          {/* Esportazione SIAT */}
+          <Route path="/esportazione-siat" element={<ProtectedRoute><EsportazioneSIAT /></ProtectedRoute>} />
         </Routes>
         </Suspense>
       </main>

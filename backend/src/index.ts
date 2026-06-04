@@ -28,6 +28,7 @@ import esamiStrumentaliRouter from './routes/esamiStrumentali';
 import auditLogRouter from './routes/auditLog';
 import supplyRequestsRouter from './routes/supplyRequests';
 import gdprRouter from './routes/gdpr';
+import exportSiatRouter from './routes/exportSiat';
 
 if (!process.env.JWT_SECRET) {
   console.error('ERRORE: JWT_SECRET non è impostato. Configurare la variabile d\'ambiente nel file .env prima di avviare il server.');
@@ -98,6 +99,7 @@ app.get('/api/health', (req: Request, res: Response) => {
 
 app.use('/api/auth', rateLimitByIP(5, 900000), authRouter); // Max 5 tentativi ogni 15 min
 app.use('/api/gdpr', rateLimitByUser(30, 60000), gdprRouter); // Max 30 req/min per GDPR
+app.use('/api/export', rateLimitByUser(20, 60000), exportSiatRouter); // Export formato SIAT
 app.use('/api/dashboard', rateLimitByUser(100, 60000), dashboardRouter);
 app.use('/api/patients', patientsRouter);
 app.use('/api/staff', staffRouter);
