@@ -6,6 +6,7 @@ import path from 'path';
 import jwt from 'jsonwebtoken';
 import connectDB from './config/db';
 import { verificaConnessioneSMTP, inviaEmailNuovoPianoDiLavoro } from './utils/email';
+import { rateLimitByIP, rateLimitByUser } from './middleware/rateLimit';
 import authRouter from './routes/auth';
 import patientsRouter from './routes/patients';
 import staffRouter from './routes/staff';
@@ -26,6 +27,7 @@ import checklistGlucometroRouter from './routes/checklistGlucometro';
 import esamiStrumentaliRouter from './routes/esamiStrumentali';
 import auditLogRouter from './routes/auditLog';
 import supplyRequestsRouter from './routes/supplyRequests';
+import gdprRouter from './routes/gdpr';
 
 if (!process.env.JWT_SECRET) {
   console.error('ERRORE: JWT_SECRET non è impostato. Configurare la variabile d\'ambiente nel file .env prima di avviare il server.');
@@ -37,8 +39,13 @@ const port = process.env.PORT || 4000;
 
 // ─── Security headers (Helmet) ────────────────────────────────────────────────
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' }, // necessario per Vercel→Render
-  contentSecurityPolicy: false, // gestito da Vercel sul frontend
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: false,
+  hsts: {
+    maxAge: 31536000, // 1 anno
+    includeSubDomains: true,
+    preload: true,
+  },
 }));
 
 // ─── CORS — solo origini autorizzate ─────────────────────────────────────────
@@ -89,8 +96,9 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'App Abbraccio API in esecuzione' });
 });
 
-app.use('/api/auth', authRouter);
-app.use('/api/dashboard', dashboardRouter);
+app.use('/api/auth', rateLimitByIP(5, 900000), authRouter); // Max 5 tentativi ogni 15 min
+app.use('/api/gdpr', rateLimitByUser(30, 60000), gdprRouter); // Max 30 req/min per GDPR
+app.use('/api/dashboard', rateLimitByUser(100, 60000), dashboardRouter);
 app.use('/api/patients', patientsRouter);
 app.use('/api/staff', staffRouter);
 app.use('/api/workplan', workplanRouter);
@@ -107,8 +115,8 @@ app.use('/api/checklist-defibrillatore', checklistDefibrillatoreRouter);
 app.use('/api/scheda-controllo-defibrillatore', schedaControlloDefibrillatoreRouter);
 app.use('/api/checklist-glucometro', checklistGlucometroRouter);
 app.use('/api/esami-strumentali', esamiStrumentaliRouter);
-app.use('/api/audit-log', auditLogRouter);
-app.use('/api/supply-requests', supplyRequestsRouter);
+app.use('/api/audit-log', rateLimitByUser(20, 60000), auditLogRouter);
+app.use('/api/supply-requests', rateLimitByUser(50, 60000), supplyRequestsRouter);
 // Alias senza prefisso /api per compatibilità con URL diretti degli allegati
 app.use('/allegati', allegatiRouter);
 
