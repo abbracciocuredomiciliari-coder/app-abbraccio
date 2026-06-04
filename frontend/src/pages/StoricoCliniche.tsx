@@ -328,7 +328,7 @@ export default function StoricoCliniche() {
                         {dettaglio.map(entry => (
                           <div key={entry._id} style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${entry.firmato ? '#86efac' : '#e5e7eb'}`, backgroundColor: entry.firmato ? '#f0fdf4' : '#fafafa' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap', fontSize: '0.78rem', color: '#888' }}>
-                              📅 {formatDataOra(entry.dataRegistrazione)} — ✍️ {entry.firmaLogin}
+                              📅 {formatDataOra(entry.dataRegistrazione)} — ✍️ {entry.staffName}
                               {entry.firmato && (
                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', backgroundColor: '#dcfce7', color: '#16a34a', padding: '1px 6px', borderRadius: '10px', fontSize: '0.72rem', fontWeight: '600' }}>
                                   <Lock size={10} /> Firmato {entry.dataFirma ? new Date(entry.dataFirma).toLocaleDateString('it-IT') : ''}
