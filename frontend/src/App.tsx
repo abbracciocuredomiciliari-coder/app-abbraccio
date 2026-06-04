@@ -32,6 +32,7 @@ const CompensoIncarichi = lazy(() => import('./pages/CompensoIncarichi'));
 const EsamiStrumentali = lazy(() => import('./pages/EsamiStrumentali'));
 const RichiestePresidiPage = lazy(() => import('./pages/RichiestePresidiPage'));
 const ProtocolliProcedure = lazy(() => import('./pages/ProtocolliProcedure'));
+const ReportConsegne = lazy(() => import('./pages/ReportConsegne'));
 import {
   Heart,
   LayoutDashboard,
@@ -53,6 +54,7 @@ import {
   HeartPulse,
   Menu,
   X,
+  Package,
 } from 'lucide-react';
 
 // Ruoli con accesso completo (admin/coordinamento/direzione)
@@ -188,6 +190,10 @@ function AppShell() {
                 <Euro size={18} />
                 Compenso per incarichi
               </Link>
+              <Link to="/report-consegne" className={isActive('/report-consegne') ? 'active' : ''}>
+                <Package size={18} />
+                Report Consegne
+              </Link>
               {user.role === 'admin' && (
                 <Link to="/gestione-utenti" className={isActive('/gestione-utenti') ? 'active' : ''}>
                   <ShieldCheck size={18} />
@@ -256,6 +262,7 @@ function AppShell() {
           <Route path="/piani-lavorativi" element={<ProtectedRoute><PortaleOperatore mode="piani" /></ProtectedRoute>} />
           <Route path="/profilo-personale" element={<ProtectedRoute><ProfiloPersonale /></ProtectedRoute>} />
           <Route path="/compenso-incarichi" element={<ProtectedRoute><CompensoIncarichi /></ProtectedRoute>} />
+          <Route path="/report-consegne" element={<ProtectedRoute><ReportConsegne /></ProtectedRoute>} />
         </Routes>
         </Suspense>
       </main>
