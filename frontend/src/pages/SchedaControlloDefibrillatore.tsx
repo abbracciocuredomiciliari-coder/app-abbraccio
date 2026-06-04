@@ -173,9 +173,9 @@ function SchedaControlloDefibrillatore() {
     }
   };
 
-  // ─── Visualizza PDF ───────────────────────────────────────────────────────────────
+  // ─── Genera HTML per PDF ───────────────────────────────────────────────────────────
 
-  const stampaScheda = (entry: SchedaEntry) => {
+  const generaHTMLScheda = (entry: SchedaEntry): string => {
     const dataComp = new Date(entry.dataCompilazione).toLocaleDateString('it-IT');
 
     const righeRegistro = entry.registroInterventi.length > 0
@@ -203,7 +203,7 @@ function SchedaControlloDefibrillatore() {
       })
       .join('');
 
-    const html = `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8"/>
@@ -271,13 +271,30 @@ function SchedaControlloDefibrillatore() {
   <div class="footer">Documento generato automaticamente da Abbraccio Cure Domiciliari</div>
 </body>
 </html>`;
+  };
 
+  // ─── Visualizza PDF ───────────────────────────────────────────────────────────────
+
+  const visualizzaScheda = (entry: SchedaEntry) => {
+    const html = generaHTMLScheda(entry);
     const win = window.open('', '_blank');
     if (win) {
       win.document.write(html);
       win.document.close();
       win.focus();
+    }
+  };
+
+  // ─── Stampa PDF ───────────────────────────────────────────────────────────────
+
+  const stampaScheda = (entry: SchedaEntry) => {
+    const html = generaHTMLScheda(entry);
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
       win.focus();
+      setTimeout(() => win.print(), 500);
     }
   };
 
@@ -663,10 +680,17 @@ function SchedaControlloDefibrillatore() {
                         </button>
                         <button
                           type="button"
+                          onClick={() => visualizzaScheda(entry)}
+                          style={{ background: '#3b82f6', fontSize: '0.85rem', padding: '6px 14px' }}
+                        >
+                          👁️ Visualizza PDF
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => stampaScheda(entry)}
                           style={{ background: '#1e4d8c', fontSize: '0.85rem', padding: '6px 14px' }}
                         >
-                          🖨️ Visualizza PDF
+                          🖨️ Stampa PDF
                         </button>
                         {user && (user.role === 'admin' || user.role === 'coordinator') && (
                           <button

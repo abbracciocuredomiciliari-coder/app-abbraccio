@@ -174,9 +174,9 @@ function CheckListGlucometro() {
     }
   };
 
-  // ─── Visualizza PDF ───────────────────────────────────────────────────────────────
+  // ─── Genera HTML per PDF ───────────────────────────────────────────────────────────
 
-  const stampaChecklist = (entry: CheckListGlucometroEntry) => {
+  const generaHTMLChecklist = (entry: CheckListGlucometroEntry): string => {
     const dataStr = new Date(entry.dataControllo).toLocaleDateString('it-IT');
 
     const righeTabella = LIVELLI.map((liv) => {
@@ -193,7 +193,7 @@ function CheckListGlucometro() {
       </tr>`;
     }).join('');
 
-    const html = `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8"/>
@@ -260,13 +260,30 @@ function CheckListGlucometro() {
   <div class="footer">Documento generato automaticamente da Abbraccio Cure Domiciliari — ${new Date().toLocaleString('it-IT')}</div>
 </body>
 </html>`;
+  };
 
+  // ─── Visualizza PDF ───────────────────────────────────────────────────────────────
+
+  const visualizzaChecklist = (entry: CheckListGlucometroEntry) => {
+    const html = generaHTMLChecklist(entry);
     const win = window.open('', '_blank');
     if (win) {
       win.document.write(html);
       win.document.close();
       win.focus();
+    }
+  };
+
+  // ─── Stampa PDF ───────────────────────────────────────────────────────────────
+
+  const stampaChecklist = (entry: CheckListGlucometroEntry) => {
+    const html = generaHTMLChecklist(entry);
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
       win.focus();
+      setTimeout(() => win.print(), 500);
     }
   };
 
@@ -715,10 +732,17 @@ function CheckListGlucometro() {
                         </button>
                         <button
                           type="button"
+                          onClick={() => visualizzaChecklist(entry)}
+                          style={{ background: '#3b82f6', fontSize: '0.85rem', padding: '6px 14px' }}
+                        >
+                          👁️ Visualizza PDF
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => stampaChecklist(entry)}
                           style={{ background: '#1e4d8c', fontSize: '0.85rem', padding: '6px 14px' }}
                         >
-                          🖨️ Visualizza PDF
+                          🖨️ Stampa PDF
                         </button>
                         {user && (user.role === 'admin' || user.role === 'coordinator') && (
                           <button

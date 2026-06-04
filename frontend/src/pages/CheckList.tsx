@@ -220,7 +220,7 @@ function CheckList() {
     }
   };
 
-  const stampaChecklist = (entry: CheckListEntry) => {
+  const generaHTMLChecklist = (entry: CheckListEntry): string => {
     const oggi = new Date(entry.data).toLocaleDateString('it-IT');
     const voci = vociChecklist
       .map((v) => {
@@ -232,7 +232,7 @@ function CheckList() {
       })
       .join('');
 
-    const html = `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8"/>
@@ -283,13 +283,26 @@ function CheckList() {
   <div class="footer">Documento generato automaticamente da Abbraccio Cure Domiciliari</div>
 </body>
 </html>`;
+  };
 
+  const visualizzaChecklist = (entry: CheckListEntry) => {
+    const html = generaHTMLChecklist(entry);
     const win = window.open('', '_blank');
     if (win) {
       win.document.write(html);
       win.document.close();
       win.focus();
+    }
+  };
+
+  const stampaChecklist = (entry: CheckListEntry) => {
+    const html = generaHTMLChecklist(entry);
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
       win.focus();
+      setTimeout(() => win.print(), 500);
     }
   };
 
@@ -523,10 +536,17 @@ function CheckList() {
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         <button
                           type="button"
+                          onClick={() => visualizzaChecklist(entry)}
+                          style={{ background: '#3b82f6', fontSize: '0.85rem', padding: '6px 14px' }}
+                        >
+                          👁️ Visualizza PDF
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => stampaChecklist(entry)}
                           style={{ background: '#1e4d8c', fontSize: '0.85rem', padding: '6px 14px' }}
                         >
-                          🖨️ Visualizza PDF
+                          🖨️ Stampa PDF
                         </button>
                         {user && (user.role === 'admin' || user.role === 'coordinator') && (
                           <button
