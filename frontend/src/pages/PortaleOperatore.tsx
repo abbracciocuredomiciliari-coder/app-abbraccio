@@ -514,41 +514,41 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
       ══════════════════════════════════════════════════════════════════════ */}
       {mode === 'dashboard' && !pazienteSelezionato && !mostraTuttiPiani && (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px', marginBottom: '20px' }}>
             <button
               type="button"
               onClick={() => navigate('/piani-lavorativi')}
-              style={{ background: 'rgba(5,150,105,0.07)', border: '1px solid rgba(5,150,105,0.3)', borderRadius: '10px', padding: '14px 16px', textAlign: 'center', cursor: 'pointer' }}
+              style={{ background: 'rgba(5,150,105,0.07)', border: '1px solid rgba(5,150,105,0.3)', borderRadius: '10px', padding: '14px 12px', textAlign: 'center', cursor: 'pointer', minWidth: 0 }}
             >
-              <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Pazienti attivi</div>
+              <div style={{ fontSize: '0.7rem', color: '#059669', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap' }}>Pazienti</div>
               <div style={{ fontSize: '2rem', fontWeight: '800', color: '#059669', lineHeight: 1 }}>{pazienti.length}</div>
             </button>
             <button
               type="button"
               onClick={() => navigate('/piani-lavorativi')}
-              style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '10px', padding: '14px 16px', textAlign: 'center', cursor: 'pointer' }}
+              style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '10px', padding: '14px 12px', textAlign: 'center', cursor: 'pointer', minWidth: 0 }}
             >
-              <div style={{ fontSize: '0.72rem', color: '#d97706', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Incarichi attivi</div>
+              <div style={{ fontSize: '0.7rem', color: '#d97706', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap' }}>Incarichi</div>
               <div style={{ fontSize: '2rem', fontWeight: '800', color: '#d97706', lineHeight: 1 }}>{pianiAttiviTutti.length}</div>
             </button>
             <button
               type="button"
               onClick={() => navigate('/esami-strumentali')}
-              style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.3)', borderRadius: '10px', padding: '14px 16px', textAlign: 'center', cursor: 'pointer' }}
+              style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.3)', borderRadius: '10px', padding: '14px 10px', textAlign: 'center', cursor: 'pointer', minWidth: 0, overflow: 'hidden' }}
             >
-              <div style={{ fontSize: '0.72rem', color: '#dc2626', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Esami strumentali attivi</div>
+              <div style={{ fontSize: '0.7rem', color: '#dc2626', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Esami Strumentali</div>
               <div style={{ fontSize: '2rem', fontWeight: '800', color: '#dc2626', lineHeight: 1 }}>{esamiAttivi}</div>
             </button>
             {compensoTotaleGlobale > 0 && (
               <button
                 type="button"
                 onClick={() => navigate('/compenso-incarichi')}
-                style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: '10px', padding: '14px 16px', textAlign: 'center', cursor: 'pointer' }}
+                style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: '10px', padding: '12px 10px', textAlign: 'center', cursor: 'pointer', minWidth: 0, overflow: 'hidden' }}
               >
-                <div style={{ fontSize: '0.72rem', color: '#7c3aed', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Compenso maturato</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#7c3aed', lineHeight: 1 }}>€ {compensoTotaleGlobale.toFixed(2)}</div>
+                <div style={{ fontSize: '0.7rem', color: '#7c3aed', fontWeight: '700', textTransform: 'uppercase', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Compenso</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: '800', color: '#7c3aed', lineHeight: 1.1 }}>€{compensoTotaleGlobale.toFixed(0)}</div>
                 {compensoPagatoGlobale > 0 && (
-                  <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: '600', marginTop: '2px' }}>✅ € {compensoPagatoGlobale.toFixed(2)} pagato</div>
+                  <div style={{ fontSize: '0.65rem', color: '#059669', fontWeight: '600', marginTop: '2px', whiteSpace: 'nowrap' }}>✓ €{compensoPagatoGlobale.toFixed(0)}</div>
                 )}
               </button>
             )}
