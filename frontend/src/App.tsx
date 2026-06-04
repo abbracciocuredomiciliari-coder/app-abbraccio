@@ -34,6 +34,7 @@ const RichiestePresidiPage = lazy(() => import('./pages/RichiestePresidiPage'));
 const ProtocolliProcedure = lazy(() => import('./pages/ProtocolliProcedure'));
 const ReportConsegne = lazy(() => import('./pages/ReportConsegne'));
 const GestioneFatturazione = lazy(() => import('./pages/GestioneFatturazione'));
+const GestioneConsensiGDPR = lazy(() => import('./pages/GestioneConsensiGDPR'));
 import {
   Heart,
   LayoutDashboard,
@@ -49,6 +50,7 @@ import {
   Archive,
   CheckSquare,
   ShieldCheck,
+  Shield,
   Briefcase,
   UserCircle,
   Euro,
@@ -201,10 +203,16 @@ function AppShell() {
                 Fatturazione
               </Link>
               {user.role === 'admin' && (
-                <Link to="/gestione-utenti" className={isActive('/gestione-utenti') ? 'active' : ''}>
-                  <ShieldCheck size={18} />
-                  Gestione Utenti
-                </Link>
+                <>
+                  <Link to="/gestione-utenti" className={isActive('/gestione-utenti') ? 'active' : ''}>
+                    <ShieldCheck size={18} />
+                    Gestione Utenti
+                  </Link>
+                  <Link to="/gestione-consensi-gdpr" className={isActive('/gestione-consensi-gdpr') ? 'active' : ''}>
+                    <Shield size={18} />
+                    Consensi GDPR
+                  </Link>
+                </>
               )}
             </>
           )}
@@ -270,6 +278,8 @@ function AppShell() {
           <Route path="/compenso-incarichi" element={<ProtectedRoute><CompensoIncarichi /></ProtectedRoute>} />
           <Route path="/report-consegne" element={<ProtectedRoute><ReportConsegne /></ProtectedRoute>} />
           <Route path="/gestione-fatturazione" element={<ProtectedRoute><GestioneFatturazione /></ProtectedRoute>} />
+          {/* GDPR Compliance - Gestione Consensi */}
+          <Route path="/gestione-consensi-gdpr" element={<ProtectedRoute><GestioneConsensiGDPR /></ProtectedRoute>} />
         </Routes>
         </Suspense>
       </main>
