@@ -395,16 +395,14 @@ function WorkPlan() {
     }
   };
 
-  // Visualizza PDF senza tariffa (solo rendicontazione accessi)
-  const stampaExportModal = () => {
-    if (!exportDataModal) return;
-    const win = window.open('', '_blank');
-    if (!win) return;
+  // Genera HTML per il PDF export
+  const generaHTMLExport = () => {
+    if (!exportDataModal) return '';
     const righe = exportDataModal.accessi.map((acc: any) => `<tr>
       <td>${acc.data}</td><td>${acc.oraEntrata}</td><td>${acc.oraUscita || '—'}</td>
       <td>${acc.durataOre}</td><td>${acc.note || '—'}</td>
     </tr>`).join('');
-    win.document.write(`<html><head><title>Registro Accessi</title>
+    return `<html><head><title>Registro Accessi</title>
     <style>
       body{font-family:Arial,sans-serif;font-size:12px;color:#222;margin:20px}
       h1{font-size:18px;color:#1e4d8c;margin-bottom:4px}
@@ -431,10 +429,30 @@ function WorkPlan() {
       <p><strong>Totale accessi:</strong> ${exportDataModal.riepilogo.totaleAccessi}</p>
       <p><strong>Ore totali:</strong> ${exportDataModal.riepilogo.oreTotali}</p>
     </div>
-    </body></html>`);
+    </body></html>`;
+  };
+
+  // Visualizza PDF in nuova tab (senza stampare)
+  const visualizzaExportModal = () => {
+    const html = generaHTMLExport();
+    if (!html) return;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
     win.document.close();
     win.focus();
+  };
+
+  // Stampa PDF direttamente (apre dialogo stampa)
+  const stampaExportModal = () => {
+    const html = generaHTMLExport();
+    if (!html) return;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
     win.focus();
+    setTimeout(() => win.print(), 500);
   };
 
   // Salva compenso
@@ -1048,16 +1066,12 @@ function WorkPlan() {
                                 {acc.oraUscita && (
                                   <span style={{ color: '#7c3aed' }}>⏱️ <strong>{calcolaDurata(acc.oraEntrata, acc.oraUscita)}</strong></span>
                                 )}
-                                {acc.oraUscita && acc.compensoMaturato !== undefined && acc.compensoMaturato > 0 && (
-                                  <span style={{ color: '#16a34a', fontWeight: '700', backgroundColor: '#f0fdf4', padding: '1px 8px', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
-                                    💶 €{acc.compensoMaturato}
-                                  </span>
-                                )}
                               </div>
                               {acc.note && <div style={{ fontSize: '0.8rem', color: '#555', marginTop: '4px', fontStyle: 'italic' }}>📝 {acc.note}</div>}
                             </div>
                             <div style={{ textAlign: 'right', fontSize: '0.75rem', color: '#888' }}>
-                              <div>✍️ {acc.firmaLogin}</div>
+                              <div>✍️ {acc.staffName}</div>
+                              <div>({acc.staffRole})</div>
                               <div>{new Date(acc.oraEntrata).toLocaleDateString('it-IT')}</div>
                             </div>
                           </div>
@@ -1177,10 +1191,16 @@ function WorkPlan() {
                           {loadingExportModal ? '⏳' : '🔍 Carica'}
                         </button>
                         {exportDataModal && (
-                          <button type="button" onClick={stampaExportModal}
-                            style={{ background: '#059669', padding: '9px 16px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
-                            🖨️ Visualizza PDF
-                          </button>
+                          <>
+                            <button type="button" onClick={visualizzaExportModal}
+                              style={{ background: '#3b82f6', padding: '9px 16px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                              👁️ Visualizza PDF
+                            </button>
+                            <button type="button" onClick={stampaExportModal}
+                              style={{ background: '#059669', padding: '9px 16px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                              🖨️ Stampa PDF
+                            </button>
+                          </>
                         )}
                       </div>
                       <p style={{ margin: 0, fontSize: '0.78rem', color: '#888' }}>Lascia vuoto per il mese corrente</p>

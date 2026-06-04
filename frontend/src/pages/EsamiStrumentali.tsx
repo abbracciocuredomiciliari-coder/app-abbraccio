@@ -459,9 +459,8 @@ export default function EsamiStrumentali() {
     }
   };
 
-  // ─── Visualizza PDF ─────────────────────────────────────────────────────────────
-  const stampaPDF = async (esame: EsameItem) => {
-    setLoadingPdf(true);
+  // ─── Genera HTML per PDF ───────────────────────────────────────────────────────
+  const generaPDFHtml = async (esame: EsameItem): Promise<string | null> => {
     try {
       const res = await api.get(`/esami-strumentali/${esame._id}/pdf-data`);
       const d = res.data;
@@ -499,7 +498,7 @@ export default function EsamiStrumentali() {
             <span style="color:#888">${a.caricatoDa} — ${a.data}</span>
           </div>`).join('');
 
-      const html = `<!DOCTYPE html>
+      return `<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
@@ -578,13 +577,44 @@ export default function EsamiStrumentali() {
   </div>
 </body>
 </html>`;
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Errore nella generazione del PDF.');
+      setTimeout(() => setError(''), 4000);
+      return null;
+    }
+  };
 
+  // ─── Visualizza PDF in nuova tab ────────────────────────────────────────────────
+  const visualizzaPDF = async (esame: EsameItem) => {
+    setLoadingPdf(true);
+    try {
+      const html = await generaPDFHtml(esame);
+      if (!html) return;
       const win = window.open('', '_blank');
-      if (!win) { setError('Impossibile aprire la finestra di stampa. Controlla il blocco popup.'); return; }
+      if (!win) { setError('Impossibile aprire la finestra. Controlla il blocco popup.'); return; }
       win.document.write(html);
       win.document.close();
       win.focus();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Errore nella generazione del PDF.');
+      setTimeout(() => setError(''), 4000);
+    } finally {
+      setLoadingPdf(false);
+    }
+  };
+
+  // ─── Stampa PDF (apre dialogo stampa) ───────────────────────────────────────────
+  const stampaPDF = async (esame: EsameItem) => {
+    setLoadingPdf(true);
+    try {
+      const html = await generaPDFHtml(esame);
+      if (!html) return;
+      const win = window.open('', '_blank');
+      if (!win) { setError('Impossibile aprire la finestra. Controlla il blocco popup.'); return; }
+      win.document.write(html);
+      win.document.close();
       win.focus();
+      setTimeout(() => win.print(), 500);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Errore nella generazione del PDF.');
       setTimeout(() => setError(''), 4000);
@@ -792,12 +822,21 @@ export default function EsamiStrumentali() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => stampaPDF(esame)}
-                        style={{ background: '#059669', padding: '7px' }}
+                        onClick={() => visualizzaPDF(esame)}
+                        style={{ background: '#3b82f6', padding: '7px' }}
                         title="Visualizza PDF"
                         disabled={loadingPdf}
                       >
                         <Printer size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => stampaPDF(esame)}
+                        style={{ background: '#059669', padding: '7px' }}
+                        title="Stampa PDF"
+                        disabled={loadingPdf}
+                      >
+                        🖨️
                       </button>
                       {isPrivilegiato && !esame.archiviato && (
                         <button
@@ -857,12 +896,20 @@ export default function EsamiStrumentali() {
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <button
                   type="button"
-                  onClick={() => stampaPDF(selectedEsame)}
-                  style={{ background: '#059669', padding: '8px 14px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  onClick={() => visualizzaPDF(selectedEsame)}
+                  style={{ background: '#3b82f6', padding: '8px 14px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
                   disabled={loadingPdf}
                 >
                   <Printer size={15} />
                   {loadingPdf ? 'Generazione...' : 'Visualizza PDF'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => stampaPDF(selectedEsame)}
+                  style={{ background: '#059669', padding: '8px 14px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  disabled={loadingPdf}
+                >
+                  🖨️ Stampa PDF
                 </button>
                 <button type="button" onClick={chiudiModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', padding: '4px' }}>
                   <X size={22} />

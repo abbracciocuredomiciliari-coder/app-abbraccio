@@ -431,10 +431,8 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
     }
   };
 
-  const stampaPDF = () => {
-    if (!exportData) return;
-    const win = window.open('', '_blank');
-    if (!win) return;
+  const generaPDFHtml = () => {
+    if (!exportData) return '';
     const righe = exportData.accessi.map((acc: any) => `
       <tr>
         <td>${acc.data}</td>
@@ -444,7 +442,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
         <td>${acc.note || '—'}</td>
       </tr>`).join('');
 
-    win.document.write(`<html><head><title>Registro Accessi</title>
+    return `<html><head><title>Registro Accessi</title>
     <style>
       body{font-family:Arial,sans-serif;font-size:12px;color:#222;margin:20px}
       h1{font-size:18px;color:#1e4d8c;margin-bottom:4px}
@@ -469,10 +467,28 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
       <p><strong>Totale accessi:</strong> ${exportData.riepilogo.totaleAccessi}</p>
       <p><strong>Ore totali:</strong> ${exportData.riepilogo.oreTotali}</p>
     </div>
-    </body></html>`);
+    </body></html>`;
+  };
+
+  const visualizzaPDF = () => {
+    const html = generaPDFHtml();
+    if (!html) return;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
     win.document.close();
     win.focus();
+  };
+
+  const stampaPDF = () => {
+    const html = generaPDFHtml();
+    if (!html) return;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
     win.focus();
+    setTimeout(() => win.print(), 500);
   };
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -1156,10 +1172,16 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                       {loadingExport ? '⏳' : '🔍 Carica'}
                     </button>
                     {exportData && (
-                      <button type="button" onClick={stampaPDF}
-                        style={{ background: '#059669', padding: '10px 18px', whiteSpace: 'nowrap' }}>
-                        🖨️ Visualizza PDF
-                      </button>
+                      <>
+                        <button type="button" onClick={visualizzaPDF}
+                          style={{ background: '#3b82f6', padding: '10px 18px', whiteSpace: 'nowrap' }}>
+                          👁️ Visualizza PDF
+                        </button>
+                        <button type="button" onClick={stampaPDF}
+                          style={{ background: '#059669', padding: '10px 18px', whiteSpace: 'nowrap' }}>
+                          🖨️ Stampa PDF
+                        </button>
+                      </>
                     )}
                   </div>
                   <p style={{ margin: 0, fontSize: '0.82rem', color: '#888' }}>Lascia vuoto per il mese corrente. Il PDF non include le tariffe.</p>
@@ -1214,7 +1236,10 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                                 {acc.note && <span>📝 {acc.note}</span>}
                               </div>
                             </div>
-                            <span style={{ fontSize: '0.8rem', color: '#888' }}>✍️ {acc.firmaLogin}</span>
+                            <div style={{ fontSize: '0.8rem', color: '#888', textAlign: 'right' }}>
+                              <div>✍️ {acc.staffName}</div>
+                              <div>({acc.staffRole})</div>
+                            </div>
                           </div>
                         </li>
                       ))}
