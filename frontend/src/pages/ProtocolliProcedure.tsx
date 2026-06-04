@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import Protocolli from './Protocolli';
 import Procedure from './Procedure';
+import Modulistica from './Modulistica';
 
-type PPTab = 'protocolli' | 'procedure';
+type PPTab = 'protocolli' | 'procedure' | 'modulistica';
 
 export default function ProtocolliProcedure() {
   const [activeTab, setActiveTab] = useState<PPTab>('protocolli');
@@ -14,6 +15,7 @@ export default function ProtocolliProcedure() {
         {([
           { key: 'protocolli' as const, label: '📋 Protocolli Sanitari' },
           { key: 'procedure' as const, label: '📄 Procedure Sanitarie' },
+          { key: 'modulistica' as const, label: '📝 Modulistica' },
         ]).map((tab) => (
           <button
             key={tab.key}
@@ -36,7 +38,9 @@ export default function ProtocolliProcedure() {
         ))}
       </div>
 
-      {activeTab === 'protocolli' ? <Protocolli /> : <Procedure />}
+      {activeTab === 'protocolli' && <Protocolli />}
+      {activeTab === 'procedure' && <Procedure />}
+      {activeTab === 'modulistica' && <Modulistica />}
     </div>
   );
 }
