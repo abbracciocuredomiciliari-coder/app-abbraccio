@@ -194,7 +194,7 @@ function AppShell() {
               </Link>
               <Link to="/report-consegne" className={isActive('/report-consegne') ? 'active' : ''}>
                 <Package size={18} />
-                Report Consegne
+                Richieste e Consegne
               </Link>
               <Link to="/gestione-fatturazione" className={isActive('/gestione-fatturazione') ? 'active' : ''}>
                 <Receipt size={18} />

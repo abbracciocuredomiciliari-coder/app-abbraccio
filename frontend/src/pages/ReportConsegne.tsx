@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { Package, Calendar, Search, FileText, Printer, Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { Package, Calendar, Search, FileText, Printer, Download, ChevronDown, ChevronUp, ClipboardList, Truck } from 'lucide-react';
 
 interface ConsegnaItem {
   nome: string;
@@ -20,9 +20,30 @@ interface Consegna {
   noteAdmin?: string;
 }
 
+interface RichiestaItem {
+  nome: string;
+  categoria: 'presidio' | 'farmaco';
+  unitaMisura: string;
+  quantitaRichiesta: number;
+  quantitaAutorizzata?: number;
+}
+
+interface Richiesta {
+  _id: string;
+  operatoreId: string;
+  operatoreNome: string;
+  items: RichiestaItem[];
+  dataRichiesta: string;
+  stato: 'in attesa' | 'autorizzata' | 'rifiutata' | 'consegnata';
+  noteAdmin?: string;
+  noteOperatore?: string;
+}
+
 export default function ReportConsegne() {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<'consegne' | 'richieste'>('consegne');
   const [consegne, setConsegne] = useState<Consegna[]>([]);
+  const [richieste, setRichieste] = useState<Richiesta[]>([]);
   const [loading, setLoading] = useState(true);
   const [dataInizio, setDataInizio] = useState('');
   const [dataFine, setDataFine] = useState('');
@@ -33,11 +54,19 @@ export default function ReportConsegne() {
   const isAdmin = user?.role === 'admin' || user?.role === 'coordinator' || user?.role === 'direttore';
 
   useEffect(() => {
-    caricaConsegne();
+    caricaDati();
   }, []);
 
-  const caricaConsegne = async () => {
+  const caricaDati = async () => {
     setLoading(true);
+    try {
+      await Promise.all([caricaConsegne(), caricaRichieste()]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const caricaConsegne = async () => {
     try {
       const params: any = {};
       if (dataInizio) params.dataInizio = dataInizio;
@@ -48,8 +77,20 @@ export default function ReportConsegne() {
       setConsegne(res.data);
     } catch (err) {
       console.error('Errore caricamento consegne:', err);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const caricaRichieste = async () => {
+    try {
+      const params: any = {};
+      if (dataInizio) params.dataInizio = dataInizio;
+      if (dataFine) params.dataFine = dataFine;
+      if (!isAdmin && user?.id) params.operatoreId = user.id;
+      
+      const res = await api.get('/supply-requests', { params });
+      setRichieste(res.data);
+    } catch (err) {
+      console.error('Errore caricamento richieste:', err);
     }
   };
 
@@ -62,7 +103,17 @@ export default function ReportConsegne() {
     });
   };
 
+  const filtraRichieste = () => {
+    return richieste.filter(r => {
+      const matchOperatore = isAdmin 
+        ? r.operatoreNome.toLowerCase().includes(ricercaOperatore.toLowerCase())
+        : true;
+      return matchOperatore;
+    });
+  };
+
   const consegneFiltrate = filtraConsegne();
+  const richiesteFiltrate = filtraRichieste();
 
   // Calcolo totali
   const totaliPerCategoria = consegneFiltrate.reduce((acc, c) => {
@@ -80,6 +131,26 @@ export default function ReportConsegne() {
     });
     return acc;
   }, {} as Record<string, { nome: string; unitaMisura: string; categoria: string; totale: number }>);
+
+  const totaliRichiestePerCategoria = richiesteFiltrate.reduce((acc, r) => {
+    r.items.forEach(item => {
+      const key = `${item.nome} (${item.unitaMisura})`;
+      if (!acc[key]) {
+        acc[key] = { 
+          nome: item.nome, 
+          unitaMisura: item.unitaMisura, 
+          categoria: item.categoria, 
+          totaleRichiesto: 0,
+          totaleAutorizzato: 0
+        };
+      }
+      acc[key].totaleRichiesto += item.quantitaRichiesta;
+      if (item.quantitaAutorizzata) {
+        acc[key].totaleAutorizzato += item.quantitaAutorizzata;
+      }
+    });
+    return acc;
+  }, {} as Record<string, { nome: string; unitaMisura: string; categoria: string; totaleRichiesto: number; totaleAutorizzato: number }>);
 
   const generaPDFHtml = (): string => {
     const periodo = dataInizio && dataFine 
@@ -209,7 +280,7 @@ export default function ReportConsegne() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px', color: '#1e4d8c' }}>
           <Package size={28} />
-          Report Consegne Materiali
+          Richieste e Consegne Materiali
         </h1>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button onClick={visualizzaPDF} className="btn-secondary">
@@ -221,6 +292,77 @@ export default function ReportConsegne() {
             Stampa PDF
           </button>
         </div>
+      </div>
+
+      {/* Tab Switcher */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '0', 
+        marginBottom: '24px',
+        background: 'white',
+        borderRadius: '12px',
+        padding: '4px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        border: '1px solid #e2e8f0'
+      }}>
+        <button
+          onClick={() => setActiveTab('consegne')}
+          style={{
+            flex: 1,
+            padding: '12px 24px',
+            borderRadius: '8px',
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            background: activeTab === 'consegne' ? '#1e4d8c' : 'transparent',
+            color: activeTab === 'consegne' ? 'white' : '#374151',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <Truck size={20} />
+          Report Consegna Materiali
+          <span style={{ 
+            background: activeTab === 'consegne' ? 'rgba(255,255,255,0.2)' : '#e2e8f0',
+            padding: '2px 8px',
+            borderRadius: '12px',
+            fontSize: '0.75rem'
+          }}>
+            {consegneFiltrate.length}
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab('richieste')}
+          style={{
+            flex: 1,
+            padding: '12px 24px',
+            borderRadius: '8px',
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            background: activeTab === 'richieste' ? '#1e4d8c' : 'transparent',
+            color: activeTab === 'richieste' ? 'white' : '#374151',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <ClipboardList size={20} />
+          Richieste Materiali
+          <span style={{ 
+            background: activeTab === 'richieste' ? 'rgba(255,255,255,0.2)' : '#e2e8f0',
+            padding: '2px 8px',
+            borderRadius: '12px',
+            fontSize: '0.75rem'
+          }}>
+            {richiesteFiltrate.length}
+          </span>
+        </button>
       </div>
 
       {/* Filtri */}
@@ -277,7 +419,7 @@ export default function ReportConsegne() {
           )}
           <div>
             <button 
-              onClick={caricaConsegne}
+              onClick={caricaDati}
               style={{ 
                 width: '100%', 
                 padding: '10px 20px', 
@@ -301,7 +443,7 @@ export default function ReportConsegne() {
       </div>
 
       {/* Totali */}
-      {Object.keys(totaliPerCategoria).length > 0 && (
+      {activeTab === 'consegne' && Object.keys(totaliPerCategoria).length > 0 && (
         <div style={{ 
           background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)', 
           borderRadius: '12px', 
@@ -310,7 +452,7 @@ export default function ReportConsegne() {
           border: '1px solid #bae6fd'
         }}>
           <h3 style={{ margin: '0 0 12px', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Package size={20} />
+            <Truck size={20} />
             Totali Materiali Consegnati
           </h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
@@ -333,8 +475,40 @@ export default function ReportConsegne() {
         </div>
       )}
 
-      {/* Lista consegne */}
-      {loading ? (
+      {activeTab === 'richieste' && Object.keys(totaliRichiestePerCategoria).length > 0 && (
+        <div style={{ 
+          background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', 
+          borderRadius: '12px', 
+          padding: '20px', 
+          marginBottom: '24px',
+          border: '1px solid #f59e0b'
+        }}>
+          <h3 style={{ margin: '0 0 12px', color: '#b45309', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ClipboardList size={20} />
+            Totali Richieste Materiali
+          </h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            {Object.values(totaliRichiestePerCategoria).map((t, idx) => (
+              <div key={idx} style={{ 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: '6px',
+                padding: '8px 14px', 
+                background: t.categoria === 'farmaco' ? '#ede9fe' : '#fef3c7', 
+                borderRadius: '20px',
+                border: `1px solid ${t.categoria === 'farmaco' ? '#7c3aed' : '#f59e0b'}`,
+                fontSize: '0.9rem'
+              }}>
+                <span style={{ fontSize: '1rem' }}>{t.categoria === 'farmaco' ? '💊' : '🏥'}</span>
+                <strong>{t.nome}</strong>: {t.totaleRichiesto} {t.unitaMisura} {t.totaleAutorizzato > 0 && <span style={{ color: '#059669' }}>(✓ {t.totaleAutorizzato})</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Lista consegne o richieste */}
+      {activeTab === 'consegne' && loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
           <div className="skeleton skeleton-card" style={{ margin: '0 auto 20px', width: '60px', height: '60px', borderRadius: '50%' }}></div>
           <p>Caricamento consegne...</p>
@@ -492,8 +666,196 @@ export default function ReportConsegne() {
         </div>
       )}
 
-      {/* Riepilogo */}
-      {!loading && consegneFiltrate.length > 0 && (
+      {/* Lista richieste */}
+      {activeTab === 'richieste' && loading ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+          <div className="skeleton skeleton-card" style={{ margin: '0 auto 20px', width: '60px', height: '60px', borderRadius: '50%' }}></div>
+          <p>Caricamento richieste...</p>
+        </div>
+      ) : activeTab === 'richieste' && richiesteFiltrate.length === 0 ? (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '60px 20px', 
+          background: '#f9fafb', 
+          borderRadius: '12px',
+          border: '2px dashed #e5e7eb'
+        }}>
+          <ClipboardList size={48} style={{ color: '#9ca3af', marginBottom: '16px' }} />
+          <h3 style={{ margin: '0 0 8px', color: '#4b5563' }}>Nessuna richiesta trovata</h3>
+          <p style={{ margin: 0, color: '#6b7280' }}>
+            {dataInizio || dataFine 
+              ? 'Prova a modificare i filtri di ricerca' 
+              : 'Non ci sono richieste registrate nel sistema'}
+          </p>
+        </div>
+      ) : activeTab === 'richieste' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {richiesteFiltrate.map((richiesta) => (
+            <div 
+              key={richiesta._id} 
+              style={{ 
+                background: 'white', 
+                borderRadius: '12px', 
+                border: '1px solid #e2e8f0',
+                overflow: 'hidden',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                transition: 'all 0.2s ease',
+              }}
+              className="card-hover"
+            >
+              {/* Header richiesta */}
+              <div 
+                onClick={() => setExpandedId(expandedId === richiesta._id ? null : richiesta._id)}
+                style={{ 
+                  padding: '16px 20px', 
+                  background: '#f8fafc',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  borderBottom: expandedId === richiesta._id ? '1px solid #e2e8f0' : 'none'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                  <div style={{ 
+                    width: '48px', 
+                    height: '48px', 
+                    borderRadius: '12px', 
+                    background: richiesta.stato === 'consegnata' ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)' : 
+                                richiesta.stato === 'autorizzata' ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' :
+                                richiesta.stato === 'rifiutata' ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)' :
+                                'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: richiesta.stato === 'consegnata' ? '#059669' : 
+                          richiesta.stato === 'autorizzata' ? '#1e4d8c' :
+                          richiesta.stato === 'rifiutata' ? '#dc2626' :
+                          '#b45309'
+                  }}>
+                    <ClipboardList size={24} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#1e4d8c', marginBottom: '4px' }}>
+                      {isAdmin ? richiesta.operatoreNome : 'Richiesta materiali'}
+                    </div>
+                    <div style={{ fontSize: '0.875rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Calendar size={14} />
+                      {formatData(richiesta.dataRichiesta)}
+                      <span style={{ 
+                        marginLeft: '8px',
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        background: richiesta.stato === 'consegnata' ? '#d1fae5' :
+                                    richiesta.stato === 'autorizzata' ? '#dbeafe' :
+                                    richiesta.stato === 'rifiutata' ? '#fee2e2' :
+                                    '#fef3c7',
+                        color: richiesta.stato === 'consegnata' ? '#059669' :
+                               richiesta.stato === 'autorizzata' ? '#1e4d8c' :
+                               richiesta.stato === 'rifiutata' ? '#dc2626' :
+                               '#b45309'
+                      }}>
+                        {richiesta.stato}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ 
+                    fontSize: '0.875rem', 
+                    color: '#6b7280',
+                    background: '#f1f5f9',
+                    padding: '4px 12px',
+                    borderRadius: '20px'
+                  }}>
+                    {richiesta.items.length} {richiesta.items.length === 1 ? 'articolo' : 'articoli'}
+                  </span>
+                  {expandedId === richiesta._id ? <ChevronUp size={20} color="#6b7280" /> : <ChevronDown size={20} color="#6b7280" />}
+                </div>
+              </div>
+
+              {/* Dettaglio richiesta */}
+              {expandedId === richiesta._id && (
+                <div style={{ padding: '20px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
+                        <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '0.875rem', color: '#374151' }}>Articolo</th>
+                        <th style={{ textAlign: 'center', padding: '10px 8px', fontSize: '0.875rem', color: '#374151' }}>Categoria</th>
+                        <th style={{ textAlign: 'center', padding: '10px 8px', fontSize: '0.875rem', color: '#374151' }}>Richiesta</th>
+                        <th style={{ textAlign: 'center', padding: '10px 8px', fontSize: '0.875rem', color: '#374151' }}>Autorizzata</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {richiesta.items.map((item, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '12px 8px', fontWeight: 500 }}>
+                            {item.nome}
+                          </td>
+                          <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                            <span style={{ 
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '4px 10px',
+                              borderRadius: '20px',
+                              fontSize: '0.8rem',
+                              fontWeight: 600,
+                              background: item.categoria === 'farmaco' ? '#ede9fe' : '#e0f2fe',
+                              color: item.categoria === 'farmaco' ? '#7c3aed' : '#0369a1'
+                            }}>
+                              {item.categoria === 'farmaco' ? '💊 Farmaco' : '🏥 Presidio'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 600, color: '#b45309' }}>
+                            {item.quantitaRichiesta} {item.unitaMisura}
+                          </td>
+                          <td style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: item.quantitaAutorizzata ? '#059669' : '#9ca3af' }}>
+                            {item.quantitaAutorizzata || '-'} {item.quantitaAutorizzata ? item.unitaMisura : ''}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  
+                  {richiesta.noteOperatore && (
+                    <div style={{ 
+                      marginTop: '16px', 
+                      padding: '12px 16px', 
+                      background: '#eff6ff', 
+                      borderRadius: '8px',
+                      border: '1px solid #bfdbfe',
+                      fontSize: '0.875rem',
+                      color: '#1e40af'
+                    }}>
+                      <strong>📝 Note Operatore:</strong> {richiesta.noteOperatore}
+                    </div>
+                  )}
+                  
+                  {richiesta.noteAdmin && (
+                    <div style={{ 
+                      marginTop: '16px', 
+                      padding: '12px 16px', 
+                      background: '#fffbeb', 
+                      borderRadius: '8px',
+                      border: '1px solid #fde68a',
+                      fontSize: '0.875rem',
+                      color: '#92400e'
+                    }}>
+                      <strong>📝 Risposta Admin:</strong> {richiesta.noteAdmin}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Riepilogo consegne */}
+      {activeTab === 'consegne' && !loading && consegneFiltrate.length > 0 && (
         <div style={{ 
           marginTop: '32px', 
           padding: '20px', 
