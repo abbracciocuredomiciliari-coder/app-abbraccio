@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, ReactNode } from 'react';
 
 interface User {
   id: string;
@@ -44,7 +44,35 @@ function isTokenExpired(token: string): boolean {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const logoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Funzione per pulire il timer esistente
+  const clearLogoutTimer = () => {
+    if (logoutTimerRef.current) {
+      clearTimeout(logoutTimerRef.current);
+      logoutTimerRef.current = null;
+    }
+  };
+
+  // Funzione per impostare il timer di auto-logout
+  const setupLogoutTimer = (token: string) => {
+    clearLogoutTimer(); // Pulisci timer precedente
+    
+    const payload = decodeJwtPayload(token);
+    if (payload?.exp) {
+      const msAllaScadenza = payload.exp * 1000 - Date.now();
+      if (msAllaScadenza > 0) {
+        logoutTimerRef.current = setTimeout(() => {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('authUser');
+          setUser(null);
+          alert('La tua sessione è scaduta. Effettua nuovamente il login.');
+        }, msAllaScadenza);
+      }
+    }
+  };
+
+  // Inizializzazione al mount
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     const userString = localStorage.getItem('authUser');
@@ -59,35 +87,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const storedUser = JSON.parse(userString) as User;
         setUser(storedUser);
-
-        // Pianifica auto-logout alla scadenza del token
-        const payload = decodeJwtPayload(token);
-        if (payload?.exp) {
-          const msAllaScadenza = payload.exp * 1000 - Date.now();
-          if (msAllaScadenza > 0) {
-            const timer = setTimeout(() => {
-              localStorage.removeItem('authToken');
-              localStorage.removeItem('authUser');
-              setUser(null);
-              alert('La tua sessione è scaduta. Effettua nuovamente il login.');
-            }, msAllaScadenza);
-            // Cleanup del timer se il componente viene smontato
-            return () => clearTimeout(timer);
-          }
-        }
+        // Imposta timer per questo token
+        setupLogoutTimer(token);
       } catch {
         localStorage.removeItem('authUser');
       }
     }
+    
+    // Cleanup quando il componente viene smontato
+    return () => clearLogoutTimer();
   }, []);
 
   const login = (token: string, authUser: User) => {
     localStorage.setItem('authToken', token);
     localStorage.setItem('authUser', JSON.stringify(authUser));
     setUser(authUser);
+    // Imposta il timer per il nuovo token
+    setupLogoutTimer(token);
   };
 
   const logout = () => {
+    clearLogoutTimer();
     localStorage.removeItem('authToken');
     localStorage.removeItem('authUser');
     setUser(null);
