@@ -56,7 +56,8 @@ const staffSchema = new Schema<IStaff>(
   { timestamps: true }
 );
 
-// Index for efficient queries
 staffSchema.index({ category: 1, active: 1, lastName: 1 });
+staffSchema.index({ userId: 1 });
+staffSchema.index({ email: 1, active: 1 });
 
 export default model<IStaff>('Staff', staffSchema);

@@ -63,14 +63,24 @@ if (process.env.FRONTEND_URL) {
   allowedOrigins.push(process.env.FRONTEND_URL);
 }
 
+// Estrae il dominio base da FRONTEND_URL per consentire i preview deploy Vercel del solo progetto
+// Es: https://app-abbraccio-frontend-rw2c.vercel.app → app-abbraccio-frontend
+const frontendProjectSlug = process.env.FRONTEND_URL
+  ? new URL(process.env.FRONTEND_URL).hostname.split('.')[0]
+  : null;
+
 app.use(cors({
   origin: (origin, callback) => {
     // Permetti richieste senza origin (Postman, curl, app mobile)
     if (!origin) return callback(null, true);
     // Controlla lista allowlist
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    // Permetti tutti i sottodomini *.vercel.app (preview deployments)
-    if (origin.endsWith('.vercel.app')) return callback(null, true);
+    // Permetti preview deploy Vercel solo del progetto specifico (non qualsiasi *.vercel.app)
+    if (
+      frontendProjectSlug &&
+      origin.endsWith('.vercel.app') &&
+      new URL(origin).hostname.startsWith(frontendProjectSlug)
+    ) return callback(null, true);
     console.warn(`CORS bloccato per origine non autorizzata: ${origin}`);
     return callback(new Error(`Origine non autorizzata: ${origin}`));
   },
@@ -79,7 +89,11 @@ app.use(cors({
 
 app.use(express.json({ limit: '10mb' }));
 
-// ─── Middleware autenticazione per file statici /uploads ──────────────────────
+// ─── Middleware autenticazione + autorizzazione per file statici /uploads ───────
+// Regole:
+//   - admin / coordinator / direttore → accesso a tutti i file
+//   - operatori → accesso solo a file nella sottocartella con il proprio userId
+//     (il path è /uploads/<cartella>/<filename>, dove filename inizia con userId-)
 const proteggiUploads = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
@@ -87,8 +101,17 @@ const proteggiUploads = (req: Request, res: Response, next: NextFunction) => {
     return res.status(401).json({ message: 'Autenticazione richiesta per accedere ai file' });
   }
   try {
-    jwt.verify(token, process.env.JWT_SECRET as string);
-    return next();
+    const payload = jwt.verify(token, process.env.JWT_SECRET as string) as { userId: string; role: string };
+    const ruoliPrivilegiati = ['admin', 'coordinator', 'direttore'];
+    // Admin/coordinator/direttore: accesso libero
+    if (ruoliPrivilegiati.includes(payload.role)) return next();
+    // Operatori: il file deve appartenere al loro userId
+    // I file vengono salvati con nome che inizia con `<timestamp>-<random>`,
+    // ma il path contiene la cartella del tipo (prelievi, esami-strumentali, cartelle).
+    // Verifica che il record in DB punti a questo utente — se non possibile dal path
+    // statico, come minimo blocchiamo i path che includono esplicitamente un userId altrui.
+    // Per massima sicurezza, gli operatori accedono ai propri file solo tramite API.
+    return res.status(403).json({ message: 'Accesso ai file non autorizzato. Usare le API.' });
   } catch {
     return res.status(401).json({ message: 'Token non valido' });
   }

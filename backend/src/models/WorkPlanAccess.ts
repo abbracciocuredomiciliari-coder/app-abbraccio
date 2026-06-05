@@ -123,4 +123,8 @@ const workPlanAccessSchema = new Schema<IWorkPlanAccess>(
   { timestamps: true }
 );
 
+workPlanAccessSchema.index({ workPlan: 1, staffId: 1 });
+workPlanAccessSchema.index({ staffId: 1, oraEntrata: -1 });
+workPlanAccessSchema.index({ oraUscita: 1, staffId: 1 });
+
 export default model<IWorkPlanAccess>('WorkPlanAccess', workPlanAccessSchema);

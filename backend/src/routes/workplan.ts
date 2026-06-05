@@ -21,6 +21,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
     const isPrivileged = ['admin', 'coordinator', 'direttore'].includes(user.role);
+    const { tipo, status, page, limit } = req.query;
 
     let filter: any = {};
 
@@ -33,18 +34,37 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
       }
     }
 
-    const workplans = await WorkPlan.find(filter)
+    // Filtro per status (pending/completed/cancelled)
+    if (status && ['pending', 'completed', 'cancelled'].includes(status as string)) {
+      filter.status = status;
+    }
+
+    const query = WorkPlan.find(filter)
       .populate('patient', 'firstName lastName tipoGestione')
       .populate('staff', 'firstName lastName role category active')
       .sort({ date: 1 });
 
-    // Filtro opzionale per tipo gestione (privato/convenzione)
-    const { tipo } = req.query;
-    if (tipo === 'privato' || tipo === 'convenzione') {
-      const filtered = workplans.filter((wp: any) => (wp.patient as any)?.tipoGestione === tipo);
-      return res.json(filtered);
+    // Paginazione opzionale — retrocompatibile
+    if (page !== undefined && limit !== undefined) {
+      const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+      const limitNum = Math.min(200, Math.max(1, parseInt(limit as string, 10) || 50));
+      const skip = (pageNum - 1) * limitNum;
+      const [workplans, total] = await Promise.all([
+        query.skip(skip).limit(limitNum),
+        WorkPlan.countDocuments(filter),
+      ]);
+      // Filtro tipo gestione post-populate
+      const data = (tipo === 'privato' || tipo === 'convenzione')
+        ? workplans.filter((wp: any) => (wp.patient as any)?.tipoGestione === tipo)
+        : workplans;
+      return res.json({ data, total, page: pageNum, limit: limitNum, pages: Math.ceil(total / limitNum) });
     }
 
+    const workplans = await query;
+    // Filtro opzionale per tipo gestione (privato/convenzione)
+    if (tipo === 'privato' || tipo === 'convenzione') {
+      return res.json(workplans.filter((wp: any) => (wp.patient as any)?.tipoGestione === tipo));
+    }
     return res.json(workplans);
   } catch (error) {
     return res.status(500).json({ message: 'Errore nel recupero del piano di lavoro', error });

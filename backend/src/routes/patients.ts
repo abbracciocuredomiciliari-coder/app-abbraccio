@@ -10,10 +10,26 @@ router.use(authenticateToken);
 
 router.get('/', auditLog('patients', 'READ'), async (req: Request, res: Response) => {
   try {
-    const { tipo } = req.query; // 'privato' | 'convenzione' | undefined (tutti)
+    const { tipo, page, limit, search } = req.query;
     const filter: any = {};
     if (tipo === 'privato') filter.tipoGestione = 'privato';
     else if (tipo === 'convenzione') filter.tipoGestione = 'convenzione';
+    // Ricerca per nome/cognome se passato
+    if (search && typeof search === 'string' && search.trim()) {
+      const regex = new RegExp(search.trim(), 'i');
+      filter.$or = [{ firstName: regex }, { lastName: regex }];
+    }
+    // Paginazione opzionale — senza page/limit si restituisce tutto (retrocompatibile)
+    if (page !== undefined && limit !== undefined) {
+      const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit as string, 10) || 20));
+      const skip = (pageNum - 1) * limitNum;
+      const [patients, total] = await Promise.all([
+        Patient.find(filter).sort({ lastName: 1, firstName: 1 }).skip(skip).limit(limitNum),
+        Patient.countDocuments(filter),
+      ]);
+      return res.json({ data: patients, total, page: pageNum, limit: limitNum, pages: Math.ceil(total / limitNum) });
+    }
     const patients = await Patient.find(filter).sort({ lastName: 1, firstName: 1 });
     return res.json(patients);
   } catch (error) {

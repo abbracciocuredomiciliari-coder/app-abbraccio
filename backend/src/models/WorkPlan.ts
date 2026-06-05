@@ -71,4 +71,9 @@ const workPlanSchema = new Schema<IWorkPlan>(
   { timestamps: true }
 );
 
+workPlanSchema.index({ staff: 1, status: 1, date: 1 });
+workPlanSchema.index({ patient: 1, date: 1 });
+workPlanSchema.index({ status: 1, date: 1 });
+workPlanSchema.index({ compensoPagato: 1, staff: 1 });
+
 export default model<IWorkPlan>('WorkPlan', workPlanSchema);

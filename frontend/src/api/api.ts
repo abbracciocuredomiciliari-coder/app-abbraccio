@@ -25,10 +25,22 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ─── Interceptor risposta: gestione errori globale ───────────────────────────
+// ─── Interceptor risposta: logout automatico su 401 ──────────────────────────
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.response?.status === 401) {
+      const isAuthRoute = (error.config?.url || '').includes('/auth/');
+      if (!isAuthRoute) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('authUser');
+        const isAlreadyOnLogin =
+          window.location.pathname === '/' || window.location.pathname === '/login';
+        if (!isAlreadyOnLogin) {
+          window.location.href = '/?sessionExpired=1';
+        }
+      }
+    }
     return Promise.reject(error);
   }
 );
