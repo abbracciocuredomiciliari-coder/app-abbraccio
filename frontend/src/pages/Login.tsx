@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import api from '../api/api';
@@ -11,12 +11,22 @@ function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [sessionExpiredMsg, setSessionExpiredMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [isWakingUp, setIsWakingUp] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('sessionExpired') === '1') {
+      setSessionExpiredMsg('La tua sessione è scaduta. Effettua nuovamente il login.');
+      window.history.replaceState({}, '', '/');
+    }
+  }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
+    setSessionExpiredMsg('');
     setIsWakingUp(false);
     setLoading(true);
 
@@ -90,6 +100,25 @@ function Login() {
       </div>
 
       <form onSubmit={handleSubmit} className="login-form" style={{ maxWidth: '440px', margin: '0 auto' }}>
+        {sessionExpiredMsg && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 16px',
+              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: 'var(--radius-md)',
+              color: '#b45309',
+              fontSize: '0.92rem',
+            }}
+          >
+            <Clock size={18} style={{ flexShrink: 0 }} />
+            {sessionExpiredMsg}
+          </div>
+        )}
+
         {error && (
           <div
             style={{

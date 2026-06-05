@@ -37,9 +37,7 @@ api.interceptors.response.use(
       localStorage.removeItem('authToken');
       localStorage.removeItem('authUser');
       if (tokenEsisteva) {
-        // Mostra avviso solo se l'utente era loggato (evita loop sul login)
-        alert('La tua sessione è scaduta. Effettua nuovamente il login.');
-        window.location.href = '/login';
+        window.location.href = '/?sessionExpired=1';
       }
     }
     return Promise.reject(error);

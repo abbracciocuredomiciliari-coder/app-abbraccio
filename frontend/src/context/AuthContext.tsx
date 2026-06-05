@@ -95,11 +95,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem('authToken');
           localStorage.removeItem('authUser');
           setUser(null);
-          // Non mostrare alert se l'utente è già sulla pagina di login
           const isOnLoginPage = window.location.pathname === '/' || window.location.pathname === '/login';
           if (!isOnLoginPage) {
-            alert('La tua sessione è scaduta. Effettua nuovamente il login.');
-            window.location.href = '/';
+            window.location.href = '/?sessionExpired=1';
           }
         }, msAllaScadenza);
       }
