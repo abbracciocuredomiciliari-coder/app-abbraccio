@@ -119,7 +119,7 @@ router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async
 router.put('/:staffId', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
   try {
     const staffId = req.params.staffId;
-    const { firstName, lastName, email, role, category, phone, note, modalitaAbilitata } = req.body;
+    const { firstName, lastName, email, role, category, phone, note, modalitaAbilitata, domicilioPartenza, raggioAzioneKm, domicilioCoords } = req.body;
     
     const updateData: any = {};
     if (firstName) updateData.firstName = firstName.trim();
@@ -134,6 +134,9 @@ router.put('/:staffId', authenticateToken, authorizeRole('admin', 'coordinator')
     if (modalitaAbilitata && ['entrambi', 'privato', 'convenzione'].includes(modalitaAbilitata)) {
       updateData.modalitaAbilitata = modalitaAbilitata;
     }
+    if (domicilioPartenza !== undefined) updateData.domicilioPartenza = domicilioPartenza.trim();
+    if (raggioAzioneKm !== undefined) updateData.raggioAzioneKm = Number(raggioAzioneKm);
+    if (domicilioCoords?.lat !== undefined) updateData.domicilioCoords = domicilioCoords;
 
     const staffMember = await Staff.findByIdAndUpdate(staffId, updateData, { new: true });
     if (!staffMember) {

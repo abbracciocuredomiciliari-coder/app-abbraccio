@@ -5,6 +5,7 @@ import Staff from '../models/Staff';
 import { authenticateToken } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { inviaEmailNuovoPianoDiLavoro } from '../utils/email';
+import { getStaffByUser } from '../utils/staffHelper';
 
 const router = Router();
 
@@ -14,19 +15,6 @@ function isOperatore(role: string) {
   return !['admin', 'coordinator', 'direttore'].includes(role);
 }
 
-// Helper: trova lo Staff dell'utente loggato
-async function getStaffByUser(userId: string, userEmail?: string) {
-  let staff = await Staff.findOne({ userId });
-  if (!staff && userEmail) {
-    staff = await Staff.findOne({ email: userEmail });
-    // Collega automaticamente se trovato per email
-    if (staff) {
-      staff.userId = userId as any;
-      await staff.save();
-    }
-  }
-  return staff;
-}
 
 // GET / — lista piani (operatore vede solo i propri, admin/coordinator vedono tutti)
 router.get('/', authenticateToken, async (req: Request, res: Response) => {

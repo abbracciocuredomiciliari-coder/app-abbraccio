@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useEffect, useState, useRef } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 import {
@@ -34,6 +34,9 @@ interface StaffMember {
   dataFineCollaborazione?: string;
   note?: string;
   modalitaAbilitata?: 'entrambi' | 'privato' | 'convenzione';
+  domicilioPartenza?: string;
+  raggioAzioneKm?: number;
+  domicilioCoords?: { lat: number; lng: number };
 }
 
 interface StaffDocument {
@@ -103,6 +106,56 @@ function Staff() {
   const [uploading, setUploading] = useState(false);
   const [uploadForm, setUploadForm] = useState({ documentType: '', title: '', description: '' });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Zona lavorativa inline edit
+  const [zonaEditId, setZonaEditId] = useState<string | null>(null);
+  const [zonaForm, setZonaForm] = useState<{ domicilioPartenza: string; raggioAzioneKm: number; domicilioCoords: { lat: number; lng: number } | null }>({ domicilioPartenza: '', raggioAzioneKm: 10, domicilioCoords: null });
+  const [zonaGeoLoading, setZonaGeoLoading] = useState(false);
+  const [zonaGeoError, setZonaGeoError] = useState('');
+  const [zonaSalvando, setZonaSalvando] = useState(false);
+
+  const apriZonaEdit = (s: StaffMember) => {
+    setZonaEditId(s._id);
+    setZonaForm({
+      domicilioPartenza: s.domicilioPartenza || '',
+      raggioAzioneKm: s.raggioAzioneKm ?? 10,
+      domicilioCoords: s.domicilioCoords || null,
+    });
+    setZonaGeoError('');
+  };
+
+  const geocodificaZona = useCallback(async () => {
+    if (!zonaForm.domicilioPartenza.trim()) return;
+    setZonaGeoLoading(true);
+    setZonaGeoError('');
+    try {
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(zonaForm.domicilioPartenza)}&limit=1&countrycodes=it`,
+        { headers: { 'Accept-Language': 'it' } }
+      );
+      const d = await r.json();
+      if (d.length > 0) {
+        setZonaForm(f => ({ ...f, domicilioCoords: { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) } }));
+      } else {
+        setZonaGeoError('Indirizzo non trovato.');
+      }
+    } catch { setZonaGeoError('Errore geocoding.'); }
+    setZonaGeoLoading(false);
+  }, [zonaForm.domicilioPartenza]);
+
+  const salvaZona = async (staffId: string) => {
+    setZonaSalvando(true);
+    try {
+      await api.put(`/staff/${staffId}`, {
+        domicilioPartenza: zonaForm.domicilioPartenza,
+        raggioAzioneKm: zonaForm.raggioAzioneKm,
+        ...(zonaForm.domicilioCoords ? { domicilioCoords: zonaForm.domicilioCoords } : {}),
+      });
+      setZonaEditId(null);
+      loadStaff();
+    } catch { /* noop */ }
+    setZonaSalvando(false);
+  };
 
   // Dimissioni modal state
   const [showDimissioniModal, setShowDimissioniModal] = useState(false);
@@ -208,12 +261,12 @@ function Staff() {
   const handleUpload = async () => {
     const file = fileInputRef.current?.files?.[0];
     if (!file) {
-      alert('Seleziona un file da caricare');
+      setError('Seleziona un file da caricare');
       return;
     }
 
     if (!uploadForm.documentType) {
-      alert('Seleziona un tipo di documento');
+      setError('Seleziona un tipo di documento');
       return;
     }
 
@@ -241,7 +294,7 @@ function Staff() {
       setSuccess('Documento caricato con successo!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Errore nel caricamento del documento');
+      setError(err.response?.data?.message || 'Errore nel caricamento del documento');
     } finally {
       setUploading(false);
     }
@@ -263,7 +316,7 @@ function Staff() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Errore download:', error);
-      alert('Errore nel download del documento');
+      setError('Errore nel download del documento');
     }
   };
 
@@ -283,8 +336,7 @@ function Staff() {
   };
 
   const deleteDocument = async (documentId: string) => {
-    if (!confirm('Sei sicuro di voler eliminare questo documento?')) return;
-
+    if (!window.confirm('Sei sicuro di voler eliminare questo documento?')) return;
     try {
       await api.delete(`/staff/documents/${documentId}`);
       if (selectedStaff) {
@@ -294,7 +346,7 @@ function Staff() {
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Errore eliminazione:', error);
-      alert('Errore nell\'eliminazione del documento');
+      setError('Errore nell\'eliminazione del documento');
     }
   };
 
@@ -312,7 +364,6 @@ function Staff() {
 
   const confermaDimissioni = async () => {
     if (!dimissioniStaff) return;
-
     try {
       await api.post(`/staff/${dimissioniStaff._id}/dimissioni`, dimissioniForm);
       closeDimissioniModal();
@@ -320,7 +371,7 @@ function Staff() {
       setSuccess('Dimissione registrata con successo!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Errore nella registrazione della dimissione');
+      setError(err.response?.data?.message || 'Errore nella registrazione della dimissione');
     }
   };
 
@@ -331,20 +382,19 @@ function Staff() {
       setSuccess('Membro dello staff riattivato!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      alert('Errore nella riattivazione');
+      setError('Errore nella riattivazione');
     }
   };
 
   const deleteStaff = async (staffId: string) => {
-    if (!confirm('Sei sicuro di voler eliminare definitivamente questo membro dello staff?')) return;
-
+    if (!window.confirm('Sei sicuro di voler eliminare definitivamente questo membro dello staff?')) return;
     try {
       await api.delete(`/staff/${staffId}`);
       loadStaff();
       setSuccess('Membro dello staff eliminato!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      alert('Errore nell\'eliminazione');
+      setError('Errore nell\'eliminazione');
     }
   };
 
@@ -386,6 +436,23 @@ function Staff() {
         }}>
           <CheckCircle size={18} />
           {success}
+        </div>
+      )}
+      {error && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '8px',
+          padding: '12px 16px',
+          backgroundColor: 'var(--danger-bg)',
+          border: '1px solid rgba(220,38,38,0.2)',
+          borderRadius: 'var(--radius-md)',
+          color: 'var(--danger)',
+          marginBottom: '16px',
+        }}>
+          <span><AlertCircle size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />{error}</span>
+          <button type="button" onClick={() => setError('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: 0 }}><X size={16} /></button>
         </div>
       )}
 
@@ -679,6 +746,64 @@ function Staff() {
                       <p style={{ fontSize: '0.85rem', color: 'var(--danger)', marginTop: '4px', marginBottom: 0 }}>
                         Fine collaborazione: {formatDate(staff.dataFineCollaborazione)}
                       </p>
+                    )}
+                    {/* ── Zona lavorativa ── */}
+                    <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      {staff.domicilioPartenza ? (
+                        <span style={{ fontSize: '0.8rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '2px 8px', color: '#065f46', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          📍 {staff.domicilioPartenza} — {staff.raggioAzioneKm ?? 10} km
+                          {staff.domicilioCoords && <span style={{ color: '#059669' }}>✓</span>}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '0.78rem', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '6px', padding: '2px 8px', color: '#92400e' }}>
+                          ⚠️ Zona non impostata
+                        </span>
+                      )}
+                      {canEdit && staff.active && (
+                        <button
+                          type="button"
+                          onClick={() => zonaEditId === staff._id ? setZonaEditId(null) : apriZonaEdit(staff)}
+                          style={{ fontSize: '0.75rem', background: 'none', border: '1px solid #d1d5db', borderRadius: '5px', padding: '2px 8px', cursor: 'pointer', color: '#374151' }}
+                        >
+                          {zonaEditId === staff._id ? '✕ Chiudi' : '✏️ Zona'}
+                        </button>
+                      )}
+                    </div>
+                    {/* Form inline zona */}
+                    {zonaEditId === staff._id && (
+                      <div style={{ marginTop: '10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e4d8c', marginBottom: '2px' }}>📍 Zona lavorativa</div>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <input
+                            value={zonaForm.domicilioPartenza}
+                            onChange={e => { setZonaForm(f => ({ ...f, domicilioPartenza: e.target.value, domicilioCoords: null })); setZonaGeoError(''); }}
+                            placeholder="Es. Via Roma 10, Roma RM"
+                            style={{ flex: 1, padding: '7px 10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.85rem' }}
+                          />
+                          <button type="button" onClick={geocodificaZona} disabled={zonaGeoLoading || !zonaForm.domicilioPartenza.trim()}
+                            style={{ background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '6px', padding: '7px 12px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700, opacity: zonaGeoLoading ? 0.7 : 1 }}>
+                            {zonaGeoLoading ? '...' : '📍'}
+                          </button>
+                        </div>
+                        {zonaGeoError && <span style={{ fontSize: '0.78rem', color: '#dc2626' }}>{zonaGeoError}</span>}
+                        {zonaForm.domicilioCoords && <span style={{ fontSize: '0.78rem', color: '#059669' }}>✓ Posizione trovata ({zonaForm.domicilioCoords.lat.toFixed(4)}, {zonaForm.domicilioCoords.lng.toFixed(4)})</span>}
+                        <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#374151' }}>
+                          Raggio: <strong>{zonaForm.raggioAzioneKm} km</strong>
+                          <input type="range" min={1} max={80} step={1} value={zonaForm.raggioAzioneKm}
+                            onChange={e => setZonaForm(f => ({ ...f, raggioAzioneKm: Number(e.target.value) }))}
+                            style={{ width: '100%', marginTop: '4px' }} />
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button type="button" onClick={() => setZonaEditId(null)}
+                            style={{ flex: 1, background: '#f1f5f9', border: '1px solid #d1d5db', borderRadius: '6px', padding: '7px', cursor: 'pointer', fontSize: '0.82rem' }}>
+                            Annulla
+                          </button>
+                          <button type="button" onClick={() => salvaZona(staff._id)} disabled={zonaSalvando}
+                            style={{ flex: 2, background: zonaSalvando ? '#d1d5db' : '#059669', color: 'white', border: 'none', borderRadius: '6px', padding: '7px', cursor: zonaSalvando ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>
+                            {zonaSalvando ? '...' : '✅ Salva zona'}
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flexShrink: 0, alignItems: 'center' }}>

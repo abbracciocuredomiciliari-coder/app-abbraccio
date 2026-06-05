@@ -10,6 +10,9 @@ interface Utente {
   professione?: string;
   categoria?: string;
   createdAt: string;
+  domicilioPartenza?: string;
+  raggioAzioneKm?: number;
+  domicilioCoords?: { lat: number; lng: number };
 }
 
 const roleLabels: Record<string, string> = {
@@ -40,6 +43,13 @@ function GestioneUtenti() {
   const [filtro, setFiltro] = useState<'tutti' | 'pending' | 'approved' | 'rejected'>('pending');
   const [approvandoId, setApprovandoId] = useState<string | null>(null);
   const [roleSelezionato, setRoleSelezionato] = useState<Record<string, string>>({});
+  const [toast, setToast] = useState<{ msg: string; tipo: 'ok' | 'err' } | null>(null);
+  const [conferma, setConferma] = useState<{ msg: string; onSi: () => void } | null>(null);
+
+  const mostraToast = (msg: string, tipo: 'ok' | 'err' = 'ok') => {
+    setToast({ msg, tipo });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   useEffect(() => {
     fetchUtenti();
@@ -62,32 +72,44 @@ function GestioneUtenti() {
       const role = roleSelezionato[id] || 'caregiver';
       const res = await api.put(`/auth/approve/${id}`, { role });
       setUtenti(utenti.map(u => u._id === id ? { ...u, status: 'approved', role: res.data.user.role } : u));
-      alert(`✅ Utente approvato con ruolo: ${roleLabels[role] || role}`);
+      mostraToast(`✅ Utente approvato con ruolo: ${roleLabels[role] || role}`, 'ok');
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Errore durante l\'approvazione');
+      mostraToast(err?.response?.data?.message || 'Errore durante l\'approvazione', 'err');
     } finally {
       setApprovandoId(null);
     }
   };
 
   const rifiutaUtente = async (id: string) => {
-    if (!confirm('Sei sicuro di voler rifiutare questa richiesta?')) return;
-    try {
-      await api.put(`/auth/reject/${id}`);
-      setUtenti(utenti.map(u => u._id === id ? { ...u, status: 'rejected' } : u));
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Errore durante il rifiuto');
-    }
+    setConferma({
+      msg: 'Sei sicuro di voler rifiutare questa richiesta?',
+      onSi: async () => {
+        setConferma(null);
+        try {
+          await api.put(`/auth/reject/${id}`);
+          setUtenti(prev => prev.map(u => u._id === id ? { ...u, status: 'rejected' } : u));
+          mostraToast('Accesso rifiutato.', 'ok');
+        } catch (err: any) {
+          mostraToast(err?.response?.data?.message || 'Errore durante il rifiuto', 'err');
+        }
+      },
+    });
   };
 
   const eliminaUtente = async (id: string) => {
-    if (!confirm('Sei sicuro di voler eliminare definitivamente questo utente?')) return;
-    try {
-      await api.delete(`/auth/users/${id}`);
-      setUtenti(utenti.filter(u => u._id !== id));
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Errore durante l\'eliminazione');
-    }
+    setConferma({
+      msg: 'Sei sicuro di voler eliminare definitivamente questo utente? L\'operazione non è reversibile.',
+      onSi: async () => {
+        setConferma(null);
+        try {
+          await api.delete(`/auth/users/${id}`);
+          setUtenti(prev => prev.filter(u => u._id !== id));
+          mostraToast('Utente eliminato.', 'ok');
+        } catch (err: any) {
+          mostraToast(err?.response?.data?.message || 'Errore durante l\'eliminazione', 'err');
+        }
+      },
+    });
   };
 
   const utentiFiltrati = utenti.filter(u => filtro === 'tutti' ? true : u.status === filtro);
@@ -97,6 +119,37 @@ function GestioneUtenti() {
 
   return (
     <section>
+      {/* ── Toast ── */}
+      {toast && (
+        <div style={{
+          position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
+          background: toast.tipo === 'ok' ? '#f0fdf4' : '#fef2f2',
+          border: `1px solid ${toast.tipo === 'ok' ? '#059669' : '#dc2626'}`,
+          color: toast.tipo === 'ok' ? '#065f46' : '#7f1d1d',
+          borderRadius: '10px', padding: '12px 18px', fontWeight: 600,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.12)', fontSize: '0.9rem', maxWidth: '340px',
+        }}>
+          {toast.msg}
+        </div>
+      )}
+      {/* ── Modale conferma ── */}
+      {conferma && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '24px', maxWidth: '400px', width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+            <p style={{ margin: '0 0 20px', fontSize: '0.95rem', color: '#374151', lineHeight: 1.5 }}>{conferma.msg}</p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => setConferma(null)}
+                style={{ background: '#f1f5f9', border: '1px solid #d1d5db', borderRadius: '8px', padding: '8px 18px', cursor: 'pointer', fontWeight: 600, color: '#374151' }}>
+                Annulla
+              </button>
+              <button type="button" onClick={conferma.onSi}
+                style={{ background: '#dc2626', border: 'none', borderRadius: '8px', padding: '8px 18px', cursor: 'pointer', fontWeight: 600, color: 'white' }}>
+                Conferma
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <h2>👥 Gestione Utenti</h2>
       <p style={{ color: 'var(--gray-500)', marginBottom: '24px', fontSize: '0.95rem' }}>
         Approva o rifiuta le richieste di registrazione e gestisci gli accessi all'app.
@@ -188,6 +241,21 @@ function GestioneUtenti() {
                         <span>🔑 {roleLabels[utente.role] || utente.role}</span>
                         <span>📅 {formatData(utente.createdAt)}</span>
                       </div>
+                      {/* Zona lavorativa (visibile solo per richieste pending) */}
+                      {utente.status === 'pending' && (
+                        <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '10px', fontSize: '0.82rem' }}>
+                          {utente.domicilioPartenza ? (
+                            <span style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '2px 8px', color: '#065f46' }}>
+                              📍 {utente.domicilioPartenza} — raggio {utente.raggioAzioneKm ?? 10} km
+                              {utente.domicilioCoords && <span style={{ color: '#059669', marginLeft: '4px' }}>✓ geo</span>}
+                            </span>
+                          ) : (
+                            <span style={{ background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '6px', padding: '2px 8px', color: '#92400e' }}>
+                              ⚠️ Zona lavorativa non impostata
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>

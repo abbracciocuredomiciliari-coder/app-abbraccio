@@ -184,10 +184,6 @@ function AppShell() {
                 <Syringe size={18} />
                 Prelievi
               </Link>
-              <Link to="/assegnazione-pai" className={isActive('/assegnazione-pai') ? 'active' : ''}>
-                <Map size={18} />
-                {isConvenzione ? 'Assegnazione PAI' : 'Assegna Piano'}
-              </Link>
               <Link to="/richieste-presidi" className={isActive('/richieste-presidi') ? 'active' : ''}>
                 <Briefcase size={18} />
                 Richiesta Presidi/Farmaci
@@ -262,6 +258,10 @@ function AppShell() {
               <Link to="/gestione-fatturazione" className={isActive('/gestione-fatturazione') ? 'active' : ''}>
                 <Receipt size={18} />
                 Fatturazione
+              </Link>
+              <Link to="/assegnazione-pai" className={isActive('/assegnazione-pai') ? 'active' : ''}>
+                <Map size={18} />
+                {isConvenzione ? 'Assegnazione PAI' : 'Assegna Piano'}
               </Link>
               {user.role === 'admin' && (
                 <>

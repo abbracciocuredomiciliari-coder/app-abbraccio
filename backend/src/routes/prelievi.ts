@@ -8,6 +8,7 @@ import Prelievo from '../models/Prelievo';
 import Staff from '../models/Staff';
 import Patient from '../models/Patient';
 import { authenticateToken } from '../middleware/auth';
+import { getStaffByUser } from '../utils/staffHelper';
 
 const router = Router();
 
@@ -75,14 +76,6 @@ const upload = multer({
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-async function getStaffByUser(userId: string, userEmail?: string) {
-  let staff = await Staff.findOne({ userId });
-  if (!staff && userEmail) {
-    staff = await Staff.findOne({ email: userEmail });
-    if (staff) { staff.userId = userId as any; await staff.save(); }
-  }
-  return staff;
-}
 
 function isPrivilegiato(role: string) {
   return ['admin', 'coordinator', 'direttore'].includes(role);

@@ -1,7 +1,8 @@
 import { useState, useCallback, lazy, Suspense } from 'react';
 import api from '../api/api';
+import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
-import { Search, MapPin, User, CheckCircle, Building2, ClipboardList } from 'lucide-react';
+import { Search, MapPin, User, CheckCircle, Building2, ClipboardList, ShieldOff } from 'lucide-react';
 
 const MappaZona = lazy(() => import('../components/MappaZona'));
 
@@ -55,6 +56,7 @@ const COLORI_CATEGORIA: Record<string, string> = {
 
 // ─── Componente ────────────────────────────────────────────────────────────────
 export default function AssegnazionePAI() {
+  const { user } = useAuth();
   const { isConvenzione, modalita } = useModalita();
 
   // Ricerca paziente
@@ -82,6 +84,7 @@ export default function AssegnazionePAI() {
   const [salvandoPiano, setSalvandoPiano] = useState(false);
   const [pianoCreatoMsg, setPianoCreatoMsg] = useState('');
 
+  const isPrivilegiato = user && ['admin', 'coordinator', 'direttore'].includes(user.role);
   const colore = isConvenzione ? '#0369a1' : '#1e4d8c';
   const titoloTipo = isConvenzione ? 'Assegnazione PAI — Convenzione SIAT' : 'Assegnazione Piano di Lavoro — Privato';
 
@@ -164,6 +167,19 @@ export default function AssegnazionePAI() {
       colore: operatoreSelezionato?._id === o._id ? '#dc2626' : (COLORI_CATEGORIA[o.category] || '#059669'),
       distanzaKm: o.distanzaKm,
     }));
+
+  // ─── Guard ruolo ───────────────────────────────────────────────────────────
+  if (!isPrivilegiato) {
+    return (
+      <section>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', gap: '16px', color: '#6b7280' }}>
+          <ShieldOff size={48} color="#d1d5db" />
+          <p style={{ fontWeight: 700, fontSize: '1rem', margin: 0 }}>Accesso non autorizzato</p>
+          <p style={{ fontSize: '0.88rem', margin: 0, textAlign: 'center' }}>Questa sezione è riservata ad admin, coordinatori e direttori sanitari.</p>
+        </div>
+      </section>
+    );
+  }
 
   // ─── UI ────────────────────────────────────────────────────────────────────
   return (
@@ -270,7 +286,10 @@ export default function AssegnazionePAI() {
                 <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0 }}>Impossibile cercare operatori senza coordinate paziente.</p>
               )}
               {!loadingZona && pazienteSelezionato.coords && operatoriInZona.length === 0 && (
-                <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0 }}>Nessun operatore con zona impostata copre questo indirizzo.</p>
+                <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '8px', padding: '12px 14px', fontSize: '0.82rem', color: '#92400e' }}>
+                  <strong>⚠️ Nessun operatore trovato in questa zona.</strong>
+                  <div style={{ marginTop: '4px' }}>Possibili cause: nessun operatore ha impostato la propria zona di lavoro, oppure l'indirizzo non è coperto dai raggi d'azione configurati. Vai a <em>Gestione Personale</em> per configurare la zona degli operatori.</div>
+                </div>
               )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '340px', overflowY: 'auto' }}>
