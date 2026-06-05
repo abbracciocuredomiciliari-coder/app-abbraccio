@@ -15,6 +15,8 @@ router.get('/', authenticateToken, authorizeRole('admin', 'coordinator', 'dirett
     const fineOggi = new Date(inizioOggi.getTime() + 24 * 60 * 60 * 1000);
     const tra30giorni = new Date(oggi.getTime() + 30 * 24 * 60 * 60 * 1000);
 
+    const tra7giorni = new Date(oggi.getTime() + 7 * 24 * 60 * 60 * 1000);
+
     const [
       patientsCount,
       staffCount,
@@ -24,6 +26,7 @@ router.get('/', authenticateToken, authorizeRole('admin', 'coordinator', 'dirett
       prelieviOggiCount,
       operatoriSenzaZonaCount,
       scadenzeImminentiCount,
+      paiInScadenza7gg,
     ] = await Promise.all([
       Patient.countDocuments(),
       Staff.countDocuments({ active: true }),
@@ -49,6 +52,23 @@ router.get('/', authenticateToken, authorizeRole('admin', 'coordinator', 'dirett
         tipoGestione: 'convenzione',
         'siat.dataScadenzaAutorizzazione': { $gte: oggi, $lte: tra30giorni },
       }),
+      // PAI in scadenza entro 7gg (o già scaduti) con alert non ancora visto
+      Patient.find({
+        tipoGestione: 'convenzione',
+        'siat.dataScadenzaAutorizzazione': { $lte: tra7giorni },
+      }).select('siat.dataScadenzaAutorizzazione alertPaiVisto').then(pazienti =>
+        pazienti.filter(p => {
+          const scadenza = p.siat?.dataScadenzaAutorizzazione;
+          if (!scadenza) return false;
+          if (p.alertPaiVisto?.vistoIl) {
+            const vistoIl = new Date(p.alertPaiVisto.vistoIl);
+            const scadenzaDate = new Date(scadenza);
+            if (scadenzaDate < oggi && vistoIl < scadenzaDate) return true;
+            return false;
+          }
+          return true;
+        }).length
+      ),
     ]);
 
     return res.json({
@@ -60,6 +80,7 @@ router.get('/', authenticateToken, authorizeRole('admin', 'coordinator', 'dirett
       prelieviOggiCount,
       operatoriSenzaZonaCount,
       scadenzeImminentiCount,
+      paiInScadenza7gg,
     });
   } catch (error) {
     return res.status(500).json({ message: 'Errore nel recupero dei dati della dashboard', error });

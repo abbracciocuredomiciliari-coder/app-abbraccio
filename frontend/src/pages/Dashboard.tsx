@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
-import { Users, UserPlus, Calendar, Activity, CheckCircle, ClipboardList, Syringe, MapPin, AlertTriangle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Users, Calendar, Activity, CheckCircle, ClipboardList, Syringe, MapPin, AlertTriangle, Bell, Eye } from 'lucide-react';
 
 interface DashboardCounts {
   patientsCount: number;
@@ -12,10 +13,33 @@ interface DashboardCounts {
   prelieviOggiCount: number;
   operatoriSenzaZonaCount: number;
   scadenzeImminentiCount: number;
+  paiInScadenza7gg: number;
+}
+
+interface PazienteScadenza {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  address?: string;
+  siat?: {
+    dataScadenzaAutorizzazione?: string;
+    tipologiaCura?: string;
+    npi?: string;
+    asl?: string;
+    distretto?: string;
+  };
+  alertPaiVisto?: {
+    vistoIl: string;
+    vistoDa: string;
+    vistoDaId: string;
+  };
 }
 
 function Dashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isPrivilegiato = user && ['admin', 'coordinator', 'direttore'].includes(user.role);
+
   const [counts, setCounts] = useState<DashboardCounts>({
     patientsCount: 0,
     staffCount: 0,
@@ -25,14 +49,30 @@ function Dashboard() {
     prelieviOggiCount: 0,
     operatoriSenzaZonaCount: 0,
     scadenzeImminentiCount: 0,
+    paiInScadenza7gg: 0,
   });
   const [loading, setLoading] = useState(true);
+
+  // Alert PAI in scadenza
+  const [paiScadenza, setPaiScadenza] = useState<PazienteScadenza[]>([]);
+  const [showPaiAlert, setShowPaiAlert] = useState(false);
+  const [chiudendoId, setChiudendoId] = useState<string | null>(null);
+
+  const caricaScadenzePai = async () => {
+    try {
+      const res = await api.get('/patients/scadenze-pai');
+      setPaiScadenza(res.data || []);
+    } catch { /* noop */ }
+  };
 
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        const response = await api.get('/dashboard');
-        setCounts(response.data);
+        const [dashRes] = await Promise.all([
+          api.get('/dashboard'),
+          isPrivilegiato ? caricaScadenzePai() : Promise.resolve(),
+        ]);
+        setCounts(dashRes.data);
       } catch (error) {
         console.error('Errore caricamento dashboard', error);
       } finally {
@@ -42,6 +82,26 @@ function Dashboard() {
 
     loadDashboard();
   }, []);
+
+  const segnaVisto = async (pazienteId: string) => {
+    setChiudendoId(pazienteId);
+    try {
+      await api.patch(`/patients/${pazienteId}/segna-alert-visto`);
+      setPaiScadenza(prev => prev.filter(p => p._id !== pazienteId));
+      setCounts(prev => ({ ...prev, paiInScadenza7gg: Math.max(0, prev.paiInScadenza7gg - 1) }));
+    } catch { /* noop */ }
+    setChiudendoId(null);
+  };
+
+  const formatDataBreve = (d?: string) => {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  const giorniAllaScadenza = (d?: string): number | null => {
+    if (!d) return null;
+    return Math.floor((new Date(d).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  };
 
   const dashboardCards = [
     {
@@ -94,7 +154,7 @@ function Dashboard() {
       btnLabel: 'Vai al Personale →',
     },
     counts.scadenzeImminentiCount > 0 && {
-      title: `${counts.scadenzeImminentiCount} autorizzazioni SIAT in scadenza`,
+      title: `${counts.scadenzeImminentiCount} autorizzazioni SIAT in scadenza (30gg)`,
       desc: 'Pazienti in convenzione con autorizzazione in scadenza nei prossimi 30 giorni.',
       icon: AlertTriangle,
       color: '#dc2626',
@@ -157,6 +217,99 @@ function Dashboard() {
               </button>
             ))}
           </div>
+
+          {/* ════ ALERT PAI IN SCADENZA 7 GIORNI ════ */}
+          {isPrivilegiato && counts.paiInScadenza7gg > 0 && (
+            <div style={{ marginTop: '20px' }}>
+              <button
+                type="button"
+                onClick={() => setShowPaiAlert(v => !v)}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  background: 'rgba(220,38,38,0.07)', border: '2px solid #fca5a5',
+                  borderBottom: showPaiAlert ? '2px solid #fca5a5' : '2px solid #fca5a5',
+                  borderRadius: showPaiAlert ? '10px 10px 0 0' : '10px',
+                  padding: '12px 16px', cursor: 'pointer', gap: '12px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Bell size={20} color="#dc2626" />
+                  <span style={{ fontWeight: 700, color: '#dc2626', fontSize: '0.95rem' }}>
+                    ⚠️ {counts.paiInScadenza7gg} PAI SIAT in scadenza entro 7 giorni
+                  </span>
+                  <span style={{ background: '#dc2626', color: 'white', borderRadius: '10px', padding: '1px 8px', fontSize: '0.78rem', fontWeight: 800 }}>
+                    {counts.paiInScadenza7gg}
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.8rem', color: '#dc2626', fontWeight: 600 }}>{showPaiAlert ? '▲ Chiudi' : '▼ Mostra lista'}</span>
+              </button>
+
+              {showPaiAlert && (
+                <div style={{
+                  border: '2px solid #fca5a5', borderTop: 'none', borderRadius: '0 0 10px 10px',
+                  background: 'white', overflow: 'hidden',
+                }}>
+                  {paiScadenza.length === 0 ? (
+                    <p style={{ padding: '16px', color: '#888', margin: 0, fontSize: '0.88rem' }}>Caricamento lista...</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      {paiScadenza.map((paz, i) => {
+                        const giorni = giorniAllaScadenza(paz.siat?.dataScadenzaAutorizzazione);
+                        const scaduto = giorni !== null && giorni < 0;
+                        const urgente = giorni !== null && giorni <= 2 && !scaduto;
+                        return (
+                          <div
+                            key={paz._id}
+                            style={{
+                              padding: '14px 16px',
+                              borderTop: i > 0 ? '1px solid #fee2e2' : 'none',
+                              background: scaduto ? 'rgba(220,38,38,0.04)' : urgente ? 'rgba(245,158,11,0.04)' : 'white',
+                              display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap',
+                            }}
+                          >
+                            <div style={{ flex: 1, minWidth: '200px' }}>
+                              <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#1e4d8c', marginBottom: '3px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                {paz.firstName} {paz.lastName}
+                                {scaduto ? (
+                                  <span style={{ background: '#dc2626', color: 'white', borderRadius: '5px', padding: '1px 7px', fontSize: '0.72rem', fontWeight: 800 }}>SCADUTO {Math.abs(giorni!)} gg fa</span>
+                                ) : urgente ? (
+                                  <span style={{ background: '#f59e0b', color: 'white', borderRadius: '5px', padding: '1px 7px', fontSize: '0.72rem', fontWeight: 800 }}>⚡ {giorni} gg</span>
+                                ) : (
+                                  <span style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d', borderRadius: '5px', padding: '1px 7px', fontSize: '0.72rem', fontWeight: 700 }}>{giorni} gg</span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: '0.8rem', color: '#555', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                <span>📅 Scadenza: <strong>{formatDataBreve(paz.siat?.dataScadenzaAutorizzazione)}</strong></span>
+                                {paz.siat?.tipologiaCura && <span>🩺 {paz.siat.tipologiaCura}</span>}
+                                {paz.siat?.npi && <span>NPI: {paz.siat.npi}</span>}
+                                {paz.siat?.asl && <span>ASL: {paz.siat.asl}</span>}
+                                {paz.siat?.distretto && <span>Distretto: {paz.siat.distretto}</span>}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => segnaVisto(paz._id)}
+                              disabled={chiudendoId === paz._id}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                background: chiudendoId === paz._id ? '#e5e7eb' : '#f0fdf4',
+                                border: '1px solid #bbf7d0', borderRadius: '8px',
+                                padding: '8px 14px', cursor: chiudendoId === paz._id ? 'not-allowed' : 'pointer',
+                                color: '#065f46', fontWeight: 700, fontSize: '0.82rem', whiteSpace: 'nowrap', flexShrink: 0,
+                              }}
+                            >
+                              <Eye size={14} />
+                              {chiudendoId === paz._id ? '...' : 'Ho visto – chiudi'}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Alert cards */}
           {alertCards.length > 0 && (

@@ -12,6 +12,13 @@ export interface IPatient extends Document {
   // === MODALITÀ GESTIONE ===
   tipoGestione: 'privato' | 'convenzione';  // default: privato
   
+  // === ALERT PAI IN SCADENZA ===
+  alertPaiVisto?: {
+    vistoIl: Date;
+    vistoDa: string;      // nome utente
+    vistoDaId: string;    // userId
+  };
+
   // === DATI CONVENZIONE SIAT LAZIO ===
   siat?: {
     npi?: string;                // Numero Progressivo Intervento SIAT
@@ -40,6 +47,11 @@ const patientSchema = new Schema<IPatient>(
     contactPhone: { type: String, trim: true },
     codiceFiscale: { type: String, trim: true, uppercase: true },
     tipoGestione: { type: String, enum: ['privato', 'convenzione'], default: 'privato' },
+    alertPaiVisto: {
+      vistoIl: { type: Date },
+      vistoDa: { type: String },
+      vistoDaId: { type: String },
+    },
     siat: {
       npi: { type: String, trim: true },
       codiceAutorizzazione: { type: String, trim: true },

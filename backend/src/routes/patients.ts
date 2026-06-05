@@ -143,4 +143,74 @@ router.post('/import-siat', authorizeRole('admin', 'coordinator'), auditLog('pat
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/patients/scadenze-pai
+// Restituisce pazienti SIAT con PAI in scadenza entro 7 giorni (o già scaduto)
+// il cui alert non sia stato ancora chiuso (alertPaiVisto assente),
+// oppure in scadenza da meno di 48h rispetto all'ultima chiusura (riapertura automatica)
+// ─────────────────────────────────────────────────────────────────────────────
+router.get('/scadenze-pai', authorizeRole('admin', 'coordinator', 'direttore'), async (req: Request, res: Response) => {
+  try {
+    const oggi = new Date();
+    const tra7giorni = new Date(oggi.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    // Pazienti SIAT con scadenza entro 7 giorni o già scaduta
+    const pazienti = await Patient.find({
+      tipoGestione: 'convenzione',
+      'siat.dataScadenzaAutorizzazione': { $lte: tra7giorni },
+    })
+      .select('firstName lastName address siat.dataScadenzaAutorizzazione siat.tipologiaCura siat.npi siat.asl siat.distretto alertPaiVisto')
+      .sort({ 'siat.dataScadenzaAutorizzazione': 1 });
+
+    // Filtra: includi solo quelli con alert non ancora visto (o riscaduto dopo chiusura)
+    const daAlertare = pazienti.filter(p => {
+      const scadenza = p.siat?.dataScadenzaAutorizzazione;
+      if (!scadenza) return false;
+
+      // Se l'alert è già stato chiuso, riapri solo se la scadenza è già passata
+      // e la chiusura è avvenuta prima della scadenza effettiva
+      if (p.alertPaiVisto?.vistoIl) {
+        const vistoIl = new Date(p.alertPaiVisto.vistoIl);
+        const scadenzaDate = new Date(scadenza);
+        // Se la scadenza è già passata E la chiusura era antecedente alla scadenza → riapri
+        if (scadenzaDate < oggi && vistoIl < scadenzaDate) return true;
+        // Altrimenti l'alert è già stato gestito
+        return false;
+      }
+      return true;
+    });
+
+    return res.json(daAlertare);
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore recupero scadenze PAI', error });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PATCH /api/patients/:id/segna-alert-visto
+// Segna l'alert PAI come visto dall'utente corrente
+// ─────────────────────────────────────────────────────────────────────────────
+router.patch('/:id/segna-alert-visto', authorizeRole('admin', 'coordinator', 'direttore'), async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const paziente = await Patient.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          alertPaiVisto: {
+            vistoIl: new Date(),
+            vistoDa: user.name || user.email,
+            vistoDaId: user.id || user.userId,
+          },
+        },
+      },
+      { new: true }
+    );
+    if (!paziente) return res.status(404).json({ message: 'Paziente non trovato' });
+    return res.json({ ok: true, alertPaiVisto: paziente.alertPaiVisto });
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore aggiornamento alert PAI', error });
+  }
+});
+
 export default router;
