@@ -25,6 +25,7 @@ import checklistDefibrillatoreRouter from './routes/checklistDefibrillatore';
 import schedaControlloDefibrillatoreRouter from './routes/schedaControlloDefibrillatore';
 import checklistGlucometroRouter from './routes/checklistGlucometro';
 import esamiStrumentaliRouter from './routes/esamiStrumentali';
+import prelieviRouter from './routes/prelievi';
 import auditLogRouter from './routes/auditLog';
 import supplyRequestsRouter from './routes/supplyRequests';
 import gdprRouter from './routes/gdpr';
@@ -117,6 +118,7 @@ app.use('/api/checklist-defibrillatore', checklistDefibrillatoreRouter);
 app.use('/api/scheda-controllo-defibrillatore', schedaControlloDefibrillatoreRouter);
 app.use('/api/checklist-glucometro', checklistGlucometroRouter);
 app.use('/api/esami-strumentali', esamiStrumentaliRouter);
+app.use('/api/prelievi', prelieviRouter);
 app.use('/api/audit-log', auditLogRouter);
 app.use('/api/supply-requests', supplyRequestsRouter);
 // Alias senza prefisso /api per compatibilità con URL diretti degli allegati

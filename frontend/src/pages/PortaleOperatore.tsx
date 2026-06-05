@@ -38,6 +38,23 @@ interface Piano {
   staff: { _id: string; firstName: string; lastName: string; role: string };
 }
 
+interface PrelievoOperatore {
+  _id: string;
+  patient: { _id: string; firstName: string; lastName: string; tipoGestione?: string; siat?: { asl?: string } };
+  staff: { _id: string; firstName: string; lastName: string; role: string };
+  dataPrelievo: string;
+  orario?: string;
+  tipoPrelievo: string;
+  note?: string;
+  status: 'pianificato' | 'eseguito' | 'annullato';
+  tipoGestione: 'privato' | 'convenzione';
+  dataEsecuzione?: string;
+  eseguitoDa?: string;
+  noteEsecuzione?: string;
+  diaria: { _id: string; autore: string; testo: string; data: string; firmato: boolean }[];
+  allegati: any[];
+}
+
 interface Accesso {
   _id: string;
   staffName: string;
@@ -195,6 +212,14 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
   const [loading, setLoading] = useState(true);
   const [loadingPiano, setLoadingPiano] = useState(false);
 
+  // Prelievi giornalieri
+  const [prelieviOggi, setPrelieviOggi] = useState<PrelievoOperatore[]>([]);
+  const [prelievoAperto, setPrelievoAperto] = useState<string | null>(null);
+  const [testoDiariaPrelievo, setTestoDiariaPrelievo] = useState('');
+  const [salvandoDiariaPrelievo, setSalvandoDiariaPrelievo] = useState(false);
+  const [noteEsecuzione, setNoteEsecuzione] = useState('');
+  const [registrandoPrelievo, setRegistrandoPrelievo] = useState<string | null>(null);
+
   // ─── Caricamento iniziale + polling ogni 30s ───────────────────────────────
 
   const caricaDati = async (silent = false) => {
@@ -216,6 +241,13 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
       setPazienti(pazientiPerModalita);
       const esami: any[] = esamiRes.data || [];
       setEsamiAttivi(esami.filter(e => e.status === 'pianificato' && !e.archiviato).length);
+      // Prelievi di oggi per l'operatore
+      try {
+        const prelRes = await api.get('/prelievi/miei-oggi', {
+          params: { tipoGestione: isConvenzione ? 'convenzione' : 'privato' }
+        });
+        setPrelieviOggi(prelRes.data || []);
+      } catch { setPrelieviOggi([]); }
     } catch {}
     finally { if (!silent) setLoading(false); }
   };
@@ -584,6 +616,120 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
               </button>
             )}
           </div>
+
+          {/* ─── PLANNING PRELIEVI OGGI ─────────────────────────────────── */}
+          {prelieviOggi.length > 0 && (
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0369a1', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                💉 Prelievi pianificati oggi ({prelieviOggi.length})
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {prelieviOggi.map(prel => {
+                  const aperto = prelievoAperto === prel._id;
+                  return (
+                    <div key={prel._id} style={{ background: 'white', border: '1px solid #bae6fd', borderLeft: `4px solid ${prel.status === 'eseguito' ? '#059669' : '#0369a1'}`, borderRadius: '8px', overflow: 'hidden' }}>
+                      <button
+                        type="button"
+                        onClick={() => { setPrelievoAperto(aperto ? null : prel._id); setTestoDiariaPrelievo(''); setNoteEsecuzione(''); }}
+                        style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '12px 14px', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 700, color: '#0369a1', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            {prel.orario && <span style={{ background: '#eff6ff', padding: '1px 6px', borderRadius: '4px', fontSize: '0.78rem' }}>⏰ {prel.orario}</span>}
+                            {prel.patient.firstName} {prel.patient.lastName}
+                            <span style={{ padding: '1px 7px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 700, background: prel.status === 'eseguito' ? '#f0fdf4' : '#eff6ff', color: prel.status === 'eseguito' ? '#059669' : '#0369a1' }}>
+                              {prel.status === 'eseguito' ? '✅ Eseguito' : '🔵 Da eseguire'}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px' }}>💉 {prel.tipoPrelievo}</div>
+                        </div>
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{aperto ? '▲' : '▼'}</span>
+                      </button>
+
+                      {aperto && (
+                        <div style={{ borderTop: '1px solid #e0f2fe', padding: '14px' }}>
+                          {prel.note && <p style={{ fontSize: '0.83rem', color: '#475569', marginBottom: '10px' }}>📝 {prel.note}</p>}
+
+                          {/* Registra esecuzione */}
+                          {prel.status === 'pianificato' && (
+                            <div style={{ background: '#f0f9ff', borderRadius: '8px', padding: '12px', marginBottom: '12px' }}>
+                              <div style={{ fontWeight: 600, fontSize: '0.83rem', color: '#0369a1', marginBottom: '8px' }}>Registra esecuzione</div>
+                              <textarea
+                                value={noteEsecuzione}
+                                onChange={e => setNoteEsecuzione(e.target.value)}
+                                placeholder="Note sull'esecuzione (facoltativo)..."
+                                rows={2}
+                                style={{ width: '100%', borderRadius: '6px', border: '1px solid #bae6fd', padding: '8px', fontSize: '0.83rem', resize: 'vertical', marginBottom: '8px' }}
+                              />
+                              <button
+                                type="button"
+                                disabled={registrandoPrelievo === prel._id}
+                                onClick={async () => {
+                                  setRegistrandoPrelievo(prel._id);
+                                  try {
+                                    await api.post(`/prelievi/${prel._id}/esegui`, { noteEsecuzione });
+                                    setNoteEsecuzione('');
+                                    setPrelievoAperto(null);
+                                    await caricaDati(true);
+                                  } catch { /* noop */ }
+                                  setRegistrandoPrelievo(null);
+                                }}
+                                style={{ background: '#059669', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer', fontWeight: 700, fontSize: '0.83rem' }}
+                              >
+                                {registrandoPrelievo === prel._id ? '...' : '✅ Segna come eseguito'}
+                              </button>
+                            </div>
+                          )}
+                          {prel.status === 'eseguito' && prel.dataEsecuzione && (
+                            <div style={{ background: '#f0fdf4', borderRadius: '8px', padding: '10px', marginBottom: '12px', fontSize: '0.83rem', color: '#166534' }}>
+                              ✅ Eseguito il {new Date(prel.dataEsecuzione).toLocaleString('it-IT')}
+                              {prel.noteEsecuzione && <div style={{ marginTop: '4px', color: '#374151' }}>{prel.noteEsecuzione}</div>}
+                            </div>
+                          )}
+
+                          {/* Diaria */}
+                          <div style={{ fontWeight: 600, fontSize: '0.83rem', color: '#374151', marginBottom: '6px' }}>
+                            📋 Diaria ({prel.diaria.length})
+                          </div>
+                          {prel.diaria.map(d => (
+                            <div key={d._id} style={{ background: '#f8fafc', borderRadius: '6px', padding: '6px 10px', marginBottom: '4px', fontSize: '0.8rem' }}>
+                              <div style={{ fontWeight: 600, color: '#475569' }}>{d.autore} · {new Date(d.data).toLocaleString('it-IT')}</div>
+                              <div style={{ color: '#334155' }}>{d.testo}</div>
+                            </div>
+                          ))}
+                          <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                            <textarea
+                              value={testoDiariaPrelievo}
+                              onChange={e => setTestoDiariaPrelievo(e.target.value)}
+                              placeholder="Aggiungi nota clinica..."
+                              rows={2}
+                              style={{ flex: 1, borderRadius: '6px', border: '1px solid #d1d5db', padding: '6px 8px', fontSize: '0.8rem', resize: 'vertical' }}
+                            />
+                            <button
+                              type="button"
+                              disabled={salvandoDiariaPrelievo || !testoDiariaPrelievo.trim()}
+                              onClick={async () => {
+                                setSalvandoDiariaPrelievo(true);
+                                try {
+                                  await api.post(`/prelievi/${prel._id}/diaria`, { testo: testoDiariaPrelievo });
+                                  setTestoDiariaPrelievo('');
+                                  await caricaDati(true);
+                                } catch { /* noop */ }
+                                setSalvandoDiariaPrelievo(false);
+                              }}
+                              style={{ background: '#0369a1', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', alignSelf: 'flex-end' }}
+                            >
+                              {salvandoDiariaPrelievo ? '...' : 'Salva'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
             <p style={{ color: 'var(--gray-500)', margin: 0, fontSize: '0.95rem' }}>
