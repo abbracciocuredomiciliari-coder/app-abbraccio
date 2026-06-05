@@ -42,6 +42,7 @@ const EsportazioneSIAT = lazy(() => import('./pages/EsportazioneSIAT'));
 const RegistrazioneAccesso = lazy(() => import('./pages/RegistrazioneAccesso'));
 const PazientiConvenzione = lazy(() => import('./pages/PazientiConvenzione'));
 const PianificazionePrelievi = lazy(() => import('./pages/PianificazionePrelievi'));
+const CentroPrelievi = lazy(() => import('./pages/CentroPrelievi'));
 const AssegnazionePAI = lazy(() => import('./pages/AssegnazionePAI'));
 import {
   Heart,
@@ -225,6 +226,10 @@ function AppShell() {
                 <Calendar size={18} />
                 Piano lavoro
               </Link>
+              <Link to="/centro-prelievi" className={isActive('/centro-prelievi') ? 'active' : ''}>
+                <Syringe size={18} />
+                Centro Prelievi
+              </Link>
               <Link to="/protocolli-procedure" className={isActive('/protocolli-procedure') ? 'active' : ''}>
                 <ClipboardList size={18} />
                 Protocolli e Procedure
@@ -346,8 +351,10 @@ function AppShell() {
 
           {/* Esami Strumentali */}
           <Route path="/esami-strumentali" element={<ProtectedRoute><EsamiStrumentali /></ProtectedRoute>} />
-          {/* Pianificazione Prelievi */}
+          {/* Pianificazione Prelievi (vecchia pagina, mantenuta per compatibilità) */}
           <Route path="/pianificazione-prelievi" element={<ProtectedRoute><PianificazionePrelievi /></ProtectedRoute>} />
+          {/* Centro Prenotazioni Prelievi — admin */}
+          <Route path="/centro-prelievi" element={<ProtectedRoute><CentroPrelievi /></ProtectedRoute>} />
           {/* Assegnazione PAI / Piano di Lavoro */}
           <Route path="/assegnazione-pai" element={<ProtectedRoute><AssegnazionePAI /></ProtectedRoute>} />
 

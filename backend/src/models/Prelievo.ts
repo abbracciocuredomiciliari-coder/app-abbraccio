@@ -90,7 +90,7 @@ const allegatoSchema = new Schema<IAllegatoPrelievo>(
 const prelievoSchema = new Schema<IPrelievo>(
   {
     patient: { type: Schema.Types.ObjectId, ref: 'Patient', required: true },
-    staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: true },
+    staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: false, default: null },
     dataPrelievo: { type: Date, required: true },
     orario: { type: String },
     tipoPrelievo: { type: String, required: true, trim: true },

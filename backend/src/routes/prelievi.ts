@@ -192,8 +192,8 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
     }
 
     const { patient, staff, dataPrelievo, orario, tipoPrelievo, note } = req.body;
-    if (!patient || !staff || !dataPrelievo || !tipoPrelievo) {
-      return res.status(400).json({ message: 'Campi obbligatori: patient, staff, dataPrelievo, tipoPrelievo' });
+    if (!patient || !dataPrelievo || !tipoPrelievo) {
+      return res.status(400).json({ message: 'Campi obbligatori: patient, dataPrelievo, tipoPrelievo' });
     }
 
     // Eredita tipoGestione dal paziente
@@ -202,7 +202,9 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
     const tipoGestione = paziente.tipoGestione || 'privato';
 
     const prelievo = await Prelievo.create({
-      patient, staff, dataPrelievo, orario, tipoPrelievo, note, tipoGestione,
+      patient,
+      staff: staff || null,
+      dataPrelievo, orario, tipoPrelievo, note, tipoGestione,
     });
 
     const populated = await Prelievo.findById(prelievo._id)
