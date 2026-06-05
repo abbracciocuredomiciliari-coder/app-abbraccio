@@ -25,21 +25,10 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ─── Interceptor risposta: auto-logout su 401 (token scaduto o non valido) ───
+// ─── Interceptor risposta: gestione errori globale ───────────────────────────
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const requestUrl = error?.config?.url || '';
-    const isAuthRoute = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
-    if (error?.response?.status === 401 && !isAuthRoute) {
-      // Token scaduto o non valido: pulisci la sessione e reindirizza al login
-      const tokenEsisteva = !!localStorage.getItem('authToken');
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('authUser');
-      if (tokenEsisteva) {
-        window.location.href = '/?sessionExpired=1';
-      }
-    }
     return Promise.reject(error);
   }
 );
