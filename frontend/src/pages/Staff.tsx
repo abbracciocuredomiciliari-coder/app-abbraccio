@@ -33,6 +33,7 @@ interface StaffMember {
   dataInizioCollaborazione?: string;
   dataFineCollaborazione?: string;
   note?: string;
+  modalitaAbilitata?: 'entrambi' | 'privato' | 'convenzione';
 }
 
 interface StaffDocument {
@@ -90,6 +91,7 @@ function Staff() {
     phone: '',
     dataInizioCollaborazione: new Date().toISOString().split('T')[0],
     note: '',
+    modalitaAbilitata: 'entrambi' as 'entrambi' | 'privato' | 'convenzione',
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -161,6 +163,7 @@ function Staff() {
         phone: '',
         dataInizioCollaborazione: new Date().toISOString().split('T')[0],
         note: '',
+        modalitaAbilitata: 'entrambi',
       });
       setShowForm(false);
       loadStaff();
@@ -554,6 +557,18 @@ function Staff() {
             />
           </label>
           <label>
+            Modalità abilitata
+            <select
+              name="modalitaAbilitata"
+              value={formData.modalitaAbilitata}
+              onChange={handleInputChange}
+            >
+              <option value="entrambi">Entrambe (Privato + Convenzione)</option>
+              <option value="privato">Solo Pazienti Privati</option>
+              <option value="convenzione">Solo Pazienti Convenzione SIAT</option>
+            </select>
+          </label>
+          <label>
             Note (opzionale)
             <textarea
               name="note"
@@ -632,6 +647,20 @@ function Staff() {
                           Inattivo
                         </span>
                       )}
+                      {/* Badge modalità abilitata */}
+                      {staff.modalitaAbilitata && staff.modalitaAbilitata !== 'entrambi' && (
+                        <span style={{
+                          fontSize: '0.72rem',
+                          padding: '2px 8px',
+                          backgroundColor: staff.modalitaAbilitata === 'convenzione' ? '#eff6ff' : '#f0fdf4',
+                          color: staff.modalitaAbilitata === 'convenzione' ? '#0369a1' : '#166534',
+                          borderRadius: 'var(--radius-full)',
+                          fontWeight: 700,
+                          border: `1px solid ${staff.modalitaAbilitata === 'convenzione' ? '#bae6fd' : '#bbf7d0'}`,
+                        }}>
+                          {staff.modalitaAbilitata === 'convenzione' ? '🏥 Solo SIAT' : '👤 Solo Privati'}
+                        </span>
+                      )}
                     </div>
                     <div style={{ fontSize: '0.88rem', color: 'var(--gray-600)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -652,7 +681,26 @@ function Staff() {
                       </p>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flexShrink: 0, alignItems: 'center' }}>
+                    {/* Select modalità inline — solo admin/coordinator */}
+                    {canEdit && staff.active && (
+                      <select
+                        value={staff.modalitaAbilitata || 'entrambi'}
+                        onChange={async (e) => {
+                          const val = e.target.value as 'entrambi' | 'privato' | 'convenzione';
+                          try {
+                            await api.put(`/staff/${staff._id}`, { modalitaAbilitata: val });
+                            loadStaff();
+                          } catch {}
+                        }}
+                        style={{ fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px', border: '1px solid #d1d5db', cursor: 'pointer', background: 'white', color: '#374151' }}
+                        title="Modalità abilitata per questo operatore"
+                      >
+                        <option value="entrambi">🔓 Entrambi</option>
+                        <option value="privato">👤 Solo Privati</option>
+                        <option value="convenzione">🏥 Solo SIAT</option>
+                      </select>
+                    )}
                     <button
                       onClick={() => openDocumentsModal(staff)}
                       style={{ background: 'var(--info)' }}

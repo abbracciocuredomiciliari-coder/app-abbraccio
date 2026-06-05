@@ -15,6 +15,7 @@ export interface IStaff extends Document {
   dataFineCollaborazione?: Date;
   note?: string;
   userId?: Types.ObjectId; // collegamento con l'account di login (User)
+  modalitaAbilitata: 'entrambi' | 'privato' | 'convenzione';
 }
 
 const staffSchema = new Schema<IStaff>(
@@ -35,6 +36,11 @@ const staffSchema = new Schema<IStaff>(
     dataFineCollaborazione: { type: Date },
     note: { type: String, trim: true },
     userId: { type: Schema.Types.ObjectId, ref: 'User' },
+    modalitaAbilitata: {
+      type: String,
+      enum: ['entrambi', 'privato', 'convenzione'],
+      default: 'entrambi',
+    },
   },
   { timestamps: true }
 );

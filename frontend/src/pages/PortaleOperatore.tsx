@@ -517,11 +517,17 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
 
   if (loading) return <section><p>Caricamento...</p></section>;
 
-  const pianiAttiviTutti = tuttiIPiani.filter(p => p.status === 'pending');
-  const compensoTotaleGlobale = tuttiIPiani
+  // Filtra piani per modalità corrente
+  const pianiModalita = tuttiIPiani.filter(p =>
+    isConvenzione
+      ? p.patient?.tipoGestione === 'convenzione'
+      : (p.patient?.tipoGestione === 'privato' || !p.patient?.tipoGestione)
+  );
+  const pianiAttiviTutti = pianiModalita.filter(p => p.status === 'pending');
+  const compensoTotaleGlobale = pianiModalita
     .filter(p => p.tipoCompenso && p.tipoCompenso !== 'nessuno')
     .reduce((sum, p) => sum + (p.compensoTotale || 0), 0);
-  const compensoPagatoGlobale = tuttiIPiani
+  const compensoPagatoGlobale = pianiModalita
     .filter(p => p.tipoCompenso && p.tipoCompenso !== 'nessuno' && p.compensoPagato)
     .reduce((sum, p) => sum + (p.compensoTotale || 0), 0);
 
@@ -553,14 +559,17 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
               <div style={{ fontSize: '0.7rem', color: '#d97706', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap' }}>Incarichi</div>
               <div style={{ fontSize: '2rem', fontWeight: '800', color: '#d97706', lineHeight: 1 }}>{pianiAttiviTutti.length}</div>
             </button>
-            <button
-              type="button"
-              onClick={() => navigate('/esami-strumentali')}
-              style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.3)', borderRadius: '10px', padding: '14px 10px', textAlign: 'center', cursor: 'pointer', minWidth: 0, overflow: 'hidden' }}
-            >
-              <div style={{ fontSize: '0.7rem', color: '#dc2626', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Esami Strumentali</div>
-              <div style={{ fontSize: '2rem', fontWeight: '800', color: '#dc2626', lineHeight: 1 }}>{esamiAttivi}</div>
-            </button>
+            {/* Esami strumentali solo in modalità privata */}
+            {!isConvenzione && (
+              <button
+                type="button"
+                onClick={() => navigate('/esami-strumentali')}
+                style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.3)', borderRadius: '10px', padding: '14px 10px', textAlign: 'center', cursor: 'pointer', minWidth: 0, overflow: 'hidden' }}
+              >
+                <div style={{ fontSize: '0.7rem', color: '#dc2626', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Esami Strumentali</div>
+                <div style={{ fontSize: '2rem', fontWeight: '800', color: '#dc2626', lineHeight: 1 }}>{esamiAttivi}</div>
+              </button>
+            )}
             {compensoTotaleGlobale > 0 && (
               <button
                 type="button"

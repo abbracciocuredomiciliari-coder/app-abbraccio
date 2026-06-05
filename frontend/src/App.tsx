@@ -78,7 +78,7 @@ function isPrivilegiato(role: string) {
 
 function AppShell() {
   const { user, logout } = useAuth();
-  const { modalita, setModalita, isConvenzione } = useModalita();
+  const { modalita, setModalita, isConvenzione, modalitaAbilitata, canSwitch } = useModalita();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -111,14 +111,19 @@ function AppShell() {
           {user && (
             <button
               type="button"
-              onClick={() => setModalita(isConvenzione ? 'privato' : 'convenzione')}
+              onClick={() => canSwitch && setModalita(isConvenzione ? 'privato' : 'convenzione')}
+              title={
+                !canSwitch
+                  ? `Abilitazione: solo ${modalitaAbilitata === 'privato' ? 'pazienti privati' : 'pazienti in convenzione'}`
+                  : (isConvenzione ? 'Passa a Gestione Privata' : 'Passa a Convenzione SIAT')
+              }
               style={{
                 marginTop: '12px',
                 width: '100%',
                 padding: '8px 12px',
                 borderRadius: '8px',
-                border: 'none',
-                cursor: 'pointer',
+                border: canSwitch ? 'none' : '1px solid rgba(255,255,255,0.15)',
+                cursor: canSwitch ? 'pointer' : 'not-allowed',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -126,12 +131,14 @@ function AppShell() {
                 fontWeight: '700',
                 fontSize: '0.8rem',
                 background: isConvenzione ? 'rgba(2, 132, 199, 0.25)' : 'rgba(255,255,255,0.1)',
-                color: isConvenzione ? '#7dd3fc' : 'rgba(255,255,255,0.7)',
+                color: !canSwitch ? 'rgba(255,255,255,0.35)' : isConvenzione ? '#7dd3fc' : 'rgba(255,255,255,0.7)',
                 transition: 'all 0.2s',
+                opacity: canSwitch ? 1 : 0.6,
               }}
             >
               <ArrowLeftRight size={14} />
               {isConvenzione ? '🏥 Convenzione SIAT' : '👤 Gestione Privata'}
+              {!canSwitch && <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>🔒</span>}
             </button>
           )}
         </div>

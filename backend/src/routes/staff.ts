@@ -31,7 +31,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
 
 // Crea nuovo membro dello staff
 router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
-  const { firstName, lastName, email, role, category, phone, dataInizioCollaborazione, note } = req.body;
+  const { firstName, lastName, email, role, category, phone, dataInizioCollaborazione, note, modalitaAbilitata } = req.body;
 
   if (!firstName?.trim() || !lastName?.trim() || !email?.trim() || !role) {
     return res.status(400).json({ message: 'I campi nome, cognome, email e ruolo sono obbligatori' });
@@ -50,6 +50,7 @@ router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async
       category,
       phone: phone?.trim(),
       note: note?.trim(),
+      modalitaAbilitata: modalitaAbilitata || 'entrambi',
     };
 
     if (dataInizioCollaborazione) {
@@ -70,7 +71,7 @@ router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async
 router.put('/:staffId', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
   try {
     const staffId = req.params.staffId;
-    const { firstName, lastName, email, role, category, phone, note } = req.body;
+    const { firstName, lastName, email, role, category, phone, note, modalitaAbilitata } = req.body;
     
     const updateData: any = {};
     if (firstName) updateData.firstName = firstName.trim();
@@ -82,6 +83,9 @@ router.put('/:staffId', authenticateToken, authorizeRole('admin', 'coordinator')
     }
     if (phone !== undefined) updateData.phone = phone.trim();
     if (note !== undefined) updateData.note = note.trim();
+    if (modalitaAbilitata && ['entrambi', 'privato', 'convenzione'].includes(modalitaAbilitata)) {
+      updateData.modalitaAbilitata = modalitaAbilitata;
+    }
 
     const staffMember = await Staff.findByIdAndUpdate(staffId, updateData, { new: true });
     if (!staffMember) {
