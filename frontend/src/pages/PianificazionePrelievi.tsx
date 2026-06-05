@@ -3,7 +3,7 @@ import api from '../api/api';
 import { useModalita } from '../context/ModalitaContext';
 import {
   ChevronLeft, ChevronRight, Plus, X, Calendar, Clock, User, Syringe,
-  CheckCircle, Trash2, ChevronDown, ChevronUp, FileText, Building2
+  CheckCircle, Trash2, ChevronDown, ChevronUp, FileText, Building2, Printer
 } from 'lucide-react';
 
 // ─── Interfacce ───────────────────────────────────────────────────────────────
@@ -198,6 +198,112 @@ export default function PianificazionePrelievi() {
     setSalvandoDiaria(false);
   };
 
+  // ─── Stampa foglio firma giornaliero ────────────────────────────────────────
+  const stampaFoglioFirma = () => {
+    const dataLabel = new Date(giornoSelezionato + 'T12:00:00').toLocaleDateString('it-IT', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    });
+    // Raggruppa per operatore
+    const perOperatore = new Map<string, { nome: string; prelievi: Prelievo[] }>();
+    prelieviGiornoSelezionato.forEach(p => {
+      const key = p.staff._id;
+      if (!perOperatore.has(key)) {
+        perOperatore.set(key, { nome: `${p.staff.firstName} ${p.staff.lastName}`, prelievi: [] });
+      }
+      perOperatore.get(key)!.prelievi.push(p);
+    });
+
+    const tipoLabel = isConvenzione ? 'Convenzione SIAT' : 'Gestione Privata';
+
+    const righePerOperatore = Array.from(perOperatore.values()).map(op => `
+      <div style="margin-bottom:32px; page-break-inside:avoid;">
+        <div style="background:#f1f5f9;border-radius:6px;padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:0.75rem;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:0.05em;">Operatore incaricato</div>
+            <div style="font-size:1rem;font-weight:800;color:#1e293b;margin-top:2px;">${op.nome}</div>
+          </div>
+          <div style="font-size:0.85rem;color:#64748b;">Prelievi: <strong>${op.prelievi.length}</strong></div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+          <thead>
+            <tr style="background:#e2e8f0;">
+              <th style="padding:8px 10px;text-align:left;border:1px solid #cbd5e1;width:60px;">Orario</th>
+              <th style="padding:8px 10px;text-align:left;border:1px solid #cbd5e1;">Paziente</th>
+              <th style="padding:8px 10px;text-align:left;border:1px solid #cbd5e1;">Tipo prelievo</th>
+              <th style="padding:8px 10px;text-align:left;border:1px solid #cbd5e1;width:80px;">Stato</th>
+              <th style="padding:8px 10px;text-align:center;border:1px solid #cbd5e1;width:100px;">Firma<br/>Operatore</th>
+              <th style="padding:8px 10px;text-align:center;border:1px solid #cbd5e1;width:100px;">Controfirma<br/>Paziente</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${op.prelievi.map((p, i) => `
+              <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+                <td style="padding:10px;border:1px solid #e2e8f0;text-align:center;font-weight:600;">${p.orario || '—'}</td>
+                <td style="padding:10px;border:1px solid #e2e8f0;">
+                  <div style="font-weight:700;">${p.patient.firstName} ${p.patient.lastName}</div>
+                  ${p.patient.siat?.asl ? `<div style="font-size:0.75rem;color:#64748b;">ASL: ${p.patient.siat.asl}</div>` : ''}
+                </td>
+                <td style="padding:10px;border:1px solid #e2e8f0;">${p.tipoPrelievo}${p.note ? `<div style="font-size:0.75rem;color:#64748b;margin-top:2px;">${p.note}</div>` : ''}</td>
+                <td style="padding:10px;border:1px solid #e2e8f0;text-align:center;">
+                  <span style="font-size:0.75rem;font-weight:700;padding:2px 6px;border-radius:4px;background:${p.status === 'eseguito' ? '#dcfce7' : '#dbeafe'};color:${p.status === 'eseguito' ? '#166534' : '#1e40af'};">
+                    ${p.status === 'eseguito' ? '✓ Eseguito' : 'Pianificato'}
+                  </span>
+                </td>
+                <td style="padding:10px;border:1px solid #e2e8f0;min-height:48px;"></td>
+                <td style="padding:10px;border:1px solid #e2e8f0;min-height:48px;"></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+        <!-- Firma complessiva operatore -->
+        <div style="margin-top:16px;display:flex;gap:40px;">
+          <div style="flex:1;border-top:1px solid #94a3b8;padding-top:8px;">
+            <div style="font-size:0.75rem;color:#64748b;">Firma operatore</div>
+            <div style="height:40px;"></div>
+          </div>
+          <div style="flex:1;border-top:1px solid #94a3b8;padding-top:8px;">
+            <div style="font-size:0.75rem;color:#64748b;">Timbro / Data</div>
+            <div style="height:40px;"></div>
+          </div>
+        </div>
+      </div>
+    `).join('<hr style="border:none;border-top:2px dashed #e2e8f0;margin:24px 0;">');
+
+    const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">
+      <title>Foglio Firma Prelievi — ${dataLabel}</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 24px 32px; color: #1e293b; }
+        h1 { font-size: 1.2rem; margin: 0 0 4px; }
+        @media print {
+          body { padding: 16px 20px; }
+          button { display: none !important; }
+        }
+      </style>
+    </head><body>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;border-bottom:2px solid #1e293b;padding-bottom:12px;">
+        <div>
+          <h1>📋 Foglio Prelievi Giornaliero — Firma e Controfirma</h1>
+          <div style="font-size:0.9rem;color:#475569;margin-top:4px;">${dataLabel}</div>
+          <div style="font-size:0.8rem;margin-top:4px;display:inline-block;padding:2px 10px;border-radius:4px;background:${isConvenzione ? '#dbeafe' : '#dcfce7'};color:${isConvenzione ? '#1e40af' : '#166534'};font-weight:700;">${tipoLabel}</div>
+        </div>
+        <div style="text-align:right;font-size:0.8rem;color:#64748b;">
+          Totale prelievi: <strong>${prelieviGiornoSelezionato.length}</strong><br/>
+          Stampato il: ${new Date().toLocaleString('it-IT')}
+        </div>
+      </div>
+      ${righePerOperatore}
+      <div style="margin-top:40px;font-size:0.72rem;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px;text-align:center;">
+        Abbraccio Cure Domiciliari — Documento riservato uso interno
+      </div>
+    </body></html>`;
+
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 500);
+  };
+
   // ─── Build celle calendario ────────────────────────────────────────────────
   const numeroCelle = getDaysInMonth(annoCorrente, meseCorrente);
   const primoGiorno = getFirstDayOfMonth(annoCorrente, meseCorrente);
@@ -301,12 +407,20 @@ export default function PianificazionePrelievi() {
 
         {/* ═══ LISTA GIORNALIERA ═════════════════════════════════════════════ */}
         <div>
-          <div style={{ fontWeight: 700, fontSize: '1rem', color: '#374151', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ fontWeight: 700, fontSize: '1rem', color: '#374151', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <Calendar size={18} style={{ color: coloreModalita }} />
             {new Date(giornoSelezionato + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
             <span style={{ background: '#f1f5f9', borderRadius: '12px', padding: '2px 10px', fontSize: '0.8rem', color: '#64748b' }}>
               {prelieviGiornoSelezionato.length} prelievi
             </span>
+            {prelieviGiornoSelezionato.length > 0 && (
+              <button
+                onClick={stampaFoglioFirma}
+                style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', background: coloreModalita, color: 'white', border: 'none', borderRadius: '8px', padding: '6px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}
+              >
+                <Printer size={15} />Stampa foglio firma
+              </button>
+            )}
           </div>
 
           {prelieviGiornoSelezionato.length === 0 ? (
