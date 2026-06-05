@@ -62,7 +62,7 @@ router.get('/:workPlanId', authenticateToken, async (req: Request, res: Response
 router.post('/:workPlanId/entrata', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { workPlanId } = req.params;
-    const { note, firmaOperatore } = req.body;
+    const { note, firmaOperatore, firmaPaziente, nomeFirmatarioPaziente, ruoloFirmatario } = req.body;
     const user = (req as any).user;
 
     if (!user) {
@@ -109,6 +109,9 @@ router.post('/:workPlanId/entrata', authenticateToken, async (req: Request, res:
       durataMinuti: 0,
       compensoMaturato: 0,
       firmaOperatore: firmaOperatore || undefined,
+      firmaPaziente: firmaPaziente || undefined,
+      nomeFirmatarioPaziente: firmaPaziente ? (nomeFirmatarioPaziente?.trim() || 'Paziente') : undefined,
+      ruoloFirmatario: firmaPaziente ? (ruoloFirmatario || 'paziente') : undefined,
     });
 
     return res.status(201).json({ 
