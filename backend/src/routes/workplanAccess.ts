@@ -125,7 +125,7 @@ router.post('/:workPlanId/entrata', authenticateToken, async (req: Request, res:
 router.patch('/:accessId/uscita', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { accessId } = req.params;
-    const { note, firmaPaziente, nomeFirmatarioPaziente, ruoloFirmatario } = req.body;
+    const { note, firmaOperatore, firmaPaziente, nomeFirmatarioPaziente, ruoloFirmatario } = req.body;
     const user = (req as any).user;
 
     const accesso = await WorkPlanAccess.findById(accessId);
@@ -160,6 +160,7 @@ router.patch('/:accessId/uscita', authenticateToken, async (req: Request, res: R
     accesso.durataMinuti = durataMinuti;
     accesso.compensoMaturato = compensoMaturato;
     if (note?.trim()) accesso.note = note.trim();
+    if (firmaOperatore) accesso.firmaOperatore = firmaOperatore;
     if (firmaPaziente) {
       accesso.firmaPaziente = firmaPaziente;
       accesso.nomeFirmatarioPaziente = nomeFirmatarioPaziente?.trim() || 'Paziente';

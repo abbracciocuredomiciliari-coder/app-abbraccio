@@ -5,7 +5,7 @@ import api from '../api/api';
 import FirmaCanvas from '../components/FirmaCanvas';
 import {
   LogIn, LogOut, CheckCircle, AlertCircle, Loader2,
-  User, Clock, MapPin, PenLine, Heart
+  User, Clock, MapPin, Heart
 } from 'lucide-react';
 
 interface WorkPlanInfo {
@@ -26,7 +26,7 @@ interface AccessoInfo {
   staffName: string;
 }
 
-type Step = 'selezione' | 'firma-operatore-entrata' | 'conferma-entrata' | 'accesso-attivo' | 'firma-operatore-uscita' | 'firma-paziente' | 'riepilogo';
+type Step = 'selezione' | 'conferma-entrata' | 'accesso-attivo' | 'firma-operatore-uscita' | 'firma-paziente' | 'riepilogo';
 
 export default function RegistrazioneAccesso() {
   const { workPlanId } = useParams<{ workPlanId: string }>();
@@ -74,7 +74,6 @@ export default function RegistrazioneAccesso() {
       setLoading(true);
       const res = await api.post(`/workplan-access/${workPlanId}/entrata`, {
         note: note || undefined,
-        firmaOperatore: firmaOperatore || undefined,
       });
       setAccessoAperto(res.data.accesso);
       setStep('conferma-entrata');
@@ -91,6 +90,7 @@ export default function RegistrazioneAccesso() {
       setLoading(true);
       await api.patch(`/workplan-access/${accessoAperto._id}/uscita`, {
         note: note || undefined,
+        firmaOperatore: firmaOperatore || undefined,
         firmaPaziente: firmaPaziente || undefined,
         nomeFirmatarioPaziente: nomeFirmatario || undefined,
         ruoloFirmatario,
@@ -179,15 +179,16 @@ export default function RegistrazioneAccesso() {
             </p>
 
             <button
-              onClick={() => setStep('firma-operatore-entrata')}
-              style={{ width: '100%', background: 'linear-gradient(135deg, #16a34a, #15803d)', color: 'white', border: 'none', borderRadius: '16px', padding: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', fontSize: '1.1rem', fontWeight: '600' }}
+              onClick={registraEntrata}
+              disabled={loading}
+              style={{ width: '100%', background: 'linear-gradient(135deg, #16a34a, #15803d)', color: 'white', border: 'none', borderRadius: '16px', padding: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', fontSize: '1.1rem', fontWeight: '600', opacity: loading ? 0.7 : 1 }}
             >
               <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '12px', padding: '12px' }}>
-                <LogIn size={28} />
+                {loading ? <Loader2 size={28} style={{ animation: 'spin 1s linear infinite' }} /> : <LogIn size={28} />}
               </div>
               <div style={{ textAlign: 'left' }}>
                 <div>Registra Entrata</div>
-                <div style={{ fontWeight: '400', fontSize: '0.85rem', opacity: 0.85, marginTop: '2px' }}>Inizio visita domiciliare</div>
+                <div style={{ fontWeight: '400', fontSize: '0.85rem', opacity: 0.85, marginTop: '2px' }}>Inizio visita — nessuna firma richiesta</div>
               </div>
             </button>
 
@@ -197,52 +198,6 @@ export default function RegistrazioneAccesso() {
             >
               ← Torna indietro
             </button>
-          </div>
-        )}
-
-        {/* === STEP: FIRMA OPERATORE ENTRATA === */}
-        {step === 'firma-operatore-entrata' && (
-          <div style={{ background: 'white', borderRadius: '20px', padding: '24px' }}>
-            <h2 style={{ color: '#1e3a5f', marginBottom: '6px', fontSize: '1.3rem' }}>
-              <PenLine size={20} style={{ display: 'inline', marginRight: '8px' }} />
-              Firma Operatore
-            </h2>
-            <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '24px' }}>
-              Firma per registrare la tua entrata — {new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-            </p>
-
-            <FirmaCanvas
-              label="Firma dell'Operatore"
-              sublabel={`${user?.name} — ${new Date().toLocaleDateString('it-IT')}`}
-              onFirmaCompleta={(firma) => setFirmaOperatore(firma)}
-              onCancella={() => setFirmaOperatore('')}
-              altezza={180}
-            />
-
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Note (opzionale)</label>
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Note sull'accesso..."
-                rows={2}
-                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem', resize: 'none', boxSizing: 'border-box' }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setStep('selezione')} style={{ flex: 1, background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '10px', padding: '14px', cursor: 'pointer', fontWeight: '600' }}>
-                ← Indietro
-              </button>
-              <button
-                onClick={registraEntrata}
-                disabled={loading}
-                style={{ flex: 2, background: '#16a34a', color: 'white', border: 'none', borderRadius: '10px', padding: '14px', cursor: 'pointer', fontWeight: '600', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: loading ? 0.7 : 1 }}
-              >
-                {loading ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <LogIn size={18} />}
-                Registra Entrata
-              </button>
-            </div>
           </div>
         )}
 
@@ -282,7 +237,7 @@ export default function RegistrazioneAccesso() {
             </div>
 
             <button
-              onClick={() => { setNote(''); setStep('firma-operatore-uscita'); }}
+              onClick={() => { setNote(''); setStep('firma-paziente'); }}
               style={{ width: '100%', background: 'linear-gradient(135deg, #dc2626, #b91c1c)', color: 'white', border: 'none', borderRadius: '16px', padding: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px', fontSize: '1.1rem', fontWeight: '600' }}
             >
               <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '12px', padding: '12px' }}>
@@ -290,66 +245,35 @@ export default function RegistrazioneAccesso() {
               </div>
               <div style={{ textAlign: 'left' }}>
                 <div>Registra Uscita</div>
-                <div style={{ fontWeight: '400', fontSize: '0.85rem', opacity: 0.85, marginTop: '2px' }}>Fine visita + firma paziente</div>
+                <div style={{ fontWeight: '400', fontSize: '0.85rem', opacity: 0.85, marginTop: '2px' }}>Fine visita + firme</div>
               </div>
             </button>
           </div>
         )}
 
-        {/* === STEP: FIRMA OPERATORE USCITA === */}
-        {step === 'firma-operatore-uscita' && (
-          <div style={{ background: 'white', borderRadius: '20px', padding: '24px' }}>
-            <h2 style={{ color: '#1e3a5f', marginBottom: '6px', fontSize: '1.3rem' }}>
-              <PenLine size={20} style={{ display: 'inline', marginRight: '8px' }} />
-              Firma Operatore — Uscita
-            </h2>
-            <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '24px' }}>
-              Firma per confermare la fine della visita
-            </p>
-
-            <FirmaCanvas
-              label="Firma dell'Operatore"
-              sublabel={`${user?.name} — Uscita ${new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`}
-              onFirmaCompleta={(firma) => setFirmaOperatore(firma)}
-              onCancella={() => setFirmaOperatore('')}
-              altezza={180}
-            />
-
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Note visita (opzionale)</label>
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Note sulla visita..."
-                rows={2}
-                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem', resize: 'none', boxSizing: 'border-box' }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setStep('accesso-attivo')} style={{ flex: 1, background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '10px', padding: '14px', cursor: 'pointer', fontWeight: '600' }}>
-                ← Indietro
-              </button>
-              <button
-                onClick={() => setStep('firma-paziente')}
-                style={{ flex: 2, background: '#2563eb', color: 'white', border: 'none', borderRadius: '10px', padding: '14px', cursor: 'pointer', fontWeight: '600', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-              >
-                Avanti → Firma Paziente
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* === STEP: FIRMA PAZIENTE/CAREGIVER === */}
+        {/* === STEP: FIRMA USCITA (operatore + paziente/caregiver) === */}
         {step === 'firma-paziente' && (
           <div style={{ background: 'white', borderRadius: '20px', padding: '24px' }}>
             <h2 style={{ color: '#1e3a5f', marginBottom: '6px', fontSize: '1.3rem' }}>
-              <User size={20} style={{ display: 'inline', marginRight: '8px' }} />
-              Firma Paziente / Caregiver
+              <LogOut size={20} style={{ display: 'inline', marginRight: '8px' }} />
+              Firme di Uscita
             </h2>
             <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '20px' }}>
-              Consegnare il tablet al paziente o caregiver per la firma di conferma della visita
+              Uscita: {new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} — Durata: {durataAccesso()}
             </p>
+
+            {/* FIRMA OPERATORE */}
+            <div style={{ borderBottom: '2px solid #e5e7eb', paddingBottom: '20px', marginBottom: '20px' }}>
+              <FirmaCanvas
+                label="✍️ Firma Operatore"
+                sublabel={`${user?.name}`}
+                onFirmaCompleta={(firma) => setFirmaOperatore(firma)}
+                onCancella={() => setFirmaOperatore('')}
+                altezza={160}
+              />
+            </div>
+
+            <p style={{ fontWeight: '600', color: '#374151', marginBottom: '16px', fontSize: '0.95rem' }}>👇 Consegnare il tablet al paziente / caregiver</p>
 
             {/* Selezione ruolo firmatario */}
             <div style={{ marginBottom: '16px' }}>
@@ -393,7 +317,7 @@ export default function RegistrazioneAccesso() {
             />
 
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setStep('firma-operatore-uscita')} style={{ flex: 1, background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '10px', padding: '14px', cursor: 'pointer', fontWeight: '600' }}>
+              <button onClick={() => setStep('accesso-attivo')} style={{ flex: 1, background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '10px', padding: '14px', cursor: 'pointer', fontWeight: '600' }}>
                 ← Indietro
               </button>
               <button
