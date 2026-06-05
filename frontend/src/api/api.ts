@@ -11,12 +11,16 @@ const api = axios.create({
 
 // ─── Interceptor richiesta: aggiunge il token JWT a ogni chiamata ─────────────
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('authToken');
-  if (!config.headers) {
-    config.headers = axios.AxiosHeaders.from({});
-  }
-  if (token) {
-    (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
+  const url = config.url || '';
+  const isAuthRoute = url.includes('/auth/login') || url.includes('/auth/register');
+  if (!isAuthRoute) {
+    const token = localStorage.getItem('authToken');
+    if (!config.headers) {
+      config.headers = axios.AxiosHeaders.from({});
+    }
+    if (token) {
+      (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
+    }
   }
   return config;
 });
@@ -25,7 +29,9 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error?.response?.status === 401) {
+    const requestUrl = error?.config?.url || '';
+    const isAuthRoute = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
+    if (error?.response?.status === 401 && !isAuthRoute) {
       // Token scaduto o non valido: pulisci la sessione e reindirizza al login
       const tokenEsisteva = !!localStorage.getItem('authToken');
       localStorage.removeItem('authToken');
