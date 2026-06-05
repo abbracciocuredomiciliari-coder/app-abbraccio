@@ -40,6 +40,7 @@ const EsportazioneSIAT = lazy(() => import('./pages/EsportazioneSIAT'));
 const RegistrazioneAccesso = lazy(() => import('./pages/RegistrazioneAccesso'));
 const PazientiConvenzione = lazy(() => import('./pages/PazientiConvenzione'));
 const PianificazionePrelievi = lazy(() => import('./pages/PianificazionePrelievi'));
+const AssegnazionePAI = lazy(() => import('./pages/AssegnazionePAI'));
 import {
   Heart,
   LayoutDashboard,
@@ -67,6 +68,7 @@ import {
   Building2,
   ArrowLeftRight,
   Syringe,
+  Map,
 } from 'lucide-react';
 
 // Ruoli con accesso completo (admin/coordinamento/direzione)
@@ -181,6 +183,10 @@ function AppShell() {
               <Link to="/pianificazione-prelievi" className={isActive('/pianificazione-prelievi') ? 'active' : ''}>
                 <Syringe size={18} />
                 Prelievi
+              </Link>
+              <Link to="/assegnazione-pai" className={isActive('/assegnazione-pai') ? 'active' : ''}>
+                <Map size={18} />
+                {isConvenzione ? 'Assegnazione PAI' : 'Assegna Piano'}
               </Link>
               <Link to="/richieste-presidi" className={isActive('/richieste-presidi') ? 'active' : ''}>
                 <Briefcase size={18} />
@@ -326,6 +332,8 @@ function AppShell() {
           <Route path="/esami-strumentali" element={<ProtectedRoute><EsamiStrumentali /></ProtectedRoute>} />
           {/* Pianificazione Prelievi */}
           <Route path="/pianificazione-prelievi" element={<ProtectedRoute><PianificazionePrelievi /></ProtectedRoute>} />
+          {/* Assegnazione PAI / Piano di Lavoro */}
+          <Route path="/assegnazione-pai" element={<ProtectedRoute><AssegnazionePAI /></ProtectedRoute>} />
 
           {/* Richieste Presidi/Farmaci */}
           <Route path="/richieste-presidi" element={<ProtectedRoute><RichiestePresidiPage /></ProtectedRoute>} />

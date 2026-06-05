@@ -1,5 +1,7 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useCallback, lazy, Suspense } from 'react';
 import api from '../api/api';
+
+const MappaZona = lazy(() => import('../components/MappaZona'));
 
 // Figure professionali dal menu Personale
 const figurePerCategoria: Record<string, { label: string; ruoli: string[] }> = {
@@ -39,6 +41,34 @@ function Register() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Zona lavorativa
+  const [domicilioPartenza, setDomicilioPartenza] = useState('');
+  const [raggioAzioneKm, setRaggioAzioneKm] = useState(10);
+  const [domicilioCoords, setDomicilioCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [geocodingLoading, setGeocodingLoading] = useState(false);
+  const [geocodingError, setGeocodingError] = useState('');
+
+  const geocodifica = useCallback(async () => {
+    if (!domicilioPartenza.trim()) return;
+    setGeocodingLoading(true);
+    setGeocodingError('');
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(domicilioPartenza)}&limit=1&countrycodes=it`,
+        { headers: { 'Accept-Language': 'it' } }
+      );
+      const data = await res.json();
+      if (data.length > 0) {
+        setDomicilioCoords({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
+      } else {
+        setGeocodingError('Indirizzo non trovato. Prova con un indirizzo più preciso (città, via, numero).');
+      }
+    } catch {
+      setGeocodingError('Errore nella ricerca indirizzo.');
+    }
+    setGeocodingLoading(false);
+  }, [domicilioPartenza]);
+
   const handleCategoriaChange = (val: string) => {
     setCategoria(val);
     setProfessione('');
@@ -58,6 +88,9 @@ function Register() {
         categoria,
         professione,
         role: 'caregiver',
+        domicilioPartenza: domicilioPartenza.trim(),
+        raggioAzioneKm,
+        ...(domicilioCoords ? { domicilioCoords } : {}),
       });
 
       if (response.data.pending) {
@@ -175,6 +208,62 @@ function Register() {
 
         <div style={{ background: 'rgba(30,77,140,0.06)', border: '1px solid rgba(30,77,140,0.2)', borderRadius: '6px', padding: '10px 14px', fontSize: '0.88rem', color: '#1e4d8c', marginBottom: '4px' }}>
           ℹ️ Dopo la registrazione, la tua richiesta sarà inviata all'amministratore per l'approvazione. Potrai accedere solo dopo l'attivazione del tuo account.
+        </div>
+
+        {/* ─── Zona lavorativa ─────────────────────────────────── */}
+        <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '18px', marginTop: '4px' }}>
+          <h3 style={{ margin: '0 0 4px', fontSize: '1rem', color: '#1e3a5f' }}>📍 Zona di lavoro</h3>
+          <p style={{ margin: '0 0 14px', fontSize: '0.85rem', color: '#6b7280' }}>
+            Indica il tuo domicilio di partenza e il raggio entro cui sei disponibile a lavorare.
+          </p>
+          <label>
+            Indirizzo di partenza *
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                value={domicilioPartenza}
+                onChange={e => { setDomicilioPartenza(e.target.value); setDomicilioCoords(null); }}
+                placeholder="Es. Via Roma 10, Roma RM"
+                style={{ flex: 1 }}
+              />
+              <button
+                type="button"
+                onClick={geocodifica}
+                disabled={geocodingLoading || !domicilioPartenza.trim()}
+                style={{ background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '8px', padding: '0 14px', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap', opacity: geocodingLoading ? 0.7 : 1 }}
+              >
+                {geocodingLoading ? '...' : '📍 Trova'}
+              </button>
+            </div>
+            {geocodingError && <span style={{ fontSize: '0.82rem', color: '#dc2626' }}>{geocodingError}</span>}
+            {domicilioCoords && <span style={{ fontSize: '0.82rem', color: '#059669' }}>✓ Posizione trovata</span>}
+          </label>
+          <label style={{ marginTop: '12px', display: 'block' }}>
+            Raggio di azione: <strong>{raggioAzioneKm} km</strong>
+            <input
+              type="range" min={1} max={80} step={1}
+              value={raggioAzioneKm}
+              onChange={e => setRaggioAzioneKm(Number(e.target.value))}
+              style={{ width: '100%', marginTop: '6px' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#9ca3af' }}>
+              <span>1 km</span><span>80 km</span>
+            </div>
+          </label>
+          {domicilioCoords && (
+            <div style={{ marginTop: '14px' }}>
+              <Suspense fallback={<div style={{ height: 280, background: '#f1f5f9', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>Caricamento mappa...</div>}>
+                <MappaZona
+                  center={domicilioCoords}
+                  raggioKm={raggioAzioneKm}
+                  altezza={280}
+                  readonly
+                />
+              </Suspense>
+              <p style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '6px', textAlign: 'center' }}>
+                Il cerchio blu mostra la tua zona di disponibilità
+              </p>
+            </div>
+          )}
         </div>
 
         <button type="submit" disabled={loading} style={{ opacity: loading ? 0.7 : 1 }}>

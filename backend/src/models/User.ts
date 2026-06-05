@@ -8,6 +8,9 @@ export interface IUser extends Document {
   status: 'pending' | 'approved' | 'rejected';
   professione?: string;
   categoria?: string;
+  domicilioPartenza?: string;
+  raggioAzioneKm?: number;
+  domicilioCoords?: { lat: number; lng: number };
 }
 
 const userSchema = new Schema<IUser>(
@@ -29,6 +32,12 @@ const userSchema = new Schema<IUser>(
     },
     professione: { type: String, trim: true },
     categoria: { type: String, trim: true },
+    domicilioPartenza: { type: String, trim: true },
+    raggioAzioneKm: { type: Number, default: 10 },
+    domicilioCoords: {
+      lat: { type: Number },
+      lng: { type: Number },
+    },
   },
   { timestamps: true }
 );

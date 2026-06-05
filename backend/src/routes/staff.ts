@@ -8,6 +8,54 @@ import { authorizeRole } from '../middleware/roles';
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 const router = Router();
 
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /staff/zona?lat=&lng=&tipoGestione= — operatori disponibili in quella zona
+// Restituisce operatori il cui raggio d'azione copre il punto lat/lng
+// ─────────────────────────────────────────────────────────────────────────────
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+router.get('/zona', authenticateToken, authorizeRole('admin', 'coordinator', 'direttore'), async (req: Request, res: Response) => {
+  try {
+    const lat = parseFloat(req.query.lat as string);
+    const lng = parseFloat(req.query.lng as string);
+    const tipoGestione = req.query.tipoGestione as string | undefined;
+
+    if (isNaN(lat) || isNaN(lng)) {
+      return res.status(400).json({ message: 'lat e lng sono obbligatori' });
+    }
+
+    const query: any = { active: true, 'domicilioCoords.lat': { $exists: true } };
+    if (tipoGestione === 'privato') query.modalitaAbilitata = { $in: ['privato', 'entrambi'] };
+    if (tipoGestione === 'convenzione') query.modalitaAbilitata = { $in: ['convenzione', 'entrambi'] };
+
+    const tuttiStaff = await Staff.find(query).select(
+      'firstName lastName role category domicilioPartenza domicilioCoords raggioAzioneKm modalitaAbilitata active'
+    );
+
+    const inZona = tuttiStaff.filter(s => {
+      if (!s.domicilioCoords?.lat || !s.domicilioCoords?.lng) return false;
+      const dist = haversineKm(s.domicilioCoords.lat, s.domicilioCoords.lng, lat, lng);
+      return dist <= (s.raggioAzioneKm || 10);
+    }).map(s => ({
+      ...s.toObject(),
+      distanzaKm: Math.round(haversineKm(s.domicilioCoords!.lat, s.domicilioCoords!.lng, lat, lng) * 10) / 10,
+    }));
+
+    inZona.sort((a, b) => a.distanzaKm - b.distanzaKm);
+    return res.json(inZona);
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore ricerca zona', error });
+  }
+});
+
 // Ottieni tutto il personale (con filtri opzionali)
 router.get('/', authenticateToken, async (req: Request, res: Response) => {
   try {

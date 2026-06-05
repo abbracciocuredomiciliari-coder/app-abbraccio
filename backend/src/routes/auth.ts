@@ -32,7 +32,7 @@ const registerLimiter = rateLimit({
 
 // REGISTRAZIONE — crea utente con status "pending"
 router.post('/register', registerLimiter, async (req: Request, res: Response) => {
-  const { name, email, password, role, professione, categoria } = req.body;
+  const { name, email, password, role, professione, categoria, domicilioPartenza, raggioAzioneKm, domicilioCoords } = req.body;
 
   if (!name?.trim() || !email?.trim() || !password) {
     return res.status(400).json({ message: 'Nome, email e password sono obbligatori' });
@@ -63,6 +63,9 @@ router.post('/register', registerLimiter, async (req: Request, res: Response) =>
       status: isFirstUser ? 'approved' : 'pending',
       professione: professione?.trim() || '',
       categoria: categoria?.trim() || '',
+      domicilioPartenza: domicilioPartenza?.trim() || '',
+      raggioAzioneKm: raggioAzioneKm || 10,
+      ...(domicilioCoords ? { domicilioCoords } : {}),
     });
 
     if (!isFirstUser) {
@@ -187,11 +190,15 @@ router.put('/approve/:userId', authenticateToken, authorizeRole('admin'), async 
       return res.status(404).json({ message: 'Utente non trovato' });
     }
 
-    // Collega automaticamente User↔Staff tramite email
+    // Collega automaticamente User↔Staff tramite email e copia dati zona
     try {
+      const zonaUpdate: any = { userId: user._id };
+      if (user.domicilioPartenza) zonaUpdate.domicilioPartenza = user.domicilioPartenza;
+      if (user.raggioAzioneKm) zonaUpdate.raggioAzioneKm = user.raggioAzioneKm;
+      if (user.domicilioCoords?.lat) zonaUpdate.domicilioCoords = user.domicilioCoords;
       await Staff.findOneAndUpdate(
         { email: user.email },
-        { $set: { userId: user._id } },
+        { $set: zonaUpdate },
         { new: true }
       );
     } catch (linkErr) {

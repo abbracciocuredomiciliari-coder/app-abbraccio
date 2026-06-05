@@ -16,6 +16,11 @@ export interface IStaff extends Document {
   note?: string;
   userId?: Types.ObjectId; // collegamento con l'account di login (User)
   modalitaAbilitata: 'entrambi' | 'privato' | 'convenzione';
+
+  // === ZONA DI LAVORO ===
+  domicilioPartenza?: string;       // Indirizzo testo
+  raggioAzioneKm?: number;          // Raggio in km
+  domicilioCoords?: { lat: number; lng: number }; // Coordinate geocodificate
 }
 
 const staffSchema = new Schema<IStaff>(
@@ -36,6 +41,12 @@ const staffSchema = new Schema<IStaff>(
     dataFineCollaborazione: { type: Date },
     note: { type: String, trim: true },
     userId: { type: Schema.Types.ObjectId, ref: 'User' },
+    domicilioPartenza: { type: String, trim: true },
+    raggioAzioneKm: { type: Number, default: 10 },
+    domicilioCoords: {
+      lat: { type: Number },
+      lng: { type: Number },
+    },
     modalitaAbilitata: {
       type: String,
       enum: ['entrambi', 'privato', 'convenzione'],
