@@ -41,6 +41,9 @@ if (!process.env.JWT_SECRET) {
 const app: Application = express();
 const port = process.env.PORT || 4000;
 
+// Trust proxy per Render/Vercel (necessario per rate-limit con X-Forwarded-For)
+app.set('trust proxy', 1);
+
 // ─── Security headers (Helmet) ────────────────────────────────────────────────
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
