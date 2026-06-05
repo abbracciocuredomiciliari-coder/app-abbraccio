@@ -1143,7 +1143,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                     <input value={noteAccesso} onChange={e => setNoteAccesso(e.target.value)} placeholder="Es. parametri rilevati, attività svolte..." style={{ marginTop: '4px' }} />
                   </label>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <button type="button" onClick={() => !accessoAperto && setStepFirmaAccesso('entrata-op')} disabled={!!accessoAperto || registrandoAccesso}
+                    <button type="button" onClick={() => registraEntrata('', '', '', '')} disabled={!!accessoAperto || registrandoAccesso}
                       style={{ padding: '14px', borderRadius: '10px', border: 'none', cursor: accessoAperto ? 'not-allowed' : 'pointer', backgroundColor: accessoAperto ? '#d1fae5' : '#16a34a', color: 'white', fontWeight: '700', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: accessoAperto ? 0.6 : 1 }}>
                       ▶️ ENTRATA
                     </button>
@@ -1155,11 +1155,11 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                 </>
               )}
 
-              {/* Step 1: Firma operatore (entrata o uscita) */}
-              {(stepFirmaAccesso === 'entrata-op' || stepFirmaAccesso === 'uscita-op') && (
+              {/* Step 1: Firma operatore (solo uscita) */}
+              {stepFirmaAccesso === 'uscita-op' && (
                 <div style={{ background: '#f0f9ff', borderRadius: '10px', padding: '14px' }}>
                   <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e4d8c', marginBottom: '10px' }}>
-                    ✍️ Step 1 — Firma Operatore ({stepFirmaAccesso === 'entrata-op' ? 'Entrata' : 'Uscita'})
+                    ✍️ Step 1 — Firma Operatore (Uscita)
                   </div>
                   <FirmaCanvas
                     label="Firma Operatore"
@@ -1171,7 +1171,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                   <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                     <button type="button" onClick={() => { setStepFirmaAccesso(null); setFirmaOpAccesso(''); }} style={{ flex: 1, background: '#f1f5f9', border: '1px solid #d1d5db', borderRadius: '6px', padding: '9px', cursor: 'pointer', fontSize: '0.85rem' }}>Annulla</button>
                     <button type="button" disabled={!firmaOpAccesso}
-                      onClick={() => setStepFirmaAccesso(stepFirmaAccesso === 'entrata-op' ? 'entrata-paz' : 'uscita-paz')}
+                      onClick={() => setStepFirmaAccesso('uscita-paz')}
                       style={{ flex: 2, background: firmaOpAccesso ? '#1e4d8c' : '#bfdbfe', color: 'white', border: 'none', borderRadius: '6px', padding: '9px', cursor: firmaOpAccesso ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: '0.85rem' }}>
                       Avanti → Firma Paziente
                     </button>
@@ -1179,11 +1179,11 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                 </div>
               )}
 
-              {/* Step 2: Firma paziente (entrata o uscita) */}
-              {(stepFirmaAccesso === 'entrata-paz' || stepFirmaAccesso === 'uscita-paz') && (
+              {/* Step 2: Firma paziente (solo uscita) */}
+              {stepFirmaAccesso === 'uscita-paz' && (
                 <div style={{ background: '#f0fdf4', borderRadius: '10px', padding: '14px' }}>
                   <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#059669', marginBottom: '10px' }}>
-                    👇 Step 2 — Consegna al Paziente ({stepFirmaAccesso === 'entrata-paz' ? 'Entrata' : 'Uscita'})
+                    👇 Step 2 — Consegna al Paziente (Uscita)
                   </div>
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
                     {(['paziente', 'caregiver'] as const).map(r => (
@@ -1207,16 +1207,15 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                     altezza={140}
                   />
                   <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                    <button type="button" onClick={() => setStepFirmaAccesso(stepFirmaAccesso === 'entrata-paz' ? 'entrata-op' : 'uscita-op')} style={{ flex: 1, background: '#f1f5f9', border: '1px solid #d1d5db', borderRadius: '6px', padding: '9px', cursor: 'pointer', fontSize: '0.85rem' }}>← Indietro</button>
+                    <button type="button" onClick={() => setStepFirmaAccesso('uscita-op')} style={{ flex: 1, background: '#f1f5f9', border: '1px solid #d1d5db', borderRadius: '6px', padding: '9px', cursor: 'pointer', fontSize: '0.85rem' }}>← Indietro</button>
                     <button type="button"
                       disabled={registrandoAccesso || !firmaPazAccesso}
                       onClick={() => {
                         const nomeFirm = nomeFirmatarioAccesso || (pianoSelezionato ? pianoSelezionato.patient.firstName + ' ' + pianoSelezionato.patient.lastName : 'Paziente');
-                        if (stepFirmaAccesso === 'entrata-paz') registraEntrata(firmaOpAccesso, firmaPazAccesso, nomeFirm, ruoloFirmatarioAccesso);
-                        else registraUscita(firmaOpAccesso, firmaPazAccesso, nomeFirm, ruoloFirmatarioAccesso);
+                        registraUscita(firmaOpAccesso, firmaPazAccesso, nomeFirm, ruoloFirmatarioAccesso);
                       }}
                       style={{ flex: 2, background: firmaPazAccesso ? '#059669' : '#d1fae5', color: 'white', border: 'none', borderRadius: '6px', padding: '9px', cursor: firmaPazAccesso ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: '0.85rem' }}>
-                      {registrandoAccesso ? '⏳ Registrazione...' : `✅ Conferma ${stepFirmaAccesso === 'entrata-paz' ? 'Entrata' : 'Uscita'}`}
+                      {registrandoAccesso ? '⏳ Registrazione...' : '✅ Conferma Uscita'}
                     </button>
                   </div>
                 </div>
