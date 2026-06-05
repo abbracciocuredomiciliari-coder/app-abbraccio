@@ -47,11 +47,11 @@ export const buildCSV = (patient: any, workPlan: any, diario: any[]): string => 
     patient.address || '',                         // INDIRIZZO
     patient.contactPhone || '',                    // TELEFONO
     workPlan ? 'CURE_DOMICILIARI' : 'NON_ASSEGNATO', // TIPO_PRESA_CARICO
-    workPlan?.startDate ? new Date(workPlan.startDate).toISOString().split('T')[0] : (workPlan?.createdAt ? new Date(workPlan.createdAt).toISOString().split('T')[0] : ''),
-    workPlan?.endDate ? new Date(workPlan.endDate).toISOString().split('T')[0] : '',
+    workPlan?.date ? new Date(workPlan.date).toISOString().split('T')[0] : '',
+    workPlan?.dataFine ? new Date(workPlan.dataFine).toISOString().split('T')[0] : '',
     workPlan?.status === 'completed' ? 'CHIUSA' : workPlan?.status === 'pending' ? 'ATTIVA' : 'SOSPESA',
-    (patient.assistanceNeeds || workPlan?.needs || '').replace(/\n/g, ' ').substring(0, 250),
-    workPlan?.assignedTo ? (typeof workPlan.assignedTo === 'string' ? workPlan.assignedTo : `${workPlan.assignedTo.firstName} ${workPlan.assignedTo.lastName}`) : '',
+    (patient.assistanceNeeds || workPlan?.task || '').replace(/\n/g, ' ').substring(0, 250),
+    workPlan?.staff ? (typeof workPlan.staff === 'string' ? workPlan.staff : `${(workPlan.staff as any).firstName} ${(workPlan.staff as any).lastName}`) : '',
     lastAccess?.dataRegistrazione ? new Date(lastAccess.dataRegistrazione).toISOString().split('T')[0] : '',
     lastAccess?.staffName || '',
     diario?.length || 0,
@@ -191,9 +191,9 @@ export const buildCDA2 = (patient: any, workPlan: any, diario: any[]): string =>
               </thead>
               <tbody>
                 <tr>
-                  <td>${workPlan?.startDate ? new Date(workPlan.startDate).toLocaleDateString('it-IT') : 'N/D'}</td>
+                  <td>${workPlan?.date ? new Date(workPlan.date).toLocaleDateString('it-IT') : 'N/D'}</td>
                   <td>${workPlan?.status === 'completed' ? 'Completato' : workPlan?.status === 'pending' ? 'Attivo' : 'Sospeso'}</td>
-                  <td>${workPlan?.assignedTo ? (typeof workPlan.assignedTo === 'string' ? 'Operatore ID: ' + workPlan.assignedTo : `${workPlan.assignedTo.firstName} ${workPlan.assignedTo.lastName}`) : 'Non assegnato'}</td>
+                  <td>${workPlan?.staff ? (typeof workPlan.staff === 'string' ? 'Operatore ID: ' + workPlan.staff : `${(workPlan.staff as any).firstName} ${(workPlan.staff as any).lastName}`) : 'Non assegnato'}</td>
                 </tr>
               </tbody>
             </table>

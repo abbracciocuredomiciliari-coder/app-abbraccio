@@ -153,7 +153,7 @@ router.post(
       }
 
       const patient = workPlan.patient as any;
-      const operatore = workPlan.assignedTo as any;
+      const operatore = (workPlan as any).staff as any;
 
       // Template HTML per stampa modulo SIAT
       const html = `
@@ -213,16 +213,16 @@ router.post(
   <div class="section">
     <div class="section-title">3. Piano Assistenziale (sintesi)</div>
     <div class="field"><span class="label">Operatore assegnato:</span> <span class="value">${operatore ? `${operatore.firstName} ${operatore.lastName}` : 'Non assegnato'}</span></div>
-    <div class="field"><span class="label">Data inizio presa in carico:</span> <span class="value">${workPlan.startDate ? new Date(workPlan.startDate).toLocaleDateString('it-IT') : new Date(workPlan.createdAt).toLocaleDateString('it-IT')}</span></div>
+    <div class="field"><span class="label">Data inizio presa in carico:</span> <span class="value">${workPlan.date ? new Date(workPlan.date).toLocaleDateString('it-IT') : 'N/D'}</span></div>
     <div class="field"><span class="label">Necessità assistenziali:</span></div>
-    <div style="white-space: pre-wrap; margin-left: 20px;">${patient.assistanceNeeds || workPlan.needs || 'N/D'}</div>
+    <div style="white-space: pre-wrap; margin-left: 20px;">${patient.assistanceNeeds || workPlan.task || 'N/D'}</div>
   </div>
 
   <div class="section">
     <div class="section-title">4. Ultimi Accessi Registrati</div>
     <table>
       <tr><th>Data</th><th>Operatore</th><th>Note</th></tr>
-      ${(workPlan.accessi || []).slice(0, 5).map((a: any) => `
+      ${((workPlan as any).accessi || []).slice(0, 5).map((a: any) => `
         <tr>
           <td>${a.data ? new Date(a.data).toLocaleDateString('it-IT') : 'N/D'}</td>
           <td>${a.staffName || 'N/D'}</td>
