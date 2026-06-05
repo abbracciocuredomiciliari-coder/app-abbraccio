@@ -26,8 +26,10 @@ export interface IWorkPlan extends Document {
   tariffa?: number;
   compensoTotale?: number;
   compensoPagato?: boolean;
-  // Costo prestazione al paziente (ricavo admin)
+  // Costo prestazione al paziente (ricavo admin) - solo pazienti PRIVATI
   costoPrestazione?: number;
+  // Tariffa da fatturare all'ASL - solo pazienti in CONVENZIONE
+  tariffaAsl?: number;
 }
 
 const workPlanSchema = new Schema<IWorkPlan>(
@@ -64,6 +66,7 @@ const workPlanSchema = new Schema<IWorkPlan>(
     compensoTotale: { type: Number, default: 0 },
     compensoPagato: { type: Boolean, default: false },
     costoPrestazione: { type: Number, default: 0 },
+    tariffaAsl: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

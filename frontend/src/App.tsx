@@ -108,7 +108,7 @@ function AppShell() {
         <div style={{ padding: '16px 12px 8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.15)', marginBottom: '8px' }}>
           <img src="/logo.png" alt="Abbraccio Cure Domiciliari" style={{ width: '100%', maxWidth: '160px', height: 'auto', display: 'block', margin: '0 auto' }} />
           {/* Pulsante switch modalità */}
-          {user && isPrivilegiato(user.role) && (
+          {user && (
             <button
               type="button"
               onClick={() => setModalita(isConvenzione ? 'privato' : 'convenzione')}

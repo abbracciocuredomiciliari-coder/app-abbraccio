@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { Receipt, Calendar, Search, FileText, Printer, User, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { useModalita } from '../context/ModalitaContext';
+import { Receipt, Calendar, FileText, Printer, User, Filter, ChevronDown, ChevronUp, Building2 } from 'lucide-react';
 
 interface Patient {
   _id: string;
@@ -17,8 +18,18 @@ interface WorkPlanItem {
   date: string;
   compensoTotale?: number;
   costoPrestazione?: number;
-  patient: Patient;
+  tariffaAsl?: number;
+  patient: Patient & { tipoGestione?: string; siat?: { asl?: string; npi?: string; codiceAutorizzazione?: string } };
   staff: { firstName: string; lastName: string; role: string };
+}
+
+interface RiepilogoAsl {
+  asl: string;
+  workPlans: WorkPlanItem[];
+  totaleTariffe: number;
+  totaleCompensoOperatori: number;
+  numeroPrestazioni: number;
+  numeroPazienti: number;
 }
 
 interface RiepilogoPaziente {
@@ -32,25 +43,23 @@ interface RiepilogoPaziente {
 
 export default function GestioneFatturazione() {
   const { user } = useAuth();
+  const { isConvenzione } = useModalita();
   const [workplans, setWorkplans] = useState<WorkPlanItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [dataInizio, setDataInizio] = useState('');
   const [dataFine, setDataFine] = useState('');
   const [ricercaPaziente, setRicercaPaziente] = useState('');
   const [pazienteEspanso, setPazienteEspanso] = useState<string | null>(null);
+  const [aslEspansa, setAslEspansa] = useState<string | null>(null);
   const [showFiltri, setShowFiltri] = useState(true);
 
-  useEffect(() => {
-    caricaDati();
-  }, []);
+  useEffect(() => { caricaDati(); }, []);
 
   const caricaDati = async () => {
     setLoading(true);
     try {
       const res = await api.get('/workplan');
-      const piani: WorkPlanItem[] = res.data;
-      const fatturabili = piani.filter(p => p.costoPrestazione && p.costoPrestazione > 0);
-      setWorkplans(fatturabili);
+      setWorkplans(res.data);
     } catch (err) {
       console.error('Errore caricamento dati:', err);
     } finally {
@@ -61,22 +70,56 @@ export default function GestioneFatturazione() {
   const workplansFiltratiPerData = useMemo(() => {
     return workplans.filter(wp => {
       const dataWp = new Date(wp.date);
-      if (dataInizio) {
-        const inizio = new Date(dataInizio);
-        if (dataWp < inizio) return false;
-      }
-      if (dataFine) {
-        const fine = new Date(dataFine);
-        fine.setHours(23, 59, 59, 999);
-        if (dataWp > fine) return false;
-      }
+      if (dataInizio && dataWp < new Date(dataInizio)) return false;
+      if (dataFine) { const fine = new Date(dataFine); fine.setHours(23,59,59,999); if (dataWp > fine) return false; }
       return true;
     });
   }, [workplans, dataInizio, dataFine]);
 
+  // Piani PRIVATI con costoPrestazione > 0
+  const pianiPrivati = useMemo(() =>
+    workplansFiltratiPerData.filter(wp =>
+      (wp.patient?.tipoGestione === 'privato' || !wp.patient?.tipoGestione) &&
+      wp.costoPrestazione && wp.costoPrestazione > 0
+    ), [workplansFiltratiPerData]);
+
+  // Piani CONVENZIONE con tariffaAsl > 0
+  const pianiConvenzione = useMemo(() =>
+    workplansFiltratiPerData.filter(wp =>
+      wp.patient?.tipoGestione === 'convenzione' &&
+      wp.tariffaAsl && wp.tariffaAsl > 0
+    ), [workplansFiltratiPerData]);
+
+  // Riepilogo per ASL (convenzione)
+  const riepiloghiPerAsl = useMemo(() => {
+    const map = new Map<string, RiepilogoAsl>();
+    pianiConvenzione.forEach(wp => {
+      const aslKey = wp.patient?.siat?.asl || 'ASL non specificata';
+      const existing = map.get(aslKey);
+      const compenso = wp.compensoTotale || 0;
+      const tariffa = wp.tariffaAsl || 0;
+      if (existing) {
+        existing.workPlans.push(wp);
+        existing.totaleTariffe += tariffa;
+        existing.totaleCompensoOperatori += compenso;
+        existing.numeroPrestazioni += 1;
+        if (!existing.workPlans.slice(0, -1).some(p => p.patient._id === wp.patient._id))
+          existing.numeroPazienti += 1;
+      } else {
+        map.set(aslKey, { asl: aslKey, workPlans: [wp], totaleTariffe: tariffa, totaleCompensoOperatori: compenso, numeroPrestazioni: 1, numeroPazienti: 1 });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => b.totaleTariffe - a.totaleTariffe);
+  }, [pianiConvenzione]);
+
+  const totaliAsl = useMemo(() => riepiloghiPerAsl.reduce(
+    (acc, r) => ({ totale: acc.totale + r.totaleTariffe, compenso: acc.compenso + r.totaleCompensoOperatori, prestazioni: acc.prestazioni + r.numeroPrestazioni }),
+    { totale: 0, compenso: 0, prestazioni: 0 }
+  ), [riepiloghiPerAsl]);
+
   const riepiloghiPerPaziente = useMemo(() => {
     const map = new Map<string, RiepilogoPaziente>();
-    workplansFiltratiPerData.forEach(wp => {
+    pianiPrivati.forEach(wp => {
       const patientId = wp.patient._id;
       const existing = map.get(patientId);
       const compensoOp = wp.compensoTotale || 0;
@@ -105,7 +148,7 @@ export default function GestioneFatturazione() {
       return nomeCompleto.includes(ricercaPaziente.toLowerCase()) ||
              r.patient.codiceFiscale?.toLowerCase().includes(ricercaPaziente.toLowerCase());
     }).sort((a, b) => b.totaleFatturato - a.totaleFatturato);
-  }, [workplansFiltratiPerData, ricercaPaziente]);
+  }, [pianiPrivati, ricercaPaziente]);
 
   const totaliGenerali = useMemo(() => {
     return riepiloghiPerPaziente.reduce((acc, r) => ({
@@ -153,19 +196,40 @@ export default function GestioneFatturazione() {
     setTimeout(() => win.print(), 500);
   };
 
+  const stampaRiepilogoAsl = () => {
+    const periodo = dataInizio && dataFine ? `${formatData(dataInizio)} - ${formatData(dataFine)}` : 'Tutto il periodo';
+    const righe = pianiConvenzione.map(wp => `<tr><td>${formatData(wp.date)}</td><td>${wp.patient.firstName} ${wp.patient.lastName}</td><td>${wp.task}</td><td>${wp.staff.firstName} ${wp.staff.lastName}</td><td>${wp.patient.siat?.asl || ''}</td><td style="text-align:right;font-weight:700;color:#0369a1">€${(wp.tariffaAsl||0).toFixed(2)}</td><td style="text-align:right">€${(wp.compensoTotale||0).toFixed(2)}</td></tr>`).join('');
+    const html = `<!DOCTYPE html><html><head><style>body{font-family:Arial;margin:24px;font-size:12px}h1{color:#0369a1}table{width:100%;border-collapse:collapse;margin-top:16px}th{background:#0369a1;color:#fff;padding:8px;text-align:left}td{padding:7px 8px;border-bottom:1px solid #e2e8f0}.totali{margin-top:20px;background:#eff6ff;padding:16px;border-radius:8px;display:flex;gap:40px}</style></head><body><h1>🏥 Tariffa da Fatturare all'ASL — Convenzione SIAT</h1><div style="color:#666;margin-bottom:16px">Periodo: ${periodo}</div><div class="totali"><div><div style="font-size:11px;color:#0369a1">TOTALE DA FATTURARE ALL'ASL</div><div style="font-size:24px;font-weight:800;color:#0369a1">€${totaliAsl.totale.toFixed(2)}</div></div><div><div style="font-size:11px;color:#7c3aed">COMPENSI OPERATORI</div><div style="font-size:24px;font-weight:800;color:#7c3aed">€${totaliAsl.compenso.toFixed(2)}</div></div><div><div style="font-size:11px;color:#374151">PRESTAZIONI</div><div style="font-size:24px;font-weight:800">${totaliAsl.prestazioni}</div></div></div><table style="margin-top:24px"><thead><tr><th>Data</th><th>Paziente</th><th>Prestazione</th><th>Operatore</th><th>ASL</th><th style="text-align:right">Tariffa ASL</th><th style="text-align:right">Comp. Op.</th></tr></thead><tbody>${righe}</tbody></table></body></html>`;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 500);
+  };
+
   return (
     <section className="fade-in">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px', color: '#1e4d8c' }}>
-          <Receipt size={28} />Gestione Fatturazione Pazienti
+        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px', color: isConvenzione ? '#0369a1' : '#1e4d8c' }}>
+          {isConvenzione ? <Building2 size={28} /> : <Receipt size={28} />}
+          {isConvenzione ? 'Tariffa da Fatturare all\u2019ASL' : 'Fatturazione Pazienti Privati'}
         </h1>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={() => visualizzaPDF()} style={{ background: '#3b82f6', color: 'white', padding: '10px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FileText size={18} />Visualizza Report
-          </button>
-          <button onClick={() => stampaPDF()} style={{ background: '#1e4d8c', color: 'white', padding: '10px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Printer size={18} />Stampa Report
-          </button>
+          {isConvenzione ? (
+            <button onClick={stampaRiepilogoAsl} style={{ background: '#0369a1', color: 'white', padding: '10px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Printer size={18} />Stampa Report ASL
+            </button>
+          ) : (
+            <>
+              <button onClick={() => visualizzaPDF()} style={{ background: '#3b82f6', color: 'white', padding: '10px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FileText size={18} />Visualizza Report
+              </button>
+              <button onClick={() => stampaPDF()} style={{ background: '#1e4d8c', color: 'white', padding: '10px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Printer size={18} />Stampa Report
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -195,8 +259,104 @@ export default function GestioneFatturazione() {
         )}
       </div>
 
-      {/* Totali */}
-      {!loading && totaliGenerali.numeroPazienti > 0 && (
+      {/* ══════════════════════ VISTA CONVENZIONE ASL ══════════════════════ */}
+      {isConvenzione && !loading && (
+        <div>
+          {/* Totali ASL */}
+          {totaliAsl.prestazioni > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+              <div style={{ background: 'linear-gradient(135deg, #0369a1, #0284c7)', borderRadius: '12px', padding: '20px', color: 'white', textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 800 }}>{formatEuro(totaliAsl.totale)}</div>
+                <div style={{ fontSize: '0.875rem', opacity: 0.9, marginTop: '4px' }}>🏛 Totale da fatturare all'ASL</div>
+              </div>
+              <div style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', borderRadius: '12px', padding: '20px', color: 'white', textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 800 }}>{formatEuro(totaliAsl.compenso)}</div>
+                <div style={{ fontSize: '0.875rem', opacity: 0.9, marginTop: '4px' }}>👤 Compensi Operatori</div>
+              </div>
+              <div style={{ background: 'linear-gradient(135deg, #059669, #047857)', borderRadius: '12px', padding: '20px', color: 'white', textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 800 }}>{formatEuro(totaliAsl.totale - totaliAsl.compenso)}</div>
+                <div style={{ fontSize: '0.875rem', opacity: 0.9, marginTop: '4px' }}>📈 Margine</div>
+              </div>
+              <div style={{ background: 'linear-gradient(135deg, #475569, #334155)', borderRadius: '12px', padding: '20px', color: 'white', textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 800 }}>{totaliAsl.prestazioni}</div>
+                <div style={{ fontSize: '0.875rem', opacity: 0.9, marginTop: '4px' }}>🩺 Prestazioni</div>
+              </div>
+            </div>
+          )}
+
+          {/* Riepilogo per ASL */}
+          {riepiloghiPerAsl.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px', background: '#f0f9ff', borderRadius: '12px', border: '1px solid #bae6fd' }}>
+              <Building2 size={48} style={{ color: '#0284c7', marginBottom: '16px', opacity: 0.4 }} />
+              <h3 style={{ margin: '0 0 8px', color: '#0369a1' }}>Nessuna tariffa ASL registrata</h3>
+              <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>Aggiungi il campo "Tariffa ASL" ai piani di lavoro dei pazienti in convenzione</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {riepiloghiPerAsl.map((r) => {
+                const espanso = aslEspansa === r.asl;
+                return (
+                  <div key={r.asl} style={{ background: 'white', borderRadius: '12px', border: '1px solid #bae6fd', overflow: 'hidden' }}>
+                    <div onClick={() => setAslEspansa(espanso ? null : r.asl)} style={{ padding: '20px', background: '#eff6ff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0369a1' }}>
+                          <Building2 size={24} />
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#0369a1' }}>{r.asl}</div>
+                          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{r.numeroPrestazioni} prestazioni · {r.numeroPazienti} pazienti</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Tariffa ASL / Compenso Op.</div>
+                          <div style={{ fontSize: '1rem', fontWeight: 700 }}>
+                            <span style={{ color: '#0369a1' }}>{formatEuro(r.totaleTariffe)}</span>
+                            <span style={{ color: '#9ca3af', margin: '0 8px' }}>/</span>
+                            <span style={{ color: '#7c3aed' }}>{formatEuro(r.totaleCompensoOperatori)}</span>
+                          </div>
+                        </div>
+                        {espanso ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                      </div>
+                    </div>
+                    {espanso && (
+                      <div style={{ padding: '20px' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
+                              <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '0.875rem' }}>Data</th>
+                              <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '0.875rem' }}>Paziente</th>
+                              <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '0.875rem' }}>Prestazione</th>
+                              <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '0.875rem' }}>Operatore</th>
+                              <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '0.875rem' }}>Tariffa ASL</th>
+                              <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '0.875rem' }}>Comp. Op.</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {r.workPlans.map((wp) => (
+                              <tr key={wp._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                <td style={{ padding: '10px 8px' }}>{formatData(wp.date)}</td>
+                                <td style={{ padding: '10px 8px', fontWeight: 600 }}>{wp.patient.firstName} {wp.patient.lastName}</td>
+                                <td style={{ padding: '10px 8px' }}>{wp.task}</td>
+                                <td style={{ padding: '10px 8px' }}>{wp.staff.firstName} {wp.staff.lastName}</td>
+                                <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 700, color: '#0369a1' }}>{formatEuro(wp.tariffaAsl || 0)}</td>
+                                <td style={{ padding: '10px 8px', textAlign: 'right', color: '#7c3aed' }}>{formatEuro(wp.compensoTotale || 0)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ══════════════════════ VISTA PRIVATI ══════════════════════ */}
+      {!isConvenzione && !loading && totaliGenerali.numeroPazienti > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           <div style={{ background: 'linear-gradient(135deg, #166534 0%, #14532d 100%)', borderRadius: '12px', padding: '20px', color: 'white', textAlign: 'center' }}>
             <div style={{ fontSize: '2rem', fontWeight: 800 }}>{formatEuro(totaliGenerali.totaleFatturato)}</div>
@@ -217,8 +377,8 @@ export default function GestioneFatturazione() {
         </div>
       )}
 
-      {/* Lista */}
-      {loading ? (
+      {/* Lista pazienti PRIVATI */}
+      {!isConvenzione && (loading ? (
         <div style={{ textAlign: 'center', padding: '40px' }}><p>Caricamento...</p></div>
       ) : riepiloghiPerPaziente.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px', background: '#f9fafb', borderRadius: '12px' }}>
@@ -300,7 +460,7 @@ export default function GestioneFatturazione() {
             );
           })}
         </div>
-      )}
+      ))}
     </section>
   );
 }

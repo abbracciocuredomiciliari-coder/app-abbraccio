@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
+import { useModalita } from '../context/ModalitaContext';
 
 // ─── Interfacce ───────────────────────────────────────────────────────────────
 
@@ -14,6 +15,8 @@ interface Paziente {
   contactPhone?: string;
   assistanceNeeds?: string;
   pianiAssegnati?: number;
+  tipoGestione?: 'privato' | 'convenzione';
+  siat?: { npi?: string; tipologiaCura?: string; asl?: string; distretto?: string; dataScadenzaAutorizzazione?: string };
 }
 
 interface Piano {
@@ -30,7 +33,8 @@ interface Piano {
   compensoTotale?: number;
   compensoPagato?: boolean;
   costoPrestazione?: number;
-  patient: { _id: string; firstName: string; lastName: string };
+  tariffaAsl?: number;
+  patient: { _id: string; firstName: string; lastName: string; tipoGestione?: string };
   staff: { _id: string; firstName: string; lastName: string; role: string };
 }
 
@@ -137,10 +141,12 @@ interface PortaleOperatoreProps {
 
 export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperatoreProps) {
   const { user } = useAuth();
+  const { modalita, isConvenzione } = useModalita();
   const navigate = useNavigate();
 
   // Selezione paziente / piano
   const [pazienti, setPazienti] = useState<Paziente[]>([]);
+  const [tuttiIPazienti, setTuttiIPazienti] = useState<Paziente[]>([]);
   const [pazienteSelezionato, setPazienteSelezionato] = useState<Paziente | null>(null);
   const [piani, setPiani] = useState<Piano[]>([]);
   const [pianoSelezionato, setPianoSelezionato] = useState<Piano | null>(null);
@@ -200,10 +206,14 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
       ]);
       const tuttiPiani: Piano[] = pianiRes.data || [];
       setTuttiIPiani(tuttiPiani);
-      const pazientiConPianoAttivo = pazientiRes.data.filter((paz: Paziente) =>
+      const tuttiPazientiAttivi = pazientiRes.data.filter((paz: Paziente) =>
         tuttiPiani.some(p => p.patient?._id === paz._id && p.status === 'pending')
       );
-      setPazienti(pazientiConPianoAttivo);
+      setTuttiIPazienti(tuttiPazientiAttivi);
+      const pazientiPerModalita = tuttiPazientiAttivi.filter((paz: Paziente) =>
+        isConvenzione ? paz.tipoGestione === 'convenzione' : (paz.tipoGestione === 'privato' || !paz.tipoGestione)
+      );
+      setPazienti(pazientiPerModalita);
       const esami: any[] = esamiRes.data || [];
       setEsamiAttivi(esami.filter(e => e.status === 'pianificato' && !e.archiviato).length);
     } catch {}
@@ -215,6 +225,18 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
     const interval = setInterval(() => caricaDati(true), 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Rifiltra pazienti e resetta selezione quando cambia modalità
+  useEffect(() => {
+    const filtrati = tuttiIPazienti.filter((paz: Paziente) =>
+      isConvenzione ? paz.tipoGestione === 'convenzione' : (paz.tipoGestione === 'privato' || !paz.tipoGestione)
+    );
+    setPazienti(filtrati);
+    setPazienteSelezionato(null);
+    setPiani([]);
+    setPianoSelezionato(null);
+    setMostraTuttiPiani(false);
+  }, [modalita]);
 
   // ─── Selezione paziente ────────────────────────────────────────────────────
 
@@ -592,7 +614,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
           ) : (
             <div>
               <div style={{ fontWeight: '600', marginBottom: '12px', fontSize: '0.95rem', color: '#374151' }}>
-                👤 Pazienti in carico ({pazienti.length})
+                {isConvenzione ? '🏥 Pazienti in convenzione' : '👤 Pazienti in carico'} ({pazienti.length})
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {pazienti.map(paz => {
@@ -616,13 +638,19 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                       }}
                     >
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: '700', fontSize: '1rem', color: '#1e4d8c', marginBottom: '4px' }}>
-                          👤 {paz.firstName} {paz.lastName}
+                        <div style={{ fontWeight: '700', fontSize: '1rem', color: '#1e4d8c', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          {paz.tipoGestione === 'convenzione' ? '🏥' : '👤'} {paz.firstName} {paz.lastName}
+                          {paz.tipoGestione === 'convenzione' && (
+                            <span style={{ background: '#0284c7', color: 'white', fontSize: '0.68rem', fontWeight: '700', padding: '2px 7px', borderRadius: '4px', letterSpacing: '0.03em' }}>CONVENZIONE</span>
+                          )}
                         </div>
                         <div style={{ fontSize: '0.83rem', color: '#555', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                           {paz.address && <span>📍 {paz.address}</span>}
                           {paz.contactPhone && <span>📞 {paz.contactPhone}</span>}
-                          {paz.assistanceNeeds && <span>🩺 {paz.assistanceNeeds}</span>}
+                          {paz.tipoGestione === 'convenzione' && paz.siat?.tipologiaCura
+                            ? <span>🩺 {paz.siat.tipologiaCura}</span>
+                            : paz.assistanceNeeds && <span>🩺 {paz.assistanceNeeds}</span>}
+                          {paz.siat?.asl && <span>🏛 {paz.siat.asl}</span>}
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', flexShrink: 0 }}>

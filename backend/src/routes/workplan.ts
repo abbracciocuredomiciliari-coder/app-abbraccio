@@ -46,9 +46,17 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
     }
 
     const workplans = await WorkPlan.find(filter)
-      .populate('patient', 'firstName lastName')
+      .populate('patient', 'firstName lastName tipoGestione')
       .populate('staff', 'firstName lastName role category active')
       .sort({ date: 1 });
+
+    // Filtro opzionale per tipo gestione (privato/convenzione)
+    const { tipo } = req.query;
+    if (tipo === 'privato' || tipo === 'convenzione') {
+      const filtered = workplans.filter((wp: any) => (wp.patient as any)?.tipoGestione === tipo);
+      return res.json(filtered);
+    }
+
     return res.json(workplans);
   } catch (error) {
     return res.status(500).json({ message: 'Errore nel recupero del piano di lavoro', error });
@@ -65,7 +73,7 @@ router.get('/miei-pazienti', authenticateToken, async (req: Request, res: Respon
     }
 
     const piani = await WorkPlan.find({ staff: staffMember._id, status: { $ne: 'cancelled' } })
-      .populate('patient', 'firstName lastName birthDate address contactPhone assistanceNeeds')
+      .populate('patient', 'firstName lastName birthDate address contactPhone assistanceNeeds tipoGestione siat')
       .sort({ date: -1 });
 
     // Deduplica pazienti
