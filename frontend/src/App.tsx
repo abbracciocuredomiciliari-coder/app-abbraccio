@@ -200,12 +200,15 @@ function AppShell() {
           {/* ===== MENU PRIVILEGIATI (admin, coordinator, direttore) ===== */}
           {user && isPrivilegiato(user.role) && (
             <>
-              {(user.role === 'admin' || user.role === 'coordinator' || user.role === 'direttore') && (
-                <Link to="/dashboard" className={isActive('/dashboard') ? 'active' : ''}>
-                  <LayoutDashboard size={18} />
-                  Dashboard
-                </Link>
-              )}
+              {/* — Panoramica — */}
+              <span className="nav-section-label">Panoramica</span>
+              <Link to="/dashboard" className={isActive('/dashboard') ? 'active' : ''}>
+                <LayoutDashboard size={18} />
+                Dashboard
+              </Link>
+
+              {/* — Clinico — */}
+              <span className="nav-section-label">Clinico</span>
               {!isConvenzione && (
                 <Link to="/patients" className={isActive('/patients') ? 'active' : ''}>
                   <Users size={18} />
@@ -218,29 +221,40 @@ function AppShell() {
                   Pazienti Convenzione
                 </Link>
               )}
-              <Link to="/staff" className={isActive('/staff') ? 'active' : ''}>
-                <UserPlus size={18} />
-                Personale
+              <Link to="/workplan" className={isActive('/workplan') ? 'active' : ''}>
+                <Calendar size={18} />
+                Piano lavoro
               </Link>
               <Link to="/protocolli-procedure" className={isActive('/protocolli-procedure') ? 'active' : ''}>
                 <ClipboardList size={18} />
                 Protocolli e Procedure
               </Link>
-              <Link to="/workplan" className={isActive('/workplan') ? 'active' : ''}>
-                <Calendar size={18} />
-                Piano lavoro e esami strumentali
+              <Link to="/storico-cliniche" className={isActive('/storico-cliniche') ? 'active' : ''}>
+                <BookOpen size={18} />
+                Storico cartelle
+              </Link>
+              <Link to="/archivio-cartelle" className={isActive('/archivio-cartelle') ? 'active' : ''}>
+                <Archive size={18} />
+                Archivio cartelle
+              </Link>
+              <Link to="/assegnazione-pai" className={isActive('/assegnazione-pai') ? 'active' : ''}>
+                <Map size={18} />
+                {isConvenzione ? 'Assegnazione PAI' : 'Assegna Piano'}
+              </Link>
+
+              {/* — Operativo — */}
+              <span className="nav-section-label">Operativo</span>
+              <Link to="/staff" className={isActive('/staff') ? 'active' : ''}>
+                <UserPlus size={18} />
+                Personale
               </Link>
               <Link to="/strumenti" className={isActive('/strumenti') ? 'active' : ''}>
                 <Stethoscope size={18} />
                 Strumenti e presidi
               </Link>
-              <Link to="/storico-cliniche" className={isActive('/storico-cliniche') ? 'active' : ''}>
-                <BookOpen size={18} />
-                Storico cartelle cliniche
-              </Link>
-              <Link to="/archivio-cartelle" className={isActive('/archivio-cartelle') ? 'active' : ''}>
-                <Archive size={18} />
-                Archivio cartelle
+              <Link to="/report-consegne" className={isActive('/report-consegne') ? 'active' : ''}>
+                <Package size={18} />
+                Richieste e Consegne
               </Link>
               <Link
                 to="/checklist-hub"
@@ -249,24 +263,22 @@ function AppShell() {
                 <CheckSquare size={18} />
                 Check List
               </Link>
+
+              {/* — Amministrazione — */}
+              <span className="nav-section-label">Amministrazione</span>
               <Link to="/compenso-incarichi" className={isActive('/compenso-incarichi') ? 'active' : ''}>
                 <Euro size={18} />
-                Compenso per incarichi
-              </Link>
-              <Link to="/report-consegne" className={isActive('/report-consegne') ? 'active' : ''}>
-                <Package size={18} />
-                Richieste e Consegne
+                Compenso incarichi
               </Link>
               <Link to="/gestione-fatturazione" className={isActive('/gestione-fatturazione') ? 'active' : ''}>
                 <Receipt size={18} />
                 Fatturazione
               </Link>
-              <Link to="/assegnazione-pai" className={isActive('/assegnazione-pai') ? 'active' : ''}>
-                <Map size={18} />
-                {isConvenzione ? 'Assegnazione PAI' : 'Assegna Piano'}
-              </Link>
+
+              {/* — Sistema (solo admin) — */}
               {user.role === 'admin' && (
                 <>
+                  <span className="nav-section-label">Sistema</span>
                   <Link to="/gestione-utenti" className={isActive('/gestione-utenti') ? 'active' : ''}>
                     <ShieldCheck size={18} />
                     Gestione Utenti

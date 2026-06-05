@@ -1,6 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
+import SkeletonList from '../components/SkeletonList';
 import {
   Users,
   UserPlus,
@@ -416,7 +417,7 @@ function Staff() {
   const canEdit = user && (user.role === 'admin' || user.role === 'coordinator');
 
   return (
-    <section>
+    <section className="section-wide">
       <h2>
         <Users size={28} />
         Gestione Personale
@@ -671,10 +672,7 @@ function Staff() {
           Elenco Personale ({filteredStaff.length})
         </h3>
         {loading ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '24px', color: 'var(--gray-500)' }}>
-            <Loader2 size={20} className="spin" />
-            Caricamento personale...
-          </div>
+          <div style={{ padding: '8px 0' }}><SkeletonList rows={6} showHeader={false} /></div>
         ) : filteredStaff.length === 0 ? (
           <p style={{ textAlign: 'center', padding: '32px', color: 'var(--gray-500)' }}>
             Nessun membro dello staff trovato.

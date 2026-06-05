@@ -209,7 +209,7 @@ export default function GestioneFatturazione() {
   };
 
   return (
-    <section className="fade-in">
+    <section className="fade-in section-wide">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px', color: isConvenzione ? '#0369a1' : '#1e4d8c' }}>
           {isConvenzione ? <Building2 size={28} /> : <Receipt size={28} />}

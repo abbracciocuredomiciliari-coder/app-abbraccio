@@ -165,16 +165,40 @@ function Dashboard() {
     },
   ].filter(Boolean) as { title: string; desc: string; icon: any; color: string; bgColor: string; border: string; link: string; btnLabel: string }[];
 
+  if (loading) {
+    return (
+      <section>
+        <h2><Activity size={28} />Dashboard</h2>
+        <div className="dashboard-grid" style={{ marginBottom: '24px' }}>
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="dashboard-card" style={{ pointerEvents: 'none' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                <div style={{ flex: 1 }}>
+                  <div className="skeleton skeleton-text" style={{ width: '70%', marginBottom: '6px' }} />
+                  <div className="skeleton skeleton-text" style={{ width: '45%', height: '0.75rem' }} />
+                </div>
+                <div className="skeleton" style={{ width: '40px', height: '40px', borderRadius: '8px', flexShrink: 0 }} />
+              </div>
+              <div className="skeleton" style={{ width: '50%', height: '2.2rem', borderRadius: '6px' }} />
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {[1, 2].map(i => (
+            <div key={i} className="skeleton" style={{ height: '72px', borderRadius: '10px' }} />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section>
       <h2>
         <Activity size={28} />
         Dashboard
       </h2>
-      {loading ? (
-        <p>Caricamento...</p>
-      ) : (
-        <>
+      <>
           <div className="dashboard-grid">
             {dashboardCards.map((card) => (
               <button
@@ -347,8 +371,7 @@ function Dashboard() {
               ))}
             </div>
           )}
-        </>
-      )}
+      </>
     </section>
   );
 }

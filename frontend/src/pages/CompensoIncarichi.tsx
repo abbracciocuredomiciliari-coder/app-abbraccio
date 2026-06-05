@@ -177,7 +177,7 @@ export default function CompensoIncarichi() {
   }
 
   return (
-    <section>
+    <section className="section-wide">
       <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <Euro size={28} color="#7c3aed" />
         Compenso per Incarichi

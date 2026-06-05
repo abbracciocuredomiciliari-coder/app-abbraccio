@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
+import SkeletonList from '../components/SkeletonList';
 import {
   Search,
   UserPlus,
@@ -482,10 +483,7 @@ function Patients() {
           Elenco Pazienti ({filteredPatients.length})
         </h3>
         {loading ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '24px', color: 'var(--gray-500)' }}>
-            <Loader2 size={20} className="spin" />
-            Caricamento pazienti...
-          </div>
+          <div style={{ padding: '8px 0' }}><SkeletonList rows={6} showHeader={false} /></div>
         ) : filteredPatients.length === 0 ? (
           <p style={{ textAlign: 'center', padding: '32px', color: 'var(--gray-500)' }}>
             {searchTerm ? 'Nessun paziente trovato.' : 'Nessun paziente presente.'}

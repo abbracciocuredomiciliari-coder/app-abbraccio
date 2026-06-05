@@ -91,6 +91,14 @@
   --r-2xl: 20px;
   --r-full: 9999px;
 
+  /* Alias radius (compatibilità componenti) */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+
   /* Transitions */
   --t-fast: 150ms ease;
   --t-normal: 200ms ease;
@@ -220,8 +228,23 @@ body {
 
 .sidebar nav a svg { flex-shrink: 0; opacity: 0.9; }
 
-/* Nav section dividers */
-.sidebar nav a:nth-child(3) { margin-top: 8px; }
+/* Nav section labels */
+.nav-section-label {
+  padding: 12px 14px 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  user-select: none;
+  pointer-events: none;
+}
+
+.nav-section-label:not(:first-child) {
+  margin-top: 6px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  padding-top: 14px;
+}
 
 /* User area */
 .user-area {
@@ -280,6 +303,13 @@ body {
 
 section {
   max-width: 980px;
+  margin: 0 auto;
+}
+
+/* Pagine con tabelle/report dense — più spazio su monitor larghi */
+section.wide,
+.section-wide {
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -777,6 +807,26 @@ div[style*="border:1px solid #e5e7eb"] {
    Responsive
    ============================================ */
 
+/* ============================================
+   Tablet — breakpoint intermedio (769-1024px)
+   ============================================ */
+@media (min-width: 769px) and (max-width: 1024px) {
+  :root { --sidebar-width: 220px; }
+
+  .content { padding: 20px 22px; }
+
+  section { max-width: 100%; }
+
+  .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .sidebar nav a {
+    padding: 9px 12px;
+    font-size: 0.83rem;
+  }
+
+  .sidebar h1 { font-size: 0.95rem; padding: 16px 12px; }
+}
+
 @media (max-width: 768px) {
   :root { --sidebar-width: 0px; }
 
@@ -867,6 +917,7 @@ div[style*="border:1px solid #e5e7eb"] {
   /* Contenuto a tutta larghezza, sotto la topbar */
   .content { margin-left: 0; padding: 16px; padding-top: 72px; }
   section { max-width: 100%; }
+  section.wide, .section-wide { max-width: 100%; }
   .dashboard-grid { grid-template-columns: 1fr 1fr; }
   .login-form { padding: 24px; }
 }
