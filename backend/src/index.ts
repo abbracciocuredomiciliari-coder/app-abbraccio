@@ -98,9 +98,9 @@ app.get('/api/health', (req: Request, res: Response) => {
 });
 
 app.use('/api/auth', rateLimitByIP(5, 900000), authRouter); // Max 5 tentativi ogni 15 min
-app.use('/api/gdpr', rateLimitByUser(30, 60000), gdprRouter); // Max 30 req/min per GDPR
-app.use('/api/export', rateLimitByUser(20, 60000), exportSiatRouter); // Export formato SIAT
-app.use('/api/dashboard', rateLimitByUser(100, 60000), dashboardRouter);
+app.use('/api/gdpr', gdprRouter);
+app.use('/api/export', exportSiatRouter);
+app.use('/api/dashboard', dashboardRouter);
 app.use('/api/patients', patientsRouter);
 app.use('/api/staff', staffRouter);
 app.use('/api/workplan', workplanRouter);
@@ -117,8 +117,8 @@ app.use('/api/checklist-defibrillatore', checklistDefibrillatoreRouter);
 app.use('/api/scheda-controllo-defibrillatore', schedaControlloDefibrillatoreRouter);
 app.use('/api/checklist-glucometro', checklistGlucometroRouter);
 app.use('/api/esami-strumentali', esamiStrumentaliRouter);
-app.use('/api/audit-log', rateLimitByUser(20, 60000), auditLogRouter);
-app.use('/api/supply-requests', rateLimitByUser(50, 60000), supplyRequestsRouter);
+app.use('/api/audit-log', auditLogRouter);
+app.use('/api/supply-requests', supplyRequestsRouter);
 // Alias senza prefisso /api per compatibilità con URL diretti degli allegati
 app.use('/allegati', allegatiRouter);
 
