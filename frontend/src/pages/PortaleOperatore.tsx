@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
-import FirmaCanvas from '../components/FirmaCanvas';
 
 // ─── Interfacce ───────────────────────────────────────────────────────────────
 
@@ -180,14 +179,6 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
   const [accessi, setAccessi] = useState<Accesso[]>([]);
   const [riepilogo, setRiepilogo] = useState<any>(null);
   const [accessoAperto, setAccessoAperto] = useState<Accesso | null>(null);
-  const [noteAccesso, setNoteAccesso] = useState('');
-  const [registrandoAccesso, setRegistrandoAccesso] = useState(false);
-  // Flusso firma accesso: null | 'entrata-op' | 'entrata-paz' | 'uscita-op' | 'uscita-paz'
-  const [stepFirmaAccesso, setStepFirmaAccesso] = useState<string | null>(null);
-  const [firmaOpAccesso, setFirmaOpAccesso] = useState('');
-  const [firmaPazAccesso, setFirmaPazAccesso] = useState('');
-  const [nomeFirmatarioAccesso, setNomeFirmatarioAccesso] = useState('');
-  const [ruoloFirmatarioAccesso, setRuoloFirmatarioAccesso] = useState<'paziente' | 'caregiver'>('paziente');
 
   // Diario clinico
   const [diario, setDiario] = useState<DiarioEntry[]>([]);
@@ -360,43 +351,6 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
     }
   };
 
-  // ─── Accessi ───────────────────────────────────────────────────────────────
-
-  const registraEntrata = async (firmaOp: string, firmaPaz: string, nomeFirm: string, ruoloFirm: string) => {
-    if (!pianoSelezionato) return;
-    setRegistrandoAccesso(true);
-    try {
-      const res = await api.post(`/workplan-access/${pianoSelezionato._id}/entrata`, { note: noteAccesso, firmaOperatore: firmaOp, firmaPaziente: firmaPaz, nomeFirmatarioPaziente: nomeFirm, ruoloFirmatario: ruoloFirm });
-      setNoteAccesso('');
-      setStepFirmaAccesso(null); setFirmaOpAccesso(''); setFirmaPazAccesso(''); setNomeFirmatarioAccesso(''); setRuoloFirmatarioAccesso('paziente');
-      setAccessoAperto(res.data);
-      const accessiRes = await api.get(`/workplan/${pianoSelezionato._id}/accessi`);
-      setAccessi(accessiRes.data.accessi || []);
-      setRiepilogo(accessiRes.data.riepilogo || null);
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Errore nella registrazione entrata');
-    } finally {
-      setRegistrandoAccesso(false);
-    }
-  };
-
-  const registraUscita = async (firmaOp: string, firmaPaz: string, nomeFirm: string, ruoloFirm: string) => {
-    if (!pianoSelezionato || !accessoAperto) return;
-    setRegistrandoAccesso(true);
-    try {
-      await api.patch(`/workplan-access/${accessoAperto._id}/uscita`, { note: noteAccesso, firmaOperatore: firmaOp, firmaPaziente: firmaPaz, nomeFirmatarioPaziente: nomeFirm, ruoloFirmatario: ruoloFirm });
-      setNoteAccesso('');
-      setStepFirmaAccesso(null); setFirmaOpAccesso(''); setFirmaPazAccesso(''); setNomeFirmatarioAccesso(''); setRuoloFirmatarioAccesso('paziente');
-      setAccessoAperto(null);
-      const accessiRes = await api.get(`/workplan/${pianoSelezionato._id}/accessi`);
-      setAccessi(accessiRes.data.accessi || []);
-      setRiepilogo(accessiRes.data.riepilogo || null);
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Errore nella registrazione uscita');
-    } finally {
-      setRegistrandoAccesso(false);
-    }
-  };
 
   // ─── Diario clinico ────────────────────────────────────────────────────────
 
@@ -1124,106 +1078,29 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
               </div>
             )}
 
-            {/* ── REGISTRAZIONE ACCESSO (tutti i tipi di piano) ── */}
+            {/* ── REGISTRAZIONE ACCESSO (apre pagina dedicata ottimizzata tablet) ── */}
             <div style={{ background: accessoAperto ? 'rgba(5,150,105,0.06)' : 'rgba(30,77,140,0.04)', border: `1px solid ${accessoAperto ? 'rgba(5,150,105,0.3)' : 'rgba(30,77,140,0.2)'}`, borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
               <h4 style={{ margin: '0 0 10px', color: accessoAperto ? '#065f46' : '#1e4d8c' }}>
                 {accessoAperto ? '🟢 Accesso in corso' : '🔵 Registra accesso'}
               </h4>
               {accessoAperto && (
-                <p style={{ margin: '0 0 10px', fontSize: '0.9rem', color: '#374151' }}>
+                <p style={{ margin: '0 0 12px', fontSize: '0.9rem', color: '#374151' }}>
                   Entrata: <strong>{formatOra(accessoAperto.oraEntrata)}</strong> del <strong>{formatData(accessoAperto.oraEntrata)}</strong>
                 </p>
               )}
-
-              {/* Pulsanti iniziali — visibili solo se non è in corso il flusso firma */}
-              {!stepFirmaAccesso && (
-                <>
-                  <label style={{ display: 'block', marginBottom: '12px' }}>
-                    Note accesso (opzionale)
-                    <input value={noteAccesso} onChange={e => setNoteAccesso(e.target.value)} placeholder="Es. parametri rilevati, attività svolte..." style={{ marginTop: '4px' }} />
-                  </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <button type="button" onClick={() => registraEntrata('', '', '', '')} disabled={!!accessoAperto || registrandoAccesso}
-                      style={{ padding: '14px', borderRadius: '10px', border: 'none', cursor: accessoAperto ? 'not-allowed' : 'pointer', backgroundColor: accessoAperto ? '#d1fae5' : '#16a34a', color: 'white', fontWeight: '700', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: accessoAperto ? 0.6 : 1 }}>
-                      ▶️ ENTRATA
-                    </button>
-                    <button type="button" onClick={() => !!accessoAperto && setStepFirmaAccesso('uscita-op')} disabled={!accessoAperto || registrandoAccesso}
-                      style={{ padding: '14px', borderRadius: '10px', border: 'none', cursor: !accessoAperto ? 'not-allowed' : 'pointer', backgroundColor: !accessoAperto ? '#fee2e2' : '#dc2626', color: 'white', fontWeight: '700', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: !accessoAperto ? 0.6 : 1 }}>
-                      ⏹️ USCITA
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {/* Step 1: Firma operatore (solo uscita) */}
-              {stepFirmaAccesso === 'uscita-op' && (
-                <div style={{ background: '#f0f9ff', borderRadius: '10px', padding: '14px' }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e4d8c', marginBottom: '10px' }}>
-                    ✍️ Step 1 — Firma Operatore (Uscita)
-                  </div>
-                  <FirmaCanvas
-                    label="Firma Operatore"
-                    sublabel={user?.name || ''}
-                    onFirmaCompleta={f => setFirmaOpAccesso(f)}
-                    onCancella={() => setFirmaOpAccesso('')}
-                    altezza={140}
-                  />
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                    <button type="button" onClick={() => { setStepFirmaAccesso(null); setFirmaOpAccesso(''); }} style={{ flex: 1, background: '#f1f5f9', border: '1px solid #d1d5db', borderRadius: '6px', padding: '9px', cursor: 'pointer', fontSize: '0.85rem' }}>Annulla</button>
-                    <button type="button" disabled={!firmaOpAccesso}
-                      onClick={() => setStepFirmaAccesso('uscita-paz')}
-                      style={{ flex: 2, background: firmaOpAccesso ? '#1e4d8c' : '#bfdbfe', color: 'white', border: 'none', borderRadius: '6px', padding: '9px', cursor: firmaOpAccesso ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: '0.85rem' }}>
-                      Avanti → Firma Paziente
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 2: Firma paziente (solo uscita) */}
-              {stepFirmaAccesso === 'uscita-paz' && (
-                <div style={{ background: '#f0fdf4', borderRadius: '10px', padding: '14px' }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#059669', marginBottom: '10px' }}>
-                    👇 Step 2 — Consegna al Paziente (Uscita)
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-                    {(['paziente', 'caregiver'] as const).map(r => (
-                      <button key={r} type="button" onClick={() => setRuoloFirmatarioAccesso(r)}
-                        style={{ flex: 1, padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.83rem', background: ruoloFirmatarioAccesso === r ? '#059669' : '#f3f4f6', color: ruoloFirmatarioAccesso === r ? 'white' : '#374151', border: `2px solid ${ruoloFirmatarioAccesso === r ? '#059669' : '#d1d5db'}` }}>
-                        {r === 'paziente' ? '🧑 Paziente' : '👨‍👩‍👧 Caregiver'}
-                      </button>
-                    ))}
-                  </div>
-                  <input type="text"
-                    placeholder={`Nome ${ruoloFirmatarioAccesso === 'caregiver' ? 'caregiver' : (pianoSelezionato ? pianoSelezionato.patient.firstName + ' ' + pianoSelezionato.patient.lastName : 'paziente')}`}
-                    value={nomeFirmatarioAccesso}
-                    onChange={e => setNomeFirmatarioAccesso(e.target.value)}
-                    style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', marginBottom: '10px', fontSize: '0.85rem', boxSizing: 'border-box' }}
-                  />
-                  <FirmaCanvas
-                    label={`Firma ${ruoloFirmatarioAccesso === 'caregiver' ? 'Caregiver' : 'Paziente'}`}
-                    sublabel="Firma per confermare la prestazione"
-                    onFirmaCompleta={f => setFirmaPazAccesso(f)}
-                    onCancella={() => setFirmaPazAccesso('')}
-                    altezza={140}
-                  />
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                    <button type="button" onClick={() => setStepFirmaAccesso('uscita-op')} style={{ flex: 1, background: '#f1f5f9', border: '1px solid #d1d5db', borderRadius: '6px', padding: '9px', cursor: 'pointer', fontSize: '0.85rem' }}>← Indietro</button>
-                    <button type="button"
-                      disabled={registrandoAccesso || !firmaPazAccesso}
-                      onClick={() => {
-                        const nomeFirm = nomeFirmatarioAccesso || (pianoSelezionato ? pianoSelezionato.patient.firstName + ' ' + pianoSelezionato.patient.lastName : 'Paziente');
-                        registraUscita(firmaOpAccesso, firmaPazAccesso, nomeFirm, ruoloFirmatarioAccesso);
-                      }}
-                      style={{ flex: 2, background: firmaPazAccesso ? '#059669' : '#d1fae5', color: 'white', border: 'none', borderRadius: '6px', padding: '9px', cursor: firmaPazAccesso ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: '0.85rem' }}>
-                      {registrandoAccesso ? '⏳ Registrazione...' : '✅ Conferma Uscita'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {registrandoAccesso && !stepFirmaAccesso && (
-                <p style={{ margin: '8px 0 0', fontSize: '0.85rem', color: '#888', textAlign: 'center' }}>⏳ Registrazione in corso...</p>
-              )}
+              <button
+                type="button"
+                onClick={() => pianoSelezionato && navigate(`/registrazione-accesso/${pianoSelezionato._id}`)}
+                style={{
+                  width: '100%', padding: '16px', borderRadius: '10px', border: 'none',
+                  cursor: 'pointer', backgroundColor: accessoAperto ? '#16a34a' : '#1e4d8c',
+                  color: 'white', fontWeight: '700', fontSize: '1.05rem',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                }}
+              >
+                {accessoAperto ? '⏹️ Registra Uscita con Firma' : '▶️ Registra Entrata'}
+                <span style={{ fontSize: '0.75rem', opacity: 0.9 }}>(ottimizzato tablet)</span>
+              </button>
             </div>
 
             {/* ── SEZIONE DIARIO CLINICO ── */}
