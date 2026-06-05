@@ -10,6 +10,8 @@ import Breadcrumb from './components/Breadcrumb';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 
 // Lazy load per pagine pesanti
 const Patients = lazy(() => import('./pages/Patients'));
@@ -198,7 +200,7 @@ function AppShell() {
           {/* ===== MENU PRIVILEGIATI (admin, coordinator, direttore) ===== */}
           {user && isPrivilegiato(user.role) && (
             <>
-              {(user.role === 'admin' || user.role === 'coordinator') && (
+              {(user.role === 'admin' || user.role === 'coordinator' || user.role === 'direttore') && (
                 <Link to="/dashboard" className={isActive('/dashboard') ? 'active' : ''}>
                   <LayoutDashboard size={18} />
                   Dashboard
@@ -303,6 +305,8 @@ function AppShell() {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Route privilegiati */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

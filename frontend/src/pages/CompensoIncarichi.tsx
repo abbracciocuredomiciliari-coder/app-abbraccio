@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/api';
-import { Euro, TrendingUp, CheckCircle, Clock, AlertCircle, Receipt, ChevronDown, ChevronUp } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Euro, TrendingUp, CheckCircle, Clock, AlertCircle, Receipt, ChevronDown, ChevronUp, ShieldOff } from 'lucide-react';
 
 interface WorkPlanItem {
   _id: string;
@@ -35,6 +36,9 @@ function formatData(d: string) {
 }
 
 export default function CompensoIncarichi() {
+  const { user } = useAuth();
+  const isPrivilegiato = user && ['admin', 'coordinator', 'direttore'].includes(user.role);
+
   const [workplans, setWorkplans] = useState<WorkPlanItem[]>([]);
   const [riepilogos, setRiepilogos] = useState<RiepilogoItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -159,6 +163,18 @@ export default function CompensoIncarichi() {
   });
 
   if (loading) return <section><p>⏳ Caricamento compensi...</p></section>;
+
+  if (!isPrivilegiato) {
+    return (
+      <section>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '40px 20px', textAlign: 'center' }}>
+          <ShieldOff size={48} color="#dc2626" />
+          <h2 style={{ margin: 0, color: '#dc2626' }}>Accesso non autorizzato</h2>
+          <p style={{ color: '#6b7280', margin: 0 }}>Questa sezione è riservata ad amministratori e coordinatori.</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section>

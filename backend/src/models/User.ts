@@ -11,6 +11,8 @@ export interface IUser extends Document {
   domicilioPartenza?: string;
   raggioAzioneKm?: number;
   domicilioCoords?: { lat: number; lng: number };
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
 }
 
 const userSchema = new Schema<IUser>(
@@ -38,6 +40,8 @@ const userSchema = new Schema<IUser>(
       lat: { type: Number },
       lng: { type: Number },
     },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
   },
   { timestamps: true }
 );

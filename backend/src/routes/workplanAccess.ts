@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
 import WorkPlan from '../models/WorkPlan';
 import WorkPlanAccess from '../models/WorkPlanAccess';
-import Staff from '../models/Staff';
 import { authenticateToken } from '../middleware/auth';
+import { getStaffByUser } from '../utils/staffHelper';
 
 const router = Router();
 
@@ -79,7 +79,7 @@ router.post('/:workPlanId/entrata', authenticateToken, async (req: Request, res:
     }
 
     // Cerca il profilo staff corrispondente all'utente loggato
-    const staffMember = await Staff.findOne({ userId: user.id || user._id });
+    const staffMember = await getStaffByUser(user.id || user.userId, user.email);
 
     // Controlla se c'è già un accesso aperto (entrata senza uscita) per questo utente su questo piano
     const accessoAperto = await WorkPlanAccess.findOne({
@@ -139,7 +139,7 @@ router.patch('/:accessId/uscita', authenticateToken, async (req: Request, res: R
     }
 
     // Verifica che sia lo stesso utente (o admin/coordinator)
-    const staffMember = await Staff.findOne({ userId: user.id || user._id });
+    const staffMember = await getStaffByUser(user.id || user.userId, user.email);
     const isOwner = accesso.staffId.toString() === (staffMember?._id?.toString() || user.id);
     const isAdmin = user.role === 'admin' || user.role === 'coordinator';
 
@@ -215,7 +215,7 @@ router.patch('/:accessId/firma-operatore', authenticateToken, async (req: Reques
 router.get('/miei-accessi/aperti', authenticateToken, async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const staffMember = await Staff.findOne({ userId: user.id || user._id });
+    const staffMember = await getStaffByUser(user.id || user.userId, user.email);
 
     const accessiAperti = await WorkPlanAccess.find({
       staffId: staffMember?._id || user.id,
@@ -246,7 +246,7 @@ router.get('/piano/:workPlanId/info', authenticateToken, async (req: Request, re
       .limit(20);
 
     const user = (req as any).user;
-    const staffMember = await Staff.findOne({ userId: user.id || user._id });
+    const staffMember = await getStaffByUser(user.id || user.userId, user.email);
 
     const accessoApertoUtente = await WorkPlanAccess.findOne({
       workPlan: workPlanId,

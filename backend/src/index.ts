@@ -7,6 +7,8 @@ import jwt from 'jsonwebtoken';
 import connectDB from './config/db';
 import { verificaConnessioneSMTP, inviaEmailNuovoPianoDiLavoro } from './utils/email';
 import { rateLimitByIP, rateLimitByUser } from './middleware/rateLimit';
+import { authenticateToken } from './middleware/auth';
+import { authorizeRole } from './middleware/roles';
 import authRouter from './routes/auth';
 import patientsRouter from './routes/patients';
 import staffRouter from './routes/staff';
@@ -128,7 +130,7 @@ app.use('/allegati', allegatiRouter);
 app.use('/uploads', proteggiUploads, express.static(path.join(process.cwd(), 'uploads')));
 
 // ─── Endpoint test email (per diagnostica SMTP) ───────────────────────────────
-app.get('/api/test-email', async (req: Request, res: Response) => {
+app.get('/api/test-email', authenticateToken, authorizeRole('admin'), async (req: Request, res: Response) => {
   const { to } = req.query;
   if (!to) return res.status(400).json({ message: 'Parametro ?to=email richiesto' });
   try {

@@ -127,6 +127,34 @@ export async function inviaEmailNuovoPianoDiLavoro(
   );
 }
 
+// ─── Reset password — link sicuro via email ───────────────────────────────────
+export async function inviaEmailResetPassword(
+  emailDestinatario: string,
+  nomeUtente: string,
+  resetToken: string
+) {
+  const frontendUrl = process.env.FRONTEND_URL || 'https://app-abbraccio-frontend-rw2c.vercel.app';
+  const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+  console.log(`📧 Invio email reset password a: ${emailDestinatario}`);
+  await invia(
+    emailDestinatario,
+    '🔑 Reset password — App Abbraccio',
+    `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+      <h2 style="color:#1e4d8c;margin-top:0;">🔑 Reset della tua password</h2>
+      <p>Ciao <strong>${nomeUtente}</strong>,</p>
+      <p>Hai richiesto il reset della password per il tuo account su <strong>Abbraccio Cure Domiciliari</strong>.</p>
+      <p>Clicca il pulsante qui sotto per impostare una nuova password. Il link è valido per <strong>1 ora</strong>.</p>
+      <div style="text-align:center;margin:28px 0;">
+        <a href="${resetUrl}" style="display:inline-block;background:#1e4d8c;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:1rem;">Reimposta password →</a>
+      </div>
+      <p style="font-size:0.85rem;color:#888;">Se non hai richiesto il reset, ignora questa email. La password non verrà modificata.</p>
+      <p style="font-size:0.85rem;color:#888;">Se il pulsante non funziona, copia questo link nel browser:<br/><a href="${resetUrl}" style="color:#1e4d8c;">${resetUrl}</a></p>
+      <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0;"/>
+      <p style="margin:0;font-size:12px;color:#888;">Abbraccio Cure Domiciliari</p>
+    </div>`
+  );
+}
+
 // ─── Notifica operatore — nuovo paziente assegnato ────────────────────────────
 export async function inviaEmailNuovoPaziente(
   emailOperatore: string,

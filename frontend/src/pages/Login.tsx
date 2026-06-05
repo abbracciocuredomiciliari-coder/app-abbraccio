@@ -1,5 +1,5 @@
 import { FormEvent, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
@@ -172,9 +172,14 @@ function Login() {
         </label>
 
         <label>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Lock size={16} />
-            Password
+          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Lock size={16} />
+              Password
+            </span>
+            <Link to="/forgot-password" style={{ fontSize: '0.82rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: 500 }}>
+              Password dimenticata?
+            </Link>
           </span>
           <input
             type="password"
