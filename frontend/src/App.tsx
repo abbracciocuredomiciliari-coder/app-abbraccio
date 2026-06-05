@@ -1,6 +1,7 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
 import { Link, useLocation, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ModalitaProvider, useModalita } from './context/ModalitaContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoadingScreen from './components/LoadingScreen';
 import Breadcrumb from './components/Breadcrumb';
@@ -37,6 +38,7 @@ const GestioneFatturazione = lazy(() => import('./pages/GestioneFatturazione'));
 const GestioneConsensiGDPR = lazy(() => import('./pages/GestioneConsensiGDPR'));
 const EsportazioneSIAT = lazy(() => import('./pages/EsportazioneSIAT'));
 const RegistrazioneAccesso = lazy(() => import('./pages/RegistrazioneAccesso'));
+const PazientiConvenzione = lazy(() => import('./pages/PazientiConvenzione'));
 import {
   Heart,
   LayoutDashboard,
@@ -61,6 +63,8 @@ import {
   Menu,
   X,
   Package,
+  Building2,
+  ArrowLeftRight,
 } from 'lucide-react';
 
 // Ruoli con accesso completo (admin/coordinamento/direzione)
@@ -74,6 +78,7 @@ function isPrivilegiato(role: string) {
 
 function AppShell() {
   const { user, logout } = useAuth();
+  const { modalita, setModalita, isConvenzione } = useModalita();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -102,6 +107,33 @@ function AppShell() {
         </button>
         <div style={{ padding: '16px 12px 8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.15)', marginBottom: '8px' }}>
           <img src="/logo.png" alt="Abbraccio Cure Domiciliari" style={{ width: '100%', maxWidth: '160px', height: 'auto', display: 'block', margin: '0 auto' }} />
+          {/* Pulsante switch modalità */}
+          {user && isPrivilegiato(user.role) && (
+            <button
+              type="button"
+              onClick={() => setModalita(isConvenzione ? 'privato' : 'convenzione')}
+              style={{
+                marginTop: '12px',
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                fontWeight: '700',
+                fontSize: '0.8rem',
+                background: isConvenzione ? 'rgba(2, 132, 199, 0.25)' : 'rgba(255,255,255,0.1)',
+                color: isConvenzione ? '#7dd3fc' : 'rgba(255,255,255,0.7)',
+                transition: 'all 0.2s',
+              }}
+            >
+              <ArrowLeftRight size={14} />
+              {isConvenzione ? '🏥 Convenzione SIAT' : '👤 Gestione Privata'}
+            </button>
+          )}
         </div>
         <nav onClick={() => setMenuOpen(false)}>
           {/* Link non autenticati */}
@@ -157,10 +189,18 @@ function AppShell() {
                   Dashboard
                 </Link>
               )}
-              <Link to="/patients" className={isActive('/patients') ? 'active' : ''}>
-                <Users size={18} />
-                Pazienti
-              </Link>
+              {!isConvenzione && (
+                <Link to="/patients" className={isActive('/patients') ? 'active' : ''}>
+                  <Users size={18} />
+                  Pazienti
+                </Link>
+              )}
+              {isConvenzione && (
+                <Link to="/pazienti-convenzione" className={isActive('/pazienti-convenzione') ? 'active' : ''}>
+                  <Building2 size={18} />
+                  Pazienti Convenzione
+                </Link>
+              )}
               <Link to="/staff" className={isActive('/staff') ? 'active' : ''}>
                 <UserPlus size={18} />
                 Personale
@@ -288,6 +328,8 @@ function AppShell() {
           <Route path="/gestione-consensi-gdpr" element={<ProtectedRoute><GestioneConsensiGDPR /></ProtectedRoute>} />
           {/* Esportazione SIAT */}
           <Route path="/esportazione-siat" element={<ProtectedRoute><EsportazioneSIAT /></ProtectedRoute>} />
+          {/* Pazienti in Convenzione SIAT Lazio */}
+          <Route path="/pazienti-convenzione" element={<ProtectedRoute><PazientiConvenzione /></ProtectedRoute>} />
           {/* Registrazione accesso con firma touch (ottimizzata tablet/mobile) */}
           <Route path="/registrazione-accesso/:workPlanId" element={<ProtectedRoute><RegistrazioneAccesso /></ProtectedRoute>} />
         </Routes>
@@ -300,7 +342,9 @@ function AppShell() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppShell />
+      <ModalitaProvider>
+        <AppShell />
+      </ModalitaProvider>
     </AuthProvider>
   );
 }
