@@ -21,6 +21,10 @@ function Login() {
       setSessionExpiredMsg('La tua sessione è scaduta. Effettua nuovamente il login.');
       window.history.replaceState({}, '', '/');
     }
+    // Sveglia il server Render al caricamento della pagina login
+    const serverURL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api')
+      .replace(/\/api$/, '');
+    fetch(`${serverURL}/api/health`).catch(() => {});
   }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {

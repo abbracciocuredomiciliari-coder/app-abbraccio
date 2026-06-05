@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Ping ogni 5 minuti (300000 ms) - Render dorme dopo 15 min di inattività
     pingIntervalRef.current = setInterval(async () => {
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+        const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api').replace(/\/api$/, '');
         await fetch(`${API_URL}/api/health`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
