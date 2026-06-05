@@ -57,17 +57,12 @@ const allowedOrigins: string[] = [
   'http://localhost:5173',
   'http://localhost:3000',
   'http://127.0.0.1:5173',
+  'https://app-abbraccio-frontend.vercel.app',
 ];
-// Aggiungi FRONTEND_URL da env (es. https://app-abbraccio-frontend-rw2c.vercel.app)
-if (process.env.FRONTEND_URL) {
+// Aggiungi FRONTEND_URL da env se diverso da quelli già in lista
+if (process.env.FRONTEND_URL && !allowedOrigins.includes(process.env.FRONTEND_URL)) {
   allowedOrigins.push(process.env.FRONTEND_URL);
 }
-
-// Estrae il dominio base da FRONTEND_URL per consentire i preview deploy Vercel del solo progetto
-// Es: https://app-abbraccio-frontend-rw2c.vercel.app → app-abbraccio-frontend
-const frontendProjectSlug = process.env.FRONTEND_URL
-  ? new URL(process.env.FRONTEND_URL).hostname.split('.')[0]
-  : null;
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -75,11 +70,10 @@ app.use(cors({
     if (!origin) return callback(null, true);
     // Controlla lista allowlist
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    // Permetti preview deploy Vercel solo del progetto specifico (non qualsiasi *.vercel.app)
+    // Permetti qualsiasi preview deploy Vercel del progetto app-abbraccio-frontend
     if (
-      frontendProjectSlug &&
       origin.endsWith('.vercel.app') &&
-      new URL(origin).hostname.startsWith(frontendProjectSlug)
+      new URL(origin).hostname.startsWith('app-abbraccio-frontend')
     ) return callback(null, true);
     console.warn(`CORS bloccato per origine non autorizzata: ${origin}`);
     return callback(new Error(`Origine non autorizzata: ${origin}`));
