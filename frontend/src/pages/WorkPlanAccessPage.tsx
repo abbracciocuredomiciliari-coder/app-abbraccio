@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 import {
   CheckCircle, LogIn, LogOut, BookOpen, Activity,
   Target, Plus, ChevronDown, ChevronUp, AlertCircle, Trash2, PenLine, Lock,
-  Paperclip, FileText, Image, File, ExternalLink
+  Paperclip, FileText, Image, File, ExternalLink, Smartphone
 } from 'lucide-react';
 
 interface WorkPlanInfo {
@@ -42,6 +42,7 @@ const API_BASE = _rawBase.endsWith('/api') ? _rawBase : _rawBase.replace(/\/$/, 
 export default function WorkPlanAccessPage() {
   const { workPlanId } = useParams<{ workPlanId: string }>();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [now, setNow] = useState(new Date());
@@ -277,7 +278,16 @@ export default function WorkPlanAccessPage() {
         </div>
       )}
 
-      {/* Pulsanti entrata/uscita */}
+      {/* Pulsante firma touch (ottimizzato tablet/mobile) */}
+      <button
+        type="button"
+        onClick={() => navigate(`/registrazione-accesso/${workPlanId}`)}
+        style={{ width: '100%', padding: '14px', borderRadius: '10px', border: '2px solid #2563eb', cursor: 'pointer', backgroundColor: '#eff6ff', color: '#2563eb', fontWeight: '700', fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '12px' }}
+      >
+        <Smartphone size={18} /> Usa Firma Touch (Tablet/Smartphone)
+      </button>
+
+      {/* Pulsanti entrata/uscita rapida (senza firma) */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
         <button type="button" onClick={registraEntrata} disabled={!!accessoCorrente} style={{ padding: '16px', borderRadius: '10px', border: 'none', cursor: accessoCorrente ? 'not-allowed' : 'pointer', backgroundColor: accessoCorrente ? '#d1fae5' : '#16a34a', color: 'white', fontWeight: '700', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: accessoCorrente ? 0.6 : 1 }}>
           <LogIn size={20} /> ENTRATA

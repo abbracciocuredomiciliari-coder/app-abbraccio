@@ -13,6 +13,13 @@ export interface IWorkPlanAccess extends Document {
   durataMinuti?: number;           // durata in minuti (calcolata all'uscita)
   compensoMaturato?: number;       // compenso guadagnato per questo singolo accesso
   
+  // === FIRME TOUCH (canvas) ===
+  firmaOperatore?: string;         // Base64 immagine firma operatore (PNG)
+  firmaPaziente?: string;          // Base64 immagine firma paziente/caregiver (PNG)
+  nomeFirmatarioPaziente?: string; // Nome del firmatario (paziente o caregiver)
+  ruoloFirmatario?: 'paziente' | 'caregiver';  // Chi ha firmato
+  firmatoAllaPartenza?: boolean;   // Firma paziente raccolta all'uscita
+  
   // === MARCATURA TEMPORALE (RFC 3161) ===
   documentHash?: string;           // SHA-256 del documento serializzato
   timestampEntrata?: {
@@ -96,6 +103,13 @@ const workPlanAccessSchema = new Schema<IWorkPlanAccess>(
     ipAddress: { type: String },
     durataMinuti: { type: Number, default: 0 },
     compensoMaturato: { type: Number, default: 0 },
+    
+    // Firme touch
+    firmaOperatore: { type: String },
+    firmaPaziente: { type: String },
+    nomeFirmatarioPaziente: { type: String },
+    ruoloFirmatario: { type: String, enum: ['paziente', 'caregiver'] },
+    firmatoAllaPartenza: { type: Boolean, default: false },
     
     // Marcatura temporale
     documentHash: { type: String },

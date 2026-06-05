@@ -36,6 +36,7 @@ const ReportConsegne = lazy(() => import('./pages/ReportConsegne'));
 const GestioneFatturazione = lazy(() => import('./pages/GestioneFatturazione'));
 const GestioneConsensiGDPR = lazy(() => import('./pages/GestioneConsensiGDPR'));
 const EsportazioneSIAT = lazy(() => import('./pages/EsportazioneSIAT'));
+const RegistrazioneAccesso = lazy(() => import('./pages/RegistrazioneAccesso'));
 import {
   Heart,
   LayoutDashboard,
@@ -287,6 +288,8 @@ function AppShell() {
           <Route path="/gestione-consensi-gdpr" element={<ProtectedRoute><GestioneConsensiGDPR /></ProtectedRoute>} />
           {/* Esportazione SIAT */}
           <Route path="/esportazione-siat" element={<ProtectedRoute><EsportazioneSIAT /></ProtectedRoute>} />
+          {/* Registrazione accesso con firma touch (ottimizzata tablet/mobile) */}
+          <Route path="/registrazione-accesso/:workPlanId" element={<ProtectedRoute><RegistrazioneAccesso /></ProtectedRoute>} />
         </Routes>
         </Suspense>
       </main>

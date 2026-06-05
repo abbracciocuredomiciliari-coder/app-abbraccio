@@ -62,7 +62,7 @@ router.get('/:workPlanId', authenticateToken, async (req: Request, res: Response
 router.post('/:workPlanId/entrata', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { workPlanId } = req.params;
-    const { note } = req.body;
+    const { note, firmaOperatore } = req.body;
     const user = (req as any).user;
 
     if (!user) {
@@ -108,6 +108,7 @@ router.post('/:workPlanId/entrata', authenticateToken, async (req: Request, res:
       ipAddress: ipAddress.toString().split(',')[0].trim(),
       durataMinuti: 0,
       compensoMaturato: 0,
+      firmaOperatore: firmaOperatore || undefined,
     });
 
     return res.status(201).json({ 
@@ -124,7 +125,7 @@ router.post('/:workPlanId/entrata', authenticateToken, async (req: Request, res:
 router.patch('/:accessId/uscita', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { accessId } = req.params;
-    const { note } = req.body;
+    const { note, firmaPaziente, nomeFirmatarioPaziente, ruoloFirmatario } = req.body;
     const user = (req as any).user;
 
     const accesso = await WorkPlanAccess.findById(accessId);
@@ -158,8 +159,12 @@ router.patch('/:accessId/uscita', authenticateToken, async (req: Request, res: R
     accesso.oraUscita = oraUscita;
     accesso.durataMinuti = durataMinuti;
     accesso.compensoMaturato = compensoMaturato;
-    if (note?.trim()) {
-      accesso.note = note.trim();
+    if (note?.trim()) accesso.note = note.trim();
+    if (firmaPaziente) {
+      accesso.firmaPaziente = firmaPaziente;
+      accesso.nomeFirmatarioPaziente = nomeFirmatarioPaziente?.trim() || 'Paziente';
+      accesso.ruoloFirmatario = ruoloFirmatario || 'paziente';
+      accesso.firmatoAllaPartenza = true;
     }
     await accesso.save();
 
@@ -178,6 +183,30 @@ router.patch('/:accessId/uscita', authenticateToken, async (req: Request, res: R
     });
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore nella registrazione dell\'uscita', error: error?.message });
+  }
+});
+
+// PATCH /api/workplan-access/:accessId/firma-operatore - Aggiunge/aggiorna firma operatore
+router.patch('/:accessId/firma-operatore', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { accessId } = req.params;
+    const { firmaOperatore } = req.body;
+
+    if (!firmaOperatore) {
+      return res.status(400).json({ message: 'Firma operatore richiesta' });
+    }
+
+    const accesso = await WorkPlanAccess.findByIdAndUpdate(
+      accessId,
+      { firmaOperatore },
+      { new: true }
+    );
+
+    if (!accesso) return res.status(404).json({ message: 'Accesso non trovato' });
+
+    return res.json({ message: 'Firma operatore salvata', accesso });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore salvataggio firma', error: error?.message });
   }
 });
 
