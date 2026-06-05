@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
+import FirmaCanvas from '../components/FirmaCanvas';
 
 // ─── Interfacce ───────────────────────────────────────────────────────────────
 
@@ -53,6 +54,10 @@ interface PrelievoOperatore {
   noteEsecuzione?: string;
   diaria: { _id: string; autore: string; testo: string; data: string; firmato: boolean }[];
   allegati: any[];
+  firmaOperatore?: string;
+  firmaPaziente?: string;
+  nomeFirmatarioPaziente?: string;
+  ruoloFirmatario?: 'paziente' | 'caregiver';
 }
 
 interface Accesso {
@@ -219,6 +224,12 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
   const [salvandoDiariaPrelievo, setSalvandoDiariaPrelievo] = useState(false);
   const [noteEsecuzione, setNoteEsecuzione] = useState('');
   const [registrandoPrelievo, setRegistrandoPrelievo] = useState<string | null>(null);
+  // Flusso firma prelievo: null | 'firma-operatore' | 'firma-paziente'
+  const [stepFirmaPrelievo, setStepFirmaPrelievo] = useState<Record<string, 'firma-operatore' | 'firma-paziente'>>({});
+  const [firmaOpPrelievo, setFirmaOpPrelievo] = useState<Record<string, string>>({});
+  const [firmaPazPrelievo, setFirmaPazPrelievo] = useState<Record<string, string>>({});
+  const [nomeFirmatarioPrelievo, setNomeFirmatarioPrelievo] = useState<Record<string, string>>({});
+  const [ruoloFirmatarioPrelievo, setRuoloFirmatarioPrelievo] = useState<Record<string, 'paziente' | 'caregiver'>>({});
 
   // ─── Caricamento iniziale + polling ogni 30s ───────────────────────────────
 
@@ -650,10 +661,9 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                         <div style={{ borderTop: '1px solid #e0f2fe', padding: '14px' }}>
                           {prel.note && <p style={{ fontSize: '0.83rem', color: '#475569', marginBottom: '10px' }}>📝 {prel.note}</p>}
 
-                          {/* Registra esecuzione */}
-                          {prel.status === 'pianificato' && (
-                            <div style={{ background: '#f0f9ff', borderRadius: '8px', padding: '12px', marginBottom: '12px' }}>
-                              <div style={{ fontWeight: 600, fontSize: '0.83rem', color: '#0369a1', marginBottom: '8px' }}>Registra esecuzione</div>
+                          {/* Registra esecuzione con firma touch */}
+                          {prel.status === 'pianificato' && !stepFirmaPrelievo[prel._id] && (
+                            <div style={{ marginBottom: '12px' }}>
                               <textarea
                                 value={noteEsecuzione}
                                 onChange={e => setNoteEsecuzione(e.target.value)}
@@ -663,21 +673,94 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                               />
                               <button
                                 type="button"
-                                disabled={registrandoPrelievo === prel._id}
-                                onClick={async () => {
-                                  setRegistrandoPrelievo(prel._id);
-                                  try {
-                                    await api.post(`/prelievi/${prel._id}/esegui`, { noteEsecuzione });
-                                    setNoteEsecuzione('');
-                                    setPrelievoAperto(null);
-                                    await caricaDati(true);
-                                  } catch { /* noop */ }
-                                  setRegistrandoPrelievo(null);
-                                }}
-                                style={{ background: '#059669', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer', fontWeight: 700, fontSize: '0.83rem' }}
+                                onClick={() => setStepFirmaPrelievo(s => ({ ...s, [prel._id]: 'firma-operatore' }))}
+                                style={{ background: '#0369a1', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer', fontWeight: 700, fontSize: '0.83rem', width: '100%' }}
                               >
-                                {registrandoPrelievo === prel._id ? '...' : '✅ Segna come eseguito'}
+                                ✍️ Procedi con firma
                               </button>
+                            </div>
+                          )}
+
+                          {/* Step 1: Firma operatore */}
+                          {prel.status === 'pianificato' && stepFirmaPrelievo[prel._id] === 'firma-operatore' && (
+                            <div style={{ background: '#f0f9ff', borderRadius: '10px', padding: '14px', marginBottom: '12px' }}>
+                              <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0369a1', marginBottom: '10px' }}>✍️ Step 1 — Firma Operatore</div>
+                              <FirmaCanvas
+                                label="Firma Operatore"
+                                sublabel={`${user?.name}`}
+                                onFirmaCompleta={f => setFirmaOpPrelievo(s => ({ ...s, [prel._id]: f }))}
+                                onCancella={() => setFirmaOpPrelievo(s => ({ ...s, [prel._id]: '' }))}
+                                altezza={140}
+                              />
+                              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                                <button type="button" onClick={() => setStepFirmaPrelievo(s => { const n = { ...s }; delete n[prel._id]; return n; })} style={{ flex: 1, background: '#f1f5f9', border: '1px solid #d1d5db', borderRadius: '6px', padding: '8px', cursor: 'pointer', fontSize: '0.83rem' }}>Annulla</button>
+                                <button
+                                  type="button"
+                                  disabled={!firmaOpPrelievo[prel._id]}
+                                  onClick={() => setStepFirmaPrelievo(s => ({ ...s, [prel._id]: 'firma-paziente' }))}
+                                  style={{ flex: 2, background: firmaOpPrelievo[prel._id] ? '#0369a1' : '#bae6fd', color: 'white', border: 'none', borderRadius: '6px', padding: '8px', cursor: firmaOpPrelievo[prel._id] ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: '0.83rem' }}
+                                >
+                                  Avanti → Firma Paziente
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Step 2: Firma paziente */}
+                          {prel.status === 'pianificato' && stepFirmaPrelievo[prel._id] === 'firma-paziente' && (
+                            <div style={{ background: '#f0fdf4', borderRadius: '10px', padding: '14px', marginBottom: '12px' }}>
+                              <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#059669', marginBottom: '10px' }}>👇 Step 2 — Consegna al Paziente</div>
+                              <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                                {(['paziente', 'caregiver'] as const).map(r => (
+                                  <button key={r} type="button"
+                                    onClick={() => setRuoloFirmatarioPrelievo(s => ({ ...s, [prel._id]: r }))}
+                                    style={{ flex: 1, padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.83rem', background: ruoloFirmatarioPrelievo[prel._id] === r ? '#059669' : '#f3f4f6', color: ruoloFirmatarioPrelievo[prel._id] === r ? 'white' : '#374151', border: `2px solid ${ruoloFirmatarioPrelievo[prel._id] === r ? '#059669' : '#d1d5db'}` }}
+                                  >{r === 'paziente' ? '🧑 Paziente' : '👨‍👩‍👧 Caregiver'}</button>
+                                ))}
+                              </div>
+                              <input
+                                type="text"
+                                placeholder={`Nome ${ruoloFirmatarioPrelievo[prel._id] === 'caregiver' ? 'caregiver' : `${prel.patient.firstName} ${prel.patient.lastName}`}`}
+                                value={nomeFirmatarioPrelievo[prel._id] || ''}
+                                onChange={e => setNomeFirmatarioPrelievo(s => ({ ...s, [prel._id]: e.target.value }))}
+                                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', marginBottom: '10px', fontSize: '0.83rem' }}
+                              />
+                              <FirmaCanvas
+                                label={`Firma ${ruoloFirmatarioPrelievo[prel._id] === 'caregiver' ? 'Caregiver' : 'Paziente'}`}
+                                sublabel="Firma per confermare il prelievo eseguito"
+                                onFirmaCompleta={f => setFirmaPazPrelievo(s => ({ ...s, [prel._id]: f }))}
+                                onCancella={() => setFirmaPazPrelievo(s => ({ ...s, [prel._id]: '' }))}
+                                altezza={140}
+                              />
+                              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                                <button type="button" onClick={() => setStepFirmaPrelievo(s => ({ ...s, [prel._id]: 'firma-operatore' }))} style={{ flex: 1, background: '#f1f5f9', border: '1px solid #d1d5db', borderRadius: '6px', padding: '8px', cursor: 'pointer', fontSize: '0.83rem' }}>← Indietro</button>
+                                <button
+                                  type="button"
+                                  disabled={registrandoPrelievo === prel._id || !firmaPazPrelievo[prel._id]}
+                                  onClick={async () => {
+                                    setRegistrandoPrelievo(prel._id);
+                                    try {
+                                      await api.post(`/prelievi/${prel._id}/esegui`, {
+                                        noteEsecuzione,
+                                        firmaOperatore: firmaOpPrelievo[prel._id],
+                                        firmaPaziente: firmaPazPrelievo[prel._id],
+                                        nomeFirmatarioPaziente: nomeFirmatarioPrelievo[prel._id] || `${prel.patient.firstName} ${prel.patient.lastName}`,
+                                        ruoloFirmatario: ruoloFirmatarioPrelievo[prel._id] || 'paziente',
+                                      });
+                                      setNoteEsecuzione('');
+                                      setPrelievoAperto(null);
+                                      setStepFirmaPrelievo(s => { const n = { ...s }; delete n[prel._id]; return n; });
+                                      setFirmaOpPrelievo(s => { const n = { ...s }; delete n[prel._id]; return n; });
+                                      setFirmaPazPrelievo(s => { const n = { ...s }; delete n[prel._id]; return n; });
+                                      await caricaDati(true);
+                                    } catch { /* noop */ }
+                                    setRegistrandoPrelievo(null);
+                                  }}
+                                  style={{ flex: 2, background: firmaPazPrelievo[prel._id] ? '#059669' : '#d1fae5', color: 'white', border: 'none', borderRadius: '6px', padding: '8px', cursor: firmaPazPrelievo[prel._id] ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: '0.83rem' }}
+                                >
+                                  {registrandoPrelievo === prel._id ? '...' : '✅ Conferma e salva'}
+                                </button>
+                              </div>
                             </div>
                           )}
                           {prel.status === 'eseguito' && prel.dataEsecuzione && (

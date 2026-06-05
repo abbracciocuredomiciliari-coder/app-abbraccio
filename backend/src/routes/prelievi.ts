@@ -269,15 +269,23 @@ router.post('/:id/esegui', authenticateToken, async (req: Request, res: Response
       ? `${staffMember.firstName} ${staffMember.lastName}`
       : (user.name || user.email);
 
-    const { noteEsecuzione } = req.body;
+    const { noteEsecuzione, firmaOperatore, firmaPaziente, nomeFirmatarioPaziente, ruoloFirmatario } = req.body;
 
-    await Prelievo.findByIdAndUpdate(req.params.id, {
+    const update: any = {
       status: 'eseguito',
       dataEsecuzione: new Date(),
       eseguitoDa: nomeOperatore,
       eseguitoDaId: staffMember?._id,
       noteEsecuzione: noteEsecuzione || '',
-    });
+    };
+    if (firmaOperatore) update.firmaOperatore = firmaOperatore;
+    if (firmaPaziente) {
+      update.firmaPaziente = firmaPaziente;
+      update.nomeFirmatarioPaziente = nomeFirmatarioPaziente?.trim() || 'Paziente';
+      update.ruoloFirmatario = ruoloFirmatario || 'paziente';
+    }
+
+    await Prelievo.findByIdAndUpdate(req.params.id, update);
 
     const updated = await Prelievo.findById(req.params.id)
       .populate('patient', 'firstName lastName tipoGestione')
@@ -286,6 +294,32 @@ router.post('/:id/esegui', authenticateToken, async (req: Request, res: Response
     return res.json(updated);
   } catch (error) {
     return res.status(500).json({ message: 'Errore nella registrazione esecuzione', error });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PATCH /api/prelievi/:id/firma — salva/aggiorna firme touch (operatore + paziente)
+// ─────────────────────────────────────────────────────────────────────────────
+router.patch('/:id/firma', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const prelievo = await Prelievo.findById(req.params.id);
+    if (!prelievo) return res.status(404).json({ message: 'Prelievo non trovato' });
+
+    const { firmaOperatore, firmaPaziente, nomeFirmatarioPaziente, ruoloFirmatario } = req.body;
+    const update: any = {};
+    if (firmaOperatore) update.firmaOperatore = firmaOperatore;
+    if (firmaPaziente) {
+      update.firmaPaziente = firmaPaziente;
+      update.nomeFirmatarioPaziente = nomeFirmatarioPaziente?.trim() || 'Paziente';
+      update.ruoloFirmatario = ruoloFirmatario || 'paziente';
+    }
+
+    const updated = await Prelievo.findByIdAndUpdate(req.params.id, update, { new: true })
+      .populate('patient', 'firstName lastName tipoGestione siat')
+      .populate('staff', 'firstName lastName role');
+    return res.json(updated);
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore salvataggio firme', error });
   }
 });
 

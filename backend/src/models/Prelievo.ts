@@ -41,6 +41,12 @@ export interface IPrelievo extends Document {
   eseguitoDaId?: Types.ObjectId;
   noteEsecuzione?: string;
 
+  // Firme touch (canvas base64)
+  firmaOperatore?: string;
+  firmaPaziente?: string;
+  nomeFirmatarioPaziente?: string;
+  ruoloFirmatario?: 'paziente' | 'caregiver';
+
   // Diaria clinica
   diaria: IDiariaPrelievo[];
 
@@ -104,6 +110,10 @@ const prelievoSchema = new Schema<IPrelievo>(
     eseguitoDa: { type: String },
     eseguitoDaId: { type: Schema.Types.ObjectId },
     noteEsecuzione: { type: String, trim: true },
+    firmaOperatore: { type: String },
+    firmaPaziente: { type: String },
+    nomeFirmatarioPaziente: { type: String },
+    ruoloFirmatario: { type: String, enum: ['paziente', 'caregiver'] },
     diaria: [diariaSchema],
     allegati: [allegatoSchema],
     archiviato: { type: Boolean, default: false },

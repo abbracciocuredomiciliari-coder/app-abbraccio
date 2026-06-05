@@ -48,6 +48,10 @@ interface Prelievo {
   noteEsecuzione?: string;
   diaria: DiariaEntry[];
   allegati: any[];
+  firmaOperatore?: string;
+  firmaPaziente?: string;
+  nomeFirmatarioPaziente?: string;
+  ruoloFirmatario?: 'paziente' | 'caregiver';
 }
 
 const TIPI_PRELIEVO = [
@@ -198,6 +202,92 @@ export default function PianificazionePrelievi() {
     setSalvandoDiaria(false);
   };
 
+  // ─── PDF singolo prelievo con firme ──────────────────────────────────────────
+  const apriPdfPrelievo = (p: Prelievo) => {
+    const dataLabel = new Date(p.dataPrelievo + (p.dataPrelievo.includes('T') ? '' : 'T12:00:00'))
+      .toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const tipoLabel = p.tipoGestione === 'convenzione' ? 'Convenzione SIAT' : 'Gestione Privata';
+    const colore = p.tipoGestione === 'convenzione' ? '#1e40af' : '#166534';
+    const bgColore = p.tipoGestione === 'convenzione' ? '#dbeafe' : '#dcfce7';
+
+    const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">
+      <title>Prelievo — ${p.patient.firstName} ${p.patient.lastName}</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 28px 36px; color: #1e293b; font-size: 0.9rem; }
+        h2 { margin: 0 0 4px; font-size: 1.15rem; }
+        .badge { display: inline-block; padding: 2px 12px; border-radius: 4px; font-weight: 700; font-size: 0.8rem; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+        td, th { padding: 9px 12px; border: 1px solid #e2e8f0; }
+        th { background: #f1f5f9; font-size: 0.8rem; text-transform: uppercase; color: #64748b; }
+        .firma-box { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; text-align: center; flex: 1; }
+        .firma-label { font-size: 0.72rem; color: #64748b; font-weight: 700; margin-bottom: 6px; }
+        .firme-row { display: flex; gap: 16px; margin-top: 20px; }
+        @media print { body { padding: 16px 20px; } }
+      </style>
+    </head><body>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid ${colore};padding-bottom:12px;margin-bottom:18px;">
+        <div>
+          <h2>💉 Verbale Prelievo Domiciliare</h2>
+          <div style="font-size:0.85rem;color:#475569;margin-top:3px;">${dataLabel}${p.orario ? ' — ore ' + p.orario : ''}</div>
+          <span class="badge" style="background:${bgColore};color:${colore};margin-top:5px;">${tipoLabel}</span>
+        </div>
+        <div style="text-align:right;font-size:0.78rem;color:#94a3b8;">
+          Stampato il ${new Date().toLocaleString('it-IT')}
+        </div>
+      </div>
+
+      <table>
+        <tr><th>Paziente</th><td><strong>${p.patient.firstName} ${p.patient.lastName}</strong>${p.patient.siat?.asl ? '<br/><span style="font-size:0.8rem;color:#64748b;">ASL: ' + p.patient.siat.asl + '</span>' : ''}</td>
+            <th>Operatore</th><td>${p.staff.firstName} ${p.staff.lastName}<br/><span style="font-size:0.8rem;color:#64748b;">${p.staff.role}</span></td></tr>
+        <tr><th>Tipo prelievo</th><td colspan="3">${p.tipoPrelievo}</td></tr>
+        ${p.note ? `<tr><th>Note</th><td colspan="3">${p.note}</td></tr>` : ''}
+        <tr><th>Stato</th><td colspan="3">
+          <span class="badge" style="background:${p.status === 'eseguito' ? '#dcfce7' : '#dbeafe'};color:${p.status === 'eseguito' ? '#166534' : '#1e40af'};">
+            ${p.status === 'eseguito' ? '✓ Eseguito' : p.status === 'annullato' ? '✗ Annullato' : '● Pianificato'}
+          </span>
+          ${p.dataEsecuzione ? '<br/><span style="font-size:0.8rem;color:#64748b;">il ' + new Date(p.dataEsecuzione).toLocaleString('it-IT') + (p.eseguitoDa ? ' da ' + p.eseguitoDa : '') + '</span>' : ''}
+          ${p.noteEsecuzione ? '<br/>' + p.noteEsecuzione : ''}
+        </td></tr>
+      </table>
+
+      ${p.diaria.length > 0 ? `
+        <div style="margin-top:16px;">
+          <div style="font-weight:700;font-size:0.85rem;color:#374151;margin-bottom:8px;">📋 Diaria Clinica</div>
+          ${p.diaria.map(d => `
+            <div style="background:#f8fafc;border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:0.82rem;">
+              <div style="font-weight:600;color:#475569;">${d.autore} · ${new Date(d.data).toLocaleString('it-IT')}</div>
+              <div style="margin-top:2px;">${d.testo}</div>
+            </div>`).join('')}
+        </div>` : ''}
+
+      <div class="firme-row">
+        <div class="firma-box">
+          <div class="firma-label">✍️ FIRMA OPERATORE — ${p.staff.firstName} ${p.staff.lastName}</div>
+          ${p.firmaOperatore
+            ? `<img src="${p.firmaOperatore}" style="max-width:180px;max-height:80px;display:block;margin:auto;" />`
+            : '<div style="height:70px;border-bottom:1px solid #94a3b8;"></div>'}
+        </div>
+        <div class="firma-box">
+          <div class="firma-label">👤 CONTROFIRMA — ${p.nomeFirmatarioPaziente || p.patient.firstName + ' ' + p.patient.lastName}</div>
+          ${p.firmaPaziente
+            ? `<img src="${p.firmaPaziente}" style="max-width:180px;max-height:80px;display:block;margin:auto;" />`
+            : '<div style="height:70px;border-bottom:1px solid #94a3b8;"></div>'}
+        </div>
+      </div>
+
+      <div style="margin-top:32px;font-size:0.7rem;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px;text-align:center;">
+        Abbraccio Cure Domiciliari — Documento riservato uso interno
+      </div>
+    </body></html>`;
+
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 500);
+  };
+
   // ─── Stampa foglio firma giornaliero ────────────────────────────────────────
   const stampaFoglioFirma = () => {
     const dataLabel = new Date(giornoSelezionato + 'T12:00:00').toLocaleDateString('it-IT', {
@@ -249,8 +339,16 @@ export default function PianificazionePrelievi() {
                     ${p.status === 'eseguito' ? '✓ Eseguito' : 'Pianificato'}
                   </span>
                 </td>
-                <td style="padding:10px;border:1px solid #e2e8f0;min-height:48px;"></td>
-                <td style="padding:10px;border:1px solid #e2e8f0;min-height:48px;"></td>
+                <td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:center;vertical-align:middle;">
+                  ${p.firmaOperatore
+                    ? `<img src="${p.firmaOperatore}" style="max-width:88px;max-height:44px;display:block;margin:auto;" />`
+                    : '<div style="height:44px;"></div>'}
+                </td>
+                <td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:center;vertical-align:middle;">
+                  ${p.firmaPaziente
+                    ? `<div style="font-size:0.7rem;color:#64748b;margin-bottom:2px;">${p.nomeFirmatarioPaziente || 'Paziente'}</div><img src="${p.firmaPaziente}" style="max-width:88px;max-height:44px;display:block;margin:auto;" />`
+                    : '<div style="height:44px;"></div>'}
+                </td>
               </tr>`).join('')}
           </tbody>
         </table>
@@ -458,6 +556,11 @@ export default function PianificazionePrelievi() {
                     </div>
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
                       <button
+                        onClick={(e) => { e.stopPropagation(); apriPdfPrelievo(p); }}
+                        style={{ background: '#eff6ff', border: '1px solid #bae6fd', borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 700 }}
+                        title="Visualizza/Stampa PDF"
+                      ><Printer size={13} />PDF</button>
+                      <button
                         onClick={(e) => { e.stopPropagation(); eliminaPrelievo(p._id); }}
                         style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', color: '#dc2626' }}
                       ><Trash2 size={14} /></button>
@@ -473,6 +576,23 @@ export default function PianificazionePrelievi() {
                         <div style={{ background: '#f0fdf4', borderRadius: '8px', padding: '10px 12px', marginBottom: '12px', fontSize: '0.85rem', color: '#166534' }}>
                           ✅ Eseguito da <strong>{p.eseguitoDa}</strong> il {new Date(p.dataEsecuzione!).toLocaleDateString('it-IT')}
                           {p.noteEsecuzione && <div style={{ marginTop: '4px', color: '#374151' }}>{p.noteEsecuzione}</div>}
+                        </div>
+                      )}
+                      {/* Firme salvate */}
+                      {(p.firmaOperatore || p.firmaPaziente) && (
+                        <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                          {p.firmaOperatore && (
+                            <div style={{ flex: 1, minWidth: '140px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
+                              <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: '4px', fontWeight: 700 }}>✍️ Firma Operatore</div>
+                              <img src={p.firmaOperatore} alt="Firma operatore" style={{ maxWidth: '100%', maxHeight: '60px', objectFit: 'contain' }} />
+                            </div>
+                          )}
+                          {p.firmaPaziente && (
+                            <div style={{ flex: 1, minWidth: '140px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
+                              <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: '4px', fontWeight: 700 }}>👤 {p.nomeFirmatarioPaziente || 'Paziente'}</div>
+                              <img src={p.firmaPaziente} alt="Firma paziente" style={{ maxWidth: '100%', maxHeight: '60px', objectFit: 'contain' }} />
+                            </div>
+                          )}
                         </div>
                       )}
 
