@@ -229,4 +229,16 @@ router.patch('/:id/segna-alert-visto', authorizeRole('admin', 'coordinator', 'di
   }
 });
 
+// DELETE /api/patients/:id - Elimina un paziente (solo admin)
+router.delete('/:id', authorizeRole('admin'), auditLog('patients', 'DELETE'), async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const paziente = await Patient.findByIdAndDelete(id);
+    if (!paziente) return res.status(404).json({ message: 'Paziente non trovato' });
+    return res.json({ message: 'Paziente eliminato con successo', patientId: id });
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore eliminazione paziente', error });
+  }
+});
+
 export default router;

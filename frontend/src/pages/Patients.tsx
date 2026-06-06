@@ -291,6 +291,20 @@ function Patients() {
     }
   };
 
+  const deletePatient = async (patientId: string) => {
+    if (!confirm('Sei sicuro di voler eliminare questo paziente?\n\nQuesta azione è irreversibile!')) return;
+
+    try {
+      await api.delete(`/patients/${patientId}`);
+      setSuccess('Paziente eliminato con successo!');
+      setTimeout(() => setSuccess(''), 3000);
+      loadPatients();
+    } catch (error) {
+      console.error('Errore eliminazione paziente:', error);
+      alert('Errore nell\'eliminazione del paziente');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('it-IT', {
       year: 'numeric',
@@ -522,17 +536,30 @@ function Patients() {
                     💡 {patient.assistanceNeeds}
                   </div>
                 </div>
-                <button
-                  onClick={() => openDocumentsModal(patient)}
-                  style={{
-                    background: 'var(--info)',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0,
-                  }}
-                >
-                  <FolderOpen size={16} />
-                  Documenti
-                </button>
+                <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                  <button
+                    onClick={() => openDocumentsModal(patient)}
+                    style={{
+                      background: 'var(--info)',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <FolderOpen size={16} />
+                    Documenti
+                  </button>
+                  {user?.role === 'admin' && (
+                    <button
+                      onClick={() => deletePatient(patient._id)}
+                      style={{
+                        background: 'var(--danger)',
+                        whiteSpace: 'nowrap',
+                      }}
+                      title="Elimina paziente"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
