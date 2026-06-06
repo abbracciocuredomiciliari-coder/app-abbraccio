@@ -151,6 +151,19 @@ app.use('/allegati', allegatiRouter);
 // Serve file statici uploads — protetti da autenticazione JWT
 app.use('/uploads', proteggiUploads, express.static(path.join(process.cwd(), 'uploads')));
 
+// ─── Endpoint diagnostica SMTP (per verificare configurazione) ────────────────
+app.get('/api/smtp-config', authenticateToken, authorizeRole('admin'), async (_req: Request, res: Response) => {
+  const config = {
+    host: process.env.SMTP_HOST || 'NON CONFIGURATO',
+    port: process.env.SMTP_PORT || 'NON CONFIGURATO',
+    secure: process.env.SMTP_SECURE || 'NON CONFIGURATO',
+    user: process.env.SMTP_USER || 'NON CONFIGURATO',
+    passConfigured: process.env.SMTP_PASS ? '✅ CONFIGURATA' : '❌ MANCANTE',
+    adminEmail: process.env.ADMIN_EMAIL || 'NON CONFIGURATO',
+  };
+  return res.json(config);
+});
+
 // ─── Endpoint test email (per diagnostica SMTP) ───────────────────────────────
 app.get('/api/test-email', authenticateToken, authorizeRole('admin'), async (req: Request, res: Response) => {
   const { to } = req.query;
