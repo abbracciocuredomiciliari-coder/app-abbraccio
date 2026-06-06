@@ -9,6 +9,7 @@ import Staff from '../models/Staff';
 import Patient from '../models/Patient';
 import { authenticateToken } from '../middleware/auth';
 import { getStaffByUser } from '../utils/staffHelper';
+import { inviaEmailPrelievoAssegnato } from '../utils/email';
 
 const router = Router();
 
@@ -209,7 +210,26 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
 
     const populated = await Prelievo.findById(prelievo._id)
       .populate('patient', 'firstName lastName tipoGestione')
-      .populate('staff', 'firstName lastName role');
+      .populate('staff', 'firstName lastName role email');
+
+    // Invia email notifica all'operatore assegnato
+    if (staff) {
+      try {
+        const staffDoc = populated?.staff as any;
+        const patientDoc = populated?.patient as any;
+        if (staffDoc?.email) {
+          await inviaEmailPrelievoAssegnato(
+            staffDoc.email,
+            `${staffDoc.firstName} ${staffDoc.lastName}`,
+            `${patientDoc?.firstName || ''} ${patientDoc?.lastName || ''}`.trim(),
+            new Date(dataPrelievo).toLocaleDateString('it-IT'),
+            tipoPrelievo
+          );
+        }
+      } catch (emailErr) {
+        console.warn('⚠️ Errore invio email prelievo:', emailErr);
+      }
+    }
 
     return res.status(201).json(populated);
   } catch (error) {
@@ -242,7 +262,26 @@ router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
 
     const updated = await Prelievo.findByIdAndUpdate(req.params.id, aggiornamenti, { new: true })
       .populate('patient', 'firstName lastName tipoGestione siat')
-      .populate('staff', 'firstName lastName role');
+      .populate('staff', 'firstName lastName role email');
+
+    // Invia email se lo staff è stato cambiato/assegnato
+    if (req.body.staff && req.body.staff !== prelievo.staff?.toString()) {
+      try {
+        const staffDoc = updated?.staff as any;
+        const patientDoc = updated?.patient as any;
+        if (staffDoc?.email) {
+          await inviaEmailPrelievoAssegnato(
+            staffDoc.email,
+            `${staffDoc.firstName} ${staffDoc.lastName}`,
+            `${patientDoc?.firstName || ''} ${patientDoc?.lastName || ''}`.trim(),
+            new Date(updated?.dataPrelievo || Date.now()).toLocaleDateString('it-IT'),
+            updated?.tipoPrelievo || ''
+          );
+        }
+      } catch (emailErr) {
+        console.warn('⚠️ Errore invio email prelievo aggiornato:', emailErr);
+      }
+    }
 
     return res.json(updated);
   } catch (error) {

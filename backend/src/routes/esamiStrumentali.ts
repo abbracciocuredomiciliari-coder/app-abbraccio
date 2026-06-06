@@ -8,6 +8,7 @@ import EsameStrumentale from '../models/EsameStrumentale';
 import WorkPlan from '../models/WorkPlan';
 import Staff from '../models/Staff';
 import { authenticateToken } from '../middleware/auth';
+import { inviaEmailEsameAssegnato } from '../utils/email';
 
 const router = Router();
 
@@ -179,7 +180,26 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
 
     const populated = await EsameStrumentale.findById(esame._id)
       .populate('patient', 'firstName lastName')
-      .populate('staff', 'firstName lastName role');
+      .populate('staff', 'firstName lastName role email');
+
+    // Invia email notifica all'operatore assegnato
+    if (staff) {
+      try {
+        const staffDoc = populated?.staff as any;
+        const patientDoc = populated?.patient as any;
+        if (staffDoc?.email) {
+          await inviaEmailEsameAssegnato(
+            staffDoc.email,
+            `${staffDoc.firstName} ${staffDoc.lastName}`,
+            `${patientDoc?.firstName || ''} ${patientDoc?.lastName || ''}`.trim(),
+            new Date(dataEsame).toLocaleDateString('it-IT'),
+            tipoEsame
+          );
+        }
+      } catch (emailErr) {
+        console.warn('⚠️ Errore invio email esame:', emailErr);
+      }
+    }
 
     return res.status(201).json(populated);
   } catch (error: any) {

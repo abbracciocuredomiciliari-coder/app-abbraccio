@@ -155,6 +155,62 @@ export async function inviaEmailResetPassword(
   );
 }
 
+// ─── Notifica operatore — prelievo assegnato ──────────────────────────────────
+export async function inviaEmailPrelievoAssegnato(
+  emailOperatore: string,
+  nomeOperatore: string,
+  nomePaziente: string,
+  dataPrelievo: string,
+  tipoPrelievo: string
+) {
+  const frontendUrl = process.env.FRONTEND_URL || 'https://app-abbraccio-frontend-rw2c.vercel.app';
+  console.log(`📧 Tentativo invio email prelievo a: ${emailOperatore}`);
+  await invia(
+    emailOperatore,
+    '💉 Prelievo assegnato — App Abbraccio',
+    `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+      <h2 style="color:#0369a1;margin-top:0;">💉 Prelievo assegnato</h2>
+      <p>Caro/a <strong>${nomeOperatore}</strong>,</p>
+      <p>Ti è stato assegnato un nuovo prelievo su <strong>Abbraccio Cure Domiciliari</strong>.</p>
+      <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+        <tr><td style="padding:8px;background:#f0f9ff;font-weight:bold;width:140px;">Paziente:</td><td style="padding:8px;">${nomePaziente}</td></tr>
+        <tr><td style="padding:8px;background:#e0f2fe;font-weight:bold;">Data:</td><td style="padding:8px;">${dataPrelievo}</td></tr>
+        <tr><td style="padding:8px;background:#f0f9ff;font-weight:bold;">Tipo:</td><td style="padding:8px;">${tipoPrelievo}</td></tr>
+      </table>
+      <a href="${frontendUrl}/portale-operatore" style="display:inline-block;background:#0369a1;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">Vai al Portale Operatore →</a>
+      <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari</p>
+    </div>`
+  );
+}
+
+// ─── Notifica operatore — esame strumentale assegnato ─────────────────────────
+export async function inviaEmailEsameAssegnato(
+  emailOperatore: string,
+  nomeOperatore: string,
+  nomePaziente: string,
+  dataEsame: string,
+  tipoEsame: string
+) {
+  const frontendUrl = process.env.FRONTEND_URL || 'https://app-abbraccio-frontend-rw2c.vercel.app';
+  console.log(`📧 Tentativo invio email esame a: ${emailOperatore}`);
+  await invia(
+    emailOperatore,
+    '🔬 Esame strumentale assegnato — App Abbraccio',
+    `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+      <h2 style="color:#dc2626;margin-top:0;">🔬 Esame strumentale assegnato</h2>
+      <p>Caro/a <strong>${nomeOperatore}</strong>,</p>
+      <p>Ti è stato assegnato un nuovo esame strumentale su <strong>Abbraccio Cure Domiciliari</strong>.</p>
+      <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+        <tr><td style="padding:8px;background:#fef2f2;font-weight:bold;width:140px;">Paziente:</td><td style="padding:8px;">${nomePaziente}</td></tr>
+        <tr><td style="padding:8px;background:#fee2e2;font-weight:bold;">Data:</td><td style="padding:8px;">${dataEsame}</td></tr>
+        <tr><td style="padding:8px;background:#fef2f2;font-weight:bold;">Tipo:</td><td style="padding:8px;">${tipoEsame}</td></tr>
+      </table>
+      <a href="${frontendUrl}/portale-operatore" style="display:inline-block;background:#dc2626;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">Vai al Portale Operatore →</a>
+      <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari</p>
+    </div>`
+  );
+}
+
 // ─── Notifica operatore — nuovo paziente assegnato ────────────────────────────
 export async function inviaEmailNuovoPaziente(
   emailOperatore: string,
