@@ -48,6 +48,7 @@ const CentroPrenotazioniPrivato = lazy(() => import('./pages/CentroPrenotazioniP
 const CentroPrenotazioni = lazy(() => import('./pages/CentroPrenotazioni'));
 const CentroPrenotazioniConvenzione = lazy(() => import('./pages/CentroPrenotazioniConvenzione'));
 const GestioneRichieste = lazy(() => import('./pages/GestioneRichieste'));
+const PortalePaziente = lazy(() => import('./pages/PortalePaziente'));
 import {
   Heart,
   LayoutDashboard,
@@ -171,9 +172,9 @@ function AppShell() {
           {/* ===== MENU PAZIENTE/CAREGIVER REGISTRATO ===== */}
           {user && user.role === 'paziente_registrato' && (
             <>
-              <Link to="/centro-prenotazioni-privato" className={isActive('/centro-prenotazioni-privato') ? 'active' : ''}>
+              <Link to="/portale-paziente" className={isActive('/portale-paziente') ? 'active' : ''}>
                 <Calendar size={18} />
-                Centro Prenotazioni
+                Prenota Servizio
               </Link>
               <Link to="/profilo-personale" className={isActive('/profilo-personale') ? 'active' : ''}>
                 <UserCircle size={18} />
@@ -368,6 +369,7 @@ function AppShell() {
           <Route path="/gestione-utenti" element={<ProtectedRoute><GestioneUtenti /></ProtectedRoute>} />
           <Route path="/gestione-richieste" element={<ProtectedRoute><GestioneRichieste /></ProtectedRoute>} />
           <Route path="/centro-prenotazioni-privato" element={<ProtectedRoute><CentroPrenotazioniPrivato /></ProtectedRoute>} />
+          <Route path="/portale-paziente" element={<ProtectedRoute><PortalePaziente /></ProtectedRoute>} />
 
           {/* Route condivise (tutti gli utenti autenticati) */}
           <Route path="/protocolli-procedure" element={<ProtectedRoute><ProtocolliProcedure /></ProtectedRoute>} />

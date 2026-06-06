@@ -302,19 +302,21 @@ router.put('/approve/:userId', authenticateToken, authorizeRole('admin'), async 
       return res.status(404).json({ message: 'Utente non trovato' });
     }
 
-    // Collega automaticamente User↔Staff tramite email e copia dati zona
-    try {
-      const zonaUpdate: any = { userId: user._id };
-      if (user.domicilioPartenza) zonaUpdate.domicilioPartenza = user.domicilioPartenza;
-      if (user.raggioAzioneKm) zonaUpdate.raggioAzioneKm = user.raggioAzioneKm;
-      if (user.domicilioCoords?.lat) zonaUpdate.domicilioCoords = user.domicilioCoords;
-      await Staff.findOneAndUpdate(
-        { email: user.email },
-        { $set: zonaUpdate },
-        { new: true }
-      );
-    } catch (linkErr) {
-      console.warn('⚠️ Impossibile collegare User↔Staff:', linkErr);
+    // Collega automaticamente User↔Staff solo per operatori (non per paziente_registrato)
+    if (user.role !== 'paziente_registrato') {
+      try {
+        const zonaUpdate: any = { userId: user._id };
+        if (user.domicilioPartenza) zonaUpdate.domicilioPartenza = user.domicilioPartenza;
+        if (user.raggioAzioneKm) zonaUpdate.raggioAzioneKm = user.raggioAzioneKm;
+        if (user.domicilioCoords?.lat) zonaUpdate.domicilioCoords = user.domicilioCoords;
+        await Staff.findOneAndUpdate(
+          { email: user.email },
+          { $set: zonaUpdate },
+          { new: true }
+        );
+      } catch (linkErr) {
+        console.warn('⚠️ Impossibile collegare User↔Staff:', linkErr);
+      }
     }
 
     return res.json({ message: 'Utente approvato con successo', user });
