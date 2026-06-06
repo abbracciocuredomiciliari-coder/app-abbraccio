@@ -148,8 +148,9 @@ router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async
     }
 
     return res.status(201).json(workplan);
-  } catch (error) {
-    return res.status(400).json({ message: 'Errore nella creazione dell incarico', error });
+  } catch (error: any) {
+    console.error('❌ Errore creazione workplan:', error);
+    return res.status(400).json({ message: 'Errore nella creazione dell incarico', error: error.message, details: error.errors });
   }
 });
 

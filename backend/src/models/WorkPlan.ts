@@ -45,7 +45,7 @@ const workPlanSchema = new Schema<IWorkPlan>(
       default: 'prestazionale'
     },
     category: { type: String, required: false },  // retrocompatibilità
-    categories: [{ type: String }],  // nuovo: array di categorie
+    categories: [String],  // nuovo: array di categorie (array di stringhe)
     tipoEsame: { type: String, trim: true },
     patient: { type: Schema.Types.ObjectId, ref: 'Patient', required: true },
     staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: true },
