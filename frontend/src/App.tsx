@@ -45,6 +45,7 @@ const PianificazionePrelievi = lazy(() => import('./pages/PianificazionePrelievi
 const CentroPrelievi = lazy(() => import('./pages/CentroPrelievi'));
 const AssegnazionePAI = lazy(() => import('./pages/AssegnazionePAI'));
 const CentroPrenotazioniPrivato = lazy(() => import('./pages/CentroPrenotazioniPrivato'));
+const CentroPrenotazioni = lazy(() => import('./pages/CentroPrenotazioni'));
 const GestioneRichieste = lazy(() => import('./pages/GestioneRichieste'));
 import {
   Heart,
@@ -234,13 +235,9 @@ function AppShell() {
                   Pazienti Convenzione
                 </Link>
               )}
-              <Link to="/workplan" className={isActive('/workplan') ? 'active' : ''}>
+              <Link to="/centro-prenotazioni" className={isActive('/centro-prenotazioni') ? 'active' : ''}>
                 <Calendar size={18} />
-                Piano lavoro
-              </Link>
-              <Link to="/centro-prelievi" className={isActive('/centro-prelievi') ? 'active' : ''}>
-                <Syringe size={18} />
-                Centro Prelievi
+                Centro Prenotazioni
               </Link>
               <Link to="/protocolli-procedure" className={isActive('/protocolli-procedure') ? 'active' : ''}>
                 <ClipboardList size={18} />
@@ -254,10 +251,12 @@ function AppShell() {
                 <Archive size={18} />
                 Archivio cartelle
               </Link>
-              <Link to="/assegnazione-pai" className={isActive('/assegnazione-pai') ? 'active' : ''}>
-                <Map size={18} />
-                {isConvenzione ? 'Assegnazione PAI' : 'Assegna Piano'}
-              </Link>
+              {isConvenzione && (
+                <Link to="/assegnazione-pai" className={isActive('/assegnazione-pai') ? 'active' : ''}>
+                  <Map size={18} />
+                  Assegnazione PAI
+                </Link>
+              )}
 
               {/* — Operativo — */}
               <span className="nav-section-label">Operativo</span>
@@ -371,9 +370,11 @@ function AppShell() {
           <Route path="/esami-strumentali" element={<ProtectedRoute><EsamiStrumentali /></ProtectedRoute>} />
           {/* Pianificazione Prelievi (vecchia pagina, mantenuta per compatibilità) */}
           <Route path="/pianificazione-prelievi" element={<ProtectedRoute><PianificazionePrelievi /></ProtectedRoute>} />
-          {/* Centro Prenotazioni Prelievi — admin */}
+          {/* Centro Prenotazioni unificato (privato) — admin/coordinator */}
+          <Route path="/centro-prenotazioni" element={<ProtectedRoute><CentroPrenotazioni /></ProtectedRoute>} />
+          {/* Centro Prenotazioni Prelievi — mantenuto per compatibilità */}
           <Route path="/centro-prelievi" element={<ProtectedRoute><CentroPrelievi /></ProtectedRoute>} />
-          {/* Assegnazione PAI / Piano di Lavoro */}
+          {/* Assegnazione PAI */}
           <Route path="/assegnazione-pai" element={<ProtectedRoute><AssegnazionePAI /></ProtectedRoute>} />
 
           {/* Richieste Presidi/Farmaci */}
