@@ -277,7 +277,7 @@ router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
             `${staffDoc.firstName} ${staffDoc.lastName}`,
             `${patientDoc?.firstName || ''} ${patientDoc?.lastName || ''}`.trim(),
             new Date(updated?.dataPrelievo || Date.now()).toLocaleDateString('it-IT'),
-            updated?.tipoPrelievo || ''
+            Array.isArray(updated?.tipoPrelievo) ? updated?.tipoPrelievo.join(', ') : (updated?.tipoPrelievo || '')
           );
         }
       } catch (emailErr) {
