@@ -7,6 +7,7 @@ export interface IPatient extends Document {
   address: string;
   assistanceNeeds: string;
   contactPhone?: string;
+  email?: string;
   codiceFiscale?: string;
   
   // === MODALITÀ GESTIONE ===
@@ -45,6 +46,7 @@ const patientSchema = new Schema<IPatient>(
     address: { type: String, required: true, trim: true },
     assistanceNeeds: { type: String, required: true, trim: true },
     contactPhone: { type: String, trim: true },
+    email: { type: String, trim: true, lowercase: true },
     codiceFiscale: { type: String, trim: true, uppercase: true },
     tipoGestione: { type: String, enum: ['privato', 'convenzione'], default: 'privato' },
     alertPaiVisto: {

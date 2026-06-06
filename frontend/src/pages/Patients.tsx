@@ -30,6 +30,7 @@ interface Patient {
   address: string;
   assistanceNeeds: string;
   contactPhone?: string;
+  email?: string;
 }
 
 interface PatientDocument {
@@ -79,7 +80,8 @@ function Patients() {
     birthDate: '',
     address: '',
     assistanceNeeds: '',
-    contactPhone: ''
+    contactPhone: '',
+    email: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -144,7 +146,8 @@ function Patients() {
         birthDate: '',
         address: '',
         assistanceNeeds: '',
-        contactPhone: ''
+        contactPhone: '',
+        email: ''
       });
       setShowForm(false);
       loadPatients();
@@ -461,6 +464,16 @@ function Patients() {
             />
           </label>
           <label>
+            Email
+            <input
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              placeholder="paziente@email.com"
+            />
+          </label>
+          <label>
             Fabbisogni assistenziali *
             <textarea
               name="assistanceNeeds"
@@ -531,6 +544,7 @@ function Patients() {
                     <span>📅 Nato il: {formatDate(patient.birthDate)}</span>
                     <span>📍 {patient.address}</span>
                     {patient.contactPhone && <span>📞 {patient.contactPhone}</span>}
+                    {patient.email && <span>✉️ {patient.email}</span>}
                   </div>
                   <div style={{ fontSize: '0.88rem', color: 'var(--gray-600)', marginTop: '4px', fontStyle: 'italic' }}>
                     💡 {patient.assistanceNeeds}
