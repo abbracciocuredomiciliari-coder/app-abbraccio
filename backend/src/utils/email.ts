@@ -77,7 +77,7 @@ export async function inviaEmailNotificaAdmin(
   emailUtente: string,
   professione: string
 ) {
-  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminEmail = process.env.ADMIN_EMAIL || 'abbracciocuredomiciliari@gmail.com';
   if (!adminEmail) {
     console.warn('⚠️ ADMIN_EMAIL non configurata — notifica admin saltata');
     return;
