@@ -242,17 +242,19 @@ function GestioneUtenti() {
                         <span>🔑 {roleLabels[utente.role] || utente.role}</span>
                         <span>📅 {formatData(utente.createdAt)}</span>
                       </div>
-                      {/* Zona lavorativa (visibile solo per richieste pending) */}
+                      {/* Domicilio / Zona lavorativa (visibile solo per richieste pending) */}
                       {utente.status === 'pending' && (
                         <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '10px', fontSize: '0.82rem' }}>
                           {utente.domicilioPartenza ? (
                             <span style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '2px 8px', color: '#065f46' }}>
-                              📍 {utente.domicilioPartenza} — raggio {utente.raggioAzioneKm ?? 10} km
+                              {utente.role === 'paziente_registrato'
+                                ? `🏠 Domicilio: ${utente.domicilioPartenza}`
+                                : `📍 ${utente.domicilioPartenza} — raggio ${utente.raggioAzioneKm ?? 10} km`}
                               {utente.domicilioCoords && <span style={{ color: '#059669', marginLeft: '4px' }}>✓ geo</span>}
                             </span>
                           ) : (
                             <span style={{ background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '6px', padding: '2px 8px', color: '#92400e' }}>
-                              ⚠️ Zona lavorativa non impostata
+                              {utente.role === 'paziente_registrato' ? '⚠️ Domicilio non inserito' : '⚠️ Zona lavorativa non impostata'}
                             </span>
                           )}
                         </div>
