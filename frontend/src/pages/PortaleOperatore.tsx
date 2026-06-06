@@ -72,6 +72,11 @@ interface Accesso {
   firmaLogin: string;
   durataMinuti: number;
   compensoMaturato: number;
+  firmaOperatore?: string;
+  firmaPaziente?: string;
+  nomeFirmatarioPaziente?: string;
+  ruoloFirmatario?: 'paziente' | 'caregiver';
+  firmatoAllaPartenza?: boolean;
 }
 
 interface DiarioEntry {
@@ -569,14 +574,28 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
 
   const generaPDFHtml = () => {
     if (!exportData) return '';
-    const righe = exportData.accessi.map((acc: any) => `
-      <tr>
-        <td>${acc.data}</td>
-        <td>${acc.oraEntrata}</td>
-        <td>${acc.oraUscita || '—'}</td>
-        <td>${acc.durataOre}</td>
-        <td>${acc.note || '—'}</td>
-      </tr>`).join('');
+
+    const righe = exportData.accessi.map((acc: any, idx: number) => {
+      const haFirmaOp = !!acc.firmaOperatore;
+      const haFirmaPaz = !!acc.firmaPaziente;
+      const firmaOpHtml = haFirmaOp
+        ? `<img src="${acc.firmaOperatore}" style="max-width:180px;max-height:60px;border:1px solid #d1d5db;border-radius:4px;display:block" />`
+        : '<span style="color:#9ca3af;font-size:10px">Non raccolta</span>';
+      const firmaPazHtml = haFirmaPaz
+        ? `<div><img src="${acc.firmaPaziente}" style="max-width:180px;max-height:60px;border:1px solid #d1d5db;border-radius:4px;display:block" />
+           ${acc.nomeFirmatarioPaziente ? `<span style="font-size:9px;color:#6b7280">${acc.ruoloFirmatario === 'caregiver' ? 'Caregiver' : 'Paziente'}: ${acc.nomeFirmatarioPaziente}</span>` : ''}</div>`
+        : '<span style="color:#9ca3af;font-size:10px">Non raccolta</span>';
+      return `
+      <tr style="background:${idx % 2 === 0 ? '#fff' : '#f8fafc'}">
+        <td style="padding:8px;border-bottom:1px solid #e2e8f0;vertical-align:top">${acc.data}</td>
+        <td style="padding:8px;border-bottom:1px solid #e2e8f0;vertical-align:top">${acc.oraEntrata}</td>
+        <td style="padding:8px;border-bottom:1px solid #e2e8f0;vertical-align:top">${acc.oraUscita || '—'}</td>
+        <td style="padding:8px;border-bottom:1px solid #e2e8f0;vertical-align:top">${acc.durataOre}</td>
+        <td style="padding:8px;border-bottom:1px solid #e2e8f0;vertical-align:top">${acc.note || '—'}</td>
+        <td style="padding:8px;border-bottom:1px solid #e2e8f0;vertical-align:top">${firmaOpHtml}</td>
+        <td style="padding:8px;border-bottom:1px solid #e2e8f0;vertical-align:top">${firmaPazHtml}</td>
+      </tr>`;
+    }).join('');
 
     return `<html><head><title>Registro Accessi</title>
     <style>
@@ -585,18 +604,21 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
       h2{font-size:14px;color:#444;margin:0 0 16px}
       table{width:100%;border-collapse:collapse;margin-top:16px}
       th{background:#1e4d8c;color:#fff;padding:8px;text-align:left;font-size:11px}
-      td{padding:7px 8px;border-bottom:1px solid #e2e8f0;font-size:11px}
-      tr:nth-child(even) td{background:#f8fafc}
       .riepilogo{margin-top:20px;background:#f1f5f9;padding:12px;border-radius:6px}
       .riepilogo p{margin:4px 0}
-      @media print{body{margin:0}}
+      @media print{body{margin:0} img{max-width:160px!important}}
     </style></head><body>
     <h1>Registro Accessi — ${exportData.piano.paziente}</h1>
     <h2>Operatore: ${exportData.piano.operatore} (${exportData.piano.ruoloOperatore})</h2>
     <p><strong>Attività:</strong> ${exportData.piano.task}</p>
     <p><strong>Periodo:</strong> ${exportData.periodo.da} — ${exportData.periodo.a}</p>
     <table>
-      <thead><tr><th>Data</th><th>Entrata</th><th>Uscita</th><th>Durata</th><th>Note</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Data</th><th>Entrata</th><th>Uscita</th><th>Durata</th><th>Note</th>
+          <th>Firma Operatore</th><th>Firma Paziente/Caregiver</th>
+        </tr>
+      </thead>
       <tbody>${righe}</tbody>
     </table>
     <div class="riepilogo">
@@ -1628,7 +1650,10 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                       <p><strong>Periodo:</strong> {exportData.periodo.da} — {exportData.periodo.a}</p>
                       <table>
                         <thead>
-                          <tr><th>Data</th><th>Entrata</th><th>Uscita</th><th>Durata</th><th>Note</th></tr>
+                          <tr>
+                            <th>Data</th><th>Entrata</th><th>Uscita</th><th>Durata</th><th>Note</th>
+                            <th>Firma Operatore</th><th>Firma Paziente/Caregiver</th>
+                          </tr>
                         </thead>
                         <tbody>
                           {exportData.accessi.map((acc: any, i: number) => (
@@ -1638,6 +1663,19 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                               <td>{acc.oraUscita || '—'}</td>
                               <td>{acc.durataOre}</td>
                               <td>{acc.note || '—'}</td>
+                              <td style={{ verticalAlign: 'top' }}>
+                                {acc.firmaOperatore
+                                  ? <img src={acc.firmaOperatore} alt="Firma op" style={{ maxWidth: '160px', maxHeight: '55px', border: '1px solid #d1d5db', borderRadius: '4px', display: 'block' }} />
+                                  : <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Non raccolta</span>}
+                              </td>
+                              <td style={{ verticalAlign: 'top' }}>
+                                {acc.firmaPaziente
+                                  ? <div>
+                                      <img src={acc.firmaPaziente} alt="Firma paz" style={{ maxWidth: '160px', maxHeight: '55px', border: '1px solid #d1d5db', borderRadius: '4px', display: 'block' }} />
+                                      {acc.nomeFirmatarioPaziente && <span style={{ fontSize: '0.7rem', color: '#6b7280' }}>{acc.ruoloFirmatario === 'caregiver' ? 'Caregiver' : 'Paziente'}: {acc.nomeFirmatarioPaziente}</span>}
+                                    </div>
+                                  : <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Non raccolta</span>}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -1660,14 +1698,31 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                       {accessi.map(acc => (
                         <li key={acc._id}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                            <div>
+                            <div style={{ flex: 1 }}>
                               <div style={{ fontWeight: '600', marginBottom: '4px' }}>
                                 📅 {formatData(acc.oraEntrata)} — {formatOra(acc.oraEntrata)}
                                 {acc.oraUscita ? ` → ${formatOra(acc.oraUscita)}` : ' 🟢 In corso'}
                               </div>
-                              <div style={{ fontSize: '0.85rem', color: '#555', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                              <div style={{ fontSize: '0.85rem', color: '#555', display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '6px' }}>
                                 {acc.durataMinuti > 0 && <span>⏱️ {formatDurata(acc.durataMinuti)}</span>}
                                 {acc.note && <span>📝 {acc.note}</span>}
+                              </div>
+                              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '6px' }}>
+                                <div style={{ fontSize: '0.78rem' }}>
+                                  <span style={{ color: '#6b7280', fontWeight: 600 }}>Firma operatore: </span>
+                                  {acc.firmaOperatore
+                                    ? <img src={acc.firmaOperatore} alt="Firma op" style={{ maxWidth: '120px', maxHeight: '40px', verticalAlign: 'middle', border: '1px solid #d1d5db', borderRadius: '4px', marginLeft: '4px' }} />
+                                    : <span style={{ color: '#f59e0b' }}>⚠️ non raccolta</span>}
+                                </div>
+                                <div style={{ fontSize: '0.78rem' }}>
+                                  <span style={{ color: '#6b7280', fontWeight: 600 }}>Firma paziente: </span>
+                                  {acc.firmaPaziente
+                                    ? <span>
+                                        <img src={acc.firmaPaziente} alt="Firma paz" style={{ maxWidth: '120px', maxHeight: '40px', verticalAlign: 'middle', border: '1px solid #d1d5db', borderRadius: '4px', marginLeft: '4px' }} />
+                                        {acc.nomeFirmatarioPaziente && <span style={{ color: '#6b7280', marginLeft: '4px' }}>({acc.nomeFirmatarioPaziente})</span>}
+                                      </span>
+                                    : <span style={{ color: '#9ca3af' }}>non raccolta</span>}
+                                </div>
                               </div>
                             </div>
                             <div style={{ fontSize: '0.8rem', color: '#888', textAlign: 'right' }}>
