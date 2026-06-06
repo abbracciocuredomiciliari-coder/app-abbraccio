@@ -199,10 +199,6 @@ function AppShell() {
                 <HeartPulse size={18} />
                 Esami Strumentali
               </Link>
-              <Link to="/pianificazione-prelievi" className={isActive('/pianificazione-prelievi') ? 'active' : ''}>
-                <Syringe size={18} />
-                Prelievi
-              </Link>
               <Link to="/richieste-presidi" className={isActive('/richieste-presidi') ? 'active' : ''}>
                 <Briefcase size={18} />
                 Richiesta Presidi/Farmaci
