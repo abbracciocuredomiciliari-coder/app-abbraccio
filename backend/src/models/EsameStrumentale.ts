@@ -50,7 +50,7 @@ export interface IEsameStrumentale extends Document {
   workPlan: Types.ObjectId;    // riferimento al WorkPlan (type=esami_strumentali)
   patient: Types.ObjectId;
   staff: Types.ObjectId;       // operatore esecutore
-  tipoEsame: string;           // ECG, Holter ECG, ecc.
+  tipoEsame: string | string[]; // ECG o ["ECG", "Holter ECG"]
   dataEsame: Date;
   orario?: string;
   note?: string;
@@ -129,7 +129,7 @@ const esameStrumentaleSchema = new Schema<IEsameStrumentale>(
     workPlan: { type: Schema.Types.ObjectId, ref: 'WorkPlan', required: false },
     patient: { type: Schema.Types.ObjectId, ref: 'Patient', required: true },
     staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: true },
-    tipoEsame: { type: String, required: true, trim: true },
+    tipoEsame: { type: Schema.Types.Mixed, required: true }, // supporta string o string[]
     dataEsame: { type: Date, required: true },
     orario: { type: String },
     note: { type: String, trim: true },

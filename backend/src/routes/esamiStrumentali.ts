@@ -157,7 +157,9 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
       return res.status(403).json({ message: 'Non autorizzato a creare esami strumentali' });
     }
 
-    const { workPlanId, patient, staff, tipoEsame, dataEsame, orario, note } = req.body;
+    const { workPlanId, patient, staff, tipoEsame, tipiEsame, dataEsame, orario, note } = req.body;
+    // Supporta sia tipoEsame (string, retrocompatibile) che tipiEsame (array, nuovo)
+    const tipiEsameFinal = tipiEsame || (tipoEsame ? [tipoEsame] : []);
 
     // Verifica che il WorkPlan esista e sia di tipo esami_strumentali
     if (workPlanId) {
@@ -169,7 +171,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
       workPlan: workPlanId,
       patient,
       staff,
-      tipoEsame,
+      tipoEsame: tipiEsameFinal,
       dataEsame: new Date(dataEsame),
       orario,
       note,

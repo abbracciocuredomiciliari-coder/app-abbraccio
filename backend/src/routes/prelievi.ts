@@ -192,9 +192,11 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
       return res.status(403).json({ message: 'Non autorizzato a creare prelievi' });
     }
 
-    const { patient, staff, dataPrelievo, orario, tipoPrelievo, note } = req.body;
-    if (!patient || !dataPrelievo || !tipoPrelievo) {
-      return res.status(400).json({ message: 'Campi obbligatori: patient, dataPrelievo, tipoPrelievo' });
+    const { patient, staff, dataPrelievo, orario, tipoPrelievo, tipiPrelievo, note } = req.body;
+    // Supporta sia tipoPrelievo (string, retrocompatibile) che tipiPrelievo (array, nuovo)
+    const tipiPrelievoFinal = tipiPrelievo || (tipoPrelievo ? [tipoPrelievo] : []);
+    if (!patient || !dataPrelievo || (!tipiPrelievoFinal || tipiPrelievoFinal.length === 0)) {
+      return res.status(400).json({ message: 'Campi obbligatori: patient, dataPrelievo, tipoPrelievo (o tipiPrelievo)' });
     }
 
     // Eredita tipoGestione dal paziente
@@ -205,7 +207,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
     const prelievo = await Prelievo.create({
       patient,
       staff: staff || null,
-      dataPrelievo, orario, tipoPrelievo, note, tipoGestione,
+      dataPrelievo, orario, tipoPrelievo: tipiPrelievoFinal, note, tipoGestione,
     });
 
     const populated = await Prelievo.findById(prelievo._id)

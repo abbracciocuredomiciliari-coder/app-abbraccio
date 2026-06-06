@@ -30,7 +30,7 @@ export interface IPrelievo extends Document {
   staff: Types.ObjectId;           // operatore incaricato
   dataPrelievo: Date;
   orario?: string;
-  tipoPrelievo: string;            // es. "Emocromo", "Glicemia", "Coagulazione"
+  tipoPrelievo: string | string[]; // es. "Emocromo" o ["Emocromo", "Glicemia"]
   note?: string;
   status: 'pianificato' | 'eseguito' | 'annullato';
   tipoGestione: 'privato' | 'convenzione';
@@ -93,7 +93,7 @@ const prelievoSchema = new Schema<IPrelievo>(
     staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: false, default: null },
     dataPrelievo: { type: Date, required: true },
     orario: { type: String },
-    tipoPrelievo: { type: String, required: true, trim: true },
+    tipoPrelievo: { type: Schema.Types.Mixed, required: true }, // supporta string o string[]
     note: { type: String, trim: true },
     status: {
       type: String,
