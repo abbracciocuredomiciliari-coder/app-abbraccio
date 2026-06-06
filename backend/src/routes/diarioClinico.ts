@@ -213,6 +213,8 @@ router.get('/storico/tutti', authenticateToken, auditLog('diario-storico', 'READ
           as: 'workPlanInfo'
         }
       },
+      // Escludi cartelle di piani eliminati (workPlanInfo vuoto)
+      { $match: { workPlanInfo: { $not: { $size: 0 } } } },
       {
         $project: {
           paziente: { $arrayElemAt: ['$pazienteInfo', 0] },
