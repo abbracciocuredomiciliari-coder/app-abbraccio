@@ -228,6 +228,12 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
   const [nomeFirmatarioPrelievo, setNomeFirmatarioPrelievo] = useState<Record<string, string>>({});
   const [ruoloFirmatarioPrelievo, setRuoloFirmatarioPrelievo] = useState<Record<string, 'paziente' | 'caregiver'>>({});
 
+  // ─── Accettazione incarico da email ─────────────────────────────────────────
+  const [pianoDaAccettare, setPianoDaAccettare] = useState<Piano | null>(null);
+  const [mostraModalAccettazione, setMostraModalAccettazione] = useState(false);
+  const [motivoRifiuto, setMotivoRifiuto] = useState('');
+  const [loadingAccettazione, setLoadingAccettazione] = useState(false);
+
   // ─── Caricamento iniziale + polling ogni 30s ───────────────────────────────
 
   const caricaDati = async (silent = false) => {
@@ -277,6 +283,20 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
     setPianoSelezionato(null);
     setMostraTuttiPiani(false);
   }, [modalita]);
+
+  // ─── Leggi parametri URL per accettazione da email ───────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const pianoId = params.get('piano');
+    const azione = params.get('azione');
+    if (pianoId && azione === 'accettazione' && tuttiIPiani.length > 0) {
+      const piano = tuttiIPiani.find(p => p._id === pianoId);
+      if (piano && piano.statoAccettazione === 'in_attesa') {
+        setPianoDaAccettare(piano);
+        setMostraModalAccettazione(true);
+      }
+    }
+  }, [tuttiIPiani]);
 
   // ─── Selezione paziente ────────────────────────────────────────────────────
 
@@ -518,6 +538,40 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
     setTimeout(() => win.print(), 500);
   };
 
+  // ─── Accettazione/Rifiuto incarico ─────────────────────────────────────────
+  const accettaIncarico = async () => {
+    if (!pianoDaAccettare) return;
+    setLoadingAccettazione(true);
+    try {
+      await api.post(`/workplan/${pianoDaAccettare._id}/accetta`);
+      setMostraModalAccettazione(false);
+      setPianoDaAccettare(null);
+      await caricaDati();
+      alert('✅ Incarico accettato con successo!');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nell\'accettazione');
+    } finally {
+      setLoadingAccettazione(false);
+    }
+  };
+
+  const rifiutaIncarico = async () => {
+    if (!pianoDaAccettare) return;
+    setLoadingAccettazione(true);
+    try {
+      await api.post(`/workplan/${pianoDaAccettare._id}/rifiuta`, { motivo: motivoRifiuto || 'Rifiutato dall\'operatore' });
+      setMostraModalAccettazione(false);
+      setPianoDaAccettare(null);
+      setMotivoRifiuto('');
+      await caricaDati();
+      alert('❌ Incarico rifiutato. Il coordinatore verrà notificato.');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nel rifiuto');
+    } finally {
+      setLoadingAccettazione(false);
+    }
+  };
+
   // ─── Render ────────────────────────────────────────────────────────────────
 
   if (loading) return <section><p>Caricamento...</p></section>;
@@ -541,6 +595,56 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
       <h2>
         {mode === 'piani' ? '📋 Piani Lavorativi' : (pazienteSelezionato || mostraTuttiPiani ? '🏥 Il mio Piano di Lavoro' : '📊 Dashboard')}
       </h2>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          MODAL ACCETTAZIONE INCARICO (da email)
+      ══════════════════════════════════════════════════════════════════════ */}
+      {mostraModalAccettazione && pianoDaAccettare && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '28px', maxWidth: '480px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <h3 style={{ margin: '0 0 8px', color: '#1e4d8c', fontSize: '1.3rem' }}>📋 Nuovo incarico assegnato</h3>
+            <p style={{ color: '#666', margin: '0 0 20px', fontSize: '0.95rem' }}>
+              Ti è stato assegnato un nuovo piano di lavoro. Accetta o rifiuta l'incarico.
+            </p>
+
+            <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
+              <p style={{ margin: '0 0 8px', fontSize: '0.9rem' }}><strong>Paziente:</strong> {pianoDaAccettare.patient?.firstName} {pianoDaAccettare.patient?.lastName}</p>
+              <p style={{ margin: '0 0 8px', fontSize: '0.9rem' }}><strong>Attività:</strong> {pianoDaAccettare.task}</p>
+              <p style={{ margin: 0, fontSize: '0.9rem' }}><strong>Data inizio:</strong> {new Date(pianoDaAccettare.date).toLocaleDateString('it-IT')}</p>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: '#374151' }}>
+                Motivo rifiuto (solo se rifiuti):
+              </label>
+              <textarea
+                value={motivoRifiuto}
+                onChange={e => setMotivoRifiuto(e.target.value)}
+                placeholder="Es. impegnato in altro incarico, indisponibilità..."
+                rows={2}
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.9rem', resize: 'vertical' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <button
+                onClick={accettaIncarico}
+                disabled={loadingAccettazione}
+                style={{ flex: 1, padding: '14px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '1rem', cursor: loadingAccettazione ? 'not-allowed' : 'pointer', opacity: loadingAccettazione ? 0.7 : 1 }}
+              >
+                {loadingAccettazione ? '⏳...' : '✅ Accetta'}
+              </button>
+              <button
+                onClick={rifiutaIncarico}
+                disabled={loadingAccettazione}
+                style={{ flex: 1, padding: '14px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '1rem', cursor: loadingAccettazione ? 'not-allowed' : 'pointer', opacity: loadingAccettazione ? 0.7 : 1 }}
+              >
+                {loadingAccettazione ? '⏳...' : '❌ Rifiuta'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════════════
           DASHBOARD OPERATORE (solo mode=dashboard)
