@@ -44,6 +44,8 @@ const PazientiConvenzione = lazy(() => import('./pages/PazientiConvenzione'));
 const PianificazionePrelievi = lazy(() => import('./pages/PianificazionePrelievi'));
 const CentroPrelievi = lazy(() => import('./pages/CentroPrelievi'));
 const AssegnazionePAI = lazy(() => import('./pages/AssegnazionePAI'));
+const CentroPrenotazioniPrivato = lazy(() => import('./pages/CentroPrenotazioniPrivato'));
+const GestioneRichieste = lazy(() => import('./pages/GestioneRichieste'));
 import {
   Heart,
   LayoutDashboard,
@@ -164,8 +166,22 @@ function AppShell() {
             </Link>
           )}
 
+          {/* ===== MENU PAZIENTE/CAREGIVER REGISTRATO ===== */}
+          {user && user.role === 'paziente_registrato' && (
+            <>
+              <Link to="/centro-prenotazioni-privato" className={isActive('/centro-prenotazioni-privato') ? 'active' : ''}>
+                <Calendar size={18} />
+                Centro Prenotazioni
+              </Link>
+              <Link to="/profilo-personale" className={isActive('/profilo-personale') ? 'active' : ''}>
+                <UserCircle size={18} />
+                Il mio profilo
+              </Link>
+            </>
+          )}
+
           {/* ===== MENU OPERATORI (infermieristico, oss, riabilitativo, medico) ===== */}
-          {user && operatore && (
+          {user && operatore && user.role !== 'paziente_registrato' && (
             <>
               <Link to="/portale-operatore" className={isActive('/portale-operatore') ? 'active' : ''}>
                 <LayoutDashboard size={18} />
@@ -288,6 +304,10 @@ function AppShell() {
                     <ShieldCheck size={18} />
                     Gestione Utenti
                   </Link>
+                  <Link to="/gestione-richieste" className={isActive('/gestione-richieste') ? 'active' : ''}>
+                    <Calendar size={18} />
+                    Gestione Richieste
+                  </Link>
                   <Link to="/gestione-consensi-gdpr" className={isActive('/gestione-consensi-gdpr') ? 'active' : ''}>
                     <Shield size={18} />
                     Consensi GDPR
@@ -342,6 +362,8 @@ function AppShell() {
           <Route path="/scheda-controllo-defibrillatore" element={<Navigate to="/checklist-hub" replace />} />
           <Route path="/checklist-glucometro" element={<Navigate to="/checklist-hub" replace />} />
           <Route path="/gestione-utenti" element={<ProtectedRoute><GestioneUtenti /></ProtectedRoute>} />
+          <Route path="/gestione-richieste" element={<ProtectedRoute><GestioneRichieste /></ProtectedRoute>} />
+          <Route path="/centro-prenotazioni-privato" element={<ProtectedRoute><CentroPrenotazioniPrivato /></ProtectedRoute>} />
 
           {/* Route condivise (tutti gli utenti autenticati) */}
           <Route path="/protocolli-procedure" element={<ProtectedRoute><ProtocolliProcedure /></ProtectedRoute>} />

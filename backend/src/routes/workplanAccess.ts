@@ -79,12 +79,12 @@ router.post('/:workPlanId/entrata', authenticateToken, async (req: Request, res:
     }
 
     // Cerca il profilo staff corrispondente all'utente loggato
-    const staffMember = await getStaffByUser(user.id || user.userId, user.email);
+    const staffMember = await getStaffByUser(user.userId, user.email);
 
     // Controlla se c'è già un accesso aperto (entrata senza uscita) per questo utente su questo piano
     const accessoAperto = await WorkPlanAccess.findOne({
       workPlan: workPlanId,
-      staffId: staffMember?._id || user.id,
+      staffId: staffMember?._id || user.userId,
       oraUscita: { $exists: false }
     });
 
@@ -99,7 +99,7 @@ router.post('/:workPlanId/entrata', authenticateToken, async (req: Request, res:
 
     const accesso = await WorkPlanAccess.create({
       workPlan: workPlanId,
-      staffId: staffMember?._id || user.id,
+      staffId: staffMember?._id || user.userId,
       staffName: user.name || `${staffMember?.firstName} ${staffMember?.lastName}` || 'Utente',
       staffRole: user.role || staffMember?.role || 'operatore',
       oraEntrata: new Date(),
@@ -139,8 +139,8 @@ router.patch('/:accessId/uscita', authenticateToken, async (req: Request, res: R
     }
 
     // Verifica che sia lo stesso utente (o admin/coordinator)
-    const staffMember = await getStaffByUser(user.id || user.userId, user.email);
-    const isOwner = accesso.staffId.toString() === (staffMember?._id?.toString() || user.id);
+    const staffMember = await getStaffByUser(user.userId, user.email);
+    const isOwner = accesso.staffId.toString() === (staffMember?._id?.toString() || user.userId);
     const isAdmin = user.role === 'admin' || user.role === 'coordinator';
 
     if (!isOwner && !isAdmin) {
@@ -215,10 +215,10 @@ router.patch('/:accessId/firma-operatore', authenticateToken, async (req: Reques
 router.get('/miei-accessi/aperti', authenticateToken, async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const staffMember = await getStaffByUser(user.id || user.userId, user.email);
+    const staffMember = await getStaffByUser(user.userId, user.email);
 
     const accessiAperti = await WorkPlanAccess.find({
-      staffId: staffMember?._id || user.id,
+      staffId: staffMember?._id || user.userId,
       oraUscita: { $exists: false }
     }).populate('workPlan');
 
@@ -246,11 +246,11 @@ router.get('/piano/:workPlanId/info', authenticateToken, async (req: Request, re
       .limit(20);
 
     const user = (req as any).user;
-    const staffMember = await getStaffByUser(user.id || user.userId, user.email);
+    const staffMember = await getStaffByUser(user.userId, user.email);
 
     const accessoApertoUtente = await WorkPlanAccess.findOne({
       workPlan: workPlanId,
-      staffId: staffMember?._id || user.id,
+      staffId: staffMember?._id || user.userId,
       oraUscita: { $exists: false }
     });
 

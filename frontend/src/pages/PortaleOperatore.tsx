@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
+import FirmaCanvas from '../components/FirmaCanvas';
 
 // ─── Interfacce ───────────────────────────────────────────────────────────────
 
@@ -36,6 +37,7 @@ interface Piano {
   tariffaAsl?: number;
   patient: { _id: string; firstName: string; lastName: string; tipoGestione?: string };
   staff: { _id: string; firstName: string; lastName: string; role: string };
+  statoAccettazione?: 'in_attesa' | 'accettato' | 'rifiutato';
 }
 
 interface PrelievoOperatore {
@@ -754,7 +756,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                               <FirmaCanvas
                                 label="Firma Operatore"
                                 sublabel={`${user?.name}`}
-                                onFirmaCompleta={f => setFirmaOpPrelievo(s => ({ ...s, [prel._id]: f }))}
+                                onFirmaCompleta={(f: string) => setFirmaOpPrelievo(s => ({ ...s, [prel._id]: f }))}
                                 onCancella={() => setFirmaOpPrelievo(s => ({ ...s, [prel._id]: '' }))}
                                 altezza={140}
                               />
@@ -794,7 +796,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                               <FirmaCanvas
                                 label={`Firma ${ruoloFirmatarioPrelievo[prel._id] === 'caregiver' ? 'Caregiver' : 'Paziente'}`}
                                 sublabel="Firma per confermare il prelievo eseguito"
-                                onFirmaCompleta={f => setFirmaPazPrelievo(s => ({ ...s, [prel._id]: f }))}
+                                onFirmaCompleta={(f: string) => setFirmaPazPrelievo(s => ({ ...s, [prel._id]: f }))}
                                 onCancella={() => setFirmaPazPrelievo(s => ({ ...s, [prel._id]: '' }))}
                                 altezza={140}
                               />

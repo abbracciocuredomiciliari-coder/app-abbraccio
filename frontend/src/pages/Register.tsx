@@ -48,6 +48,10 @@ function Register() {
   const [geocodingLoading, setGeocodingLoading] = useState(false);
   const [geocodingError, setGeocodingError] = useState('');
 
+  // Tipo registrazione: operatore o caregiver/paziente
+  const [tipoRegistrazione, setTipoRegistrazione] = useState<'operatore' | 'caregiver'>('operatore');
+  const [telefono, setTelefono] = useState('');
+
   const geocodifica = useCallback(async () => {
     if (!domicilioPartenza.trim()) return;
     setGeocodingLoading(true);
@@ -81,17 +85,23 @@ function Register() {
     setLoading(true);
 
     try {
-      const response = await api.post('/auth/register', {
+      const payload: any = {
         name,
         email,
         password,
-        categoria,
-        professione,
-        role: 'caregiver',
-        domicilioPartenza: domicilioPartenza.trim(),
-        raggioAzioneKm,
-        ...(domicilioCoords ? { domicilioCoords } : {}),
-      });
+        role: tipoRegistrazione === 'operatore' ? 'caregiver' : 'paziente_registrato',
+        telefono,
+      };
+
+      if (tipoRegistrazione === 'operatore') {
+        payload.categoria = categoria;
+        payload.professione = professione;
+        payload.domicilioPartenza = domicilioPartenza.trim();
+        payload.raggioAzioneKm = raggioAzioneKm;
+        if (domicilioCoords) payload.domicilioCoords = domicilioCoords;
+      }
+
+      const response = await api.post('/auth/register', payload);
 
       if (response.data.pending) {
         setSuccess(response.data.message);
@@ -139,6 +149,41 @@ function Register() {
         Compila il modulo per richiedere l'accesso all'app. La tua richiesta sarà valutata dall'amministratore.
       </p>
       <form onSubmit={handleSubmit} className="login-form" style={{ maxWidth: '480px' }}>
+        {/* Sezione tipo registrazione */}
+        <div style={{ marginBottom: '20px', padding: '12px', background: '#f8fafc', borderRadius: '8px' }}>
+          <label style={{ marginBottom: '8px', display: 'block' }}>Registrati come:</label>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              type="button"
+              onClick={() => setTipoRegistrazione('operatore')}
+              style={{
+                flex: 1,
+                padding: '12px',
+                borderRadius: '8px',
+                border: tipoRegistrazione === 'operatore' ? '2px solid #1e4d8c' : '1px solid #d1d5db',
+                background: tipoRegistrazione === 'operatore' ? '#eff6ff' : 'white',
+                cursor: 'pointer'
+              }}
+            >
+              👨‍⚕️ Operatore
+            </button>
+            <button
+              type="button"
+              onClick={() => setTipoRegistrazione('caregiver')}
+              style={{
+                flex: 1,
+                padding: '12px',
+                borderRadius: '8px',
+                border: tipoRegistrazione === 'caregiver' ? '2px solid #1e4d8c' : '1px solid #d1d5db',
+                background: tipoRegistrazione === 'caregiver' ? '#eff6ff' : 'white',
+                cursor: 'pointer'
+              }}
+            >
+              👤 Paziente/Caregiver
+            </button>
+          </div>
+        </div>
+
         <label>
           Nome completo *
           <input
@@ -159,6 +204,15 @@ function Register() {
           />
         </label>
         <label>
+          Telefono
+          <input
+            type="tel"
+            value={telefono}
+            onChange={(e) => setTelefono(e.target.value)}
+            placeholder="Es. +39 333 123 4567"
+          />
+        </label>
+        <label>
           Password *
           <input
             type="password"
@@ -170,6 +224,8 @@ function Register() {
           />
         </label>
 
+        {tipoRegistrazione === 'operatore' && (
+          <>
         <label>
           Categoria professionale *
           <select
@@ -265,6 +321,8 @@ function Register() {
             </div>
           )}
         </div>
+        </>
+        )}
 
         <button type="submit" disabled={loading} style={{ opacity: loading ? 0.7 : 1 }}>
           {loading ? '⏳ Invio in corso...' : '📨 Invia richiesta di registrazione'}

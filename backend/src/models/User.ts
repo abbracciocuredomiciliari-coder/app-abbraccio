@@ -45,7 +45,7 @@ const userSchema = new Schema<IUser>(
     },
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
-    pazienteId: { type: Schema.Types.ObjectId, ref: 'Patient', required: false },
+    pazienteId: { type: String, required: false },
     telefono: { type: String, trim: true },
   },
   { timestamps: true }
