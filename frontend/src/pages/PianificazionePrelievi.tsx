@@ -39,7 +39,7 @@ interface Prelievo {
   staff: { _id: string; firstName: string; lastName: string; role: string };
   dataPrelievo: string;
   orario?: string;
-  tipoPrelievo: string;
+  tipoPrelievo: string | string[];
   note?: string;
   status: 'pianificato' | 'eseguito' | 'annullato';
   tipoGestione: 'privato' | 'convenzione';
@@ -98,7 +98,7 @@ export default function PianificazionePrelievi() {
     staff: '',
     dataPrelievo: giornoSelezionato,
     orario: '',
-    tipoPrelievo: '',
+    tipiPrelievo: [] as string[],
     note: '',
   });
   const [salvando, setSalvando] = useState(false);
@@ -167,12 +167,12 @@ export default function PianificazionePrelievi() {
 
   // ─── Crea prelievo ─────────────────────────────────────────────────────────
   const creaPrelievo = async () => {
-    if (!form.patient || !form.staff || !form.tipoPrelievo) return;
+    if (!form.patient || !form.staff || form.tipiPrelievo.length === 0) return;
     setSalvando(true);
     try {
       await api.post('/prelievi', { ...form });
       setShowForm(false);
-      setForm({ patient: '', staff: '', dataPrelievo: giornoSelezionato, orario: '', tipoPrelievo: '', note: '' });
+      setForm({ patient: '', staff: '', dataPrelievo: giornoSelezionato, orario: '', tipiPrelievo: [], note: '' });
       await caricaPrelievi();
     } catch { /* noop */ }
     setSalvando(false);
@@ -239,7 +239,7 @@ export default function PianificazionePrelievi() {
       <table>
         <tr><th>Paziente</th><td><strong>${p.patient.firstName} ${p.patient.lastName}</strong>${p.patient.siat?.asl ? '<br/><span style="font-size:0.8rem;color:#64748b;">ASL: ' + p.patient.siat.asl + '</span>' : ''}</td>
             <th>Operatore</th><td>${p.staff.firstName} ${p.staff.lastName}<br/><span style="font-size:0.8rem;color:#64748b;">${p.staff.role}</span></td></tr>
-        <tr><th>Tipo prelievo</th><td colspan="3">${p.tipoPrelievo}</td></tr>
+        <tr><th>Tipi prelievo</th><td colspan="3">${Array.isArray(p.tipoPrelievo) ? p.tipoPrelievo.join(', ') : p.tipoPrelievo}</td></tr>
         ${p.note ? `<tr><th>Note</th><td colspan="3">${p.note}</td></tr>` : ''}
         <tr><th>Stato</th><td colspan="3">
           <span class="badge" style="background:${p.status === 'eseguito' ? '#dcfce7' : '#dbeafe'};color:${p.status === 'eseguito' ? '#166534' : '#1e40af'};">
@@ -551,7 +551,7 @@ export default function PianificazionePrelievi() {
                         </span>
                       </div>
                       <div style={{ fontSize: '0.83rem', color: '#64748b', marginTop: '4px' }}>
-                        💉 {p.tipoPrelievo} · 👤 {p.staff.firstName} {p.staff.lastName}
+                        💉 {Array.isArray(p.tipoPrelievo) ? p.tipoPrelievo.join(', ') : p.tipoPrelievo} · 👤 {p.staff.firstName} {p.staff.lastName}
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
@@ -702,15 +702,37 @@ export default function PianificazionePrelievi() {
               </div>
 
               <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>
-                Tipo prelievo *
-                <select
-                  value={form.tipoPrelievo}
-                  onChange={e => setForm(f => ({ ...f, tipoPrelievo: e.target.value }))}
-                  style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
-                >
-                  <option value="">Seleziona tipo...</option>
-                  {TIPI_PRELIEVO.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
+                Tipi prelievo *
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px', maxHeight: '150px', overflowY: 'auto' }}>
+                  {TIPI_PRELIEVO.map(tipo => {
+                    const selected = form.tipiPrelievo.includes(tipo);
+                    return (
+                      <button
+                        key={tipo}
+                        type="button"
+                        onClick={() => {
+                          if (selected) {
+                            setForm(f => ({ ...f, tipiPrelievo: f.tipiPrelievo.filter(t => t !== tipo) }));
+                          } else {
+                            setForm(f => ({ ...f, tipiPrelievo: [...f.tipiPrelievo, tipo] }));
+                          }
+                        }}
+                        style={{
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          border: `2px solid ${selected ? '#0d9488' : '#d1d5db'}`,
+                          background: selected ? '#ccfbf1' : 'white',
+                          color: selected ? '#0f766e' : '#374151',
+                          fontSize: '0.8rem',
+                          cursor: 'pointer',
+                          fontWeight: selected ? 600 : 400,
+                        }}
+                      >
+                        {selected && '✓ '}{tipo}
+                      </button>
+                    );
+                  })}
+                </div>
               </label>
 
               <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>
@@ -731,7 +753,7 @@ export default function PianificazionePrelievi() {
               </button>
               <button
                 onClick={creaPrelievo}
-                disabled={salvando || !form.patient || !form.staff || !form.tipoPrelievo}
+                disabled={salvando || !form.patient || !form.staff || form.tipiPrelievo.length === 0}
                 style={{ padding: '10px 20px', borderRadius: '8px', background: coloreModalita, color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}
               >
                 {salvando ? '...' : <><CheckCircle size={16} />Salva Prelievo</>}

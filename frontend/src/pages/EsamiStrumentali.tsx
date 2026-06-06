@@ -75,7 +75,7 @@ interface AllegatoEsame {
 
 interface EsameItem {
   _id: string;
-  tipoEsame: string;
+  tipoEsame: string | string[];
   patient: PatientOption;
   staff: StaffMember;
   dataEsame: string;
@@ -131,7 +131,7 @@ export default function EsamiStrumentali() {
   // Form nuovo esame
   const [formPatient, setFormPatient] = useState('');
   const [formStaff, setFormStaff] = useState('');
-  const [formTipoEsame, setFormTipoEsame] = useState('');
+  const [formTipiEsame, setFormTipiEsame] = useState<string[]>([]);
   const [formDataEsame, setFormDataEsame] = useState('');
   const [formOrario, setFormOrario] = useState('');
   const [formNote, setFormNote] = useState('');
@@ -213,7 +213,7 @@ export default function EsamiStrumentali() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(''); setSuccess('');
-    if (!formPatient || !formStaff || !formTipoEsame || !formDataEsame) {
+    if (!formPatient || !formStaff || formTipiEsame.length === 0 || !formDataEsame) {
       setError('Compila tutti i campi obbligatori.');
       return;
     }
@@ -221,13 +221,13 @@ export default function EsamiStrumentali() {
       await api.post('/esami-strumentali', {
         patient: formPatient,
         staff: formStaff,
-        tipoEsame: formTipoEsame,
+        tipiEsame: formTipiEsame,
         dataEsame: formDataEsame,
         orario: formOrario || undefined,
         note: formNote || undefined,
       });
       await loadData();
-      setFormPatient(''); setFormStaff(''); setFormTipoEsame('');
+      setFormPatient(''); setFormStaff(''); setFormTipiEsame([]);
       setFormDataEsame(''); setFormOrario(''); setFormNote('');
       setSuccess('✅ Esame strumentale creato con successo!');
       setTimeout(() => setSuccess(''), 3000);
@@ -687,13 +687,37 @@ export default function EsamiStrumentali() {
               </label>
 
               <label>
-                Tipo esame *
-                <select value={formTipoEsame} onChange={e => setFormTipoEsame(e.target.value)} required>
-                  <option value="">Seleziona tipo</option>
-                  {TIPI_ESAME.map(t => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
+                Tipi esame *
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px', maxHeight: '150px', overflowY: 'auto' }}>
+                  {TIPI_ESAME.map(tipo => {
+                    const selected = formTipiEsame.includes(tipo.value);
+                    return (
+                      <button
+                        key={tipo.value}
+                        type="button"
+                        onClick={() => {
+                          if (selected) {
+                            setFormTipiEsame(prev => prev.filter(t => t !== tipo.value));
+                          } else {
+                            setFormTipiEsame(prev => [...prev, tipo.value]);
+                          }
+                        }}
+                        style={{
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          border: `2px solid ${selected ? '#e11d48' : '#d1d5db'}`,
+                          background: selected ? '#fef2f2' : 'white',
+                          color: selected ? '#be123c' : '#374151',
+                          fontSize: '0.8rem',
+                          cursor: 'pointer',
+                          fontWeight: selected ? 600 : 400,
+                        }}
+                      >
+                        {selected && '✓ '}{tipo.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </label>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -879,7 +903,7 @@ export default function EsamiStrumentali() {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
                   <HeartPulse size={22} color="#e11d48" />
-                  <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{selectedEsame.tipoEsame}</h3>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{Array.isArray(selectedEsame.tipoEsame) ? selectedEsame.tipoEsame.join(', ') : selectedEsame.tipoEsame}</h3>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '2px 10px', borderRadius: '10px', backgroundColor: STATUS_CONFIG[selectedEsame.status]?.bg, color: STATUS_CONFIG[selectedEsame.status]?.color }}>
                     {STATUS_CONFIG[selectedEsame.status]?.label}
                   </span>

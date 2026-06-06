@@ -49,7 +49,8 @@ interface GiornoSettimana {
 interface WorkPlanItem {
   _id: string;
   type: 'prestazionale' | 'assistenziale';
-  category: string;
+  category?: string; // retrocompatibilità
+  categories?: string[];
   tipoEsame?: string;
   patient: PatientOption;
   staff: StaffMember;
@@ -158,7 +159,7 @@ function WorkPlan() {
   const [duration, setDuration] = useState(60);
   const [patient, setPatient] = useState('');
   const [staff, setStaff] = useState('');
-  const [category, setCategory] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [tipoCompenso, setTipoCompenso] = useState<'orario' | 'fisso' | 'nessuno'>('nessuno');
   const [tariffa, setTariffa] = useState<number>(0);
@@ -225,8 +226,8 @@ function WorkPlan() {
         setError('Compila il campo Attività / Descrizione.');
         return;
       }
-      if (!category) {
-        setError('Seleziona una categoria.');
+      if (categories.length === 0) {
+        setError('Seleziona almeno una categoria.');
         return;
       }
       const giorniAttivi = giorniForm
@@ -239,7 +240,7 @@ function WorkPlan() {
 
       await api.post('/workplan', {
         type: activeTab,
-        category,
+        categories,
         patient,
         staff,
         task,
@@ -255,7 +256,7 @@ function WorkPlan() {
       });
       await loadData();
       setTask(''); setDate(''); setDataFine(''); setTime(''); setDuration(60);
-      setPatient(''); setStaff(''); setCategory(''); setNotes('');
+      setPatient(''); setStaff(''); setCategories([]); setNotes('');
       setTipoCompenso('nessuno'); setTariffa(0); setCostoPrestazione(0);
       setGiorniForm(prev => prev.map(g => ({ ...g, attivo: false, accessiAlGiorno: 1, minutiPerAccesso: 60 })));
       setSuccess('Incarico aggiunto con successo!');
@@ -703,13 +704,43 @@ function WorkPlan() {
             </div>
 
             <label>
-              Categoria *
-              <select value={category} onChange={(e) => setCategory(e.target.value)} required>
-                <option value="">Seleziona categoria</option>
-                {currentCategories.map((cat) => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
-                ))}
-              </select>
+              Categorie *
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
+                {currentCategories.map((cat) => {
+                  const selected = categories.includes(cat.value);
+                  const Icon = cat.icon;
+                  return (
+                    <button
+                      key={cat.value}
+                      type="button"
+                      onClick={() => {
+                        if (selected) {
+                          setCategories(categories.filter(c => c !== cat.value));
+                        } else {
+                          setCategories([...categories, cat.value]);
+                        }
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        border: `2px solid ${selected ? cat.color : '#e5e7eb'}`,
+                        background: selected ? `${cat.color}20` : 'white',
+                        color: selected ? cat.color : '#374151',
+                        fontWeight: selected ? 700 : 500,
+                        fontSize: '0.875rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Icon size={16} />
+                      {cat.label}
+                      {selected && <span style={{ marginLeft: '4px' }}>✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
             </label>
 
             <label>
@@ -796,7 +827,7 @@ function WorkPlan() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '700px', overflowY: 'auto' }}>
               {filteredWorkplans.map((item) => {
-                const catInfo = getCategoryInfo(item.category);
+                const catInfo = getCategoryInfo(item.categories?.[0] || item.category || '');
                 const Icon = catInfo.icon;
                 return (
                   <div key={item._id} style={{ display: 'flex', gap: '12px', padding: '14px', border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-lg)', backgroundColor: 'white', borderLeft: `4px solid ${catInfo.color}`, opacity: item.status === 'completed' ? 0.75 : 1 }}>

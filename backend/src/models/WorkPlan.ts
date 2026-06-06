@@ -8,7 +8,8 @@ export interface IGiornoSettimana {
 
 export interface IWorkPlan extends Document {
   type: 'prestazionale' | 'assistenziale' | 'esami_strumentali';
-  category: string;
+  category?: string;  // retrocompatibilità
+  categories?: string[]; // nuovo: array di categorie
   tipoEsame?: string;   // per esami_strumentali: ECG, Holter ECG, ecc.
   patient: Types.ObjectId;
   staff: Types.ObjectId;
@@ -43,7 +44,8 @@ const workPlanSchema = new Schema<IWorkPlan>(
       enum: ['prestazionale', 'assistenziale', 'esami_strumentali'],
       default: 'prestazionale'
     },
-    category: { type: String, required: true },
+    category: { type: String, required: false },  // retrocompatibilità
+    categories: [{ type: String }],  // nuovo: array di categorie
     tipoEsame: { type: String, trim: true },
     patient: { type: Schema.Types.ObjectId, ref: 'Patient', required: true },
     staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: true },
