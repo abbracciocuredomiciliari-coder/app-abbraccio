@@ -4,7 +4,7 @@ import { useModalita } from '../context/ModalitaContext';
 import {
   ChevronLeft, ChevronRight, Plus, X, Calendar, Clock, User, Syringe,
   CheckCircle, Trash2, ChevronDown, ChevronUp, FileText, Building2,
-  Printer, UserCheck, ClipboardList,
+  Printer, UserCheck, ClipboardList, Eye,
 } from 'lucide-react';
 
 // ─── Interfacce ───────────────────────────────────────────────────────────────
@@ -211,6 +211,92 @@ export default function CentroPrelievi() {
       if (prelievoAperto?._id === id) setPrelievoAperto(null);
       await caricaPrelievi();
     } catch { /* noop */ }
+  };
+
+  // ─── Genera HTML per PDF prelievo ───────────────────────────────────────────
+  const generaHTMLPrelievo = (p: Prelievo) => {
+    return `<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Verbale Prelievo - ${p.patient.firstName} ${p.patient.lastName}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+    h1 { color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; }
+    .info { margin: 15px 0; }
+    .label { font-weight: bold; color: #666; }
+    .value { color: #333; }
+    .box { border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 8px; }
+    .status-eseguito { background: #f0fdf4; border-left: 4px solid #059669; }
+    .firma { margin-top: 10px; }
+    .firma img { max-width: 300px; max-height: 150px; border: 1px solid #ccc; border-radius: 4px; }
+    .footer { margin-top: 30px; font-size: 12px; color: #999; text-align: center; border-top: 1px solid #eee; padding-top: 10px; }
+    @media print { body { margin: 10mm; } }
+  </style>
+</head>
+<body>
+  <h1>📋 Verbale Prelievo</h1>
+  <div class="box status-eseguito">
+    <div class="info"><span class="label">Stato:</span> <span class="value">✅ ESEGUITO</span></div>
+    <div class="info"><span class="label">Data prelievo:</span> <span class="value">${new Date(p.dataPrelievo).toLocaleDateString('it-IT')}</span></div>
+    ${p.orario ? `<div class="info"><span class="label">Orario:</span> <span class="value">${p.orario}</span></div>` : ''}
+  </div>
+  
+  <div class="box">
+    <h3>👤 Paziente</h3>
+    <div class="info"><span class="label">Nome:</span> <span class="value">${p.patient.firstName} ${p.patient.lastName}</span></div>
+    <div class="info"><span class="label">Tipo gestione:</span> <span class="value">${p.patient.tipoGestione === 'convenzione' ? 'Convenzione' : 'Privato'}</span></div>
+  </div>
+  
+  <div class="box">
+    <h3>💉 Dettagli Prelievo</h3>
+    <div class="info"><span class="label">Tipi prelievo:</span> <span class="value">${p.tipoPrelievo}</span></div>
+    ${p.note ? `<div class="info"><span class="label">Note:</span> <span class="value">${p.note}</span></div>` : ''}
+  </div>
+  
+  <div class="box">
+    <h3>✍️ Esecuzione</h3>
+    <div class="info"><span class="label">Eseguito da:</span> <span class="value">${p.eseguitoDa || 'N/A'}</span></div>
+    <div class="info"><span class="label">Data esecuzione:</span> <span class="value">${p.dataEsecuzione ? new Date(p.dataEsecuzione).toLocaleDateString('it-IT') : 'N/A'}</span></div>
+    ${p.noteEsecuzione ? `<div class="info"><span class="label">Note esecuzione:</span> <span class="value">${p.noteEsecuzione}</span></div>` : ''}
+  </div>
+  
+  ${p.firmaOperatore ? `<div class="box firma">
+    <h3>✍️ Firma Operatore</h3>
+    <img src="${p.firmaOperatore}" alt="Firma operatore" />
+  </div>` : ''}
+  
+  ${p.firmaPaziente ? `<div class="box firma">
+    <h3>✍️ Firma ${p.ruoloFirmatario === 'caregiver' ? 'Caregiver' : 'Paziente'} ${p.nomeFirmatarioPaziente ? `(${p.nomeFirmatarioPaziente})` : ''}</h3>
+    <img src="${p.firmaPaziente}" alt="Firma paziente" />
+  </div>` : ''}
+  
+  <div class="footer">
+    Documento generato da App Abbraccio - ${new Date().toLocaleString('it-IT')}
+  </div>
+</body>
+</html>`;
+  };
+
+  // ─── Stampa PDF prelievo ────────────────────────────────────────────────────
+  const stampaPrelievoPDF = (p: Prelievo) => {
+    const html = generaHTMLPrelievo(p);
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 500);
+  };
+
+  // ─── Visualizza PDF prelievo ────────────────────────────────────────────────
+  const visualizzaPrelievoPDF = (p: Prelievo) => {
+    const html = generaHTMLPrelievo(p);
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.focus();
   };
 
   // ─── Aggiungi diaria ───────────────────────────────────────────────────────
@@ -482,6 +568,45 @@ export default function CentroPrelievi() {
                           <div style={{ background: '#f0fdf4', borderRadius: '8px', padding: '10px 12px', marginBottom: '12px', fontSize: '0.85rem', color: '#166534' }}>
                             ✅ Eseguito da <strong>{p.eseguitoDa}</strong> il {new Date(p.dataEsecuzione!).toLocaleDateString('it-IT')}
                             {p.noteEsecuzione && <div style={{ marginTop: '4px', color: '#374151' }}>{p.noteEsecuzione}</div>}
+                          </div>
+                        )}
+
+                        {/* Firme */}
+                        {p.status === 'eseguito' && (p.firmaOperatore || p.firmaPaziente) && (
+                          <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '12px', marginBottom: '12px', border: '1px solid #e2e8f0' }}>
+                            <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#374151', marginBottom: '10px' }}>✍️ Firme</div>
+                            {p.firmaOperatore && (
+                              <div style={{ marginBottom: '10px' }}>
+                                <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '4px' }}>Firma Operatore:</div>
+                                <img src={p.firmaOperatore} alt="Firma operatore" style={{ maxWidth: '200px', maxHeight: '100px', border: '1px solid #d1d5db', borderRadius: '4px', background: 'white' }} />
+                              </div>
+                            )}
+                            {p.firmaPaziente && (
+                              <div>
+                                <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '4px' }}>
+                                  Firma {p.ruoloFirmatario === 'caregiver' ? 'Caregiver' : 'Paziente'} {p.nomeFirmatarioPaziente && `(${p.nomeFirmatarioPaziente})`}:
+                                </div>
+                                <img src={p.firmaPaziente} alt="Firma paziente" style={{ maxWidth: '200px', maxHeight: '100px', border: '1px solid #d1d5db', borderRadius: '4px', background: 'white' }} />
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Pulsanti PDF per prelievo eseguito */}
+                        {p.status === 'eseguito' && (
+                          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                            <button
+                              onClick={() => stampaPrelievoPDF(p)}
+                              style={{ flex: 1, background: '#0d9488', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.83rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                            >
+                              <Printer size={14} /> Stampa PDF
+                            </button>
+                            <button
+                              onClick={() => visualizzaPrelievoPDF(p)}
+                              style={{ flex: 1, background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.83rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                            >
+                              <Eye size={14} /> Visualizza PDF
+                            </button>
                           </div>
                         )}
                         {/* Diaria */}
