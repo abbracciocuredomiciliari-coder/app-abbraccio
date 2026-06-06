@@ -157,10 +157,40 @@ router.patch('/:id', authenticateToken, authorizeRole('admin', 'coordinator'), a
   try {
     const { id } = req.params;
     const updates = req.body;
-    const workplan = await WorkPlan.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
+
+    // Recupera piano originale per verificare se cambia operatore
+    const originale = await WorkPlan.findById(id).populate('patient', 'firstName lastName');
+    const staffPrecedente = originale?.staff?.toString();
+
+    const workplan = await WorkPlan.findByIdAndUpdate(id, updates, { new: true, runValidators: true })
+      .populate('patient', 'firstName lastName')
+      .populate('staff', 'firstName lastName role email');
+
     if (!workplan) {
       return res.status(404).json({ message: 'Incarico non trovato' });
     }
+
+    // Invia email se lo staff è stato cambiato/assegna nuovo operatore
+    if (updates.staff && updates.staff !== staffPrecedente) {
+      try {
+        const staffDoc = (workplan as any).staff;
+        const patientDoc = (workplan as any).patient;
+        if (staffDoc?.email) {
+          const nomePaziente = `${patientDoc?.firstName || ''} ${patientDoc?.lastName || ''}`.trim();
+          const dataInizio = new Date(workplan.date).toLocaleDateString('it-IT');
+          await inviaEmailNuovoPianoDiLavoro(
+            staffDoc.email,
+            `${staffDoc.firstName} ${staffDoc.lastName}`,
+            nomePaziente,
+            dataInizio,
+            workplan.task
+          );
+        }
+      } catch (emailErr) {
+        console.warn('⚠️ Errore invio email riassegnazione piano:', emailErr);
+      }
+    }
+
     return res.json(workplan);
   } catch (error) {
     return res.status(400).json({ message: 'Errore nell aggiornamento dell incarico', error });
