@@ -172,6 +172,8 @@ function Register() {
                 borderRadius: '8px',
                 border: tipoRegistrazione === 'operatore' ? '2px solid #1e4d8c' : '1px solid #d1d5db',
                 background: tipoRegistrazione === 'operatore' ? '#eff6ff' : 'white',
+                color: '#1e3a5f',
+                fontWeight: tipoRegistrazione === 'operatore' ? 700 : 500,
                 cursor: 'pointer'
               }}
             >
@@ -185,6 +187,8 @@ function Register() {
                 padding: '12px',
                 borderRadius: '8px',
                 border: tipoRegistrazione === 'caregiver' ? '2px solid #1e4d8c' : '1px solid #d1d5db',
+                color: '#1e3a5f',
+                fontWeight: tipoRegistrazione === 'caregiver' ? 700 : 500,
                 background: tipoRegistrazione === 'caregiver' ? '#eff6ff' : 'white',
                 cursor: 'pointer'
               }}
@@ -343,14 +347,14 @@ function Register() {
                 <button
                   type="button"
                   onClick={() => setRuoloCaregiverPaziente('paziente')}
-                  style={{ flex: 1, padding: '10px', borderRadius: '8px', border: ruoloCaregiverPaziente === 'paziente' ? '2px solid #1e4d8c' : '1px solid #d1d5db', background: ruoloCaregiverPaziente === 'paziente' ? '#eff6ff' : 'white', cursor: 'pointer', fontWeight: 600 }}
+                  style={{ flex: 1, padding: '10px', borderRadius: '8px', border: ruoloCaregiverPaziente === 'paziente' ? '2px solid #1e4d8c' : '1px solid #d1d5db', background: ruoloCaregiverPaziente === 'paziente' ? '#eff6ff' : 'white', color: '#1e3a5f', cursor: 'pointer', fontWeight: 600 }}
                 >
                   🧑‍🦳 Sono il Paziente
                 </button>
                 <button
                   type="button"
                   onClick={() => setRuoloCaregiverPaziente('caregiver_familiare')}
-                  style={{ flex: 1, padding: '10px', borderRadius: '8px', border: ruoloCaregiverPaziente === 'caregiver_familiare' ? '2px solid #1e4d8c' : '1px solid #d1d5db', background: ruoloCaregiverPaziente === 'caregiver_familiare' ? '#eff6ff' : 'white', cursor: 'pointer', fontWeight: 600 }}
+                  style={{ flex: 1, padding: '10px', borderRadius: '8px', border: ruoloCaregiverPaziente === 'caregiver_familiare' ? '2px solid #1e4d8c' : '1px solid #d1d5db', background: ruoloCaregiverPaziente === 'caregiver_familiare' ? '#eff6ff' : 'white', color: '#1e3a5f', cursor: 'pointer', fontWeight: 600 }}
                 >
                   👨‍👩‍👧 Caregiver Familiare
                 </button>
