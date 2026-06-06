@@ -32,6 +32,7 @@ import auditLogRouter from './routes/auditLog';
 import supplyRequestsRouter from './routes/supplyRequests';
 import gdprRouter from './routes/gdpr';
 import exportSiatRouter from './routes/exportSiat';
+import richiestePrenotazioniRouter from './routes/richiestePrenotazioni';
 
 if (!process.env.JWT_SECRET) {
   console.error('ERRORE: JWT_SECRET non è impostato. Configurare la variabile d\'ambiente nel file .env prima di avviare il server.');
@@ -143,6 +144,7 @@ app.use('/api/esami-strumentali', esamiStrumentaliRouter);
 app.use('/api/prelievi', prelieviRouter);
 app.use('/api/audit-log', auditLogRouter);
 app.use('/api/supply-requests', supplyRequestsRouter);
+app.use('/api/richieste-prenotazioni', richiestePrenotazioniRouter);
 // Alias senza prefisso /api per compatibilità con URL diretti degli allegati
 app.use('/allegati', allegatiRouter);
 

@@ -4,7 +4,7 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
-  role: 'admin' | 'coordinator' | 'caregiver' | 'direttore';
+  role: 'admin' | 'coordinator' | 'caregiver' | 'direttore' | 'paziente_registrato';
   status: 'pending' | 'approved' | 'rejected';
   professione?: string;
   categoria?: string;
@@ -13,6 +13,9 @@ export interface IUser extends Document {
   domicilioCoords?: { lat: number; lng: number };
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  // Per paziente_registrato: dati del paziente associato
+  pazienteId?: string;
+  telefono?: string;
 }
 
 const userSchema = new Schema<IUser>(
@@ -23,7 +26,7 @@ const userSchema = new Schema<IUser>(
     role: {
       type: String,
       required: true,
-      enum: ['admin', 'coordinator', 'caregiver', 'direttore'],
+      enum: ['admin', 'coordinator', 'caregiver', 'direttore', 'paziente_registrato'],
       default: 'caregiver'
     },
     status: {
@@ -42,6 +45,8 @@ const userSchema = new Schema<IUser>(
     },
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
+    pazienteId: { type: Schema.Types.ObjectId, ref: 'Patient', required: false },
+    telefono: { type: String, trim: true },
   },
   { timestamps: true }
 );

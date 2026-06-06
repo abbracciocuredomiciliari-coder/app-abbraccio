@@ -251,3 +251,97 @@ export async function inviaEmailNuovoPaziente(
     </div>`
   );
 }
+
+// ─── Notifica admin — nuova richiesta prenotazione ───────────────────────────
+export async function inviaEmailNuovaRichiestaPrenotazione(
+  adminEmail: string,
+  richiesta: any
+) {
+  const frontendUrl = process.env.FRONTEND_URL || 'https://app-abbraccio-frontend-rw2c.vercel.app';
+  console.log(`📧 Notifica admin nuova richiesta #${richiesta._id}`);
+
+  const tipoServizioLabel: Record<string, string> = {
+    prelievo: '💉 Prelievo',
+    esame_strumentale: '🔬 Esame Strumentale',
+    prestazione: '🏥 Prestazione',
+    assistenza: '🤝 Assistenza'
+  };
+
+  const dataPreferita = new Date(richiesta.dataPreferita).toLocaleDateString('it-IT');
+  const dataAlternativa = richiesta.dataAlternativa
+    ? new Date(richiesta.dataAlternativa).toLocaleDateString('it-IT')
+    : null;
+
+  await invia(
+    adminEmail,
+    `📅 Nuova richiesta prenotazione — ${tipoServizioLabel[richiesta.tipoServizio] || richiesta.tipoServizio}`,
+    `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+      <h2 style="color:#1e4d8c;margin-top:0;">📅 Nuova richiesta prenotazione</h2>
+      <p style="background:#fef3c7;padding:12px;border-radius:6px;border-left:4px solid #f59e0b;">
+        <strong>Azione richiesta:</strong> Revisiona e conferma la richiesta dal pannello admin.
+      </p>
+      <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+        <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;width:140px;">Servizio:</td><td style="padding:8px;">${tipoServizioLabel[richiesta.tipoServizio] || richiesta.tipoServizio}</td></tr>
+        <tr><td style="padding:8px;background:#f1f5f9;font-weight:bold;">Tipo:</td><td style="padding:8px;">${richiesta.tipoSpecifico || 'N/A'}</td></tr>
+        <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;">Paziente:</td><td style="padding:8px;">${richiesta.pazienteNome}</td></tr>
+        <tr><td style="padding:8px;background:#f1f5f9;font-weight:bold;">Indirizzo:</td><td style="padding:8px;">${richiesta.pazienteIndirizzo}</td></tr>
+        <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;">Richiedente:</td><td style="padding:8px;">${richiesta.richiedenteNome} (${richiesta.richiedenteEmail})</td></tr>
+        <tr><td style="padding:8px;background:#f1f5f9;font-weight:bold;">Data preferita:</td><td style="padding:8px;">${dataPreferita} ${richiesta.orarioPreferito || ''}</td></tr>
+        ${dataAlternativa ? `<tr><td style="padding:8px;background:#f8fafc;font-weight:bold;">Data alternativa:</td><td style="padding:8px;">${dataAlternativa} ${richiesta.orarioAlternativo || ''}</td></tr>` : ''}
+        <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;">Priorità:</td><td style="padding:8px;">${richiesta.priorita || 'normale'}</td></tr>
+        ${richiesta.noteRichiedente ? `<tr><td style="padding:8px;background:#f1f5f9;font-weight:bold;">Note:</td><td style="padding:8px;">${richiesta.noteRichiedente}</td></tr>` : ''}
+      </table>
+      <a href="${frontendUrl}/gestione-richieste" style="display:inline-block;background:#1e4d8c;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:bold;">📋 Gestisci Richieste →</a>
+      <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari</p>
+    </div>`
+  );
+}
+
+// ─── Conferma prenotazione — notifica al caregiver/paziente ────────────────────
+export async function inviaEmailConfermaPrenotazione(
+  emailDestinatario: string,
+  richiesta: any
+) {
+  const frontendUrl = process.env.FRONTEND_URL || 'https://app-abbraccio-frontend-rw2c.vercel.app';
+  console.log(`📧 Conferma prenotazione a: ${emailDestinatario}`);
+
+  const tipoServizioLabel: Record<string, string> = {
+    prelievo: '💉 Prelievo',
+    esame_strumentale: '🔬 Esame Strumentale',
+    prestazione: '🏥 Prestazione',
+    assistenza: '🤝 Assistenza'
+  };
+
+  const dataConfermata = richiesta.dataConfermata
+    ? new Date(richiesta.dataConfermata).toLocaleDateString('it-IT')
+    : new Date(richiesta.dataPreferita).toLocaleDateString('it-IT');
+  const orarioConfermato = richiesta.orarioConfermato || richiesta.orarioPreferito || 'Da concordare';
+
+  const statoColor = richiesta.stato === 'rifiutata' ? '#dc2626' : '#16a34a';
+  const statoLabel = richiesta.stato === 'rifiutata' ? '❌ Rifiutata' : '✅ Confermata';
+
+  await invia(
+    emailDestinatario,
+    `${statoLabel} — ${tipoServizioLabel[richiesta.tipoServizio] || richiesta.tipoServizio}`,
+    `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+      <h2 style="color:${statoColor};margin-top:0;">${statoLabel}</h2>
+      <p>Gentile <strong>${richiesta.richiedenteNome}</strong>,</p>
+      <p>La sua richiesta di prenotazione è stata <strong>${richiesta.stato === 'rifiutata' ? 'rifiutata' : 'confermata'}</strong> da Abbraccio Cure Domiciliari.</p>
+
+      ${richiesta.stato === 'rifiutata' && richiesta.noteAdmin ? `<p style="background:#fef2f2;padding:12px;border-radius:6px;border-left:4px solid #dc2626;"><strong>Motivo:</strong> ${richiesta.noteAdmin}</p>` : ''}
+
+      <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+        <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;width:140px;">Servizio:</td><td style="padding:8px;">${tipoServizioLabel[richiesta.tipoServizio] || richiesta.tipoServizio}</td></tr>
+        <tr><td style="padding:8px;background:#f1f5f9;font-weight:bold;">Tipo:</td><td style="padding:8px;">${richiesta.tipoSpecifico || 'N/A'}</td></tr>
+        <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;">Paziente:</td><td style="padding:8px;">${richiesta.pazienteNome}</td></tr>
+        <tr><td style="padding:8px;background:#f1f5f9;font-weight:bold;">Data confermata:</td><td style="padding:8px;">${dataConfermata}</td></tr>
+        <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;">Orario:</td><td style="padding:8px;">${orarioConfermato}</td></tr>
+        ${richiesta.staffAssegnatoNome ? `<tr><td style="padding:8px;background:#f1f5f9;font-weight:bold;">Operatore:</td><td style="padding:8px;">${richiesta.staffAssegnatoNome}</td></tr>` : ''}
+      </table>
+
+      ${richiesta.stato !== 'rifiutata' ? `<a href="${frontendUrl}/centro-prenotazioni-privato" style="display:inline-block;background:#16a34a;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:bold;">📅 Vedi le mie prenotazioni →</a>` : ''}
+
+      <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari<br/>Per modifiche contattare l'amministrazione.</p>
+    </div>`
+  );
+}
