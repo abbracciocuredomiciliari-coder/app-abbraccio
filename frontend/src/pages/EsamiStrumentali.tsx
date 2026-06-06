@@ -199,10 +199,11 @@ export default function EsamiStrumentali() {
   // ─── Filtro lista ───────────────────────────────────────────────────────────
   const esamiFiltrati = esami.filter(e => {
     const term = searchTerm.toLowerCase();
+    const tipoEsameStr = Array.isArray(e.tipoEsame) ? e.tipoEsame.join(' ') : e.tipoEsame;
     const matchSearch = !term ||
       e.patient.firstName.toLowerCase().includes(term) ||
       e.patient.lastName.toLowerCase().includes(term) ||
-      e.tipoEsame.toLowerCase().includes(term) ||
+      tipoEsameStr.toLowerCase().includes(term) ||
       e.staff.firstName.toLowerCase().includes(term) ||
       e.staff.lastName.toLowerCase().includes(term);
     const matchStato = !filtroStato || e.status === filtroStato;
