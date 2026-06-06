@@ -46,6 +46,7 @@ const CentroPrelievi = lazy(() => import('./pages/CentroPrelievi'));
 const AssegnazionePAI = lazy(() => import('./pages/AssegnazionePAI'));
 const CentroPrenotazioniPrivato = lazy(() => import('./pages/CentroPrenotazioniPrivato'));
 const CentroPrenotazioni = lazy(() => import('./pages/CentroPrenotazioni'));
+const CentroPrenotazioniConvenzione = lazy(() => import('./pages/CentroPrenotazioniConvenzione'));
 const GestioneRichieste = lazy(() => import('./pages/GestioneRichieste'));
 import {
   Heart,
@@ -235,10 +236,18 @@ function AppShell() {
                   Pazienti Convenzione
                 </Link>
               )}
-              <Link to="/centro-prenotazioni" className={isActive('/centro-prenotazioni') ? 'active' : ''}>
-                <Calendar size={18} />
-                Centro Prenotazioni
-              </Link>
+              {!isConvenzione && (
+                <Link to="/centro-prenotazioni" className={isActive('/centro-prenotazioni') ? 'active' : ''}>
+                  <Calendar size={18} />
+                  Centro Prenotazioni
+                </Link>
+              )}
+              {isConvenzione && (
+                <Link to="/centro-prenotazioni-convenzione" className={isActive('/centro-prenotazioni-convenzione') ? 'active' : ''}>
+                  <Calendar size={18} />
+                  Centro Prenotazioni
+                </Link>
+              )}
               <Link to="/protocolli-procedure" className={isActive('/protocolli-procedure') ? 'active' : ''}>
                 <ClipboardList size={18} />
                 Protocolli e Procedure
@@ -372,6 +381,8 @@ function AppShell() {
           <Route path="/pianificazione-prelievi" element={<ProtectedRoute><PianificazionePrelievi /></ProtectedRoute>} />
           {/* Centro Prenotazioni unificato (privato) — admin/coordinator */}
           <Route path="/centro-prenotazioni" element={<ProtectedRoute><CentroPrenotazioni /></ProtectedRoute>} />
+          {/* Centro Prenotazioni convenzione SIAT */}
+          <Route path="/centro-prenotazioni-convenzione" element={<ProtectedRoute><CentroPrenotazioniConvenzione /></ProtectedRoute>} />
           {/* Centro Prenotazioni Prelievi — mantenuto per compatibilità */}
           <Route path="/centro-prelievi" element={<ProtectedRoute><CentroPrelievi /></ProtectedRoute>} />
           {/* Assegnazione PAI */}
