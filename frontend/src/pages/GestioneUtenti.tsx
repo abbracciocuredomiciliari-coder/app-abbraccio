@@ -20,6 +20,7 @@ const roleLabels: Record<string, string> = {
   coordinator: 'Coordinatore',
   caregiver: 'Operatore',
   direttore: 'Direttore Sanitario',
+  paziente_registrato: 'Paziente / Caregiver',
 };
 
 const statusColors: Record<string, { bg: string; border: string; color: string; label: string }> = {
@@ -262,7 +263,7 @@ function GestioneUtenti() {
                       {isPending && (
                         <>
                           <select
-                            value={roleSelezionato[utente._id] || 'caregiver'}
+                            value={roleSelezionato[utente._id] || utente.role || 'caregiver'}
                             onChange={(e) => setRoleSelezionato({ ...roleSelezionato, [utente._id]: e.target.value })}
                             style={{ padding: '6px 10px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '0.85rem' }}
                           >
@@ -270,6 +271,7 @@ function GestioneUtenti() {
                             <option value="coordinator">Coordinatore</option>
                             <option value="direttore">Direttore Sanitario</option>
                             <option value="admin">Admin</option>
+                            <option value="paziente_registrato">Paziente / Caregiver</option>
                           </select>
                           <button
                             type="button"
