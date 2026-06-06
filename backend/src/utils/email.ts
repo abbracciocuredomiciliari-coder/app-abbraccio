@@ -105,23 +105,38 @@ export async function inviaEmailNuovoPianoDiLavoro(
   nomeOperatore: string,
   nomePaziente: string,
   dataInizio: string,
-  task: string
+  task: string,
+  pianoId?: string
 ) {
   const frontendUrl = process.env.FRONTEND_URL || 'https://app-abbraccio-frontend-rw2c.vercel.app';
   console.log(`📧 Tentativo invio email piano a: ${emailOperatore}`);
+
+  const linkPortale = pianoId
+    ? `${frontendUrl}/portale-operatore?piano=${pianoId}&azione=accettazione`
+    : `${frontendUrl}/portale-operatore`;
+
   await invia(
     emailOperatore,
-    '📋 Nuovo piano di lavoro assegnato — App Abbraccio',
+    '📋 Nuovo piano di lavoro assegnato — Azione richiesta',
     `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
       <h2 style="color:#1e4d8c;margin-top:0;">📋 Nuovo piano di lavoro assegnato</h2>
       <p>Caro/a <strong>${nomeOperatore}</strong>,</p>
       <p>Ti è stato assegnato un nuovo piano di lavoro su <strong>Abbraccio Cure Domiciliari</strong>.</p>
+      <p style="background:#fef3c7;padding:12px;border-radius:6px;border-left:4px solid #f59e0b;">
+        <strong>⚠️ Azione richiesta:</strong> Accetta o rifiuta l'incarico dal tuo portale operatore.
+      </p>
       <table style="width:100%;border-collapse:collapse;margin:16px 0;">
         <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;width:140px;">Paziente:</td><td style="padding:8px;">${nomePaziente}</td></tr>
         <tr><td style="padding:8px;background:#f1f5f9;font-weight:bold;">Data inizio:</td><td style="padding:8px;">${dataInizio}</td></tr>
         <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;">Attività:</td><td style="padding:8px;">${task}</td></tr>
       </table>
-      <a href="${frontendUrl}/portale-operatore" style="display:inline-block;background:#1e4d8c;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">Vai al Portale Operatore →</a>
+      <div style="display:flex;gap:12px;margin:20px 0;flex-wrap:wrap;">
+        <a href="${linkPortale}" style="display:inline-block;background:#16a34a;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:bold;text-align:center;">✅ Accetta Incarico</a>
+        <a href="${linkPortale}" style="display:inline-block;background:#dc2626;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:bold;text-align:center;">❌ Rifiuta Incarico</a>
+      </div>
+      <p style="margin-top:16px;font-size:14px;color:#666;">
+        Clicca su uno dei pulsanti sopra per aprire il portale operatore e gestire l'incarico.
+      </p>
       <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari</p>
     </div>`
   );

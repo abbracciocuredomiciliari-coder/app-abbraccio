@@ -138,7 +138,8 @@ router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async
             `${staffDoc.firstName} ${staffDoc.lastName}`,
             nomePaziente,
             dataInizio,
-            workplan.task
+            workplan.task,
+            workplan._id.toString()
           );
         }
       }
@@ -183,7 +184,8 @@ router.patch('/:id', authenticateToken, authorizeRole('admin', 'coordinator'), a
             `${staffDoc.firstName} ${staffDoc.lastName}`,
             nomePaziente,
             dataInizio,
-            workplan.task
+            workplan.task,
+            workplan._id.toString()
           );
         }
       } catch (emailErr) {
@@ -480,6 +482,70 @@ router.patch('/:id/compenso', authenticateToken, authorizeRole('admin', 'coordin
     return res.json(workplan);
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore nell\'aggiornamento del compenso', error: error?.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/workplan/:id/accetta - Operatore accetta incarico
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/:id/accetta', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const user = (req as any).user;
+
+    const workplan = await WorkPlan.findById(id)
+      .populate('patient', 'firstName lastName')
+      .populate('staff', 'firstName lastName email');
+    if (!workplan) {
+      return res.status(404).json({ message: 'Incarico non trovato' });
+    }
+
+    // Verifica che sia l'operatore assegnato
+    const staffDoc = (workplan as any).staff;
+    if (staffDoc?.email !== user.email && staffDoc?._id?.toString() !== user.userId) {
+      return res.status(403).json({ message: 'Non autorizzato: incarico assegnato ad altro operatore' });
+    }
+
+    workplan.statoAccettazione = 'accettato';
+    workplan.dataAccettazione = new Date();
+    await workplan.save();
+
+    return res.json({ message: 'Incarico accettato', workplan });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore nell\'accettazione', error: error?.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/workplan/:id/rifiuta - Operatore rifiuta incarico
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/:id/rifiuta', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { motivo } = req.body;
+    const user = (req as any).user;
+
+    const workplan = await WorkPlan.findById(id)
+      .populate('patient', 'firstName lastName')
+      .populate('staff', 'firstName lastName email');
+    if (!workplan) {
+      return res.status(404).json({ message: 'Incarico non trovato' });
+    }
+
+    // Verifica che sia l'operatore assegnato
+    const staffDoc = (workplan as any).staff;
+    if (staffDoc?.email !== user.email && staffDoc?._id?.toString() !== user.userId) {
+      return res.status(403).json({ message: 'Non autorizzato: incarico assegnato ad altro operatore' });
+    }
+
+    workplan.statoAccettazione = 'rifiutato';
+    workplan.dataAccettazione = new Date();
+    workplan.motivoRifiuto = motivo || 'Rifiutato dall\'operatore';
+    await workplan.save();
+
+    return res.json({ message: 'Incarico rifiutato', workplan });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore nel rifiuto', error: error?.message });
   }
 });
 
