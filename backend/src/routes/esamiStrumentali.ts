@@ -231,12 +231,13 @@ router.patch('/:id', authenticateToken, async (req: Request, res: Response) => {
       if (note !== undefined) esame.note = note;
     } else {
       // Privilegiati possono aggiornare tutto
-      const { status, note, orario, dataEsame, tipoEsame } = req.body;
+      const { status, note, orario, dataEsame, tipoEsame, staff } = req.body;
       if (status) esame.status = status;
       if (note !== undefined) esame.note = note;
       if (orario !== undefined) esame.orario = orario;
       if (dataEsame) esame.dataEsame = new Date(dataEsame);
       if (tipoEsame) esame.tipoEsame = tipoEsame;
+      if (staff !== undefined) esame.staff = staff;
     }
 
     await esame.save();

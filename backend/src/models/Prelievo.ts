@@ -126,5 +126,6 @@ const prelievoSchema = new Schema<IPrelievo>(
 prelievoSchema.index({ patient: 1, dataPrelievo: -1 });
 prelievoSchema.index({ staff: 1, dataPrelievo: -1 });
 prelievoSchema.index({ tipoGestione: 1, dataPrelievo: -1 });
+prelievoSchema.index({ patient: 1, dataPrelievo: -1 });
 
 export default model<IPrelievo>('Prelievo', prelievoSchema);

@@ -58,6 +58,9 @@ function Dashboard() {
   const [showPaiAlert, setShowPaiAlert] = useState(false);
   const [chiudendoId, setChiudendoId] = useState<string | null>(null);
 
+  // Utenti in attesa di approvazione (solo admin)
+  const [pendingCount, setPendingCount] = useState(0);
+
   const caricaScadenzePai = async () => {
     try {
       const res = await api.get('/patients/scadenze-pai');
@@ -73,6 +76,13 @@ function Dashboard() {
           isPrivilegiato ? caricaScadenzePai() : Promise.resolve(),
         ]);
         setCounts(dashRes.data);
+        // Conta utenti pending (solo admin)
+        if (user?.role === 'admin') {
+          try {
+            const usersRes = await api.get('/auth/all-users');
+            setPendingCount(usersRes.data.filter((u: any) => u.status === 'pending').length);
+          } catch { /* non bloccante */ }
+        }
       } catch (error) {
         console.error('Errore caricamento dashboard', error);
       } finally {
@@ -199,6 +209,24 @@ function Dashboard() {
         Dashboard
       </h2>
       <>
+          {/* Banner utenti in attesa — solo admin */}
+          {user?.role === 'admin' && pendingCount > 0 && (
+            <div
+              onClick={() => navigate('/gestione-utenti')}
+              style={{ background: 'rgba(245,158,11,0.12)', border: '2px solid #f59e0b', borderRadius: '12px', padding: '14px 18px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'background 0.15s' }}
+            >
+              <Bell size={22} color="#d97706" style={{ flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: '700', color: '#92400e', fontSize: '0.95rem' }}>
+                  {pendingCount} {pendingCount === 1 ? 'nuova richiesta di accesso' : 'nuove richieste di accesso'} in attesa
+                </div>
+                <div style={{ color: '#b45309', fontSize: '0.82rem', marginTop: '2px' }}>
+                  Clicca per approvare o rifiutare gli utenti registrati
+                </div>
+              </div>
+              <span style={{ background: '#f59e0b', color: 'white', borderRadius: '20px', padding: '4px 12px', fontWeight: '800', fontSize: '0.9rem', flexShrink: 0 }}>{pendingCount}</span>
+            </div>
+          )}
           <div className="dashboard-grid">
             {dashboardCards.map((card) => (
               <button

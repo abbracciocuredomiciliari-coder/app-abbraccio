@@ -52,6 +52,11 @@ function Register() {
   const [tipoRegistrazione, setTipoRegistrazione] = useState<'operatore' | 'caregiver'>('operatore');
   const [telefono, setTelefono] = useState('');
 
+  // Domicilio paziente/caregiver
+  const [domicilioPaziente, setDomicilioPaziente] = useState('');
+  const [cittaPaziente, setCittaPaziente] = useState('');
+  const [ruoloCaregiverPaziente, setRuoloCaregiverPaziente] = useState<'paziente' | 'caregiver_familiare'>('paziente');
+
   const geocodifica = useCallback(async () => {
     if (!domicilioPartenza.trim()) return;
     setGeocodingLoading(true);
@@ -99,6 +104,11 @@ function Register() {
         payload.domicilioPartenza = domicilioPartenza.trim();
         payload.raggioAzioneKm = raggioAzioneKm;
         if (domicilioCoords) payload.domicilioCoords = domicilioCoords;
+      } else {
+        // Paziente / Caregiver familiare
+        const indirizzoCompleto = [domicilioPaziente.trim(), cittaPaziente.trim()].filter(Boolean).join(', ');
+        if (indirizzoCompleto) payload.domicilioPartenza = indirizzoCompleto;
+        payload.professione = ruoloCaregiverPaziente === 'paziente' ? 'Paziente' : 'Caregiver familiare';
       }
 
       const response = await api.post('/auth/register', payload);
@@ -162,6 +172,8 @@ function Register() {
                 borderRadius: '8px',
                 border: tipoRegistrazione === 'operatore' ? '2px solid #1e4d8c' : '1px solid #d1d5db',
                 background: tipoRegistrazione === 'operatore' ? '#eff6ff' : 'white',
+                color: '#1e3a5f',
+                fontWeight: tipoRegistrazione === 'operatore' ? 700 : 500,
                 cursor: 'pointer'
               }}
             >
@@ -175,6 +187,8 @@ function Register() {
                 padding: '12px',
                 borderRadius: '8px',
                 border: tipoRegistrazione === 'caregiver' ? '2px solid #1e4d8c' : '1px solid #d1d5db',
+                color: '#1e3a5f',
+                fontWeight: tipoRegistrazione === 'caregiver' ? 700 : 500,
                 background: tipoRegistrazione === 'caregiver' ? '#eff6ff' : 'white',
                 cursor: 'pointer'
               }}
@@ -322,6 +336,65 @@ function Register() {
           )}
         </div>
         </>
+        )}
+
+        {tipoRegistrazione === 'caregiver' && (
+          <>
+            {/* Ruolo paziente o caregiver familiare */}
+            <div style={{ marginBottom: '4px' }}>
+              <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600 }}>Sei il paziente o il caregiver familiare?</label>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setRuoloCaregiverPaziente('paziente')}
+                  style={{ flex: 1, padding: '10px', borderRadius: '8px', border: ruoloCaregiverPaziente === 'paziente' ? '2px solid #1e4d8c' : '1px solid #d1d5db', background: ruoloCaregiverPaziente === 'paziente' ? '#eff6ff' : 'white', color: '#1e3a5f', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  🧑‍🦳 Sono il Paziente
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRuoloCaregiverPaziente('caregiver_familiare')}
+                  style={{ flex: 1, padding: '10px', borderRadius: '8px', border: ruoloCaregiverPaziente === 'caregiver_familiare' ? '2px solid #1e4d8c' : '1px solid #d1d5db', background: ruoloCaregiverPaziente === 'caregiver_familiare' ? '#eff6ff' : 'white', color: '#1e3a5f', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  👨‍👩‍👧 Caregiver Familiare
+                </button>
+              </div>
+            </div>
+
+            {/* Indirizzo domicilio */}
+            <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px', marginTop: '8px' }}>
+              <h3 style={{ margin: '0 0 4px', fontSize: '1rem', color: '#1e3a5f' }}>🏠 Domicilio</h3>
+              <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: '#6b7280' }}>
+                Indica l'indirizzo di residenza del paziente — servirà per organizzare le visite a domicilio.
+              </p>
+              <label>
+                Via e numero civico
+                <input
+                  value={domicilioPaziente}
+                  onChange={e => setDomicilioPaziente(e.target.value)}
+                  placeholder="Es. Via Roma 10"
+                />
+              </label>
+              <label>
+                Città / CAP
+                <input
+                  value={cittaPaziente}
+                  onChange={e => setCittaPaziente(e.target.value)}
+                  placeholder="Es. Roma, 00100"
+                />
+              </label>
+            </div>
+
+            {error && (
+              <p className="error-text" style={{ background: 'rgba(220,38,38,0.08)', padding: '10px 14px', borderRadius: '6px', border: '1px solid #dc2626' }}>
+                ⚠️ {error}
+              </p>
+            )}
+
+            <div style={{ background: 'rgba(30,77,140,0.06)', border: '1px solid rgba(30,77,140,0.2)', borderRadius: '6px', padding: '10px 14px', fontSize: '0.88rem', color: '#1e4d8c' }}>
+              ℹ️ Dopo la registrazione, la tua richiesta sarà valutata dall'amministratore. Riceverai una comunicazione quando il tuo accesso sarà attivato.
+            </div>
+          </>
         )}
 
         <button type="submit" disabled={loading} style={{ opacity: loading ? 0.7 : 1 }}>

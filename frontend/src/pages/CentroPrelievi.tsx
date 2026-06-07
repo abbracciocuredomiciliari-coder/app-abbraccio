@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 import { useModalita } from '../context/ModalitaContext';
 import {
@@ -80,6 +81,8 @@ const GIORNI = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
 // ─── Componente principale ────────────────────────────────────────────────────
 export default function CentroPrelievi() {
   const { isConvenzione, modalita } = useModalita();
+  const { user } = useAuth();
+  const puoCreaPrelievo = user && ['admin', 'coordinator'].includes(user.role);
 
   const oggi = new Date();
   const [tab, setTab] = useState<'prenotazioni' | 'assegnazione'>('prenotazioni');
@@ -479,12 +482,14 @@ export default function CentroPrelievi() {
           </h1>
           <div style={{ marginTop: '6px' }}>{badgeModalita}</div>
         </div>
-        <button
-          onClick={() => { setForm(f => ({ ...f, dataPrelievo: giornoSelezionato })); setShowForm(true); }}
-          style={{ background: colore, color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}
-        >
-          <Plus size={18} />Nuova Prenotazione
-        </button>
+        {puoCreaPrelievo && (
+          <button
+            onClick={() => { setForm(f => ({ ...f, dataPrelievo: giornoSelezionato })); setShowForm(true); }}
+            style={{ background: colore, color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}
+          >
+            <Plus size={18} />Nuova Prenotazione
+          </button>
+        )}
       </div>
 
       {/* Tab bar */}
@@ -556,7 +561,7 @@ export default function CentroPrelievi() {
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                        <button onClick={e => { e.stopPropagation(); eliminaPrelievo(p._id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', color: '#dc2626' }}><Trash2 size={14} /></button>
+                        {puoCreaPrelievo && <button onClick={e => { e.stopPropagation(); eliminaPrelievo(p._id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', color: '#dc2626' }}><Trash2 size={14} /></button>}
                         {prelievoAperto?._id === p._id ? <ChevronUp size={16} style={{ color: '#94a3b8' }} /> : <ChevronDown size={16} style={{ color: '#94a3b8' }} />}
                       </div>
                     </div>
@@ -755,7 +760,7 @@ export default function CentroPrelievi() {
       )}
 
       {/* ═══ FORM NUOVA PRENOTAZIONE ════════════════════════════════════════ */}
-      {showForm && (
+      {showForm && puoCreaPrelievo && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '540px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>

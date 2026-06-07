@@ -283,6 +283,11 @@ router.get('/:id/accessi', authenticateToken, async (req: Request, res: Response
         firmaLogin: acc.firmaLogin,
         durataMinuti: (acc as any).durataMinuti || (acc.oraUscita ? Math.round((acc.oraUscita.getTime() - acc.oraEntrata.getTime()) / 60000) : 0),
         compensoMaturato: compensoAcc,
+        firmaOperatore: acc.firmaOperatore || null,
+        firmaPaziente: acc.firmaPaziente || null,
+        nomeFirmatarioPaziente: acc.nomeFirmatarioPaziente || null,
+        ruoloFirmatario: acc.ruoloFirmatario || null,
+        firmatoAllaPartenza: acc.firmatoAllaPartenza || false,
       };
     });
 
@@ -386,6 +391,11 @@ router.get('/:id/accessi/export', authenticateToken, async (req: Request, res: R
         ruolo: acc.staffRole,
         note: acc.note || '',
         compenso: compenso > 0 ? `€ ${compenso.toFixed(2)}` : '—',
+        firmaOperatore: acc.firmaOperatore || null,
+        firmaPaziente: acc.firmaPaziente || null,
+        nomeFirmatarioPaziente: acc.nomeFirmatarioPaziente || null,
+        ruoloFirmatario: acc.ruoloFirmatario || null,
+        firmatoAllaPartenza: acc.firmatoAllaPartenza || false,
       };
     });
 

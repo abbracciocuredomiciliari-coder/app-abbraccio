@@ -45,7 +45,10 @@ const PianificazionePrelievi = lazy(() => import('./pages/PianificazionePrelievi
 const CentroPrelievi = lazy(() => import('./pages/CentroPrelievi'));
 const AssegnazionePAI = lazy(() => import('./pages/AssegnazionePAI'));
 const CentroPrenotazioniPrivato = lazy(() => import('./pages/CentroPrenotazioniPrivato'));
+const CentroPrenotazioni = lazy(() => import('./pages/CentroPrenotazioni'));
+const CentroPrenotazioniConvenzione = lazy(() => import('./pages/CentroPrenotazioniConvenzione'));
 const GestioneRichieste = lazy(() => import('./pages/GestioneRichieste'));
+const PortalePaziente = lazy(() => import('./pages/PortalePaziente'));
 import {
   Heart,
   LayoutDashboard,
@@ -169,9 +172,9 @@ function AppShell() {
           {/* ===== MENU PAZIENTE/CAREGIVER REGISTRATO ===== */}
           {user && user.role === 'paziente_registrato' && (
             <>
-              <Link to="/centro-prenotazioni-privato" className={isActive('/centro-prenotazioni-privato') ? 'active' : ''}>
+              <Link to="/portale-paziente" className={isActive('/portale-paziente') ? 'active' : ''}>
                 <Calendar size={18} />
-                Centro Prenotazioni
+                Prenota Servizio
               </Link>
               <Link to="/profilo-personale" className={isActive('/profilo-personale') ? 'active' : ''}>
                 <UserCircle size={18} />
@@ -234,14 +237,18 @@ function AppShell() {
                   Pazienti Convenzione
                 </Link>
               )}
-              <Link to="/workplan" className={isActive('/workplan') ? 'active' : ''}>
-                <Calendar size={18} />
-                Piano lavoro
-              </Link>
-              <Link to="/centro-prelievi" className={isActive('/centro-prelievi') ? 'active' : ''}>
-                <Syringe size={18} />
-                Centro Prelievi
-              </Link>
+              {!isConvenzione && (
+                <Link to="/centro-prenotazioni" className={isActive('/centro-prenotazioni') ? 'active' : ''}>
+                  <Calendar size={18} />
+                  Centro Prenotazioni
+                </Link>
+              )}
+              {isConvenzione && (
+                <Link to="/centro-prenotazioni-convenzione" className={isActive('/centro-prenotazioni-convenzione') ? 'active' : ''}>
+                  <Calendar size={18} />
+                  Centro Prenotazioni
+                </Link>
+              )}
               <Link to="/protocolli-procedure" className={isActive('/protocolli-procedure') ? 'active' : ''}>
                 <ClipboardList size={18} />
                 Protocolli e Procedure
@@ -254,10 +261,12 @@ function AppShell() {
                 <Archive size={18} />
                 Archivio cartelle
               </Link>
-              <Link to="/assegnazione-pai" className={isActive('/assegnazione-pai') ? 'active' : ''}>
-                <Map size={18} />
-                {isConvenzione ? 'Assegnazione PAI' : 'Assegna Piano'}
-              </Link>
+              {isConvenzione && (
+                <Link to="/assegnazione-pai" className={isActive('/assegnazione-pai') ? 'active' : ''}>
+                  <Map size={18} />
+                  Assegnazione PAI
+                </Link>
+              )}
 
               {/* — Operativo — */}
               <span className="nav-section-label">Operativo</span>
@@ -360,6 +369,7 @@ function AppShell() {
           <Route path="/gestione-utenti" element={<ProtectedRoute><GestioneUtenti /></ProtectedRoute>} />
           <Route path="/gestione-richieste" element={<ProtectedRoute><GestioneRichieste /></ProtectedRoute>} />
           <Route path="/centro-prenotazioni-privato" element={<ProtectedRoute><CentroPrenotazioniPrivato /></ProtectedRoute>} />
+          <Route path="/portale-paziente" element={<ProtectedRoute><PortalePaziente /></ProtectedRoute>} />
 
           {/* Route condivise (tutti gli utenti autenticati) */}
           <Route path="/protocolli-procedure" element={<ProtectedRoute><ProtocolliProcedure /></ProtectedRoute>} />
@@ -371,9 +381,13 @@ function AppShell() {
           <Route path="/esami-strumentali" element={<ProtectedRoute><EsamiStrumentali /></ProtectedRoute>} />
           {/* Pianificazione Prelievi (vecchia pagina, mantenuta per compatibilità) */}
           <Route path="/pianificazione-prelievi" element={<ProtectedRoute><PianificazionePrelievi /></ProtectedRoute>} />
-          {/* Centro Prenotazioni Prelievi — admin */}
+          {/* Centro Prenotazioni unificato (privato) — admin/coordinator */}
+          <Route path="/centro-prenotazioni" element={<ProtectedRoute><CentroPrenotazioni /></ProtectedRoute>} />
+          {/* Centro Prenotazioni convenzione SIAT */}
+          <Route path="/centro-prenotazioni-convenzione" element={<ProtectedRoute><CentroPrenotazioniConvenzione /></ProtectedRoute>} />
+          {/* Centro Prenotazioni Prelievi — mantenuto per compatibilità */}
           <Route path="/centro-prelievi" element={<ProtectedRoute><CentroPrelievi /></ProtectedRoute>} />
-          {/* Assegnazione PAI / Piano di Lavoro */}
+          {/* Assegnazione PAI */}
           <Route path="/assegnazione-pai" element={<ProtectedRoute><AssegnazionePAI /></ProtectedRoute>} />
 
           {/* Richieste Presidi/Farmaci */}

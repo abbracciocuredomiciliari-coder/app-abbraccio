@@ -5,7 +5,7 @@ import api from '../api/api';
 import FirmaCanvas from '../components/FirmaCanvas';
 import {
   LogIn, LogOut, CheckCircle, AlertCircle, Loader2,
-  User, Clock, MapPin, Heart
+  User, Clock, MapPin, Heart, FileText, Printer
 } from 'lucide-react';
 
 interface WorkPlanInfo {
@@ -109,6 +109,71 @@ export default function RegistrazioneAccesso() {
     const h = Math.floor(diff / 3600000);
     const m = Math.floor((diff % 3600000) / 60000);
     return `${h > 0 ? `${h}h ` : ''}${m}min`;
+  };
+
+  const generaFoglioFirmaHtml = (): string => {
+    const oraEntrata = accessoAperto?.oraEntrata
+      ? new Date(accessoAperto.oraEntrata).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+      : '—';
+    const oraUscita = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    const dataOggi = new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const nomePaziente = `${workPlan?.patient.firstName || ''} ${workPlan?.patient.lastName || ''}`.trim();
+    const nomeOperatore = user?.name || '—';
+    const attivita = workPlan?.task || '—';
+
+    const firmaOpHtml = firmaOperatore
+      ? `<img src="${firmaOperatore}" style="max-width:220px;max-height:80px;border:1px solid #d1d5db;border-radius:4px;display:block;margin-top:8px" />`
+      : '<span style="color:#9ca3af;font-size:11px">Non raccolta</span>';
+
+    const nomeFirmatarioLabel = nomeFirmatario || nomePaziente;
+    const ruoloLabel = ruoloFirmatario === 'caregiver' ? 'Caregiver' : 'Paziente';
+    const firmaPazHtml = firmaPaziente
+      ? `<img src="${firmaPaziente}" style="max-width:220px;max-height:80px;border:1px solid #d1d5db;border-radius:4px;display:block;margin-top:8px" />
+         <span style="font-size:10px;color:#6b7280">${ruoloLabel}: ${nomeFirmatarioLabel}</span>`
+      : '<span style="color:#9ca3af;font-size:11px">Non raccolta</span>';
+
+    return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Foglio Firma</title>
+    <style>
+      body{font-family:Arial,sans-serif;font-size:13px;color:#111;margin:30px;max-width:700px}
+      h1{font-size:20px;color:#1e4d8c;margin-bottom:4px}
+      h2{font-size:14px;color:#444;margin:0 0 20px}
+      .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-bottom:24px}
+      .info-item label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:2px}
+      .info-item span{font-size:13px;color:#111;font-weight:600}
+      .firma-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:20px}
+      .firma-box{border:1px solid #e2e8f0;border-radius:8px;padding:14px}
+      .firma-box h3{font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 10px}
+      .footer{margin-top:32px;font-size:10px;color:#9ca3af;border-top:1px solid #e2e8f0;padding-top:12px;text-align:center}
+      @media print{body{margin:15px} .no-print{display:none}}
+    </style></head><body>
+    <h1>Foglio Firma Accesso</h1>
+    <h2>Abbraccio Cure Domiciliari</h2>
+    <div class="info-grid">
+      <div class="info-item"><label>Paziente</label><span>${nomePaziente}</span></div>
+      <div class="info-item"><label>Operatore</label><span>${nomeOperatore}</span></div>
+      <div class="info-item"><label>Data</label><span>${dataOggi}</span></div>
+      <div class="info-item"><label>Attività</label><span>${attivita}</span></div>
+      <div class="info-item"><label>Ora Entrata</label><span>${oraEntrata}</span></div>
+      <div class="info-item"><label>Ora Uscita</label><span>${oraUscita}</span></div>
+    </div>
+    <div class="firma-grid">
+      <div class="firma-box"><h3>✍️ Firma Operatore</h3>${firmaOpHtml}</div>
+      <div class="firma-box"><h3>✍️ Firma ${ruoloLabel}</h3>${firmaPazHtml}</div>
+    </div>
+    <div class="footer">Documento generato automaticamente — ${new Date().toLocaleString('it-IT')}</div>
+    </body></html>`;
+  };
+
+  const visualizzaPDF = () => {
+    const html = generaFoglioFirmaHtml();
+    const w = window.open('', '_blank');
+    if (w) { w.document.write(html); w.document.close(); }
+  };
+
+  const stampaPDF = () => {
+    const html = generaFoglioFirmaHtml();
+    const w = window.open('', '_blank');
+    if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 500); }
   };
 
   if (loading && step === 'selezione') {
@@ -353,6 +418,20 @@ export default function RegistrazioneAccesso() {
               {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
 
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+              <button
+                onClick={visualizzaPDF}
+                style={{ background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: '12px', padding: '14px', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                <FileText size={18} /> Visualizza PDF
+              </button>
+              <button
+                onClick={stampaPDF}
+                style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '14px', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                <Printer size={18} /> Stampa PDF
+              </button>
+            </div>
             <button
               onClick={() => navigate(-1)}
               style={{ width: '100%', background: '#2563eb', color: 'white', border: 'none', borderRadius: '12px', padding: '16px', cursor: 'pointer', fontWeight: '600', fontSize: '1rem' }}

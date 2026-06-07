@@ -20,6 +20,7 @@ const roleLabels: Record<string, string> = {
   coordinator: 'Coordinatore',
   caregiver: 'Operatore',
   direttore: 'Direttore Sanitario',
+  paziente_registrato: 'Paziente / Caregiver',
 };
 
 const statusColors: Record<string, { bg: string; border: string; color: string; label: string }> = {
@@ -114,6 +115,12 @@ function GestioneUtenti() {
 
   const utentiFiltrati = utenti.filter(u => filtro === 'tutti' ? true : u.status === filtro);
   const nPending = utenti.filter(u => u.status === 'pending').length;
+
+  // Separa approvati in operatori vs pazienti/caregiver (solo per filtro 'approved' e 'tutti')
+  const operatoriApprovati = utentiFiltrati.filter(u => u.status === 'approved' && u.role !== 'paziente_registrato');
+  const pazientiApprovati = utentiFiltrati.filter(u => u.status === 'approved' && u.role === 'paziente_registrato');
+  const nonApprovati = utentiFiltrati.filter(u => u.status !== 'approved');
+  const mostraSeparati = filtro === 'approved' || filtro === 'tutti';
 
   const formatData = (d: string) => new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
 
@@ -211,8 +218,14 @@ function GestioneUtenti() {
         <p style={{ color: '#666', fontStyle: 'italic' }}>Nessun utente in questa categoria.</p>
       ) : (
         <div className="document-list">
+          {/* Sezioni separate quando si vedono gli approvati */}
+          {mostraSeparati && operatoriApprovati.length > 0 && (
+            <div style={{ marginBottom: '8px', padding: '6px 10px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', fontSize: '0.85rem', fontWeight: '700', color: '#0369a1' }}>
+              👨‍⚕️ Operatori approvati ({operatoriApprovati.length})
+            </div>
+          )}
           <ul>
-            {utentiFiltrati.map((utente) => {
+            {(mostraSeparati ? [...nonApprovati, ...operatoriApprovati] : utentiFiltrati).map((utente) => {
               const st = statusColors[utente.status];
               const isPending = utente.status === 'pending';
               return (
@@ -241,17 +254,19 @@ function GestioneUtenti() {
                         <span>🔑 {roleLabels[utente.role] || utente.role}</span>
                         <span>📅 {formatData(utente.createdAt)}</span>
                       </div>
-                      {/* Zona lavorativa (visibile solo per richieste pending) */}
+                      {/* Domicilio / Zona lavorativa (visibile solo per richieste pending) */}
                       {utente.status === 'pending' && (
                         <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '10px', fontSize: '0.82rem' }}>
                           {utente.domicilioPartenza ? (
                             <span style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '2px 8px', color: '#065f46' }}>
-                              📍 {utente.domicilioPartenza} — raggio {utente.raggioAzioneKm ?? 10} km
+                              {utente.role === 'paziente_registrato'
+                                ? `🏠 Domicilio: ${utente.domicilioPartenza}`
+                                : `📍 ${utente.domicilioPartenza} — raggio ${utente.raggioAzioneKm ?? 10} km`}
                               {utente.domicilioCoords && <span style={{ color: '#059669', marginLeft: '4px' }}>✓ geo</span>}
                             </span>
                           ) : (
                             <span style={{ background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '6px', padding: '2px 8px', color: '#92400e' }}>
-                              ⚠️ Zona lavorativa non impostata
+                              {utente.role === 'paziente_registrato' ? '⚠️ Domicilio non inserito' : '⚠️ Zona lavorativa non impostata'}
                             </span>
                           )}
                         </div>
@@ -262,7 +277,7 @@ function GestioneUtenti() {
                       {isPending && (
                         <>
                           <select
-                            value={roleSelezionato[utente._id] || 'caregiver'}
+                            value={roleSelezionato[utente._id] || utente.role || 'caregiver'}
                             onChange={(e) => setRoleSelezionato({ ...roleSelezionato, [utente._id]: e.target.value })}
                             style={{ padding: '6px 10px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '0.85rem' }}
                           >
@@ -270,6 +285,7 @@ function GestioneUtenti() {
                             <option value="coordinator">Coordinatore</option>
                             <option value="direttore">Direttore Sanitario</option>
                             <option value="admin">Admin</option>
+                            <option value="paziente_registrato">Paziente / Caregiver</option>
                           </select>
                           <button
                             type="button"
@@ -319,6 +335,48 @@ function GestioneUtenti() {
               );
             })}
           </ul>
+
+          {/* Sezione Pazienti/Caregiver approvati separata */}
+          {mostraSeparati && pazientiApprovati.length > 0 && (
+            <>
+              <div style={{ margin: '16px 0 8px', padding: '6px 10px', background: '#fdf4ff', border: '1px solid #e9d5ff', borderRadius: '8px', fontSize: '0.85rem', fontWeight: '700', color: '#7e22ce' }}>
+                🧑‍🤝‍🧑 Pazienti / Caregiver approvati ({pazientiApprovati.length})
+              </div>
+              <ul>
+                {pazientiApprovati.map((utente) => {
+                  const st = statusColors[utente.status];
+                  return (
+                    <li key={utente._id}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+                        <div style={{ flex: 1, minWidth: '200px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                            <strong style={{ fontSize: '1rem' }}>{utente.name}</strong>
+                            <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: '700', background: st.bg, border: `1px solid ${st.border}`, color: st.color }}>{st.label}</span>
+                          </div>
+                          <div style={{ fontSize: '0.88rem', color: '#555', display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                            <span>📧 {utente.email}</span>
+                            {utente.professione && <span>💼 {utente.professione}</span>}
+                            {utente.domicilioPartenza && <span>🏠 {utente.domicilioPartenza}</span>}
+                            <span>📅 {formatData(utente.createdAt)}</span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <button type="button" onClick={() => rifiutaUtente(utente._id)}
+                            style={{ background: '#f59e0b', fontSize: '0.85rem', padding: '6px 14px' }}>
+                            🚫 Revoca accesso
+                          </button>
+                          <button type="button" onClick={() => eliminaUtente(utente._id)}
+                            style={{ background: '#6c757d', fontSize: '0.85rem', padding: '6px 14px' }}>
+                            🗑️ Elimina
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
         </div>
       )}
     </section>
