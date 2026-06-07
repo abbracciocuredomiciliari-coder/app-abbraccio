@@ -205,10 +205,10 @@ function WorkPlan() {
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(w =>
-        w.patient.firstName.toLowerCase().includes(term) ||
-        w.patient.lastName.toLowerCase().includes(term) ||
-        w.staff.firstName.toLowerCase().includes(term) ||
-        w.staff.lastName.toLowerCase().includes(term) ||
+        w.patient?.firstName?.toLowerCase().includes(term) ||
+        w.patient?.lastName?.toLowerCase().includes(term) ||
+        w.staff?.firstName?.toLowerCase().includes(term) ||
+        w.staff?.lastName?.toLowerCase().includes(term) ||
         w.task.toLowerCase().includes(term)
       );
     }
@@ -315,10 +315,10 @@ function WorkPlan() {
 
   // Archivia incarico (snapshot completo in archivio permanente)
   const archiviaIncarico = async (item: WorkPlanItem) => {
-    if (!confirm(`Archiviare definitivamente la cartella clinica di ${item.patient.firstName} ${item.patient.lastName}?\n\nVerrà creato uno snapshot permanente di tutto il piano, diario clinico, accessi e allegati.\nL'incarico rimarrà anche nel Piano di Lavoro.`)) return;
+    if (!confirm(`Archiviare definitivamente la cartella clinica di ${item.patient?.firstName} ${item.patient?.lastName}?\n\nVerrà creato uno snapshot permanente di tutto il piano, diario clinico, accessi e allegati.\nL'incarico rimarrà anche nel Piano di Lavoro.`)) return;
     try {
       await api.post(`/archivio/${item._id}`);
-      setSuccess(`✅ Cartella di ${item.patient.firstName} ${item.patient.lastName} archiviata con successo!`);
+      setSuccess(`✅ Cartella di ${item.patient?.firstName} ${item.patient?.lastName} archiviata con successo!`);
       setTimeout(() => setSuccess(''), 4000);
     } catch (err: any) {
       if (err.response?.status === 400) {
@@ -837,7 +837,7 @@ function WorkPlan() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                        <strong>{item.patient.firstName} {item.patient.lastName}</strong>
+                        <strong>{item.patient?.firstName ?? '(eliminato)'} {item.patient?.lastName ?? ''}</strong>
                         <span style={{ fontSize: '0.72rem', padding: '2px 7px', backgroundColor: `${catInfo.color}20`, color: catInfo.color, borderRadius: 'var(--radius-full)', fontWeight: 600 }}>{catInfo.label}</span>
                         <span style={{ fontSize: '0.72rem', padding: '2px 7px', backgroundColor: `${getStatusColor(item.status)}20`, color: getStatusColor(item.status), borderRadius: 'var(--radius-full)', fontWeight: 600 }}>{getStatusLabel(item.status)}</span>
                         {item.tipoCompenso && item.tipoCompenso !== 'nessuno' && (
@@ -852,7 +852,7 @@ function WorkPlan() {
                       <p style={{ margin: '0 0 3px', fontSize: '0.9rem', color: 'var(--gray-700)' }}>{item.task}</p>
                       <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--gray-500)', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                         <span>📅 {formatDate(item.date)}{item.dataFine ? ` → ${formatDate(item.dataFine)}` : ''}{item.time && ` alle ${item.time}`}</span>
-                        <span>👤 {item.staff.firstName} {item.staff.lastName}</span>
+                        <span>👤 {item.staff?.firstName} {item.staff?.lastName}</span>
                         {item.duration && <span>⏱️ {item.duration} min</span>}
                       </p>
                       {item.giorniSettimana && item.giorniSettimana.length > 0 && (
@@ -917,10 +917,10 @@ function WorkPlan() {
                   Storico Accessi & Compenso
                 </h3>
                 <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
-                  {selectedWorkPlan.patient.firstName} {selectedWorkPlan.patient.lastName} — {selectedWorkPlan.task}
+                  {selectedWorkPlan.patient?.firstName ?? '(eliminato)'} {selectedWorkPlan.patient?.lastName ?? ''} — {selectedWorkPlan.task}
                 </p>
                 <p style={{ margin: '2px 0 0', color: '#888', fontSize: '0.82rem' }}>
-                  Operatore: {selectedWorkPlan.staff.firstName} {selectedWorkPlan.staff.lastName}
+                  Operatore: {selectedWorkPlan.staff?.firstName} {selectedWorkPlan.staff?.lastName}
                 </p>
               </div>
               <button type="button" onClick={() => setShowAccessiModal(false)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#666', padding: '4px' }}>
