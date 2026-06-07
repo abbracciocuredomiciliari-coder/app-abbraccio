@@ -40,6 +40,8 @@ function CheckList() {
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [mostraForm, setMostraForm] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
 
   const [form, setForm] = useState({
     data: oggiISO(),

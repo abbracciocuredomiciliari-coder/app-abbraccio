@@ -7,6 +7,7 @@ interface AlertProps {
   title?: string;
   onClose?: () => void;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export function Alert({
@@ -15,6 +16,7 @@ export function Alert({
   title,
   onClose,
   className = '',
+  style: externalStyle,
 }: AlertProps) {
   const styles = {
     success: {
@@ -43,7 +45,7 @@ export function Alert({
     },
   };
 
-  const style = styles[type];
+  const typeStyle = styles[type];
 
   return (
     <div
@@ -53,11 +55,12 @@ export function Alert({
         gap: '12px',
         padding: '16px',
         borderRadius: '8px',
-        ...style,
+        ...typeStyle,
+        ...externalStyle,
       }}
       className={className}
     >
-      <span style={{ flexShrink: 0, marginTop: '2px' }}>{style.icon}</span>
+      <span style={{ flexShrink: 0, marginTop: '2px' }}>{typeStyle.icon}</span>
       <div style={{ flex: 1 }}>
         {title && (
           <h4 style={{ margin: '0 0 4px 0', fontWeight: 600, fontSize: '0.9375rem' }}>

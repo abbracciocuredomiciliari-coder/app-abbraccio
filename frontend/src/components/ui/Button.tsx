@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+cdimport { ReactNode } from 'react';
 
 interface ButtonProps {
   children: ReactNode;
@@ -11,6 +11,7 @@ interface ButtonProps {
   icon?: ReactNode;
   fullWidth?: boolean;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export function Button({
@@ -24,6 +25,7 @@ export function Button({
   icon,
   fullWidth = false,
   className = '',
+  style,
 }: ButtonProps) {
   const baseStyles = {
     display: 'inline-flex',
@@ -88,6 +90,7 @@ export function Button({
         ...variantStyles[variant],
         width: fullWidth ? '100%' : 'auto',
         ...hoverStyles,
+        ...style,
       }}
       className={className}
     >

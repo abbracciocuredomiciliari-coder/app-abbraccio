@@ -9,6 +9,7 @@ interface CardProps {
   padding?: 'none' | 'sm' | 'md' | 'lg';
   shadow?: 'none' | 'sm' | 'md' | 'lg';
   border?: boolean;
+  style?: React.CSSProperties;
 }
 
 export function Card({
@@ -20,6 +21,7 @@ export function Card({
   padding = 'md',
   shadow = 'sm',
   border = true,
+  style,
 }: CardProps) {
   const paddingStyles = {
     none: { padding: 0 },
@@ -43,6 +45,7 @@ export function Card({
         border: border ? '1px solid #e2e8f0' : 'none',
         ...shadowStyles[shadow],
         ...paddingStyles[padding],
+        ...style,
       }}
       className={className}
     >
