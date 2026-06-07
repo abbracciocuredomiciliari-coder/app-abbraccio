@@ -1,4 +1,6 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
+import { ToastContainer } from './components/ToastContainer';
+import { useToast } from './hooks/useToast';
 import { Link, useLocation, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ModalitaProvider, useModalita } from './context/ModalitaContext';
@@ -93,12 +95,26 @@ function AppShell() {
   const { modalita, setModalita, isConvenzione, modalitaAbilitata, canSwitch } = useModalita();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { toasts, removeToast } = useToast();
 
   const isActive = (path: string) => location.pathname === path;
   const operatore = user && !isPrivilegiato(user.role);
 
   // Chiudi il menu mobile a ogni cambio pagina
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
+
+  // Register service worker for PWA
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then((registration) => {
+          console.log('SW registered:', registration);
+        })
+        .catch((error) => {
+          console.log('SW registration failed:', error);
+        });
+    }
+  }, []);
 
   return (
     <div className="app-shell">
@@ -413,6 +429,7 @@ function AppShell() {
         </Routes>
         </Suspense>
       </main>
+      <ToastContainer toasts={toasts} onRemove={removeToast} position="top-right" />
     </div>
   );
 }

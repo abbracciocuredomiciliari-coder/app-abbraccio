@@ -23,6 +23,10 @@ import {
   User,
   Calendar,
 } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
 
 // ─── Tipi esame disponibili ───────────────────────────────────────────────────
 const TIPI_ESAME = [
@@ -647,14 +651,14 @@ export default function EsamiStrumentali() {
 
       {/* Messaggi globali */}
       {success && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', backgroundColor: 'var(--success-bg)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 'var(--radius-md)', color: 'var(--success)', marginBottom: '16px' }}>
-          <CheckCircle size={18} /> {success}
-        </div>
+        <Alert type="success" onClose={() => setSuccess('')} style={{ marginBottom: '16px' }}>
+          {success}
+        </Alert>
       )}
       {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', backgroundColor: 'var(--danger-bg)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: 'var(--radius-md)', color: 'var(--danger)', marginBottom: '16px' }}>
-          <AlertCircle size={18} /> {error}
-        </div>
+        <Alert type="error" onClose={() => setError('')} style={{ marginBottom: '16px' }}>
+          {error}
+        </Alert>
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: isPrivilegiato ? 'minmax(280px, 360px) 1fr' : '1fr', gap: '24px' }}>
@@ -936,9 +940,9 @@ export default function EsamiStrumentali() {
                 >
                   🖨️ Stampa PDF
                 </button>
-                <button type="button" onClick={chiudiModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', padding: '4px' }}>
+                <Button variant="ghost" size="sm" onClick={chiudiModal}>
                   <X size={22} />
-                </button>
+                </Button>
               </div>
             </div>
 

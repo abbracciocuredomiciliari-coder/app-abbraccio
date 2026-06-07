@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { Euro, TrendingUp, CheckCircle, Clock, AlertCircle, Receipt, ChevronDown, ChevronUp, ShieldOff } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
 
 interface WorkPlanItem {
   _id: string;
@@ -187,14 +189,14 @@ export default function CompensoIncarichi() {
       </p>
 
       {success && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', color: '#16a34a', marginBottom: '16px' }}>
-          <CheckCircle size={18} /> {success}
-        </div>
+        <Alert type="success" onClose={() => setSuccess('')} style={{ marginBottom: '16px' }}>
+          {success}
+        </Alert>
       )}
       {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#dc2626', marginBottom: '16px' }}>
-          <AlertCircle size={18} /> {error}
-        </div>
+        <Alert type="error" onClose={() => setError('')} style={{ marginBottom: '16px' }}>
+          {error}
+        </Alert>
       )}
 
       {/* ── Riepilogo totali ── */}

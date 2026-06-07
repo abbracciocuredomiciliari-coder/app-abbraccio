@@ -24,6 +24,8 @@ import {
   Archive,
   HeartPulse,
 } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
 
 interface PatientOption {
   _id: string;
@@ -571,10 +573,9 @@ function WorkPlan() {
       </h2>
 
       {success && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', backgroundColor: 'var(--success-bg)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: 'var(--radius-md)', color: 'var(--success)', marginBottom: '16px' }}>
-          <CheckCircle size={18} />
+        <Alert type="success" onClose={() => setSuccess('')} style={{ marginBottom: '16px' }}>
           {success}
-        </div>
+        </Alert>
       )}
 
       {/* Tab Navigation */}

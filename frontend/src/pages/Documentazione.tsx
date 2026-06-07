@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { jsPDF } from 'jspdf';
 import api from '../api/api';
+import { Button } from '../components/ui/Button';
 
 interface DocumentItem {
   _id: string;
@@ -267,21 +268,21 @@ function Documentazione() {
     <section>
       <h2>Documentazione sanitaria</h2>
       <div className="document-export-actions">
-        <button type="button" onClick={exportDocumentListAsPdf}>
+        <Button variant="primary" onClick={exportDocumentListAsPdf}>
           Esporta elenco in PDF
-        </button>
-        <button type="button" onClick={exportDocumentListAsWord}>
+        </Button>
+        <Button variant="secondary" onClick={exportDocumentListAsWord}>
           Esporta elenco in Word
-        </button>
+        </Button>
       </div>
       {downloadMessage && <p className="info-text">{downloadMessage}</p>}
       <div className="dashboard-folders">
         <section className="dashboard-folder">
           <h3>Procedure sanitarie</h3>
           <p>Trova sul computer e carica il file di procedura sanitaria.</p>
-          <button type="button" onClick={openProcedureFileDialog}>
+          <Button variant="secondary" onClick={openProcedureFileDialog}>
             Cerca file
-          </button>
+          </Button>
           <input
             ref={procedureInputRef}
             type="file"
@@ -337,9 +338,9 @@ function Documentazione() {
         <section className="dashboard-folder">
           <h3>Protocolli sanitari</h3>
           <p>Trova sul computer e carica il file del protocollo sanitario.</p>
-          <button type="button" onClick={openProtocolFileDialog}>
+          <Button variant="secondary" onClick={openProtocolFileDialog}>
             Cerca file
-          </button>
+          </Button>
           <input
             ref={protocolInputRef}
             type="file"

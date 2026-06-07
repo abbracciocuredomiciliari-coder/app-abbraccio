@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import api from '../api/api';
 import { Eye, EyeOff, Lock, MapPin, Save, X } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
 
 interface StaffDoc {
   _id: string;

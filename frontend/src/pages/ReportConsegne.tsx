@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { Package, Calendar, Search, FileText, Printer, Download, ChevronDown, ChevronUp, ClipboardList, Truck } from 'lucide-react';
+import { Button } from '../components/ui/Button';
 
 interface ConsegnaItem {
   nome: string;

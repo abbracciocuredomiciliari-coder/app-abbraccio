@@ -13,6 +13,8 @@ import {
   CheckCircle,
   X,
 } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
 
 interface Patient {
   _id: string;

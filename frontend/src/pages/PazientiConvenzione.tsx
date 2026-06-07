@@ -7,6 +7,8 @@ import {
   FileText, User, Building2, Calendar, Phone, RefreshCw,
   Info, ChevronDown, ChevronUp, Download
 } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
 
 interface PazienteSIAT {
   _id: string;
@@ -187,16 +189,14 @@ export default function PazientiConvenzione() {
       </div>
 
       {error && (
-        <div style={{ background: '#fee2e2', border: '1px solid #ef4444', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: '#dc2626' }}>
-          <AlertCircle size={18} /> {error}
-          <button onClick={() => setError('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: '1.2rem' }}>✕</button>
-        </div>
+        <Alert type="error" onClose={() => setError('')} style={{ marginBottom: '16px' }}>
+          {error}
+        </Alert>
       )}
       {success && (
-        <div style={{ background: '#d1fae5', border: '1px solid #10b981', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: '#065f46' }}>
-          <CheckCircle size={18} /> {success}
-          <button onClick={() => setSuccess('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#065f46', fontSize: '1.2rem' }}>✕</button>
-        </div>
+        <Alert type="success" onClose={() => setSuccess('')} style={{ marginBottom: '16px' }}>
+          {success}
+        </Alert>
       )}
 
       {/* Import CSV — solo admin/coordinator */}

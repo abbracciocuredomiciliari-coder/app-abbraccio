@@ -20,3 +20,15 @@ services:
         sync: false   # da impostare manualmente su Render dashboard
       - key: CLOUDINARY_API_SECRET
         sync: false   # da impostare manualmente su Render dashboard
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # FRONTEND - Static Site (React + Vite)
+  # ═══════════════════════════════════════════════════════════════════════════
+  - type: static
+    name: app-abbraccio-frontend
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://app-abbraccio.onrender.com/api  # URL del backend su Render

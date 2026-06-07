@@ -2,6 +2,8 @@ import { FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/api';
 import { Mail, Heart, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');

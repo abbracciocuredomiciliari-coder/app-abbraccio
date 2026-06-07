@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { Users, Calendar, Activity, CheckCircle, ClipboardList, Syringe, MapPin, AlertTriangle, Bell, Eye } from 'lucide-react';
+import { Card } from '../components/ui/Card';
+import { Loading } from '../components/ui/Loading';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 
 interface DashboardCounts {
   patientsCount: number;
@@ -181,7 +185,7 @@ function Dashboard() {
         <h2><Activity size={28} />Dashboard</h2>
         <div className="dashboard-grid" style={{ marginBottom: '24px' }}>
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="dashboard-card" style={{ pointerEvents: 'none' }}>
+            <Card key={i} padding="md">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                 <div style={{ flex: 1 }}>
                   <div className="skeleton skeleton-text" style={{ width: '70%', marginBottom: '6px' }} />
@@ -190,12 +194,14 @@ function Dashboard() {
                 <div className="skeleton" style={{ width: '40px', height: '40px', borderRadius: '8px', flexShrink: 0 }} />
               </div>
               <div className="skeleton" style={{ width: '50%', height: '2.2rem', borderRadius: '6px' }} />
-            </div>
+            </Card>
           ))}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {[1, 2].map(i => (
-            <div key={i} className="skeleton" style={{ height: '72px', borderRadius: '10px' }} />
+            <Card key={i}>
+              <div className="skeleton" style={{ height: '40px', borderRadius: '6px' }} />
+            </Card>
           ))}
         </div>
       </section>

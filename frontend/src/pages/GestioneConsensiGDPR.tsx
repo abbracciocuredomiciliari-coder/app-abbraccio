@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import api from '../api/api';
 import { Shield, FileText, CheckCircle, XCircle, AlertCircle, Search, User, Calendar, Printer, Save, Trash2, RefreshCw, Loader2 } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
 
 interface Consenso {
   _id: string; patientId: string; pazienteAnonimoId: string;
@@ -64,7 +66,11 @@ export default function GestioneConsensiGDPR() {
   return (
     <section>
       <h2><Shield size={28} /> Gestione Consensi GDPR</h2>
-      {message && <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', backgroundColor: message.includes('successo') ? '#d1fae5' : '#fee2e2', borderRadius: '8px', marginBottom: '16px' }}><AlertCircle size={18} />{message}<button onClick={() => setMessage('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer' }}><XCircle size={16} /></button></div>}
+      {message && (
+        <Alert type={message.includes('successo') ? 'success' : 'error'} onClose={() => setMessage('')} style={{ marginBottom: '16px' }}>
+          {message}
+        </Alert>
+      )}
 
       <div style={{ background: 'var(--gray-50)', padding: '20px', borderRadius: '12px', marginBottom: '24px' }}>
         <h3 style={{ marginBottom: '16px' }}><Search size={20} /> Cerca Paziente</h3>

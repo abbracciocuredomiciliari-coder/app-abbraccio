@@ -6,7 +6,6 @@ import path from 'path';
 import jwt from 'jsonwebtoken';
 import connectDB from './config/db';
 import { verificaConnessioneSMTP, inviaEmailNuovoPianoDiLavoro } from './utils/email';
-import { rateLimitByIP, rateLimitByUser } from './middleware/rateLimit';
 import { authenticateToken } from './middleware/auth';
 import { authorizeRole } from './middleware/roles';
 import authRouter from './routes/auth';
@@ -62,6 +61,8 @@ const allowedOrigins: string[] = [
   'http://localhost:3000',
   'http://127.0.0.1:5173',
   'https://app-abbraccio-frontend.vercel.app',
+  'https://app-abbraccio-frontend.onrender.com',
+  'https://abbraccio-cure.onrender.com',
 ];
 // Aggiungi FRONTEND_URL da env se diverso da quelli già in lista
 if (process.env.FRONTEND_URL && !allowedOrigins.includes(process.env.FRONTEND_URL)) {
@@ -79,6 +80,8 @@ app.use(cors({
       origin.endsWith('.vercel.app') &&
       new URL(origin).hostname.startsWith('app-abbraccio-frontend')
     ) return callback(null, true);
+    // Permetti qualsiasi dominio Render (per staging/preview)
+    if (origin.endsWith('.onrender.com')) return callback(null, true);
     console.warn(`CORS bloccato per origine non autorizzata: ${origin}`);
     return callback(new Error(`Origine non autorizzata: ${origin}`));
   },
@@ -121,7 +124,7 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'App Abbraccio API in esecuzione' });
 });
 
-app.use('/api/auth', rateLimitByIP(5, 900000), authRouter); // Max 5 tentativi ogni 15 min
+app.use('/api/auth', authRouter);
 app.use('/api/gdpr', gdprRouter);
 app.use('/api/export', exportSiatRouter);
 app.use('/api/dashboard', dashboardRouter);

@@ -299,7 +299,7 @@ export default function CentroPrenotazioniPrivato() {
                 <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>Tipo di servizio *</label>
                 <select
                   value={formData.tipoServizio}
-                  onChange={(e: ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, tipoServizio: e.target.value as TipoServizio })}
+                  onChange={e => setFormData({ ...formData, tipoServizio: e.target.value as TipoServizio })}
                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
                   required
                 >
@@ -319,7 +319,7 @@ export default function CentroPrenotazioniPrivato() {
                 <input
                   type="text"
                   value={formData.tipoSpecifico}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, tipoSpecifico: e.target.value })}
+                  onChange={e => setFormData({ ...formData, tipoSpecifico: e.target.value })}
                   placeholder={formData.tipoServizio === 'prelievo' ? 'Es. Emocromo completo' : formData.tipoServizio === 'esame_strumentale' ? 'Es. ECG' : 'Specifica il tipo...'}
                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
                 />
@@ -331,7 +331,7 @@ export default function CentroPrenotazioniPrivato() {
                 <input
                   type="text"
                   value={formData.pazienteNome}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, pazienteNome: e.target.value })}
+                  onChange={e => setFormData({ ...formData, pazienteNome: e.target.value })}
                   placeholder="Nome e cognome"
                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
                   required
@@ -343,7 +343,7 @@ export default function CentroPrenotazioniPrivato() {
                 <input
                   type="text"
                   value={formData.pazienteIndirizzo}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, pazienteIndirizzo: e.target.value })}
+                  onChange={e => setFormData({ ...formData, pazienteIndirizzo: e.target.value })}
                   placeholder="Via, numero, città"
                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
                   required
@@ -355,7 +355,7 @@ export default function CentroPrenotazioniPrivato() {
                 <input
                   type="tel"
                   value={formData.pazienteTelefono}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, pazienteTelefono: e.target.value })}
+                  onChange={e => setFormData({ ...formData, pazienteTelefono: e.target.value })}
                   placeholder="Numero di telefono"
                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
                 />
@@ -368,7 +368,7 @@ export default function CentroPrenotazioniPrivato() {
                   <input
                     type="date"
                     value={formData.dataPreferita}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, dataPreferita: e.target.value })}
+                    onChange={e => setFormData({ ...formData, dataPreferita: e.target.value })}
                     min={new Date().toISOString().split('T')[0]}
                     style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
                     required
@@ -379,7 +379,7 @@ export default function CentroPrenotazioniPrivato() {
                   <input
                     type="time"
                     value={formData.orarioPreferito}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, orarioPreferito: e.target.value })}
+                    onChange={e => setFormData({ ...formData, orarioPreferito: e.target.value })}
                     style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
                   />
                 </div>
@@ -391,7 +391,7 @@ export default function CentroPrenotazioniPrivato() {
                   <input
                     type="date"
                     value={formData.dataAlternativa}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, dataAlternativa: e.target.value })}
+                    onChange={e => setFormData({ ...formData, dataAlternativa: e.target.value })}
                     min={new Date().toISOString().split('T')[0]}
                     style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
                   />
@@ -401,7 +401,7 @@ export default function CentroPrenotazioniPrivato() {
                   <input
                     type="time"
                     value={formData.orarioAlternativo}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, orarioAlternativo: e.target.value })}
+                    onChange={e => setFormData({ ...formData, orarioAlternativo: e.target.value })}
                     style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
                   />
                 </div>
@@ -412,7 +412,7 @@ export default function CentroPrenotazioniPrivato() {
                 <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>Priorità</label>
                 <select
                   value={formData.priorita}
-                  onChange={(e: ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, priorita: e.target.value as any })}
+                  onChange={e => setFormData({ ...formData, priorita: e.target.value as any })}
                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
                 >
                   <option value="bassa">🟢 Bassa</option>
@@ -427,7 +427,7 @@ export default function CentroPrenotazioniPrivato() {
                 <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>Note aggiuntive</label>
                 <textarea
                   value={formData.noteRichiedente}
-                  onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, noteRichiedente: e.target.value })}
+                  onChange={e => setFormData({ ...formData, noteRichiedente: e.target.value })}
                   placeholder="Informazioni utili per l'operatore..."
                   rows={3}
                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', resize: 'vertical' }}

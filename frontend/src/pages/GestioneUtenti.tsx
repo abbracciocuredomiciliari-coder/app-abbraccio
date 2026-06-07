@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/api';
+import { Button } from '../components/ui/Button';
 
 interface Utente {
   _id: string;
@@ -145,14 +146,12 @@ function GestioneUtenti() {
           <div style={{ background: 'white', borderRadius: '12px', padding: '24px', maxWidth: '400px', width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
             <p style={{ margin: '0 0 20px', fontSize: '0.95rem', color: '#374151', lineHeight: 1.5 }}>{conferma.msg}</p>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button type="button" onClick={() => setConferma(null)}
-                style={{ background: '#f1f5f9', border: '1px solid #d1d5db', borderRadius: '8px', padding: '8px 18px', cursor: 'pointer', fontWeight: 600, color: '#374151' }}>
+              <Button variant="secondary" size="sm" onClick={() => setConferma(null)}>
                 Annulla
-              </button>
-              <button type="button" onClick={conferma.onSi}
-                style={{ background: '#dc2626', border: 'none', borderRadius: '8px', padding: '8px 18px', cursor: 'pointer', fontWeight: 600, color: 'white' }}>
+              </Button>
+              <Button variant="danger" size="sm" onClick={conferma.onSi}>
                 Conferma
-              </button>
+              </Button>
             </div>
           </div>
         </div>

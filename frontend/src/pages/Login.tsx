@@ -4,6 +4,9 @@ import axios from 'axios';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { Heart, Mail, Lock, LogIn, AlertCircle, Clock } from 'lucide-react';
+import { Alert } from '../components/ui/Alert';
+import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
 
 function Login() {
   const navigate = useNavigate();
@@ -105,115 +108,65 @@ function Login() {
 
       <form onSubmit={handleSubmit} className="login-form" style={{ maxWidth: '440px', margin: '0 auto' }}>
         {sessionExpiredMsg && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 16px',
-              backgroundColor: 'rgba(245, 158, 11, 0.1)',
-              border: '1px solid rgba(245, 158, 11, 0.3)',
-              borderRadius: 'var(--radius-md)',
-              color: '#b45309',
-              fontSize: '0.92rem',
-            }}
-          >
-            <Clock size={18} style={{ flexShrink: 0 }} />
+          <Alert type="warning" onClose={() => setSessionExpiredMsg('')} style={{ marginBottom: '16px' }}>
             {sessionExpiredMsg}
-          </div>
+          </Alert>
         )}
 
         {error && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 16px',
-              backgroundColor: 'var(--danger-bg)',
-              border: '1px solid rgba(239, 68, 68, 0.2)',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--danger)',
-              fontSize: '0.92rem',
-            }}
-          >
-            <AlertCircle size={18} style={{ flexShrink: 0 }} />
+          <Alert type="error" onClose={() => setError('')} style={{ marginBottom: '16px' }}>
             {error}
-          </div>
+          </Alert>
         )}
 
         {isWakingUp && !error && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 16px',
-              backgroundColor: 'rgba(245, 158, 11, 0.1)',
-              border: '1px solid rgba(245, 158, 11, 0.3)',
-              borderRadius: 'var(--radius-md)',
-              color: '#b45309',
-              fontSize: '0.92rem',
-            }}
-          >
-            <Clock size={18} style={{ flexShrink: 0 }} />
+          <Alert type="warning" style={{ marginBottom: '16px' }}>
             Il server si sta avviando, attendi qualche secondo…
-          </div>
+          </Alert>
         )}
 
-        <label>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Mail size={16} />
-            Email
-          </span>
-          <input
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="inserisci la tua email"
-            required
-          />
-        </label>
-
-        <label>
-          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Input
+          label={
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Lock size={16} />
-              Password
+              <Mail size={16} />
+              Email
             </span>
-            <Link to="/forgot-password" style={{ fontSize: '0.82rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: 500 }}>
-              Password dimenticata?
-            </Link>
-          </span>
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="••••••••"
-            required
-          />
-        </label>
+          }
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="inserisci la tua email"
+          required
+        />
 
-        <button type="submit" disabled={loading} style={{ width: '100%' }}>
-          {loading ? (
-            <>
-              <span style={{
-                width: '18px',
-                height: '18px',
-                border: '2px solid rgba(255,255,255,0.3)',
-                borderTopColor: 'white',
-                borderRadius: '50%',
-                animation: 'spin 0.8s linear infinite',
-              }} />
-              {isWakingUp ? 'Avvio server in corso…' : 'Accesso in corso...'}
-            </>
-          ) : (
-            <>
-              <LogIn size={18} />
-              Accedi
-            </>
-          )}
-        </button>
+        <Input
+          label={
+            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Lock size={16} />
+                Password
+              </span>
+              <Link to="/forgot-password" style={{ fontSize: '0.82rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: 500 }}>
+                Password dimenticata?
+              </Link>
+            </span>
+          }
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          required
+        />
+
+        <Button
+          type="submit"
+          variant="primary"
+          loading={loading}
+          icon={<LogIn size={18} />}
+          style={{ width: '100%' }}
+        >
+          {isWakingUp ? 'Avvio server in corso…' : 'Accedi'}
+        </Button>
 
         <p style={{ textAlign: 'center', fontSize: '0.88rem', color: 'var(--gray-500)', margin: 0 }}>
           Non hai un account?{' '}

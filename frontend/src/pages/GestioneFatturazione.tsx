@@ -3,6 +3,7 @@ import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
 import { Receipt, Calendar, FileText, Printer, User, Filter, ChevronDown, ChevronUp, Building2 } from 'lucide-react';
+import { Button } from '../components/ui/Button';
 
 interface Patient {
   _id: string;
@@ -217,17 +218,17 @@ export default function GestioneFatturazione() {
         </h1>
         <div style={{ display: 'flex', gap: '10px' }}>
           {isConvenzione ? (
-            <button onClick={stampaRiepilogoAsl} style={{ background: '#0369a1', color: 'white', padding: '10px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Printer size={18} />Stampa Report ASL
-            </button>
+            <Button variant="primary" onClick={stampaRiepilogoAsl} icon={<Printer size={18} />}>
+              Stampa Report ASL
+            </Button>
           ) : (
             <>
-              <button onClick={() => visualizzaPDF()} style={{ background: '#3b82f6', color: 'white', padding: '10px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FileText size={18} />Visualizza Report
-              </button>
-              <button onClick={() => stampaPDF()} style={{ background: '#1e4d8c', color: 'white', padding: '10px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Printer size={18} />Stampa Report
-              </button>
+              <Button variant="primary" onClick={() => visualizzaPDF()} icon={<FileText size={18} />}>
+                Visualizza Report
+              </Button>
+              <Button variant="secondary" onClick={() => stampaPDF()} icon={<Printer size={18} />}>
+                Stampa Report
+              </Button>
             </>
           )}
         </div>
@@ -447,12 +448,12 @@ export default function GestioneFatturazione() {
                       </tbody>
                     </table>
                     <div style={{ display: 'flex', gap: '10px', marginTop: '16px', justifyContent: 'flex-end' }}>
-                      <button onClick={() => visualizzaPDF(r)} style={{ background: '#3b82f6', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <FileText size={16} />Visualizza PDF
-                      </button>
-                      <button onClick={() => stampaPDF(r)} style={{ background: '#1e4d8c', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Printer size={16} />Stampa PDF
-                      </button>
+                      <Button variant="primary" size="sm" onClick={() => visualizzaPDF(r)} icon={<FileText size={16} />}>
+                        Visualizza PDF
+                      </Button>
+                      <Button variant="secondary" size="sm" onClick={() => stampaPDF(r)} icon={<Printer size={16} />}>
+                        Stampa PDF
+                      </Button>
                     </div>
                   </div>
                 )}

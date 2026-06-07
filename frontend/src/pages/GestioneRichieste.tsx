@@ -1,5 +1,6 @@
 import { useEffect, useState, ChangeEvent } from 'react';
 import api from '../api/api';
+import { Button } from '../components/ui/Button';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Tipi
@@ -329,7 +330,9 @@ export default function GestioneRichieste() {
           <div style={{ background: 'white', borderRadius: '16px', padding: '24px', maxWidth: '600px', width: '100%', maxHeight: '90vh', overflow: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2 style={{ margin: 0, color: '#1e4d8c' }}>📝 Gestisci Richiesta</h2>
-              <button onClick={() => setGestioneModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#666' }}>×</button>
+              <Button variant="ghost" size="sm" onClick={() => setGestioneModal(false)}>
+                ×
+              </Button>
             </div>
 
             {/* Dettagli richiesta */}

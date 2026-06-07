@@ -1,5 +1,7 @@
 import { FormEvent, useState, useCallback, lazy, Suspense } from 'react';
 import api from '../api/api';
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
 
 const MappaZona = lazy(() => import('../components/MappaZona'));
 
@@ -271,9 +273,9 @@ function Register() {
         )}
 
         {error && (
-          <p className="error-text" style={{ background: 'rgba(220,38,38,0.08)', padding: '10px 14px', borderRadius: '6px', border: '1px solid #dc2626' }}>
-            ⚠️ {error}
-          </p>
+          <Alert type="error" onClose={() => setError('')} style={{ marginBottom: '16px' }}>
+            {error}
+          </Alert>
         )}
 
         <div style={{ background: 'rgba(30,77,140,0.06)', border: '1px solid rgba(30,77,140,0.2)', borderRadius: '6px', padding: '10px 14px', fontSize: '0.88rem', color: '#1e4d8c', marginBottom: '4px' }}>
@@ -385,21 +387,15 @@ function Register() {
               </label>
             </div>
 
-            {error && (
-              <p className="error-text" style={{ background: 'rgba(220,38,38,0.08)', padding: '10px 14px', borderRadius: '6px', border: '1px solid #dc2626' }}>
-                ⚠️ {error}
-              </p>
-            )}
-
             <div style={{ background: 'rgba(30,77,140,0.06)', border: '1px solid rgba(30,77,140,0.2)', borderRadius: '6px', padding: '10px 14px', fontSize: '0.88rem', color: '#1e4d8c' }}>
               ℹ️ Dopo la registrazione, la tua richiesta sarà valutata dall'amministratore. Riceverai una comunicazione quando il tuo accesso sarà attivato.
             </div>
           </>
         )}
 
-        <button type="submit" disabled={loading} style={{ opacity: loading ? 0.7 : 1 }}>
-          {loading ? '⏳ Invio in corso...' : '📨 Invia richiesta di registrazione'}
-        </button>
+        <Button type="submit" loading={loading} variant="primary" style={{ width: '100%' }}>
+          {loading ? 'Invio in corso...' : 'Invia richiesta di registrazione'}
+        </Button>
       </form>
     </section>
   );

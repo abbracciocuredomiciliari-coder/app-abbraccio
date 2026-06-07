@@ -7,6 +7,10 @@ import {
   CheckCircle, Trash2, ChevronDown, ChevronUp, FileText, Building2,
   Printer, UserCheck, ClipboardList, Eye,
 } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
+import { Card } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
 
 // ─── Interfacce ───────────────────────────────────────────────────────────────
 interface Paziente {
@@ -630,7 +634,15 @@ export default function CentroPrelievi() {
                               ))}
                               <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                                 <textarea value={testoDiaria} onChange={e => setTestoDiaria(e.target.value)} placeholder="Aggiungi nota clinica..." rows={2} style={{ flex: 1, borderRadius: '6px', border: '1px solid #d1d5db', padding: '8px', fontSize: '0.85rem', resize: 'vertical' }} />
-                                <button onClick={aggiungiDiaria} disabled={salvandoDiaria || !testoDiaria.trim()} style={{ background: colore, color: 'white', border: 'none', borderRadius: '6px', padding: '8px 14px', cursor: 'pointer', fontWeight: 600, alignSelf: 'flex-end' }}>{salvandoDiaria ? '...' : 'Salva'}</button>
+                                <Button
+                                  onClick={aggiungiDiaria}
+                                  loading={salvandoDiaria}
+                                  disabled={!testoDiaria.trim()}
+                                  variant="primary"
+                                  size="sm"
+                                >
+                                  Salva
+                                </Button>
                               </div>
                             </div>
                           )}
@@ -767,7 +779,9 @@ export default function CentroPrelievi() {
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: colore }}>
                 <Syringe size={20} />Nuova Prenotazione Prelievo
               </h3>
-              <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+              <Button variant="ghost" size="sm" onClick={() => setShowForm(false)}>
+                <X size={20} />
+              </Button>
             </div>
             <div style={{ display: 'grid', gap: '14px' }}>
               <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>
@@ -807,10 +821,17 @@ export default function CentroPrelievi() {
               </label>
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setShowForm(false)} style={{ padding: '10px 18px', borderRadius: '8px', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer' }}>Annulla</button>
-              <button onClick={creaPrelievo} disabled={salvando || !form.patient || !form.tipoPrelievo} style={{ padding: '10px 20px', borderRadius: '8px', background: colore, color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {salvando ? '...' : <><CheckCircle size={16} />Salva Prenotazione</>}
-              </button>
+              <Button variant="secondary" onClick={() => setShowForm(false)}>
+                Annulla
+              </Button>
+              <Button
+                variant="primary"
+                loading={salvando}
+                disabled={!form.patient || !form.tipoPrelievo}
+                icon={<CheckCircle size={16} />}
+              >
+                Salva Prenotazione
+              </Button>
             </div>
           </div>
         </div>

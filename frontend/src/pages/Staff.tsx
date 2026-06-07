@@ -21,6 +21,13 @@ import {
   CheckCircle,
   UserX,
 } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Alert } from '../components/ui/Alert';
+import { Input } from '../components/ui/Input';
+import { Badge } from '../components/ui/Badge';
+import { Modal } from '../components/ui/Modal';
+import { Loading } from '../components/ui/Loading';
 
 interface StaffMember {
   _id: string;
@@ -424,37 +431,14 @@ function Staff() {
       </h2>
 
       {success && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '12px 16px',
-          backgroundColor: 'var(--success-bg)',
-          border: '1px solid rgba(16, 185, 129, 0.2)',
-          borderRadius: 'var(--radius-md)',
-          color: 'var(--success)',
-          marginBottom: '16px',
-        }}>
-          <CheckCircle size={18} />
+        <Alert type="success" onClose={() => setSuccess('')} style={{ marginBottom: '16px' }}>
           {success}
-        </div>
+        </Alert>
       )}
       {error && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '8px',
-          padding: '12px 16px',
-          backgroundColor: 'var(--danger-bg)',
-          border: '1px solid rgba(220,38,38,0.2)',
-          borderRadius: 'var(--radius-md)',
-          color: 'var(--danger)',
-          marginBottom: '16px',
-        }}>
-          <span><AlertCircle size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />{error}</span>
-          <button type="button" onClick={() => setError('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: 0 }}><X size={16} /></button>
-        </div>
+        <Alert type="error" onClose={() => setError('')} style={{ marginBottom: '16px' }}>
+          {error}
+        </Alert>
       )}
 
       {/* Search and Filter Bar */}
@@ -465,36 +449,13 @@ function Staff() {
         alignItems: 'center',
         flexWrap: 'wrap',
       }}>
-        <div style={{
-          flex: 1,
-          minWidth: '200px',
-          position: 'relative',
-        }}>
-          <Search
-            size={18}
-            style={{
-              position: 'absolute',
-              left: '14px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'var(--gray-400)',
-            }}
-          />
-          <input
-            type="text"
-            placeholder="Cerca per nome, email o ruolo..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px 14px 12px 44px',
-              border: '1px solid var(--gray-300)',
-              borderRadius: 'var(--radius-md)',
-              fontSize: '0.95rem',
-              outline: 'none',
-            }}
-          />
-        </div>
+        <Input
+          placeholder="Cerca per nome, email o ruolo..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          icon={<Search size={18} />}
+          style={{ flex: 1, minWidth: '200px' }}
+        />
 
         <select
           value={selectedCategory}
@@ -514,19 +475,13 @@ function Staff() {
         </select>
 
         {canEdit && (
-          <button
+          <Button
+            variant={showForm ? 'secondary' : 'primary'}
             onClick={() => setShowForm(!showForm)}
-            className="add-button"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              whiteSpace: 'nowrap',
-            }}
+            icon={<UserPlus size={18} />}
           >
-            <UserPlus size={18} />
             {showForm ? 'Annulla' : 'Nuovo Staff'}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -701,16 +656,7 @@ function Staff() {
                         {getCategoryLabel(staff.category)}
                       </span>
                       {!staff.active && (
-                        <span style={{
-                          fontSize: '0.78rem',
-                          padding: '2px 10px',
-                          backgroundColor: 'var(--danger-bg)',
-                          color: 'var(--danger)',
-                          borderRadius: 'var(--radius-full)',
-                          fontWeight: 600,
-                        }}>
-                          Inattivo
-                        </span>
+                        <Badge variant="danger" size="sm">Inattivo</Badge>
                       )}
                       {/* Badge modalità abilitata */}
                       {staff.modalitaAbilitata && staff.modalitaAbilitata !== 'entrambi' && (
@@ -758,13 +704,13 @@ function Staff() {
                         </span>
                       )}
                       {canEdit && staff.active && (
-                        <button
-                          type="button"
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => zonaEditId === staff._id ? setZonaEditId(null) : apriZonaEdit(staff)}
-                          style={{ fontSize: '0.75rem', background: 'none', border: '1px solid #d1d5db', borderRadius: '5px', padding: '2px 8px', cursor: 'pointer', color: '#374151' }}
                         >
                           {zonaEditId === staff._id ? '✕ Chiudi' : '✏️ Zona'}
-                        </button>
+                        </Button>
                       )}
                     </div>
                     {/* Form inline zona */}

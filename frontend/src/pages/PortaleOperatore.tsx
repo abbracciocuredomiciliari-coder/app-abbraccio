@@ -5,6 +5,10 @@ import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
 import FirmaCanvas from '../components/FirmaCanvas';
 import { Printer, Eye, CheckCircle, Plus, Calendar, User, Syringe, Clock, FileText } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
 
 // ─── Interfacce ───────────────────────────────────────────────────────────────
 
@@ -1399,10 +1403,15 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                         </label>
                       ))}
                     </div>
-                    <button type="button" onClick={salvaDiario} disabled={salvandoDiario || !testoDiario.trim()}
-                      style={{ background: '#1e4d8c', padding: '9px 20px', opacity: !testoDiario.trim() ? 0.5 : 1 }}>
-                      {salvandoDiario ? '⏳ Salvataggio...' : '💾 Salva voce diario'}
-                    </button>
+                    <Button
+                      onClick={salvaDiario}
+                      loading={salvandoDiario}
+                      disabled={!testoDiario.trim()}
+                      variant="primary"
+                      icon={<FileText size={16} />}
+                    >
+                      Salva voce diario
+                    </Button>
                   </div>
 
                   {diario.length === 0 ? (
@@ -1570,11 +1579,15 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                                     <input value={noteRivalutazione} onChange={e => setNoteRivalutazione(e.target.value)}
                                       placeholder="Osservazioni sulla rivalutazione..." style={{ marginTop: '4px' }} />
                                   </label>
-                                  <button type="button" onClick={() => salvaRivalutazione(ob._id)}
-                                    disabled={salvandoRivalutazione || !statoRivalutazione}
-                                    style={{ background: '#059669', padding: '9px 16px', opacity: !statoRivalutazione ? 0.5 : 1 }}>
-                                    {salvandoRivalutazione ? '⏳' : '✅ Salva'}
-                                  </button>
+                                  <Button
+                                    onClick={() => salvaRivalutazione(ob._id)}
+                                    loading={salvandoRivalutazione}
+                                    disabled={!statoRivalutazione}
+                                    variant="success"
+                                    size="sm"
+                                  >
+                                    Salva
+                                  </Button>
                                 </div>
                               </div>
                             )}

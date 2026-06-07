@@ -16,6 +16,7 @@ import {
   Check,
   ClipboardList,
 } from 'lucide-react';
+import { Button } from '../components/ui/Button';
 
 interface DocumentItem {
   _id: string;

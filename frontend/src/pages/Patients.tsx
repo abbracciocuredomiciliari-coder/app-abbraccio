@@ -17,6 +17,13 @@ import {
   AlertCircle,
   Loader2,
 } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Alert } from '../components/ui/Alert';
+import { Input } from '../components/ui/Input';
+import { Badge } from '../components/ui/Badge';
+import { Modal } from '../components/ui/Modal';
+import { Loading } from '../components/ui/Loading';
 
 // Assicura che API_BASE_URL termini sempre con /api
 const _rawBasePatients = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
@@ -326,20 +333,9 @@ function Patients() {
       </h2>
 
       {success && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '12px 16px',
-          backgroundColor: 'var(--success-bg)',
-          border: '1px solid rgba(16, 185, 129, 0.2)',
-          borderRadius: 'var(--radius-md)',
-          color: 'var(--success)',
-          marginBottom: '16px',
-        }}>
-          <AlertCircle size={18} />
+        <Alert type="success" onClose={() => setSuccess('')} style={{ marginBottom: '16px' }}>
           {success}
-        </div>
+        </Alert>
       )}
 
       {/* Search Bar */}
@@ -349,52 +345,20 @@ function Patients() {
         marginBottom: '20px',
         alignItems: 'center',
       }}>
-        <div style={{
-          flex: 1,
-          position: 'relative',
-        }}>
-          <Search
-            size={18}
-            style={{
-              position: 'absolute',
-              left: '14px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'var(--gray-400)',
-            }}
-          />
-          <input
-            type="text"
-            placeholder="Cerca per nome, cognome o ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px 14px 12px 44px',
-              border: '1px solid var(--gray-300)',
-              borderRadius: 'var(--radius-md)',
-              fontSize: '0.95rem',
-              outline: 'none',
-              transition: 'border-color var(--transition-fast)',
-            }}
-            onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-            onBlur={(e) => e.target.style.borderColor = 'var(--gray-300)'}
-          />
-        </div>
+        <Input
+          placeholder="Cerca per nome, cognome o ID..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          icon={<Search size={18} />}
+        />
         {canEdit && (
-          <button
+          <Button
+            variant={showForm ? 'secondary' : 'primary'}
             onClick={() => setShowForm(!showForm)}
-            className="add-button"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              whiteSpace: 'nowrap',
-            }}
+            icon={<UserPlus size={18} />}
           >
-            <UserPlus size={18} />
             {showForm ? 'Annulla' : 'Nuovo Paziente'}
-          </button>
+          </Button>
         )}
       </div>
 

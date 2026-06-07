@@ -7,6 +7,8 @@ import {
   LogIn, LogOut, CheckCircle, AlertCircle, Loader2,
   User, Clock, MapPin, Heart, FileText, Printer
 } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
 
 interface WorkPlanInfo {
   _id: string;

@@ -1,6 +1,8 @@
 ﻿import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
 
 interface CheckListEntry {
   _id: string;
@@ -93,9 +95,9 @@ function CheckList() {
       const res = await api.post('/checklist-defibrillatore', form);
       setStorico([res.data, ...storico]);
       setMostraForm(false);
-      alert('Checklist salvata con successo!');
+      setSuccess('Checklist salvata con successo!');
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Errore nel salvataggio');
+      setError(err?.response?.data?.message || 'Errore nel salvataggio');
     } finally {
       setSalvando(false);
     }
@@ -107,7 +109,7 @@ function CheckList() {
       await api.delete(`/checklist-defibrillatore/${id}`);
       setStorico(storico.filter((c) => c._id !== id));
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Errore durante l\'eliminazione');
+      setError(err?.response?.data?.message || 'Errore durante l\'eliminazione');
     }
   };
 

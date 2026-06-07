@@ -15,6 +15,7 @@ import {
   Pencil,
   Check,
 } from 'lucide-react';
+import { Button } from '../components/ui/Button';
 
 interface DocumentItem {
   _id: string;
@@ -287,9 +288,9 @@ function Procedure() {
         }}>
           <AlertCircle size={18} />
           {procedureMessage}
-          <button onClick={() => setProcedureMessage('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer' }}>
+          <Button variant="ghost" size="sm" onClick={() => setProcedureMessage('')}>
             <X size={16} />
-          </button>
+          </Button>
         </div>
       )}
 

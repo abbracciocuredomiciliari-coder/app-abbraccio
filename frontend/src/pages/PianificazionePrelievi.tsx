@@ -5,6 +5,7 @@ import {
   ChevronLeft, ChevronRight, Plus, X, Calendar, Clock, User, Syringe,
   CheckCircle, Trash2, ChevronDown, ChevronUp, FileText, Building2, Printer
 } from 'lucide-react';
+import { Button } from '../components/ui/Button';
 
 // ─── Interfacce ───────────────────────────────────────────────────────────────
 interface Paziente {
