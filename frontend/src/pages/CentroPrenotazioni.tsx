@@ -206,7 +206,7 @@ export default function CentroPrenotazioni() {
   const pianiFiltrati = useMemo(() => {
     let list = piani.filter(w => w.type === pianoTipo && w.status !== 'cancelled');
     const t = searchP.toLowerCase().trim();
-    if (t) list = list.filter(w => `${w.patient.firstName} ${w.patient.lastName} ${w.staff?.firstName} ${w.staff?.lastName} ${w.task}`.toLowerCase().includes(t));
+    if (t) list = list.filter(w => `${w.patient?.firstName} ${w.patient?.lastName} ${w.staff?.firstName} ${w.staff?.lastName} ${w.task}`.toLowerCase().includes(t));
     return list;
   }, [piani, pianoTipo, searchP]);
 
@@ -278,7 +278,7 @@ export default function CentroPrenotazioni() {
                       <div key={p._id} style={{ background: 'white', border: `1px solid #bfdbfe`, borderLeft: `4px solid ${p.status === 'eseguito' ? '#059669' : '#0369a1'}`, borderRadius: '10px', overflow: 'hidden' }}>
                         <button type="button" onClick={() => setAperto(aperto === p._id ? null : p._id)} style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '12px 14px', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: '0.9rem' }}><User size={13} style={{ display: 'inline', marginRight: '4px' }} />{p.patient.firstName} {p.patient.lastName}{p.orario && <span style={{ marginLeft: '8px', color: '#64748b', fontWeight: 400, fontSize: '0.82rem' }}><Clock size={11} style={{ display: 'inline' }} /> {p.orario}</span>}</div>
+                            <div style={{ fontWeight: 700, fontSize: '0.9rem' }}><User size={13} style={{ display: 'inline', marginRight: '4px' }} />{p.patient?.firstName} {p.patient?.lastName}{p.orario && <span style={{ marginLeft: '8px', color: '#64748b', fontWeight: 400, fontSize: '0.82rem' }}><Clock size={11} style={{ display: 'inline' }} /> {p.orario}</span>}</div>
                             <div style={{ fontSize: '0.8rem', color: '#64748b' }}>💉 {p.tipoPrelievo} <span style={{ marginLeft: '6px', padding: '1px 8px', borderRadius: '10px', fontSize: '0.72rem', fontWeight: 700, background: p.status === 'eseguito' ? '#dcfce7' : '#dbeafe', color: p.status === 'eseguito' ? '#059669' : '#1d4ed8' }}>{p.status === 'eseguito' ? '✅ Eseguito' : '🔵 Pianificato'}</span></div>
                           </div>
                           <div style={{ display: 'flex', gap: '6px' }}>
@@ -323,7 +323,7 @@ export default function CentroPrenotazioni() {
                   : <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {prelAss.map(p => { const s = selP.has(p._id); return (
                       <div key={p._id} onClick={() => setSelP(prev => { const n = new Set(prev); s ? n.delete(p._id) : n.add(p._id); return n; })} style={{ background: s ? '#eff6ff' : 'white', border: `2px solid ${s ? '#2563eb' : '#e2e8f0'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div><div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{p.patient.firstName} {p.patient.lastName}</div><div style={{ fontSize: '0.78rem', color: '#64748b' }}>💉 {p.tipoPrelievo}{p.orario ? ` · ${p.orario}` : ''}</div></div>
+                        <div><div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{p.patient?.firstName} {p.patient?.lastName}</div><div style={{ fontSize: '0.78rem', color: '#64748b' }}>💉 {p.tipoPrelievo}{p.orario ? ` · ${p.orario}` : ''}</div></div>
                         <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: `2px solid ${s ? '#2563eb' : '#d1d5db'}`, background: s ? '#2563eb' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{s && <CheckCircle size={12} color="white" />}</div>
                       </div>
                     ); })}
@@ -364,7 +364,7 @@ export default function CentroPrenotazioni() {
                       <div key={e._id} style={{ background: 'white', border: '1px solid #e9d5ff', borderLeft: `4px solid #7c3aed`, borderRadius: '10px', overflow: 'hidden' }}>
                         <button type="button" onClick={() => setApertoE(apertoE === e._id ? null : e._id)} style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '12px 14px', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: '0.9rem' }}><User size={13} style={{ display: 'inline', marginRight: '4px' }} />{e.patient.firstName} {e.patient.lastName}{e.orario && <span style={{ marginLeft: '8px', color: '#64748b', fontWeight: 400, fontSize: '0.82rem' }}><Clock size={11} style={{ display: 'inline' }} /> {e.orario}</span>}</div>
+                            <div style={{ fontWeight: 700, fontSize: '0.9rem' }}><User size={13} style={{ display: 'inline', marginRight: '4px' }} />{e.patient?.firstName} {e.patient?.lastName}{e.orario && <span style={{ marginLeft: '8px', color: '#64748b', fontWeight: 400, fontSize: '0.82rem' }}><Clock size={11} style={{ display: 'inline' }} /> {e.orario}</span>}</div>
                             <div style={{ fontSize: '0.8rem', color: '#64748b' }}>🏥 {Array.isArray(e.tipoEsame) ? e.tipoEsame.join(', ') : e.tipoEsame} <span style={{ marginLeft: '6px', padding: '1px 8px', borderRadius: '10px', fontSize: '0.72rem', fontWeight: 700, background: '#ede9fe', color: '#6d28d9' }}>{e.status === 'eseguito' ? '✅ Eseguito' : e.status === 'refertato' ? '📋 Refertato' : '🔵 Pianificato'}</span></div>
                           </div>
                           <div style={{ display: 'flex', gap: '6px' }}>
@@ -408,7 +408,7 @@ export default function CentroPrenotazioni() {
                   : <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {esamiAss.map(e => { const s = selE.has(e._id); return (
                       <div key={e._id} onClick={() => setSelE(prev => { const n = new Set(prev); s ? n.delete(e._id) : n.add(e._id); return n; })} style={{ background: s ? '#f5f3ff' : 'white', border: `2px solid ${s ? '#7c3aed' : '#e2e8f0'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div><div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{e.patient.firstName} {e.patient.lastName}</div><div style={{ fontSize: '0.78rem', color: '#64748b' }}>🏥 {Array.isArray(e.tipoEsame) ? e.tipoEsame.join(', ') : e.tipoEsame}{e.orario ? ` · ${e.orario}` : ''}</div></div>
+                        <div><div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{e.patient?.firstName} {e.patient?.lastName}</div><div style={{ fontSize: '0.78rem', color: '#64748b' }}>🏥 {Array.isArray(e.tipoEsame) ? e.tipoEsame.join(', ') : e.tipoEsame}{e.orario ? ` · ${e.orario}` : ''}</div></div>
                         <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: `2px solid ${s ? '#7c3aed' : '#d1d5db'}`, background: s ? '#7c3aed' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{s && <CheckCircle size={12} color="white" />}</div>
                       </div>
                     ); })}
@@ -451,7 +451,7 @@ export default function CentroPrenotazioni() {
                   <div key={w._id} style={{ background: 'white', border: '1px solid #e2e8f0', borderLeft: `4px solid ${w.status === 'completed' ? '#059669' : '#10b981'}`, borderRadius: '10px', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f172a', marginBottom: '4px' }}>
-                        {w.patient.firstName} {w.patient.lastName}
+                        {w.patient?.firstName ?? '(paziente eliminato)'} {w.patient?.lastName ?? ''}
                         <span style={{ marginLeft: '10px', padding: '2px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, background: w.status === 'completed' ? '#dcfce7' : '#d1fae5', color: '#059669' }}>{w.status === 'completed' ? '✅ Completato' : '🟢 Attivo'}</span>
                       </div>
                       <div style={{ fontSize: '0.83rem', color: '#475569' }}>👤 {w.staff?.firstName} {w.staff?.lastName} — {w.staff?.role}</div>
