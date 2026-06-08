@@ -794,6 +794,15 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                 <div style={{ fontSize: '2rem', fontWeight: '800', color: '#dc2626', lineHeight: 1 }}>{esamiAttivi}</div>
               </button>
             )}
+            {/* Gestione Prelievi */}
+            <button
+              type="button"
+              onClick={() => navigate('/centro-prelievi')}
+              style={{ background: 'rgba(14,165,233,0.07)', border: '1px solid rgba(14,165,233,0.3)', borderRadius: '10px', padding: '14px 10px', textAlign: 'center', cursor: 'pointer', minWidth: 0, overflow: 'hidden' }}
+            >
+              <div style={{ fontSize: '0.7rem', color: '#0ea5e9', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Gestione Prelievi</div>
+              <div style={{ fontSize: '2rem', fontWeight: '800', color: '#0ea5e9', lineHeight: 1 }}>💉</div>
+            </button>
             {compensoTotaleGlobale > 0 && (
               <button
                 type="button"
