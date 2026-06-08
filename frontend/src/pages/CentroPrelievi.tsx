@@ -498,7 +498,12 @@ export default function CentroPrelievi() {
 
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', background: '#f1f5f9', borderRadius: '10px', padding: '4px', width: 'fit-content' }}>
-        {([['prenotazioni', <ClipboardList size={16} />, 'Prenotazioni'], ...(puoCreaPrelievo ? [['assegnazione', <UserCheck size={16} />, 'Assegnazione Operatori']] : [])] as const).map(([key, icon, label]) => (
+        {(() => {
+          const tabs = [['prenotazioni', <ClipboardList size={16} />, 'Prenotazioni'] as const];
+          if (puoCreaPrelievo) {
+            tabs.push(['assegnazione', <UserCheck size={16} />, 'Assegnazione Operatori'] as const);
+          }
+          return tabs.map(([key, icon, label]) => (
           <button
             key={key}
             onClick={() => setTab(key)}
@@ -512,7 +517,8 @@ export default function CentroPrelievi() {
           >
             {icon}{label}
           </button>
-        ))}
+        ));
+        })()}
       </div>
 
       {/* ══════════════════════════════════════════════════════════════════════ */}
