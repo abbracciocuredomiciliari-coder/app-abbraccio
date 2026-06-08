@@ -498,7 +498,7 @@ export default function CentroPrelievi() {
 
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', background: '#f1f5f9', borderRadius: '10px', padding: '4px', width: 'fit-content' }}>
-        {([['prenotazioni', <ClipboardList size={16} />, 'Prenotazioni'] , ['assegnazione', <UserCheck size={16} />, 'Assegnazione Operatori']] as const).map(([key, icon, label]) => (
+        {([['prenotazioni', <ClipboardList size={16} />, 'Prenotazioni'], ...(puoCreaPrelievo ? [['assegnazione', <UserCheck size={16} />, 'Assegnazione Operatori']] : [])] as const).map(([key, icon, label]) => (
           <button
             key={key}
             onClick={() => setTab(key)}
@@ -660,7 +660,7 @@ export default function CentroPrelievi() {
       {/* ══════════════════════════════════════════════════════════════════════ */}
       {/* TAB ASSEGNAZIONE                                                      */}
       {/* ══════════════════════════════════════════════════════════════════════ */}
-      {tab === 'assegnazione' && (
+      {tab === 'assegnazione' && puoCreaPrelievo && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '24px', alignItems: 'start' }}>
           {renderCalendario(assAnno, assMese, assMesePrecedente, assMeseSuccessivo, assGiorno, (iso) => { setAssGiorno(iso); setSelezionati(new Set()); setAssMsg(''); }, colore)}
 
