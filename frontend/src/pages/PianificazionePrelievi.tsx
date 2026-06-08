@@ -240,7 +240,7 @@ export default function PianificazionePrelievi() {
       <table>
         <tr><th>Paziente</th><td><strong>${p.patient.firstName} ${p.patient.lastName}</strong>${p.patient.siat?.asl ? '<br/><span style="font-size:0.8rem;color:#64748b;">ASL: ' + p.patient.siat.asl + '</span>' : ''}</td>
             <th>Operatore</th><td>${p.staff.firstName} ${p.staff.lastName}<br/><span style="font-size:0.8rem;color:#64748b;">${p.staff.role}</span></td></tr>
-        <tr><th>Tipi prelievo</th><td colspan="3">${Array.isArray(p.tipoPrelievo) ? p.tipoPrelievo.join(', ') : p.tipoPrelievo}</td></tr>
+        <tr><th>Tipi prelievo</th><td colspan="3">${p.tipoPrelievo ? (Array.isArray(p.tipoPrelievo) ? p.tipoPrelievo.join(', ') : p.tipoPrelievo) : 'N/D'}</td></tr>
         ${p.note ? `<tr><th>Note</th><td colspan="3">${p.note}</td></tr>` : ''}
         <tr><th>Stato</th><td colspan="3">
           <span class="badge" style="background:${p.status === 'eseguito' ? '#dcfce7' : '#dbeafe'};color:${p.status === 'eseguito' ? '#166534' : '#1e40af'};">
@@ -552,7 +552,7 @@ export default function PianificazionePrelievi() {
                         </span>
                       </div>
                       <div style={{ fontSize: '0.83rem', color: '#64748b', marginTop: '4px' }}>
-                        💉 {Array.isArray(p.tipoPrelievo) ? p.tipoPrelievo.join(', ') : p.tipoPrelievo} · 👤 {p.staff.firstName} {p.staff.lastName}
+                        💉 {p.tipoPrelievo ? (Array.isArray(p.tipoPrelievo) ? p.tipoPrelievo.join(', ') : p.tipoPrelievo) : 'N/D'} · 👤 {p.staff.firstName} {p.staff.lastName}
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
