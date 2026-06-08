@@ -226,7 +226,7 @@ export default function CentroPrelievi() {
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <title>Verbale Prelievo - ${p.patient.firstName} ${p.patient.lastName}</title>
+  <title>Verbale Prelievo - ${p.patient?.firstName || 'N/D'} ${p.patient?.lastName || ''}</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
     h1 { color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; }
@@ -251,7 +251,7 @@ export default function CentroPrelievi() {
   
   <div class="box">
     <h3>👤 Paziente</h3>
-    <div class="info"><span class="label">Nome:</span> <span class="value">${p.patient.firstName} ${p.patient.lastName}</span></div>
+    <div class="info"><span class="label">Nome:</span> <span class="value">${p.patient?.firstName || 'N/D'} ${p.patient?.lastName || ''}</span></div>
     <div class="info"><span class="label">Tipo gestione:</span> <span class="value">${p.patient.tipoGestione === 'convenzione' ? 'Convenzione' : 'Privato'}</span></div>
   </div>
   
@@ -365,7 +365,7 @@ export default function CentroPrelievi() {
     prelieviGiornoSel.forEach(p => {
       const key = p.staff._id;
       if (!perOperatore.has(key)) {
-        perOperatore.set(key, { nome: `${p.staff.firstName} ${p.staff.lastName}`, prelievi: [] });
+        perOperatore.set(key, { nome: `${p.staff?.firstName || 'N/D'} ${p.staff?.lastName || ''}`, prelievi: [] });
       }
       perOperatore.get(key)!.prelievi.push(p);
     });
@@ -391,7 +391,7 @@ export default function CentroPrelievi() {
           <tbody>${op.prelievi.map((p, i) => `
             <tr style="background:${i % 2 === 0 ? '#fff' : '#f8fafc'};">
               <td style="padding:10px;border:1px solid #e2e8f0;text-align:center;font-weight:600;">${p.orario || '—'}</td>
-              <td style="padding:10px;border:1px solid #e2e8f0;"><div style="font-weight:700;">${p.patient.firstName} ${p.patient.lastName}</div>${p.patient.siat?.asl ? `<div style="font-size:0.75rem;color:#64748b;">ASL: ${p.patient.siat.asl}</div>` : ''}</td>
+              <td style="padding:10px;border:1px solid #e2e8f0;"><div style="font-weight:700;">${p.patient?.firstName || 'N/D'} ${p.patient?.lastName || ''}</div>${p.patient?.siat?.asl ? `<div style="font-size:0.75rem;color:#64748b;">ASL: ${p.patient.siat.asl}</div>` : ''}</td>
               <td style="padding:10px;border:1px solid #e2e8f0;">${p.tipoPrelievo}${p.note ? `<div style="font-size:0.75rem;color:#64748b;">${p.note}</div>` : ''}</td>
               <td style="padding:10px;border:1px solid #e2e8f0;text-align:center;"><span style="font-size:0.75rem;font-weight:700;padding:2px 6px;border-radius:4px;background:${p.status === 'eseguito' ? '#dcfce7' : '#dbeafe'};color:${p.status === 'eseguito' ? '#166534' : '#1e40af'};">${p.status === 'eseguito' ? '✓ Eseguito' : 'Pianificato'}</span></td>
               <td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:center;">${p.firmaOperatore ? `<img src="${p.firmaOperatore}" style="max-width:88px;max-height:44px;display:block;margin:auto;"/>` : '<div style="height:44px;"></div>'}</td>
@@ -554,14 +554,14 @@ export default function CentroPrelievi() {
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                           {p.orario && <span style={{ background: '#f1f5f9', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', color: '#475569' }}><Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />{p.orario}</span>}
-                          {p.patient.firstName} {p.patient.lastName}
+                          {p.patient?.firstName || 'N/D'} {p.patient?.lastName || ''}
                           <span style={{ padding: '2px 8px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700, background: p.status === 'eseguito' ? '#f0fdf4' : p.status === 'annullato' ? '#fef2f2' : '#eff6ff', color: p.status === 'eseguito' ? '#059669' : p.status === 'annullato' ? '#dc2626' : colore }}>
                             {p.status === 'eseguito' ? '✅ Eseguito' : p.status === 'annullato' ? '❌ Annullato' : '🔵 Pianificato'}
                           </span>
                         </div>
                         <div style={{ fontSize: '0.83rem', color: '#64748b', marginTop: '4px' }}>
                           💉 {p.tipoPrelievo}
-                          {p.staff?.firstName && <span> · 👤 {p.staff.firstName} {p.staff.lastName}</span>}
+                          {p.staff?.firstName && <span> · 👤 {p.staff.firstName} {p.staff?.lastName || ''}</span>}
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
@@ -713,12 +713,12 @@ export default function CentroPrelievi() {
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                             {p.orario && <span style={{ background: '#f1f5f9', padding: '1px 7px', borderRadius: '5px', fontSize: '0.75rem', color: '#475569' }}>{p.orario}</span>}
-                            {p.patient.firstName} {p.patient.lastName}
+                            {p.patient?.firstName || 'N/D'} {p.patient?.lastName || ''}
                           </div>
                           <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px' }}>
                             💉 {p.tipoPrelievo}
                             {p.staff?.firstName
-                              ? <span style={{ marginLeft: '8px', color: '#0369a1', fontWeight: 600 }}>→ {p.staff.firstName} {p.staff.lastName}</span>
+                              ? <span style={{ marginLeft: '8px', color: '#0369a1', fontWeight: 600 }}>→ {p.staff?.firstName} {p.staff?.lastName || ''}</span>
                               : <span style={{ marginLeft: '8px', color: '#f59e0b', fontWeight: 600 }}>⚠ Non assegnato</span>
                             }
                           </div>
@@ -742,7 +742,7 @@ export default function CentroPrelievi() {
                   >
                     <option value="">Seleziona operatore...</option>
                     {staff.map(s => (
-                      <option key={s._id} value={s._id}>{s.firstName} {s.lastName} — {s.role}</option>
+                      <option key={s._id} value={s._id}>{s?.firstName || 'N/D'} {s?.lastName || ''} — {s?.role || 'N/D'}</option>
                     ))}
                   </select>
                   <button
@@ -788,14 +788,14 @@ export default function CentroPrelievi() {
                 Paziente *
                 <select value={form.patient} onChange={e => setForm(f => ({ ...f, patient: e.target.value }))} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}>
                   <option value="">Seleziona paziente...</option>
-                  {pazienti.map(p => <option key={p._id} value={p._id}>{p.firstName} {p.lastName}{p.siat?.asl ? ` — ${p.siat.asl}` : ''}</option>)}
+                  {pazienti.map(p => <option key={p._id} value={p._id}>{p?.firstName || 'N/D'} {p?.lastName || ''}{p?.siat?.asl ? ` — ${p.siat.asl}` : ''}</option>)}
                 </select>
               </label>
               <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>
                 Operatore (opzionale — si può assegnare dopo)
                 <select value={form.staff} onChange={e => setForm(f => ({ ...f, staff: e.target.value }))} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}>
                   <option value="">Da assegnare in seguito...</option>
-                  {staff.map(s => <option key={s._id} value={s._id}>{s.firstName} {s.lastName} — {s.role}</option>)}
+                  {staff.map(s => <option key={s._id} value={s._id}>{s?.firstName || 'N/D'} {s?.lastName || ''} — {s?.role || 'N/D'}</option>)}
                 </select>
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
