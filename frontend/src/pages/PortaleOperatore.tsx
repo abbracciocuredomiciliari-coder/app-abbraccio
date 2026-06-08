@@ -252,7 +252,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <title>Verbale Prelievo - ${prel.patient.firstName} ${prel.patient.lastName}</title>
+  <title>Verbale Prelievo - ${prel.patient?.firstName || 'N/D'} ${prel.patient?.lastName || ''}</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
     h1 { color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; }
@@ -277,7 +277,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
   
   <div class="box">
     <h3>👤 Paziente</h3>
-    <div class="info"><span class="label">Nome:</span> <span class="value">${prel.patient.firstName} ${prel.patient.lastName}</span></div>
+    <div class="info"><span class="label">Nome:</span> <span class="value">${prel.patient?.firstName || 'N/D'} ${prel.patient?.lastName || ''}</span></div>
     <div class="info"><span class="label">Tipo gestione:</span> <span class="value">${prel.patient.tipoGestione === 'convenzione' ? 'Convenzione' : 'Privato'}</span></div>
   </div>
   
@@ -837,7 +837,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: 700, color: '#0369a1', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                             {prel.orario && <span style={{ background: '#eff6ff', padding: '1px 6px', borderRadius: '4px', fontSize: '0.78rem' }}>⏰ {prel.orario}</span>}
-                            {prel.patient.firstName} {prel.patient.lastName}
+                            {prel.patient?.firstName || 'N/D'} {prel.patient?.lastName || ''}
                             <span style={{ padding: '1px 7px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 700, background: prel.status === 'eseguito' ? '#f0fdf4' : '#eff6ff', color: prel.status === 'eseguito' ? '#059669' : '#0369a1' }}>
                               {prel.status === 'eseguito' ? '✅ Eseguito' : '🔵 Da eseguire'}
                             </span>
@@ -910,7 +910,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                               </div>
                               <input
                                 type="text"
-                                placeholder={`Nome ${ruoloFirmatarioPrelievo[prel._id] === 'caregiver' ? 'caregiver' : `${prel.patient.firstName} ${prel.patient.lastName}`}`}
+                                placeholder={`Nome ${ruoloFirmatarioPrelievo[prel._id] === 'caregiver' ? 'caregiver' : `${prel.patient?.firstName || 'N/D'} ${prel.patient?.lastName || ''}`}`}
                                 value={nomeFirmatarioPrelievo[prel._id] || ''}
                                 onChange={e => setNomeFirmatarioPrelievo(s => ({ ...s, [prel._id]: e.target.value }))}
                                 style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', marginBottom: '10px', fontSize: '0.83rem' }}
@@ -934,7 +934,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                                         noteEsecuzione,
                                         firmaOperatore: firmaOpPrelievo[prel._id],
                                         firmaPaziente: firmaPazPrelievo[prel._id],
-                                        nomeFirmatarioPaziente: nomeFirmatarioPrelievo[prel._id] || `${prel.patient.firstName} ${prel.patient.lastName}`,
+                                        nomeFirmatarioPaziente: nomeFirmatarioPrelievo[prel._id] || `${prel.patient?.firstName || 'N/D'} ${prel.patient?.lastName || ''}`,
                                         ruoloFirmatario: ruoloFirmatarioPrelievo[prel._id] || 'paziente',
                                       });
                                       setNoteEsecuzione('');
@@ -1106,7 +1106,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                     >
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: '700', fontSize: '1rem', color: '#1e4d8c', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          {paz.tipoGestione === 'convenzione' ? '🏥' : '👤'} {paz.firstName} {paz.lastName}
+                          {paz.tipoGestione === 'convenzione' ? '🏥' : '👤'} {paz?.firstName || 'N/D'} {paz?.lastName || ''}
                           {paz.tipoGestione === 'convenzione' && (
                             <span style={{ background: '#0284c7', color: 'white', fontSize: '0.68rem', fontWeight: '700', padding: '2px 7px', borderRadius: '4px', letterSpacing: '0.03em' }}>CONVENZIONE</span>
                           )}
@@ -1185,7 +1185,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                 >
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: '700', fontSize: '0.95rem', color: '#1e4d8c', marginBottom: '3px' }}>
-                      👤 {piano.patient.firstName} {piano.patient.lastName}
+                      👤 {piano.patient?.firstName || 'N/D'} {piano.patient?.lastName || ''}
                     </div>
                     <div style={{ fontSize: '0.85rem', color: '#374151', marginBottom: '2px' }}>
                       {piano.category} — {piano.task}
@@ -1220,7 +1220,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
           </div>
 
           <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', marginBottom: '20px' }}>
-            <strong>📋 {pazienteSelezionato.firstName} {pazienteSelezionato.lastName}</strong>
+            <strong>📋 {pazienteSelezionato?.firstName || 'N/D'} {pazienteSelezionato?.lastName || ''}</strong>
             <div style={{ fontSize: '0.88rem', color: '#555', marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
               {pazienteSelezionato.address && <span>📍 {pazienteSelezionato.address}</span>}
               {pazienteSelezionato.contactPhone && <span>📞 {pazienteSelezionato.contactPhone}</span>}
@@ -1281,7 +1281,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
               </button>
               {pazienteSelezionato && (
                 <span style={{ fontSize: '0.85rem', color: '#888' }}>
-                  {pazienteSelezionato.firstName} {pazienteSelezionato.lastName} › {pianoSelezionato.category}
+                  {pazienteSelezionato?.firstName || 'N/D'} {pazienteSelezionato?.lastName || ''} › {pianoSelezionato?.category || 'N/D'}
                 </span>
               )}
             </div>
