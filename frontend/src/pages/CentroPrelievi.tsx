@@ -499,14 +499,14 @@ export default function CentroPrelievi() {
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', background: '#f1f5f9', borderRadius: '10px', padding: '4px', width: 'fit-content' }}>
         {(() => {
-          const tabs = [['prenotazioni', <ClipboardList size={16} />, 'Prenotazioni'] as const];
+          const tabs: Array<[string, React.ReactNode, string]> = [['prenotazioni', <ClipboardList size={16} />, 'Prenotazioni']];
           if (puoCreaPrelievo) {
-            tabs.push(['assegnazione', <UserCheck size={16} />, 'Assegnazione Operatori'] as const);
+            tabs.push(['assegnazione', <UserCheck size={16} />, 'Assegnazione Operatori']);
           }
           return tabs.map(([key, icon, label]) => (
           <button
             key={key}
-            onClick={() => setTab(key)}
+            onClick={() => setTab(key as 'prenotazioni' | 'assegnazione')}
             style={{
               padding: '8px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem',
               display: 'flex', alignItems: 'center', gap: '6px',
