@@ -228,4 +228,56 @@ router.delete('/:id', auth, async (req: Request, res: Response) => {
   }
 });
 
+// ─── GET /api/supply-requests/consegne ───────────────────────────────────────
+// Restituisce le richieste consegnate per il report
+router.get('/consegne', auth, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const isAdmin = ['admin', 'coordinator', 'direttore'].includes(user.role);
+    
+    // Costruisci filtro
+    const filtro: any = { stato: 'consegnata' };
+    
+    // Se non è admin, filtra per operatore
+    if (!isAdmin && (user.staffId || user.userId || user.id)) {
+      filtro.operatoreId = user.staffId || user.userId || user.id;
+    }
+    
+    // Filtri per data
+    if (req.query.dataInizio || req.query.dataFine) {
+      filtro.dataConsegna = {};
+      if (req.query.dataInizio) {
+        filtro.dataConsegna.$gte = new Date(req.query.dataInizio as string);
+      }
+      if (req.query.dataFine) {
+        filtro.dataConsegna.$lte = new Date(req.query.dataFine as string + 'T23:59:59.999Z');
+      }
+    }
+    
+    const consegne = await SupplyRequest.find(filtro)
+      .sort({ dataConsegna: -1 })
+      .lean();
+    
+    // Trasforma nel formato atteso dal frontend
+    const result = consegne.map((c: any) => ({
+      _id: c._id,
+      operatoreId: c.operatoreId,
+      operatoreNome: c.operatoreNome,
+      dataConsegna: c.dataConsegna,
+      consegnataDa: c.consegnataDa,
+      items: c.items.filter((item: any) => item.statoItem === 'autorizzato' || item.statoItem === 'parziale').map((item: any) => ({
+        nome: item.nome,
+        categoria: item.categoria,
+        unitaMisura: item.unitaMisura || 'pezzi',
+        quantita: item.quantitaAutorizzata || item.quantitaRichiesta,
+        note: item.noteAdmin
+      }))
+    }));
+    
+    return res.json(result);
+  } catch (err: any) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
 export default router;
