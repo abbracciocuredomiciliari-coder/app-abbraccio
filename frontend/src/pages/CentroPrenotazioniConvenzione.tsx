@@ -315,7 +315,7 @@ export default function CentroPrenotazioniConvenzione() {
                       <Syringe size={18} color="#dc2626" style={{ flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{p.patient ? `${p.patient.firstName} ${p.patient.lastName}` : '—'}</div>
-                        <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{p.tipoPrelievo?.join(', ')}{p.orario ? ` · ${p.orario}` : ''}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{p.tipoPrelievo ? (Array.isArray(p.tipoPrelievo) ? p.tipoPrelievo.join(', ') : p.tipoPrelievo) : 'N/D'}{p.orario ? ` · ${p.orario}` : ''}</div>
                         {p.staff && <div style={{ fontSize: '0.78rem', color: '#0369a1' }}>👤 {p.staff.firstName} {p.staff.lastName}</div>}
                       </div>
                       <span style={{ padding: '2px 8px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700', background: p.status === 'eseguito' ? '#dcfce7' : '#fff7ed', color: p.status === 'eseguito' ? '#15803d' : '#9a3412' }}>{p.status}</span>
@@ -334,7 +334,7 @@ export default function CentroPrenotazioniConvenzione() {
                   prelievi.filter(p => !p.staff).map(p => (
                     <label key={p._id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '8px', background: prelieviSelezionati.has(p._id) ? '#fef2f2' : '#f9fafb', marginBottom: '6px', cursor: 'pointer', border: `1px solid ${prelieviSelezionati.has(p._id) ? '#fca5a5' : '#f3f4f6'}` }}>
                       <input type="checkbox" checked={prelieviSelezionati.has(p._id)} onChange={e => { const s = new Set(prelieviSelezionati); e.target.checked ? s.add(p._id) : s.delete(p._id); setPrelieviSelezionati(s); }} />
-                      <div style={{ flex: 1 }}><div style={{ fontWeight: '600', fontSize: '0.88rem' }}>{p.patient ? `${p.patient.firstName} ${p.patient.lastName}` : '—'}</div><div style={{ fontSize: '0.78rem', color: '#6b7280' }}>{p.dataPrelievo?.split('T')[0]}{p.orario ? ` · ${p.orario}` : ''} · {p.tipoPrelievo?.join(', ')}</div></div>
+                      <div style={{ flex: 1 }}><div style={{ fontWeight: '600', fontSize: '0.88rem' }}>{p.patient ? `${p.patient.firstName} ${p.patient.lastName}` : '—'}</div><div style={{ fontSize: '0.78rem', color: '#6b7280' }}>{p.dataPrelievo?.split('T')[0]}{p.orario ? ` · ${p.orario}` : ''} · {p.tipoPrelievo ? (Array.isArray(p.tipoPrelievo) ? p.tipoPrelievo.join(', ') : p.tipoPrelievo) : 'N/D'}</div></div>
                     </label>
                   ))}
               </div>
@@ -366,7 +366,7 @@ export default function CentroPrenotazioniConvenzione() {
                       <HeartPulse size={18} color="#7c3aed" style={{ flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{e.patient ? `${e.patient.firstName} ${e.patient.lastName}` : '—'}</div>
-                        <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{e.tipoEsame?.join(', ')}{e.orario ? ` · ${e.orario}` : ''}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{e.tipoEsame ? (Array.isArray(e.tipoEsame) ? e.tipoEsame.join(', ') : e.tipoEsame) : 'N/D'}{e.orario ? ` · ${e.orario}` : ''}</div>
                         {e.staff && <div style={{ fontSize: '0.78rem', color: '#7c3aed' }}>👤 {e.staff.firstName} {e.staff.lastName}</div>}
                       </div>
                       <span style={{ padding: '2px 8px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700', background: e.status === 'eseguito' ? '#dcfce7' : '#ede9fe', color: e.status === 'eseguito' ? '#15803d' : '#7c3aed' }}>{e.status}</span>
@@ -385,7 +385,7 @@ export default function CentroPrenotazioniConvenzione() {
                   esami.filter(e => !e.staff).map(e => (
                     <label key={e._id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '8px', background: esamiSelezionati.has(e._id) ? '#f5f3ff' : '#f9fafb', marginBottom: '6px', cursor: 'pointer', border: `1px solid ${esamiSelezionati.has(e._id) ? '#c4b5fd' : '#f3f4f6'}` }}>
                       <input type="checkbox" checked={esamiSelezionati.has(e._id)} onChange={ev => { const s = new Set(esamiSelezionati); ev.target.checked ? s.add(e._id) : s.delete(e._id); setEsamiSelezionati(s); }} />
-                      <div style={{ flex: 1 }}><div style={{ fontWeight: '600', fontSize: '0.88rem' }}>{e.patient ? `${e.patient.firstName} ${e.patient.lastName}` : '—'}</div><div style={{ fontSize: '0.78rem', color: '#6b7280' }}>{e.dataEsame?.split('T')[0]}{e.orario ? ` · ${e.orario}` : ''} · {e.tipoEsame?.join(', ')}</div></div>
+                      <div style={{ flex: 1 }}><div style={{ fontWeight: '600', fontSize: '0.88rem' }}>{e.patient ? `${e.patient.firstName} ${e.patient.lastName}` : '—'}</div><div style={{ fontSize: '0.78rem', color: '#6b7280' }}>{e.dataEsame?.split('T')[0]}{e.orario ? ` · ${e.orario}` : ''} · {e.tipoEsame ? (Array.isArray(e.tipoEsame) ? e.tipoEsame.join(', ') : e.tipoEsame) : 'N/D'}</div></div>
                     </label>
                   ))}
               </div>
