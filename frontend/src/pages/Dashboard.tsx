@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { Users, Calendar, Activity, CheckCircle, ClipboardList, Syringe, MapPin, AlertTriangle, Bell, Eye } from 'lucide-react';
+import { Users, Activity, CheckCircle, ClipboardList, MapPin, AlertTriangle, Bell, Eye } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Loading } from '../components/ui/Loading';
 import { Badge } from '../components/ui/Badge';
@@ -144,15 +144,6 @@ function Dashboard() {
       color: '#4f46e5',
       bgColor: 'rgba(79, 70, 229, 0.1)',
       link: '/patients',
-    },
-    {
-      title: 'Prelievi oggi',
-      subtitle: 'da eseguire',
-      value: counts.prelieviOggiCount,
-      icon: Syringe,
-      color: '#0369a1',
-      bgColor: 'rgba(3, 105, 161, 0.1)',
-      link: '/pianificazione-prelievi',
     },
   ];
 
