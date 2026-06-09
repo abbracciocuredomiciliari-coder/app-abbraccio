@@ -168,19 +168,33 @@ function Login() {
           {isWakingUp ? 'Avvio server in corso…' : 'Accedi'}
         </Button>
 
-        <p style={{ textAlign: 'center', fontSize: '0.88rem', color: 'var(--gray-500)', margin: 0 }}>
-          Non hai un account?{' '}
-          <a
-            href="/register"
-            style={{
-              color: 'var(--primary)',
-              textDecoration: 'none',
-              fontWeight: 500,
-            }}
-          >
+        <p style={{ textAlign: 'center', fontSize: '0.88rem', color: 'var(--gray-500)', margin: '0 0 10px' }}>
+          Operatore?{' '}
+          <a href="/register" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 500 }}>
             Registrati
           </a>
         </p>
+        <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '14px', textAlign: 'center' }}>
+          <a
+            href="/richiesta-servizio"
+            style={{
+              display: 'inline-block',
+              background: 'rgba(30,77,140,0.08)',
+              border: '1.5px solid rgba(30,77,140,0.25)',
+              color: '#1e4d8c',
+              textDecoration: 'none',
+              fontWeight: '600',
+              fontSize: '0.9rem',
+              padding: '10px 20px',
+              borderRadius: '10px',
+              width: '100%',
+              boxSizing: 'border-box',
+            }}
+          >
+            🏥 Sei un paziente o caregiver?<br />
+            <span style={{ fontSize: '0.82rem', fontWeight: '400', color: '#4b6a9b' }}>Richiedi un servizio a domicilio →</span>
+          </a>
+        </div>
       </form>
     </section>
   );

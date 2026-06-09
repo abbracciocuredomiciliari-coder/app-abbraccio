@@ -51,6 +51,7 @@ const CentroPrenotazioni = lazy(() => import('./pages/CentroPrenotazioni'));
 const CentroPrenotazioniConvenzione = lazy(() => import('./pages/CentroPrenotazioniConvenzione'));
 const GestioneRichieste = lazy(() => import('./pages/GestioneRichieste'));
 const PortalePaziente = lazy(() => import('./pages/PortalePaziente'));
+const RichiestaServizio = lazy(() => import('./pages/RichiestaServizio'));
 import {
   Heart,
   LayoutDashboard,
@@ -363,6 +364,7 @@ function AppShell() {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/richiesta-servizio" element={<RichiestaServizio />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 

@@ -21,6 +21,64 @@ async function notificaAdminNuovaRichiesta(richiesta: any) {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// POST /api/richieste-prenotazioni/pubblica - Richiesta pubblica (senza login)
+// ═════════════════════════════════════════════════════════════════════════════
+router.post('/pubblica', async (req: Request, res: Response) => {
+  try {
+    const {
+      richiedenteNome,
+      richiedenteEmail,
+      richiedenteTelefono,
+      pazienteNome,
+      pazienteIndirizzo,
+      pazienteTelefono,
+      tipoServizio,
+      tipoSpecifico,
+      dataPreferita,
+      orarioPreferito,
+      dataAlternativa,
+      orarioAlternativo,
+      priorita,
+      noteRichiedente,
+    } = req.body;
+
+    if (!pazienteNome || !pazienteIndirizzo || !tipoServizio || !dataPreferita || !richiedenteNome) {
+      return res.status(400).json({ message: 'Campi obbligatori: nome richiedente, nome paziente, indirizzo, tipo servizio, data preferita' });
+    }
+
+    const richiesta = await RichiestaPrenotazione.create({
+      richiedenteNome,
+      richiedenteEmail,
+      richiedenteTelefono,
+      pazienteNome,
+      pazienteIndirizzo,
+      pazienteTelefono,
+      tipoServizio,
+      tipoSpecifico,
+      dataPreferita: new Date(dataPreferita),
+      orarioPreferito,
+      dataAlternativa: dataAlternativa ? new Date(dataAlternativa) : undefined,
+      orarioAlternativo,
+      priorita: priorita || 'normale',
+      noteRichiedente,
+      stato: 'in_attesa',
+      storicoModifiche: [{
+        data: new Date(),
+        autore: richiedenteNome,
+        azione: 'Richiesta pubblica creata',
+        note: `Servizio: ${tipoServizio}${tipoSpecifico ? ` - ${tipoSpecifico}` : ''}`,
+      }],
+    });
+
+    await notificaAdminNuovaRichiesta(richiesta);
+
+    return res.status(201).json({ message: 'Richiesta inviata con successo', id: richiesta._id });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore nella creazione richiesta', error: error?.message });
+  }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
 // POST /api/richieste-prenotazioni - Crea nuova richiesta (caregiver/paziente)
 // ═════════════════════════════════════════════════════════════════════════════
 router.post('/', authenticateToken, async (req: Request, res: Response) => {
