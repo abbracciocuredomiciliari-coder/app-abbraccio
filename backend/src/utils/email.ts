@@ -297,6 +297,58 @@ export async function inviaEmailNuovaRichiestaPrenotazione(
   );
 }
 
+// ─── Conferma consenso GDPR — copia al paziente/firmatario ──────────────────
+export async function inviaEmailConsensoGDPR(
+  emailDestinatario: string,
+  nomePaziente: string,
+  nomeFirmatario: string,
+  ruoloFirmatario: string,
+  dataFirma: string,
+  versioneInformativa: string
+) {
+  console.log(`📧 Invio copia consenso GDPR a: ${emailDestinatario}`);
+  await invia(
+    emailDestinatario,
+    '✅ Consenso GDPR firmato — Abbraccio Cure Domiciliari',
+    `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:28px;border:1px solid #e2e8f0;border-radius:10px;">
+      <div style="text-align:center;border-bottom:2px solid #1e4d8c;padding-bottom:16px;margin-bottom:20px;">
+        <h2 style="color:#1e4d8c;margin:0;font-size:1.3rem;">🛡️ Consenso al trattamento dei dati personali</h2>
+        <p style="color:#6b7280;font-size:0.9rem;margin:4px 0 0;">Abbraccio Cure Domiciliari — Via Di Santa Maria Ausiliatrice 4b, Roma</p>
+      </div>
+
+      <p>Gentile <strong>${nomeFirmatario}</strong>,</p>
+      <p>Le confermiamo che il consenso al trattamento dei dati personali ai sensi del Regolamento UE 2016/679 (GDPR) per il/la paziente <strong>${nomePaziente}</strong> è stato registrato con firma digitale.</p>
+
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:16px 20px;margin:20px 0;">
+        <table style="width:100%;border-collapse:collapse;">
+          <tr><td style="padding:6px 0;font-weight:bold;color:#374151;width:160px;">Paziente:</td><td style="padding:6px 0;color:#374151;">${nomePaziente}</td></tr>
+          <tr><td style="padding:6px 0;font-weight:bold;color:#374151;">Firmato da:</td><td style="padding:6px 0;color:#374151;">${nomeFirmatario} (${ruoloFirmatario})</td></tr>
+          <tr><td style="padding:6px 0;font-weight:bold;color:#374151;">Data firma:</td><td style="padding:6px 0;color:#374151;">${dataFirma}</td></tr>
+          <tr><td style="padding:6px 0;font-weight:bold;color:#374151;">Versione informativa:</td><td style="padding:6px 0;color:#374151;">${versioneInformativa}</td></tr>
+        </table>
+      </div>
+
+      <p style="font-size:0.88rem;color:#374151;">Il consenso riguarda il trattamento dei dati personali e sanitari per le finalità connesse all'erogazione dei servizi di assistenza domiciliare, ai sensi degli artt. 6 e 9 del GDPR.</p>
+
+      <div style="background:#fef3c7;border-left:3px solid #f59e0b;padding:10px 14px;border-radius:0 6px 6px 0;font-size:0.85rem;margin:16px 0;">
+        <strong>I suoi diritti (artt. 15–21 GDPR):</strong> Accesso, rettifica, cancellazione, limitazione, portabilità e opposizione al trattamento. Potrà esercitarli in qualsiasi momento contattando abbracciocuredomiciliari@gmail.com o Tel. 351 417 5117.
+      </div>
+
+      <p style="font-size:0.82rem;color:#6b7280;margin-top:20px;">
+        Per revocare il consenso o per qualsiasi informazione:<br/>
+        📧 abbracciocuredomiciliari@gmail.com &nbsp;|&nbsp; 📞 351 417 5117<br/>
+        Garante Privacy: <a href="https://www.garanteprivacy.it" style="color:#1e4d8c;">www.garanteprivacy.it</a> — garante@gpdp.it
+      </p>
+
+      <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0;"/>
+      <p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">
+        Abbraccio Cure Domiciliari — Roma, Via Di Santa Maria Ausiliatrice 4b<br/>
+        Questa è una email automatica di conferma. Non rispondere a questo messaggio.
+      </p>
+    </div>`
+  );
+}
+
 // ─── Conferma prenotazione — notifica al caregiver/paziente ────────────────────
 export async function inviaEmailConfermaPrenotazione(
   emailDestinatario: string,

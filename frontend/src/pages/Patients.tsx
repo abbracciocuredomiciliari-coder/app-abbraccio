@@ -112,7 +112,8 @@ function Patients() {
   const [firmaConsensoNome, setFirmaConsensoNome] = useState('');
   const [firmaConsensoRuolo, setFirmaConsensoRuolo] = useState<'paziente' | 'familiare' | 'tutore'>('paziente');
   const [salvandoConsenso, setSalvandoConsenso] = useState(false);
-  const [consensoSalvato, setConsensoSalvato] = useState(false);
+  const [consensoSalvato, setConsensoSalvato] = useState<false | 'ok' | 'email'>(false);
+  const [emailConsenso, setEmailConsenso] = useState('');
 
   useEffect(() => {
     loadPatients();
@@ -534,6 +535,7 @@ function Patients() {
                       setFirmaConsensoNome(patient.firstName + ' ' + patient.lastName);
                       setFirmaConsensoRuolo('paziente');
                       setConsensoSalvato(false);
+                      setEmailConsenso(patient.email || '');
                       setShowConsensoModal(true);
                     }}
                     style={{ background: '#7e22ce', color: 'white', whiteSpace: 'nowrap' }}
@@ -593,7 +595,10 @@ function Patients() {
                 <div style={{ textAlign: 'center', padding: '48px 24px' }}>
                   <CheckCircle size={64} color="#16a34a" style={{ marginBottom: '16px' }} />
                   <h2 style={{ color: '#15803d', marginBottom: '8px' }}>Consenso registrato!</h2>
-                  <p style={{ color: '#6b7280', marginBottom: '24px' }}>Il consenso GDPR di <strong>{consensoPaziente.firstName} {consensoPaziente.lastName}</strong> è stato salvato con firma digitale.</p>
+                  <p style={{ color: '#6b7280', marginBottom: '8px' }}>Il consenso GDPR di <strong>{consensoPaziente.firstName} {consensoPaziente.lastName}</strong> è stato salvato con firma digitale.</p>
+                  {consensoSalvato === 'email' && (
+                    <p style={{ color: '#059669', fontWeight: '600', marginBottom: '20px', fontSize: '0.95rem' }}>✉️ Copia email inviata a <strong>{emailConsenso}</strong></p>
+                  )}
                   <button onClick={() => setShowConsensoModal(false)} style={{ background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '8px', padding: '12px 28px', fontWeight: '700', cursor: 'pointer' }}>Chiudi</button>
                 </div>
               ) : (
@@ -652,6 +657,16 @@ function Patients() {
                       style={{ width: '100%', padding: '11px 14px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem', boxSizing: 'border-box' }} />
                   </div>
 
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', fontWeight: '600', color: '#374151', marginBottom: '6px', fontSize: '0.9rem' }}>
+                      📧 Email per copia consenso <span style={{ fontWeight: 400, color: '#9ca3af' }}>(opzionale)</span>
+                    </label>
+                    <input type="email" value={emailConsenso} onChange={e => setEmailConsenso(e.target.value)}
+                      placeholder="es. nome@email.it"
+                      style={{ width: '100%', padding: '11px 14px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem', boxSizing: 'border-box' }} />
+                    {emailConsenso && <p style={{ fontSize: '0.78rem', color: '#6b7280', marginTop: '4px' }}>✉️ Al salvataggio verrà inviata una copia email con il riepilogo del consenso firmato.</p>}
+                  </div>
+
                   {/* Consenso checkbox */}
                   <div style={{ border: '2px solid #1e4d8c', borderRadius: '10px', padding: '16px', marginBottom: '20px', background: '#f8faff' }}>
                     <p style={{ fontSize: '0.88rem', color: '#374151', marginBottom: '12px', fontWeight: '600' }}>📋 Preso atto dell'informativa sul trattamento dei dati personali e di categoria particolare:</p>
@@ -677,7 +692,7 @@ function Patients() {
                       if (!firmaConsenso || !firmaConsensoNome) return;
                       setSalvandoConsenso(true);
                       try {
-                        await api.post('/gdpr/consenso', {
+                        const res = await api.post('/gdpr/consenso', {
                           patientId: consensoPaziente._id,
                           finalita: { prestazioneSanitaria: true, fatturazione: true, auditInterno: true, ricercaScientifica: false },
                           datiSensibili: { datiSanitari: true, datiEconomici: true, immagini: false },
@@ -687,8 +702,9 @@ function Patients() {
                           cognomeFirmatario: firmaConsensoNome.split(' ').slice(1).join(' ') || '',
                           versioneInformativa: 'v2025.1',
                           firmaDigitale: firmaConsenso,
+                          ...(emailConsenso.trim() ? { emailNotifica: emailConsenso.trim() } : {}),
                         });
-                        setConsensoSalvato(true);
+                        setConsensoSalvato(res.data.emailInviata ? 'email' : 'ok');
                       } catch (err: any) {
                         alert(err?.response?.data?.message || 'Errore nel salvataggio del consenso');
                       } finally { setSalvandoConsenso(false); }

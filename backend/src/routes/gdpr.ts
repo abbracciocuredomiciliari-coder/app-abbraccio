@@ -5,6 +5,7 @@ import { auditLog } from '../middleware/audit';
 import ConsensoGDPR from '../models/ConsensoGDPR';
 import Patient from '../models/Patient';
 import crypto from 'crypto';
+import { inviaEmailConsensoGDPR } from '../utils/email';
 
 const router = Router();
 
@@ -21,7 +22,7 @@ router.post(
   auditLog('consenso', 'CREATE'),
   async (req: AuthRequest, res: Response) => {
     try {
-      const { patientId, ...consensoData } = req.body;
+      const { patientId, emailNotifica, ...consensoData } = req.body;
       
       if (!patientId) {
         return res.status(400).json({ message: 'patientId richiesto' });
@@ -49,11 +50,28 @@ router.post(
         ipAddress: ip,
         userAgent: req.headers['user-agent']?.substring(0, 200),
       });
+
+      // Invia email di conferma al paziente/firmatario (non bloccante)
+      const destinatarioEmail = emailNotifica || patient.email;
+      if (destinatarioEmail) {
+        const nomePaziente = `${patient.firstName} ${patient.lastName}`;
+        const nomeFirmatario = `${consensoData.nomeFirmatario || ''} ${consensoData.cognomeFirmatario || ''}`.trim() || nomePaziente;
+        const dataFirmaFmt = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        inviaEmailConsensoGDPR(
+          destinatarioEmail,
+          nomePaziente,
+          nomeFirmatario,
+          consensoData.firmatoDa || 'paziente',
+          dataFirmaFmt,
+          consensoData.versioneInformativa || 'v2025.1'
+        ).catch((e: any) => console.warn('⚠️ Email consenso GDPR non inviata:', e?.message));
+      }
       
       return res.status(201).json({
         message: 'Consenso registrato con successo',
         consensoId: consenso._id,
         pazienteAnonimoId: consenso.pazienteAnonimoId,
+        emailInviata: !!destinatarioEmail,
       });
     } catch (error: any) {
       console.error('[GDPR] Errore registrazione consenso:', error);
