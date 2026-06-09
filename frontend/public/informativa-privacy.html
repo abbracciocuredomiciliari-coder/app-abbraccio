@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Informativa Privacy - App Abbraccio Cure Domiciliari</title>
+  <title>Informativa Privacy - Abbraccio Cure Domiciliari</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -15,276 +15,276 @@
       padding: 40px 20px;
     }
     .container {
-      max-width: 800px;
+      max-width: 860px;
       margin: 0 auto;
       background: white;
       border-radius: 16px;
-      padding: 48px;
+      padding: 52px 56px;
       box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
     }
-    h1 {
-      color: #1e4d8c;
-      font-size: 2rem;
-      margin-bottom: 8px;
-    }
-    .subtitle {
-      color: #6b7280;
-      font-size: 1rem;
-      margin-bottom: 32px;
+    .header { text-align: center; margin-bottom: 36px; border-bottom: 3px solid #1e4d8c; padding-bottom: 24px; }
+    .header h1 { color: #1e4d8c; font-size: 1.4rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .header p { color: #4b5563; font-size: 0.95rem; }
+    .intro-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 28px;
+      font-size: 0.95rem;
+      color: #374151;
+      line-height: 1.8;
     }
     h2 {
       color: #1e4d8c;
-      font-size: 1.25rem;
-      margin-top: 32px;
-      margin-bottom: 16px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid #e5e7eb;
-    }
-    h3 {
-      color: #374151;
-      font-size: 1.1rem;
-      margin-top: 20px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-top: 28px;
       margin-bottom: 12px;
+      padding: 8px 14px;
+      background: #f0f4ff;
+      border-left: 4px solid #1e4d8c;
+      border-radius: 0 6px 6px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
     }
-    p, li {
-      margin-bottom: 12px;
-      color: #4b5563;
-    }
-    ul {
-      margin-left: 24px;
-      margin-bottom: 16px;
-    }
+    p { margin-bottom: 12px; color: #374151; font-size: 0.93rem; }
+    ul { margin: 8px 0 14px 22px; }
+    ul li { margin-bottom: 7px; color: #374151; font-size: 0.93rem; }
     .highlight-box {
       background: #fef3c7;
       border-left: 4px solid #f59e0b;
-      padding: 16px 20px;
-      margin: 20px 0;
+      padding: 14px 18px;
+      margin: 18px 0;
       border-radius: 0 8px 8px 0;
-    }
-    .info-box {
-      background: #dbeafe;
-      border-left: 4px solid #3b82f6;
-      padding: 16px 20px;
-      margin: 20px 0;
-      border-radius: 0 8px 8px 0;
+      font-size: 0.91rem;
     }
     .contact-box {
       background: #d1fae5;
       border: 2px solid #10b981;
-      padding: 24px;
-      margin: 32px 0;
-      border-radius: 12px;
-      text-align: center;
+      padding: 20px 24px;
+      margin: 24px 0;
+      border-radius: 10px;
     }
-    .contact-box h3 {
-      color: #059669;
-      margin-top: 0;
+    .contact-box h3 { color: #065f46; margin-bottom: 10px; font-size: 0.95rem; }
+    .contact-box p { margin-bottom: 5px; font-size: 0.92rem; }
+    .servizi-box {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 14px 0;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0;
+    .consenso-box {
+      border: 2px solid #1e4d8c;
+      border-radius: 10px;
+      padding: 24px 28px;
+      margin-top: 32px;
+      background: #fafbff;
     }
-    th, td {
-      padding: 12px;
-      text-align: left;
+    .consenso-box h3 { color: #1e4d8c; font-size: 1rem; margin-bottom: 14px; }
+    .consenso-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 12px 0;
       border-bottom: 1px solid #e5e7eb;
     }
-    th {
-      background: #f9fafb;
-      font-weight: 600;
-      color: #374151;
+    .consenso-row:last-of-type { border-bottom: none; }
+    .consenso-checkboxes { display: flex; gap: 24px; min-width: 160px; }
+    .consenso-checkboxes label { display: flex; align-items: center; gap: 6px; font-size: 0.88rem; color: #374151; cursor: pointer; }
+    .firma-section {
+      margin-top: 28px;
+      border-top: 1px dashed #9ca3af;
+      padding-top: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 2fr;
+      gap: 20px;
     }
+    .firma-field label { display: block; font-size: 0.78rem; color: #6b7280; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; }
+    .firma-field .line { border-bottom: 1px solid #374151; min-height: 32px; }
     .date {
       text-align: center;
-      color: #6b7280;
-      font-size: 0.9rem;
-      margin-top: 48px;
-      padding-top: 24px;
+      color: #9ca3af;
+      font-size: 0.82rem;
+      margin-top: 40px;
+      padding-top: 20px;
       border-top: 1px solid #e5e7eb;
     }
     @media (max-width: 640px) {
-      .container { padding: 24px; }
-      h1 { font-size: 1.5rem; }
+      .container { padding: 24px 20px; }
+      .firma-section { grid-template-columns: 1fr; }
+      .consenso-row { flex-direction: column; }
+    }
+    @media print {
+      body { background: white; padding: 0; }
+      .container { box-shadow: none; border-radius: 0; padding: 20px; }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🏥 Informativa Privacy</h1>
-    <p class="subtitle">App Abbraccio Cure Domiciliari - Trattamento dati personali e sanitari</p>
 
-    <div class="highlight-box">
-      <strong>⚠️ Importante:</strong> Questa informativa riguarda il trattamento dei dati personali e sanitari ai sensi del Regolamento UE 2016/679 (GDPR) e del D.Lgs. 196/2003 (Codice Privacy).
+    <div class="header">
+      <h1>Informativa sul trattamento dei dati personali<br>e di categoria particolare per l'erogazione dei servizi</h1>
+      <p>Ai sensi del Regolamento UE 2016/679 (GDPR) e del D.Lgs. 196/2003</p>
     </div>
 
-    <h2>1. Titolare del Trattamento</h2>
-    <p>
-      <strong>Nome struttura:</strong> [ABBRACCIO CURE DOMICILIARI]<br>
-      <strong>Indirizzo:</strong> VIA DI SANTA MARIA AUSILIATRICE 4B<br>
-      <strong>Email:</strong> abbracciocuredomiciliari@gmail.com].it<br>
-      <strong>Telefono:</strong> [3514175117]
-    </p>
-
-    <h2>2. Responsabile della Protezione Dati (DPO)</h2>
-    <p>
-      <strong>Nome:</strong> [NON NOMINATO]<br>
-      <strong>Email:</strong> dpo@[dominio].it<br>
-      <strong>Telefono:</strong> [3514175117]
-    </p>
-
-    <h2>3. Categorie di Dati Trattati</h2>
-    <table>
-      <tr>
-        <th>Categoria</th>
-        <th>Esempi</th>
-        <th>Base giuridica</th>
-      </tr>
-      <tr>
-        <td>Dati anagrafici</td>
-        <td>Nome, cognome, data di nascita, codice fiscale</td>
-        <td>Esecuzione contratto (cura)</td>
-      </tr>
-      <tr>
-        <td>Dati di contatto</td>
-        <td>Indirizzo, telefono, email</td>
-        <td>Esecuzione contratto</td>
-      </tr>
-      <tr>
-        <td><strong>Dati sanitari</strong></td>
-        <td>Cartella clinica, diagnosi, terapie, esami</td>
-        <td>Salvaguardia vita/interesse vitale + consenso</td>
-      </tr>
-      <tr>
-        <td>Dati economici</td>
-        <td>Compenso prestazioni, fatturazione</td>
-        <td>Obbligo legale/fiscale</td>
-      </tr>
-      <tr>
-        <td>Dati operatore</td>
-        <td>Chi ha effettuato la visita, firme digitali</td>
-        <td>Obbligo tracciabilità (art. 30 GDPR)</td>
-      </tr>
-    </table>
-
-    <h2>4. Finalità del Trattamento</h2>
-    <p>I dati vengono trattati per le seguenti finalità:</p>
-    <ul>
-      <li><strong>Prestazione sanitaria:</strong> erogazione cure domiciliari, gestione cartella clinica</li>
-      <li><strong>Fatturazione:</strong> emissione fatture, gestione pagamenti</li>
-      <li><strong>Audit interno:</strong> tracciabilità accessi per sicurezza (art. 30 GDPR)</li>
-      <li><strong>Obblighi legali:</strong> conservazione documenti sanitari (10 anni)</li>
-    </ul>
-
-    <h2>5. Modalità di Trattamento</h2>
-    <p>
-      Il trattamento è effettuato con strumenti informatici e telematici, con logiche organizzative 
-      e procedure tecniche idonee a garantire la sicurezza, l'integrità e la riservatezza dei dati.
-    </p>
-    <p>
-      <strong>Misure di sicurezza adottate:</strong>
-    </p>
-    <ul>
-      <li>Autenticazione con credenziali personali</li>
-      <li>Crittografia dati sensibili (AES-256)</li>
-      <li>Tracciabilità accessi (audit log)</li>
-      <li>Backup criptati</li>
-      <li>Accesso limitato al personale autorizzato</li>
-    </ul>
-
-    <h2>6. Comunicazione e Diffusione</h2>
-    <p>I dati possono essere comunicati a:</p>
-    <ul>
-      <li>Personale sanitario interno (medici, infermieri, OSS)</li>
-      <li>Medici specialisti esterni (su indicazione)</li>
-      <li>Strutture sanitarie (ospedali, laboratori)</li>
-      <li>Consulenti fiscali (solo dati amministrativi)</li>
-      <li>Autorità competenti (su richiesta legale)</li>
-    </ul>
-
-    <h2>7. Periodo di Conservazione</h2>
-    <div class="info-box">
-      <strong>📅 Durata conservazione:</strong><br>
-      - <strong>Dati sanitari:</strong> 10 anni (art. 11 D.Lgs. 78/2010)<br>
-      - <strong>Documenti fiscali:</strong> 10 anni (art. 2220 c.c.)<br>
-      - <strong>Log accessi:</strong> 2 anni (art. 30 GDPR)
-    </div>
-
-    <h2>8. I Suoi Diritti (Art. 15-22 GDPR)</h2>
-    <h3>🔍 Diritto di Accesso (Art. 15)</h3>
-    <p>Ha il diritto di ottenere conferma che sia in corso un trattamento dei suoi dati personali e, in tal caso, di ottenerne la comunicazione in forma intelligibile.</p>
-
-    <h3>✏️ Diritto di Rettifica (Art. 16)</h3>
-    <p>Ha il diritto di ottenere la rettifica dei dati personali inesatti o l'integrazione dei dati incompleti.</p>
-
-    <h3>🗑️ Diritto alla Cancellazione ("Diritto all'oblio") - Art. 17</h3>
-    <p>Ha il diritto di ottenere la cancellazione dei dati personali che la riguardano, salvo i casi in cui il trattamento sia necessario per:</p>
-    <ul>
-      <li>L'esecuzione di un obbligo legale (conservazione sanitaria)</li>
-      <li>La ricerca scientifica (anonimizzati)</li>
-    </ul>
-
-    <h3>⏸️ Diritto di Limitazione (Art. 18)</h3>
-    <p>Ha il diritto di ottenere la limitazione del trattamento quando:</p>
-    <ul>
-      <li>Contesta l'esattezza dei dati (per il periodo della verifica)</li>
-      <li>Il trattamento è illecito ma si oppone alla cancellazione</li>
-    </ul>
-
-    <h3>📤 Diritto alla Portabilità (Art. 20)</h3>
-    <p>Ha il diritto di ricevere in formato strutturato, di uso comune e leggibile i dati che la riguardano.</p>
-
-    <h3>🛑 Diritto di Opposizione (Art. 21)</h3>
-    <p>Ha il diritto di opporsi in qualsiasi momento al trattamento dei dati che la riguardano.</p>
-
-    <h3>🤖 Diritto di non essere sottoposto a processi decisionali automatizzati (Art. 22)</h3>
-    <p>Non utilizziamo processi decisionali automatizzati che producano effetti giuridici che la riguardano.</p>
-
-    <h2>9. Come Esercitare i Diritti</h2>
-    <div class="contact-box">
-      <h3>📧 Contatti per esercitare i diritti:</h3>
-      <p><strong>Email:</strong> privacy@[dominio].it</p>
-      <p><strong>Email DPO:</strong> dpo@[dominio].it</p>
-      <p><strong>Telefono:</strong> [INSERIRE NUMERO]</p>
-      <p><strong>PEC:</strong> [INSERIRE PEC]</p>
-      <p style="margin-top: 16px; font-size: 0.9rem; color: #6b7280;">
-        Risponderemo entro <strong>30 giorni</strong> dalla ricezione della richiesta.<br>
-        In caso di mancata risposta o risposta insoddisfacente, potrà rivolgersi al Garante Privacy.
+    <div class="intro-box">
+      <p>Gent. Sig.ra / Egr. Sig.,<br>
+      con la presente desideriamo comunicarLe che per l'instaurazione e la gestione del Servizio di:</p>
+      <div class="servizi-box">
+        <ul style="list-style:none; margin:0; padding:0;">
+          <li>☐ &nbsp;Assistenza domiciliare integrata</li>
+          <li>☐ &nbsp;Nutrizione artificiale</li>
+          <li>☐ &nbsp;Telemedicina, telemetria</li>
+          <li>☐ &nbsp;Ausili</li>
+          <li>☐ &nbsp;Altro: _______________________________________________</li>
+        </ul>
+      </div>
+      <p style="margin-top:12px;">
+        richiesto/i dalla ASL / Az. Ospedaliera / Farmacia di _______________________________ con sede in _______________________________,
+        alla nostra Società, la sottoscritta <strong>Abbraccio Cure Domiciliari</strong>, con sede legale in <strong>Roma, Via Di Santa Maria Ausiliatrice 4b</strong>,
+        tratterà i Suoi Dati Personali in qualità di <strong>Responsabile del trattamento</strong> per conto dell'Ente Titolare,
+        ai sensi del Regolamento (UE) 2016/679 (GDPR).
       </p>
     </div>
 
-    <h2>10. Autorità di Controllo</h2>
-    <p>
-      <strong>Garante per la Protezione dei Dati Personali</strong><br>
-      Sito web: <a href="https://www.garanteprivacy.it" target="_blank">www.garanteprivacy.it</a><br>
-      Email: <a href="mailto:garante@gpdp.it">garante@gpdp.it</a><br>
-      Telefono: 06.696771
-    </p>
-
-    <h2>11. Modifiche all'Informativa</h2>
-    <p>
-      Il Titolare si riserva il diritto di modificare la presente informativa in qualsiasi momento, 
-      dandone pubblicità agli interessati mediante pubblicazione sulla app/piattaforma.
-    </p>
-
-    <h2>12. Consenso al Trattamento</h2>
-    <p>
-      Prendiamo atto che ha ricevuto l'informativa privacy e, con la sottoscrizione del presente documento:
-    </p>
+    <h2>1. Oggetto del Trattamento</h2>
+    <p>Al fine di poterLe fornire i Servizi sopra indicati, la Società tratterà dati Suoi ed eventualmente anche dei suoi familiari (i "Dati Personali"). In particolare, il Titolare tratterà:</p>
     <ul>
-      <li>☐ Acconsente al trattamento dei dati personali per le finalità di prestazione sanitaria</li>
-      <li>☐ Acconsente alla comunicazione dei dati ai medici specialisti indicati</li>
-      <li>☐ Acconsente alla conservazione dei dati per il periodo necessario agli obblighi legali</li>
+      <li><strong>Dati comuni identificativi:</strong> nome, cognome, indirizzo, numero di telefono, e-mail, residenza, ecc.</li>
+      <li><strong>Categorie particolari di dati personali</strong> ai sensi dell'art. 9 GDPR, quali quelli idonei a rivelare uno stato di salute (tramite documentazione sanitaria o cartelle cliniche).</li>
     </ul>
 
+    <h2>2. Base Giuridica e Finalità del Trattamento</h2>
+    <p>I Dati Personali saranno trattati senza che sia necessario un Suo consenso nei seguenti casi:</p>
+    <ul>
+      <li><strong>Art. 6, c. 1, lett. b) GDPR:</strong> trattamento necessario all'esecuzione del Servizio o di misure precontrattuali adottate a Sua richiesta;</li>
+      <li><strong>Art. 6, c. 1, lett. c) GDPR:</strong> trattamento necessario per adempiere un obbligo legale al quale è soggetto il Titolare;</li>
+      <li><strong>Art. 9, c. 2, lett. b) GDPR:</strong> trattamento necessario per assolvere obblighi in materia di diritto del lavoro, sicurezza sociale e protezione sociale;</li>
+      <li><strong>Art. 9, c. 2, lett. h) GDPR:</strong> trattamento necessario per motivi di interesse pubblico nel settore della sanità pubblica;</li>
+      <li><strong>Art. 9, c. 2, lett. j) GDPR:</strong> trattamento necessario a fini di archiviazione nel pubblico interesse, ricerca scientifica o storica ovvero a fini statistici.</li>
+    </ul>
+    <p>I Dati Personali saranno trattati per le seguenti finalità:</p>
+    <ul>
+      <li>Consentire il puntuale e tempestivo adempimento del Servizio affidatoci;</li>
+      <li>Adempimento di obblighi di legge e del contratto connessi al Servizio;</li>
+      <li>Gestione del contenzioso ed esercizio dei diritti della Società in sede giudiziaria;</li>
+      <li>Collaborazione con pubbliche autorità, prevenzione e repressione di atti illeciti.</li>
+    </ul>
     <div class="highlight-box">
-      <strong>⚠️ Nota importante:</strong> Il mancato consenso al trattamento dei dati sanitari 
-      potrebbe impedire la corretta erogazione delle cure domiciliari.
+      La Società potrà trattare i Suoi Dati Personali per finalità diverse da quelle sopra indicate unicamente a fronte di un Suo ulteriore consenso esplicito.
+    </div>
+
+    <h2>3. Modalità del Trattamento</h2>
+    <p>Il trattamento dei Suoi Dati Personali, ai sensi dell'art. 4 GDPR, potrà consistere in: raccolta, registrazione, organizzazione, strutturazione, conservazione, adattamento o modifica, estrazione, consultazione, uso, comunicazione, limitazione, cancellazione o distruzione.</p>
+    <p>Il trattamento potrà essere effettuato mediante supporto cartaceo, informatico o telematico. I Suoi dati:</p>
+    <ul>
+      <li>Saranno trattati nel rispetto dei principi di liceità, correttezza e trasparenza;</li>
+      <li>Saranno raccolti per le legittime finalità sopra determinate;</li>
+      <li>Saranno adeguati, pertinenti e limitati a quanto necessario rispetto alle finalità;</li>
+      <li>Saranno conservati per un arco di tempo non superiore al conseguimento delle finalità;</li>
+      <li>Saranno trattati in modo da garantire adeguata sicurezza mediante misure tecniche ed organizzative.</li>
+    </ul>
+
+    <h2>4. Natura del Conferimento</h2>
+    <p>Il trattamento dei Suoi Dati Personali è indispensabile per la corretta esecuzione del Servizio. Un eventuale rifiuto di fornire i Suoi Dati Personali, in tutto o in parte, potrebbe comportare l'impossibilità di dare esecuzione al Servizio.</p>
+
+    <h2>5. Accesso ai Dati Personali</h2>
+    <p>Ferme restando le comunicazioni in adempimento di obblighi di legge, i Suoi Dati Personali potranno essere resi accessibili a:</p>
+    <ul>
+      <li>Dipendenti e/o collaboratori degli uffici di sede o di territorio, debitamente autorizzati dal Titolare, nella qualità di soggetti autorizzati al trattamento e/o amministratori di sistema.</li>
+    </ul>
+
+    <h2>6. Comunicazione dei Dati Personali</h2>
+    <p>I Suoi Dati Personali potranno essere comunicati, ai sensi dell'art. 6, c. 1, lett. c) GDPR, ai seguenti soggetti:</p>
+    <ul>
+      <li>Enti pubblici (ASL, Aziende Ospedaliere, IRCCS, Università, Comuni, Pronto Soccorso, Guardia Medica, INAIL, INPS, ecc.) per lo svolgimento delle funzioni istituzionali;</li>
+      <li>Farmacie, medici specialisti, professionisti sanitari singoli o associati, studi medici;</li>
+      <li>Società terze per manutenzione tecnica e aggiornamento dei sistemi informativi e/o apparecchiature utilizzate per il Servizio;</li>
+      <li>Aziende di credito o società di assicurazione;</li>
+      <li>Professionisti o società di consulenza in materia legale, commerciale, amministrativa, fiscale e tributaria;</li>
+      <li>Clienti pubblici e/o privati, fornitori e terzi in genere connessi all'esecuzione del Servizio.</li>
+    </ul>
+
+    <h2>7. Trasferimento di Dati Extra UE</h2>
+    <p>I Suoi Dati Personali non saranno soggetti a trasferimento nei confronti di soggetti terzi rispetto a quelli indicati nella presente informativa. Un eventuale trasferimento in Paesi extra UE potrà avvenire unicamente nei termini e con le garanzie previsti dalla Normativa Privacy.</p>
+
+    <h2>8. Periodo di Conservazione</h2>
+    <p>I Suoi Dati Personali saranno conservati per il tempo necessario ad adempiere alle finalità indicate, e comunque <strong>non oltre 10 anni dalla cessazione del Servizio</strong>, al fine del rilascio di attestazioni o documentazione richiesti per adempimenti di Legge. I dati verranno altresì conservati a fini statistici e storici ai sensi dell'art. 89, par. 1 GDPR, con l'adozione di opportune misure tecniche quali la pseudonimizzazione e/o la crittografia.</p>
+
+    <h2>9. I Suoi Diritti</h2>
+    <p>Nella qualità di interessato, potrà in ogni momento esercitare i seguenti diritti:</p>
+    <ul>
+      <li><strong>Diritto di accesso (art. 15 GDPR):</strong> ottenere conferma dell'esistenza di dati che La riguardano e la loro comunicazione in forma intelligibile, incluse le finalità, le modalità, l'origine e il periodo di conservazione;</li>
+      <li><strong>Diritto di rettifica (art. 16 GDPR):</strong> richiedere la rettificazione o l'integrazione dei dati inesatti o incompleti;</li>
+      <li><strong>Diritto alla cancellazione / "diritto all'oblio" (art. 17 GDPR):</strong> richiedere la cancellazione, la trasformazione in forma anonima o il blocco dei dati trattati in violazione di legge;</li>
+      <li><strong>Diritto di limitazione del trattamento (art. 18 GDPR):</strong> ottenere la limitazione del trattamento nei casi previsti dalla normativa;</li>
+      <li><strong>Diritto di notifica (art. 19 GDPR):</strong> richiedere indicazione dei destinatari a cui siano state notificate rettifiche, cancellazioni o limitazioni del trattamento;</li>
+      <li><strong>Diritto alla portabilità dei dati (art. 20 GDPR):</strong> ricevere i Suoi dati in un formato strutturato, di uso comune e leggibile da dispositivo automatico;</li>
+      <li><strong>Diritto di opposizione (art. 21 GDPR):</strong> opporsi, per motivi legittimi, al trattamento dei Suoi dati personali, incluso quello a fini di marketing diretto.</li>
+    </ul>
+    <p>Potrà altresì <strong>revocare il consenso in qualsiasi momento</strong>, senza pregiudizio per la liceità del trattamento effettuato prima della revoca.</p>
+
+    <h2>10. Esercizio dei Diritti e Reclamo al Garante</h2>
+    <p>Potrà esercitare i Suoi diritti rivolgendosi:</p>
+    <div class="contact-box">
+      <h3>📬 All'Ente Titolare</h3>
+      <p>Raccomandata A.R. all'indirizzo del Titolare indicato nel contratto di servizio.</p>
+      <h3 style="margin-top:14px;">📧 Al Responsabile del Trattamento — Abbraccio Cure Domiciliari</h3>
+      <p><strong>Email:</strong> abbracciocuredomiciliari@gmail.com</p>
+      <p><strong>Telefono:</strong> 351 417 5117</p>
+    </div>
+    <p>Ha altresì il diritto di proporre reclamo al <strong>Garante per la Protezione dei Dati Personali</strong>:</p>
+    <ul>
+      <li>Raccomandata A/R a: "Garante per la protezione dei dati personali" — Piazza di Monte Citorio, 121 — 00186 Roma</li>
+      <li>Email: <a href="mailto:garante@gpdp.it">garante@gpdp.it</a> oppure <a href="mailto:protocollo@pec.gpdp.it">protocollo@pec.gpdp.it</a></li>
+      <li>Fax: 06-696773785</li>
+      <li>Sito web: <a href="http://www.garanteprivacy.it" target="_blank">www.garanteprivacy.it</a></li>
+    </ul>
+
+    <h2>11. Titolare e Responsabile del Trattamento</h2>
+    <p>Il <strong>Titolare del Trattamento</strong> è l'Ente committente (ASL / Az. Ospedaliera / Farmacia) come indicato nel contratto di servizio.<br>
+    Il <strong>Responsabile del Trattamento</strong> è <strong>Abbraccio Cure Domiciliari</strong>, con sede legale in Roma, Via Di Santa Maria Ausiliatrice 4b.<br>
+    L'elenco aggiornato dei sub-responsabili del trattamento è liberamente consultabile presso la sede della Società.</p>
+
+    <!-- SEZIONE CONSENSO -->
+    <div class="consenso-box">
+      <h3>📋 CONSENSO AL TRATTAMENTO DEI DATI PERSONALI</h3>
+      <p style="font-size:0.88rem; color:#6b7280; margin-bottom:16px;">
+        Preso atto dell'informativa sul trattamento dei dati personali e di categoria particolare per l'erogazione dei servizi sopra indicata:
+      </p>
+
+      <div class="consenso-row">
+        <div style="flex:1; font-size:0.92rem; color:#374151;">
+          Acconsento al trattamento dei miei Dati Personali per le finalità di cui al paragrafo 2 dell'informativa, connesse alla corretta esecuzione del/i Servizio/i richiesto/i.
+        </div>
+        <div class="consenso-checkboxes">
+          <label><input type="checkbox" /> Acconsento</label>
+          <label><input type="checkbox" /> Non acconsento</label>
+        </div>
+      </div>
+
+      <div class="firma-section">
+        <div class="firma-field">
+          <label>Luogo</label>
+          <div class="line"></div>
+        </div>
+        <div class="firma-field">
+          <label>Data</label>
+          <div class="line"></div>
+        </div>
+        <div class="firma-field">
+          <label>Firma dell'interessato</label>
+          <div class="line"></div>
+        </div>
+      </div>
     </div>
 
     <p class="date">
-      Ultimo aggiornamento: 4 Giugno 2026<br>
-      Versione: 1.0
+      Abbraccio Cure Domiciliari — Roma, Via Di Santa Maria Ausiliatrice 4b — Tel. 351 417 5117 — abbracciocuredomiciliari@gmail.com<br>
+      Ultimo aggiornamento: Giugno 2026
     </p>
   </div>
 </body>

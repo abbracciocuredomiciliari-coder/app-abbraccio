@@ -57,10 +57,126 @@ export default function GestioneConsensiGDPR() {
 
   const stampaConsenso = (c: Consenso, p: Patient) => {
     const win = window.open('', '_blank');
-    if (win) {
-      win.document.write(`<!DOCTYPE html><html><head><title>Consenso - ${p.firstName} ${p.lastName}</title><style>body{font-family:Arial;padding:40px;line-height:1.6}h1{color:#1e4d8c;border-bottom:2px solid #1e4d8c}.box{border:1px solid #ccc;padding:15px;margin:15px 0;border-radius:5px}.signature{border:2px dashed #999;padding:60px 20px 20px;text-align:center;margin-top:40px}</style></head><body><h1>CONSENSO INFORMATO AL TRATTAMENTO DATI</h1><p><strong>Paziente:</strong> ${p.firstName} ${p.lastName}</p><p><strong>Data firma:</strong> ${formatDate(c.dataFirma)}</p><div class="box"><strong>Finalità:</strong> ${Object.entries(c.finalita).filter(([,v])=>v).map(([k])=>k).join(', ')}</div><div class="box"><strong>Dati sensibili:</strong> ${Object.entries(c.datiSensibili).filter(([,v])=>v).map(([k])=>k).join(', ')}</div><div class="signature"><p>Firma di ${c.firmatoDa}: ${c.nomeFirmatario} ${c.cognomeFirmatario}</p></div></body></html>`);
-      win.document.close(); win.focus();
-    }
+    if (!win) return;
+    const dataFirmaFmt = formatDate(c.dataFirma);
+    const nascitaFmt = p.birthDate ? new Date(p.birthDate).toLocaleDateString('it-IT') : '_______________';
+    win.document.write(`<!DOCTYPE html>
+<html lang="it"><head><meta charset="UTF-8">
+<title>Informativa Privacy e Consenso - ${p.firstName} ${p.lastName}</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:Arial,sans-serif;font-size:10pt;line-height:1.6;color:#111;padding:28px 36px}
+  .header{text-align:center;border-bottom:2px solid #1e4d8c;padding-bottom:14px;margin-bottom:18px}
+  .header h1{color:#1e4d8c;font-size:12pt;text-transform:uppercase;letter-spacing:0.4px}
+  .header p{font-size:9pt;color:#555;margin-top:4px}
+  .paziente-box{background:#f0f4ff;border:1px solid #c7d7f0;border-radius:6px;padding:12px 16px;margin-bottom:16px;font-size:9.5pt}
+  .paziente-box strong{color:#1e4d8c}
+  h2{font-size:9.5pt;color:#1e4d8c;text-transform:uppercase;background:#f0f4ff;border-left:3px solid #1e4d8c;padding:5px 10px;margin:14px 0 8px}
+  p{margin-bottom:8px;font-size:9.5pt}
+  ul{margin:4px 0 10px 20px}
+  ul li{font-size:9.5pt;margin-bottom:4px}
+  .highlight{background:#fef3c7;border-left:3px solid #f59e0b;padding:8px 12px;margin:10px 0;font-size:9pt}
+  .consenso-box{border:2px solid #1e4d8c;border-radius:6px;padding:16px 20px;margin-top:20px;background:#fafbff}
+  .consenso-box h3{color:#1e4d8c;font-size:10pt;margin-bottom:10px}
+  .consenso-row{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid #e5e7eb;gap:20px}
+  .cb-group{display:flex;gap:28px;flex-shrink:0;font-size:9pt}
+  .cb-group label{display:flex;align-items:center;gap:4px}
+  .firma-grid{display:grid;grid-template-columns:1fr 1fr 2fr;gap:16px;margin-top:20px;border-top:1px dashed #aaa;padding-top:16px}
+  .firma-field label{display:block;font-size:8pt;color:#666;font-weight:bold;text-transform:uppercase;margin-bottom:5px}
+  .firma-field .line{border-bottom:1px solid #333;min-height:28px}
+  .footer{text-align:center;font-size:8pt;color:#999;margin-top:24px;padding-top:12px;border-top:1px solid #e5e7eb}
+  @media print{body{padding:16px}}
+</style></head><body>
+
+<div class="header">
+  <h1>Informativa sul trattamento dei dati personali<br>e di categoria particolare per l'erogazione dei servizi</h1>
+  <p>Ai sensi del Regolamento UE 2016/679 (GDPR) e del D.Lgs. 196/2003</p>
+</div>
+
+<div class="paziente-box">
+  <strong>Paziente:</strong> ${p.firstName} ${p.lastName} &nbsp;|&nbsp;
+  <strong>Nato/a il:</strong> ${nascitaFmt} &nbsp;|&nbsp;
+  <strong>Data firma:</strong> ${dataFirmaFmt} &nbsp;|&nbsp;
+  <strong>Firmatario:</strong> ${c.nomeFirmatario} ${c.cognomeFirmatario} (${c.firmatoDa})
+</div>
+
+<p>Gent. Sig.ra / Egr. Sig. <strong>${p.firstName} ${p.lastName}</strong>,<br>
+con la presente desideriamo comunicarLe che per l'instaurazione e la gestione del Servizio di assistenza domiciliare integrata, la nostra Società, <strong>Abbraccio Cure Domiciliari</strong>, con sede legale in Roma, Via Di Santa Maria Ausiliatrice 4b, tratterà i Suoi Dati Personali in qualità di Responsabile del trattamento, ai sensi del Regolamento (UE) 2016/679 (GDPR).</p>
+
+<h2>1. Oggetto del Trattamento</h2>
+<p>Al fine di poterLe fornire i Servizi, la Società tratterà i seguenti dati:</p>
+<ul>
+  <li><strong>Dati comuni identificativi:</strong> nome, cognome, indirizzo, telefono, e-mail, residenza, ecc.</li>
+  <li><strong>Categorie particolari di dati (art. 9 GDPR):</strong> dati idonei a rivelare lo stato di salute (documentazione sanitaria, cartelle cliniche).</li>
+</ul>
+
+<h2>2. Base Giuridica e Finalità del Trattamento</h2>
+<p>I Dati saranno trattati, senza necessità di consenso, ai sensi di: art. 6 c.1 lett. b) e c) GDPR; art. 9 c.2 lett. b), h) e j) GDPR. Le finalità sono:</p>
+<ul>
+  <li>Puntuale adempimento del Servizio affidatoci;</li>
+  <li>Adempimento di obblighi di legge connessi al Servizio;</li>
+  <li>Gestione del contenzioso ed esercizio dei diritti in sede giudiziaria;</li>
+  <li>Collaborazione con pubbliche autorità, prevenzione di atti illeciti.</li>
+</ul>
+<div class="highlight">Per finalità diverse sarà richiesto un Suo esplicito ulteriore consenso.</div>
+
+<h2>3. Modalità del Trattamento</h2>
+<p>Il trattamento potrà avvenire mediante supporto cartaceo, informatico o telematico, nel rispetto dei principi di liceità, correttezza e trasparenza, con misure adeguate di sicurezza (pseudonimizzazione, crittografia, controllo accessi).</p>
+
+<h2>4. Comunicazione dei Dati</h2>
+<p>I dati potranno essere comunicati a: enti pubblici (ASL, Ospedali, INAIL, INPS ecc.); farmacie, medici specialisti, professionisti sanitari; società di manutenzione tecnica; aziende di credito/assicurazione; consulenti legali, fiscali, amministrativi.</p>
+
+<h2>5. Conservazione</h2>
+<p>I dati saranno conservati <strong>non oltre 10 anni dalla cessazione del Servizio</strong>, ai sensi degli obblighi di legge vigenti. A fini statistici e storici, ai sensi dell'art. 89 par. 1 GDPR, con adeguate misure di pseudonimizzazione.</p>
+
+<h2>6. I Suoi Diritti (artt. 15–21 GDPR)</h2>
+<ul>
+  <li><strong>Accesso (art. 15):</strong> ottenere conferma e copia dei dati trattati;</li>
+  <li><strong>Rettifica (art. 16):</strong> correggere dati inesatti o incompleti;</li>
+  <li><strong>Cancellazione / Oblio (art. 17):</strong> richiedere cancellazione o anonimizzazione;</li>
+  <li><strong>Limitazione (art. 18):</strong> limitare il trattamento nei casi previsti;</li>
+  <li><strong>Portabilità (art. 20):</strong> ricevere i dati in formato strutturato e leggibile;</li>
+  <li><strong>Opposizione (art. 21):</strong> opporsi al trattamento per motivi legittimi;</li>
+  <li><strong>Revoca del consenso:</strong> in qualsiasi momento, senza pregiudizio per il trattamento pregresso.</li>
+</ul>
+
+<h2>7. Contatti per Esercitare i Diritti e Reclamo al Garante</h2>
+<ul>
+  <li><strong>Abbraccio Cure Domiciliari:</strong> abbracciocuredomiciliari@gmail.com — Tel. 351 417 5117</li>
+  <li><strong>Garante Privacy:</strong> Piazza di Monte Citorio 121, 00186 Roma — garante@gpdp.it — Fax 06-696773785</li>
+  <li>Sito web: www.garanteprivacy.it</li>
+</ul>
+
+<div class="consenso-box">
+  <h3>📋 CONSENSO AL TRATTAMENTO DEI DATI PERSONALI</h3>
+  <p style="font-size:9pt;color:#555;margin-bottom:12px;">Preso atto dell'informativa sul trattamento dei dati personali e di categoria particolare per l'erogazione dei servizi sopra indicata:</p>
+
+  <div class="consenso-row">
+    <div style="flex:1;font-size:9.5pt">
+      Acconsento al trattamento dei miei Dati Personali per le finalità di cui al paragrafo 2 dell'informativa, connesse alla corretta esecuzione del/i Servizio/i richiesto/i.
+    </div>
+    <div class="cb-group">
+      <label><input type="checkbox" ${c.finalita.prestazioneSanitaria ? 'checked' : ''} disabled /> Acconsento</label>
+      <label><input type="checkbox" ${!c.finalita.prestazioneSanitaria ? 'checked' : ''} disabled /> Non acconsento</label>
+    </div>
+  </div>
+
+  <div class="firma-grid">
+    <div class="firma-field"><label>Luogo</label><div class="line"></div></div>
+    <div class="firma-field"><label>Data</label><div class="line">${dataFirmaFmt}</div></div>
+    <div class="firma-field"><label>Firma dell'interessato</label><div class="line">${c.nomeFirmatario} ${c.cognomeFirmatario}</div></div>
+  </div>
+</div>
+
+<div class="footer">
+  Abbraccio Cure Domiciliari — Roma, Via Di Santa Maria Ausiliatrice 4b — Tel. 351 417 5117 — abbracciocuredomiciliari@gmail.com<br>
+  Versione informativa: ${c.versioneInformativa} — Documento generato il ${new Date().toLocaleDateString('it-IT')}
+</div>
+
+<script>window.onload=function(){window.print()}</script>
+</body></html>`);
+    win.document.close();
+    win.focus();
   };
 
   return (
