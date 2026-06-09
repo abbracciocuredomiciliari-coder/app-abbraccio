@@ -16,7 +16,10 @@ import {
   ClipboardList,
   AlertCircle,
   Loader2,
+  Shield,
+  CheckCircle,
 } from 'lucide-react';
+import FirmaCanvas from '../components/FirmaCanvas';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
@@ -101,6 +104,15 @@ function Patients() {
   const [uploading, setUploading] = useState(false);
   const [uploadForm, setUploadForm] = useState({ title: '', description: '', category: '' as string });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Stato modal consenso GDPR
+  const [showConsensoModal, setShowConsensoModal] = useState(false);
+  const [consensoPaziente, setConsensoPaziente] = useState<Patient | null>(null);
+  const [firmaConsenso, setFirmaConsenso] = useState('');
+  const [firmaConsensoNome, setFirmaConsensoNome] = useState('');
+  const [firmaConsensoRuolo, setFirmaConsensoRuolo] = useState<'paziente' | 'familiare' | 'tutore'>('paziente');
+  const [salvandoConsenso, setSalvandoConsenso] = useState(false);
+  const [consensoSalvato, setConsensoSalvato] = useState(false);
 
   useEffect(() => {
     loadPatients();
@@ -514,7 +526,22 @@ function Patients() {
                     💡 {patient.assistanceNeeds}
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => {
+                      setConsensoPaziente(patient);
+                      setFirmaConsenso('');
+                      setFirmaConsensoNome(patient.firstName + ' ' + patient.lastName);
+                      setFirmaConsensoRuolo('paziente');
+                      setConsensoSalvato(false);
+                      setShowConsensoModal(true);
+                    }}
+                    style={{ background: '#7e22ce', color: 'white', whiteSpace: 'nowrap' }}
+                    title="Consenso GDPR"
+                  >
+                    <Shield size={16} />
+                    GDPR
+                  </button>
                   <button
                     onClick={() => openDocumentsModal(patient)}
                     style={{
@@ -543,6 +570,140 @@ function Patients() {
           </ul>
         )}
       </div>
+
+      {/* ═══ MODAL CONSENSO GDPR ═══ */}
+      {showConsensoModal && consensoPaziente && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, overflowY: 'auto', padding: '0' }}>
+          <div style={{ background: 'white', minHeight: '100vh', maxWidth: '700px', margin: '0 auto', padding: '0' }}>
+
+            {/* Header fisso */}
+            <div style={{ position: 'sticky', top: 0, background: '#1e4d8c', color: 'white', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
+              <div>
+                <div style={{ fontWeight: '700', fontSize: '1rem' }}>🛡️ Consenso GDPR</div>
+                <div style={{ fontSize: '0.82rem', opacity: 0.8 }}>{consensoPaziente.firstName} {consensoPaziente.lastName}</div>
+              </div>
+              <button onClick={() => setShowConsensoModal(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '6px', color: 'white', padding: '6px 10px', cursor: 'pointer' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ padding: '20px 24px' }}>
+
+              {consensoSalvato ? (
+                <div style={{ textAlign: 'center', padding: '48px 24px' }}>
+                  <CheckCircle size={64} color="#16a34a" style={{ marginBottom: '16px' }} />
+                  <h2 style={{ color: '#15803d', marginBottom: '8px' }}>Consenso registrato!</h2>
+                  <p style={{ color: '#6b7280', marginBottom: '24px' }}>Il consenso GDPR di <strong>{consensoPaziente.firstName} {consensoPaziente.lastName}</strong> è stato salvato con firma digitale.</p>
+                  <button onClick={() => setShowConsensoModal(false)} style={{ background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '8px', padding: '12px 28px', fontWeight: '700', cursor: 'pointer' }}>Chiudi</button>
+                </div>
+              ) : (
+                <>
+                  {/* Testo informativa */}
+                  <div style={{ fontSize: '0.82rem', color: '#374151', lineHeight: 1.7, marginBottom: '20px' }}>
+                    <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px 16px', marginBottom: '14px', fontSize: '0.83rem' }}>
+                      <strong>Gent. Sig./Sig.ra {consensoPaziente.firstName} {consensoPaziente.lastName}</strong>,<br/>
+                      con la presente La informiamo che la nostra Società <strong>Abbraccio Cure Domiciliari</strong> (Roma, Via Di Santa Maria Ausiliatrice 4b) tratterà i Suoi dati personali in qualità di Responsabile del trattamento per l'erogazione dei servizi di assistenza domiciliare, ai sensi del Reg. UE 2016/679 (GDPR).
+                    </div>
+
+                    <strong style={{ display: 'block', color: '#1e4d8c', marginBottom: '4px' }}>Dati trattati:</strong>
+                    <ul style={{ marginLeft: '18px', marginBottom: '10px' }}>
+                      <li>Dati comuni identificativi (nome, indirizzo, telefono, email)</li>
+                      <li>Categorie particolari (dati sanitari, cartella clinica) — art. 9 GDPR</li>
+                    </ul>
+
+                    <strong style={{ display: 'block', color: '#1e4d8c', marginBottom: '4px' }}>Finalità:</strong>
+                    <ul style={{ marginLeft: '18px', marginBottom: '10px' }}>
+                      <li>Erogazione delle cure domiciliari e gestione della cartella clinica</li>
+                      <li>Adempimenti di legge (conservazione 10 anni dalla cessazione del servizio)</li>
+                      <li>Comunicazione a enti pubblici (ASL), medici specialisti, strutture sanitarie</li>
+                    </ul>
+
+                    <strong style={{ display: 'block', color: '#1e4d8c', marginBottom: '4px' }}>I Suoi diritti (artt. 15–21 GDPR):</strong>
+                    <ul style={{ marginLeft: '18px', marginBottom: '10px' }}>
+                      <li>Accesso, rettifica, cancellazione ("diritto all'oblio"), limitazione, portabilità, opposizione</li>
+                      <li>Revoca del consenso in qualsiasi momento senza pregiudizio per il trattamento pregresso</li>
+                    </ul>
+
+                    <strong style={{ display: 'block', color: '#1e4d8c', marginBottom: '4px' }}>Contatti:</strong>
+                    <p style={{ marginBottom: '0', color: '#555' }}>abbracciocuredomiciliari@gmail.com — Tel. 351 417 5117 | Garante Privacy: garante@gpdp.it</p>
+                  </div>
+
+                  <div style={{ background: '#fef3c7', borderLeft: '3px solid #f59e0b', padding: '10px 14px', borderRadius: '0 6px 6px 0', fontSize: '0.82rem', marginBottom: '20px' }}>
+                    Il mancato conferimento dei dati sanitari potrebbe impedire la corretta erogazione delle cure domiciliari.
+                  </div>
+
+                  {/* Selezione ruolo firmatario */}
+                  <div style={{ marginBottom: '14px' }}>
+                    <label style={{ display: 'block', fontWeight: '600', color: '#374151', marginBottom: '8px', fontSize: '0.9rem' }}>Chi firma?</label>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {(['paziente', 'familiare', 'tutore'] as const).map(r => (
+                        <button key={r} type="button" onClick={() => setFirmaConsensoRuolo(r)}
+                          style={{ padding: '9px 16px', borderRadius: '8px', border: `2px solid ${firmaConsensoRuolo === r ? '#1e4d8c' : '#d1d5db'}`, background: firmaConsensoRuolo === r ? '#1e4d8c' : 'white', color: firmaConsensoRuolo === r ? 'white' : '#374151', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', textTransform: 'capitalize' }}>
+                          {r === 'paziente' ? '🧑 Paziente' : r === 'familiare' ? '👨‍👩‍👧 Familiare' : '📋 Tutore legale'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', fontWeight: '600', color: '#374151', marginBottom: '6px', fontSize: '0.9rem' }}>Nome del firmatario *</label>
+                    <input type="text" value={firmaConsensoNome} onChange={e => setFirmaConsensoNome(e.target.value)}
+                      placeholder="Nome e Cognome"
+                      style={{ width: '100%', padding: '11px 14px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem', boxSizing: 'border-box' }} />
+                  </div>
+
+                  {/* Consenso checkbox */}
+                  <div style={{ border: '2px solid #1e4d8c', borderRadius: '10px', padding: '16px', marginBottom: '20px', background: '#f8faff' }}>
+                    <p style={{ fontSize: '0.88rem', color: '#374151', marginBottom: '12px', fontWeight: '600' }}>📋 Preso atto dell'informativa sul trattamento dei dati personali e di categoria particolare:</p>
+                    <p style={{ fontSize: '0.88rem', color: '#374151', lineHeight: 1.6 }}>
+                      Acconsento al trattamento dei miei Dati Personali per le finalità connesse alla corretta esecuzione del/i servizio/i di assistenza domiciliare richiesto/i.
+                    </p>
+                  </div>
+
+                  {/* FirmaCanvas */}
+                  <FirmaCanvas
+                    label="✍️ Firma del paziente / firmatario"
+                    sublabel="Firmare con il dito o con la penna sullo schermo"
+                    onFirmaCompleta={(f) => setFirmaConsenso(f)}
+                    onCancella={() => setFirmaConsenso('')}
+                    altezza={200}
+                  />
+
+                  {/* Pulsante salva */}
+                  <button
+                    type="button"
+                    disabled={!firmaConsenso || !firmaConsensoNome || salvandoConsenso}
+                    onClick={async () => {
+                      if (!firmaConsenso || !firmaConsensoNome) return;
+                      setSalvandoConsenso(true);
+                      try {
+                        await api.post('/gdpr/consenso', {
+                          patientId: consensoPaziente._id,
+                          finalita: { prestazioneSanitaria: true, fatturazione: true, auditInterno: true, ricercaScientifica: false },
+                          datiSensibili: { datiSanitari: true, datiEconomici: true, immagini: false },
+                          comunicazioneTerzi: { mediciSpecialisti: false, struttureSanitarie: false, familiari: false, assicurazioni: false },
+                          firmatoDa: firmaConsensoRuolo,
+                          nomeFirmatario: firmaConsensoNome.split(' ')[0] || firmaConsensoNome,
+                          cognomeFirmatario: firmaConsensoNome.split(' ').slice(1).join(' ') || '',
+                          versioneInformativa: 'v2025.1',
+                          firmaDigitale: firmaConsenso,
+                        });
+                        setConsensoSalvato(true);
+                      } catch (err: any) {
+                        alert(err?.response?.data?.message || 'Errore nel salvataggio del consenso');
+                      } finally { setSalvandoConsenso(false); }
+                    }}
+                    style={{ width: '100%', padding: '14px', background: firmaConsenso && firmaConsensoNome ? '#15803d' : '#d1d5db', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '1rem', cursor: firmaConsenso && firmaConsensoNome ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '12px' }}
+                  >
+                    {salvandoConsenso ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Shield size={18} />}
+                    {salvandoConsenso ? 'Salvataggio...' : 'Conferma e salva consenso GDPR'}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Documents Modal */}
       {showDocumentsModal && selectedPatient && (
