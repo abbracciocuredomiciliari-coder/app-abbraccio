@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { Users, Calendar, Activity, CheckCircle, ClipboardList, Syringe, MapPin, AlertTriangle, Bell, Eye } from 'lucide-react';
@@ -178,6 +178,11 @@ function Dashboard() {
       btnLabel: 'Vai ai pazienti convenzione →',
     },
   ].filter(Boolean) as { title: string; desc: string; icon: any; color: string; bgColor: string; border: string; link: string; btnLabel: string }[];
+
+  // Paziente/caregiver registrato → portale dedicato
+  if (user?.role === 'paziente_registrato') {
+    return <Navigate to="/portale-paziente" replace />;
+  }
 
   if (loading) {
     return (
