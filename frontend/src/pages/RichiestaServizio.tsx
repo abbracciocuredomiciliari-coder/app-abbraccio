@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { Syringe, HeartPulse, Activity, CheckCircle, ChevronLeft, ChevronRight, Send } from 'lucide-react';
+import { Syringe, HeartPulse, Activity, CheckCircle, ChevronLeft, ChevronRight, Send, UserPlus, Calendar } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -66,8 +66,27 @@ function Calendario({ year, month, onPrev, onNext, selectedDate, onSelectDate }:
 
 export default function RichiestaServizio() {
   const today = toISO(new Date());
+  const [modalita, setModalita] = useState<'prenotazione' | 'registrazione'>('prenotazione');
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [inviata, setInviata] = useState(false);
+
+  // Registrazione paziente
+  const [regFirstName, setRegFirstName] = useState('');
+  const [regLastName, setRegLastName] = useState('');
+  const [regBirthDate, setRegBirthDate] = useState('');
+  const [regCF, setRegCF] = useState('');
+  const [regAddress, setRegAddress] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regNeeds, setRegNeeds] = useState('');
+  const [regMedico, setRegMedico] = useState('');
+  const [regNote, setRegNote] = useState('');
+  const [regRichNome, setRegRichNome] = useState('');
+  const [regRichRelazione, setRegRichRelazione] = useState('familiare');
+  const [regRichEmail, setRegRichEmail] = useState('');
+  const [regRichTel, setRegRichTel] = useState('');
+  const [regSending, setRegSending] = useState(false);
+  const [regError, setRegError] = useState('');
 
   // Step 1 — tipo servizio
   const [tipoServizio, setTipoServizio] = useState('');
@@ -99,6 +118,8 @@ export default function RichiestaServizio() {
 
   const iStyle: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem', boxSizing: 'border-box', marginTop: '4px' };
   const labelStyle: React.CSSProperties = { display: 'block', fontWeight: '600', color: '#374151', fontSize: '0.88rem' };
+  const iStyle1: React.CSSProperties = { width: '100%', padding: '9px 11px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.9rem', boxSizing: 'border-box', marginTop: '3px' };
+  const iStyle2: React.CSSProperties = { display: 'block', fontWeight: '600', color: '#374151', fontSize: '0.82rem', marginBottom: '2px' };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -119,6 +140,27 @@ export default function RichiestaServizio() {
     } finally { setSending(false); }
   };
 
+  const handleRegistraPaziente = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!regFirstName || !regLastName || !regBirthDate || !regAddress || !regNeeds || !regRichNome) {
+      setRegError('Compila tutti i campi obbligatori (*)'); return;
+    }
+    setRegSending(true); setRegError('');
+    try {
+      await axios.post(`${API_BASE}/richieste-paziente`, {
+        firstName: regFirstName, lastName: regLastName,
+        birthDate: regBirthDate, codiceFiscale: regCF || undefined,
+        address: regAddress, contactPhone: regPhone || undefined, email: regEmail || undefined,
+        assistanceNeeds: regNeeds, medicoReferente: regMedico || undefined, noteAggiuntive: regNote || undefined,
+        richiedenteNome: regRichNome, richiedenteRelazione: regRichRelazione,
+        richiedenteEmail: regRichEmail || undefined, richiedenteTelefono: regRichTel || undefined,
+      });
+      setInviata(true);
+    } catch (err: any) {
+      setRegError(err.response?.data?.message || 'Errore durante l\'invio. Riprova.');
+    } finally { setRegSending(false); }
+  };
+
   if (inviata) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
@@ -126,9 +168,13 @@ export default function RichiestaServizio() {
           <div style={{ width: '72px', height: '72px', background: '#dcfce7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
             <CheckCircle size={40} color="#15803d" />
           </div>
-          <h2 style={{ margin: '0 0 12px', color: '#15803d', fontSize: '1.4rem' }}>Richiesta inviata!</h2>
+          <h2 style={{ margin: '0 0 12px', color: '#15803d', fontSize: '1.4rem' }}>
+            {modalita === 'registrazione' ? 'Registrazione inviata!' : 'Richiesta inviata!'}
+          </h2>
           <p style={{ color: '#6b7280', lineHeight: 1.6, margin: '0 0 24px' }}>
-            La tua richiesta è stata ricevuta. Il nostro staff la elaborerà al più presto e ti contatteremo per confermare l'appuntamento.
+            {modalita === 'registrazione'
+              ? 'La richiesta di registrazione del paziente è stata ricevuta. L\'amministratore la elaborerà e il paziente comparirà nella lista appena approvata.'
+              : 'La tua richiesta è stata ricevuta. Il nostro staff la elaborerà al più presto e ti contatteremo per confermare l\'appuntamento.'}
           </p>
           <Link to="/login" style={{ display: 'inline-block', background: '#1e3a5f', color: 'white', padding: '12px 28px', borderRadius: '10px', textDecoration: 'none', fontWeight: '700' }}>
             Torna alla pagina iniziale
@@ -140,16 +186,101 @@ export default function RichiestaServizio() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)', padding: '30px 16px' }}>
-      <div style={{ maxWidth: '560px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '580px', margin: '0 auto' }}>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <div style={{ fontSize: '2.2rem', marginBottom: '6px' }}>🏥</div>
           <h1 style={{ margin: '0 0 6px', color: 'white', fontSize: '1.6rem', fontWeight: '800' }}>Abbracciare — Cure Domiciliari</h1>
-          <p style={{ margin: 0, color: 'rgba(255,255,255,0.75)', fontSize: '0.95rem' }}>Richiesta di servizio a domicilio</p>
+          <p style={{ margin: 0, color: 'rgba(255,255,255,0.75)', fontSize: '0.95rem' }}>Portale pazienti e caregiver</p>
         </div>
 
-        {/* Step indicator */}
+        {/* Selettore modalità */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', background: 'rgba(255,255,255,0.12)', borderRadius: '12px', padding: '6px' }}>
+          <button type="button" onClick={() => { setModalita('prenotazione'); setStep(1); }}
+            style={{ flex: 1, padding: '10px 8px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '0.88rem', background: modalita === 'prenotazione' ? 'white' : 'transparent', color: modalita === 'prenotazione' ? '#1e3a5f' : 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            <Calendar size={15} /> Prenota un servizio
+          </button>
+          <button type="button" onClick={() => setModalita('registrazione')}
+            style={{ flex: 1, padding: '10px 8px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '0.88rem', background: modalita === 'registrazione' ? 'white' : 'transparent', color: modalita === 'registrazione' ? '#1e3a5f' : 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            <UserPlus size={15} /> Registra paziente
+          </button>
+        </div>
+
+        {/* ════ FORM REGISTRAZIONE PAZIENTE ════ */}
+        {modalita === 'registrazione' && (
+          <div style={{ background: 'white', borderRadius: '16px', padding: '28px', boxShadow: '0 10px 40px rgba(0,0,0,0.15)' }}>
+            <h2 style={{ margin: '0 0 4px', color: '#1e3a5f', fontSize: '1.2rem' }}>📋 Registrazione nuovo paziente</h2>
+            <p style={{ margin: '0 0 20px', color: '#6b7280', fontSize: '0.85rem' }}>I dati saranno verificati dall'amministratore. Dopo l'approvazione il paziente sarà disponibile nel sistema.</p>
+            <form onSubmit={handleRegistraPaziente} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+              <div style={{ background: '#f0f9ff', borderRadius: '8px', padding: '10px 14px', fontWeight: '700', color: '#0369a1', fontSize: '0.85rem' }}>👤 Dati anagrafici del paziente</div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div><label style={iStyle2}>Nome *</label><input value={regFirstName} onChange={e => setRegFirstName(e.target.value)} required placeholder="Es. Mario" style={iStyle1} /></div>
+                <div><label style={iStyle2}>Cognome *</label><input value={regLastName} onChange={e => setRegLastName(e.target.value)} required placeholder="Es. Rossi" style={iStyle1} /></div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div><label style={iStyle2}>Data di nascita *</label><input type="date" value={regBirthDate} onChange={e => setRegBirthDate(e.target.value)} required style={iStyle1} /></div>
+                <div><label style={iStyle2}>Codice Fiscale</label><input value={regCF} onChange={e => setRegCF(e.target.value.toUpperCase())} placeholder="Es. RSSMRO..." style={iStyle1} maxLength={16} /></div>
+              </div>
+              <div><label style={iStyle2}>Indirizzo domicilio *</label><input value={regAddress} onChange={e => setRegAddress(e.target.value)} required placeholder="Via, numero civico, città, CAP" style={iStyle1} /></div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div><label style={iStyle2}>Telefono</label><input type="tel" value={regPhone} onChange={e => setRegPhone(e.target.value)} placeholder="Es. 333 123 4567" style={iStyle1} /></div>
+                <div><label style={iStyle2}>Email paziente</label><input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} placeholder="email@esempio.it" style={iStyle1} /></div>
+              </div>
+
+              <div style={{ background: '#f0fdf4', borderRadius: '8px', padding: '10px 14px', fontWeight: '700', color: '#15803d', fontSize: '0.85rem' }}>🩺 Informazioni cliniche</div>
+
+              <div>
+                <label style={iStyle2}>Necessità assistenziali * <span style={{ fontWeight: '400', color: '#9ca3af' }}>(descrivere brevemente)</span></label>
+                <textarea value={regNeeds} onChange={e => setRegNeeds(e.target.value)} required rows={3}
+                  placeholder="Es. Assistenza infermieristica domiciliare, medicazioni, prelievi periodici..."
+                  style={{ ...iStyle1, resize: 'vertical' }} />
+              </div>
+              <div><label style={iStyle2}>Medico curante / referente</label><input value={regMedico} onChange={e => setRegMedico(e.target.value)} placeholder="Nome medico di base o specialista" style={iStyle1} /></div>
+              <div>
+                <label style={iStyle2}>Note aggiuntive</label>
+                <textarea value={regNote} onChange={e => setRegNote(e.target.value)} rows={2}
+                  placeholder="Allergie, farmaci, accesso al domicilio, ecc."
+                  style={{ ...iStyle1, resize: 'vertical' }} />
+              </div>
+
+              <div style={{ background: '#fdf4ff', borderRadius: '8px', padding: '10px 14px', fontWeight: '700', color: '#7e22ce', fontSize: '0.85rem' }}>👥 Chi sta compilando questa richiesta?</div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={iStyle2}>Nome e Cognome *</label>
+                  <input value={regRichNome} onChange={e => setRegRichNome(e.target.value)} required placeholder="Chi compila il modulo" style={iStyle1} />
+                </div>
+                <div>
+                  <label style={iStyle2}>Relazione con il paziente</label>
+                  <select value={regRichRelazione} onChange={e => setRegRichRelazione(e.target.value)} style={iStyle1}>
+                    <option value="paziente">Sono il paziente</option>
+                    <option value="familiare">Familiare</option>
+                    <option value="caregiver">Caregiver</option>
+                    <option value="medico">Medico / Operatore sanitario</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div><label style={iStyle2}>Email richiedente</label><input type="email" value={regRichEmail} onChange={e => setRegRichEmail(e.target.value)} placeholder="Per ricevere aggiornamenti" style={iStyle1} /></div>
+                <div><label style={iStyle2}>Telefono richiedente</label><input type="tel" value={regRichTel} onChange={e => setRegRichTel(e.target.value)} placeholder="Es. 333 123 4567" style={iStyle1} /></div>
+              </div>
+
+              {regError && <div style={{ background: '#fee2e2', border: '1px solid #ef4444', borderRadius: '8px', padding: '10px 14px', color: '#dc2626', fontSize: '0.88rem' }}>⚠️ {regError}</div>}
+
+              <button type="submit" disabled={regSending}
+                style={{ width: '100%', padding: '14px', background: regSending ? '#9ca3af' : '#1e3a5f', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '1rem', cursor: regSending ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <UserPlus size={18} />
+                {regSending ? 'Invio in corso...' : 'Invia richiesta di registrazione paziente'}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* ════ FORM PRENOTAZIONE SERVIZIO ════ */}
+        {modalita === 'prenotazione' && (<>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}>
           {[1,2,3].map(s => (
             <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -325,6 +456,7 @@ export default function RichiestaServizio() {
           )}
         </div>
 
+        </>)}
         <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.6)', fontSize: '0.82rem', marginTop: '20px' }}>
           Sei un operatore?{' '}
           <Link to="/login" style={{ color: 'rgba(255,255,255,0.9)', fontWeight: '600' }}>Accedi →</Link>

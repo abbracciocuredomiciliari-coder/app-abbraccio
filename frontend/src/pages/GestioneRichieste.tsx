@@ -42,6 +42,28 @@ interface Staff {
   professione?: string;
 }
 
+interface RichiestaPaziente {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  codiceFiscale?: string;
+  address: string;
+  contactPhone?: string;
+  email?: string;
+  assistanceNeeds: string;
+  medicoReferente?: string;
+  noteAggiuntive?: string;
+  richiedenteNome: string;
+  richiedenteRelazione?: string;
+  richiedenteEmail?: string;
+  richiedenteTelefono?: string;
+  stato: 'in_attesa' | 'approvata' | 'rifiutata';
+  noteAdmin?: string;
+  pazienteCreatId?: string;
+  createdAt: string;
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
 // Componente
 // ═════════════════════════════════════════════════════════════════════════════
@@ -50,6 +72,11 @@ export default function GestioneRichieste() {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'tutte' | 'in_attesa' | 'in_revisione' | 'confermata' | 'rifiutata'>('tutte');
+
+  // Richieste registrazione paziente
+  const [richiestePaziente, setRichiestePaziente] = useState<RichiestaPaziente[]>([]);
+  const [tabPrincipale, setTabPrincipale] = useState<'prenotazioni' | 'pazienti'>('prenotazioni');
+  const [approvandoPazId, setApprovandoPazId] = useState<string | null>(null);
   const [selectedRichiesta, setSelectedRichiesta] = useState<Richiesta | null>(null);
   const [gestioneModal, setGestioneModal] = useState(false);
 
@@ -72,16 +99,39 @@ export default function GestioneRichieste() {
 
   const caricaDati = async () => {
     try {
-      const [richiesteRes, staffRes] = await Promise.all([
+      const [richiesteRes, staffRes, pazienteRes] = await Promise.all([
         api.get('/richieste-prenotazioni'),
-        api.get('/staff')
+        api.get('/staff'),
+        api.get('/richieste-paziente'),
       ]);
       setRichieste(richiesteRes.data || []);
       setStaff(staffRes.data || []);
+      setRichiestePaziente(pazienteRes.data || []);
     } catch {
       setRichieste([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const approvaRegistrazionePaziente = async (id: string) => {
+    setApprovandoPazId(id);
+    try {
+      const res = await api.put(`/richieste-paziente/${id}/approva`);
+      alert(`✅ Paziente "${res.data.paziente.firstName} ${res.data.paziente.lastName}" creato con successo!`);
+      await caricaDati();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore durante l\'approvazione');
+    } finally { setApprovandoPazId(null); }
+  };
+
+  const rifiutaRegistrazionePaziente = async (id: string) => {
+    if (!confirm('Rifiutare questa richiesta di registrazione?')) return;
+    try {
+      await api.put(`/richieste-paziente/${id}/rifiuta`);
+      await caricaDati();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore');
     }
   };
 
@@ -199,10 +249,82 @@ export default function GestioneRichieste() {
   return (
     <section style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ margin: '0 0 8px', fontSize: '1.5rem', color: '#1e4d8c' }}>📋 Gestione Richieste Prenotazioni</h1>
+      <div style={{ marginBottom: '16px' }}>
+        <h1 style={{ margin: '0 0 8px', fontSize: '1.5rem', color: '#1e4d8c' }}>📋 Gestione Richieste</h1>
         <p style={{ margin: 0, color: '#666' }}>Revisiona, conferma e assegna richieste da caregiver e pazienti</p>
       </div>
+
+      {/* Tab principale */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', background: '#f1f5f9', borderRadius: '10px', padding: '5px' }}>
+        <button type="button" onClick={() => setTabPrincipale('prenotazioni')}
+          style={{ flex: 1, padding: '9px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '0.88rem', background: tabPrincipale === 'prenotazioni' ? 'white' : 'transparent', color: tabPrincipale === 'prenotazioni' ? '#1e4d8c' : '#6b7280', boxShadow: tabPrincipale === 'prenotazioni' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
+          📋 Prenotazioni servizi ({richieste.length})
+        </button>
+        <button type="button" onClick={() => setTabPrincipale('pazienti')}
+          style={{ flex: 1, padding: '9px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '0.88rem', background: tabPrincipale === 'pazienti' ? 'white' : 'transparent', color: tabPrincipale === 'pazienti' ? '#7e22ce' : '#6b7280', boxShadow: tabPrincipale === 'pazienti' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', position: 'relative' as const }}>
+          👤 Nuovi pazienti ({richiestePaziente.filter(r => r.stato === 'in_attesa').length} in attesa)
+        </button>
+      </div>
+
+      {/* ═══ SEZIONE REGISTRAZIONI PAZIENTI ═══ */}
+      {tabPrincipale === 'pazienti' && (
+        <div>
+          {richiestePaziente.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>Nessuna richiesta di registrazione paziente</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {richiestePaziente.map(rp => (
+                <div key={rp._id} style={{ background: 'white', borderRadius: '12px', padding: '16px 20px', border: `2px solid ${rp.stato === 'in_attesa' ? '#fcd34d' : rp.stato === 'approvata' ? '#86efac' : '#fca5a5'}`, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+                    <div style={{ flex: 1, minWidth: '260px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                        <strong style={{ fontSize: '1.05rem' }}>{rp.firstName} {rp.lastName}</strong>
+                        <span style={{ background: rp.stato === 'in_attesa' ? '#fef3c7' : rp.stato === 'approvata' ? '#dcfce7' : '#fee2e2', color: rp.stato === 'in_attesa' ? '#92400e' : rp.stato === 'approvata' ? '#15803d' : '#991b1b', padding: '2px 10px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700 }}>
+                          {rp.stato === 'in_attesa' ? '⏳ In attesa' : rp.stato === 'approvata' ? '✅ Approvata' : '❌ Rifiutata'}
+                        </span>
+                        {rp.stato === 'approvata' && rp.pazienteCreatId && (
+                          <a href={`/patients`} style={{ fontSize: '0.78rem', color: '#2563eb', textDecoration: 'none' }}>→ Vai ai pazienti</a>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: '#555', display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '4px' }}>
+                        <span>📅 {new Date(rp.birthDate).toLocaleDateString('it-IT')}</span>
+                        {rp.codiceFiscale && <span>🪪 {rp.codiceFiscale}</span>}
+                        <span>📍 {rp.address}</span>
+                        {rp.contactPhone && <span>📞 {rp.contactPhone}</span>}
+                      </div>
+                      <div style={{ fontSize: '0.82rem', color: '#374151', marginTop: '4px' }}>
+                        <strong>Necessità:</strong> {rp.assistanceNeeds}
+                      </div>
+                      {rp.medicoReferente && <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>🩺 Medico: {rp.medicoReferente}</div>}
+                      <div style={{ fontSize: '0.78rem', color: '#9ca3af', marginTop: '4px' }}>
+                        Richiesto da: <strong>{rp.richiedenteNome}</strong>{rp.richiedenteRelazione ? ` (${rp.richiedenteRelazione})` : ''}
+                        {rp.richiedenteEmail && ` — ${rp.richiedenteEmail}`}
+                        {rp.richiedenteTelefono && ` — ${rp.richiedenteTelefono}`}
+                      </div>
+                    </div>
+                    {rp.stato === 'in_attesa' && (
+                      <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                        <button type="button" onClick={() => approvaRegistrazionePaziente(rp._id)}
+                          disabled={approvandoPazId === rp._id}
+                          style={{ background: '#15803d', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', opacity: approvandoPazId === rp._id ? 0.6 : 1 }}>
+                          {approvandoPazId === rp._id ? '⏳...' : '✅ Approva e crea paziente'}
+                        </button>
+                        <button type="button" onClick={() => rifiutaRegistrazionePaziente(rp._id)}
+                          style={{ background: '#dc2626', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>
+                          ❌ Rifiuta
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══ SEZIONE PRENOTAZIONI SERVIZI ═══ */}
+      {tabPrincipale === 'prenotazioni' && <>
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px' }}>
@@ -476,6 +598,7 @@ export default function GestioneRichieste() {
           </div>
         </div>
       )}
+      </>}
     </section>
   );
 }
