@@ -9,6 +9,12 @@ export interface IPatient extends Document {
   contactPhone?: string;
   email?: string;
   codiceFiscale?: string;
+  // === DATI CLINICI ADI ===
+  diagnosiAmmissione?: string;
+  comorbilita?: string;
+  allergie?: string;
+  caregiverRiferimento?: string;
+  caregiverTelefono?: string;
   
   // === MODALITÀ GESTIONE ===
   tipoGestione: 'privato' | 'convenzione';  // default: privato
@@ -48,6 +54,11 @@ const patientSchema = new Schema<IPatient>(
     contactPhone: { type: String, trim: true },
     email: { type: String, trim: true, lowercase: true },
     codiceFiscale: { type: String, trim: true, uppercase: true },
+    diagnosiAmmissione: { type: String, trim: true },
+    comorbilita: { type: String, trim: true },
+    allergie: { type: String, trim: true },
+    caregiverRiferimento: { type: String, trim: true },
+    caregiverTelefono: { type: String, trim: true },
     tipoGestione: { type: String, enum: ['privato', 'convenzione'], default: 'privato' },
     alertPaiVisto: {
       vistoIl: { type: Date },

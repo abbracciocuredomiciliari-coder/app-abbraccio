@@ -41,6 +41,12 @@ interface Patient {
   assistanceNeeds: string;
   contactPhone?: string;
   email?: string;
+  codiceFiscale?: string;
+  diagnosiAmmissione?: string;
+  comorbilita?: string;
+  allergie?: string;
+  caregiverRiferimento?: string;
+  caregiverTelefono?: string;
 }
 
 interface PatientDocument {
@@ -104,6 +110,12 @@ function Patients() {
   const [uploading, setUploading] = useState(false);
   const [uploadForm, setUploadForm] = useState({ title: '', description: '', category: '' as string });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Stato modal dati clinici ADI
+  const [showDatiCliniciModal, setShowDatiCliniciModal] = useState(false);
+  const [datiCliniciPaziente, setDatiCliniciPaziente] = useState<Patient | null>(null);
+  const [datiCliniciForm, setDatiCliniciForm] = useState({ codiceFiscale: '', diagnosiAmmissione: '', comorbilita: '', allergie: '', caregiverRiferimento: '', caregiverTelefono: '' });
+  const [salvandoDatiCliniciADI, setSalvandoDatiCliniciADI] = useState(false);
 
   // Stato modal consenso GDPR
   const [showConsensoModal, setShowConsensoModal] = useState(false);
@@ -526,8 +538,34 @@ function Patients() {
                   <div style={{ fontSize: '0.88rem', color: 'var(--gray-600)', marginTop: '4px', fontStyle: 'italic' }}>
                     💡 {patient.assistanceNeeds}
                   </div>
+                  {(patient.diagnosiAmmissione || patient.allergie || patient.caregiverRiferimento) && (
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
+                      {patient.diagnosiAmmissione && <span style={{ fontSize: '0.78rem', background: '#eff6ff', color: '#1d4ed8', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>🏥 {patient.diagnosiAmmissione.slice(0, 40)}{patient.diagnosiAmmissione.length > 40 ? '…' : ''}</span>}
+                      {patient.allergie && <span style={{ fontSize: '0.78rem', background: '#fef2f2', color: '#dc2626', padding: '2px 8px', borderRadius: '4px', border: '1px solid #fecaca', fontWeight: '600' }}>⚠️ {patient.allergie.slice(0, 30)}{patient.allergie.length > 30 ? '…' : ''}</span>}
+                      {patient.caregiverRiferimento && <span style={{ fontSize: '0.78rem', background: '#f0fdf4', color: '#16a34a', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bbf7d0' }}>👤 {patient.caregiverRiferimento}</span>}
+                    </div>
+                  )}
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => {
+                      setDatiCliniciPaziente(patient);
+                      setDatiCliniciForm({
+                        codiceFiscale: patient.codiceFiscale || '',
+                        diagnosiAmmissione: patient.diagnosiAmmissione || '',
+                        comorbilita: patient.comorbilita || '',
+                        allergie: patient.allergie || '',
+                        caregiverRiferimento: patient.caregiverRiferimento || '',
+                        caregiverTelefono: patient.caregiverTelefono || '',
+                      });
+                      setShowDatiCliniciModal(true);
+                    }}
+                    style={{ background: '#0369a1', color: 'white', whiteSpace: 'nowrap' }}
+                    title="Dati Clinici ADI"
+                  >
+                    <Stethoscope size={16} />
+                    ADI
+                  </button>
                   <button
                     onClick={() => {
                       setConsensoPaziente(patient);
@@ -717,6 +755,78 @@ function Patients() {
                 </>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* === Modal Dati Clinici ADI === */}
+      {showDatiCliniciModal && datiCliniciPaziente && (
+        <div className="modal-overlay" onClick={() => setShowDatiCliniciModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px', color: '#0369a1' }}>
+                  <Stethoscope size={22} /> Dati Clinici ADI
+                </h3>
+                <p style={{ margin: '4px 0 0', color: 'var(--gray-500)', fontSize: '0.9rem' }}>
+                  {datiCliniciPaziente.firstName} {datiCliniciPaziente.lastName}
+                </p>
+              </div>
+              <button onClick={() => setShowDatiCliniciModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-500)' }}>
+                <X size={24} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ fontWeight: '600', fontSize: '0.85rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Codice Fiscale</label>
+                <input type="text" value={datiCliniciForm.codiceFiscale} onChange={e => setDatiCliniciForm(p => ({ ...p, codiceFiscale: e.target.value.toUpperCase() }))} placeholder="es. RSSMRA80A01H501Z" style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.9rem', boxSizing: 'border-box', fontFamily: 'monospace' }} />
+              </div>
+              <div>
+                <label style={{ fontWeight: '600', fontSize: '0.85rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Diagnosi di ammissione / Patologia principale</label>
+                <textarea value={datiCliniciForm.diagnosiAmmissione} onChange={e => setDatiCliniciForm(p => ({ ...p, diagnosiAmmissione: e.target.value }))} placeholder="es. Scompenso cardiaco cronico, BPCO, ..." rows={3} style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.9rem', resize: 'vertical', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontWeight: '600', fontSize: '0.85rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Comorbilità / Patologie associate</label>
+                <textarea value={datiCliniciForm.comorbilita} onChange={e => setDatiCliniciForm(p => ({ ...p, comorbilita: e.target.value }))} placeholder="es. Diabete mellito tipo 2, Ipertensione arteriosa, ..." rows={3} style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.9rem', resize: 'vertical', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontWeight: '600', fontSize: '0.85rem', color: '#dc2626', display: 'block', marginBottom: '4px' }}>⚠️ Allergie / Intolleranze farmacologiche</label>
+                <textarea value={datiCliniciForm.allergie} onChange={e => setDatiCliniciForm(p => ({ ...p, allergie: e.target.value }))} placeholder="es. Penicillina, FANS, lattice, ... (NESSUNA se assenti)" rows={2} style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #fca5a5', fontSize: '0.9rem', resize: 'vertical', boxSizing: 'border-box', background: '#fff7f7' }} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontWeight: '600', fontSize: '0.85rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Caregiver / Familiare di riferimento</label>
+                  <input type="text" value={datiCliniciForm.caregiverRiferimento} onChange={e => setDatiCliniciForm(p => ({ ...p, caregiverRiferimento: e.target.value }))} placeholder="Nome e cognome" style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontWeight: '600', fontSize: '0.85rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Telefono caregiver</label>
+                  <input type="tel" value={datiCliniciForm.caregiverTelefono} onChange={e => setDatiCliniciForm(p => ({ ...p, caregiverTelefono: e.target.value }))} placeholder="es. 3331234567" style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              disabled={salvandoDatiCliniciADI}
+              onClick={async () => {
+                setSalvandoDatiCliniciADI(true);
+                try {
+                  const res = await api.patch(`/patients/${datiCliniciPaziente._id}/dati-clinici`, datiCliniciForm);
+                  setPatients(prev => prev.map(p => p._id === datiCliniciPaziente._id ? { ...p, ...res.data } : p));
+                  setFilteredPatients(prev => prev.map(p => p._id === datiCliniciPaziente._id ? { ...p, ...res.data } : p));
+                  setShowDatiCliniciModal(false);
+                  setSuccess('✅ Dati clinici ADI salvati!');
+                  setTimeout(() => setSuccess(''), 3000);
+                } catch (err: any) {
+                  alert(err?.response?.data?.message || 'Errore nel salvataggio');
+                } finally { setSalvandoDatiCliniciADI(false); }
+              }}
+              style={{ marginTop: '20px', width: '100%', padding: '13px', background: salvandoDatiCliniciADI ? '#93c5fd' : '#0369a1', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '1rem', cursor: salvandoDatiCliniciADI ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            >
+              {salvandoDatiCliniciADI ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <CheckCircle size={18} />}
+              {salvandoDatiCliniciADI ? 'Salvataggio...' : 'Salva dati clinici ADI'}
+            </button>
           </div>
         </div>
       )}

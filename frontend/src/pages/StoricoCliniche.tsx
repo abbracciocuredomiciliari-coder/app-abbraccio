@@ -36,6 +36,22 @@ interface DiarioEntry {
     peso?: number;
     dolore?: number;
   };
+  scaleValutazione?: {
+    braden?: number;
+    barthel?: number;
+    conley?: number;
+    bradenLivello?: string;
+    barthelLivello?: string;
+    conleyLivello?: string;
+  };
+  terapiaFarmacologica?: Array<{
+    farmaco: string;
+    dosaggio: string;
+    mattina?: boolean;
+    pomeriggio?: boolean;
+    sera?: boolean;
+    notte?: boolean;
+  }>;
 }
 
 interface AllegatoInfo {
@@ -191,11 +207,24 @@ export default function StoricoCliniche() {
       <strong>Parametri vitali:</strong><br/>
       ${e.parametriVitali.pressioneSistolica && e.parametriVitali.pressioneDiastolica ? `<span class="param-badge">🩺 ${e.parametriVitali.pressioneSistolica}/${e.parametriVitali.pressioneDiastolica} mmHg</span>` : ''}
       ${e.parametriVitali.frequenzaCardiaca ? `<span class="param-badge">❤️ ${e.parametriVitali.frequenzaCardiaca} bpm</span>` : ''}
+      ${e.parametriVitali.frequenzaRespiratoria ? `<span class="param-badge">🫁 ${e.parametriVitali.frequenzaRespiratoria} /min</span>` : ''}
       ${e.parametriVitali.temperatura ? `<span class="param-badge">🌡️ ${e.parametriVitali.temperatura}°C</span>` : ''}
       ${e.parametriVitali.saturazione ? `<span class="param-badge">💨 SpO₂ ${e.parametriVitali.saturazione}%</span>` : ''}
       ${e.parametriVitali.glicemia ? `<span class="param-badge">🩸 ${e.parametriVitali.glicemia} mg/dL</span>` : ''}
       ${e.parametriVitali.peso ? `<span class="param-badge">⚖️ ${e.parametriVitali.peso} kg</span>` : ''}
       ${e.parametriVitali.dolore !== undefined ? `<span class="param-badge">😣 Dolore: ${e.parametriVitali.dolore}/10</span>` : ''}
+    </div>` : ''}
+    ${e.scaleValutazione && (e.scaleValutazione.braden !== undefined || e.scaleValutazione.barthel !== undefined || e.scaleValutazione.conley !== undefined) ? `
+    <div class="parametri" style="background:#fdf4ff;border-color:#e9d5ff;">
+      <strong>Scale di valutazione:</strong><br/>
+      ${e.scaleValutazione.braden !== undefined ? `<span class="param-badge">BRADEN: ${e.scaleValutazione.braden}${e.scaleValutazione.bradenLivello ? ` — ${e.scaleValutazione.bradenLivello}` : ''}</span>` : ''}
+      ${e.scaleValutazione.barthel !== undefined ? `<span class="param-badge">BARTHEL: ${e.scaleValutazione.barthel}${e.scaleValutazione.barthelLivello ? ` — ${e.scaleValutazione.barthelLivello}` : ''}</span>` : ''}
+      ${e.scaleValutazione.conley !== undefined ? `<span class="param-badge">CONLEY: ${e.scaleValutazione.conley}${e.scaleValutazione.conleyLivello ? ` — ${e.scaleValutazione.conleyLivello}` : ''}</span>` : ''}
+    </div>` : ''}
+    ${e.terapiaFarmacologica && e.terapiaFarmacologica.length > 0 ? `
+    <div class="parametri" style="background:#f0fdf4;border-color:#86efac;">
+      <strong>Terapia farmacologica:</strong><br/>
+      ${e.terapiaFarmacologica.map(f => `<span class="param-badge">${f.farmaco} ${f.dosaggio} [${[f.mattina&&'M',f.pomeriggio&&'P',f.sera&&'S',f.notte&&'N'].filter(Boolean).join('-')||'-'}]</span>`).join('')}
     </div>` : ''}
   </div>`).join('')}
     ${allegatiDettaglio.length > 0 ? `
@@ -337,18 +366,42 @@ export default function StoricoCliniche() {
                             </div>
                             <p style={{ margin: '0 0 8px', fontSize: '0.9rem', color: '#333', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{entry.testo}</p>
                             {entry.parametriVitali && Object.values(entry.parametriVitali).some(v => v !== undefined && v !== null) && (
-                              <div style={{ padding: '8px', backgroundColor: '#f0f9ff', borderRadius: '6px', border: '1px solid #bae6fd' }}>
+                              <div style={{ padding: '8px', backgroundColor: '#f0f9ff', borderRadius: '6px', border: '1px solid #bae6fd', marginBottom: '6px' }}>
                                 <div style={{ fontSize: '0.75rem', color: '#0284c7', fontWeight: '600', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                   <Activity size={12} /> Parametri vitali
                                 </div>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                   {entry.parametriVitali.pressioneSistolica && entry.parametriVitali.pressioneDiastolica && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>🩺 {entry.parametriVitali.pressioneSistolica}/{entry.parametriVitali.pressioneDiastolica} mmHg</span>}
                                   {entry.parametriVitali.frequenzaCardiaca && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>❤️ {entry.parametriVitali.frequenzaCardiaca} bpm</span>}
+                                  {entry.parametriVitali.frequenzaRespiratoria && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>🫁 {entry.parametriVitali.frequenzaRespiratoria} /min</span>}
                                   {entry.parametriVitali.temperatura && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>🌡️ {entry.parametriVitali.temperatura}°C</span>}
                                   {entry.parametriVitali.saturazione && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>💨 SpO₂ {entry.parametriVitali.saturazione}%</span>}
                                   {entry.parametriVitali.glicemia && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>🩸 {entry.parametriVitali.glicemia} mg/dL</span>}
                                   {entry.parametriVitali.peso && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>⚖️ {entry.parametriVitali.peso} kg</span>}
                                   {entry.parametriVitali.dolore !== undefined && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd', color: entry.parametriVitali.dolore >= 7 ? '#dc2626' : entry.parametriVitali.dolore >= 4 ? '#d97706' : '#16a34a' }}>😣 Dolore: {entry.parametriVitali.dolore}/10</span>}
+                                </div>
+                              </div>
+                            )}
+                            {entry.scaleValutazione && (entry.scaleValutazione.braden !== undefined || entry.scaleValutazione.barthel !== undefined || entry.scaleValutazione.conley !== undefined) && (
+                              <div style={{ padding: '8px', backgroundColor: '#fdf4ff', borderRadius: '6px', border: '1px solid #e9d5ff', marginBottom: '6px' }}>
+                                <div style={{ fontSize: '0.75rem', color: '#7c3aed', fontWeight: '600', marginBottom: '4px' }}>🧮 Scale di Valutazione</div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                  {entry.scaleValutazione.braden !== undefined && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #e9d5ff' }}>BRADEN: {entry.scaleValutazione.braden}{entry.scaleValutazione.bradenLivello && ` — ${entry.scaleValutazione.bradenLivello}`}</span>}
+                                  {entry.scaleValutazione.barthel !== undefined && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #e9d5ff' }}>BARTHEL: {entry.scaleValutazione.barthel}{entry.scaleValutazione.barthelLivello && ` — ${entry.scaleValutazione.barthelLivello}`}</span>}
+                                  {entry.scaleValutazione.conley !== undefined && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #e9d5ff', color: entry.scaleValutazione.conley >= 2 ? '#dc2626' : '#374151' }}>CONLEY: {entry.scaleValutazione.conley}{entry.scaleValutazione.conleyLivello && ` — ${entry.scaleValutazione.conleyLivello}`}</span>}
+                                </div>
+                              </div>
+                            )}
+                            {entry.terapiaFarmacologica && entry.terapiaFarmacologica.length > 0 && (
+                              <div style={{ padding: '8px', backgroundColor: '#f0fdf4', borderRadius: '6px', border: '1px solid #86efac' }}>
+                                <div style={{ fontSize: '0.75rem', color: '#059669', fontWeight: '600', marginBottom: '4px' }}>💊 Terapia Farmacologica</div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  {entry.terapiaFarmacologica.map((f, i) => (
+                                    <div key={i} style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '4px 8px', borderRadius: '4px', border: '1px solid #86efac', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px' }}>
+                                      <span><strong>{f.farmaco}</strong> — {f.dosaggio}</span>
+                                      <span style={{ color: '#6b7280', fontSize: '0.74rem' }}>{[f.mattina&&'M',f.pomeriggio&&'P',f.sera&&'S',f.notte&&'N'].filter(Boolean).join('-') || '—'}</span>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
                             )}

@@ -24,7 +24,7 @@ interface WorkPlanInfo {
 
   date: string; time?: string; notes?: string; status: string;
 
-  patient: { firstName: string; lastName: string };
+  patient: { firstName: string; lastName: string; allergie?: string; caregiverRiferimento?: string; caregiverTelefono?: string; diagnosiAmmissione?: string; };
 
   staff: { firstName: string; lastName: string; role: string };
 
@@ -39,6 +39,10 @@ interface DiarioEntry {
   firmaLogin: string; firmato: boolean; dataFirma?: string;
 
   parametriVitali?: { pressioneSistolica?: number; pressioneDiastolica?: number; frequenzaCardiaca?: number; frequenzaRespiratoria?: number; temperatura?: number; saturazione?: number; glicemia?: number; peso?: number; dolore?: number; };
+
+  scaleValutazione?: { braden?: number; barthel?: number; conley?: number; bradenLivello?: string; barthelLivello?: string; conleyLivello?: string; };
+
+  terapiaFarmacologica?: Array<{ farmaco: string; dosaggio: string; mattina?: boolean; pomeriggio?: boolean; sera?: boolean; notte?: boolean; }>;
 
 }
 
@@ -115,6 +119,14 @@ export default function WorkPlanAccessPage() {
   const [showParametri, setShowParametri] = useState(false);
 
   const [parametri, setParametri] = useState({ pressioneSistolica: '', pressioneDiastolica: '', frequenzaCardiaca: '', frequenzaRespiratoria: '', temperatura: '', saturazione: '', glicemia: '', peso: '', dolore: '' });
+
+  // Scale di valutazione
+  const [showScale, setShowScale] = useState(false);
+  const [scale, setScale] = useState({ braden: '', barthel: '', conley: '' });
+
+  // Terapia farmacologica
+  const [showTerapia, setShowTerapia] = useState(false);
+  const [terapia, setTerapia] = useState<Array<{ farmaco: string; dosaggio: string; mattina: boolean; pomeriggio: boolean; sera: boolean; notte: boolean }>>([]);
 
 
 
@@ -254,13 +266,65 @@ export default function WorkPlanAccessPage() {
 
       Object.entries(parametri).forEach(([k, v]) => { if (v !== '') parametriVitali[k] = parseFloat(v); });
 
-      await api.post(`/diario/${workPlanId}`, { testo: testoDiario, parametriVitali: Object.keys(parametriVitali).length > 0 ? parametriVitali : undefined, workPlanAccess: accessoCorrente?._id });
+      const scaleValutazione: Record<string, any> = {};
+
+      if (scale.braden !== '') scaleValutazione['braden'] = parseInt(scale.braden);
+
+      if (scale.barthel !== '') scaleValutazione['barthel'] = parseInt(scale.barthel);
+
+      if (scale.conley !== '') scaleValutazione['conley'] = parseInt(scale.conley);
+
+      // Calcola livelli
+
+      if (scaleValutazione['braden'] !== undefined) {
+
+        const b = scaleValutazione['braden'];
+
+        scaleValutazione['bradenLivello'] = b <= 9 ? 'Rischio molto alto' : b <= 12 ? 'Rischio alto' : b <= 14 ? 'Rischio moderato' : b <= 18 ? 'Rischio basso' : 'Nessun rischio';
+
+      }
+
+      if (scaleValutazione['barthel'] !== undefined) {
+
+        const v = scaleValutazione['barthel'];
+
+        scaleValutazione['barthelLivello'] = v === 100 ? 'Indipendente' : v >= 75 ? 'Dipendenza minima' : v >= 50 ? 'Dipendenza moderata' : v >= 25 ? 'Dipendenza severa' : 'Totalmente dipendente';
+
+      }
+
+      if (scaleValutazione['conley'] !== undefined) {
+
+        scaleValutazione['conleyLivello'] = scaleValutazione['conley'] >= 2 ? 'Rischio cadute' : 'Basso rischio';
+
+      }
+
+      await api.post(`/diario/${workPlanId}`, {
+
+        testo: testoDiario,
+
+        parametriVitali: Object.keys(parametriVitali).length > 0 ? parametriVitali : undefined,
+
+        scaleValutazione: Object.keys(scaleValutazione).length > 0 ? scaleValutazione : undefined,
+
+        terapiaFarmacologica: terapia.filter(f => f.farmaco.trim()).length > 0 ? terapia.filter(f => f.farmaco.trim()) : undefined,
+
+        workPlanAccess: accessoCorrente?._id
+
+      });
 
       setTestoDiario('');
 
       setParametri({ pressioneSistolica: '', pressioneDiastolica: '', frequenzaCardiaca: '', frequenzaRespiratoria: '', temperatura: '', saturazione: '', glicemia: '', peso: '', dolore: '' });
 
+      setScale({ braden: '', barthel: '', conley: '' });
+
+      setTerapia([]);
+
       setShowParametri(false);
+
+      setShowScale(false);
+
+      setShowTerapia(false);
 
       setSuccess('📝 Voce diario salvata!');
 
@@ -511,6 +575,10 @@ export default function WorkPlanAccessPage() {
             <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>👤 {workPlan.patient.firstName} {workPlan.patient.lastName}</div>
 
             <div style={{ fontSize: '0.82rem', opacity: 0.75, marginTop: '2px' }}>🏥 {workPlan.staff.firstName} {workPlan.staff.lastName} — {workPlan.staff.role}</div>
+
+            {workPlan.patient.allergie && <div style={{ marginTop: '6px', background: 'rgba(239,68,68,0.2)', borderRadius: '6px', padding: '4px 10px', fontSize: '0.78rem', fontWeight: '700', color: '#fecaca' }}>⚠️ ALLERGIE: {workPlan.patient.allergie}</div>}
+
+            {workPlan.patient.caregiverRiferimento && <div style={{ marginTop: '4px', fontSize: '0.78rem', opacity: 0.8 }}>👤 Caregiver: {workPlan.patient.caregiverRiferimento}{workPlan.patient.caregiverTelefono ? ` — 📞 ${workPlan.patient.caregiverTelefono}` : ''}</div>}
 
           </div>
 
@@ -768,19 +836,37 @@ export default function WorkPlanAccessPage() {
 
               <textarea value={testoDiario} onChange={e => setTestoDiario(e.target.value)} placeholder="Descrivi l'intervento, le osservazioni cliniche..." rows={4} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #bae6fd', fontSize: '0.9rem', resize: 'vertical', boxSizing: 'border-box', marginBottom: '10px' }} />
 
-              <button type="button" onClick={() => setShowParametri(!showParametri)} style={{ background: 'none', border: '1px solid #0284c7', color: '#0284c7', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: showParametri ? '12px' : '0' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
 
-                <Activity size={14} /> {showParametri ? 'Nascondi parametri vitali' : 'Aggiungi parametri vitali'}
+                <button type="button" onClick={() => setShowParametri(!showParametri)} style={{ background: 'none', border: '1px solid #0284c7', color: '#0284c7', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
 
-              </button>
+                  <Activity size={14} /> {showParametri ? 'Nascondi parametri' : '📊 Parametri vitali'}
+
+                </button>
+
+                <button type="button" onClick={() => setShowScale(!showScale)} style={{ background: 'none', border: '1px solid #7c3aed', color: '#7c3aed', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+
+                  🧮 {showScale ? 'Nascondi scale' : 'Scale valutazione'}
+
+                </button>
+
+                <button type="button" onClick={() => { setShowTerapia(!showTerapia); if (!showTerapia && terapia.length === 0) setTerapia([{ farmaco: '', dosaggio: '', mattina: false, pomeriggio: false, sera: false, notte: false }]); }} style={{ background: 'none', border: '1px solid #059669', color: '#059669', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+
+                  💊 {showTerapia ? 'Nascondi terapia' : 'Terapia farmacologica'}
+
+                </button>
+
+              </div>
 
               {showParametri && (
 
-                <div style={{ marginTop: '12px' }}>
+                <div style={{ marginTop: '8px', padding: '12px', background: '#f0f9ff', borderRadius: '8px', border: '1px solid #bae6fd', marginBottom: '8px' }}>
+
+                  <div style={{ fontWeight: '600', fontSize: '0.8rem', color: '#0284c7', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}><Activity size={13} /> Parametri Vitali</div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
 
-                    {[['pressioneSistolica','P. Sistolica (mmHg)','120'],['pressioneDiastolica','P. Diastolica (mmHg)','80'],['frequenzaCardiaca','Freq. Cardiaca (bpm)','72'],['frequenzaRespiratoria','Freq. Respiratoria (/min)','16'],['temperatura','Temperatura (°C)','36.5'],['saturazione','Saturazione O₂ (%)','98'],['glicemia','Glicemia (mg/dL)','95'],['peso','Peso (kg)','70']].map(([key, label, ph]) => (
+                    {[['pressioneSistolica','P. Sistolica (mmHg)','120'],['pressioneDiastolica','P. Diastolica (mmHg)','80'],['frequenzaCardiaca','Freq. Cardiaca (bpm)','72'],['frequenzaRespiratoria','Freq. Resp. (/min)','16'],['temperatura','Temp. (°C)','36.5'],['saturazione','SpO₂ (%)','98'],['glicemia','Glicemia (mg/dL)','95'],['peso','Peso (kg)','70']].map(([key, label, ph]) => (
 
                       <label key={key} style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.8rem', color: '#555' }}>{label}
 
@@ -792,13 +878,119 @@ export default function WorkPlanAccessPage() {
 
                   </div>
 
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.8rem', color: '#555' }}>Dolore (0-10)
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.8rem', color: '#555' }}>Dolore NRS (0-10)
 
                     <input type="range" min="0" max="10" value={parametri.dolore || '0'} onChange={e => setParametri(prev => ({ ...prev, dolore: e.target.value }))} style={{ width: '100%' }} />
 
-                    <span style={{ textAlign: 'center', fontWeight: '600', color: parseInt(parametri.dolore || '0') >= 7 ? '#dc2626' : parseInt(parametri.dolore || '0') >= 4 ? '#d97706' : '#16a34a' }}>{parametri.dolore || '0'}/10</span>
+                    <span style={{ textAlign: 'center', fontWeight: '600', color: parseInt(parametri.dolore || '0') >= 7 ? '#dc2626' : parseInt(parametri.dolore || '0') >= 4 ? '#d97706' : '#16a34a' }}>{parametri.dolore || '0'}/10 — {parseInt(parametri.dolore||'0')===0?'Assente':parseInt(parametri.dolore||'0')<=3?'Lieve':parseInt(parametri.dolore||'0')<=6?'Moderato':'Severo'}</span>
 
                   </label>
+
+                </div>
+
+              )}
+
+              {showScale && (
+
+                <div style={{ marginTop: '8px', padding: '12px', background: '#fdf4ff', borderRadius: '8px', border: '1px solid #e9d5ff', marginBottom: '8px' }}>
+
+                  <div style={{ fontWeight: '600', fontSize: '0.8rem', color: '#7c3aed', marginBottom: '10px' }}>🧮 Scale di Valutazione Multidimensionale</div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
+
+                    <div style={{ background: 'white', padding: '10px', borderRadius: '6px', border: '1px solid #e9d5ff' }}>
+
+                      <div style={{ fontWeight: '600', fontSize: '0.78rem', color: '#374151', marginBottom: '6px' }}>BRADEN — Rischio lesioni da pressione (6-23, &lt;18 = rischio)</div>
+
+                      <input type="number" min="6" max="23" value={scale.braden} onChange={e => setScale(prev => ({ ...prev, braden: e.target.value }))} placeholder="es. 16" style={{ width: '100%', padding: '7px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+
+                      {scale.braden && <div style={{ fontSize: '0.75rem', marginTop: '4px', color: parseInt(scale.braden)<=12?'#dc2626':parseInt(scale.braden)<=18?'#d97706':'#16a34a', fontWeight:'600' }}>
+
+                        → {parseInt(scale.braden)<=9?'⚠️ Rischio molto alto':parseInt(scale.braden)<=12?'⚠️ Rischio alto':parseInt(scale.braden)<=14?'🟡 Rischio moderato':parseInt(scale.braden)<=18?'🟢 Rischio basso':'✅ Nessun rischio'}
+
+                      </div>}
+
+                    </div>
+
+                    <div style={{ background: 'white', padding: '10px', borderRadius: '6px', border: '1px solid #e9d5ff' }}>
+
+                      <div style={{ fontWeight: '600', fontSize: '0.78rem', color: '#374151', marginBottom: '6px' }}>BARTHEL — Autonomia ADL (0-100)</div>
+
+                      <input type="number" min="0" max="100" step="5" value={scale.barthel} onChange={e => setScale(prev => ({ ...prev, barthel: e.target.value }))} placeholder="es. 75" style={{ width: '100%', padding: '7px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+
+                      {scale.barthel && <div style={{ fontSize: '0.75rem', marginTop: '4px', color: parseInt(scale.barthel)<=25?'#dc2626':parseInt(scale.barthel)<=50?'#d97706':parseInt(scale.barthel)<=75?'#ca8a04':'#16a34a', fontWeight:'600' }}>
+
+                        → {parseInt(scale.barthel)===100?'✅ Indipendente':parseInt(scale.barthel)>=75?'🟢 Dipendenza minima':parseInt(scale.barthel)>=50?'🟡 Dipendenza moderata':parseInt(scale.barthel)>=25?'🟠 Dipendenza severa':'⚠️ Totalmente dipendente'}
+
+                      </div>}
+
+                    </div>
+
+                    <div style={{ background: 'white', padding: '10px', borderRadius: '6px', border: '1px solid #e9d5ff' }}>
+
+                      <div style={{ fontWeight: '600', fontSize: '0.78rem', color: '#374151', marginBottom: '6px' }}>CONLEY — Rischio cadute (0-8, ≥2 = rischio)</div>
+
+                      <input type="number" min="0" max="8" value={scale.conley} onChange={e => setScale(prev => ({ ...prev, conley: e.target.value }))} placeholder="es. 1" style={{ width: '100%', padding: '7px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+
+                      {scale.conley && <div style={{ fontSize: '0.75rem', marginTop: '4px', color: parseInt(scale.conley)>=2?'#dc2626':'#16a34a', fontWeight:'600' }}>
+
+                        → {parseInt(scale.conley)>=2?'⚠️ Rischio cadute':'✅ Basso rischio'}
+
+                      </div>}
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              )}
+
+              {showTerapia && (
+
+                <div style={{ marginTop: '8px', padding: '12px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #86efac', marginBottom: '8px' }}>
+
+                  <div style={{ fontWeight: '600', fontSize: '0.8rem', color: '#059669', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
+                    💊 Terapia Farmacologica
+
+                    <button type="button" onClick={() => setTerapia(prev => [...prev, { farmaco: '', dosaggio: '', mattina: false, pomeriggio: false, sera: false, notte: false }])} style={{ background: '#059669', color: 'white', border: 'none', borderRadius: '4px', padding: '3px 8px', cursor: 'pointer', fontSize: '0.75rem' }}>+ Farmaco</button>
+
+                  </div>
+
+                  {terapia.map((f, i) => (
+
+                    <div key={i} style={{ background: 'white', padding: '10px', borderRadius: '6px', border: '1px solid #86efac', marginBottom: '8px' }}>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '6px' }}>
+
+                        <input type="text" placeholder="Farmaco" value={f.farmaco} onChange={e => setTerapia(prev => prev.map((x,j)=>j===i?{...x,farmaco:e.target.value}:x))} style={{ padding: '6px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.85rem' }} />
+
+                        <input type="text" placeholder="Dosaggio (es. 10mg)" value={f.dosaggio} onChange={e => setTerapia(prev => prev.map((x,j)=>j===i?{...x,dosaggio:e.target.value}:x))} style={{ padding: '6px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.85rem' }} />
+
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '12px', fontSize: '0.8rem', alignItems: 'center', flexWrap: 'wrap' }}>
+
+                        {(['mattina','pomeriggio','sera','notte'] as const).map(t => (
+
+                          <label key={t} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+
+                            <input type="checkbox" checked={f[t]} onChange={e => setTerapia(prev => prev.map((x,j)=>j===i?{...x,[t]:e.target.checked}:x))} />
+
+                            {t.charAt(0).toUpperCase()+t.slice(1)}
+
+                          </label>
+
+                        ))}
+
+                        <button type="button" onClick={() => setTerapia(prev => prev.filter((_,j)=>j!==i))} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '0.78rem' }}>✕ Rimuovi</button>
+
+                      </div>
+
+                    </div>
+
+                  ))}
 
                 </div>
 
@@ -840,7 +1032,7 @@ export default function WorkPlanAccessPage() {
 
                     {entry.parametriVitali && Object.values(entry.parametriVitali).some(v => v !== undefined && v !== null) && (
 
-                      <div style={{ padding: '8px', backgroundColor: '#f0f9ff', borderRadius: '6px', border: '1px solid #bae6fd' }}>
+                      <div style={{ padding: '8px', backgroundColor: '#f0f9ff', borderRadius: '6px', border: '1px solid #bae6fd', marginBottom: '6px' }}>
 
                         <div style={{ fontSize: '0.75rem', color: '#0284c7', fontWeight: '600', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><Activity size={12} /> Parametri vitali</div>
 
@@ -849,6 +1041,8 @@ export default function WorkPlanAccessPage() {
                           {entry.parametriVitali.pressioneSistolica && entry.parametriVitali.pressioneDiastolica && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>🩺 {entry.parametriVitali.pressioneSistolica}/{entry.parametriVitali.pressioneDiastolica} mmHg</span>}
 
                           {entry.parametriVitali.frequenzaCardiaca && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>❤️ {entry.parametriVitali.frequenzaCardiaca} bpm</span>}
+
+                          {entry.parametriVitali.frequenzaRespiratoria && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>🫁 {entry.parametriVitali.frequenzaRespiratoria} /min</span>}
 
                           {entry.parametriVitali.temperatura && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>🌡️ {entry.parametriVitali.temperatura}°C</span>}
 
@@ -859,6 +1053,52 @@ export default function WorkPlanAccessPage() {
                           {entry.parametriVitali.peso && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>⚖️ {entry.parametriVitali.peso} kg</span>}
 
                           {entry.parametriVitali.dolore !== undefined && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd', color: entry.parametriVitali.dolore >= 7 ? '#dc2626' : entry.parametriVitali.dolore >= 4 ? '#d97706' : '#16a34a' }}>😣 Dolore: {entry.parametriVitali.dolore}/10</span>}
+
+                        </div>
+
+                      </div>
+
+                    )}
+
+                    {entry.scaleValutazione && (entry.scaleValutazione.braden !== undefined || entry.scaleValutazione.barthel !== undefined || entry.scaleValutazione.conley !== undefined) && (
+
+                      <div style={{ padding: '8px', backgroundColor: '#fdf4ff', borderRadius: '6px', border: '1px solid #e9d5ff', marginBottom: '6px' }}>
+
+                        <div style={{ fontSize: '0.75rem', color: '#7c3aed', fontWeight: '600', marginBottom: '4px' }}>🧮 Scale di Valutazione</div>
+
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+
+                          {entry.scaleValutazione.braden !== undefined && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #e9d5ff' }}>BRADEN: {entry.scaleValutazione.braden} {entry.scaleValutazione.bradenLivello && `— ${entry.scaleValutazione.bradenLivello}`}</span>}
+
+                          {entry.scaleValutazione.barthel !== undefined && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #e9d5ff' }}>BARTHEL: {entry.scaleValutazione.barthel} {entry.scaleValutazione.barthelLivello && `— ${entry.scaleValutazione.barthelLivello}`}</span>}
+
+                          {entry.scaleValutazione.conley !== undefined && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #e9d5ff', color: entry.scaleValutazione.conley >= 2 ? '#dc2626' : '#374151' }}>CONLEY: {entry.scaleValutazione.conley} {entry.scaleValutazione.conleyLivello && `— ${entry.scaleValutazione.conleyLivello}`}</span>}
+
+                        </div>
+
+                      </div>
+
+                    )}
+
+                    {entry.terapiaFarmacologica && entry.terapiaFarmacologica.length > 0 && (
+
+                      <div style={{ padding: '8px', backgroundColor: '#f0fdf4', borderRadius: '6px', border: '1px solid #86efac' }}>
+
+                        <div style={{ fontSize: '0.75rem', color: '#059669', fontWeight: '600', marginBottom: '4px' }}>💊 Terapia Farmacologica</div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+
+                          {entry.terapiaFarmacologica.map((f, i) => (
+
+                            <div key={i} style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '4px 8px', borderRadius: '4px', border: '1px solid #86efac', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+
+                              <span><strong>{f.farmaco}</strong> — {f.dosaggio}</span>
+
+                              <span style={{ color: '#6b7280', fontSize: '0.74rem' }}>{[f.mattina&&'M',f.pomeriggio&&'P',f.sera&&'S',f.notte&&'N'].filter(Boolean).join('-') || '—'}</span>
+
+                            </div>
+
+                          ))}
 
                         </div>
 

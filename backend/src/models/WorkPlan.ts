@@ -6,13 +6,21 @@ export interface IGiornoSettimana {
   minutiPerAccesso?: number;      // per assistenziale: minuti per accesso
 }
 
+export interface IPrestazione {
+  tipoPrestazione: string;  // es. 'medicazione_lesione', 'valutazione_infermieristica', ecc.
+  staff: Types.ObjectId;    // operatore assegnato a questa prestazione
+  note?: string;            // note specifiche per questa prestazione
+  categoria: 'infermieristica' | 'riabilitativa' | 'medica' | 'assistenziale' | 'sociale';
+}
+
 export interface IWorkPlan extends Document {
   type: 'prestazionale' | 'assistenziale' | 'esami_strumentali';
   category?: string;  // retrocompatibilità
-  categories?: string[]; // nuovo: array di categorie
+  categories?: string[]; // retrocompatibilità
+  prestazioni?: IPrestazione[]; // nuovo: array multi-prestazione con operatore per ciascuna
   tipoEsame?: string;   // per esami_strumentali: ECG, Holter ECG, ecc.
   patient: Types.ObjectId;
-  staff: Types.ObjectId;
+  staff: Types.ObjectId; // operatore principale (retrocompatibilità)
   date: Date;           // data inizio piano
   dataFine?: Date;      // data fine piano
   time?: string;
@@ -45,10 +53,16 @@ const workPlanSchema = new Schema<IWorkPlan>(
       default: 'prestazionale'
     },
     category: { type: String, required: false },  // retrocompatibilità
-    categories: [String],  // nuovo: array di categorie (array di stringhe)
+    categories: [String],  // retrocompatibilità
+    prestazioni: [{
+      tipoPrestazione: { type: String, required: true },
+      staff:           { type: Schema.Types.ObjectId, ref: 'Staff', required: true },
+      note:            { type: String, trim: true },
+      categoria:       { type: String, enum: ['infermieristica', 'riabilitativa', 'medica', 'assistenziale', 'sociale'], required: true },
+    }],
     tipoEsame: { type: String, trim: true },
     patient: { type: Schema.Types.ObjectId, ref: 'Patient', required: true },
-    staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: true },
+    staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: false }, // retrocompatibilità — non required
     date: { type: Date, required: true },
     dataFine: { type: Date },
     time: { type: String },

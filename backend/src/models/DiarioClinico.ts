@@ -12,6 +12,24 @@ export interface IParametriVitali {
   dolore?: number; // scala 0-10
 }
 
+export interface IScaleValutazione {
+  braden?: number;       // Rischio lesioni da pressione (6-23, <18 = rischio)
+  barthel?: number;      // Autonomia ADL (0-100)
+  conley?: number;       // Rischio cadute (0-8, >=2 = rischio)
+  bradenLivello?: string;
+  barthelLivello?: string;
+  conleyLivello?: string;
+}
+
+export interface IFarmacoTerapia {
+  farmaco: string;
+  dosaggio: string;
+  mattina?: boolean;
+  pomeriggio?: boolean;
+  sera?: boolean;
+  notte?: boolean;
+}
+
 export interface IDiarioClinico extends Document {
   workPlan: Types.ObjectId;
   workPlanAccess?: Types.ObjectId;
@@ -21,6 +39,8 @@ export interface IDiarioClinico extends Document {
   dataRegistrazione: Date;
   testo: string;
   parametriVitali?: IParametriVitali;
+  scaleValutazione?: IScaleValutazione;
+  terapiaFarmacologica?: IFarmacoTerapia[];
   firmaLogin: string;              // Firma semplice (email/username) - per audit interno
   firmato: boolean;                // una volta firmato non è più modificabile
   dataFirma?: Date;
@@ -87,6 +107,24 @@ const firmaDigitaleSchema = new Schema({
   verificationStatus: { type: String, enum: ['valid', 'expired', 'revoked', 'error'] },
 }, { _id: false });
 
+const scaleValutazioneSchema = new Schema<IScaleValutazione>({
+  braden: { type: Number, min: 6, max: 23 },
+  barthel: { type: Number, min: 0, max: 100 },
+  conley: { type: Number, min: 0, max: 8 },
+  bradenLivello: { type: String },
+  barthelLivello: { type: String },
+  conleyLivello: { type: String },
+}, { _id: false });
+
+const farmacoTerapiaSchema = new Schema<IFarmacoTerapia>({
+  farmaco: { type: String, required: true, trim: true },
+  dosaggio: { type: String, required: true, trim: true },
+  mattina: { type: Boolean, default: false },
+  pomeriggio: { type: Boolean, default: false },
+  sera: { type: Boolean, default: false },
+  notte: { type: Boolean, default: false },
+}, { _id: false });
+
 const diarioClinicoSchema = new Schema<IDiarioClinico>(
   {
     workPlan: { type: Schema.Types.ObjectId, ref: 'WorkPlan', required: true },
@@ -97,6 +135,8 @@ const diarioClinicoSchema = new Schema<IDiarioClinico>(
     dataRegistrazione: { type: Date, required: true, default: Date.now },
     testo: { type: String, required: true, trim: true },
     parametriVitali: { type: parametriVitaliSchema },
+    scaleValutazione: { type: scaleValutazioneSchema },
+    terapiaFarmacologica: [farmacoTerapiaSchema],
     firmaLogin: { type: String, required: true },
     firmato: { type: Boolean, default: false },
     dataFirma: { type: Date },

@@ -4,7 +4,7 @@ import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
 import FirmaCanvas from '../components/FirmaCanvas';
-import { Printer, Eye, CheckCircle, Plus, Calendar, User, Syringe, Clock, FileText } from 'lucide-react';
+import { Printer, Eye, CheckCircle, Plus, Calendar, User, Syringe, Clock, FileText, AlertTriangle, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
 import { Card } from '../components/ui/Card';
@@ -166,6 +166,68 @@ function formatBytes(b: number) {
   return `${(b / 1024 / 1024).toFixed(1)} MB`;
 }
 
+// ─── Costanti scheda ufficiale Evento Avverso ───────────────────────────────
+const eventoFormDefault = {
+  patientId: '',
+  ruoloOperatore: '' as string,
+  ruoloOperatoreAltro: '',
+  direzioneDiArea: '',
+  pazienteNomeCognome: '',
+  pazienteCSTV: '',
+  pazienteEta: '',
+  pazienteSesso: '' as ''|'M'|'F',
+  dataEvento: new Date().toISOString().slice(0, 10),
+  oraEvento: '',
+  luogoEvento: '',
+  descrizioneEvento: '',
+  svolgimentoFatti: '',
+  fattoriPaziente:      [] as string[],
+  fattoriStaff:         [] as string[],
+  fattoriComunicazione: [] as string[],
+  fattoriAmbiente:      [] as string[],
+  suggerimenti: '',
+  dannoRiscontrato: 'nessuno' as 'nessuno'|'lieve'|'moderato'|'grave'|'decesso',
+};
+
+const FATTORI_PAZIENTE = [
+  'Condizioni generali precarie / fragilità / infermità',
+  'Non cosciente / scarsamente orientato',
+  'Poca / mancata autonomia',
+  'Barriere linguistiche / culturali',
+  'Mancata adesione al progetto',
+];
+const FATTORI_STAFF = [
+  'Staff inadeguato / insufficiente',
+  'Insufficiente addestramento / inserimento',
+  'Gruppo nuovo / inesperto',
+  'Elevato turn-over',
+  'Scarsa continuità assistenziale',
+  'Protocollo / procedura inesistente o ambigua',
+  'Insuccesso nel far rispettare protocolli / procedure',
+];
+const FATTORI_COMUNICAZIONE = [
+  'Difficoltà nel seguire istruzioni / procedure',
+  'Inadeguate conoscenze / inesperienza',
+  'Mancato coordinamento',
+  'Mancata / inadeguata comunicazione',
+  'Presa scorciatoia / regola non seguita',
+  'Mancata supervisione',
+  'Scarso lavoro di gruppo',
+];
+const FATTORI_AMBIENTE = [
+  'Ambiente inadeguato',
+  'Mancata verifica preventiva apparecchiatura',
+  'Mancata / inadeguata manutenzione attrezzature',
+];
+
+const GRADI_DANNO: { value: string; label: string; color: string }[] = [
+  { value: 'nessuno',  label: '✅ Nessun danno',  color: '#16a34a' },
+  { value: 'lieve',    label: '🟡 Danno lieve',    color: '#d97706' },
+  { value: 'moderato', label: '🟠 Danno moderato', color: '#ea580c' },
+  { value: 'grave',    label: '🔴 Danno grave',    color: '#dc2626' },
+  { value: 'decesso',  label: '⚫ Decesso',         color: '#1f2937' },
+];
+
 // ─── Componente principale ────────────────────────────────────────────────────
 
 interface PortaleOperatoreProps {
@@ -245,6 +307,13 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
   const [mostraModalAccettazione, setMostraModalAccettazione] = useState(false);
   const [motivoRifiuto, setMotivoRifiuto] = useState('');
   const [loadingAccettazione, setLoadingAccettazione] = useState(false);
+
+  // ─── Evento Avverso ─────────────────────────────────────────────────────────
+  const [showEventoAvverso, setShowEventoAvverso] = useState(false);
+  const [eventoForm, setEventoForm] = useState({ ...eventoFormDefault });
+  const [firmaEventoOp, setFirmaEventoOp] = useState('');
+  const [salvandoEvento, setSalvandoEvento] = useState(false);
+  const [eventoSalvato, setEventoSalvato] = useState(false);
 
   // ─── Genera HTML per PDF prelievo ───────────────────────────────────────────
   const generaHTMLPrelievo = (prel: PrelievoOperatore) => {
@@ -802,6 +871,14 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
             >
               <div style={{ fontSize: '0.7rem', color: '#0ea5e9', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Gestione Prelievi</div>
               <div style={{ fontSize: '2rem', fontWeight: '800', color: '#0ea5e9', lineHeight: 1 }}>💉</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowEventoAvverso(true); setEventoSalvato(false); setFirmaEventoOp(''); setEventoForm({ ...eventoFormDefault }); }}
+              style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.3)', borderRadius: '10px', padding: '14px 10px', textAlign: 'center', cursor: 'pointer', minWidth: 0, overflow: 'hidden' }}
+            >
+              <div style={{ fontSize: '0.68rem', color: '#dc2626', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>⚠️ Evento Avverso</div>
+              <div style={{ fontSize: '1.8rem', lineHeight: 1 }}>🚨</div>
             </button>
             {compensoTotaleGlobale > 0 && (
               <button
@@ -1763,6 +1840,262 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
           </div>
         )
       )}
+      {/* ══════════════════════════════════════════════════════════════════════
+          MODAL SCHEDA SEGNALAZIONE EVENTO AVVERSO — ABBRACCIO (scheda ufficiale)
+      ══════════════════════════════════════════════════════════════════════ */}
+      {showEventoAvverso && (() => {
+        const toggleFattore = (campo: 'fattoriPaziente'|'fattoriStaff'|'fattoriComunicazione'|'fattoriAmbiente', val: string) => {
+          setEventoForm(p => {
+            const arr = p[campo] as string[];
+            return { ...p, [campo]: arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val] };
+          });
+        };
+        const sezLabel = (txt: string) => (
+          <div style={{ fontWeight: '700', fontSize: '0.8rem', color: '#1e4d8c', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #1e4d8c', paddingBottom: '4px', marginBottom: '10px', marginTop: '4px' }}>{txt}</div>
+        );
+        const checkRow = (campo: 'fattoriPaziente'|'fattoriStaff'|'fattoriComunicazione'|'fattoriAmbiente', val: string) => (
+          <label key={val} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', fontSize: '0.86rem', lineHeight: 1.4, padding: '4px 0' }}>
+            <input type="checkbox" checked={(eventoForm[campo] as string[]).includes(val)} onChange={() => toggleFattore(campo, val)}
+              style={{ width: '16px', height: '16px', flexShrink: 0, marginTop: '2px', cursor: 'pointer', accentColor: '#1e4d8c' }} />
+            <span>{val}</span>
+          </label>
+        );
+        const canSend = eventoForm.patientId && eventoForm.ruoloOperatore && eventoForm.dataEvento && eventoForm.luogoEvento && eventoForm.descrizioneEvento && firmaEventoOp;
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '12px' }}>
+            <div style={{ background: 'white', borderRadius: '14px', width: '100%', maxWidth: '660px', marginTop: '16px', marginBottom: '24px', boxShadow: '0 24px 64px rgba(0,0,0,0.35)', fontFamily: 'Arial, sans-serif' }}>
+
+              {/* ── Intestazione scheda ── */}
+              <div style={{ background: 'linear-gradient(135deg,#1e4d8c,#1e3a5f)', color: 'white', borderRadius: '14px 14px 0 0', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '0.72rem', opacity: 0.8, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '2px' }}>Abbraccio Cure Domiciliari</div>
+                  <div style={{ fontWeight: '700', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <AlertTriangle size={20} /> SCHEDA SEGNALAZIONE EVENTO AVVERSO
+                  </div>
+                </div>
+                <button onClick={() => setShowEventoAvverso(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex' }}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              {eventoSalvato ? (
+                <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '3.5rem', marginBottom: '14px' }}>✅</div>
+                  <div style={{ fontWeight: '700', fontSize: '1.15rem', color: '#16a34a', marginBottom: '8px' }}>Segnalazione registrata con successo</div>
+                  <div style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '28px' }}>La scheda è stata inviata e sarà esaminata dalla Direzione di Area.</div>
+                  <button onClick={() => setShowEventoAvverso(false)} style={{ background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '8px', padding: '12px 32px', fontWeight: '700', cursor: 'pointer', fontSize: '1rem' }}>Chiudi</button>
+                </div>
+              ) : (
+                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                  {/* ── SEZIONE 1: Chi segnala ── */}
+                  {sezLabel('Operatore che segnala l\'evento')}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontWeight: '600', fontSize: '0.83rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Direzione di area</label>
+                      <input type="text" value={eventoForm.direzioneDiArea} onChange={e => setEventoForm(p => ({ ...p, direzioneDiArea: e.target.value }))}
+                        placeholder="es. Distretto Sud, Area Metropolitana..."
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.88rem', boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontWeight: '700', fontSize: '0.83rem', color: '#374151', display: 'block', marginBottom: '8px' }}>Ruolo operatore *</label>
+                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        {[
+                          { val: 'infermiere_oss', label: '👩‍⚕️ Infermiere / OSS' },
+                          { val: 'medico', label: '🩺 Medico' },
+                          { val: 'altro', label: '✏️ Altro' },
+                        ].map(r => (
+                          <label key={r.val} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem', padding: '8px 14px', borderRadius: '8px', border: `2px solid ${eventoForm.ruoloOperatore === r.val ? '#1e4d8c' : '#e5e7eb'}`, background: eventoForm.ruoloOperatore === r.val ? '#eff6ff' : 'white', fontWeight: eventoForm.ruoloOperatore === r.val ? '700' : '400' }}>
+                            <input type="radio" name="ruoloOp" value={r.val} checked={eventoForm.ruoloOperatore === r.val} onChange={() => setEventoForm(p => ({ ...p, ruoloOperatore: r.val }))} style={{ accentColor: '#1e4d8c' }} />
+                            {r.label}
+                          </label>
+                        ))}
+                      </div>
+                      {eventoForm.ruoloOperatore === 'altro' && (
+                        <input type="text" value={eventoForm.ruoloOperatoreAltro} onChange={e => setEventoForm(p => ({ ...p, ruoloOperatoreAltro: e.target.value }))}
+                          placeholder="Specificare ruolo..."
+                          style={{ marginTop: '8px', width: '100%', padding: '8px 10px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.88rem', boxSizing: 'border-box' }} />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ── SEZIONE 2: Dati paziente (facoltativi) ── */}
+                  {sezLabel('Dati relativi al paziente (facoltativi)')}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div>
+                      <label style={{ fontWeight: '700', fontSize: '0.83rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Paziente in carico *</label>
+                      <select value={eventoForm.patientId} onChange={e => {
+                        const paz = pazienti.find(p => p._id === e.target.value);
+                        setEventoForm(p => ({ ...p, patientId: e.target.value, pazienteNomeCognome: paz ? `${paz.firstName} ${paz.lastName}` : '' }));
+                      }} style={{ width: '100%', padding: '9px 10px', borderRadius: '7px', border: `2px solid ${eventoForm.patientId ? '#d1d5db' : '#fca5a5'}`, fontSize: '0.88rem', background: 'white' }}>
+                        <option value="">— Seleziona paziente —</option>
+                        {pazienti.map(p => <option key={p._id} value={p._id}>{p.firstName} {p.lastName}</option>)}
+                      </select>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '10px' }}>
+                      <div>
+                        <label style={{ fontWeight: '600', fontSize: '0.8rem', color: '#6b7280', display: 'block', marginBottom: '3px' }}>CSTV di appartenenza</label>
+                        <input type="text" value={eventoForm.pazienteCSTV} onChange={e => setEventoForm(p => ({ ...p, pazienteCSTV: e.target.value }))}
+                          placeholder="es. ASL Roma 1" style={{ width: '100%', padding: '7px 9px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontWeight: '600', fontSize: '0.8rem', color: '#6b7280', display: 'block', marginBottom: '3px' }}>Età</label>
+                        <input type="number" value={eventoForm.pazienteEta} onChange={e => setEventoForm(p => ({ ...p, pazienteEta: e.target.value }))}
+                          min={0} max={130} placeholder="anni" style={{ width: '100%', padding: '7px 9px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontWeight: '600', fontSize: '0.8rem', color: '#6b7280', display: 'block', marginBottom: '3px' }}>Sesso</label>
+                        <select value={eventoForm.pazienteSesso} onChange={e => setEventoForm(p => ({ ...p, pazienteSesso: e.target.value as any }))}
+                          style={{ width: '100%', padding: '7px 9px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.85rem', background: 'white' }}>
+                          <option value="">—</option>
+                          <option value="M">M</option>
+                          <option value="F">F</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ── SEZIONE 3: Descrizione evento ── */}
+                  {sezLabel('Descrizione dell\'evento')}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div>
+                      <label style={{ fontWeight: '600', fontSize: '0.83rem', color: '#374151', display: 'block', marginBottom: '4px' }}>
+                        Cos'è successo? Dove? Quando? Come e perché è successo? Chi si è accorto? *
+                      </label>
+                      <textarea value={eventoForm.descrizioneEvento} onChange={e => setEventoForm(p => ({ ...p, descrizioneEvento: e.target.value }))}
+                        placeholder="Descrivi l'evento in modo sintetico ma esaustivo..."
+                        rows={4} style={{ width: '100%', padding: '9px 10px', borderRadius: '7px', border: `1px solid ${eventoForm.descrizioneEvento ? '#d1d5db' : '#fca5a5'}`, fontSize: '0.88rem', resize: 'vertical', boxSizing: 'border-box' }} />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '10px' }}>
+                      <div>
+                        <label style={{ fontWeight: '600', fontSize: '0.8rem', color: '#374151', display: 'block', marginBottom: '3px' }}>📅 Data *</label>
+                        <input type="date" value={eventoForm.dataEvento} onChange={e => setEventoForm(p => ({ ...p, dataEvento: e.target.value }))}
+                          style={{ width: '100%', padding: '7px 8px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontWeight: '600', fontSize: '0.8rem', color: '#374151', display: 'block', marginBottom: '3px' }}>⏰ Ora</label>
+                        <input type="time" value={eventoForm.oraEvento} onChange={e => setEventoForm(p => ({ ...p, oraEvento: e.target.value }))}
+                          style={{ width: '100%', padding: '7px 8px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontWeight: '600', fontSize: '0.8rem', color: '#374151', display: 'block', marginBottom: '3px' }}>📍 Luogo *</label>
+                        <input type="text" value={eventoForm.luogoEvento} onChange={e => setEventoForm(p => ({ ...p, luogoEvento: e.target.value }))}
+                          placeholder="es. Domicilio paziente" style={{ width: '100%', padding: '7px 8px', borderRadius: '7px', border: `1px solid ${eventoForm.luogoEvento ? '#d1d5db' : '#fca5a5'}`, fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontWeight: '600', fontSize: '0.83rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Come si sono svolti i fatti</label>
+                      <textarea value={eventoForm.svolgimentoFatti} onChange={e => setEventoForm(p => ({ ...p, svolgimentoFatti: e.target.value }))}
+                        placeholder="Descrivi la sequenza degli eventi, il contesto, le azioni intraprese..."
+                        rows={3} style={{ width: '100%', padding: '9px 10px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.88rem', resize: 'vertical', boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+
+                  {/* ── SEZIONE 4: Esito / Grado danno ── */}
+                  {sezLabel('Esito dell\'evento')}
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {GRADI_DANNO.map(g => (
+                      <button key={g.value} type="button" onClick={() => setEventoForm(p => ({ ...p, dannoRiscontrato: g.value as any }))}
+                        style={{ padding: '7px 13px', borderRadius: '8px', border: `2px solid ${eventoForm.dannoRiscontrato === g.value ? g.color : '#e5e7eb'}`, background: eventoForm.dannoRiscontrato === g.value ? g.color + '18' : 'white', color: eventoForm.dannoRiscontrato === g.value ? g.color : '#374151', fontWeight: eventoForm.dannoRiscontrato === g.value ? '700' : '400', cursor: 'pointer', fontSize: '0.82rem' }}>
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* ── SEZIONE 5: Fattori contribuenti ── */}
+                  {sezLabel('Fattori che possono aver contribuito all\'evento (più risposte possibili)')}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div style={{ background: '#f0f9ff', borderRadius: '10px', padding: '14px', border: '1px solid #bae6fd' }}>
+                      <div style={{ fontWeight: '700', fontSize: '0.78rem', color: '#0369a1', marginBottom: '10px', textTransform: 'uppercase' }}>👤 Fattori paziente</div>
+                      {FATTORI_PAZIENTE.map(v => checkRow('fattoriPaziente', v))}
+                    </div>
+                    <div style={{ background: '#fdf4ff', borderRadius: '10px', padding: '14px', border: '1px solid #e9d5ff' }}>
+                      <div style={{ fontWeight: '700', fontSize: '0.78rem', color: '#7c3aed', marginBottom: '10px', textTransform: 'uppercase' }}>👥 Fattori staff / organizzazione</div>
+                      {FATTORI_STAFF.map(v => checkRow('fattoriStaff', v))}
+                    </div>
+                    <div style={{ background: '#fff7ed', borderRadius: '10px', padding: '14px', border: '1px solid #fed7aa' }}>
+                      <div style={{ fontWeight: '700', fontSize: '0.78rem', color: '#c2410c', marginBottom: '10px', textTransform: 'uppercase' }}>💬 Comunicazione / task</div>
+                      {FATTORI_COMUNICAZIONE.map(v => checkRow('fattoriComunicazione', v))}
+                    </div>
+                    <div style={{ background: '#f0fdf4', borderRadius: '10px', padding: '14px', border: '1px solid #bbf7d0' }}>
+                      <div style={{ fontWeight: '700', fontSize: '0.78rem', color: '#15803d', marginBottom: '10px', textTransform: 'uppercase' }}>🏠 Ambiente / attrezzatura</div>
+                      {FATTORI_AMBIENTE.map(v => checkRow('fattoriAmbiente', v))}
+                    </div>
+                  </div>
+
+                  {/* ── SEZIONE 6: Suggerimenti ── */}
+                  {sezLabel('Suggerimenti per prevenire / evitare il ripetersi dell\'evento')}
+                  <textarea value={eventoForm.suggerimenti} onChange={e => setEventoForm(p => ({ ...p, suggerimenti: e.target.value }))}
+                    placeholder="Inserisci eventuali proposte migliorative, raccomandazioni o azioni correttive suggerite..."
+                    rows={3} style={{ width: '100%', padding: '9px 10px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.88rem', resize: 'vertical', boxSizing: 'border-box' }} />
+
+                  {/* ── SEZIONE 7: Firma ── */}
+                  {sezLabel('Firma dell\'operatore segnalante')}
+                  <FirmaCanvas
+                    label="Firma"
+                    sublabel="Firma obbligatoria per validare e inviare la segnalazione"
+                    onFirmaCompleta={f => setFirmaEventoOp(f)}
+                    onCancella={() => setFirmaEventoOp('')}
+                    firmaEsistente={firmaEventoOp}
+                    altezza={140}
+                  />
+
+                  {/* ── Pulsante invio ── */}
+                  <button
+                    type="button"
+                    disabled={!canSend || salvandoEvento}
+                    onClick={async () => {
+                      setSalvandoEvento(true);
+                      try {
+                        await api.post('/eventi-avversi', {
+                          patientId: eventoForm.patientId,
+                          ruoloOperatore: eventoForm.ruoloOperatore,
+                          ruoloOperatoreAltro: eventoForm.ruoloOperatoreAltro || undefined,
+                          direzioneDiArea: eventoForm.direzioneDiArea || undefined,
+                          pazienteNomeCognome: eventoForm.pazienteNomeCognome || undefined,
+                          pazienteCSTV: eventoForm.pazienteCSTV || undefined,
+                          pazienteEta: eventoForm.pazienteEta ? Number(eventoForm.pazienteEta) : undefined,
+                          pazienteSesso: eventoForm.pazienteSesso || undefined,
+                          dataEvento: eventoForm.dataEvento,
+                          oraEvento: eventoForm.oraEvento || undefined,
+                          luogoEvento: eventoForm.luogoEvento,
+                          descrizioneEvento: eventoForm.descrizioneEvento,
+                          svolgimentoFatti: eventoForm.svolgimentoFatti || undefined,
+                          fattoriPaziente: eventoForm.fattoriPaziente,
+                          fattoriStaff: eventoForm.fattoriStaff,
+                          fattoriComunicazione: eventoForm.fattoriComunicazione,
+                          fattoriAmbiente: eventoForm.fattoriAmbiente,
+                          suggerimenti: eventoForm.suggerimenti || undefined,
+                          dannoRiscontrato: eventoForm.dannoRiscontrato,
+                          firmaOperatore: firmaEventoOp,
+                        });
+                        setEventoSalvato(true);
+                      } catch (err: any) {
+                        alert(err?.response?.data?.message || 'Errore nel salvataggio della segnalazione');
+                      } finally {
+                        setSalvandoEvento(false);
+                      }
+                    }}
+                    style={{
+                      width: '100%', padding: '14px', borderRadius: '10px', border: 'none', fontWeight: '700', fontSize: '1rem', cursor: canSend && !salvandoEvento ? 'pointer' : 'not-allowed',
+                      background: canSend && !salvandoEvento ? '#dc2626' : '#d1d5db',
+                      color: canSend && !salvandoEvento ? 'white' : '#9ca3af',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    }}
+                  >
+                    <AlertTriangle size={18} />
+                    {salvandoEvento ? 'Invio in corso...' : 'Invia segnalazione evento avverso'}
+                  </button>
+                  <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af', margin: 0 }}>
+                    * Campi obbligatori. La firma è necessaria per validare la segnalazione.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
     </section>
   );
 }

@@ -42,6 +42,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
     const query = WorkPlan.find(filter)
       .populate('patient', 'firstName lastName tipoGestione')
       .populate('staff', 'firstName lastName role category active')
+      .populate('prestazioni.staff', 'firstName lastName role category')
       .sort({ date: 1 });
 
     // Paginazione opzionale — retrocompatibile
@@ -71,16 +72,29 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
   }
 });
 
-// GET /miei-pazienti — pazienti assegnati all'operatore loggato
+// GET /miei-pazienti — pazienti assegnati all'operatore loggato (o tutti se privilegiato)
 router.get('/miei-pazienti', authenticateToken, async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const staffMember = await getStaffByUser(user.id || user.userId, user.email);
-    if (!staffMember) {
-      return res.json([]);
+    const isPrivileged = ['admin', 'coordinator', 'direttore'].includes(user.role);
+
+    let filter: any = { status: { $ne: 'cancelled' } };
+
+    if (!isPrivileged) {
+      const staffMember = await getStaffByUser(user.id || user.userId, user.email);
+      if (!staffMember) return res.json([]);
+      filter.staff = staffMember._id;
+    } else {
+      // Privilegiato: se ha un profilo staff mostra solo i suoi piani assegnati nel portale operatore
+      // altrimenti (nessun profilo staff) mostra tutti i piani attivi
+      const staffMember = await getStaffByUser(user.id || user.userId, user.email);
+      if (staffMember) {
+        filter.staff = staffMember._id;
+      }
+      // se staffMember è null → nessun filtro staff → vede tutti i pazienti
     }
 
-    const piani = await WorkPlan.find({ staff: staffMember._id, status: { $ne: 'cancelled' } })
+    const piani = await WorkPlan.find(filter)
       .populate('patient', 'firstName lastName birthDate address contactPhone assistanceNeeds tipoGestione siat')
       .sort({ date: -1 });
 
@@ -119,17 +133,27 @@ router.get('/mio-profilo-staff', authenticateToken, async (req: Request, res: Re
 // Create new workplan item
 router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
   try {
-    const workplan = await WorkPlan.create(req.body);
+    const body = req.body;
+    // Se vengono passate prestazioni[] e non uno staff principale, usa il primo operatore delle prestazioni
+    if (body.prestazioni?.length > 0 && !body.staff) {
+      body.staff = body.prestazioni[0].staff;
+    }
+    const workplan = await WorkPlan.create(body);
 
     // Invia email notifica all'operatore assegnato
     try {
       const populated = await WorkPlan.findById(workplan._id)
         .populate('patient', 'firstName lastName')
-        .populate('staff', 'firstName lastName email');
+        .populate('staff', 'firstName lastName email')
+        .populate('prestazioni.staff', 'firstName lastName email');
 
       if (populated) {
         const staffDoc = populated.staff as any;
         const patientDoc = populated.patient as any;
+        // Notifica tutti gli operatori delle prestazioni (se diversi dallo staff principale)
+        const staffEmails = new Set<string>();
+        if (staffDoc?.email) staffEmails.add(staffDoc.email);
+        (populated as any).prestazioni?.forEach((p: any) => { if (p.staff?.email) staffEmails.add(p.staff.email); });
         if (staffDoc?.email) {
           const nomePaziente = `${patientDoc?.firstName || ''} ${patientDoc?.lastName || ''}`.trim();
           const dataInizio = new Date(workplan.date).toLocaleDateString('it-IT');

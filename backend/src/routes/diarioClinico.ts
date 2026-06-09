@@ -37,7 +37,7 @@ router.get('/paziente/:patientId', authenticateToken, auditLog('diario-paziente'
 router.post('/:workPlanId', authenticateToken, auditLog('diario', 'CREATE', req => req.params.workPlanId), async (req: Request, res: Response) => {
   try {
     const { workPlanId } = req.params;
-    const { testo, parametriVitali, workPlanAccess } = req.body;
+    const { testo, parametriVitali, scaleValutazione, terapiaFarmacologica, workPlanAccess } = req.body;
     const user = (req as any).user;
 
     if (!testo?.trim()) {
@@ -60,6 +60,8 @@ router.post('/:workPlanId', authenticateToken, auditLog('diario', 'CREATE', req 
       dataRegistrazione: new Date(),
       testo: testo.trim(),
       parametriVitali: parametriVitali || undefined,
+      scaleValutazione: scaleValutazione || undefined,
+      terapiaFarmacologica: terapiaFarmacologica?.length ? terapiaFarmacologica : undefined,
       firmaLogin: user.name || user.email || 'Operatore',
       firmato: false,
     });

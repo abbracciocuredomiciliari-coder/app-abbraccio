@@ -97,6 +97,106 @@ interface RiepilogoAccessi {
   utile: number;
 }
 
+// ─── Catalogo completo prestazioni SIAT/ADI ───────────────────────────────────────────
+type CatPrestazione = 'infermieristica' | 'riabilitativa' | 'medica' | 'assistenziale' | 'sociale';
+
+interface PrestazioneForm {
+  id: string; // uuid locale per React key
+  categoria: CatPrestazione;
+  tipoPrestazione: string;
+  staff: string;
+  note: string;
+}
+
+interface CatalogoPrestazione {
+  value: string;
+  label: string;
+  categoria: CatPrestazione;
+  color: string;
+}
+
+const CATALOGO_PRESTAZIONI: CatalogoPrestazione[] = [
+  // ── INFERMIERISTICHE ──
+  { value: 'valutazione_infermieristica',   label: 'Valutazione infermieristica',             categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'medicazione_lesione',            label: 'Medicazione lesione / ferita',             categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'medicazione_ulcera_pressione',   label: 'Medicazione ulcera da pressione',          categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'medicazione_ulcera_vascolare',   label: 'Medicazione ulcera vascolare',             categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'medicazione_stomia',             label: 'Gestione e medicazione stomia',            categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'cateterismo_vescicale',          label: 'Cateterismo vescicale / gestione CV',      categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'gestione_catetere_cv',           label: 'Gestione catetere venoso centrale',        categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'gestione_pic',                   label: 'Gestione PICC/Port',                       categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'infusione_ev',                   label: 'Infusione endovenosa / terapia parenterale',categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'iniezione_sc_im',                label: 'Iniezione sottocutanea / intramuscolare',  categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'gestione_npt',                   label: 'Nutrizione parenterale totale (NPT)',      categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'gestione_peg',                   label: 'Nutrizione enterale / gestione PEG/SNG',   categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'aspirazione_tracheale',          label: 'Aspirazione tracheale',                    categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'gestione_tracheostomia',         label: 'Gestione tracheostomia',                   categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'ossigenoterapia',                label: 'Ossigenoterapia / gestione O₂',             categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'gestione_ventilatore',           label: 'Gestione ventilatore meccanico',           categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'prelievo_ematico',               label: 'Prelievo ematico / venoso',               categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'ecg',                            label: 'Elettrocardiogramma (ECG)',                categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'monitoraggio_parametri',         label: 'Monitoraggio parametri vitali',           categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'glicemia_capillare',             label: 'Glicemia capillare / gestione insulina',  categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'clistere_enteroclisma',          label: 'Clistere / enteroclisma',                 categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'raccolta_campioni',              label: 'Raccolta campioni biologici',             categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'valutazione_braden',             label: 'Valutazione scala Braden',                categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'valutazione_barthel',            label: 'Valutazione scala Barthel',               categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'educazione_sanitaria',           label: 'Educazione sanitaria a paziente/caregiver',categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'gestione_pompa_infusionale',     label: 'Gestione pompa infusionale',              categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'gestione_drenaggio',             label: 'Gestione drenaggio / tubo di toraci',     categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'terapia_inalatoria',             label: 'Terapia inalatoria / aerosol',            categoria: 'infermieristica', color: '#2563eb' },
+  // ── RIABILITATIVE ──
+  { value: 'valutazione_fisioterapica',      label: 'Valutazione fisioterapica',               categoria: 'riabilitativa', color: '#16a34a' },
+  { value: 'fisioterapia_motoria',           label: 'Fisioterapia motoria / mobilizzazione',   categoria: 'riabilitativa', color: '#16a34a' },
+  { value: 'rieducazione_posturale',         label: 'Rieducazione posturale',                  categoria: 'riabilitativa', color: '#16a34a' },
+  { value: 'riabilitazione_neurologica',     label: 'Riabilitazione neurologica',              categoria: 'riabilitativa', color: '#16a34a' },
+  { value: 'riabilitazione_ortopedica',      label: 'Riabilitazione ortopedica',               categoria: 'riabilitativa', color: '#16a34a' },
+  { value: 'riabilitazione_respiratoria',    label: 'Riabilitazione respiratoria',             categoria: 'riabilitativa', color: '#16a34a' },
+  { value: 'riabilitazione_cardiologica',    label: 'Riabilitazione cardiologica',             categoria: 'riabilitativa', color: '#16a34a' },
+  { value: 'terapia_occupazionale',          label: 'Terapia occupazionale',                   categoria: 'riabilitativa', color: '#16a34a' },
+  { value: 'logopedia',                      label: 'Logopedia / rieducazione deglutizione',   categoria: 'riabilitativa', color: '#16a34a' },
+  { value: 'massoterapia',                   label: 'Massoterapia / linfodrenaggio',           categoria: 'riabilitativa', color: '#16a34a' },
+  { value: 'tens_elettrostimolazione',       label: 'TENS / Elettrostimolazione',              categoria: 'riabilitativa', color: '#16a34a' },
+  { value: 'valutazione_deambulazione',      label: 'Addestramento deambulazione / ausili',    categoria: 'riabilitativa', color: '#16a34a' },
+  { value: 'valutazione_psicomotoria',       label: 'Valutazione psicomotoria',                categoria: 'riabilitativa', color: '#16a34a' },
+  // ── MEDICHE ──
+  { value: 'visita_medica',                  label: 'Visita medica domiciliare',               categoria: 'medica', color: '#dc2626' },
+  { value: 'valutazione_medica_urgente',     label: 'Valutazione medica urgente',              categoria: 'medica', color: '#dc2626' },
+  { value: 'prescrizione_terapia',           label: 'Prescrizione / revisione terapia farmacologica', categoria: 'medica', color: '#dc2626' },
+  { value: 'visita_specialistica_dom',       label: 'Visita specialistica domiciliare',        categoria: 'medica', color: '#dc2626' },
+  { value: 'ecografia_dom',                  label: 'Ecografia domiciliare',                   categoria: 'medica', color: '#dc2626' },
+  { value: 'holter_ecg',                     label: 'Holter ECG applicazione/refertazione',    categoria: 'medica', color: '#dc2626' },
+  { value: 'piano_terapeutico',              label: 'Redazione piano terapeutico ADI',         categoria: 'medica', color: '#dc2626' },
+  { value: 'valutazione_multidimensionale',  label: 'Valutazione multidimensionale (UVM)',     categoria: 'medica', color: '#dc2626' },
+  { value: 'certificazione_medica',          label: 'Certificazione / documentazione medica',  categoria: 'medica', color: '#dc2626' },
+  // ── ASSISTENZIALI ──
+  { value: 'igiene_personale',               label: 'Igiene personale / bagno assistito',      categoria: 'assistenziale', color: '#d97706' },
+  { value: 'mobilizzazione_posizionamento',  label: 'Mobilizzazione e posizionamento',         categoria: 'assistenziale', color: '#d97706' },
+  { value: 'assistenza_alimentazione',       label: 'Assistenza all’alimentazione',             categoria: 'assistenziale', color: '#d97706' },
+  { value: 'assistenza_eliminazione',        label: 'Assistenza eliminazione urinaria/fecale', categoria: 'assistenziale', color: '#d97706' },
+  { value: 'assistenza_oraria',              label: 'Assistenza oraria domiciliare',           categoria: 'assistenziale', color: '#d97706' },
+  { value: 'sorveglianza_notturna',          label: 'Sorveglianza notturna',                   categoria: 'assistenziale', color: '#d97706' },
+  { value: 'accompagnamento',                label: 'Accompagnamento visite / commissioni',    categoria: 'assistenziale', color: '#d97706' },
+  { value: 'supporto_caregiver',             label: 'Supporto e sollievo al caregiver',        categoria: 'assistenziale', color: '#d97706' },
+  { value: 'gestione_farmaci',               label: 'Gestione e somministrazione farmaci orali',categoria: 'assistenziale', color: '#d97706' },
+  // ── SOCIALI ──
+  { value: 'valutazione_sociale',            label: 'Valutazione sociale domiciliare',         categoria: 'sociale', color: '#7c3aed' },
+  { value: 'sostegno_psicologico',           label: 'Sostegno psicologico / ascolto attivo',   categoria: 'sociale', color: '#7c3aed' },
+  { value: 'attivazione_servizi',            label: 'Attivazione servizi territoriali',        categoria: 'sociale', color: '#7c3aed' },
+  { value: 'segretariato_sociale',           label: 'Segretariato sociale / orientamento',     categoria: 'sociale', color: '#7c3aed' },
+];
+
+const CATEGORIA_LABELS: Record<CatPrestazione, { label: string; color: string; bg: string }> = {
+  infermieristica: { label: '💉 Infermieristica', color: '#2563eb', bg: '#eff6ff' },
+  riabilitativa:   { label: '🏃 Riabilitativa',   color: '#16a34a', bg: '#f0fdf4' },
+  medica:          { label: '🩺 Medica',          color: '#dc2626', bg: '#fef2f2' },
+  assistenziale:   { label: '🤍 Assistenziale',  color: '#d97706', bg: '#fffbeb' },
+  sociale:         { label: '🤝 Sociale',         color: '#7c3aed', bg: '#fdf4ff' },
+};
+
+const CATEGORIE_ORDINE: CatPrestazione[] = ['infermieristica','riabilitativa','medica','assistenziale','sociale'];
+
+// retrocompatibilità per la lista esistente
 const prestazioneCategories = [
   { value: 'esame_ematico', label: 'Esame Ematico', icon: TestTube2, color: '#ef4444' },
   { value: 'medicazione', label: 'Medicazione', icon: Bandage, color: '#f59e0b' },
@@ -166,6 +266,9 @@ function WorkPlan() {
   const [tipoCompenso, setTipoCompenso] = useState<'orario' | 'fisso' | 'nessuno'>('nessuno');
   const [tariffa, setTariffa] = useState<number>(0);
   const [costoPrestazione, setCostoPrestazione] = useState<number>(0);
+  // Multi-prestazione con operatore per ciascuna
+  const [prestazioniForm, setPrestazioniForm] = useState<PrestazioneForm[]>([]);
+  const [catFiltro, setCatFiltro] = useState<CatPrestazione | ''>('');
   // Giorni settimana: array di {giorno, attivo, accessiAlGiorno, minutiPerAccesso}
   const [giorniForm, setGiorniForm] = useState([
     { giorno: 1, label: 'Lun', attivo: false, accessiAlGiorno: 1, minutiPerAccesso: 60 },
@@ -220,16 +323,21 @@ function WorkPlan() {
     setError('');
     setSuccess('');
     try {
-      if (!patient || !staff || !date) {
-        setError('Compila tutti i campi obbligatori.');
+      if (!patient || !date) {
+        setError('Compila paziente e data inizio.');
         return;
       }
       if (!task) {
         setError('Compila il campo Attività / Descrizione.');
         return;
       }
-      if (categories.length === 0) {
-        setError('Seleziona almeno una categoria.');
+      if (prestazioniForm.length === 0) {
+        setError('Aggiungi almeno una prestazione.');
+        return;
+      }
+      const prestazioniValide = prestazioniForm.filter(p => p.tipoPrestazione && p.staff);
+      if (prestazioniValide.length !== prestazioniForm.length) {
+        setError('Ogni prestazione deve avere tipo e operatore assegnato.');
         return;
       }
       const giorniAttivi = giorniForm
@@ -240,11 +348,19 @@ function WorkPlan() {
           minutiPerAccesso: g.minutiPerAccesso,
         }));
 
+      const prestDaInviare = prestazioniValide.map(p => ({
+        tipoPrestazione: p.tipoPrestazione,
+        staff: p.staff,
+        nota: p.note || undefined,
+        categoria: p.categoria,
+      }));
+
       await api.post('/workplan', {
         type: activeTab,
-        categories,
+        prestazioni: prestDaInviare,
+        categories: prestazioniValide.map(p => p.tipoPrestazione), // retrocompatibilità
         patient,
-        staff,
+        staff: staff || prestazioniValide[0].staff, // principale = primo operatore
         task,
         date,
         dataFine: dataFine || undefined,
@@ -259,6 +375,7 @@ function WorkPlan() {
       await loadData();
       setTask(''); setDate(''); setDataFine(''); setTime(''); setDuration(60);
       setPatient(''); setStaff(''); setCategories([]); setNotes('');
+      setPrestazioniForm([]); setCatFiltro('');
       setTipoCompenso('nessuno'); setTariffa(0); setCostoPrestazione(0);
       setGiorniForm(prev => prev.map(g => ({ ...g, attivo: false, accessiAlGiorno: 1, minutiPerAccesso: 60 })));
       setSuccess('Incarico aggiunto con successo!');
@@ -617,16 +734,6 @@ function WorkPlan() {
               </select>
             </label>
 
-            <label>
-              Operatore *
-              <select value={staff} onChange={(e) => setStaff(e.target.value)} required>
-                <option value="">Seleziona un operatore</option>
-                {staffMembers.filter(s => s.active).map((item) => (
-                  <option key={item._id} value={item._id}>{item.firstName} {item.lastName} - {item.role}</option>
-                ))}
-              </select>
-            </label>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <label>
                 Data inizio *
@@ -642,6 +749,104 @@ function WorkPlan() {
               Orario
               <input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
             </label>
+
+            {/* ── Sezione Prestazioni Multi-Operatore ── */}
+            <div style={{ borderTop: '1px solid var(--gray-200)', paddingTop: '14px', marginTop: '4px' }}>
+              <div style={{ fontWeight: '700', fontSize: '0.92rem', color: '#1e4d8c', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>🩺 Prestazioni del piano *</span>
+                <span style={{ fontWeight: '400', fontSize: '0.78rem', color: '#6b7280' }}>{prestazioniForm.length} aggiunta/e</span>
+              </div>
+
+              {/* Filtro per categoria */}
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                <button type="button" onClick={() => setCatFiltro('')}
+                  style={{ padding: '4px 10px', borderRadius: '20px', border: `1px solid ${catFiltro === '' ? '#1e4d8c' : '#e5e7eb'}`, background: catFiltro === '' ? '#1e4d8c' : 'white', color: catFiltro === '' ? 'white' : '#374151', fontSize: '0.78rem', cursor: 'pointer' }}>
+                  Tutte
+                </button>
+                {CATEGORIE_ORDINE.map(cat => {
+                  const info = CATEGORIA_LABELS[cat];
+                  return (
+                    <button key={cat} type="button" onClick={() => setCatFiltro(cat === catFiltro ? '' : cat)}
+                      style={{ padding: '4px 10px', borderRadius: '20px', border: `1px solid ${catFiltro === cat ? info.color : '#e5e7eb'}`, background: catFiltro === cat ? info.color : 'white', color: catFiltro === cat ? 'white' : info.color, fontSize: '0.78rem', fontWeight: '600', cursor: 'pointer' }}>
+                      {info.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Catalogo prestazioni — click per aggiungere */}
+              <div style={{ maxHeight: '240px', overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', background: '#f8fafc', marginBottom: '12px' }}>
+                {CATEGORIE_ORDINE.filter(c => !catFiltro || c === catFiltro).map(cat => {
+                  const info = CATEGORIA_LABELS[cat];
+                  const prests = CATALOGO_PRESTAZIONI.filter(p => p.categoria === cat);
+                  return (
+                    <div key={cat} style={{ marginBottom: '8px' }}>
+                      <div style={{ fontSize: '0.74rem', fontWeight: '700', color: info.color, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px', padding: '2px 4px', background: info.bg, borderRadius: '4px' }}>
+                        {info.label}
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                        {prests.map(p => {
+                          const giaAggiunta = prestazioniForm.some(f => f.tipoPrestazione === p.value);
+                          return (
+                            <button key={p.value} type="button"
+                              onClick={() => {
+                                if (giaAggiunta) return;
+                                setPrestazioniForm(prev => [...prev, { id: Math.random().toString(36).slice(2), categoria: cat, tipoPrestazione: p.value, staff: '', note: '' }]);
+                              }}
+                              style={{ padding: '4px 8px', borderRadius: '6px', border: `1px solid ${giaAggiunta ? info.color : '#e5e7eb'}`, background: giaAggiunta ? info.bg : 'white', color: giaAggiunta ? info.color : '#374151', fontSize: '0.78rem', cursor: giaAggiunta ? 'default' : 'pointer', fontWeight: giaAggiunta ? '700' : '400' }}>
+                              {giaAggiunta ? '✓ ' : '+ '}{p.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Lista prestazioni aggiunte con operatore assegnato */}
+              {prestazioniForm.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {prestazioniForm.map((pf, idx) => {
+                    const catalogoItem = CATALOGO_PRESTAZIONI.find(c => c.value === pf.tipoPrestazione);
+                    const info = CATEGORIA_LABELS[pf.categoria];
+                    return (
+                      <div key={pf.id} style={{ border: `1px solid ${info.color}40`, borderLeft: `4px solid ${info.color}`, borderRadius: '8px', padding: '10px 12px', background: info.bg }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
+                          <div>
+                            <span style={{ fontSize: '0.76rem', color: info.color, fontWeight: '700', textTransform: 'uppercase' }}>{info.label}</span>
+                            <div style={{ fontWeight: '600', fontSize: '0.88rem', color: '#1e3a5f' }}>{catalogoItem?.label || pf.tipoPrestazione}</div>
+                          </div>
+                          <button type="button" onClick={() => setPrestazioniForm(prev => prev.filter((_, i) => i !== idx))}
+                            style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', padding: '2px', flexShrink: 0 }}>
+                            <X size={16} />
+                          </button>
+                        </div>
+                        <select
+                          value={pf.staff}
+                          onChange={e => setPrestazioniForm(prev => prev.map((p, i) => i === idx ? { ...p, staff: e.target.value } : p))}
+                          style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: `1px solid ${pf.staff ? '#d1d5db' : '#fca5a5'}`, fontSize: '0.85rem', background: 'white', marginBottom: '6px' }}
+                        >
+                          <option value="">— Seleziona operatore *</option>
+                          {staffMembers.filter(s => s.active).map(s => (
+                            <option key={s._id} value={s._id}>{s.firstName} {s.lastName} — {s.role}</option>
+                          ))}
+                        </select>
+                        <input type="text" value={pf.note}
+                          onChange={e => setPrestazioniForm(prev => prev.map((p, i) => i === idx ? { ...p, note: e.target.value } : p))}
+                          placeholder="Note specifiche (facoltativo)"
+                          style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.83rem', boxSizing: 'border-box' }} />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {prestazioniForm.length === 0 && (
+                <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '0.85rem', padding: '12px', border: '1px dashed #d1d5db', borderRadius: '8px' }}>
+                  ↑ Clicca su una prestazione per aggiungerla al piano
+                </div>
+              )}
+            </div>
 
             {/* Giorni settimana */}
             <div style={{ borderTop: '1px solid var(--gray-200)', paddingTop: '12px', marginTop: '4px' }}>
@@ -703,46 +908,6 @@ function WorkPlan() {
                 ))}
               </div>
             </div>
-
-            <label>
-              Categorie *
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
-                {currentCategories.map((cat) => {
-                  const selected = categories.includes(cat.value);
-                  const Icon = cat.icon;
-                  return (
-                    <button
-                      key={cat.value}
-                      type="button"
-                      onClick={() => {
-                        if (selected) {
-                          setCategories(categories.filter(c => c !== cat.value));
-                        } else {
-                          setCategories([...categories, cat.value]);
-                        }
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        border: `2px solid ${selected ? cat.color : '#e5e7eb'}`,
-                        background: selected ? `${cat.color}20` : 'white',
-                        color: selected ? cat.color : '#374151',
-                        fontWeight: selected ? 700 : 500,
-                        fontSize: '0.875rem',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <Icon size={16} />
-                      {cat.label}
-                      {selected && <span style={{ marginLeft: '4px' }}>✓</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            </label>
 
             <label>
               Attività / Descrizione *
@@ -828,17 +993,19 @@ function WorkPlan() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '700px', overflowY: 'auto' }}>
               {filteredWorkplans.map((item) => {
-                const catInfo = getCategoryInfo(item.categories?.[0] || item.category || '');
-                const Icon = catInfo.icon;
+                const itemPrestazioni = (item as any).prestazioni as Array<{ tipoPrestazione: string; categoria: string; staff: any; note?: string }> | undefined;
+                const hasPrestazioni = itemPrestazioni && itemPrestazioni.length > 0;
+                // Colore bordo: prima categoria delle prestazioni o fallback
+                const primaCategoria = hasPrestazioni ? CATEGORIA_LABELS[itemPrestazioni[0].categoria as CatPrestazione] : null;
+                const borderColor = primaCategoria?.color || '#6b7280';
                 return (
-                  <div key={item._id} style={{ display: 'flex', gap: '12px', padding: '14px', border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-lg)', backgroundColor: 'white', borderLeft: `4px solid ${catInfo.color}`, opacity: item.status === 'completed' ? 0.75 : 1 }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-md)', backgroundColor: `${catInfo.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Icon size={22} color={catInfo.color} />
+                  <div key={item._id} style={{ display: 'flex', gap: '12px', padding: '14px', border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-lg)', backgroundColor: 'white', borderLeft: `4px solid ${borderColor}`, opacity: item.status === 'completed' ? 0.75 : 1 }}>
+                    <div style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-md)', backgroundColor: `${borderColor}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.3rem' }}>
+                      🩺
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
                         <strong>{item.patient?.firstName ?? '(eliminato)'} {item.patient?.lastName ?? ''}</strong>
-                        <span style={{ fontSize: '0.72rem', padding: '2px 7px', backgroundColor: `${catInfo.color}20`, color: catInfo.color, borderRadius: 'var(--radius-full)', fontWeight: 600 }}>{catInfo.label}</span>
                         <span style={{ fontSize: '0.72rem', padding: '2px 7px', backgroundColor: `${getStatusColor(item.status)}20`, color: getStatusColor(item.status), borderRadius: 'var(--radius-full)', fontWeight: 600 }}>{getStatusLabel(item.status)}</span>
                         {item.tipoCompenso && item.tipoCompenso !== 'nessuno' && (
                           <span style={{ fontSize: '0.72rem', padding: '2px 7px', backgroundColor: '#f0fdf4', color: '#16a34a', borderRadius: 'var(--radius-full)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px' }}>
@@ -849,10 +1016,34 @@ function WorkPlan() {
                           </span>
                         )}
                       </div>
-                      <p style={{ margin: '0 0 3px', fontSize: '0.9rem', color: 'var(--gray-700)' }}>{item.task}</p>
+                      <p style={{ margin: '0 0 6px', fontSize: '0.9rem', color: 'var(--gray-700)', fontWeight: '600' }}>{item.task}</p>
+
+                      {/* Prestazioni con operatori */}
+                      {hasPrestazioni ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '6px' }}>
+                          {itemPrestazioni!.map((prest, pidx) => {
+                            const catInfo = CATEGORIA_LABELS[prest.categoria as CatPrestazione];
+                            const catalogoItem = CATALOGO_PRESTAZIONI.find(c => c.value === prest.tipoPrestazione);
+                            const opName = prest.staff ? `${prest.staff.firstName || ''} ${prest.staff.lastName || ''}`.trim() : '—';
+                            return (
+                              <div key={pidx} style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: catInfo?.bg || '#f3f4f6', color: catInfo?.color || '#374151', borderRadius: '10px', fontWeight: '700', border: `1px solid ${catInfo?.color || '#e5e7eb'}40` }}>
+                                  {catInfo?.label || prest.categoria}
+                                </span>
+                                <span style={{ fontSize: '0.82rem', color: '#1e3a5f' }}>{catalogoItem?.label || prest.tipoPrestazione}</span>
+                                <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>→ 👤 {opName}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p style={{ margin: '0 0 4px', fontSize: '0.8rem', color: 'var(--gray-500)' }}>
+                          👤 {item.staff?.firstName} {item.staff?.lastName}
+                        </p>
+                      )}
+
                       <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--gray-500)', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                         <span>📅 {formatDate(item.date)}{item.dataFine ? ` → ${formatDate(item.dataFine)}` : ''}{item.time && ` alle ${item.time}`}</span>
-                        <span>👤 {item.staff?.firstName} {item.staff?.lastName}</span>
                         {item.duration && <span>⏱️ {item.duration} min</span>}
                       </p>
                       {item.giorniSettimana && item.giorniSettimana.length > 0 && (

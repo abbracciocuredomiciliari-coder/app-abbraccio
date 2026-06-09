@@ -287,6 +287,18 @@ function AppShell() {
 
               {/* — Operativo — */}
               <span className="nav-section-label">Operativo</span>
+              {user.role === 'coordinator' && (
+                <>
+                  <Link to="/portale-operatore" className={isActive('/portale-operatore') ? 'active' : ''}>
+                    <LayoutDashboard size={18} />
+                    Portale Operatore
+                  </Link>
+                  <Link to="/piani-lavorativi" className={isActive('/piani-lavorativi') ? 'active' : ''}>
+                    <Calendar size={18} />
+                    Piani lavorativi
+                  </Link>
+                </>
+              )}
               <Link to="/staff" className={isActive('/staff') ? 'active' : ''}>
                 <UserPlus size={18} />
                 Personale

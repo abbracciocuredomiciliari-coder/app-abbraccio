@@ -71,7 +71,7 @@ router.post('/:workPlanId/entrata', authenticateToken, async (req: Request, res:
 
     // Verifica che il piano di lavoro esista
     const workPlan = await WorkPlan.findById(workPlanId)
-      .populate('patient', 'firstName lastName')
+      .populate('patient', 'firstName lastName allergie caregiverRiferimento caregiverTelefono diagnosiAmmissione')
       .populate('staff', 'firstName lastName role');
 
     if (!workPlan) {
@@ -234,7 +234,7 @@ router.get('/piano/:workPlanId/info', authenticateToken, async (req: Request, re
     const { workPlanId } = req.params;
 
     const workPlan = await WorkPlan.findById(workPlanId)
-      .populate('patient', 'firstName lastName address')
+      .populate('patient', 'firstName lastName address allergie caregiverRiferimento caregiverTelefono diagnosiAmmissione comorbilita codiceFiscale')
       .populate('staff', 'firstName lastName role');
 
     if (!workPlan) {
