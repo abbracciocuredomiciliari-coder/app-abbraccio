@@ -3,6 +3,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import rateLimit from 'express-rate-limit';
+import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
 import User from '../models/User';
 import Staff from '../models/Staff';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
@@ -11,7 +14,16 @@ import { inviaEmailNotificaAdmin, inviaEmailResetPassword } from '../utils/email
 
 const router = Router();
 const jwtSecret = process.env.JWT_SECRET as string;
-const tokenExpiration = '8h'; // Ridotto da 30d a 8h per sicurezza dati sanitari
+const tokenExpiration = '8h';
+
+// Multer per upload documenti registrazione (max 10MB)
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
+// Assicurati che la cartella uploads esista
+const uploadsDir = path.join(__dirname, '../../uploads/documenti-registrazione');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+} // Ridotto da 30d a 8h per sicurezza dati sanitari
 
 // Rate limiting: max 10 tentativi di login ogni 15 minuti per IP
 const loginLimiter = rateLimit({
@@ -101,6 +113,111 @@ router.post('/register', registerLimiter, async (req: Request, res: Response) =>
     });
   } catch (error) {
     return res.status(500).json({ message: 'Errore nella registrazione', error });
+  }
+});
+
+// REGISTRAZIONE COMPLETA con contratto firmato e documenti
+router.post('/register-completo', registerLimiter, upload.fields([
+  { name: 'assicurazione', maxCount: 1 },
+  { name: 'documentoIdentita', maxCount: 1 },
+  { name: 'attestazioneQualifica', maxCount: 1 },
+]), async (req: Request, res: Response) => {
+  try {
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const body = req.body;
+
+    // Validazione base
+    if (!body.name?.trim() || !body.email?.trim() || !body.password) {
+      return res.status(400).json({ message: 'Nome, email e password sono obbligatori' });
+    }
+    if (body.password.length < 8 || !/[a-zA-Z]/.test(body.password) || !/[0-9]/.test(body.password)) {
+      return res.status(400).json({ message: 'La password deve essere di almeno 8 caratteri e contenere almeno una lettera e un numero.' });
+    }
+    if (!body.firmaContratto) {
+      return res.status(400).json({ message: 'La firma del contratto è obbligatoria' });
+    }
+
+    const existingUser = await User.findOne({ email: body.email.toLowerCase().trim() });
+    if (existingUser) {
+      return res.status(409).json({ message: 'Email già registrata' });
+    }
+
+    const hashedPassword = await bcrypt.hash(body.password, 10);
+
+    // Salva i file su disco
+    const documenti: any = {};
+    const userDir = path.join(uploadsDir, `${Date.now()}_${body.email.replace(/[^a-z0-9]/gi, '_')}`);
+    fs.mkdirSync(userDir, { recursive: true });
+
+    if (files?.assicurazione?.[0]) {
+      const f = files.assicurazione[0];
+      const fn = `assicurazione_${f.originalname}`;
+      fs.writeFileSync(path.join(userDir, fn), f.buffer);
+      documenti.assicurazione = path.join('documenti-registrazione', path.basename(userDir), fn);
+    }
+    if (files?.documentoIdentita?.[0]) {
+      const f = files.documentoIdentita[0];
+      const fn = `documento_${f.originalname}`;
+      fs.writeFileSync(path.join(userDir, fn), f.buffer);
+      documenti.documentoIdentita = path.join('documenti-registrazione', path.basename(userDir), fn);
+    }
+    if (files?.attestazioneQualifica?.[0]) {
+      const f = files.attestazioneQualifica[0];
+      const fn = `attestazione_${f.originalname}`;
+      fs.writeFileSync(path.join(userDir, fn), f.buffer);
+      documenti.attestazioneQualifica = path.join('documenti-registrazione', path.basename(userDir), fn);
+    }
+
+    // Salva la firma come file
+    if (body.firmaContratto) {
+      const firmaData = body.firmaContratto.replace(/^data:image\/png;base64,/, '');
+      const firmaFn = `firma_contratto.png`;
+      fs.writeFileSync(path.join(userDir, firmaFn), Buffer.from(firmaData, 'base64'));
+    }
+
+    const user = await User.create({
+      name: body.name.trim(),
+      email: body.email.toLowerCase().trim(),
+      password: hashedPassword,
+      role: 'caregiver',
+      status: 'pending',
+      telefono: body.telefono?.trim() || '',
+      professione: body.professione?.trim() || '',
+      categoria: body.categoria?.trim() || '',
+      // Anagrafica
+      codiceFiscale: body.codiceFiscale?.trim().toUpperCase() || '',
+      dataNascita: body.dataNascita ? new Date(body.dataNascita) : undefined,
+      luogoNascita: body.luogoNascita?.trim() || '',
+      indirizzoResidenza: body.indirizzoResidenza?.trim() || '',
+      pec: body.pec?.trim().toLowerCase() || '',
+      // Zona
+      domicilioPartenza: body.domicilioPartenza?.trim() || '',
+      raggioAzioneKm: parseInt(body.raggioAzioneKm) || 10,
+      domicilioCoords: body.domicilioCoords ? JSON.parse(body.domicilioCoords) : undefined,
+      // Collaborazione
+      tipoCollaborazione: body.tipoCollaborazione || undefined,
+      partitaIva: body.partitaIva?.trim() || '',
+      regimeFiscale: body.regimeFiscale || undefined,
+      ordineAlbo: body.ordineAlbo?.trim() || '',
+      numeroAlbo: body.numeroAlbo?.trim() || '',
+      // Contratto
+      firmaContratto: body.firmaContratto,
+      dataFirmaContratto: body.dataFirma ? new Date(body.dataFirma) : new Date(),
+      luogoFirmaContratto: body.luogoFirma?.trim() || '',
+      // Documenti
+      documenti,
+    });
+
+    // Invia notifica email all'admin
+    await inviaEmailNotificaAdmin(user.name, user.email, user.professione || '');
+
+    return res.status(201).json({
+      pending: true,
+      message: 'Registrazione inviata con successo! Il contratto è stato firmato e i documenti caricati. La tua richiesta è in attesa di approvazione.',
+    });
+  } catch (error: any) {
+    console.error('Errore registrazione completa:', error);
+    return res.status(500).json({ message: 'Errore nella registrazione', error: error.message });
   }
 });
 
@@ -357,6 +474,37 @@ router.delete('/users/:userId', authenticateToken, authorizeRole('admin'), async
     return res.json({ message: 'Utente eliminato' });
   } catch (error) {
     return res.status(500).json({ message: 'Errore nell\'eliminazione', error });
+  }
+});
+
+// GET /users/:userId/details — dettagli completi utente per admin (con contratto e documenti)
+router.get('/users/:userId/details', authenticateToken, authorizeRole('admin'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'Utente non trovato' });
+    }
+    return res.json(user);
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore nel recupero dettagli', error });
+  }
+});
+
+// GET /documenti-registrazione/:path(*) — scarica documento (solo admin)
+router.get('/documenti-registrazione/:path(*)', authenticateToken, authorizeRole('admin'), async (req: AuthRequest, res: Response) => {
+  try {
+    const filePath = path.join(uploadsDir, req.params.path);
+    // Sicurezza: assicurati che il file sia dentro uploadsDir
+    if (!filePath.startsWith(uploadsDir)) {
+      return res.status(403).json({ message: 'Accesso negato' });
+    }
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'File non trovato' });
+    }
+    return res.sendFile(filePath);
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore nel download', error });
   }
 });
 

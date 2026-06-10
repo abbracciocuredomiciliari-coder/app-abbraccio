@@ -16,6 +16,30 @@ export interface IUser extends Document {
   // Per paziente_registrato: dati del paziente associato
   pazienteId?: string;
   telefono?: string;
+  // Dati anagrafici completi
+  codiceFiscale?: string;
+  dataNascita?: Date;
+  luogoNascita?: string;
+  indirizzoResidenza?: string;
+  pec?: string;
+  // Tipo collaborazione
+  tipoCollaborazione?: 'libero-professionista' | 'dipendente';
+  partitaIva?: string;
+  regimeFiscale?: 'forfettario' | 'ordinario';
+  // Dati albo
+  ordineAlbo?: string;
+  numeroAlbo?: string;
+  // Contratto firmato
+  firmaContratto?: string; // base64 firma
+  dataFirmaContratto?: Date;
+  luogoFirmaContratto?: string;
+  contrattoPdfUrl?: string; // URL al PDF generato
+  // Documenti allegati (riferimenti a file)
+  documenti?: {
+    assicurazione?: string; // path/url file
+    documentoIdentita?: string;
+    attestazioneQualifica?: string;
+  };
 }
 
 const userSchema = new Schema<IUser>(
@@ -47,6 +71,30 @@ const userSchema = new Schema<IUser>(
     resetPasswordExpires: { type: Date },
     pazienteId: { type: String, required: false },
     telefono: { type: String, trim: true },
+    // Dati anagrafici completi
+    codiceFiscale: { type: String, trim: true, uppercase: true },
+    dataNascita: { type: Date },
+    luogoNascita: { type: String, trim: true },
+    indirizzoResidenza: { type: String, trim: true },
+    pec: { type: String, trim: true, lowercase: true },
+    // Tipo collaborazione
+    tipoCollaborazione: { type: String, enum: ['libero-professionista', 'dipendente'] },
+    partitaIva: { type: String, trim: true },
+    regimeFiscale: { type: String, enum: ['forfettario', 'ordinario'] },
+    // Dati albo
+    ordineAlbo: { type: String, trim: true },
+    numeroAlbo: { type: String, trim: true },
+    // Contratto firmato
+    firmaContratto: { type: String }, // base64
+    dataFirmaContratto: { type: Date },
+    luogoFirmaContratto: { type: String, trim: true },
+    contrattoPdfUrl: { type: String, trim: true },
+    // Documenti allegati
+    documenti: {
+      assicurazione: { type: String, trim: true },
+      documentoIdentita: { type: String, trim: true },
+      attestazioneQualifica: { type: String, trim: true },
+    },
   },
   { timestamps: true }
 );
