@@ -156,12 +156,6 @@ function Register() {
           return false;
         }
         return true;
-      case 'documenti':
-        if (!assicurazioneFile || !documentoIdentitaFile) {
-          setError('Allega almeno assicurazione professionale e documento d\'identità');
-          return false;
-        }
-        return true;
       default:
         return true;
     }
@@ -169,13 +163,13 @@ function Register() {
 
   const nextStep = () => {
     if (!validaStep(step)) return;
-    const steps: Step[] = ['anagrafica', 'zona', 'tipo-collab', 'contratto', 'documenti', 'riepilogo'];
+    const steps: Step[] = ['anagrafica', 'zona', 'tipo-collab', 'contratto', 'riepilogo'];
     const idx = steps.indexOf(step);
     if (idx < steps.length - 1) setStep(steps[idx + 1]);
   };
 
   const prevStep = () => {
-    const steps: Step[] = ['anagrafica', 'zona', 'tipo-collab', 'contratto', 'documenti', 'riepilogo'];
+    const steps: Step[] = ['anagrafica', 'zona', 'tipo-collab', 'contratto', 'riepilogo'];
     const idx = steps.indexOf(step);
     if (idx > 0) setStep(steps[idx - 1]);
   };
@@ -418,34 +412,7 @@ function Register() {
           </div>
         )}
 
-        {/* STEP 5: Documenti */}
-        {step === 'documenti' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', color: '#1e3a5f' }}>📎 Documenti richiesti</h3>
-            <div style={{ background: '#fffbeb', border: '1px solid #f59e0b', borderRadius: '8px', padding: '10px', fontSize: '0.8rem', color: '#92400e' }}>
-              <strong>Obbligatori:</strong> Assicurazione RC professionale, Documento d'identità.<br />
-              <strong>Opzionale:</strong> Attestazione qualifica. Formati: PDF, JPG, PNG (max 10MB).
-            </div>
-            {[ 
-              { l: 'Assicurazione RC *', f: assicurazioneFile, s: setAssicurazioneFile },
-              { l: 'Documento ID *', f: documentoIdentitaFile, s: setDocumentoIdentitaFile },
-              { l: 'Attestazione qualifica', f: attestazioneQualificaFile, s: setAttestazioneQualificaFile }
-            ].map((it, i) => (
-              <div key={i} style={{ border: `2px ${it.f ? 'solid #10b981' : 'dashed #d1d5db'}`, borderRadius: '8px', padding: '12px' }}>
-                <label style={{ cursor: 'pointer' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <Upload size={20} color={it.f ? '#10b981' : '#6b7280'} />
-                    <span style={{ fontWeight: 600, color: it.f ? '#166534' : '#374151' }}>{it.f ? `✓ ${it.f.name}` : it.l}</span>
-                  </div>
-                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f && f.size <= 10*1024*1024) it.s(f); else setError('Max 10MB'); }} />
-                </label>
-                {it.f && <button type="button" onClick={() => it.s(null)} style={{ fontSize: '0.75rem', color: '#dc2626', background: 'none', border: 'none' }}>Rimuovi</button>}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* STEP 6: Riepilogo */}
+        {/* STEP 5: Riepilogo */}
         {step === 'riepilogo' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', color: '#1e3a5f' }}>✅ Riepilogo</h3>
@@ -455,7 +422,6 @@ function Register() {
               <p><strong>Prof:</strong> {professione}</p>
               <p><strong>Tipo:</strong> {tipoCollaborazione === 'libero-professionista' ? 'Libero Prof.' : 'Dipendente'}{tipoCollaborazione === 'libero-professionista' && ` (P.IVA: ${partitaIva})`}</p>
               <p><strong>Contratto:</strong> {firmaContratto ? '✓ Firmato' : '✗ Non firmato'}</p>
-              <p><strong>Documenti:</strong> Assic.{assicurazioneFile ? '✓' : '✗'} ID{documentoIdentitaFile ? '✓' : '✗'}{attestazioneQualificaFile && ' Att.'}</p>
             </div>
             <Button type="submit" loading={loading} variant="primary" style={{ width: '100%' }}>
               {loading ? 'Invio in corso...' : '✓ Invia richiesta registrazione'}
