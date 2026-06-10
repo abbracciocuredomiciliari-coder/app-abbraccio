@@ -70,7 +70,12 @@ router.post('/pubblica', async (req: Request, res: Response) => {
       }],
     });
 
-    await notificaAdminNuovaRichiesta(richiesta);
+    // Notifica admin (non blocca se fallisce)
+    try {
+      await notificaAdminNuovaRichiesta(richiesta);
+    } catch (emailError) {
+      console.error('Errore invio notifica email:', emailError);
+    }
 
     return res.status(201).json({ message: 'Richiesta inviata con successo', id: richiesta._id });
   } catch (error: any) {
