@@ -22,13 +22,16 @@ services:
         sync: false   # da impostare manualmente su Render dashboard
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # FRONTEND - Static Site (React + Vite)
+  # FRONTEND - Web Service con Express (per SPA routing)
   # ═══════════════════════════════════════════════════════════════════════════
-  - type: static
+  - type: web
     name: app-abbraccio-frontend
+    runtime: node
     rootDir: frontend
     buildCommand: npm install && npm run build
-    publishDir: dist
+    startCommand: npm run start
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: VITE_API_BASE_URL
         value: https://app-abbraccio.onrender.com/api  # URL del backend su Render
