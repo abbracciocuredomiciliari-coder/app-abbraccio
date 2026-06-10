@@ -22,9 +22,9 @@ app.use(express.static(distPath));
 app.get('*', (req, res) => {
   const indexPath = path.join(distPath, 'index.html');
   if (!fs.existsSync(indexPath)) {
-    return res.status(500).send('index.html non trovato');
+    return res.status(500).send('index.html non trovato in: ' + indexPath);
   }
-  res.sendFile(indexPath);
+  res.sendFile('index.html', { root: distPath });
 });
 
 app.listen(PORT, () => {
