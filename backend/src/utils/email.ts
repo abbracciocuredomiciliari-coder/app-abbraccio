@@ -71,6 +71,19 @@ async function invia(to: string, subject: string, html: string): Promise<boolean
   }
 }
 
+// ═════════════════════════════════════════════════════════════════════════════
+// Funzione generica per invio email (wrapper pubblico della funzione invia)
+// ═════════════════════════════════════════════════════════════════════════════
+export async function inviaEmail(options: {
+  to: string;
+  subject: string;
+  html: string;
+  from?: string;
+}): Promise<boolean> {
+  // Per ora ignora il campo from (usa default), in futuro può essere esteso
+  return invia(options.to, options.subject, options.html);
+}
+
 // ─── Notifica admin — nuova registrazione ─────────────────────────────────────
 export async function inviaEmailNotificaAdmin(
   nomeUtente: string,

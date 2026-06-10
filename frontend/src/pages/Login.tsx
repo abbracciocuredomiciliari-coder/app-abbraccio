@@ -174,7 +174,26 @@ function Login() {
             Registrati
           </a>
         </p>
-        <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '14px', textAlign: 'center' }}>
+        <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ fontSize: '0.8rem', color: '#6b7280', textAlign: 'center', marginBottom: '4px' }}>
+            👤 Paziente o caregiver? Accedi qui:
+          </div>
+          <a
+            href="/richiesta-assistenza"
+            style={{
+              display: 'inline-block',
+              background: '#1e3a5f',
+              color: 'white',
+              textDecoration: 'none',
+              fontWeight: '700',
+              fontSize: '0.9rem',
+              padding: '12px 20px',
+              borderRadius: '10px',
+              textAlign: 'center',
+            }}
+          >
+            🩺 Richiedi assistenza domiciliare
+          </a>
           <a
             href="/richiesta-servizio"
             style={{
@@ -187,12 +206,10 @@ function Login() {
               fontSize: '0.9rem',
               padding: '10px 20px',
               borderRadius: '10px',
-              width: '100%',
-              boxSizing: 'border-box',
+              textAlign: 'center',
             }}
           >
-            🏥 Sei un paziente o caregiver?<br />
-            <span style={{ fontSize: '0.82rem', fontWeight: '400', color: '#4b6a9b' }}>Richiedi un servizio a domicilio →</span>
+            📅 Prenota un singolo servizio
           </a>
         </div>
       </form>
