@@ -81,6 +81,8 @@ import {
   ArrowLeftRight,
   Syringe,
   Map,
+  Home,
+  CalendarCheck,
 } from 'lucide-react';
 
 // Ruoli con accesso completo (admin/coordinamento/direzione)
@@ -173,18 +175,31 @@ function AppShell() {
           )}
         </div>
         <nav onClick={() => setMenuOpen(false)}>
-          {/* Link non autenticati */}
+          {/* ===== MENU PUBBLICO (non autenticati) ===== */}
           {!user && (
-            <Link to="/" className={isActive('/') ? 'active' : ''}>
-              <LayoutDashboard size={18} />
-              Login
-            </Link>
-          )}
-          {!user && (
-            <Link to="/register" className={isActive('/register') ? 'active' : ''}>
-              <UserPlus size={18} />
-              Registrati
-            </Link>
+            <>
+              <span className="nav-section-label">Accesso</span>
+              <Link to="/" className={isActive('/') ? 'active' : ''}>
+                <LayoutDashboard size={18} />
+                Login
+              </Link>
+
+              <span className="nav-section-label">Pazienti & Caregiver</span>
+              <Link to="/richiesta-assistenza" className={isActive('/richiesta-assistenza') ? 'active' : ''}>
+                <Heart size={18} />
+                Richiedi assistenza domiciliare
+              </Link>
+              <Link to="/richiesta-servizio" className={isActive('/richiesta-servizio') ? 'active' : ''}>
+                <CalendarCheck size={18} />
+                Prenota singolo servizio
+              </Link>
+
+              <span className="nav-section-label">Operatori</span>
+              <Link to="/register" className={isActive('/register') ? 'active' : ''}>
+                <UserPlus size={18} />
+                Registrazione nuovo operatore
+              </Link>
+            </>
           )}
 
           {/* ===== MENU PAZIENTE/CAREGIVER REGISTRATO ===== */}
