@@ -18,6 +18,10 @@ const TIPI_SERVIZIO = [
     tipi: ['ECG','Holter ECG','Holter pressorio','Glicemia capillare','EGA','Spirometria','Ecocardiogramma','Polisonnografia','Titolazione CPAP','Altro'] },
   { value: 'prestazione', label: 'Prestazione Infermieristica', emoji: '🏥', color: '#0369a1', bg: '#eff6ff', Icon: Activity,
     tipi: ['Medicazione','Somministrazione farmaci','Misurazione parametri vitali','Cateterismo','Gestione stomia','Prelievo arterioso','Altro'] },
+  { value: 'riabilitazione', label: 'Riabilitazione', emoji: '🏋️', color: '#16a34a', bg: '#dcfce7', Icon: Activity,
+    tipi: ['Fisioterapia','Logopedia','Ergoterapia','Neuro-riabilitazione','Riabilitazione respiratoria','Altro'] },
+  { value: 'medico', label: 'Visita Medica', emoji: '👨‍⚕️', color: '#2563eb', bg: '#dbeafe', Icon: HeartPulse,
+    tipi: ['Visita generale','Visita specialista','Consulenza geriatrica','Valutazione clinica','Prescrizione terapia','Altro'] },
 ];
 
 const PRIORITA = [
