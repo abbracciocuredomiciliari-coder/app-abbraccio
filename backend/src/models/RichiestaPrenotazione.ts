@@ -57,6 +57,7 @@ export interface IRichiestaPrenotazione extends Document {
 
 const richiestaPrenotazioneSchema = new Schema<IRichiestaPrenotazione>(
   {
+    // richiedenteUserId opzionale per richieste pubbliche (non autenticate)
     richiedenteUserId: { type: Schema.Types.ObjectId, ref: 'User', required: false },
     richiedenteNome: { type: String, required: true, trim: true },
     richiedenteEmail: { type: String, required: true, trim: true, lowercase: true },
