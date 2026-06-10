@@ -467,7 +467,7 @@ function Register() {
         {step !== 'riepilogo' && (
           <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
             {step !== 'anagrafica' && (
-              <Button type="button" onClick={prevStep} variant="outline" style={{ flex: 1 }}>
+              <Button type="button" onClick={prevStep} variant="secondary" style={{ flex: 1 }}>
                 <ArrowLeft size={16} /> Indietro
               </Button>
             )}
