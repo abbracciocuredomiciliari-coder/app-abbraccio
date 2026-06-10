@@ -42,6 +42,13 @@ export interface IWorkPlan extends Document {
   costoPrestazione?: number;
   // Tariffa da fatturare all'ASL - solo pazienti in CONVENZIONE
   tariffaAsl?: number;
+  // Nuove macro-categorie e fabbisogni (formato semplificato admin)
+  macroCategorie?: ('infermieristico' | 'riabilitativo' | 'medico_specialistiche')[];
+  fabbisogni?: {
+    infermieristico?: string[];
+    riabilitativo?: string[];
+    medico_specialistiche?: string[];
+  };
 }
 
 const workPlanSchema = new Schema<IWorkPlan>(
@@ -86,6 +93,12 @@ const workPlanSchema = new Schema<IWorkPlan>(
     compensoPagato: { type: Boolean, default: false },
     costoPrestazione: { type: Number, default: 0 },
     tariffaAsl: { type: Number, default: 0 },
+    macroCategorie: [{ type: String, enum: ['infermieristico', 'riabilitativo', 'medico_specialistiche'] }],
+    fabbisogni: {
+      infermieristico: [String],
+      riabilitativo: [String],
+      medico_specialistiche: [String],
+    },
     statoAccettazione: { type: String, enum: ['in_attesa', 'accettato', 'rifiutato'], default: 'in_attesa' },
     dataAccettazione: { type: Date },
     motivoRifiuto: { type: String, trim: true },

@@ -196,6 +196,60 @@ const CATEGORIA_LABELS: Record<CatPrestazione, { label: string; color: string; b
 
 const CATEGORIE_ORDINE: CatPrestazione[] = ['infermieristica','riabilitativa','medica','assistenziale','sociale'];
 
+// ═════════════════════════════════════════════════════════════════════════════
+// FABBISOGNI per le 3 macro-categorie admin (Infermieristico, Riabilitativo, Medico/specialistiche)
+// ═════════════════════════════════════════════════════════════════════════════
+const FABBISOGNI_OPTIONS = {
+  infermieristico: [
+    { value: 'medicazioni', label: 'Medicazioni' },
+    { value: 'prelievi', label: 'Prelievi ematici' },
+    { value: 'catetere', label: 'Gestione catetere vescicale' },
+    { value: 'picc', label: 'Gestione PICC/Port-a-Cath' },
+    { value: 'peg', label: 'Gestione PEG (sonda enterale)' },
+    { value: 'tracheo', label: 'Gestione tracheostomia' },
+    { value: 'ossigeno', label: 'Gestione ossigenoterapia' },
+    { value: 'parametri', label: 'Controllo parametri vitali' },
+    { value: 'insulina', label: 'Somministrazione insulina' },
+    { value: 'terapia', label: 'Terapia farmacologica' },
+    { value: 'prevenzione', label: 'Prevenzione lesioni da decubito' },
+    { value: 'igiene', label: 'Assistenza igienica' },
+    { value: 'mobilizzazione', label: 'Mobilizzazione e cambio postura' },
+    { value: 'altro', label: 'Altro (specificare in note)' },
+  ],
+  riabilitativo: [
+    { value: 'fisio_motorio', label: 'Fisioterapia motoria' },
+    { value: 'fisio_respiratoria', label: 'Fisioterapia respiratoria' },
+    { value: 'riabilitazione', label: 'Riabilitazione post-chirurgica' },
+    { value: 'riabilitazione_ictus', label: 'Riabilitazione post-ictus' },
+    { value: 'deambulazione', label: 'Training deambulazione' },
+    { value: 'equilibrio', label: 'Rieducazione equilibrio' },
+    { value: 'logopedia', label: 'Logopedia' },
+    { value: 'terapia_occupazionale', label: 'Terapia occupazionale' },
+    { value: 'tens', label: 'TENS / elettroterapia' },
+    { value: 'altro', label: 'Altro (specificare in note)' },
+  ],
+  medico_specialistiche: [
+    { value: 'visita_medica', label: 'Visita medica domiciliare' },
+    { value: 'ecg', label: 'ECG' },
+    { value: 'ecografia', label: 'Ecografia' },
+    { value: 'rx', label: 'Rx domiciliare' },
+    { value: 'specialistica_cardio', label: 'Visita specialistica cardiologica' },
+    { value: 'specialistica_neuro', label: 'Visita specialistica neurologica' },
+    { value: 'specialistica_gm', label: 'Visita specialistica geriatrica' },
+    { value: 'specialistica_pneumo', label: 'Visita specialistica pneumologica' },
+    { value: 'wound_care', label: 'Wound care specialistica' },
+    { value: 'valutazione_pai', label: 'Valutazione PAI' },
+    { value: 'piano_terapeutico', label: 'Piano terapeutico ADI' },
+    { value: 'altro', label: 'Altro (specificare in note)' },
+  ],
+};
+
+const MACRO_CATEGORIE_LABELS: Record<string, { label: string; color: string; bg: string; icon: any }> = {
+  infermieristico: { label: '💉 Infermieristico', color: '#2563eb', bg: '#eff6ff', icon: null },
+  riabilitativo: { label: '🏃 Riabilitativo', color: '#16a34a', bg: '#f0fdf4', icon: null },
+  medico_specialistiche: { label: '🩺 Medico e Specialistiche', color: '#7c3aed', bg: '#f5f3ff', icon: null },
+};
+
 // retrocompatibilità per la lista esistente
 const prestazioneCategories = [
   { value: 'esame_ematico', label: 'Esame Ematico', icon: TestTube2, color: '#ef4444' },
@@ -269,6 +323,21 @@ function WorkPlan() {
   // Multi-prestazione con operatore per ciascuna
   const [prestazioniForm, setPrestazioniForm] = useState<PrestazioneForm[]>([]);
   const [catFiltro, setCatFiltro] = useState<CatPrestazione | ''>('');
+
+  // Nuove 3 macro-categorie per admin (Infermieristico, Riabilitativo, Medico/specialistiche)
+  type MacroCategoria = 'infermieristico' | 'riabilitativo' | 'medico_specialistiche';
+  const [macroCats, setMacroCats] = useState<Record<MacroCategoria, boolean>>({
+    infermieristico: false,
+    riabilitativo: false,
+    medico_specialistiche: false,
+  });
+  // Fabbisogni selezionati per ogni macro-categoria
+  const [fabbisogni, setFabbisogni] = useState<Record<MacroCategoria, string[]>>({
+    infermieristico: [],
+    riabilitativo: [],
+    medico_specialistiche: [],
+  });
+
   // Giorni settimana: array di {giorno, attivo, accessiAlGiorno, minutiPerAccesso}
   const [giorniForm, setGiorniForm] = useState([
     { giorno: 1, label: 'Lun', attivo: false, accessiAlGiorno: 1, minutiPerAccesso: 60 },
@@ -331,15 +400,27 @@ function WorkPlan() {
         setError('Compila il campo Attività / Descrizione.');
         return;
       }
-      if (prestazioniForm.length === 0) {
-        setError('Aggiungi almeno una prestazione.');
+
+      // Validazione macro-categorie e fabbisogni
+      const macroSelezionate = (Object.keys(macroCats) as MacroCategoria[]).filter(c => macroCats[c]);
+      if (macroSelezionate.length === 0) {
+        setError('Seleziona almeno una categoria assistenziale.');
         return;
       }
-      const prestazioniValide = prestazioniForm.filter(p => p.tipoPrestazione && p.staff);
-      if (prestazioniValide.length !== prestazioniForm.length) {
-        setError('Ogni prestazione deve avere tipo e operatore assegnato.');
+      const fabbisogniTotali = fabbisogni.infermieristico.length + fabbisogni.riabilitativo.length + fabbisogni.medico_specialistiche.length;
+      if (fabbisogniTotali === 0) {
+        setError('Seleziona almeno un fabbisogno per categoria.');
         return;
       }
+
+      // Verifica che ogni categoria selezionata abbia almeno un fabbisogno
+      for (const cat of macroSelezionate) {
+        if (fabbisogni[cat].length === 0) {
+          setError(`Seleziona almeno un fabbisogno per la categoria ${MACRO_CATEGORIE_LABELS[cat].label}`);
+          return;
+        }
+      }
+
       const giorniAttivi = giorniForm
         .filter(g => g.attivo)
         .map(g => ({
@@ -348,19 +429,29 @@ function WorkPlan() {
           minutiPerAccesso: g.minutiPerAccesso,
         }));
 
-      const prestDaInviare = prestazioniValide.map(p => ({
-        tipoPrestazione: p.tipoPrestazione,
-        staff: p.staff,
-        nota: p.note || undefined,
-        categoria: p.categoria,
-      }));
+      // Costruisci lista categorie per retrocompatibilità
+      const allFabbisogniLabels: string[] = [];
+      macroSelezionate.forEach(cat => {
+        const labels = fabbisogni[cat].map(f => {
+          const opt = FABBISOGNI_OPTIONS[cat].find(o => o.value === f);
+          return opt ? `${MACRO_CATEGORIE_LABELS[cat].label.split(' ')[1]}: ${opt.label}` : f;
+        });
+        allFabbisogniLabels.push(...labels);
+      });
 
       await api.post('/workplan', {
         type: activeTab,
-        prestazioni: prestDaInviare,
-        categories: prestazioniValide.map(p => p.tipoPrestazione), // retrocompatibilità
+        // Nuovo formato con macro-categorie e fabbisogni
+        macroCategorie: macroSelezionate,
+        fabbisogni: {
+          infermieristico: fabbisogni.infermieristico,
+          riabilitativo: fabbisogni.riabilitativo,
+          medico_specialistiche: fabbisogni.medico_specialistiche,
+        },
+        // Retrocompatibilità
+        categories: allFabbisogniLabels,
         patient,
-        staff: staff || prestazioniValide[0].staff, // principale = primo operatore
+        staff: staff || undefined,
         task,
         date,
         dataFine: dataFine || undefined,
@@ -376,6 +467,9 @@ function WorkPlan() {
       setTask(''); setDate(''); setDataFine(''); setTime(''); setDuration(60);
       setPatient(''); setStaff(''); setCategories([]); setNotes('');
       setPrestazioniForm([]); setCatFiltro('');
+      // Reset nuove macro-categorie e fabbisogni
+      setMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false });
+      setFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] });
       setTipoCompenso('nessuno'); setTariffa(0); setCostoPrestazione(0);
       setGiorniForm(prev => prev.map(g => ({ ...g, attivo: false, accessiAlGiorno: 1, minutiPerAccesso: 60 })));
       setSuccess('Incarico aggiunto con successo!');
@@ -750,100 +844,119 @@ function WorkPlan() {
               <input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
             </label>
 
-            {/* ── Sezione Prestazioni Multi-Operatore ── */}
+            {/* ── Sezione Categorie e Fabbisogni ── */}
             <div style={{ borderTop: '1px solid var(--gray-200)', paddingTop: '14px', marginTop: '4px' }}>
-              <div style={{ fontWeight: '700', fontSize: '0.92rem', color: '#1e4d8c', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>🩺 Prestazioni del piano *</span>
-                <span style={{ fontWeight: '400', fontSize: '0.78rem', color: '#6b7280' }}>{prestazioniForm.length} aggiunta/e</span>
+              <div style={{ fontWeight: '700', fontSize: '0.92rem', color: '#1e4d8c', marginBottom: '10px' }}>
+                🩺 Categorie assistenziali * (seleziona una o più)
               </div>
 
-              {/* Filtro per categoria */}
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                <button type="button" onClick={() => setCatFiltro('')}
-                  style={{ padding: '4px 10px', borderRadius: '20px', border: `1px solid ${catFiltro === '' ? '#1e4d8c' : '#e5e7eb'}`, background: catFiltro === '' ? '#1e4d8c' : 'white', color: catFiltro === '' ? 'white' : '#374151', fontSize: '0.78rem', cursor: 'pointer' }}>
-                  Tutte
-                </button>
-                {CATEGORIE_ORDINE.map(cat => {
-                  const info = CATEGORIA_LABELS[cat];
+              {/* 3 Macro-categorie toggle */}
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                {(Object.keys(MACRO_CATEGORIE_LABELS) as MacroCategoria[]).map(cat => {
+                  const info = MACRO_CATEGORIE_LABELS[cat];
+                  const selected = macroCats[cat];
                   return (
-                    <button key={cat} type="button" onClick={() => setCatFiltro(cat === catFiltro ? '' : cat)}
-                      style={{ padding: '4px 10px', borderRadius: '20px', border: `1px solid ${catFiltro === cat ? info.color : '#e5e7eb'}`, background: catFiltro === cat ? info.color : 'white', color: catFiltro === cat ? 'white' : info.color, fontSize: '0.78rem', fontWeight: '600', cursor: 'pointer' }}>
-                      {info.label}
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => {
+                        setMacroCats(prev => ({ ...prev, [cat]: !prev[cat] }));
+                        if (macroCats[cat]) {
+                          // Se deseleziono, svuoto i fabbisogni di questa categoria
+                          setFabbisogni(prev => ({ ...prev, [cat]: [] }));
+                        }
+                      }}
+                      style={{
+                        flex: '1 1 30%',
+                        minWidth: '140px',
+                        padding: '12px 16px',
+                        borderRadius: '10px',
+                        border: `2px solid ${selected ? info.color : '#e5e7eb'}`,
+                        background: selected ? info.bg : 'white',
+                        color: selected ? info.color : '#374151',
+                        fontWeight: selected ? '700' : '500',
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <span style={{ fontSize: '1.1rem' }}>{info.label.split(' ')[0]}</span>
+                      <span>{info.label.split(' ').slice(1).join(' ')}</span>
+                      {selected && <span style={{ marginLeft: '4px' }}>✓</span>}
                     </button>
                   );
                 })}
               </div>
 
-              {/* Catalogo prestazioni — click per aggiungere */}
-              <div style={{ maxHeight: '240px', overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', background: '#f8fafc', marginBottom: '12px' }}>
-                {CATEGORIE_ORDINE.filter(c => !catFiltro || c === catFiltro).map(cat => {
-                  const info = CATEGORIA_LABELS[cat];
-                  const prests = CATALOGO_PRESTAZIONI.filter(p => p.categoria === cat);
-                  return (
-                    <div key={cat} style={{ marginBottom: '8px' }}>
-                      <div style={{ fontSize: '0.74rem', fontWeight: '700', color: info.color, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px', padding: '2px 4px', background: info.bg, borderRadius: '4px' }}>
-                        {info.label}
-                      </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                        {prests.map(p => {
-                          const giaAggiunta = prestazioniForm.some(f => f.tipoPrestazione === p.value);
-                          return (
-                            <button key={p.value} type="button"
-                              onClick={() => {
-                                if (giaAggiunta) return;
-                                setPrestazioniForm(prev => [...prev, { id: Math.random().toString(36).slice(2), categoria: cat, tipoPrestazione: p.value, staff: '', note: '' }]);
-                              }}
-                              style={{ padding: '4px 8px', borderRadius: '6px', border: `1px solid ${giaAggiunta ? info.color : '#e5e7eb'}`, background: giaAggiunta ? info.bg : 'white', color: giaAggiunta ? info.color : '#374151', fontSize: '0.78rem', cursor: giaAggiunta ? 'default' : 'pointer', fontWeight: giaAggiunta ? '700' : '400' }}>
-                              {giaAggiunta ? '✓ ' : '+ '}{p.label}
-                            </button>
-                          );
-                        })}
-                      </div>
+              {/* Fabbisogni per ogni categoria selezionata */}
+              {(Object.keys(MACRO_CATEGORIE_LABELS) as MacroCategoria[]).filter(cat => macroCats[cat]).map(cat => {
+                const info = MACRO_CATEGORIE_LABELS[cat];
+                const options = FABBISOGNI_OPTIONS[cat];
+                const selezionati = fabbisogni[cat];
+                return (
+                  <div key={cat} style={{ marginBottom: '16px', padding: '12px', border: `1px solid ${info.color}40`, borderRadius: '10px', background: info.bg }}>
+                    <div style={{ fontWeight: '700', fontSize: '0.85rem', color: info.color, marginBottom: '10px' }}>
+                      {info.label} — Seleziona fabbisogni:
                     </div>
-                  );
-                })}
-              </div>
-
-              {/* Lista prestazioni aggiunte con operatore assegnato */}
-              {prestazioniForm.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {prestazioniForm.map((pf, idx) => {
-                    const catalogoItem = CATALOGO_PRESTAZIONI.find(c => c.value === pf.tipoPrestazione);
-                    const info = CATEGORIA_LABELS[pf.categoria];
-                    return (
-                      <div key={pf.id} style={{ border: `1px solid ${info.color}40`, borderLeft: `4px solid ${info.color}`, borderRadius: '8px', padding: '10px 12px', background: info.bg }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
-                          <div>
-                            <span style={{ fontSize: '0.76rem', color: info.color, fontWeight: '700', textTransform: 'uppercase' }}>{info.label}</span>
-                            <div style={{ fontWeight: '600', fontSize: '0.88rem', color: '#1e3a5f' }}>{catalogoItem?.label || pf.tipoPrestazione}</div>
-                          </div>
-                          <button type="button" onClick={() => setPrestazioniForm(prev => prev.filter((_, i) => i !== idx))}
-                            style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', padding: '2px', flexShrink: 0 }}>
-                            <X size={16} />
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {options.map(opt => {
+                        const selected = selezionati.includes(opt.value);
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => {
+                              setFabbisogni(prev => {
+                                const current = prev[cat];
+                                const nuovi = selected
+                                  ? current.filter(v => v !== opt.value)
+                                  : [...current, opt.value];
+                                return { ...prev, [cat]: nuovi };
+                              });
+                            }}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: '6px',
+                              border: `1px solid ${selected ? info.color : '#d1d5db'}`,
+                              background: selected ? info.color : 'white',
+                              color: selected ? 'white' : '#374151',
+                              fontWeight: selected ? '600' : '400',
+                              fontSize: '0.82rem',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {selected ? '✓ ' : '+ '}{opt.label}
                           </button>
-                        </div>
-                        <select
-                          value={pf.staff}
-                          onChange={e => setPrestazioniForm(prev => prev.map((p, i) => i === idx ? { ...p, staff: e.target.value } : p))}
-                          style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: `1px solid ${pf.staff ? '#d1d5db' : '#fca5a5'}`, fontSize: '0.85rem', background: 'white', marginBottom: '6px' }}
-                        >
-                          <option value="">— Seleziona operatore *</option>
-                          {staffMembers.filter(s => s.active).map(s => (
-                            <option key={s._id} value={s._id}>{s.firstName} {s.lastName} — {s.role}</option>
-                          ))}
-                        </select>
-                        <input type="text" value={pf.note}
-                          onChange={e => setPrestazioniForm(prev => prev.map((p, i) => i === idx ? { ...p, note: e.target.value } : p))}
-                          placeholder="Note specifiche (facoltativo)"
-                          style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.83rem', boxSizing: 'border-box' }} />
+                        );
+                      })}
+                    </div>
+                    {selezionati.length === 0 && (
+                      <div style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: '6px' }}>
+                        Seleziona almeno un fabbisogno per questa categoria
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-              {prestazioniForm.length === 0 && (
-                <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '0.85rem', padding: '12px', border: '1px dashed #d1d5db', borderRadius: '8px' }}>
-                  ↑ Clicca su una prestazione per aggiungerla al piano
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Riepilogo selezione */}
+              {((Object.keys(macroCats) as MacroCategoria[]).some(c => macroCats[c]) || fabbisogni.infermieristico.length + fabbisogni.riabilitativo.length + fabbisogni.medico_specialistiche.length > 0) && (
+                <div style={{ marginTop: '12px', padding: '10px', background: '#f0f9ff', borderRadius: '8px', fontSize: '0.85rem' }}>
+                  <strong>Riepilogo:</strong>
+                  <ul style={{ margin: '6px 0 0', paddingLeft: '18px' }}>
+                    {macroCats.infermieristico && fabbisogni.infermieristico.length > 0 && (
+                      <li>💉 Infermieristico: {fabbisogni.infermieristico.map(f => FABBISOGNI_OPTIONS.infermieristico.find(o => o.value === f)?.label).join(', ')}</li>
+                    )}
+                    {macroCats.riabilitativo && fabbisogni.riabilitativo.length > 0 && (
+                      <li>🏃 Riabilitativo: {fabbisogni.riabilitativo.map(f => FABBISOGNI_OPTIONS.riabilitativo.find(o => o.value === f)?.label).join(', ')}</li>
+                    )}
+                    {macroCats.medico_specialistiche && fabbisogni.medico_specialistiche.length > 0 && (
+                      <li>🩺 Medico/specialistiche: {fabbisogni.medico_specialistiche.map(f => FABBISOGNI_OPTIONS.medico_specialistiche.find(o => o.value === f)?.label).join(', ')}</li>
+                    )}
+                  </ul>
                 </div>
               )}
             </div>
@@ -995,9 +1108,15 @@ function WorkPlan() {
               {filteredWorkplans.map((item) => {
                 const itemPrestazioni = (item as any).prestazioni as Array<{ tipoPrestazione: string; categoria: string; staff: any; note?: string }> | undefined;
                 const hasPrestazioni = itemPrestazioni && itemPrestazioni.length > 0;
-                // Colore bordo: prima categoria delle prestazioni o fallback
-                const primaCategoria = hasPrestazioni ? CATEGORIA_LABELS[itemPrestazioni[0].categoria as CatPrestazione] : null;
-                const borderColor = primaCategoria?.color || '#6b7280';
+                const macroCats = (item as any).macroCategorie as string[] | undefined;
+                const hasMacroCats = macroCats && macroCats.length > 0;
+                // Colore bordo: prima macro-categoria, o prima categoria prestazioni, o fallback
+                let borderColor = '#6b7280';
+                if (hasMacroCats && macroCats[0]) {
+                  borderColor = MACRO_CATEGORIE_LABELS[macroCats[0]]?.color || '#6b7280';
+                } else if (hasPrestazioni) {
+                  borderColor = CATEGORIA_LABELS[itemPrestazioni[0].categoria as CatPrestazione]?.color || '#6b7280';
+                }
                 return (
                   <div key={item._id} style={{ display: 'flex', gap: '12px', padding: '14px', border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-lg)', backgroundColor: 'white', borderLeft: `4px solid ${borderColor}`, opacity: item.status === 'completed' ? 0.75 : 1 }}>
                     <div style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-md)', backgroundColor: `${borderColor}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.3rem' }}>
@@ -1018,8 +1137,30 @@ function WorkPlan() {
                       </div>
                       <p style={{ margin: '0 0 6px', fontSize: '0.9rem', color: 'var(--gray-700)', fontWeight: '600' }}>{item.task}</p>
 
-                      {/* Prestazioni con operatori */}
-                      {hasPrestazioni ? (
+                      {/* Macro-categorie e fabbisogni (nuovo formato) */}
+                      {((item as any).macroCategorie?.length > 0 || (item as any).fabbisogni) ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '6px' }}>
+                          {((item as any).macroCategorie as string[] || []).map((macroCat, midx) => {
+                            const fabbs = ((item as any).fabbisogni?.[macroCat as keyof typeof FABBISOGNI_OPTIONS] as string[]) || [];
+                            const macroInfo = MACRO_CATEGORIE_LABELS[macroCat];
+                            return (
+                              <div key={midx} style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '0.7rem', padding: '2px 8px', background: macroInfo?.bg || '#f3f4f6', color: macroInfo?.color || '#374151', borderRadius: '10px', fontWeight: '700', border: `1px solid ${macroInfo?.color || '#e5e7eb'}40` }}>
+                                  {macroInfo?.label || macroCat}
+                                </span>
+                                {fabbs.length > 0 && (
+                                  <span style={{ fontSize: '0.8rem', color: '#1e3a5f' }}>
+                                    {fabbs.map(f => {
+                                      const opt = FABBISOGNI_OPTIONS[macroCat as keyof typeof FABBISOGNI_OPTIONS]?.find(o => o.value === f);
+                                      return opt?.label || f;
+                                    }).join(', ')}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : hasPrestazioni ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '6px' }}>
                           {itemPrestazioni!.map((prest, pidx) => {
                             const catInfo = CATEGORIA_LABELS[prest.categoria as CatPrestazione];
