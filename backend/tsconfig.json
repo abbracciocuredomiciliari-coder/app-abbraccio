@@ -8,7 +8,7 @@
     "strict": false,
     "noImplicitAny": false,
     "strictNullChecks": false,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
