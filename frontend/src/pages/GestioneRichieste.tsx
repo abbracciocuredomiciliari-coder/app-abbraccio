@@ -177,10 +177,15 @@ export default function GestioneRichieste() {
     }
   };
 
-  // Approve request and create work order
-  const approvaRichiesta = async (id: string, data: any) => {
+  // Approva richiesta e crea appuntamento (usa endpoint unificato /gestisci)
+  const approvaRichiesta = async (id: string, data: { dataConfermata: string; orarioConfermato: string }) => {
     try {
-      await api.patch(`/richieste-prenotazioni/${id}/approva`, data);
+      await api.patch(`/richieste-prenotazioni/${id}/gestisci`, {
+        stato: 'confermata',
+        dataConfermata: data.dataConfermata,
+        orarioConfermato: data.orarioConfermato,
+        creaAppuntamento: true,
+      });
       await caricaDati();
       alert('Richiesta approvata e incarico creato');
     } catch (err: any) {
@@ -188,10 +193,13 @@ export default function GestioneRichieste() {
     }
   };
 
-  // Reject request
+  // Rifiuta richiesta (usa endpoint unificato /gestisci)
   const rifiutaRichiesta = async (id: string, motivo?: string) => {
     try {
-      await api.patch(`/richieste-prenotazioni/${id}/rifiuta`, { motivoRifiuto: motivo });
+      await api.patch(`/richieste-prenotazioni/${id}/gestisci`, {
+        stato: 'rifiutata',
+        noteAdmin: motivo || 'Richiesta rifiutata',
+      });
       await caricaDati();
       alert('Richiesta rifiutata');
     } catch (err: any) {
