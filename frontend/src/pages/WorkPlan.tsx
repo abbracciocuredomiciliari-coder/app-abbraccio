@@ -561,6 +561,86 @@ function WorkPlan() {
     }
   };
 
+  const visualizzaCartellaClinica = async (item: WorkPlanItem) => {
+    try {
+      const patientId = item.patient?._id;
+      if (!patientId) { setError('ID paziente non trovato'); return; }
+      const [patientRes, diarioRes] = await Promise.all([
+        api.get(`/patients/${patientId}`),
+        api.get(`/diario/paziente/${patientId}`),
+      ]);
+      const html = generaCartellaClinicaHtml(patientRes.data, item, diarioRes.data || []);
+      const win = window.open('', '_blank');
+      if (!win) { setError('Impossibile aprire il PDF. Controlla il blocco popup.'); return; }
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Errore nel caricamento della cartella clinica');
+      setTimeout(() => setError(''), 4000);
+    }
+  };
+
+  const generaCartellaClinicaHtml = (patient: any, wp: WorkPlanItem, entries: any[]) => {
+    const fd = (d?: string) => d ? new Date(d).toLocaleDateString('it-IT') : 'N/D';
+    const diarioHtml = entries.length === 0
+      ? '<p style="color:#6b7280;">Nessuna voce di diario clinico registrata.</p>'
+      : entries.map((e, i) => `
+        <div style="border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:12px;background:#f9fafb;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+            <strong style="color:#1e4d8c;">Accesso #${i + 1}</strong>
+            <span style="font-size:0.85rem;color:#6b7280;">${fd(e.dataRegistrazione)}</span>
+          </div>
+          <p style="margin:0 0 8px;font-size:0.9rem;"><strong>Operatore:</strong> ${e.staffName || 'N/D'}</p>
+          <p style="margin:0 0 8px;font-size:0.9rem;">${(e.testo || '').replace(/</g, '&lt;')}</p>
+          ${e.parametriVitali ? `<div style="background:white;padding:8px;border-radius:6px;font-size:0.8rem;"><strong>Parametri:</strong> ${[
+            e.parametriVitali.pressioneSistolica && `PA ${e.parametriVitali.pressioneSistolica}/${e.parametriVitali.pressioneDiastolica}`,
+            e.parametriVitali.frequenzaCardiaca && `FC ${e.parametriVitali.frequenzaCardiaca}`,
+            e.parametriVitali.temperatura && `T ${e.parametriVitali.temperatura}°C`,
+            e.parametriVitali.saturazione && `SpO2 ${e.parametriVitali.saturazione}%`,
+            e.parametriVitali.glicemia && `Gli ${e.parametriVitali.glicemia}`,
+          ].filter(Boolean).join(' · ')}</div>` : ''}
+          ${e.firmato ? '<span style="display:inline-block;background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:4px;font-size:0.75rem;margin-top:8px;">✓ Firmato</span>' : ''}
+        </div>`).join('');
+    return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Cartella Clinica - ${patient.firstName} ${patient.lastName}</title><style>
+      body{font-family:Arial,sans-serif;color:#111;margin:0;padding:24px;line-height:1.6}
+      h1{font-size:18pt;color:#1e40af;border-bottom:2px solid #1e40af;padding-bottom:8px}
+      h2{font-size:14pt;color:#1e40af;margin-top:20px}
+      .section{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-bottom:16px}
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+      .label{font-weight:600;color:#4b5563;font-size:0.9rem}
+      @media print{body{padding:12px}}
+    </style></head><body>
+      <h1>🏥 CARTELLA CLINICA</h1>
+      <div class="section"><h2>Dati Anagrafici</h2><div class="grid">
+        <div><span class="label">Nome:</span> ${patient.firstName} ${patient.lastName}</div>
+        <div><span class="label">Data nascita:</span> ${fd(patient.birthDate)}</div>
+        <div><span class="label">Codice Fiscale:</span> ${patient.codiceFiscale || 'N/D'}</div>
+        <div><span class="label">Indirizzo:</span> ${patient.address || 'N/D'}</div>
+        <div><span class="label">Telefono:</span> ${patient.contactPhone || 'N/D'}</div>
+        <div><span class="label">Email:</span> ${patient.email || 'N/D'}</div>
+      </div></div>
+      <div class="section"><h2>Dati Clinici</h2><div class="grid">
+        <div style="grid-column:1/-1;"><span class="label">Diagnosi:</span> ${patient.diagnosiAmmissione || 'N/D'}</div>
+        <div style="grid-column:1/-1;"><span class="label">Comorbilità:</span> ${patient.comorbilita || 'Nessuna'}</div>
+        <div style="grid-column:1/-1;"><span class="label">Allergie:</span> <span style="color:${patient.allergie ? '#dc2626' : '#111'};">${patient.allergie || 'Nessuna nota'}</span></div>
+        <div><span class="label">Caregiver:</span> ${patient.caregiverRiferimento || 'N/D'}</div>
+        <div><span class="label">Tel. Caregiver:</span> ${patient.caregiverTelefono || 'N/D'}</div>
+      </div></div>
+      <div class="section"><h2>Incarico</h2><div class="grid">
+        <div><span class="label">Tipo:</span> ${wp.type}</div>
+        <div><span class="label">Categoria:</span> ${wp.category || 'N/D'}</div>
+        <div><span class="label">Attività:</span> ${wp.task || 'N/D'}</div>
+        <div><span class="label">Data:</span> ${fd(wp.date)}</div>
+      </div></div>
+      <div class="section"><h2>Diario Clinico (${entries.length} voci)</h2>${diarioHtml}</div>
+      <p style="margin-top:24px;font-size:8pt;color:#6b7280;text-align:center;border-top:1px solid #e5e7eb;padding-top:12px;">
+        Generata il ${new Date().toLocaleString('it-IT')} - Abbraccio Cure Domiciliari
+      </p>
+      <script>window.onload=function(){window.print()}</script>
+    </body></html>`;
+  };
+
   const copiaLink = async (id: string) => {
     const url = `${window.location.origin}/accesso/${id}`;
     try {
@@ -1285,11 +1365,16 @@ function WorkPlan() {
                       )}
                       {item.notes && <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: 'var(--gray-600)', fontStyle: 'italic' }}>{item.notes}</p>}
                     </div>
-                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0, flexDirection: 'row', flexWrap: 'wrap', maxWidth: '280px', justifyContent: 'flex-end' }}>
+                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0, flexDirection: 'row', flexWrap: 'wrap', maxWidth: '340px', justifyContent: 'flex-end' }}>
                       {/* Storico accessi + compenso */}
                       <button type="button" onClick={() => apriStorico(item)} style={{ background: '#8b5cf6', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Storico accessi e compenso">
                         <ClipboardList size={16} />
                         <span>Storico</span>
+                      </button>
+                      {/* Cartella clinica PDF */}
+                      <button type="button" onClick={() => visualizzaCartellaClinica(item)} style={{ background: '#0d9488', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Visualizza/Stampa cartella clinica PDF">
+                        <FileText size={16} />
+                        <span>Cartella</span>
                       </button>
                       {/* Accesso remoto e copia link */}
                       <button type="button" onClick={() => apriAccesso(item._id)} style={{ background: '#3b82f6', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Apri pagina registrazione accessi">

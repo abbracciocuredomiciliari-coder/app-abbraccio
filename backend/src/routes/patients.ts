@@ -203,6 +203,19 @@ router.get('/scadenze-pai', authorizeRole('admin', 'coordinator', 'direttore'), 
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GET /api/patients/:id - Dettaglio singolo paziente
+// ─────────────────────────────────────────────────────────────────────────────
+router.get('/:id', auditLog('patients', 'READ', req => req.params.id), async (req: Request, res: Response) => {
+  try {
+    const paziente = await Patient.findById(req.params.id);
+    if (!paziente) return res.status(404).json({ message: 'Paziente non trovato' });
+    return res.json(paziente);
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore recupero paziente', error });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PATCH /api/patients/:id/segna-alert-visto
 // Segna l'alert PAI come visto dall'utente corrente
 // ─────────────────────────────────────────────────────────────────────────────
