@@ -18,6 +18,8 @@ import {
   Loader2,
   Shield,
   CheckCircle,
+  Eye,
+  Printer,
 } from 'lucide-react';
 import FirmaCanvas from '../components/FirmaCanvas';
 import { Button } from '../components/ui/Button';
@@ -60,6 +62,21 @@ interface PatientDocument {
   uploadedByNome?: string;
   dataCaricamento: string;
   createdAt: string;
+}
+
+interface Consenso {
+  _id: string;
+  patientId: string;
+  finalita: { prestazioneSanitaria: boolean; fatturazione: boolean; auditInterno: boolean; ricercaScientifica: boolean };
+  datiSensibili: { datiSanitari: boolean; datiEconomici: boolean; immagini: boolean };
+  comunicazioneTerzi: { mediciSpecialisti: boolean; struttureSanitarie: boolean; familiari: boolean; assicurazioni: boolean };
+  firmatoDa: 'paziente' | 'familiare' | 'tutore';
+  nomeFirmatario: string;
+  cognomeFirmatario: string;
+  dataFirma: string;
+  versioneInformativa: string;
+  revocato: boolean;
+  operatoreEmail: string;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -120,6 +137,8 @@ function Patients() {
   // Stato modal consenso GDPR
   const [showConsensoModal, setShowConsensoModal] = useState(false);
   const [consensoPaziente, setConsensoPaziente] = useState<Patient | null>(null);
+  const [activeConsenso, setActiveConsenso] = useState<Consenso | null>(null);
+  const [consensoLoading, setConsensoLoading] = useState(false);
   const [firmaConsenso, setFirmaConsenso] = useState('');
   const [firmaConsensoNome, setFirmaConsensoNome] = useState('');
   const [firmaConsensoRuolo, setFirmaConsensoRuolo] = useState<'paziente' | 'familiare' | 'tutore'>('paziente');
@@ -195,10 +214,22 @@ function Patients() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const loadActiveConsenso = async (patientId: string) => {
+    try {
+      setConsensoLoading(true);
+      const response = await api.get(`/gdpr/consenso/${patientId}`);
+      setActiveConsenso(response.data.consenso || null);
+    } catch (error) {
+      setActiveConsenso(null);
+    } finally {
+      setConsensoLoading(false);
+    }
+  };
+
   const openDocumentsModal = async (patient: Patient) => {
     setSelectedPatient(patient);
     setSelectedCategory('');
-    await loadPatientDocuments(patient._id);
+    await Promise.all([loadPatientDocuments(patient._id), loadActiveConsenso(patient._id)]);
     setShowDocumentsModal(true);
   };
 
@@ -207,6 +238,7 @@ function Patients() {
     setSelectedPatient(null);
     setDocuments([]);
     setUploadForm({ title: '', description: '', category: '' });
+    setActiveConsenso(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -281,6 +313,19 @@ function Patients() {
     }
   };
 
+  const getDocumentBlobUrl = async (documentId: string, contentType: string) => {
+    const token = getToken();
+    if (!token) return null;
+
+    const response = await api.get(`/documents/documents/${documentId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: 'blob'
+    });
+
+    const blob = new Blob([response.data], { type: typeof contentType === 'string' ? contentType : 'application/octet-stream' });
+    return window.URL.createObjectURL(blob);
+  };
+
   const downloadDocument = async (documentId: string, fileName: string) => {
     try {
       const token = getToken();
@@ -306,6 +351,78 @@ function Patients() {
     }
   };
 
+  const openDocument = async (documentId: string, contentType: string, fileName: string) => {
+    try {
+      const url = await getDocumentBlobUrl(documentId, contentType);
+      if (!url) {
+        alert('Impossibile aprire il documento');
+        return;
+      }
+      const isPdf = contentType.toLowerCase().includes('pdf');
+      if (isPdf) {
+        const newWindow = window.open(url, '_blank');
+        if (!newWindow) {
+          alert('Impossibile aprire il documento PDF. Controlla il blocco popup del browser.');
+          window.URL.revokeObjectURL(url);
+          return;
+        }
+        newWindow.focus();
+      } else {
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+    } catch (error) {
+      console.error('Errore apertura documento:', error);
+      alert('Errore nell\'apertura del documento');
+    }
+  };
+
+  const printDocument = async (documentId: string, contentType: string, fileName: string) => {
+    try {
+      const url = await getDocumentBlobUrl(documentId, contentType);
+      if (!url) {
+        alert('Impossibile stampare il documento');
+        return;
+      }
+      const isPdf = contentType.toLowerCase().includes('pdf');
+      if (isPdf) {
+        const newWindow = window.open(url, '_blank');
+        if (!newWindow) {
+          alert('Impossibile aprire la finestra di stampa. Controlla il blocco popup del browser.');
+          window.URL.revokeObjectURL(url);
+          return;
+        }
+        newWindow.focus();
+        newWindow.onload = () => {
+          try {
+            newWindow.print();
+          } catch (err) {
+            console.warn('Stampa automatica fallita', err);
+          }
+        };
+      } else {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        alert('Documento non PDF: è stato scaricato per la stampa locale.');
+      }
+      setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+    } catch (error) {
+      console.error('Errore stampa documento:', error);
+      alert('Errore nella stampa del documento');
+    }
+  };
+
   const deleteDocument = async (documentId: string) => {
     if (!confirm('Sei sicuro di voler eliminare questo documento?')) return;
 
@@ -324,6 +441,79 @@ function Patients() {
       console.error('Errore eliminazione:', error);
       alert('Errore nell\'eliminazione del documento');
     }
+  };
+
+  const generatePatientSummaryHtml = (patient: Patient, documents: PatientDocument[], consenso: Consenso | null, autoPrint = false) => {
+    const documentRows = documents.map((doc, index) => {
+      const uploaded = doc.uploadedByNome ? `Caricato da ${doc.uploadedByNome}` : 'Caricato dal sistema';
+      return `<tr style="border-bottom:1px solid #e5e7eb"><td style="padding:8px">${index + 1}</td><td style="padding:8px">${categoryLabels[doc.category]}</td><td style="padding:8px">${doc.title}</td><td style="padding:8px">${doc.fileName}</td><td style="padding:8px">${uploaded}</td></tr>`;
+    }).join('');
+
+    const consensoHtml = consenso ? `
+      <h2 style="font-size:13pt;color:#1e40af;margin-top:24px">Consenso GDPR attivo</h2>
+      <div style="padding:14px;background:#f8fafc;border:1px solid #dbeafe;border-radius:10px;margin-bottom:20px">
+        <p style="margin:0 0 8px"><strong>Firmatario:</strong> ${consenso.nomeFirmatario} ${consenso.cognomeFirmatario} (${consenso.firmatoDa})</p>
+        <p style="margin:0 0 8px"><strong>Data firma:</strong> ${new Date(consenso.dataFirma).toLocaleDateString('it-IT')}</p>
+        <p style="margin:0 0 8px"><strong>Versione informativa:</strong> ${consenso.versioneInformativa}</p>
+        <p style="margin:0"><strong>Finalità:</strong> ${Object.entries(consenso.finalita).filter(([, v]) => v).map(([k]) => k === 'prestazioneSanitaria' ? 'Prestazione Sanitaria' : k === 'fatturazione' ? 'Fatturazione' : k === 'auditInterno' ? 'Audit Interno' : 'Ricerca Scientifica').join(', ')}</p>
+      </div>
+    ` : '<p style="color:#475569;">Nessun consenso GDPR attivo trovato.</p>';
+
+    return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Riepilogo paziente ${patient.firstName} ${patient.lastName}</title><style>
+      body{font-family:Arial,sans-serif;color:#111;margin:0;padding:24px}
+      h1{font-size:18pt;color:#1e40af;margin-bottom:8px}
+      h2{font-size:13pt;color:#1e40af;margin-top:24px;margin-bottom:10px}
+      p{font-size:10pt;line-height:1.6;margin:0 0 10px}
+      table{width:100%;border-collapse:collapse;margin-top:12px}
+      th,td{border:1px solid #e5e7eb;padding:10px;text-align:left;font-size:10pt}
+      th{background:#eff6ff}
+      .section{margin-top:18px}
+    </style></head><body>
+      <h1>Riepilogo paziente</h1>
+      <p><strong>Paziente:</strong> ${patient.firstName} ${patient.lastName}</p>
+      <p><strong>Data di nascita:</strong> ${formatDate(patient.birthDate)}</p>
+      <p><strong>Indirizzo:</strong> ${patient.address}</p>
+      <p><strong>Contatto:</strong> ${patient.contactPhone || 'N/D'} | ${patient.email || 'N/D'}</p>
+      <p><strong>Fabbisogni assistenziali:</strong> ${patient.assistanceNeeds || 'N/D'}</p>
+      <p><strong>Diagnosi ammissione:</strong> ${patient.diagnosiAmmissione || 'N/D'}</p>
+      <p><strong>Comorbilità:</strong> ${patient.comorbilita || 'N/D'}</p>
+      <p><strong>Allergie:</strong> ${patient.allergie || 'N/D'}</p>
+      <p><strong>Caregiver:</strong> ${patient.caregiverRiferimento || 'N/D'} (${patient.caregiverTelefono || 'N/D'})</p>
+
+      <div class="section">
+        <h2>Documentazione clinica</h2>
+        ${documents.length === 0 ? '<p>Nessun documento caricato.</p>' : `<table><thead><tr><th>#</th><th>Categoria</th><th>Titolo</th><th>File</th><th>Info</th></tr></thead><tbody>${documentRows}</tbody></table>`}
+      </div>
+      <div class="section">
+        ${consensoHtml}
+      </div>
+      <p style="margin-top:24px;font-size:9pt;color:#475569">Generato il: ${new Date().toLocaleDateString('it-IT')} ${new Date().toLocaleTimeString('it-IT')}</p>
+      ${autoPrint ? '<script>window.onload=function(){window.print()}</script>' : ''}
+    </body></html>`;
+  };
+
+  const openPatientSummaryPdf = (patient: Patient) => {
+    const win = window.open('', '_blank');
+    if (!win) {
+      alert('Impossibile aprire il PDF. Controlla il blocco popup del browser.');
+      return;
+    }
+    const html = generatePatientSummaryHtml(patient, documents, activeConsenso, false);
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+  };
+
+  const printPatientSummaryPdf = (patient: Patient) => {
+    const win = window.open('', '_blank');
+    if (!win) {
+      alert('Impossibile aprire il PDF. Controlla il blocco popup del browser.');
+      return;
+    }
+    const html = generatePatientSummaryHtml(patient, documents, activeConsenso, true);
+    win.document.write(html);
+    win.document.close();
+    win.focus();
   };
 
   const deletePatient = async (patientId: string) => {
@@ -835,7 +1025,7 @@ function Patients() {
       {showDocumentsModal && selectedPatient && (
         <div className="modal-overlay" onClick={closeDocumentsModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '12px', flexWrap: 'wrap' }}>
               <div>
                 <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <FolderOpen size={24} />
@@ -845,19 +1035,37 @@ function Patients() {
                   {selectedPatient.firstName} {selectedPatient.lastName} - {formatDate(selectedPatient.birthDate)}
                 </p>
               </div>
-              <button
-                onClick={closeDocumentsModal}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '8px',
-                  borderRadius: 'var(--radius-md)',
-                  color: 'var(--gray-500)',
-                }}
-              >
-                <X size={24} />
-              </button>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => openPatientSummaryPdf(selectedPatient)}
+                  style={{ background: '#2563eb', color: 'white', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <Eye size={16} />
+                  Visualizza PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => printPatientSummaryPdf(selectedPatient)}
+                  style={{ background: '#059669', color: 'white', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <Printer size={16} />
+                  Stampa PDF
+                </button>
+                <button
+                  onClick={closeDocumentsModal}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '8px',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--gray-500)',
+                  }}
+                >
+                  <X size={24} />
+                </button>
+              </div>
             </div>
 
             {/* Upload Section */}
@@ -1045,11 +1253,27 @@ function Patients() {
                           {formatDate(doc.createdAt)} {doc.uploadedByNome && `• Caricato da ${doc.uploadedByNome}`}
                         </p>
                       </div>
-                      <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                      <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => openDocument(doc._id, doc.contentType, doc.fileName)}
+                          style={{ background: '#2563eb', color: 'white', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                        >
+                          <Eye size={16} />
+                          Apri
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => printDocument(doc._id, doc.contentType, doc.fileName)}
+                          style={{ background: '#0f766e', color: 'white', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                        >
+                          <Printer size={16} />
+                          Stampa
+                        </button>
                         <button
                           type="button"
                           onClick={() => downloadDocument(doc._id, doc.fileName)}
-                          style={{ background: 'var(--success)', padding: '8px 12px' }}
+                          style={{ background: 'var(--success)', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
                         >
                           <Download size={16} />
                           Scarica
@@ -1058,7 +1282,7 @@ function Patients() {
                           <button
                             type="button"
                             onClick={() => deleteDocument(doc._id)}
-                            style={{ background: 'var(--danger)', padding: '8px 12px' }}
+                            style={{ background: 'var(--danger)', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
                           >
                             <Trash2 size={16} />
                           </button>
