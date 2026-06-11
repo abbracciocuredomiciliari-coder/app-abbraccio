@@ -333,6 +333,99 @@ router.patch('/:id/gestisci', authenticateToken, authorizeRole('admin', 'coordin
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
+// GET /api/richieste-prenotazioni/admin/in-attesa - Lista richieste in attesa (admin)
+// ═════════════════════════════════════════════════════════════════════════════
+router.get('/admin/in-attesa', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
+  try {
+    const richieste = await RichiestaPrenotazione.find({ stato: 'in_attesa' })
+      .sort({ createdAt: -1 })
+      .populate('richiedenteUserId', 'firstName lastName email phone');
+    return res.json(richieste);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore nel recupero richieste', error: error?.message });
+  }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// PATCH /api/richieste-prenotazioni/:id/approva - Approva richiesta e crea incarico (admin)
+// ═════════════════════════════════════════════════════════════════════════════
+router.patch('/:id/approva', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
+  try {
+    const { dataConfermata, orarioConfermato, staffAssegnatoId, noteRisposta } = req.body;
+
+    const richiesta = await RichiestaPrenotazione.findById(req.params.id);
+    if (!richiesta) {
+      return res.status(404).json({ message: 'Richiesta non trovata' });
+    }
+
+    if (richiesta.stato !== 'in_attesa') {
+      return res.status(400).json({ message: 'Richiesta già elaborata' });
+    }
+
+    // Aggiorna dati conferma
+    richiesta.dataConfermata = dataConfermata || richiesta.dataPreferita;
+    richiesta.orarioConfermato = orarioConfermato || richiesta.orarioPreferito;
+    richiesta.stato = 'confermata';
+    richiesta.noteRisposta = noteRisposta || '';
+
+    // Crea incarico nel WorkPlan in base al tipo
+    if (richiesta.tipoServizio === 'prestazione' || richiesta.tipoServizio === 'assistenza') {
+      const workplan = await WorkPlan.create({
+        type: richiesta.tipoServizio === 'assistenza' ? 'assistenziale' : 'prestazionale',
+        category: richiesta.tipoSpecifico || 'Prestazione richiesta',
+        patient: richiesta.richiedenteUserId,
+        staff: staffAssegnatoId || null,
+        date: richiesta.dataConfermata,
+        time: richiesta.orarioConfermato,
+        task: richiesta.tipoSpecifico || `${richiesta.tipoServizio} richiesta`,
+        notes: richiesta.noteRichiedente,
+        status: 'pending'
+      });
+      richiesta.workPlanId = workplan._id;
+    }
+
+    await richiesta.save();
+
+    // Notifica via email (non bloccante)
+    try {
+      await inviaEmailConfermaPrenotazione(richiesta.richiedenteEmail, richiesta);
+    } catch (emailErr) {
+      console.log('Email non inviata:', emailErr);
+    }
+
+    return res.json({ message: 'Richiesta approvata e incarico creato', richiesta });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore nell\'approvazione', error: error?.message });
+  }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// PATCH /api/richieste-prenotazioni/:id/rifiuta - Rifiuta richiesta (admin)
+// ═════════════════════════════════════════════════════════════════════════════
+router.patch('/:id/rifiuta', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
+  try {
+    const { motivoRifiuto } = req.body;
+
+    const richiesta = await RichiestaPrenotazione.findById(req.params.id);
+    if (!richiesta) {
+      return res.status(404).json({ message: 'Richiesta non trovata' });
+    }
+
+    if (richiesta.stato !== 'in_attesa') {
+      return res.status(400).json({ message: 'Richiesta già elaborata' });
+    }
+
+    richiesta.stato = 'rifiutata';
+    richiesta.noteRisposta = motivoRifiuto || 'Richiesta rifiutata';
+    await richiesta.save();
+
+    return res.json({ message: 'Richiesta rifiutata', richiesta });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore nel rifiuto', error: error?.message });
+  }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
 // DELETE /api/richieste-prenotazioni/:id - Elimina richiesta (admin solo in_attesa)
 // ═════════════════════════════════════════════════════════════════════════════
 router.delete('/:id', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {

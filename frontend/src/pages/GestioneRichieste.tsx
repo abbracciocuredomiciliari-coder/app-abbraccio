@@ -177,6 +177,28 @@ export default function GestioneRichieste() {
     }
   };
 
+  // Approve request and create work order
+  const approvaRichiesta = async (id: string, data: any) => {
+    try {
+      await api.patch(`/richieste-prenotazioni/${id}/approva`, data);
+      await caricaDati();
+      alert('Richiesta approvata e incarico creato');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nell\'approvazione');
+    }
+  };
+
+  // Reject request
+  const rifiutaRichiesta = async (id: string, motivo?: string) => {
+    try {
+      await api.patch(`/richieste-prenotazioni/${id}/rifiuta`, { motivoRifiuto: motivo });
+      await caricaDati();
+      alert('Richiesta rifiutata');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nel rifiuto');
+    }
+  };
+
   // ════════════════════════════════════════════════════════════════════════════
   // Helpers
   // ════════════════════════════════════════════════════════════════════════════
@@ -430,12 +452,37 @@ export default function GestioneRichieste() {
                         Gestisci
                       </button>
                       {r.stato === 'in_attesa' && (
-                        <button
-                          onClick={() => eliminaRichiesta(r._id)}
-                          style={{ padding: '6px 12px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
-                        >
-                          🗑️
-                        </button>
+                        <>
+                          <button
+                            onClick={() => {
+                              const motivo = prompt('Motivo del rifiuto (opzionale):');
+                              if (motivo !== null) {
+                                rifiutaRichiesta(r._id, motivo || undefined);
+                              }
+                            }}
+                            style={{ padding: '6px 12px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
+                          >
+                            ✕ Rifiuta
+                          </button>
+                          <button
+                            onClick={() => {
+                              const dataConfermata = prompt('Data confermata (YYYY-MM-DD):', r.dataPreferita?.split('T')[0]);
+                              if (!dataConfermata) return;
+                              const orarioConfermato = prompt('Orario confermato (HH:MM):', r.orarioPreferito || '09:00');
+                              if (!orarioConfermato) return;
+                              approvaRichiesta(r._id, { dataConfermata, orarioConfermato });
+                            }}
+                            style={{ padding: '6px 12px', background: '#d1fae5', color: '#065f46', border: 'none', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
+                          >
+                            ✓ Approva
+                          </button>
+                          <button
+                            onClick={() => eliminaRichiesta(r._id)}
+                            style={{ padding: '6px 12px', background: '#f3f4f6', color: '#6b7280', border: 'none', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
+                          >
+                            🗑️
+                          </button>
+                        </>
                       )}
                     </div>
                   </td>

@@ -419,20 +419,33 @@ router.put('/approve/:userId', authenticateToken, authorizeRole('admin'), async 
       return res.status(404).json({ message: 'Utente non trovato' });
     }
 
-    // Collega automaticamente User↔Staff solo per operatori (non per paziente_registrato)
+    // Crea/Collega automaticamente User↔Staff solo per operatori (non per paziente_registrato)
     if (user.role !== 'paziente_registrato') {
       try {
-        const zonaUpdate: any = { userId: user._id };
-        if (user.domicilioPartenza) zonaUpdate.domicilioPartenza = user.domicilioPartenza;
-        if (user.raggioAzioneKm) zonaUpdate.raggioAzioneKm = user.raggioAzioneKm;
-        if (user.domicilioCoords?.lat) zonaUpdate.domicilioCoords = user.domicilioCoords;
+        // Crea o aggiorna il record Staff con active: true
+        const staffData: any = {
+          userId: user._id,
+          email: user.email,
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
+          role: user.role,
+          active: true, // Operatore approvato è automaticamente attivo
+          phone: user.phone || '',
+          createdAt: new Date(),
+        };
+        
+        if (user.domicilioPartenza) staffData.domicilioPartenza = user.domicilioPartenza;
+        if (user.raggioAzioneKm) staffData.raggioAzioneKm = user.raggioAzioneKm;
+        if (user.domicilioCoords?.lat) staffData.domicilioCoords = user.domicilioCoords;
+        
         await Staff.findOneAndUpdate(
           { email: user.email },
-          { $set: zonaUpdate },
-          { new: true }
+          { $set: staffData },
+          { upsert: true, new: true } // Crea se non esiste
         );
+        console.log(`✅ Staff creato/aggiornato per operatore: ${user.email}`);
       } catch (linkErr) {
-        console.warn('⚠️ Impossibile collegare User↔Staff:', linkErr);
+        console.warn('⚠️ Impossibile creare/collegare User↔Staff:', linkErr);
       }
     }
 
