@@ -520,11 +520,20 @@ function Strumenti() {
 </html>`;
 
     const win = window.open('', '_blank');
-    if (win) {
-      win.document.write(html);
-      win.document.close();
-      win.focus();
+    if (!win) {
+      alert('Impossibile aprire la finestra PDF. Controlla il blocco popup del browser.');
+      return;
     }
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    win.onload = () => {
+      try {
+        win.print();
+      } catch (error) {
+        // Ignora errori di stampa automatici
+      }
+    };
   };
 
   // Visualizza PDF presidi
@@ -603,12 +612,20 @@ function Strumenti() {
 </html>`;
 
     const win = window.open('', '_blank');
-    if (win) {
-      win.document.write(html);
-      win.document.close();
-      win.focus();
-      win.focus();
+    if (!win) {
+      alert('Impossibile aprire la finestra PDF. Controlla il blocco popup del browser.');
+      return;
     }
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    win.onload = () => {
+      try {
+        win.print();
+      } catch (error) {
+        // Ignora errori di stampa automatici
+      }
+    };
   };
 
   const canEdit = !!(user);

@@ -16,6 +16,29 @@ interface Utente {
   domicilioCoords?: { lat: number; lng: number };
 }
 
+interface UtenteDettaglio extends Utente {
+  telefono?: string;
+  codiceFiscale?: string;
+  dataNascita?: string;
+  luogoNascita?: string;
+  indirizzoResidenza?: string;
+  pec?: string;
+  tipoCollaborazione?: string;
+  partitaIva?: string;
+  regimeFiscale?: string;
+  ordineAlbo?: string;
+  numeroAlbo?: string;
+  firmaContratto?: string;
+  dataFirmaContratto?: string;
+  luogoFirmaContratto?: string;
+  contrattoPdfUrl?: string;
+  documenti?: {
+    assicurazione?: string;
+    documentoIdentita?: string;
+    attestazioneQualifica?: string;
+  };
+}
+
 const roleLabels: Record<string, string> = {
   admin: 'Admin',
   coordinator: 'Coordinatore',
@@ -44,6 +67,7 @@ function GestioneUtenti() {
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState<'tutti' | 'pending' | 'approved' | 'rejected'>('pending');
   const [approvandoId, setApprovandoId] = useState<string | null>(null);
+  const [loadingPdfUserId, setLoadingPdfUserId] = useState<string | null>(null);
   const [roleSelezionato, setRoleSelezionato] = useState<Record<string, string>>({});
   const [toast, setToast] = useState<{ msg: string; tipo: 'ok' | 'err' } | null>(null);
   const [conferma, setConferma] = useState<{ msg: string; onSi: () => void } | null>(null);
@@ -98,6 +122,26 @@ function GestioneUtenti() {
     });
   };
 
+  const openUserProfilePdf = async (id: string) => {
+    setLoadingPdfUserId(id);
+    try {
+      const res = await api.get(`/auth/users/${id}/details`);
+      const html = generaHtmlProfilo(res.data as UtenteDettaglio);
+      const win = window.open('', '_blank');
+      if (!win) {
+        mostraToast('Impossibile aprire la finestra per la stampa.', 'err');
+        return;
+      }
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+    } catch (err: any) {
+      mostraToast(err?.response?.data?.message || 'Errore nel caricamento dei dettagli utente.', 'err');
+    } finally {
+      setLoadingPdfUserId(null);
+    }
+  };
+
   const eliminaUtente = async (id: string) => {
     setConferma({
       msg: 'Sei sicuro di voler eliminare definitivamente questo utente? L\'operazione non è reversibile.',
@@ -114,54 +158,158 @@ function GestioneUtenti() {
     });
   };
 
-  const utentiFiltrati = utenti.filter(u => filtro === 'tutti' ? true : u.status === filtro);
-  const nPending = utenti.filter(u => u.status === 'pending').length;
+    const getDocumentUrl = (relativePath: string) => {
+      const base = (api.defaults.baseURL as string) || 'http://localhost:4000/api';
+      return `${base.replace(/\/$/, '')}/${relativePath.replace(/^\/+/, '')}`;
+    };
 
-  // Separa approvati in operatori vs pazienti/caregiver (solo per filtro 'approved' e 'tutti')
-  const operatoriApprovati = utentiFiltrati.filter(u => u.status === 'approved' && u.role !== 'paziente_registrato');
-  const pazientiApprovati = utentiFiltrati.filter(u => u.status === 'approved' && u.role === 'paziente_registrato');
-  const nonApprovati = utentiFiltrati.filter(u => u.status !== 'approved');
-  const mostraSeparati = filtro === 'approved' || filtro === 'tutti';
+    const escapeHtml = (value?: string) => {
+      if (!value) return '—';
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    };
 
-  const formatData = (d: string) => new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
+    const formatDateString = (value?: string | null) => {
+      if (!value) return '—';
+      return new Date(value).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+    };
 
-  return (
-    <section>
-      {/* ── Toast ── */}
-      {toast && (
-        <div style={{
-          position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
-          background: toast.tipo === 'ok' ? '#f0fdf4' : '#fef2f2',
-          border: `1px solid ${toast.tipo === 'ok' ? '#059669' : '#dc2626'}`,
-          color: toast.tipo === 'ok' ? '#065f46' : '#7f1d1d',
-          borderRadius: '10px', padding: '12px 18px', fontWeight: 600,
-          boxShadow: '0 4px 16px rgba(0,0,0,0.12)', fontSize: '0.9rem', maxWidth: '340px',
-        }}>
-          {toast.msg}
-        </div>
-      )}
-      {/* ── Modale conferma ── */}
-      {conferma && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: 'white', borderRadius: '12px', padding: '24px', maxWidth: '400px', width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
-            <p style={{ margin: '0 0 20px', fontSize: '0.95rem', color: '#374151', lineHeight: 1.5 }}>{conferma.msg}</p>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <Button variant="secondary" size="sm" onClick={() => setConferma(null)}>
-                Annulla
-              </Button>
-              <Button variant="danger" size="sm" onClick={conferma.onSi}>
-                Conferma
-              </Button>
+    const generaHtmlProfilo = (user: UtenteDettaglio) => {
+      const roleLabel = roleLabels[user.role] || user.role;
+      const docs = Object.entries(user.documenti || {})
+        .filter(([, path]) => !!path)
+        .map(([key, path]) => ({
+          label: key === 'documentoIdentita' ? 'Documento di identità'
+            : key === 'assicurazione' ? 'Polizza assicurativa'
+            : key === 'attestazioneQualifica' ? 'Attestazione di qualifica'
+            : key,
+          path: path as string,
+        }));
+
+      const docRows = docs.map((doc) => `
+            <tr>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #e5e7eb;">${escapeHtml(doc.label)}</td>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #e5e7eb;"><a href="${getDocumentUrl(doc.path)}" target="_blank">Apri documento</a></td>
+            </tr>
+          `).join('');
+
+      const contrattoSection = user.contrattoPdfUrl ? `
+      <div class="section">
+        <h2>Contratto firmato</h2>
+        <p><a href="${getDocumentUrl(user.contrattoPdfUrl)}" target="_blank">Apri contratto PDF</a></p>
+      </div>` : `
+      <div class="section">
+        <h2>Contratto firmato</h2>
+        ${user.firmaContratto ? `<div class="signature"><img src="${user.firmaContratto}" alt="Firma contratto" /></div>` : '<p>Firma non disponibile</p>'}
+        <div class="field"><strong>Data firma</strong><span>${escapeHtml(formatDateString(user.dataFirmaContratto))}</span></div>
+        <div class="field"><strong>Luogo firma</strong><span>${escapeHtml(user.luogoFirmaContratto)}</span></div>
+      </div>`;
+
+      return `<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Profilo utente - ${escapeHtml(user.name)}</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 24px; color: #1f2937; }
+      .header { margin-bottom: 24px; }
+      .header h1 { margin: 0; font-size: 1.7rem; }
+      .header p { margin: 4px 0 0; color: #4b5563; }
+      .section { margin-bottom: 22px; }
+      .section h2 { font-size: 1.1rem; margin-bottom: 10px; border-bottom: 1px solid #d1d5db; padding-bottom: 6px; }
+      .field { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+      .field strong { color: #111827; }
+      .field span { color: #374151; }
+      .signature img { max-width: 320px; height: auto; border: 1px solid #d1d5db; padding: 8px; background: #fff; }
+      table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+      td { vertical-align: top; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Profilo utente</h1>
+      <p>${escapeHtml(user.name)} • ${escapeHtml(roleLabel)}</p>
+    </div>
+    <div class="section">
+      <h2>Informazioni generali</h2>
+      <div class="field"><strong>Nome completo</strong><span>${escapeHtml(user.name)}</span></div>
+      <div class="field"><strong>Email</strong><span>${escapeHtml(user.email)}</span></div>
+      <div class="field"><strong>Ruolo</strong><span>${escapeHtml(roleLabel)}</span></div>
+      <div class="field"><strong>Stato</strong><span>${escapeHtml(user.status === 'approved' ? 'Approvato' : user.status === 'pending' ? 'In attesa' : 'Rifiutato')}</span></div>
+      <div class="field"><strong>Registrato il</strong><span>${escapeHtml(formatDateString(user.createdAt))}</span></div>
+      ${user.professione ? `<div class="field"><strong>Professione</strong><span>${escapeHtml(user.professione)}</span></div>` : ''}
+      ${user.categoria ? `<div class="field"><strong>Categoria</strong><span>${escapeHtml(user.categoria)}</span></div>` : ''}
+      ${user.telefono ? `<div class="field"><strong>Telefono</strong><span>${escapeHtml(user.telefono)}</span></div>` : ''}
+      ${user.codiceFiscale ? `<div class="field"><strong>Codice fiscale</strong><span>${escapeHtml(user.codiceFiscale)}</span></div>` : ''}
+      ${user.dataNascita ? `<div class="field"><strong>Data di nascita</strong><span>${escapeHtml(formatDateString(user.dataNascita))}</span></div>` : ''}
+      ${user.luogoNascita ? `<div class="field"><strong>Luogo di nascita</strong><span>${escapeHtml(user.luogoNascita)}</span></div>` : ''}
+      ${user.indirizzoResidenza ? `<div class="field"><strong>Residenza</strong><span>${escapeHtml(user.indirizzoResidenza)}</span></div>` : ''}
+      ${user.pec ? `<div class="field"><strong>PEC</strong><span>${escapeHtml(user.pec)}</span></div>` : ''}
+      ${user.tipoCollaborazione ? `<div class="field"><strong>Tipo collaborazione</strong><span>${escapeHtml(user.tipoCollaborazione)}</span></div>` : ''}
+      ${user.partitaIva ? `<div class="field"><strong>Partita IVA</strong><span>${escapeHtml(user.partitaIva)}</span></div>` : ''}
+      ${user.regimeFiscale ? `<div class="field"><strong>Regime fiscale</strong><span>${escapeHtml(user.regimeFiscale)}</span></div>` : ''}
+      ${user.ordineAlbo ? `<div class="field"><strong>Ordine albo</strong><span>${escapeHtml(user.ordineAlbo)}</span></div>` : ''}
+      ${user.numeroAlbo ? `<div class="field"><strong>Numero albo</strong><span>${escapeHtml(user.numeroAlbo)}</span></div>` : ''}
+    </div>
+    ${contrattoSection}
+    <div class="section">
+      <h2>Documenti allegati</h2>
+      ${docs.length === 0 ? '<p>Nessun documento allegato.</p>' : `<table><tbody>${docRows}</tbody></table>`}
+    </div>
+  </body>
+</html>`;
+    };
+
+    const utentiFiltrati = utenti.filter(u => filtro === 'tutti' ? true : u.status === filtro);
+    const nPending = utenti.filter(u => u.status === 'pending').length;
+
+    const operatoriApprovati = utentiFiltrati.filter(u => u.status === 'approved' && u.role !== 'paziente_registrato');
+    const pazientiApprovati = utentiFiltrati.filter(u => u.status === 'approved' && u.role === 'paziente_registrato');
+    const nonApprovati = utentiFiltrati.filter(u => u.status !== 'approved');
+    const mostraSeparati = filtro === 'approved' || filtro === 'tutti';
+    const formatData = (d: string) => new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    return (
+      <section>
+        {/* ── Toast ── */}
+        {toast && (
+          <div style={{
+            position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
+            background: toast.tipo === 'ok' ? '#f0fdf4' : '#fef2f2',
+            border: `1px solid ${toast.tipo === 'ok' ? '#059669' : '#dc2626'}`,
+            color: toast.tipo === 'ok' ? '#065f46' : '#7f1d1d',
+            borderRadius: '10px', padding: '12px 18px', fontWeight: 600,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.12)', fontSize: '0.9rem', maxWidth: '340px',
+          }}>
+            {toast.msg}
+          </div>
+        )}
+        {/* ── Modale conferma ── */}
+        {conferma && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div style={{ background: 'white', borderRadius: '12px', padding: '24px', maxWidth: '400px', width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+              <p style={{ margin: '0 0 20px', fontSize: '0.95rem', color: '#374151', lineHeight: 1.5 }}>{conferma.msg}</p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <Button variant="secondary" size="sm" onClick={() => setConferma(null)}>
+                  Annulla
+                </Button>
+                <Button variant="danger" size="sm" onClick={conferma.onSi}>
+                  Conferma
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      <h2>👥 Gestione Utenti</h2>
-      <p style={{ color: 'var(--gray-500)', marginBottom: '24px', fontSize: '0.95rem' }}>
-        Approva o rifiuta le richieste di registrazione e gestisci gli accessi all'app.
-      </p>
+        )}
+        <h2>👥 Gestione Utenti</h2>
+        <p style={{ color: 'var(--gray-500)', marginBottom: '24px', fontSize: '0.95rem' }}>
+          Approva o rifiuta le richieste di registrazione e gestisci gli accessi all'app.
+        </p>
 
-      {/* Filtri */}
+        {/* Filtri */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
         {(['pending', 'approved', 'rejected', 'tutti'] as const).map((f) => {
           const count = f === 'tutti' ? utenti.length : utenti.filter(u => u.status === f).length;
@@ -323,6 +471,14 @@ function GestioneUtenti() {
                       )}
                       <button
                         type="button"
+                        onClick={() => openUserProfilePdf(utente._id)}
+                        disabled={loadingPdfUserId === utente._id}
+                        style={{ background: '#2563eb', color: '#fff', fontSize: '0.85rem', padding: '6px 14px' }}
+                      >
+                        {loadingPdfUserId === utente._id ? '⏳ Caricamento...' : '📄 Profilo PDF'}
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => eliminaUtente(utente._id)}
                         style={{ background: '#6c757d', fontSize: '0.85rem', padding: '6px 14px' }}
                       >
@@ -360,6 +516,11 @@ function GestioneUtenti() {
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <button type="button" onClick={() => openUserProfilePdf(utente._id)}
+                            disabled={loadingPdfUserId === utente._id}
+                            style={{ background: '#2563eb', color: '#fff', fontSize: '0.85rem', padding: '6px 14px' }}>
+                            {loadingPdfUserId === utente._id ? '⏳ Caricamento...' : '📄 Profilo PDF'}
+                          </button>
                           <button type="button" onClick={() => rifiutaUtente(utente._id)}
                             style={{ background: '#f59e0b', fontSize: '0.85rem', padding: '6px 14px' }}>
                             🚫 Revoca accesso
