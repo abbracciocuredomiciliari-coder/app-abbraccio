@@ -24,6 +24,7 @@ import {
   Archive,
   HeartPulse,
   Syringe,
+  FileText,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
@@ -1284,30 +1285,36 @@ function WorkPlan() {
                       )}
                       {item.notes && <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: 'var(--gray-600)', fontStyle: 'italic' }}>{item.notes}</p>}
                     </div>
-                    <div style={{ display: 'flex', gap: '5px', flexShrink: 0, flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0, flexDirection: 'row', flexWrap: 'wrap', maxWidth: '280px', justifyContent: 'flex-end' }}>
                       {/* Storico accessi + compenso */}
-                      <button type="button" onClick={() => apriStorico(item)} style={{ background: '#8b5cf6', padding: '7px' }} title="Storico accessi e compenso">
-                        <ClipboardList size={15} />
+                      <button type="button" onClick={() => apriStorico(item)} style={{ background: '#8b5cf6', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Storico accessi e compenso">
+                        <ClipboardList size={16} />
+                        <span>Storico</span>
                       </button>
                       {/* Accesso remoto e copia link */}
-                      <button type="button" onClick={() => apriAccesso(item._id)} style={{ background: '#3b82f6', padding: '7px' }} title="Apri pagina registrazione accessi">
-                        <Link2 size={15} />
+                      <button type="button" onClick={() => apriAccesso(item._id)} style={{ background: '#3b82f6', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Apri pagina registrazione accessi">
+                        <Link2 size={16} />
+                        <span>Registra</span>
                       </button>
-                      <button type="button" onClick={() => copiaLink(item._id)} style={{ background: copiedId === item._id ? '#10b981' : '#6c757d', padding: '7px' }} title={copiedId === item._id ? 'Link copiato!' : 'Copia link accesso'}>
-                        <Copy size={15} />
+                      <button type="button" onClick={() => copiaLink(item._id)} style={{ background: copiedId === item._id ? '#10b981' : '#6c757d', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title={copiedId === item._id ? 'Link copiato!' : 'Copia link accesso'}>
+                        <Copy size={16} />
+                        <span>{copiedId === item._id ? 'Copiato!' : 'Copia'}</span>
                       </button>
                       {item.status === 'pending' && (
-                        <button type="button" onClick={() => completeWorkplan(item._id)} style={{ background: 'var(--success)', padding: '7px' }} title="Segna come completato">
-                          <CheckCircle size={15} />
+                        <button type="button" onClick={() => completeWorkplan(item._id)} style={{ background: 'var(--success)', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Termina incarico - Segna come completato">
+                          <CheckCircle size={16} />
+                          <span>Termina</span>
                         </button>
                       )}
                       {(user?.role === 'admin' || user?.role === 'coordinator') && (
-                        <button type="button" onClick={() => archiviaIncarico(item)} style={{ background: '#7c3aed', padding: '7px' }} title="Archivia cartella clinica">
-                          <Archive size={15} />
+                        <button type="button" onClick={() => archiviaIncarico(item)} style={{ background: '#7c3aed', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Archivia cartella clinica">
+                          <Archive size={16} />
+                          <span>Archivia</span>
                         </button>
                       )}
-                      <button type="button" onClick={() => deleteWorkplan(item._id)} style={{ background: 'var(--danger)', padding: '7px' }} title="Elimina">
-                        <Trash2 size={15} />
+                      <button type="button" onClick={() => deleteWorkplan(item._id)} style={{ background: 'var(--danger)', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Elimina incarico">
+                        <Trash2 size={16} />
+                        <span>Elimina</span>
                       </button>
                     </div>
                   </div>
