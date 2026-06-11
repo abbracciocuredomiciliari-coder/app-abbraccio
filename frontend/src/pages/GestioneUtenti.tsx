@@ -197,16 +197,61 @@ function GestioneUtenti() {
             </tr>
           `).join('');
 
-      const contrattoSection = user.contrattoPdfUrl ? `
+      const contractTesto = `
+        <h3 style="margin:0 0 10px; font-size:1rem;">CONTRATTO PROFESSIONISTI</h3>
+        <p><strong>Contratto di prestazione d'opera intellettuale ai sensi degli artt. 2229 e ss. C.C.</strong></p>
+        <p><strong>ABBRACCIO CURE DOMICILIARI</strong> con sede in Via di S.Maria Ausiliatrice 4B, 00181 (Roma), iscritta con codice fiscale e partita IVA n° 18316251000, rappresentata dal proprio amministratore Delegato Simona Schembri. PEC abbracciocuredomiciliari@facilepec.com.</p>
+        <p><strong>Professionista:</strong> Il Dr./La Dr.ssa ${escapeHtml(user.name || '___________________________________')} nato/a a ${escapeHtml(user.luogoNascita || '_____________')} il ${escapeHtml(formatDateString(user.dataNascita)) || '_____________'}, codice fiscale ${escapeHtml(user.codiceFiscale || '_____________')} e partita IVA n° ${escapeHtml(user.partitaIva || '______________________')} residente a ${escapeHtml(user.indirizzoResidenza || '______________')}. PEC Professionale ${escapeHtml(user.pec || '_________________________________')}.</p>
+        <h4 style="margin-top:10px;">Premesse</h4>
+        <p>- La Società opera nell'ambito dell'home care e dei servizi di assistenza sanitaria domiciliare integrata e necessita di professionisti competenti;</p>
+        <p>- Il Professionista è in possesso dei necessari titoli per svolgere la professione di ${escapeHtml(user.professione || '_____________')} ed è iscritto all'albo professionale dell'Ordine di ${escapeHtml(user.ordineAlbo || '_____________')} n. ${escapeHtml(user.numeroAlbo || '______')};</p>
+        <p>- Il Professionista è titolare di Partita Iva con regime fiscale ed opera abitualmente in favore di una pluralità di clienti;</p>
+        <p>- Il Professionista intende fornire alla Società la propria opera intellettuale mantenendo autonomia operativa e organizzativa;</p>
+        <p>- Le Parti dichiarano di non trovarsi in conflitto di interessi e di non avere incompatibilità normative;</p>
+        <p>- Alcuni contenuti sono descritti negli Allegati, parte integrante dell'accordo.</p>
+        <h4>Art. 1 - Oggetto</h4>
+        <p>1.1. Oggetto della prestazione d'opera intellettuale è l'esecuzione, esclusivamente personale e sotto la propria direzione e responsabilità, di attività professionale in ambito socio-sanitario nell'ambito dell'assistenza domiciliare, consistente nello svolgimento dei seguenti incarichi: ${escapeHtml(user.professione || '____________________')} che la Società affida al Professionista.</p>
+        <p>1.2. Il Professionista si impegna ad eseguire le prestazioni in piena autonomia e senza vincoli di subordinazione, senza esclusiva e senza obbligo di non concorrenza.</p>
+        <p>1.3. Il Professionista dichiara che gli incarichi verranno svolti direttamente, con propria organizzazione e mezzi, nel rispetto degli obblighi di diligenza professionale.</p>
+        <p>1.4. Il Professionista si impegna a rispettare il Codice Etico aziendale; in caso di comportamento gravemente contrario, la Società potrà agire, inclusa la risoluzione del contratto.</p>
+        <h4>Art. 2 - Modalità di esecuzione degli Incarichi</h4>
+        <p>2.1. Il Professionista rispetterà date e orari di disponibilità indicati e comunicati alla Società con congruo anticipo (almeno 20 gg lavorativi).</p>
+        <p>2.2. Ogni incarico potrà essere revocato o sospeso con comunicazione scritta, almeno 24 ore prima; nessun compenso per l'incarico revocato.</p>
+        <p>2.3. Per rendicontazione è richiesto l'uso delle piattaforme aziendali per cartella clinica, gestione materiali e registrazione accessi.</p>
+        <h4>Art. 3 - Corrispettivo e Pagamenti</h4>
+        <p>3.1. Il corrispettivo è determinato dal Professionista e riportato nel piano di assegnazione lavoro.</p>
+        <p>3.2. Pagamenti entro 30 giorni dalla emissione della fattura, con bonifico alle coordinate fornite dal Professionista.</p>
+        <h4>Art. 4 - Dichiarazioni e obbligazioni</h4>
+        <p>4.1. Il Professionista dichiara di possedere i requisiti professionali necessari e si impegna ad aggiornare la documentazione.</p>
+        <p>4.2. Il Professionista parteciperà ai corsi di formazione obbligatori; il mancato superamento potrà costituire giusta causa di recesso.</p>
+        <h4>Art. 5 - Durata e Recesso</h4>
+        <p>5.1. Gli incarichi avranno durata con rinnovo tacito annuale, salvo disdetta comunicata almeno 30 giorni prima.</p>
+        <p>5.2. Ciascuna parte potrà recedere con comunicazione PEC con preavviso di 30 giorni.</p>
+        <h4>Art. 6 - Clausola risolutiva</h4>
+        <p>6.1. Il contratto si risolverà di diritto in caso di violazione di obblighi indicati nei casi previsti dal testo completo.</p>
+        <h4>Art. 7 - Riservatezza</h4>
+        <p>7.1. Il Professionista si impegna al massimo riserbo e al rispetto della normativa sulla privacy.</p>
+        <h4>Art. 8 - Trattamento dati personali (GDPR)</h4>
+        <p>8.1. Il trattamento dei dati sarà effettuato ai sensi del GDPR; il Professionista firmerà l'eventuale nomina a responsabile esterno.</p>
+        <h4>Art. 9 - Geolocalizzazione</h4>
+        <p>9.1. Le parti potranno predisporre sistemi di localizzazione elettronica per necessità organizzative.</p>
+        <h4>Art. 10 - Responsabilità e manleva</h4>
+        <p>10.1. Il Professionista svolge le attività sotto la propria personale responsabilità e manleva la Società fino a €1.000.000,00.</p>
+        <p style="margin-top: 16px;">Letto, confermato e sottoscritto in ${escapeHtml(user.luogoFirmaContratto || '_____________')} il ${escapeHtml(formatDateString(user.dataFirmaContratto)) || '_____________'}.</p>
+      `;
+
+      const contrattoSection = `
       <div class="section">
         <h2>Contratto firmato</h2>
-        <p><a href="${getDocumentUrl(user.contrattoPdfUrl)}" target="_blank">Apri contratto PDF</a></p>
-      </div>` : `
-      <div class="section">
-        <h2>Contratto firmato</h2>
-        ${user.firmaContratto ? `<div class="signature"><img src="${user.firmaContratto}" alt="Firma contratto" /></div>` : '<p>Firma non disponibile</p>'}
-        <div class="field"><strong>Data firma</strong><span>${escapeHtml(formatDateString(user.dataFirmaContratto))}</span></div>
-        <div class="field"><strong>Luogo firma</strong><span>${escapeHtml(user.luogoFirmaContratto)}</span></div>
+        ${user.contrattoPdfUrl ? `<p><a href="${getDocumentUrl(user.contrattoPdfUrl)}" target="_blank">Apri contratto PDF</a></p>` : ''}
+        <div class="contract-text" style="padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; background: #f9fafb; font-size: 0.9rem; line-height: 1.5;">
+          ${contractTesto}
+        </div>
+        <div class="signature-block" style="margin-top: 16px;">
+          ${user.firmaContratto ? `<div class="signature" style="margin-bottom: 12px;"><img src="${user.firmaContratto}" alt="Firma contratto" style="max-width: 280px; height: auto; border: 1px solid #d1d5db; padding: 8px; background: #fff;" /></div>` : '<p>Firma non disponibile</p>'}
+          <div class="field"><strong>Data firma</strong><span>${escapeHtml(formatDateString(user.dataFirmaContratto))}</span></div>
+          <div class="field"><strong>Luogo firma</strong><span>${escapeHtml(user.luogoFirmaContratto)}</span></div>
+        </div>
       </div>`;
 
       return `<!DOCTYPE html>
