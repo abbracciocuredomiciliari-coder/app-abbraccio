@@ -51,7 +51,7 @@ export default function RichiestaAssistenza() {
 
     setSending(true);
     try {
-      await axios.post(`${API_BASE}/registrazione-pubblica-paziente`, {
+      await axios.post(`${API_BASE}/richieste-paziente`, {
         firstName,
         lastName,
         birthDate,
@@ -63,11 +63,11 @@ export default function RichiestaAssistenza() {
         diagnosiAmmissione: diagnosi,
         comorbilita,
         allergie,
-        caregiverNome: isPazienteStesso ? `${firstName} ${lastName}` : caregiverNome,
-        caregiverRelazione,
-        caregiverTelefono,
-        caregiverEmail,
         noteAggiuntive,
+        richiedenteNome: isPazienteStesso ? `${firstName} ${lastName}` : caregiverNome,
+        richiedenteRelazione: caregiverRelazione,
+        richiedenteEmail: caregiverEmail,
+        richiedenteTelefono: caregiverTelefono,
       });
       setInviata(true);
     } catch (err: any) {

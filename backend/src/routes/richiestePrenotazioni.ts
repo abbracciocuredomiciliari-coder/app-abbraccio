@@ -370,11 +370,36 @@ router.patch('/:id/approva', authenticateToken, authorizeRole('admin', 'coordina
 
     // Crea incarico nel WorkPlan in base al tipo
     if (richiesta.tipoServizio === 'prestazione' || richiesta.tipoServizio === 'assistenza') {
+      // Risolvi un Patient valido: WorkPlan.patient richiede un Patient, NON un User.
+      let patientId = richiesta.pazienteId;
+      if (!patientId) {
+        // Cerca un paziente esistente per nome/indirizzo, altrimenti crealo dai dati della richiesta
+        const [firstName, ...rest] = (richiesta.pazienteNome || richiesta.richiedenteNome || '').trim().split(' ');
+        const lastName = rest.join(' ') || firstName;
+        let patient = await Patient.findOne({
+          firstName: new RegExp(`^${firstName}$`, 'i'),
+          lastName: new RegExp(`^${lastName}$`, 'i'),
+        });
+        if (!patient) {
+          patient = await Patient.create({
+            firstName: firstName || 'Paziente',
+            lastName: lastName || 'Da definire',
+            birthDate: new Date('1970-01-01'),
+            address: richiesta.pazienteIndirizzo || 'Da completare',
+            contactPhone: richiesta.pazienteTelefono || richiesta.richiedenteTelefono || '',
+            email: richiesta.richiedenteEmail || '',
+            assistanceNeeds: richiesta.tipoSpecifico || `${richiesta.tipoServizio} richiesta`,
+          });
+        }
+        patientId = patient._id;
+        richiesta.pazienteId = patientId;
+      }
+
       const workplan = await WorkPlan.create({
         type: richiesta.tipoServizio === 'assistenza' ? 'assistenziale' : 'prestazionale',
         category: richiesta.tipoSpecifico || 'Prestazione richiesta',
-        patient: richiesta.richiedenteUserId,
-        staff: staffAssegnatoId || null,
+        patient: patientId,
+        staff: staffAssegnatoId || undefined,
         date: richiesta.dataConfermata,
         time: richiesta.orarioConfermato,
         task: richiesta.tipoSpecifico || `${richiesta.tipoServizio} richiesta`,

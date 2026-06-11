@@ -16,6 +16,7 @@ router.post('/', async (req: Request, res: Response) => {
       firstName, lastName, birthDate, codiceFiscale,
       address, contactPhone, email,
       assistanceNeeds, medicoReferente, noteAggiuntive,
+      diagnosiAmmissione, comorbilita, allergie,
       richiedenteNome, richiedenteRelazione, richiedenteEmail, richiedenteTelefono,
     } = req.body;
 
@@ -27,6 +28,7 @@ router.post('/', async (req: Request, res: Response) => {
       firstName, lastName, birthDate: new Date(birthDate), codiceFiscale,
       address, contactPhone, email,
       assistanceNeeds, medicoReferente, noteAggiuntive,
+      diagnosiAmmissione, comorbilita, allergie,
       richiedenteNome, richiedenteRelazione, richiedenteEmail, richiedenteTelefono,
       stato: 'in_attesa',
     });
@@ -83,6 +85,11 @@ router.put('/:id/approva', authenticateToken, authorizeRole('admin', 'coordinato
       email: richiesta.email,
       codiceFiscale: richiesta.codiceFiscale,
       assistanceNeeds: richiesta.assistanceNeeds,
+      diagnosiAmmissione: richiesta.diagnosiAmmissione,
+      comorbilita: richiesta.comorbilita,
+      allergie: richiesta.allergie,
+      caregiverRiferimento: richiesta.richiedenteNome,
+      caregiverTelefono: richiesta.richiedenteTelefono,
       tipoGestione: 'privato',
     });
 

@@ -17,6 +17,11 @@ export interface IRichiestaRegistrazionePaziente extends Document {
   medicoReferente?: string;
   noteAggiuntive?: string;
 
+  // Dati clinici (opzionali)
+  diagnosiAmmissione?: string;
+  comorbilita?: string;
+  allergie?: string;
+
   // Richiedente (chi compila il form)
   richiedenteNome: string;
   richiedenteRelazione?: string; // 'paziente' | 'familiare' | 'caregiver' | 'medico'
@@ -45,6 +50,10 @@ const schema = new Schema<IRichiestaRegistrazionePaziente>(
     assistanceNeeds: { type: String, required: true, trim: true },
     medicoReferente: { type: String, trim: true },
     noteAggiuntive: { type: String, trim: true },
+
+    diagnosiAmmissione: { type: String, trim: true },
+    comorbilita: { type: String, trim: true },
+    allergie: { type: String, trim: true },
 
     richiedenteNome: { type: String, required: true, trim: true },
     richiedenteRelazione: { type: String, trim: true },
