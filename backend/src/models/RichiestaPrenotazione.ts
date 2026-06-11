@@ -31,6 +31,7 @@ export interface IRichiestaPrenotazione extends Document {
   priorita?: 'bassa' | 'normale' | 'alta' | 'urgente';
   noteRichiedente?: string;
   noteAdmin?: string;
+  noteRisposta?: string;  // Note quando si approva/rifiuta
 
   // Assegnazione (compilato da admin)
   staffAssegnatoId?: Types.ObjectId;
