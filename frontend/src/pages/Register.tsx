@@ -163,13 +163,13 @@ function Register() {
 
   const nextStep = () => {
     if (!validaStep(step)) return;
-    const steps: Step[] = ['anagrafica', 'zona', 'tipo-collab', 'contratto', 'riepilogo'];
+    const steps: Step[] = ['anagrafica', 'zona', 'tipo-collab', 'contratto', 'documenti', 'riepilogo'];
     const idx = steps.indexOf(step);
     if (idx < steps.length - 1) setStep(steps[idx + 1]);
   };
 
   const prevStep = () => {
-    const steps: Step[] = ['anagrafica', 'zona', 'tipo-collab', 'contratto', 'riepilogo'];
+    const steps: Step[] = ['anagrafica', 'zona', 'tipo-collab', 'contratto', 'documenti', 'riepilogo'];
     const idx = steps.indexOf(step);
     if (idx > 0) setStep(steps[idx - 1]);
   };
@@ -266,7 +266,7 @@ function Register() {
     <section>
       <h2>Registrazione Operatore</h2>
       <p style={{ color: 'var(--gray-500)', marginBottom: '20px', fontSize: '0.95rem' }}>
-        Compila tutti gli step per richiedere l'accesso. Dovrai firmare il contratto e allegare i documenti richiesti.
+        Compila tutti gli step per richiedere l'accesso. Dovrai firmare il contratto; i documenti sono facoltativi ma consigliati.
       </p>
 
       {/* Step indicator */}
@@ -412,7 +412,77 @@ function Register() {
           </div>
         )}
 
-        {/* STEP 5: Riepilogo */}
+        {/* STEP 5: Documenti */}
+        {step === 'documenti' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', color: '#1e3a5f' }}>📎 Documenti allegati</h3>
+            <p style={{ fontSize: '0.9rem', color: '#6b7280', margin: '0 0 12px' }}>
+              Allega i documenti richiesti. Questi documenti sono facoltativi ma consigliati per velocizzare l'approvazione.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {/* Polizza Assicurativa */}
+              <div style={{ padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', background: '#f9fafb' }}>
+                <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', fontSize: '0.95rem' }}>
+                  🏥 Polizza Assicurativa Responsabilità Civile
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  onChange={(e) => setAssicurazioneFile(e.target.files?.[0] || null)}
+                  style={{ width: '100%', fontSize: '0.85rem', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }}
+                />
+                {assicurazioneFile && (
+                  <div style={{ marginTop: '6px', fontSize: '0.8rem', color: '#059669' }}>
+                    ✓ File selezionato: {assicurazioneFile.name}
+                  </div>
+                )}
+              </div>
+
+              {/* Documento di Identità */}
+              <div style={{ padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', background: '#f9fafb' }}>
+                <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', fontSize: '0.95rem' }}>
+                  🪪 Documento di Identità
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  onChange={(e) => setDocumentoIdentitaFile(e.target.files?.[0] || null)}
+                  style={{ width: '100%', fontSize: '0.85rem', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }}
+                />
+                {documentoIdentitaFile && (
+                  <div style={{ marginTop: '6px', fontSize: '0.8rem', color: '#059669' }}>
+                    ✓ File selezionato: {documentoIdentitaFile.name}
+                  </div>
+                )}
+              </div>
+
+              {/* Attestazione di Qualifica */}
+              <div style={{ padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', background: '#f9fafb' }}>
+                <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', fontSize: '0.95rem' }}>
+                  🎓 Attestazione di Qualifica Professionale
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  onChange={(e) => setAttestazioneQualificaFile(e.target.files?.[0] || null)}
+                  style={{ width: '100%', fontSize: '0.85rem', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }}
+                />
+                {attestazioneQualificaFile && (
+                  <div style={{ marginTop: '6px', fontSize: '0.8rem', color: '#059669' }}>
+                    ✓ File selezionato: {attestazioneQualificaFile.name}
+                  </div>
+                )}
+              </div>
+
+              <p style={{ fontSize: '0.8rem', color: '#9ca3af', margin: '8px 0 0' }}>
+                💡 Formati supportati: PDF, Word, Excel, immagini — massimo 20 MB per file
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 6: Riepilogo */}
         {step === 'riepilogo' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', color: '#1e3a5f' }}>✅ Riepilogo</h3>
@@ -422,6 +492,16 @@ function Register() {
               <p><strong>Prof:</strong> {professione}</p>
               <p><strong>Tipo:</strong> {tipoCollaborazione === 'libero-professionista' ? 'Libero Prof.' : 'Dipendente'}{tipoCollaborazione === 'libero-professionista' && ` (P.IVA: ${partitaIva})`}</p>
               <p><strong>Contratto:</strong> {firmaContratto ? '✓ Firmato' : '✗ Non firmato'}</p>
+              <p><strong>Documenti:</strong> {
+                [assicurazioneFile, documentoIdentitaFile, attestazioneQualificaFile].filter(Boolean).length > 0
+                  ? `✓ ${[assicurazioneFile, documentoIdentitaFile, attestazioneQualificaFile].filter(Boolean).length} allegati`
+                  : '— Nessuno'
+              }</p>
+            </div>
+            <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '12px' }}>
+              <p style={{ margin: 0, color: '#065f46', fontSize: '0.9rem' }}>
+                ✓ Tutti i dati sono stati compilati correttamente. Clicca il pulsante qui sotto per inviare la richiesta di registrazione.
+              </p>
             </div>
             <Button type="submit" loading={loading} variant="primary" style={{ width: '100%' }}>
               {loading ? 'Invio in corso...' : '✓ Invia richiesta registrazione'}
@@ -430,18 +510,18 @@ function Register() {
         )}
 
         {/* Navigation buttons */}
-        {step !== 'riepilogo' && (
-          <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-            {step !== 'anagrafica' && (
-              <Button type="button" onClick={prevStep} variant="secondary" style={{ flex: 1 }}>
-                <ArrowLeft size={16} /> Indietro
-              </Button>
-            )}
+        <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+          {step !== 'anagrafica' && (
+            <Button type="button" onClick={prevStep} variant="secondary" style={{ flex: 1 }}>
+              <ArrowLeft size={16} /> Indietro
+            </Button>
+          )}
+          {step !== 'riepilogo' && (
             <Button type="button" onClick={nextStep} variant="primary" style={{ flex: 1 }}>
               Avanti <ArrowRight size={16} />
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </form>
     </section>
   );
