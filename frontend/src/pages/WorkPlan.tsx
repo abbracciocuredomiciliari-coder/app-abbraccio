@@ -23,6 +23,7 @@ import {
   X,
   Archive,
   HeartPulse,
+  Syringe,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
@@ -263,6 +264,20 @@ const assistenzaCategories = [
   { value: 'visita_programmata', label: 'Visita Programmata', icon: Users, color: '#06b6d4' },
 ];
 
+// TIPI SERVIZIO - UI a card colorate come RichiestaServizio.tsx
+const TIPI_SERVIZIO = [
+  { value: 'prelievo', label: 'Prelievo', emoji: '💉', color: '#dc2626', bg: '#fee2e2', Icon: Syringe,
+    tipi: ['Emocromo completo','Glicemia','Coagulazione (PT/INR/aPTT)','Elettroliti','Funzionalità epatica','Funzionalità renale','Profilo lipidico','Ormoni tiroidei (TSH/fT4)','PCR / VES','Esame urine','Emogasanalisi','Altro'] },
+  { value: 'esame_strumentale', label: 'Esame Strumentale', emoji: '🔬', color: '#7c3aed', bg: '#ede9fe', Icon: HeartPulse,
+    tipi: ['ECG','Holter ECG','Holter pressorio','Glicemia capillare','EGA','Spirometria','Ecocardiogramma','Polisonnografia','Titolazione CPAP','Altro'] },
+  { value: 'prestazione', label: 'Prestazione Infermieristica', emoji: '🏥', color: '#0369a1', bg: '#eff6ff', Icon: Activity,
+    tipi: ['Medicazione','Somministrazione farmaci','Misurazione parametri vitali','Cateterismo','Gestione stomia','Prelievo arterioso','Altro'] },
+  { value: 'riabilitazione', label: 'Riabilitazione', emoji: '🏋️', color: '#16a34a', bg: '#dcfce7', Icon: Activity,
+    tipi: ['Fisioterapia','Logopedia','Ergoterapia','Neuro-riabilitazione','Riabilitazione respiratoria','Altro'] },
+  { value: 'medico', label: 'Visita Medica', emoji: '👨‍⚕️', color: '#2563eb', bg: '#dbeafe', Icon: HeartPulse,
+    tipi: ['Visita generale','Visita specialista','Consulenza geriatrica','Valutazione clinica','Prescrizione terapia','Altro'] },
+];
+
 function WorkPlan() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -323,6 +338,10 @@ function WorkPlan() {
   // Multi-prestazione con operatore per ciascuna
   const [prestazioniForm, setPrestazioniForm] = useState<PrestazioneForm[]>([]);
   const [catFiltro, setCatFiltro] = useState<CatPrestazione | ''>('');
+  
+  // Stati per selezione tipo servizio con UI a card (come RichiestaServizio)
+  const [tipoServizio, setTipoServizio] = useState<string>('');
+  const [tipoSpecifico, setTipoSpecifico] = useState<string>('');
 
   // Nuove 3 macro-categorie per admin (Infermieristico, Riabilitativo, Medico/specialistiche)
   type MacroCategoria = 'infermieristico' | 'riabilitativo' | 'medico_specialistiche';
@@ -843,6 +862,68 @@ function WorkPlan() {
               Orario
               <input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
             </label>
+
+            {/* Sezione Tipo Servizio con UI a card (come RichiestaServizio) */}
+            {activeTab === 'prestazionale' && (
+              <>
+                <div style={{ marginTop: '16px' }}>
+                  <label style={{ fontWeight: 600, marginBottom: '12px', display: 'block' }}>
+                    Tipo di prestazione *
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                    {TIPI_SERVIZIO.map((tipo) => {
+                      const Icon = tipo.Icon;
+                      const isSelected = tipoServizio === tipo.value;
+                      return (
+                        <button
+                          key={tipo.value}
+                          type="button"
+                          onClick={() => { setTipoServizio(tipo.value); setTipoSpecifico(''); }}
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            padding: '16px 12px',
+                            border: `2px solid ${isSelected ? tipo.color : '#e5e7eb'}`,
+                            borderRadius: '12px',
+                            background: isSelected ? tipo.bg : 'white',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                          }}
+                        >
+                          <span style={{ fontSize: '28px' }}>{tipo.emoji}</span>
+                          <Icon size={24} color={tipo.color} />
+                          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: tipo.color, textAlign: 'center' }}>
+                            {tipo.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Tipo specifico */}
+                {tipoServizio && (
+                  <div style={{ marginTop: '12px' }}>
+                    <label style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>
+                      Specifica la prestazione *
+                    </label>
+                    <select
+                      value={tipoSpecifico}
+                      onChange={(e) => setTipoSpecifico(e.target.value)}
+                      required
+                    >
+                      <option value="">Seleziona tipo specifico</option>
+                      {TIPI_SERVIZIO.find(t => t.value === tipoServizio)?.tipi.map((tipo) => (
+                        <option key={tipo} value={tipo}>{tipo}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </>
+            )}
 
             {/* ── Sezione Categorie e Fabbisogni ── */}
             <div style={{ borderTop: '1px solid var(--gray-200)', paddingTop: '14px', marginTop: '4px' }}>
