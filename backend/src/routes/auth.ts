@@ -422,16 +422,33 @@ router.put('/approve/:userId', authenticateToken, authorizeRole('admin'), async 
     // Crea/Collega automaticamente User↔Staff solo per operatori (non per paziente_registrato)
     if (user.role !== 'paziente_registrato') {
       try {
+        // Ricava firstName e lastName dal campo name (nome completo)
+        const nameParts = (user.name || '').trim().split(/\s+/);
+        const derivedFirstName = user.firstName || nameParts[0] || '';
+        const derivedLastName = user.lastName || nameParts.slice(1).join(' ') || '';
+
+        // Mappa la categoria dell'utente alla category dello Staff
+        const categoriaMap: Record<string, string> = {
+          infermieristico: 'infermieristico',
+          oss: 'oss',
+          riabilitativo: 'riabilitativo',
+          medico: 'medico',
+          coordinamento: 'coordinamento',
+          direzione: 'direzione',
+        };
+        const staffCategory = categoriaMap[user.categoria || ''] || 'infermieristico';
+
         // Crea o aggiorna il record Staff con active: true
         const staffData: any = {
           userId: user._id,
           email: user.email,
-          firstName: user.firstName || '',
-          lastName: user.lastName || '',
-          role: user.role,
+          firstName: derivedFirstName,
+          lastName: derivedLastName,
+          role: user.professione || user.role || 'Operatore',
+          category: staffCategory,
           active: true, // Operatore approvato è automaticamente attivo
-          phone: user.phone || '',
-          createdAt: new Date(),
+          phone: user.phone || user.telefono || '',
+          dataInizioCollaborazione: new Date(),
         };
         
         if (user.domicilioPartenza) staffData.domicilioPartenza = user.domicilioPartenza;
@@ -443,7 +460,7 @@ router.put('/approve/:userId', authenticateToken, authorizeRole('admin'), async 
           { $set: staffData },
           { upsert: true, new: true } // Crea se non esiste
         );
-        console.log(`✅ Staff creato/aggiornato per operatore: ${user.email}`);
+        console.log(`✅ Staff creato/aggiornato per operatore: ${user.email} (${derivedFirstName} ${derivedLastName}, cat: ${staffCategory})`);
       } catch (linkErr) {
         console.warn('⚠️ Impossibile creare/collegare User↔Staff:', linkErr);
       }

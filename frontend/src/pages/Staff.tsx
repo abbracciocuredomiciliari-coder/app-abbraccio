@@ -31,6 +31,7 @@ import { Loading } from '../components/ui/Loading';
 
 interface StaffMember {
   _id: string;
+  userId?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -406,6 +407,57 @@ function Staff() {
     }
   };
 
+  const openProfiloPdf = async (staff: StaffMember) => {
+    if (!staff.userId) {
+      setError('Profilo utente non collegato. Questo operatore potrebbe essere stato creato manualmente.');
+      setTimeout(() => setError(''), 4000);
+      return;
+    }
+    try {
+      const res = await api.get(`/auth/users/${staff.userId}/details`);
+      const u = res.data;
+      const roleLabel = u.professione || u.role || staff.role;
+      const fd = (d?: string) => d ? new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' }) : '—';
+      const esc = (v?: string) => v ? String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '—';
+      const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Profilo - ${esc(u.name)}</title>
+      <style>body{font-family:Arial,sans-serif;margin:24px;color:#1f2937}h1{font-size:1.4rem;color:#1e4d8c;border-bottom:2px solid #1e4d8c;padding-bottom:8px}h2{font-size:1rem;margin-top:20px;border-bottom:1px solid #d1d5db;padding-bottom:6px}.f{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e5e7eb}.f strong{color:#111827}@media print{body{margin:12px}}</style>
+      </head><body>
+      <h1>Profilo Operatore</h1>
+      <p>${esc(u.name)} • ${esc(roleLabel)}</p>
+      <h2>Informazioni generali</h2>
+      <div class="f"><strong>Nome</strong><span>${esc(u.name)}</span></div>
+      <div class="f"><strong>Email</strong><span>${esc(u.email)}</span></div>
+      <div class="f"><strong>Ruolo</strong><span>${esc(roleLabel)}</span></div>
+      <div class="f"><strong>Categoria</strong><span>${esc(u.categoria || staff.category)}</span></div>
+      ${u.telefono ? `<div class="f"><strong>Telefono</strong><span>${esc(u.telefono)}</span></div>` : ''}
+      ${u.codiceFiscale ? `<div class="f"><strong>Codice Fiscale</strong><span>${esc(u.codiceFiscale)}</span></div>` : ''}
+      ${u.dataNascita ? `<div class="f"><strong>Data nascita</strong><span>${esc(fd(u.dataNascita))}</span></div>` : ''}
+      ${u.luogoNascita ? `<div class="f"><strong>Luogo nascita</strong><span>${esc(u.luogoNascita)}</span></div>` : ''}
+      ${u.indirizzoResidenza ? `<div class="f"><strong>Residenza</strong><span>${esc(u.indirizzoResidenza)}</span></div>` : ''}
+      ${u.pec ? `<div class="f"><strong>PEC</strong><span>${esc(u.pec)}</span></div>` : ''}
+      ${u.tipoCollaborazione ? `<div class="f"><strong>Collaborazione</strong><span>${esc(u.tipoCollaborazione)}</span></div>` : ''}
+      ${u.partitaIva ? `<div class="f"><strong>Partita IVA</strong><span>${esc(u.partitaIva)}</span></div>` : ''}
+      ${u.ordineAlbo ? `<div class="f"><strong>Ordine Albo</strong><span>${esc(u.ordineAlbo)} n. ${esc(u.numeroAlbo)}</span></div>` : ''}
+      ${staff.domicilioPartenza ? `<div class="f"><strong>Zona lavorativa</strong><span>${esc(staff.domicilioPartenza)} — ${staff.raggioAzioneKm ?? 10} km</span></div>` : ''}
+      <h2>Collaborazione</h2>
+      <div class="f"><strong>Inizio</strong><span>${esc(fd(staff.dataInizioCollaborazione))}</span></div>
+      ${!staff.active && staff.dataFineCollaborazione ? `<div class="f"><strong>Fine</strong><span>${esc(fd(staff.dataFineCollaborazione))}</span></div>` : ''}
+      <div class="f"><strong>Stato</strong><span>${staff.active ? 'Attivo' : 'Inattivo'}</span></div>
+      ${u.firmaContratto ? `<h2>Firma contratto</h2><img src="${u.firmaContratto}" style="max-width:280px;border:1px solid #d1d5db;padding:8px;background:#fff" />` : ''}
+      <p style="margin-top:24px;font-size:8pt;color:#6b7280;text-align:center;border-top:1px solid #e5e7eb;padding-top:12px">Generata il ${new Date().toLocaleString('it-IT')} - Abbraccio Cure Domiciliari</p>
+      <script>window.onload=function(){window.print()}<\/script>
+      </body></html>`;
+      const win = window.open('', '_blank');
+      if (!win) { setError('Impossibile aprire la finestra. Controlla il blocco popup.'); return; }
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Errore nel caricamento del profilo.');
+      setTimeout(() => setError(''), 4000);
+    }
+  };
+
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return 'N/D';
     return new Date(dateString).toLocaleDateString('it-IT');
@@ -770,6 +822,14 @@ function Staff() {
                         <option value="convenzione">🏥 Solo SIAT</option>
                       </select>
                     )}
+                    <button
+                      onClick={() => openProfiloPdf(staff)}
+                      style={{ background: '#2563eb' }}
+                      title="Visualizza profilo PDF"
+                    >
+                      <FileText size={16} />
+                      Profilo PDF
+                    </button>
                     <button
                       onClick={() => openDocumentsModal(staff)}
                       style={{ background: 'var(--info)' }}
