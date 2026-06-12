@@ -283,11 +283,13 @@ router.patch('/:id/gestisci', authenticateToken, authorizeRole('admin', 'coordin
 
       // Se paziente non esiste, crealo
       if (!pazienteId) {
+        const nameParts = (richiesta.pazienteNome || '').trim().split(' ');
         const nuovoPaziente = await Patient.create({
-          firstName: richiesta.pazienteNome.split(' ')[0] || richiesta.pazienteNome,
-          lastName: richiesta.pazienteNome.split(' ').slice(1).join(' ') || '',
-          address: richiesta.pazienteIndirizzo,
-          contactPhone: richiesta.pazienteTelefono || richiesta.richiedenteTelefono,
+          firstName: nameParts[0] || 'N/A',
+          lastName: nameParts.slice(1).join(' ') || 'N/A',
+          birthDate: new Date('1900-01-01'), // placeholder — da aggiornare in anagrafica
+          address: richiesta.pazienteIndirizzo || 'N/A',
+          contactPhone: richiesta.pazienteTelefono || richiesta.richiedenteTelefono || '',
           tipoGestione: 'privato',
           assistanceNeeds: `Richiesta ${richiesta.tipoServizio}: ${richiesta.tipoSpecifico || 'N/A'}`
         });
@@ -296,11 +298,14 @@ router.patch('/:id/gestisci', authenticateToken, authorizeRole('admin', 'coordin
       }
 
       // Crea appuntamento in base al tipo
+      const staffRef = staffAssegnatoId || undefined; // avoid empty string for ObjectId fields
+      const dataAppuntamento = richiesta.dataConfermata || richiesta.dataPreferita || new Date();
+
       if (richiesta.tipoServizio === 'prelievo') {
         const prelievo = await Prelievo.create({
           patient: pazienteId,
-          staff: staffAssegnatoId || null,
-          dataPrelievo: richiesta.dataConfermata || richiesta.dataPreferita,
+          staff: staffRef || null,
+          dataPrelievo: dataAppuntamento,
           orario: richiesta.orarioConfermato || richiesta.orarioPreferito,
           tipoPrelievo: richiesta.tipoSpecifico || 'Prelievo richiesto',
           note: richiesta.noteRichiedente,
@@ -309,23 +314,24 @@ router.patch('/:id/gestisci', authenticateToken, authorizeRole('admin', 'coordin
         });
         richiesta.prelievoId = prelievo._id;
       } else if (richiesta.tipoServizio === 'esame_strumentale') {
-        const esame = await EsameStrumentale.create({
+        const esameData: any = {
           patient: pazienteId,
-          staff: staffAssegnatoId || null,
           tipoEsame: richiesta.tipoSpecifico || 'Esame richiesto',
-          dataEsame: richiesta.dataConfermata || richiesta.dataPreferita,
+          dataEsame: dataAppuntamento,
           orario: richiesta.orarioConfermato || richiesta.orarioPreferito,
           note: richiesta.noteRichiedente,
           status: 'pianificato'
-        });
+        };
+        if (staffRef) esameData.staff = staffRef;
+        const esame = await EsameStrumentale.create(esameData);
         richiesta.esameStrumentaleId = esame._id;
       } else if (richiesta.tipoServizio === 'prestazione' || richiesta.tipoServizio === 'assistenza') {
         const workplan = await WorkPlan.create({
           type: richiesta.tipoServizio === 'assistenza' ? 'assistenziale' : 'prestazionale',
           category: richiesta.tipoSpecifico || 'Prestazione richiesta',
           patient: pazienteId,
-          staff: staffAssegnatoId,
-          date: richiesta.dataConfermata || richiesta.dataPreferita,
+          staff: staffRef || undefined,
+          date: dataAppuntamento,
           time: richiesta.orarioConfermato || richiesta.orarioPreferito,
           task: richiesta.tipoSpecifico || `${richiesta.tipoServizio} richiesta`,
           notes: richiesta.noteRichiedente,
@@ -347,7 +353,8 @@ router.patch('/:id/gestisci', authenticateToken, authorizeRole('admin', 'coordin
     await richiesta.save();
     return res.json(richiesta);
   } catch (error: any) {
-    return res.status(500).json({ message: 'Errore nella gestione richiesta', error: error?.message });
+    console.error('❌ Errore gestisci richiesta:', error?.message, error?.errors);
+    return res.status(500).json({ message: 'Errore nella gestione richiesta', error: error?.message, details: error?.errors });
   }
 });
 

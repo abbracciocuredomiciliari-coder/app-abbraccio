@@ -128,7 +128,7 @@ const esameStrumentaleSchema = new Schema<IEsameStrumentale>(
   {
     workPlan: { type: Schema.Types.ObjectId, ref: 'WorkPlan', required: false },
     patient: { type: Schema.Types.ObjectId, ref: 'Patient', required: true },
-    staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: true },
+    staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: false },
     tipoEsame: { type: Schema.Types.Mixed, required: true }, // supporta string o string[]
     dataEsame: { type: Date, required: true },
     orario: { type: String },
