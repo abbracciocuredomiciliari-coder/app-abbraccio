@@ -100,15 +100,17 @@ export default function GestioneRichieste() {
 
   const caricaDati = async () => {
     try {
-      const [richiesteRes, staffRes, pazienteRes] = await Promise.all([
+      const [richiesteRes, staffRes, pazienteRes] = await Promise.allSettled([
         api.get('/richieste-prenotazioni'),
-        api.get('/staff'),
+        api.get('/staff', { params: { active: 'true' } }),
         api.get('/richieste-paziente'),
       ]);
-      setRichieste(richiesteRes.data || []);
-      setStaff(staffRes.data || []);
-      setRichiestePaziente(pazienteRes.data || []);
-    } catch {
+      setRichieste(richiesteRes.status === 'fulfilled' ? (richiesteRes.value.data || []) : []);
+      setStaff(staffRes.status === 'fulfilled' ? (staffRes.value.data || []) : []);
+      setRichiestePaziente(pazienteRes.status === 'fulfilled' ? (pazienteRes.value.data || []) : []);
+      if (staffRes.status === 'rejected') console.error('Errore caricamento staff:', staffRes.reason);
+    } catch (err) {
+      console.error('Errore caricaDati:', err);
       setRichieste([]);
     } finally {
       setLoading(false);
@@ -600,12 +602,17 @@ export default function GestioneRichieste() {
                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
                 >
                   <option value="">-- Seleziona operatore --</option>
-                  {staff.map((s: Staff) => (
+                  {staff
+                    .filter((s: Staff) => !['coordinamento', 'direzione'].includes(s.category || ''))
+                    .map((s: Staff) => (
                     <option key={s._id} value={s._id}>
-                      {s.firstName} {s.lastName} {s.role ? `(${s.role})` : ''}
+                      {s.firstName} {s.lastName} {s.role ? `(${s.role})` : ''} {s.category ? `[${s.category}]` : ''}
                     </option>
                   ))}
                 </select>
+                {staff.filter((s: Staff) => !['coordinamento', 'direzione'].includes(s.category || '')).length === 0 && (
+                  <p style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '4px' }}>⚠️ Nessun operatore disponibile. Verifica che esistano membri dello staff attivi.</p>
+                )}
               </div>
 
               {/* Note admin */}
