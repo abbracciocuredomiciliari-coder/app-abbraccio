@@ -437,7 +437,7 @@ export default function CentroPrenotazioni() {
           </div>
 
           {subE === 'prenotazioni' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '20px', alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 300px) 1fr', gap: '16px', alignItems: 'start' }}>
               <div>
                 <Cal anno={eAnno} mese={eMese} sel={eGiorno} onDay={setEGiorno}
                   onPrev={() => { if (eMese === 0) { setEMese(11); setEAnno(a => a-1); } else setEMese(m => m-1); }}
@@ -479,7 +479,7 @@ export default function CentroPrenotazioni() {
           )}
 
           {subE === 'assegnazione' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '20px', alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 300px) 1fr', gap: '16px', alignItems: 'start' }}>
               <Cal anno={assAnnoE} mese={assMeseE} sel={assGiornoE} onDay={setAssGiornoE}
                 onPrev={() => { if (assMeseE === 0) { setAssMeseE(11); setAssAnnoE(a => a-1); } else setAssMeseE(m => m-1); }}
                 onNext={() => { if (assMeseE === 11) { setAssMeseE(0); setAssAnnoE(a => a+1); } else setAssMeseE(m => m+1); }}
@@ -518,20 +518,20 @@ export default function CentroPrenotazioni() {
         <div>
           {okPiano && <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '10px 16px', marginBottom: '12px', color: '#166534', fontWeight: 600 }}>{okPiano}</div>}
           {errPiano && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px 16px', marginBottom: '12px', color: '#dc2626' }}>{errPiano}</div>}
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', gap: '4px', background: '#f1f5f9', borderRadius: '10px', padding: '4px' }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', gap: '4px', background: '#f1f5f9', borderRadius: '10px', padding: '3px' }}>
               {(['prestazionale', 'assistenziale'] as const).map(t => (
-                <button key={t} onClick={() => setPianoTipo(t)} style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', background: pianoTipo === t ? '#059669' : 'transparent', color: pianoTipo === t ? 'white' : '#475569' }}>
-                  {t === 'prestazionale' ? '🩺 Prestazionale' : '🤝 Assistenziale'}
+                <button key={t} onClick={() => setPianoTipo(t)} style={{ padding: '7px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', background: pianoTipo === t ? '#059669' : 'transparent', color: pianoTipo === t ? 'white' : '#475569' }}>
+                  {t === 'prestazionale' ? '🩺 Prestaz.' : '🤝 Assist.'}
                 </button>
               ))}
             </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <div style={{ position: 'relative' }}>
-                <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                <input value={searchP} onChange={e => setSearchP(e.target.value)} placeholder="Cerca..." style={{ paddingLeft: '32px', padding: '9px 9px 9px 32px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.875rem', width: '200px' }} />
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flex: '1 1 auto', justifyContent: 'flex-end' }}>
+              <div style={{ position: 'relative', flex: '1 1 120px', maxWidth: '200px', minWidth: '100px' }}>
+                <Search size={13} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                <input value={searchP} onChange={e => setSearchP(e.target.value)} placeholder="Cerca..." style={{ paddingLeft: '28px', padding: '8px 8px 8px 28px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.8rem', width: '100%', boxSizing: 'border-box' }} />
               </div>
-              {puoGestire && <button onClick={() => setShowFPiano(true)} style={{ background: '#059669', color: 'white', padding: '9px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}><Plus size={16} /> Nuovo Incarico</button>}
+              {puoGestire && <button onClick={() => setShowFPiano(true)} style={{ background: '#059669', color: 'white', padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}><Plus size={14} /> Nuovo</button>}
             </div>
           </div>
           {pianiFiltrati.length === 0
@@ -541,20 +541,20 @@ export default function CentroPrenotazioni() {
                 const allCats = [...PREST_CATS, ...ASSIST_CATS];
                 const labels = (w.categories || []).map(c => allCats.find(x => x.value === c)?.label || c);
                 return (
-                  <div key={w._id} style={{ background: 'white', border: '1px solid #e2e8f0', borderLeft: `4px solid ${w.status === 'completed' ? '#059669' : '#10b981'}`, borderRadius: '10px', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f172a', marginBottom: '4px' }}>
+                  <div key={w._id} style={{ background: 'white', border: '1px solid #e2e8f0', borderLeft: `4px solid ${w.status === 'completed' ? '#059669' : '#10b981'}`, borderRadius: '10px', padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: '1 1 0', minWidth: '0' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0f172a', marginBottom: '3px', wordBreak: 'break-word' }}>
                         {w.patient?.firstName ?? '(paziente eliminato)'} {w.patient?.lastName ?? ''}
-                        <span style={{ marginLeft: '10px', padding: '2px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, background: w.status === 'completed' ? '#dcfce7' : '#d1fae5', color: '#059669' }}>{w.status === 'completed' ? '✅ Completato' : '🟢 Attivo'}</span>
+                        <span style={{ marginLeft: '6px', padding: '2px 8px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 700, background: w.status === 'completed' ? '#dcfce7' : '#d1fae5', color: '#059669' }}>{w.status === 'completed' ? '✅ Completato' : '🟢 Attivo'}</span>
                       </div>
-                      <div style={{ fontSize: '0.83rem', color: '#475569' }}>👤 {w.staff?.firstName} {w.staff?.lastName} — {w.staff?.role}</div>
-                      <div style={{ fontSize: '0.82rem', color: '#64748b' }}>📋 {w.task}{labels.length > 0 && <span style={{ color: '#94a3b8' }}> · {labels.join(', ')}</span>}</div>
-                      <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '4px' }}><Calendar size={11} style={{ display: 'inline', marginRight: '3px' }} />{new Date(w.date).toLocaleDateString('it-IT')}{w.dataFine && ` → ${new Date(w.dataFine).toLocaleDateString('it-IT')}`}</div>
+                      <div style={{ fontSize: '0.78rem', color: '#475569' }}>👤 {w.staff?.firstName} {w.staff?.lastName} — {w.staff?.role}</div>
+                      <div style={{ fontSize: '0.76rem', color: '#64748b', wordBreak: 'break-word' }}>📋 {w.task}{labels.length > 0 && <span style={{ color: '#94a3b8' }}> · {labels.join(', ')}</span>}</div>
+                      <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '3px' }}><Calendar size={10} style={{ display: 'inline', marginRight: '3px' }} />{new Date(w.date).toLocaleDateString('it-IT')}{w.dataFine && ` → ${new Date(w.dataFine).toLocaleDateString('it-IT')}`}</div>
                     </div>
-                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                      <button onClick={() => navigate('/workplan')} style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', color: '#059669', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}><Eye size={13} /> Dettaglio</button>
-                      <button onClick={() => copiaLink(w._id)} style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', color: '#0369a1', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}>{copiedId === w._id ? <CheckCircle size={13} /> : <Copy size={13} />}</button>
-                      {puoGestire && <button onClick={() => eliminaPiano(w._id)} style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', color: '#dc2626' }}><Trash2 size={13} /></button>}
+                    <div style={{ display: 'flex', gap: '4px', flexShrink: 0, flexWrap: 'wrap' }}>
+                      <button onClick={() => navigate('/workplan')} style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '5px 8px', cursor: 'pointer', color: '#059669', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '3px' }}><Eye size={12} /> Dettaglio</button>
+                      <button onClick={() => copiaLink(w._id)} style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '6px', padding: '5px 8px', cursor: 'pointer', color: '#0369a1', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '3px' }}>{copiedId === w._id ? <CheckCircle size={12} /> : <Copy size={12} />}</button>
+                      {puoGestire && <button onClick={() => eliminaPiano(w._id)} style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', padding: '5px 8px', cursor: 'pointer', color: '#dc2626' }}><Trash2 size={12} /></button>}
                     </div>
                   </div>
                 );
@@ -638,12 +638,12 @@ export default function CentroPrenotazioni() {
                 {pianoTipo === 'prestazionale' ? (
                   <div>
                     <label style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e4d8c', display: 'block', marginBottom: '10px' }}>🩺 Categorie prestazionali * (seleziona una o più)</label>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
                       {(Object.keys(MACRO_CATEGORIE_LABELS) as MacroCategoria[]).map(cat => {
                         const info = MACRO_CATEGORIE_LABELS[cat];
                         const selected = fpMacroCats[cat];
                         return (
-                          <button key={cat} type="button" onClick={() => { setFpMacroCats(prev => ({ ...prev, [cat]: !prev[cat] })); if (fpMacroCats[cat]) { setFpFabbisogni(prev => ({ ...prev, [cat]: [] })); setFpStaffPerCat(prev => ({ ...prev, [cat]: '' })); } }} style={{ flex: '1 1 30%', minWidth: '130px', padding: '10px 14px', borderRadius: '10px', border: `2px solid ${selected ? info.color : '#d1d5db'}`, background: selected ? info.bg : 'white', color: selected ? info.color : '#374151', fontWeight: selected ? 700 : 500, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                          <button key={cat} type="button" onClick={() => { setFpMacroCats(prev => ({ ...prev, [cat]: !prev[cat] })); if (fpMacroCats[cat]) { setFpFabbisogni(prev => ({ ...prev, [cat]: [] })); setFpStaffPerCat(prev => ({ ...prev, [cat]: '' })); } }} style={{ flex: '1 1 28%', minWidth: '90px', padding: '7px 10px', borderRadius: '8px', border: `2px solid ${selected ? info.color : '#d1d5db'}`, background: selected ? info.bg : 'white', color: selected ? info.color : '#374151', fontWeight: selected ? 700 : 500, fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
                             {info.label}{selected && ' ✓'}
                           </button>
                         );
@@ -655,13 +655,13 @@ export default function CentroPrenotazioni() {
                       const options = FABBISOGNI_OPTIONS[cat];
                       const selezionati = fpFabbisogni[cat];
                       return (
-                        <div key={cat} style={{ marginBottom: '14px', padding: '12px', border: `1px solid ${info.color}40`, borderRadius: '10px', background: info.bg }}>
-                          <div style={{ fontWeight: 700, fontSize: '0.85rem', color: info.color, marginBottom: '8px' }}>{info.label} — Fabbisogni:</div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                        <div key={cat} style={{ marginBottom: '12px', padding: '10px', border: `1px solid ${info.color}40`, borderRadius: '8px', background: info.bg }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.78rem', color: info.color, marginBottom: '6px' }}>{info.label} — Fabbisogni:</div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
                             {options.map(opt => {
                               const sel = selezionati.includes(opt.value);
                               return (
-                                <button key={opt.value} type="button" onClick={() => setFpFabbisogni(prev => ({ ...prev, [cat]: sel ? prev[cat].filter(v => v !== opt.value) : [...prev[cat], opt.value] }))} style={{ padding: '5px 10px', borderRadius: '6px', border: `1px solid ${sel ? info.color : '#d1d5db'}`, background: sel ? info.color : 'white', color: sel ? 'white' : '#374151', fontWeight: sel ? 600 : 400, fontSize: '0.8rem', cursor: 'pointer' }}>
+                                <button key={opt.value} type="button" onClick={() => setFpFabbisogni(prev => ({ ...prev, [cat]: sel ? prev[cat].filter(v => v !== opt.value) : [...prev[cat], opt.value] }))} style={{ padding: '4px 8px', borderRadius: '5px', border: `1px solid ${sel ? info.color : '#d1d5db'}`, background: sel ? info.color : 'white', color: sel ? 'white' : '#374151', fontWeight: sel ? 600 : 400, fontSize: '0.72rem', cursor: 'pointer' }}>
                                   {sel ? '✓ ' : '+ '}{opt.label}
                                 </button>
                               );
@@ -693,10 +693,10 @@ export default function CentroPrenotazioni() {
                 ) : (
                   <div>
                     <label style={{ fontWeight: 600, fontSize: '0.875rem', display: 'block', marginBottom: '8px' }}>Categorie *</label>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       {ASSIST_CATS.map(cat => {
                         const sel = fpCats.includes(cat.value);
-                        return <button key={cat.value} type="button" onClick={() => setFpCats(prev => sel ? prev.filter(c => c !== cat.value) : [...prev, cat.value])} style={{ padding: '8px 14px', borderRadius: '8px', border: `2px solid ${sel ? cat.color : '#d1d5db'}`, background: sel ? cat.color + '20' : 'white', color: sel ? cat.color : '#374151', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}><cat.Icon size={14} />{cat.label}</button>;
+                        return <button key={cat.value} type="button" onClick={() => setFpCats(prev => sel ? prev.filter(c => c !== cat.value) : [...prev, cat.value])} style={{ padding: '6px 10px', borderRadius: '6px', border: `2px solid ${sel ? cat.color : '#d1d5db'}`, background: sel ? cat.color + '20' : 'white', color: sel ? cat.color : '#374151', cursor: 'pointer', fontWeight: 600, fontSize: '0.74rem', display: 'flex', alignItems: 'center', gap: '4px' }}><cat.Icon size={12} />{cat.label}</button>;
                       })}
                     </div>
                   </div>
