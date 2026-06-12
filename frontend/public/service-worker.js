@@ -1,4 +1,4 @@
-const CACHE_NAME = 'abbraccio-v2';
+const CACHE_NAME = 'abbraccio-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -33,6 +33,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Skip API requests
   if (event.request.url.includes('/api/')) {
+    return;
+  }
+
+  // Skip blob: and about: URLs (used for PDF generation)
+  if (event.request.url.startsWith('blob:') || event.request.url.startsWith('about:')) {
     return;
   }
 

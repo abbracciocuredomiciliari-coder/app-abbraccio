@@ -591,16 +591,20 @@ export default function EsamiStrumentali() {
 
   // ─── Visualizza PDF in nuova tab ────────────────────────────────────────────────
   const visualizzaPDF = async (esame: EsameItem) => {
+    // Apri finestra PRIMA dell'await per evitare blocco popup su mobile
+    const win = window.open('', '_blank');
+    if (!win) { setError('Impossibile aprire la finestra. Controlla il blocco popup.'); return; }
+    win.document.write('<p style="text-align:center;margin-top:40px;font-family:sans-serif;color:#666">⏳ Generazione documento...</p>');
     setLoadingPdf(true);
     try {
       const html = await generaPDFHtml(esame);
-      if (!html) return;
-      const win = window.open('', '_blank');
-      if (!win) { setError('Impossibile aprire la finestra. Controlla il blocco popup.'); return; }
+      if (!html) { win.close(); return; }
+      win.document.open();
       win.document.write(html);
       win.document.close();
       win.focus();
     } catch (err: any) {
+      win.close();
       setError(err.response?.data?.message || 'Errore nella generazione del PDF.');
       setTimeout(() => setError(''), 4000);
     } finally {
@@ -610,17 +614,21 @@ export default function EsamiStrumentali() {
 
   // ─── Stampa PDF (apre dialogo stampa) ───────────────────────────────────────────
   const stampaPDF = async (esame: EsameItem) => {
+    // Apri finestra PRIMA dell'await per evitare blocco popup su mobile
+    const win = window.open('', '_blank');
+    if (!win) { setError('Impossibile aprire la finestra. Controlla il blocco popup.'); return; }
+    win.document.write('<p style="text-align:center;margin-top:40px;font-family:sans-serif;color:#666">⏳ Generazione documento...</p>');
     setLoadingPdf(true);
     try {
       const html = await generaPDFHtml(esame);
-      if (!html) return;
-      const win = window.open('', '_blank');
-      if (!win) { setError('Impossibile aprire la finestra. Controlla il blocco popup.'); return; }
+      if (!html) { win.close(); return; }
+      win.document.open();
       win.document.write(html);
       win.document.close();
       win.focus();
       setTimeout(() => win.print(), 500);
     } catch (err: any) {
+      win.close();
       setError(err.response?.data?.message || 'Errore nella generazione del PDF.');
       setTimeout(() => setError(''), 4000);
     } finally {
