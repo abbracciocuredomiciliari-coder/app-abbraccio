@@ -39,7 +39,8 @@ interface Staff {
   _id: string;
   firstName: string;
   lastName: string;
-  professione?: string;
+  role?: string;
+  category?: string;
 }
 
 interface RichiestaPaziente {
@@ -140,11 +141,15 @@ export default function GestioneRichieste() {
   // ════════════════════════════════════════════════════════════════════════════
   const apriGestione = (r: Richiesta) => {
     setSelectedRichiesta(r);
+    // staffAssegnatoId may be a populated object {_id, firstName, lastName} or a plain string
+    const staffId = r.staffAssegnatoId
+      ? (typeof r.staffAssegnatoId === 'object' ? (r.staffAssegnatoId as any)._id : r.staffAssegnatoId)
+      : '';
     setGestioneForm({
       stato: r.stato === 'in_attesa' ? 'confermata' : r.stato,
       dataConfermata: r.dataConfermata ? new Date(r.dataConfermata).toISOString().split('T')[0] : r.dataPreferita ? new Date(r.dataPreferita).toISOString().split('T')[0] : '',
       orarioConfermato: r.orarioConfermato || r.orarioPreferito || '',
-      staffAssegnatoId: r.staffAssegnatoId || '',
+      staffAssegnatoId: staffId,
       noteAdmin: r.noteAdmin || '',
       creaAppuntamento: true
     });
@@ -299,11 +304,11 @@ export default function GestioneRichieste() {
       {/* ═══ SEZIONE REGISTRAZIONI PAZIENTI ═══ */}
       {tabPrincipale === 'pazienti' && (
         <div>
-          {richiestePaziente.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>Nessuna richiesta di registrazione paziente</div>
+          {richiestePaziente.filter(rp => rp.stato === 'in_attesa').length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>Nessuna richiesta di registrazione paziente in attesa</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {richiestePaziente.map(rp => (
+              {richiestePaziente.filter(rp => rp.stato === 'in_attesa').map(rp => (
                 <div key={rp._id} style={{ background: 'white', borderRadius: '12px', padding: '16px 20px', border: `2px solid ${rp.stato === 'in_attesa' ? '#fcd34d' : rp.stato === 'approvata' ? '#86efac' : '#fca5a5'}`, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
                     <div style={{ flex: 1, minWidth: '260px' }}>
@@ -587,11 +592,9 @@ export default function GestioneRichieste() {
                 <select
                   value={gestioneForm.staffAssegnatoId}
                   onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-                    const staffId = e.target.value;
-                    const staffName = staff.find((s: Staff) => s._id === staffId);
                     setGestioneForm({
                       ...gestioneForm,
-                      staffAssegnatoId: staffId,
+                      staffAssegnatoId: e.target.value,
                     });
                   }}
                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
@@ -599,7 +602,7 @@ export default function GestioneRichieste() {
                   <option value="">-- Seleziona operatore --</option>
                   {staff.map((s: Staff) => (
                     <option key={s._id} value={s._id}>
-                      {s.firstName} {s.lastName} {s.professione ? `(${s.professione})` : ''}
+                      {s.firstName} {s.lastName} {s.role ? `(${s.role})` : ''}
                     </option>
                   ))}
                 </select>

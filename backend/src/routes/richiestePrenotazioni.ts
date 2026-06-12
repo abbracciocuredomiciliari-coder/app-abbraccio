@@ -4,6 +4,7 @@ import Prelievo from '../models/Prelievo';
 import EsameStrumentale from '../models/EsameStrumentale';
 import WorkPlan from '../models/WorkPlan';
 import Patient from '../models/Patient';
+import Staff from '../models/Staff';
 import { authenticateToken } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { inviaEmailNuovaRichiestaPrenotazione, inviaEmailConfermaPrenotazione } from '../utils/email';
@@ -252,9 +253,21 @@ router.patch('/:id/gestisci', authenticateToken, authorizeRole('admin', 'coordin
     if (stato) richiesta.stato = stato;
     if (dataConfermata) richiesta.dataConfermata = new Date(dataConfermata);
     if (orarioConfermato) richiesta.orarioConfermato = orarioConfermato;
-    if (staffAssegnatoId) richiesta.staffAssegnatoId = staffAssegnatoId;
-    if (staffAssegnatoNome) richiesta.staffAssegnatoNome = staffAssegnatoNome;
-    if (noteAdmin) richiesta.noteAdmin = noteAdmin;
+    if (staffAssegnatoId) {
+      richiesta.staffAssegnatoId = staffAssegnatoId;
+      // Auto-populate staffAssegnatoNome if not provided
+      if (!staffAssegnatoNome) {
+        try {
+          const staffMember = await Staff.findById(staffAssegnatoId);
+          if (staffMember) {
+            richiesta.staffAssegnatoNome = `${staffMember.firstName} ${staffMember.lastName}`;
+          }
+        } catch { /* ignore lookup errors */ }
+      } else {
+        richiesta.staffAssegnatoNome = staffAssegnatoNome;
+      }
+    }
+    if (noteAdmin !== undefined) richiesta.noteAdmin = noteAdmin;
 
     // Aggiungi a storico
     richiesta.storicoModifiche.push({
@@ -321,8 +334,14 @@ router.patch('/:id/gestisci', authenticateToken, authorizeRole('admin', 'coordin
         richiesta.workPlanId = workplan._id;
       }
 
-      // Invia email conferma al richiedente
-      await inviaEmailConfermaPrenotazione(richiesta.richiedenteEmail, richiesta);
+      // Invia email conferma al richiedente (solo se email presente)
+      if (richiesta.richiedenteEmail) {
+        try {
+          await inviaEmailConfermaPrenotazione(richiesta.richiedenteEmail, richiesta);
+        } catch (emailErr) {
+          console.warn('⚠️ Errore invio email conferma:', emailErr);
+        }
+      }
     }
 
     await richiesta.save();
