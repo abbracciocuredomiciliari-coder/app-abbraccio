@@ -32,13 +32,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       const isAuthRoute = (error.config?.url || '').includes('/auth/');
       if (!isAuthRoute) {
+        // Rimuovi solo i dati di autenticazione; il redirect viene gestito
+        // da React (ProtectedRoute / AuthContext) senza forzare un full-reload
         localStorage.removeItem('authToken');
         localStorage.removeItem('authUser');
-        const isAlreadyOnLogin =
-          window.location.pathname === '/' || window.location.pathname === '/login';
-        if (!isAlreadyOnLogin) {
-          window.location.href = '/?sessionExpired=1';
-        }
       }
     }
     return Promise.reject(error);

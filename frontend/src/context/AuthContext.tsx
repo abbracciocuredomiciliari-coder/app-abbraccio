@@ -9,6 +9,7 @@ interface User {
 
 interface AuthContextValue {
   user: User | null;
+  loading: boolean;
   login: (token: string, user: User) => void;
   logout: () => void;
   getToken: () => string | null;
@@ -44,6 +45,7 @@ function isTokenExpired(token: string): boolean {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const logoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -95,10 +97,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem('authToken');
           localStorage.removeItem('authUser');
           setUser(null);
-          const isOnLoginPage = window.location.pathname === '/' || window.location.pathname === '/login';
-          if (!isOnLoginPage) {
-            window.location.href = '/?sessionExpired=1';
-          }
         }, msAllaScadenza);
       }
     }
@@ -127,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('authUser');
       }
     }
+    setLoading(false);
     
     // Cleanup quando il componente viene smontato
     return () => {
@@ -155,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const getToken = () => localStorage.getItem('authToken');
 
-  const value = useMemo(() => ({ user, login, logout, getToken }), [user]);
+  const value = useMemo(() => ({ user, loading, login, logout, getToken }), [user, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

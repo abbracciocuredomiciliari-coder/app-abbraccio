@@ -1,4 +1,4 @@
-const CACHE_NAME = 'abbraccio-v1';
+const CACHE_NAME = 'abbraccio-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -41,16 +41,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // SPA navigation: always serve index.html for page navigations
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match('/index.html');
+      })
+    );
+    return;
+  }
+
+  // Static assets: cache-first strategy
   event.respondWith(
     caches.match(event.request).then((response) => {
-      // Return cached response if found
       if (response) {
         return response;
       }
 
-      // Otherwise fetch from network
       return fetch(event.request).then((networkResponse) => {
-        // Cache successful responses for static assets
         if (networkResponse.ok && !event.request.url.includes('chrome-extension')) {
           const cacheCopy = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -60,10 +68,8 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       });
     }).catch(() => {
-      // Offline fallback
-      if (event.request.mode === 'navigate') {
-        return caches.match('/index.html');
-      }
+      // Offline fallback for non-navigation requests
+      return new Response('', { status: 408 });
     })
   );
 });
