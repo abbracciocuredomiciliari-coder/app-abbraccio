@@ -247,30 +247,13 @@ export default function CentroPrenotazioni() {
   const creaPiano = async (ev: FormEvent) => {
     ev.preventDefault(); setErrPiano(''); setOkPiano('');
     if (fpTipo === 'prestazionale') {
-      const macroSelezionate = (Object.keys(fpMacroCats) as MacroCategoria[]).filter(c => fpMacroCats[c]);
       if (!fpPaz || !fpDate || !fpTask) { setErrPiano('Compila paziente, data e attività.'); return; }
-      if (macroSelezionate.length === 0) { setErrPiano('Seleziona almeno una categoria prestazionale.'); return; }
-      for (const cat of macroSelezionate) {
-        if (fpFabbisogni[cat].length === 0) { setErrPiano(`Seleziona almeno un fabbisogno per ${MACRO_CATEGORIE_LABELS[cat].label}`); return; }
-        if (!fpStaffPerCat[cat]) { setErrPiano(`Assegna un professionista per ${MACRO_CATEGORIE_LABELS[cat].label}`); return; }
-      }
       setSavingPiano(true);
       try {
         const giorniAttivi = fpGiorni.filter(g => g.attivo).map(g => ({ giorno: g.giorno, accessiAlGiorno: g.accessiAlGiorno, minutiPerAccesso: g.minutiPerAccesso }));
-        const allFabbisogniLabels: string[] = [];
-        macroSelezionate.forEach(cat => {
-          fpFabbisogni[cat].forEach(f => {
-            const opt = FABBISOGNI_OPTIONS[cat].find(o => o.value === f);
-            allFabbisogniLabels.push(opt ? `${MACRO_CATEGORIE_LABELS[cat].label.replace(/^[^\s]+\s/, '')}: ${opt.label}` : f);
-          });
-        });
         await api.post('/workplan', {
           type: fpTipo,
-          macroCategorie: macroSelezionate,
-          fabbisogni: { infermieristico: fpFabbisogni.infermieristico, riabilitativo: fpFabbisogni.riabilitativo, medico_specialistiche: fpFabbisogni.medico_specialistiche },
-          staffPerCategoria: { infermieristico: fpStaffPerCat.infermieristico || undefined, riabilitativo: fpStaffPerCat.riabilitativo || undefined, medico_specialistiche: fpStaffPerCat.medico_specialistiche || undefined },
-          categories: allFabbisogniLabels,
-          patient: fpPaz, staff: fpStaffPerCat[macroSelezionate[0]], task: fpTask,
+          patient: fpPaz, staff: fpStaff || undefined, task: fpTask,
           date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpDur,
           notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined,
           tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0,
@@ -637,63 +620,8 @@ export default function CentroPrenotazioni() {
                     </button>
                   ))}
                 </div>
-                {/* Categorie — Prestazionale: macro-categorie + fabbisogni + staff per cat */}
-                {fpTipo === 'prestazionale' ? (
-                  <div>
-                    <label style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e4d8c', display: 'block', marginBottom: '10px' }}>🩺 Categorie prestazionali * (seleziona una o più)</label>
-                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
-                      {(Object.keys(MACRO_CATEGORIE_LABELS) as MacroCategoria[]).map(cat => {
-                        const info = MACRO_CATEGORIE_LABELS[cat];
-                        const selected = fpMacroCats[cat];
-                        return (
-                          <button key={cat} type="button" onClick={() => { setFpMacroCats(prev => ({ ...prev, [cat]: !prev[cat] })); if (fpMacroCats[cat]) { setFpFabbisogni(prev => ({ ...prev, [cat]: [] })); setFpStaffPerCat(prev => ({ ...prev, [cat]: '' })); } }} style={{ flex: '1 1 28%', minWidth: '90px', padding: '7px 10px', borderRadius: '8px', border: `2px solid ${selected ? info.color : '#d1d5db'}`, background: selected ? info.bg : 'white', color: selected ? info.color : '#374151', fontWeight: selected ? 700 : 500, fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                            {info.label}{selected && ' ✓'}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {/* Fabbisogni + Staff per ogni macro-categoria selezionata */}
-                    {(Object.keys(MACRO_CATEGORIE_LABELS) as MacroCategoria[]).filter(cat => fpMacroCats[cat]).map(cat => {
-                      const info = MACRO_CATEGORIE_LABELS[cat];
-                      const options = FABBISOGNI_OPTIONS[cat];
-                      const selezionati = fpFabbisogni[cat];
-                      return (
-                        <div key={cat} style={{ marginBottom: '12px', padding: '10px', border: `1px solid ${info.color}40`, borderRadius: '8px', background: info.bg }}>
-                          <div style={{ fontWeight: 700, fontSize: '0.78rem', color: info.color, marginBottom: '6px' }}>{info.label} — Fabbisogni:</div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
-                            {options.map(opt => {
-                              const sel = selezionati.includes(opt.value);
-                              return (
-                                <button key={opt.value} type="button" onClick={() => setFpFabbisogni(prev => ({ ...prev, [cat]: sel ? prev[cat].filter(v => v !== opt.value) : [...prev[cat], opt.value] }))} style={{ padding: '4px 8px', borderRadius: '5px', border: `1px solid ${sel ? info.color : '#d1d5db'}`, background: sel ? info.color : 'white', color: sel ? 'white' : '#374151', fontWeight: sel ? 600 : 400, fontSize: '0.72rem', cursor: 'pointer' }}>
-                                  {sel ? '✓ ' : '+ '}{opt.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                          {selezionati.length === 0 && <div style={{ fontSize: '0.78rem', color: '#9ca3af' }}>Seleziona almeno un fabbisogno</div>}
-                          <label style={{ fontWeight: 600, fontSize: '0.82rem', color: info.color, display: 'block', marginTop: '8px' }}>
-                            Professionista per {info.label.replace(/^[^\s]+\s/, '')} *
-                            <select value={fpStaffPerCat[cat]} onChange={e => setFpStaffPerCat(prev => ({ ...prev, [cat]: e.target.value }))} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '8px', borderRadius: '8px', border: `1px solid ${info.color}60` }}>
-                              <option value="">Seleziona professionista...</option>
-                              {staff.map(s => <option key={s._id} value={s._id}>{s.firstName} {s.lastName} — {s.role}</option>)}
-                            </select>
-                          </label>
-                        </div>
-                      );
-                    })}
-                    {/* Riepilogo */}
-                    {(Object.keys(fpMacroCats) as MacroCategoria[]).some(c => fpMacroCats[c]) && (
-                      <div style={{ padding: '10px', background: '#f0f9ff', borderRadius: '8px', fontSize: '0.82rem', marginBottom: '8px' }}>
-                        <strong>Riepilogo:</strong>
-                        <ul style={{ margin: '4px 0 0', paddingLeft: '16px' }}>
-                          {fpMacroCats.infermieristico && fpFabbisogni.infermieristico.length > 0 && <li>💉 Infermieristico: {fpFabbisogni.infermieristico.map(f => FABBISOGNI_OPTIONS.infermieristico.find(o => o.value === f)?.label).join(', ')}</li>}
-                          {fpMacroCats.riabilitativo && fpFabbisogni.riabilitativo.length > 0 && <li>🏃 Riabilitativo: {fpFabbisogni.riabilitativo.map(f => FABBISOGNI_OPTIONS.riabilitativo.find(o => o.value === f)?.label).join(', ')}</li>}
-                          {fpMacroCats.medico_specialistiche && fpFabbisogni.medico_specialistiche.length > 0 && <li>🩺 Medico/Specialistiche: {fpFabbisogni.medico_specialistiche.map(f => FABBISOGNI_OPTIONS.medico_specialistiche.find(o => o.value === f)?.label).join(', ')}</li>}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                ) : (
+                {/* Categorie — solo per Assistenziale */}
+                {fpTipo === 'assistenziale' && (
                   <div>
                     <label style={{ fontWeight: 600, fontSize: '0.875rem', display: 'block', marginBottom: '8px' }}>Categorie *</label>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -705,9 +633,7 @@ export default function CentroPrenotazioni() {
                   </div>
                 )}
                 <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Paziente *<select value={fpPaz} onChange={e => setFpPaz(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}><option value="">Seleziona...</option>{pazienti.map(p => <option key={p._id} value={p._id}>{p.firstName} {p.lastName}</option>)}</select></label>
-                {fpTipo === 'assistenziale' && (
-                  <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Operatore *<select value={fpStaff} onChange={e => setFpStaff(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}><option value="">Seleziona...</option>{staff.map(s => <option key={s._id} value={s._id}>{s.firstName} {s.lastName} — {s.role}</option>)}</select></label>
-                )}
+                <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Operatore {fpTipo === 'assistenziale' ? '*' : ''}<select value={fpStaff} onChange={e => setFpStaff(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}><option value="">Seleziona...</option>{staff.map(s => <option key={s._id} value={s._id}>{s.firstName} {s.lastName} — {s.role}</option>)}</select></label>
                 <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Attività *<input value={fpTask} onChange={e => setFpTask(e.target.value)} placeholder="Es. Assistenza domiciliare..." style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} /></label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                   <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Data inizio *<input type="date" value={fpDate} onChange={e => setFpDate(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} /></label>
