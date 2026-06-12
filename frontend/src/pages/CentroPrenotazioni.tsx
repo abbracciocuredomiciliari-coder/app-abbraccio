@@ -27,6 +27,60 @@ const ASSIST_CATS = [
   { value: 'variazione_orario', label: 'Variazione Orario', Icon: CalendarDays, color: '#8b5cf6' },
   { value: 'visita_programmata', label: 'Visita Programmata', Icon: Users, color: '#06b6d4' },
 ];
+
+// ─── Macro-categorie e fabbisogni (come WorkPlan.tsx) ─────────────────────────
+type MacroCategoria = 'infermieristico' | 'riabilitativo' | 'medico_specialistiche';
+
+const MACRO_CATEGORIE_LABELS: Record<MacroCategoria, { label: string; color: string; bg: string }> = {
+  infermieristico: { label: '💉 Infermieristico', color: '#2563eb', bg: '#eff6ff' },
+  riabilitativo: { label: '🏃 Riabilitativo', color: '#16a34a', bg: '#f0fdf4' },
+  medico_specialistiche: { label: '🩺 Medico e Specialistiche', color: '#7c3aed', bg: '#f5f3ff' },
+};
+
+const FABBISOGNI_OPTIONS: Record<MacroCategoria, { value: string; label: string }[]> = {
+  infermieristico: [
+    { value: 'medicazioni', label: 'Medicazioni' },
+    { value: 'prelievi', label: 'Prelievi ematici' },
+    { value: 'catetere', label: 'Gestione catetere vescicale' },
+    { value: 'picc', label: 'Gestione PICC/Port-a-Cath' },
+    { value: 'peg', label: 'Gestione PEG (sonda enterale)' },
+    { value: 'tracheo', label: 'Gestione tracheostomia' },
+    { value: 'ossigeno', label: 'Gestione ossigenoterapia' },
+    { value: 'parametri', label: 'Controllo parametri vitali' },
+    { value: 'insulina', label: 'Somministrazione insulina' },
+    { value: 'terapia', label: 'Terapia farmacologica' },
+    { value: 'prevenzione', label: 'Prevenzione lesioni da decubito' },
+    { value: 'igiene', label: 'Assistenza igienica' },
+    { value: 'mobilizzazione', label: 'Mobilizzazione e cambio postura' },
+    { value: 'altro', label: 'Altro (specificare in note)' },
+  ],
+  riabilitativo: [
+    { value: 'fisio_motorio', label: 'Fisioterapia motoria' },
+    { value: 'fisio_respiratoria', label: 'Fisioterapia respiratoria' },
+    { value: 'riabilitazione', label: 'Riabilitazione post-chirurgica' },
+    { value: 'riabilitazione_ictus', label: 'Riabilitazione post-ictus' },
+    { value: 'deambulazione', label: 'Training deambulazione' },
+    { value: 'equilibrio', label: 'Rieducazione equilibrio' },
+    { value: 'logopedia', label: 'Logopedia' },
+    { value: 'terapia_occupazionale', label: 'Terapia occupazionale' },
+    { value: 'tens', label: 'TENS / elettroterapia' },
+    { value: 'altro', label: 'Altro (specificare in note)' },
+  ],
+  medico_specialistiche: [
+    { value: 'visita_medica', label: 'Visita medica domiciliare' },
+    { value: 'ecg', label: 'ECG' },
+    { value: 'ecografia', label: 'Ecografia' },
+    { value: 'rx', label: 'Rx domiciliare' },
+    { value: 'specialistica_cardio', label: 'Visita specialistica cardiologica' },
+    { value: 'specialistica_neuro', label: 'Visita specialistica neurologica' },
+    { value: 'specialistica_gm', label: 'Visita specialistica geriatrica' },
+    { value: 'specialistica_pneumo', label: 'Visita specialistica pneumologica' },
+    { value: 'wound_care', label: 'Wound care specialistica' },
+    { value: 'valutazione_pai', label: 'Valutazione PAI' },
+    { value: 'piano_terapeutico', label: 'Piano terapeutico ADI' },
+    { value: 'altro', label: 'Altro (specificare in note)' },
+  ],
+};
 const GIORNI_DEFAULT = [
   { giorno: 1, label: 'Lun', attivo: false, accessiAlGiorno: 1, minutiPerAccesso: 60 },
   { giorno: 2, label: 'Mar', attivo: false, accessiAlGiorno: 1, minutiPerAccesso: 60 },
@@ -177,6 +231,10 @@ export default function CentroPrenotazioni() {
   const [fpPaz, setFpPaz] = useState('');
   const [fpStaff, setFpStaff] = useState('');
   const [fpCats, setFpCats] = useState<string[]>([]);
+  // Macro-categorie e fabbisogni (come WorkPlan.tsx)
+  const [fpMacroCats, setFpMacroCats] = useState<Record<MacroCategoria, boolean>>({ infermieristico: false, riabilitativo: false, medico_specialistiche: false });
+  const [fpFabbisogni, setFpFabbisogni] = useState<Record<MacroCategoria, string[]>>({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] });
+  const [fpStaffPerCat, setFpStaffPerCat] = useState<Record<MacroCategoria, string>>({ infermieristico: '', riabilitativo: '', medico_specialistiche: '' });
   const [fpNotes, setFpNotes] = useState('');
   const [fpCompenso, setFpCompenso] = useState<'orario'|'fisso'|'nessuno'>('nessuno');
   const [fpTariffa, setFpTariffa] = useState(0);
@@ -184,18 +242,53 @@ export default function CentroPrenotazioni() {
   const [fpGiorni, setFpGiorni] = useState(GIORNI_DEFAULT.map(g => ({ ...g })));
 
   const loadPiani = async () => { try { const r = await api.get('/workplan'); setPiani(r.data); } catch {/***/} };
-  const resetFPiano = () => { setFpTask(''); setFpDate(''); setFpFine(''); setFpTime(''); setFpDur(60); setFpPaz(''); setFpStaff(''); setFpCats([]); setFpNotes(''); setFpCompenso('nessuno'); setFpTariffa(0); setFpCosto(0); setFpGiorni(GIORNI_DEFAULT.map(g => ({ ...g }))); };
+  const resetFPiano = () => { setFpTask(''); setFpDate(''); setFpFine(''); setFpTime(''); setFpDur(60); setFpPaz(''); setFpStaff(''); setFpCats([]); setFpNotes(''); setFpCompenso('nessuno'); setFpTariffa(0); setFpCosto(0); setFpGiorni(GIORNI_DEFAULT.map(g => ({ ...g }))); setFpMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false }); setFpFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] }); setFpStaffPerCat({ infermieristico: '', riabilitativo: '', medico_specialistiche: '' }); };
   const creaPiano = async (ev: FormEvent) => {
     ev.preventDefault(); setErrPiano(''); setOkPiano('');
-    if (!fpPaz || !fpStaff || !fpDate || !fpTask || fpCats.length === 0) { setErrPiano('Compila tutti i campi obbligatori.'); return; }
-    setSavingPiano(true);
-    try {
-      const giorniAttivi = fpGiorni.filter(g => g.attivo).map(g => ({ giorno: g.giorno, accessiAlGiorno: g.accessiAlGiorno, minutiPerAccesso: g.minutiPerAccesso }));
-      await api.post('/workplan', { type: pianoTipo, categories: fpCats, patient: fpPaz, staff: fpStaff, task: fpTask, date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpDur, notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined, tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0 });
-      await loadPiani(); resetFPiano(); setShowFPiano(false);
-      setOkPiano('✅ Incarico creato!'); setTimeout(() => setOkPiano(''), 3000);
-    } catch (err: any) { setErrPiano(err.response?.data?.message || 'Errore'); }
-    setSavingPiano(false);
+    if (pianoTipo === 'prestazionale') {
+      const macroSelezionate = (Object.keys(fpMacroCats) as MacroCategoria[]).filter(c => fpMacroCats[c]);
+      if (!fpPaz || !fpDate || !fpTask) { setErrPiano('Compila paziente, data e attività.'); return; }
+      if (macroSelezionate.length === 0) { setErrPiano('Seleziona almeno una categoria prestazionale.'); return; }
+      for (const cat of macroSelezionate) {
+        if (fpFabbisogni[cat].length === 0) { setErrPiano(`Seleziona almeno un fabbisogno per ${MACRO_CATEGORIE_LABELS[cat].label}`); return; }
+        if (!fpStaffPerCat[cat]) { setErrPiano(`Assegna un professionista per ${MACRO_CATEGORIE_LABELS[cat].label}`); return; }
+      }
+      setSavingPiano(true);
+      try {
+        const giorniAttivi = fpGiorni.filter(g => g.attivo).map(g => ({ giorno: g.giorno, accessiAlGiorno: g.accessiAlGiorno, minutiPerAccesso: g.minutiPerAccesso }));
+        const allFabbisogniLabels: string[] = [];
+        macroSelezionate.forEach(cat => {
+          fpFabbisogni[cat].forEach(f => {
+            const opt = FABBISOGNI_OPTIONS[cat].find(o => o.value === f);
+            allFabbisogniLabels.push(opt ? `${MACRO_CATEGORIE_LABELS[cat].label.replace(/^[^\s]+\s/, '')}: ${opt.label}` : f);
+          });
+        });
+        await api.post('/workplan', {
+          type: pianoTipo,
+          macroCategorie: macroSelezionate,
+          fabbisogni: { infermieristico: fpFabbisogni.infermieristico, riabilitativo: fpFabbisogni.riabilitativo, medico_specialistiche: fpFabbisogni.medico_specialistiche },
+          staffPerCategoria: { infermieristico: fpStaffPerCat.infermieristico || undefined, riabilitativo: fpStaffPerCat.riabilitativo || undefined, medico_specialistiche: fpStaffPerCat.medico_specialistiche || undefined },
+          categories: allFabbisogniLabels,
+          patient: fpPaz, staff: fpStaffPerCat[macroSelezionate[0]], task: fpTask,
+          date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpDur,
+          notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined,
+          tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0,
+        });
+        await loadPiani(); resetFPiano(); setShowFPiano(false);
+        setOkPiano('✅ Incarico creato!'); setTimeout(() => setOkPiano(''), 3000);
+      } catch (err: any) { setErrPiano(err.response?.data?.message || 'Errore'); }
+      setSavingPiano(false);
+    } else {
+      if (!fpPaz || !fpStaff || !fpDate || !fpTask || fpCats.length === 0) { setErrPiano('Compila tutti i campi obbligatori.'); return; }
+      setSavingPiano(true);
+      try {
+        const giorniAttivi = fpGiorni.filter(g => g.attivo).map(g => ({ giorno: g.giorno, accessiAlGiorno: g.accessiAlGiorno, minutiPerAccesso: g.minutiPerAccesso }));
+        await api.post('/workplan', { type: pianoTipo, categories: fpCats, patient: fpPaz, staff: fpStaff, task: fpTask, date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpDur, notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined, tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0 });
+        await loadPiani(); resetFPiano(); setShowFPiano(false);
+        setOkPiano('✅ Incarico creato!'); setTimeout(() => setOkPiano(''), 3000);
+      } catch (err: any) { setErrPiano(err.response?.data?.message || 'Errore'); }
+      setSavingPiano(false);
+    }
   };
   const eliminaPiano = async (id: string) => { if (!confirm('Eliminare?')) return; try { await api.delete(`/workplan/${id}`); await loadPiani(); } catch {/***/} };
   const copiaLink = async (id: string) => {
@@ -536,23 +629,82 @@ export default function CentroPrenotazioni() {
                 {/* Tipo */}
                 <div style={{ display: 'flex', gap: '4px', background: '#f1f5f9', borderRadius: '8px', padding: '4px' }}>
                   {(['prestazionale', 'assistenziale'] as const).map(t => (
-                    <button key={t} type="button" onClick={() => { setPianoTipo(t); setFpCats([]); }} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', background: pianoTipo === t ? '#059669' : 'transparent', color: pianoTipo === t ? 'white' : '#475569' }}>
+                    <button key={t} type="button" onClick={() => { setPianoTipo(t); setFpCats([]); setFpMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false }); setFpFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] }); setFpStaffPerCat({ infermieristico: '', riabilitativo: '', medico_specialistiche: '' }); }} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', background: pianoTipo === t ? '#059669' : 'transparent', color: pianoTipo === t ? 'white' : '#475569' }}>
                       {t === 'prestazionale' ? '🩺 Prestazionale' : '🤝 Assistenziale'}
                     </button>
                   ))}
                 </div>
-                {/* Categorie */}
-                <div>
-                  <label style={{ fontWeight: 600, fontSize: '0.875rem', display: 'block', marginBottom: '8px' }}>Categorie *</label>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {(pianoTipo === 'prestazionale' ? PREST_CATS : ASSIST_CATS).map(cat => {
-                      const sel = fpCats.includes(cat.value);
-                      return <button key={cat.value} type="button" onClick={() => setFpCats(prev => sel ? prev.filter(c => c !== cat.value) : [...prev, cat.value])} style={{ padding: '8px 14px', borderRadius: '8px', border: `2px solid ${sel ? cat.color : '#d1d5db'}`, background: sel ? cat.color + '20' : 'white', color: sel ? cat.color : '#374151', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}><cat.Icon size={14} />{cat.label}</button>;
+                {/* Categorie — Prestazionale: macro-categorie + fabbisogni + staff per cat */}
+                {pianoTipo === 'prestazionale' ? (
+                  <div>
+                    <label style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e4d8c', display: 'block', marginBottom: '10px' }}>🩺 Categorie prestazionali * (seleziona una o più)</label>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
+                      {(Object.keys(MACRO_CATEGORIE_LABELS) as MacroCategoria[]).map(cat => {
+                        const info = MACRO_CATEGORIE_LABELS[cat];
+                        const selected = fpMacroCats[cat];
+                        return (
+                          <button key={cat} type="button" onClick={() => { setFpMacroCats(prev => ({ ...prev, [cat]: !prev[cat] })); if (fpMacroCats[cat]) { setFpFabbisogni(prev => ({ ...prev, [cat]: [] })); setFpStaffPerCat(prev => ({ ...prev, [cat]: '' })); } }} style={{ flex: '1 1 30%', minWidth: '130px', padding: '10px 14px', borderRadius: '10px', border: `2px solid ${selected ? info.color : '#d1d5db'}`, background: selected ? info.bg : 'white', color: selected ? info.color : '#374151', fontWeight: selected ? 700 : 500, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                            {info.label}{selected && ' ✓'}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Fabbisogni + Staff per ogni macro-categoria selezionata */}
+                    {(Object.keys(MACRO_CATEGORIE_LABELS) as MacroCategoria[]).filter(cat => fpMacroCats[cat]).map(cat => {
+                      const info = MACRO_CATEGORIE_LABELS[cat];
+                      const options = FABBISOGNI_OPTIONS[cat];
+                      const selezionati = fpFabbisogni[cat];
+                      return (
+                        <div key={cat} style={{ marginBottom: '14px', padding: '12px', border: `1px solid ${info.color}40`, borderRadius: '10px', background: info.bg }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.85rem', color: info.color, marginBottom: '8px' }}>{info.label} — Fabbisogni:</div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                            {options.map(opt => {
+                              const sel = selezionati.includes(opt.value);
+                              return (
+                                <button key={opt.value} type="button" onClick={() => setFpFabbisogni(prev => ({ ...prev, [cat]: sel ? prev[cat].filter(v => v !== opt.value) : [...prev[cat], opt.value] }))} style={{ padding: '5px 10px', borderRadius: '6px', border: `1px solid ${sel ? info.color : '#d1d5db'}`, background: sel ? info.color : 'white', color: sel ? 'white' : '#374151', fontWeight: sel ? 600 : 400, fontSize: '0.8rem', cursor: 'pointer' }}>
+                                  {sel ? '✓ ' : '+ '}{opt.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {selezionati.length === 0 && <div style={{ fontSize: '0.78rem', color: '#9ca3af' }}>Seleziona almeno un fabbisogno</div>}
+                          <label style={{ fontWeight: 600, fontSize: '0.82rem', color: info.color, display: 'block', marginTop: '8px' }}>
+                            Professionista per {info.label.replace(/^[^\s]+\s/, '')} *
+                            <select value={fpStaffPerCat[cat]} onChange={e => setFpStaffPerCat(prev => ({ ...prev, [cat]: e.target.value }))} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '8px', borderRadius: '8px', border: `1px solid ${info.color}60` }}>
+                              <option value="">Seleziona professionista...</option>
+                              {staff.map(s => <option key={s._id} value={s._id}>{s.firstName} {s.lastName} — {s.role}</option>)}
+                            </select>
+                          </label>
+                        </div>
+                      );
                     })}
+                    {/* Riepilogo */}
+                    {(Object.keys(fpMacroCats) as MacroCategoria[]).some(c => fpMacroCats[c]) && (
+                      <div style={{ padding: '10px', background: '#f0f9ff', borderRadius: '8px', fontSize: '0.82rem', marginBottom: '8px' }}>
+                        <strong>Riepilogo:</strong>
+                        <ul style={{ margin: '4px 0 0', paddingLeft: '16px' }}>
+                          {fpMacroCats.infermieristico && fpFabbisogni.infermieristico.length > 0 && <li>💉 Infermieristico: {fpFabbisogni.infermieristico.map(f => FABBISOGNI_OPTIONS.infermieristico.find(o => o.value === f)?.label).join(', ')}</li>}
+                          {fpMacroCats.riabilitativo && fpFabbisogni.riabilitativo.length > 0 && <li>🏃 Riabilitativo: {fpFabbisogni.riabilitativo.map(f => FABBISOGNI_OPTIONS.riabilitativo.find(o => o.value === f)?.label).join(', ')}</li>}
+                          {fpMacroCats.medico_specialistiche && fpFabbisogni.medico_specialistiche.length > 0 && <li>🩺 Medico/Specialistiche: {fpFabbisogni.medico_specialistiche.map(f => FABBISOGNI_OPTIONS.medico_specialistiche.find(o => o.value === f)?.label).join(', ')}</li>}
+                        </ul>
+                      </div>
+                    )}
                   </div>
-                </div>
+                ) : (
+                  <div>
+                    <label style={{ fontWeight: 600, fontSize: '0.875rem', display: 'block', marginBottom: '8px' }}>Categorie *</label>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {ASSIST_CATS.map(cat => {
+                        const sel = fpCats.includes(cat.value);
+                        return <button key={cat.value} type="button" onClick={() => setFpCats(prev => sel ? prev.filter(c => c !== cat.value) : [...prev, cat.value])} style={{ padding: '8px 14px', borderRadius: '8px', border: `2px solid ${sel ? cat.color : '#d1d5db'}`, background: sel ? cat.color + '20' : 'white', color: sel ? cat.color : '#374151', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}><cat.Icon size={14} />{cat.label}</button>;
+                      })}
+                    </div>
+                  </div>
+                )}
                 <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Paziente *<select value={fpPaz} onChange={e => setFpPaz(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}><option value="">Seleziona...</option>{pazienti.map(p => <option key={p._id} value={p._id}>{p.firstName} {p.lastName}</option>)}</select></label>
-                <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Operatore *<select value={fpStaff} onChange={e => setFpStaff(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}><option value="">Seleziona...</option>{staff.map(s => <option key={s._id} value={s._id}>{s.firstName} {s.lastName} — {s.role}</option>)}</select></label>
+                {pianoTipo === 'assistenziale' && (
+                  <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Operatore *<select value={fpStaff} onChange={e => setFpStaff(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}><option value="">Seleziona...</option>{staff.map(s => <option key={s._id} value={s._id}>{s.firstName} {s.lastName} — {s.role}</option>)}</select></label>
+                )}
                 <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Attività *<input value={fpTask} onChange={e => setFpTask(e.target.value)} placeholder="Es. Assistenza domiciliare..." style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} /></label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                   <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Data inizio *<input type="date" value={fpDate} onChange={e => setFpDate(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} /></label>
