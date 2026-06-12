@@ -216,13 +216,14 @@ export default function CentroPrenotazioni() {
 
   // ── PIANI state ─────────────────────────────────────────────────────────────
   const [piani, setPiani] = useState<Piano[]>([]);
-  const [pianoTipo, setPianoTipo] = useState<'prestazionale' | 'assistenziale'>('prestazionale');
+  const [pianoTipo, setPianoTipo] = useState<'tutti' | 'prestazionale' | 'assistenziale'>('tutti');
   const [searchP, setSearchP] = useState('');
   const [showFPiano, setShowFPiano] = useState(false);
   const [savingPiano, setSavingPiano] = useState(false);
   const [errPiano, setErrPiano] = useState('');
   const [okPiano, setOkPiano] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [fpTipo, setFpTipo] = useState<'prestazionale' | 'assistenziale'>('prestazionale');
   const [fpTask, setFpTask] = useState('');
   const [fpDate, setFpDate] = useState('');
   const [fpFine, setFpFine] = useState('');
@@ -242,10 +243,10 @@ export default function CentroPrenotazioni() {
   const [fpGiorni, setFpGiorni] = useState(GIORNI_DEFAULT.map(g => ({ ...g })));
 
   const loadPiani = async () => { try { const r = await api.get('/workplan'); setPiani(r.data); } catch {/***/} };
-  const resetFPiano = () => { setFpTask(''); setFpDate(''); setFpFine(''); setFpTime(''); setFpDur(60); setFpPaz(''); setFpStaff(''); setFpCats([]); setFpNotes(''); setFpCompenso('nessuno'); setFpTariffa(0); setFpCosto(0); setFpGiorni(GIORNI_DEFAULT.map(g => ({ ...g }))); setFpMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false }); setFpFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] }); setFpStaffPerCat({ infermieristico: '', riabilitativo: '', medico_specialistiche: '' }); };
+  const resetFPiano = () => { setFpTipo('prestazionale'); setFpTask(''); setFpDate(''); setFpFine(''); setFpTime(''); setFpDur(60); setFpPaz(''); setFpStaff(''); setFpCats([]); setFpNotes(''); setFpCompenso('nessuno'); setFpTariffa(0); setFpCosto(0); setFpGiorni(GIORNI_DEFAULT.map(g => ({ ...g }))); setFpMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false }); setFpFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] }); setFpStaffPerCat({ infermieristico: '', riabilitativo: '', medico_specialistiche: '' }); };
   const creaPiano = async (ev: FormEvent) => {
     ev.preventDefault(); setErrPiano(''); setOkPiano('');
-    if (pianoTipo === 'prestazionale') {
+    if (fpTipo === 'prestazionale') {
       const macroSelezionate = (Object.keys(fpMacroCats) as MacroCategoria[]).filter(c => fpMacroCats[c]);
       if (!fpPaz || !fpDate || !fpTask) { setErrPiano('Compila paziente, data e attività.'); return; }
       if (macroSelezionate.length === 0) { setErrPiano('Seleziona almeno una categoria prestazionale.'); return; }
@@ -264,7 +265,7 @@ export default function CentroPrenotazioni() {
           });
         });
         await api.post('/workplan', {
-          type: pianoTipo,
+          type: fpTipo,
           macroCategorie: macroSelezionate,
           fabbisogni: { infermieristico: fpFabbisogni.infermieristico, riabilitativo: fpFabbisogni.riabilitativo, medico_specialistiche: fpFabbisogni.medico_specialistiche },
           staffPerCategoria: { infermieristico: fpStaffPerCat.infermieristico || undefined, riabilitativo: fpStaffPerCat.riabilitativo || undefined, medico_specialistiche: fpStaffPerCat.medico_specialistiche || undefined },
@@ -283,7 +284,7 @@ export default function CentroPrenotazioni() {
       setSavingPiano(true);
       try {
         const giorniAttivi = fpGiorni.filter(g => g.attivo).map(g => ({ giorno: g.giorno, accessiAlGiorno: g.accessiAlGiorno, minutiPerAccesso: g.minutiPerAccesso }));
-        await api.post('/workplan', { type: pianoTipo, categories: fpCats, patient: fpPaz, staff: fpStaff, task: fpTask, date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpDur, notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined, tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0 });
+        await api.post('/workplan', { type: fpTipo, categories: fpCats, patient: fpPaz, staff: fpStaff, task: fpTask, date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpDur, notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined, tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0 });
         await loadPiani(); resetFPiano(); setShowFPiano(false);
         setOkPiano('✅ Incarico creato!'); setTimeout(() => setOkPiano(''), 3000);
       } catch (err: any) { setErrPiano(err.response?.data?.message || 'Errore'); }
@@ -297,7 +298,8 @@ export default function CentroPrenotazioni() {
     setCopiedId(id); setTimeout(() => setCopiedId(null), 2000);
   };
   const pianiFiltrati = useMemo(() => {
-    let list = piani.filter(w => w.type === pianoTipo && w.status !== 'cancelled');
+    let list = piani.filter(w => w.status !== 'cancelled');
+    if (pianoTipo !== 'tutti') list = list.filter(w => w.type === pianoTipo);
     const t = searchP.toLowerCase().trim();
     if (t) list = list.filter(w => `${w.patient?.firstName} ${w.patient?.lastName} ${w.staff?.firstName} ${w.staff?.lastName} ${w.task}`.toLowerCase().includes(t));
     return list;
@@ -519,10 +521,10 @@ export default function CentroPrenotazioni() {
           {okPiano && <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '10px 16px', marginBottom: '12px', color: '#166534', fontWeight: 600 }}>{okPiano}</div>}
           {errPiano && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px 16px', marginBottom: '12px', color: '#dc2626' }}>{errPiano}</div>}
           <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', gap: '4px', background: '#f1f5f9', borderRadius: '10px', padding: '3px' }}>
-              {(['prestazionale', 'assistenziale'] as const).map(t => (
-                <button key={t} onClick={() => setPianoTipo(t)} style={{ padding: '7px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', background: pianoTipo === t ? '#059669' : 'transparent', color: pianoTipo === t ? 'white' : '#475569' }}>
-                  {t === 'prestazionale' ? '🩺 Prestaz.' : '🤝 Assist.'}
+            <div style={{ display: 'flex', gap: '2px', background: '#f1f5f9', borderRadius: '8px', padding: '2px' }}>
+              {([['tutti', 'Tutti'], ['prestazionale', '🩺 Prest.'], ['assistenziale', '🤝 Ass.']] as const).map(([val, lbl]) => (
+                <button key={val} onClick={() => setPianoTipo(val as any)} style={{ padding: '5px 9px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.7rem', background: pianoTipo === val ? '#059669' : 'transparent', color: pianoTipo === val ? 'white' : '#475569' }}>
+                  {lbl}
                 </button>
               ))}
             </div>
@@ -545,7 +547,8 @@ export default function CentroPrenotazioni() {
                     <div style={{ flex: '1 1 0', minWidth: '0' }}>
                       <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0f172a', marginBottom: '3px', wordBreak: 'break-word' }}>
                         {w.patient?.firstName ?? '(paziente eliminato)'} {w.patient?.lastName ?? ''}
-                        <span style={{ marginLeft: '6px', padding: '2px 8px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 700, background: w.status === 'completed' ? '#dcfce7' : '#d1fae5', color: '#059669' }}>{w.status === 'completed' ? '✅ Completato' : '🟢 Attivo'}</span>
+                        <span style={{ marginLeft: '5px', padding: '1px 6px', borderRadius: '10px', fontSize: '0.62rem', fontWeight: 700, background: w.type === 'prestazionale' ? '#dbeafe' : '#fce7f3', color: w.type === 'prestazionale' ? '#1d4ed8' : '#be185d' }}>{w.type === 'prestazionale' ? 'PREST' : 'ASS'}</span>
+                        <span style={{ marginLeft: '4px', padding: '1px 6px', borderRadius: '10px', fontSize: '0.62rem', fontWeight: 700, background: w.status === 'completed' ? '#dcfce7' : '#d1fae5', color: '#059669' }}>{w.status === 'completed' ? '✅' : '🟢'}</span>
                       </div>
                       <div style={{ fontSize: '0.78rem', color: '#475569' }}>👤 {w.staff?.firstName} {w.staff?.lastName} — {w.staff?.role}</div>
                       <div style={{ fontSize: '0.76rem', color: '#64748b', wordBreak: 'break-word' }}>📋 {w.task}{labels.length > 0 && <span style={{ color: '#94a3b8' }}> · {labels.join(', ')}</span>}</div>
@@ -629,13 +632,13 @@ export default function CentroPrenotazioni() {
                 {/* Tipo */}
                 <div style={{ display: 'flex', gap: '4px', background: '#f1f5f9', borderRadius: '8px', padding: '4px' }}>
                   {(['prestazionale', 'assistenziale'] as const).map(t => (
-                    <button key={t} type="button" onClick={() => { setPianoTipo(t); setFpCats([]); setFpMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false }); setFpFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] }); setFpStaffPerCat({ infermieristico: '', riabilitativo: '', medico_specialistiche: '' }); }} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', background: pianoTipo === t ? '#059669' : 'transparent', color: pianoTipo === t ? 'white' : '#475569' }}>
-                      {t === 'prestazionale' ? '🩺 Prestazionale' : '🤝 Assistenziale'}
+                    <button key={t} type="button" onClick={() => { setFpTipo(t); setFpCats([]); setFpMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false }); setFpFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] }); setFpStaffPerCat({ infermieristico: '', riabilitativo: '', medico_specialistiche: '' }); }} style={{ flex: 1, padding: '6px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.72rem', background: fpTipo === t ? '#059669' : 'transparent', color: fpTipo === t ? 'white' : '#475569' }}>
+                      {t === 'prestazionale' ? '🩺 Prestaz.' : '🤝 Assist.'}
                     </button>
                   ))}
                 </div>
                 {/* Categorie — Prestazionale: macro-categorie + fabbisogni + staff per cat */}
-                {pianoTipo === 'prestazionale' ? (
+                {fpTipo === 'prestazionale' ? (
                   <div>
                     <label style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e4d8c', display: 'block', marginBottom: '10px' }}>🩺 Categorie prestazionali * (seleziona una o più)</label>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
@@ -702,7 +705,7 @@ export default function CentroPrenotazioni() {
                   </div>
                 )}
                 <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Paziente *<select value={fpPaz} onChange={e => setFpPaz(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}><option value="">Seleziona...</option>{pazienti.map(p => <option key={p._id} value={p._id}>{p.firstName} {p.lastName}</option>)}</select></label>
-                {pianoTipo === 'assistenziale' && (
+                {fpTipo === 'assistenziale' && (
                   <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Operatore *<select value={fpStaff} onChange={e => setFpStaff(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}><option value="">Seleziona...</option>{staff.map(s => <option key={s._id} value={s._id}>{s.firstName} {s.lastName} — {s.role}</option>)}</select></label>
                 )}
                 <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Attività *<input value={fpTask} onChange={e => setFpTask(e.target.value)} placeholder="Es. Assistenza domiciliare..." style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} /></label>
