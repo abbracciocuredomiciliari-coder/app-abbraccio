@@ -569,8 +569,8 @@ export default function CentroPrenotazioni() {
 
       {/* ══ MODAL NUOVO PRELIEVO ══════════════════════════════════════════════ */}
       {showFP && puoGestire && (
-        <div className="modal-overlay" onClick={() => setShowFP(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+        <div className="modal-overlay" onClick={() => setShowFP(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0, color: '#0369a1', display: 'flex', alignItems: 'center', gap: '8px' }}><Syringe size={20} />Nuovo Prelievo</h3>
               <button onClick={() => setShowFP(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
@@ -595,8 +595,8 @@ export default function CentroPrenotazioni() {
 
       {/* ══ MODAL NUOVO ESAME ════════════════════════════════════════════════ */}
       {showFE && puoGestire && (
-        <div className="modal-overlay" onClick={() => setShowFE(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+        <div className="modal-overlay" onClick={() => setShowFE(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0, color: '#7c3aed', display: 'flex', alignItems: 'center', gap: '8px' }}><HeartPulse size={20} />Nuovo Esame Strumentale</h3>
               <button onClick={() => setShowFE(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
@@ -621,8 +621,8 @@ export default function CentroPrenotazioni() {
 
       {/* ══ MODAL NUOVO INCARICO ══════════════════════════════════════════════ */}
       {showFPiano && puoGestire && (
-        <div className="modal-overlay" onClick={() => setShowFPiano(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '620px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div className="modal-overlay" onClick={() => setShowFPiano(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '620px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0, color: '#059669', display: 'flex', alignItems: 'center', gap: '8px' }}><ClipboardList size={20} />Nuovo Incarico</h3>
               <button onClick={() => setShowFPiano(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
