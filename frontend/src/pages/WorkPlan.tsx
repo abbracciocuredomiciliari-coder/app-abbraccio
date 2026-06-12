@@ -293,6 +293,7 @@ function WorkPlan() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
   // Modal storico accessi + compenso
   const [showAccessiModal, setShowAccessiModal] = useState(false);
@@ -901,17 +902,22 @@ function WorkPlan() {
         </button>
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar + Nuovo Incarico */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', alignItems: 'center' }}>
         <div style={{ flex: 1, position: 'relative' }}>
           <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-400)' }} />
           <input type="text" placeholder="Cerca per paziente, operatore o attività..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '12px 14px 12px 44px', border: '1px solid var(--gray-300)', borderRadius: 'var(--radius-md)', fontSize: '0.95rem', outline: 'none' }} />
         </div>
+        {(user?.role === 'admin' || user?.role === 'coordinator') && (
+          <button type="button" onClick={() => setShowForm(prev => !prev)} style={{ background: showForm ? '#dc2626' : '#059669', color: 'white', padding: '10px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+            {showForm ? <><X size={16} /> Chiudi</> : <><Plus size={16} /> Nuovo Incarico</>}
+          </button>
+        )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 380px) 1fr', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: showForm ? 'minmax(280px, 380px) 1fr' : '1fr', gap: '24px' }}>
         {/* Form Section */}
-        <div className="dashboard-folder">
+        {showForm && <div className="dashboard-folder">
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: 0 }}>
             <Plus size={20} />
             {activeTab === 'prestazionale' ? 'Nuovo Incarico Prestazionale' : 'Nuovo Incarico Assistenziale'}
@@ -1254,7 +1260,7 @@ function WorkPlan() {
               Aggiungi Incarico
             </button>
           </form>
-        </div>
+        </div>}
 
         {/* List Section */}
         <div className="dashboard-folder">

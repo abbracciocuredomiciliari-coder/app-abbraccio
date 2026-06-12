@@ -248,11 +248,19 @@ export default function CentroPrenotazioni() {
     ev.preventDefault(); setErrPiano(''); setOkPiano('');
     if (fpTipo === 'prestazionale') {
       if (!fpPaz || !fpDate || !fpTask) { setErrPiano('Compila paziente, data e attività.'); return; }
+      const macroSel = (Object.keys(fpMacroCats) as (keyof typeof fpMacroCats)[]).filter(c => fpMacroCats[c]);
+      if (macroSel.length === 0) { setErrPiano('Seleziona almeno una categoria assistenziale.'); return; }
+      for (const cat of macroSel) { if (fpFabbisogni[cat].length === 0) { setErrPiano(`Seleziona almeno un fabbisogno per ${MACRO_CATEGORIE_LABELS[cat].label}`); return; } }
       setSavingPiano(true);
       try {
         const giorniAttivi = fpGiorni.filter(g => g.attivo).map(g => ({ giorno: g.giorno, accessiAlGiorno: g.accessiAlGiorno, minutiPerAccesso: g.minutiPerAccesso }));
+        const allFabbisogniLabels: string[] = [];
+        macroSel.forEach(cat => { const labels = fpFabbisogni[cat].map(f => { const opt = FABBISOGNI_OPTIONS[cat].find(o => o.value === f); return opt ? `${MACRO_CATEGORIE_LABELS[cat].label.split(' ')[1]}: ${opt.label}` : f; }); allFabbisogniLabels.push(...labels); });
         await api.post('/workplan', {
           type: fpTipo,
+          macroCategorie: macroSel,
+          fabbisogni: { infermieristico: fpFabbisogni.infermieristico, riabilitativo: fpFabbisogni.riabilitativo, medico_specialistiche: fpFabbisogni.medico_specialistiche },
+          categories: allFabbisogniLabels,
           patient: fpPaz, staff: fpStaff || undefined, task: fpTask,
           date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpDur,
           notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined,
@@ -620,6 +628,56 @@ export default function CentroPrenotazioni() {
                     </button>
                   ))}
                 </div>
+                {/* Macro-categorie e fabbisogni — Prestazionale */}
+                {fpTipo === 'prestazionale' && (
+                  <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '12px', marginTop: '4px' }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e4d8c', marginBottom: '8px' }}>🩺 Categorie assistenziali * (seleziona una o più)</div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                      {(Object.keys(MACRO_CATEGORIE_LABELS) as (keyof typeof MACRO_CATEGORIE_LABELS)[]).map(cat => {
+                        const info = MACRO_CATEGORIE_LABELS[cat];
+                        const selected = fpMacroCats[cat];
+                        return (
+                          <button key={cat} type="button" onClick={() => { setFpMacroCats(prev => ({ ...prev, [cat]: !prev[cat] })); if (fpMacroCats[cat]) setFpFabbisogni(prev => ({ ...prev, [cat]: [] })); }} style={{ flex: '1 1 30%', minWidth: '120px', padding: '10px 12px', borderRadius: '8px', border: `2px solid ${selected ? info.color : '#e5e7eb'}`, background: selected ? info.bg : 'white', color: selected ? info.color : '#374151', fontWeight: selected ? 700 : 500, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                            <span style={{ fontSize: '1rem' }}>{info.label.split(' ')[0]}</span>
+                            <span>{info.label.split(' ').slice(1).join(' ')}</span>
+                            {selected && <span style={{ marginLeft: '2px' }}>✓</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {(Object.keys(MACRO_CATEGORIE_LABELS) as (keyof typeof MACRO_CATEGORIE_LABELS)[]).filter(cat => fpMacroCats[cat]).map(cat => {
+                      const info = MACRO_CATEGORIE_LABELS[cat];
+                      const options = FABBISOGNI_OPTIONS[cat];
+                      const selezionati = fpFabbisogni[cat];
+                      return (
+                        <div key={cat} style={{ marginBottom: '12px', padding: '10px', border: `1px solid ${info.color}40`, borderRadius: '8px', background: info.bg }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.8rem', color: info.color, marginBottom: '8px' }}>{info.label} — Seleziona fabbisogni:</div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                            {options.map(opt => {
+                              const sel = selezionati.includes(opt.value);
+                              return (
+                                <button key={opt.value} type="button" onClick={() => setFpFabbisogni(prev => { const cur = prev[cat]; const nuovi = sel ? cur.filter(v => v !== opt.value) : [...cur, opt.value]; return { ...prev, [cat]: nuovi }; })} style={{ padding: '5px 10px', borderRadius: '5px', border: `1px solid ${sel ? info.color : '#d1d5db'}`, background: sel ? info.color : 'white', color: sel ? 'white' : '#374151', fontWeight: sel ? 600 : 400, fontSize: '0.78rem', cursor: 'pointer' }}>
+                                  {sel ? '✓ ' : '+ '}{opt.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {selezionati.length === 0 && <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '4px' }}>Seleziona almeno un fabbisogno</div>}
+                        </div>
+                      );
+                    })}
+                    {((Object.keys(fpMacroCats) as (keyof typeof fpMacroCats)[]).some(c => fpMacroCats[c])) && (
+                      <div style={{ marginTop: '8px', padding: '8px', background: '#f0f9ff', borderRadius: '6px', fontSize: '0.8rem' }}>
+                        <strong>Riepilogo:</strong>
+                        <ul style={{ margin: '4px 0 0', paddingLeft: '16px' }}>
+                          {fpMacroCats.infermieristico && fpFabbisogni.infermieristico.length > 0 && <li>💉 Infermieristico: {fpFabbisogni.infermieristico.map(f => FABBISOGNI_OPTIONS.infermieristico.find(o => o.value === f)?.label).join(', ')}</li>}
+                          {fpMacroCats.riabilitativo && fpFabbisogni.riabilitativo.length > 0 && <li>🏃 Riabilitativo: {fpFabbisogni.riabilitativo.map(f => FABBISOGNI_OPTIONS.riabilitativo.find(o => o.value === f)?.label).join(', ')}</li>}
+                          {fpMacroCats.medico_specialistiche && fpFabbisogni.medico_specialistiche.length > 0 && <li>🩺 Medico/specialistiche: {fpFabbisogni.medico_specialistiche.map(f => FABBISOGNI_OPTIONS.medico_specialistiche.find(o => o.value === f)?.label).join(', ')}</li>}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {/* Categorie — solo per Assistenziale */}
                 {fpTipo === 'assistenziale' && (
                   <div>
