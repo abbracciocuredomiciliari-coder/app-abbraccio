@@ -91,8 +91,10 @@ router.post('/register', registerLimiter, async (req: Request, res: Response) =>
     });
 
     if (!isFirstUser) {
-      // Invia notifica email all'admin
-      await inviaEmailNotificaAdmin(user.name, user.email, user.professione || '');
+      // Invia notifica email all'admin (fire-and-forget, non blocca la risposta)
+      inviaEmailNotificaAdmin(user.name, user.email, user.professione || '').catch(emailErr => {
+        console.warn('⚠️ Errore invio email notifica admin (registrazione completata comunque):', emailErr?.message || emailErr);
+      });
 
       return res.status(201).json({
         pending: true,
@@ -208,8 +210,10 @@ router.post('/register-completo', registerLimiter, upload.fields([
       documenti,
     });
 
-    // Invia notifica email all'admin
-    await inviaEmailNotificaAdmin(user.name, user.email, user.professione || '');
+    // Invia notifica email all'admin (fire-and-forget, non blocca la risposta)
+    inviaEmailNotificaAdmin(user.name, user.email, user.professione || '').catch(emailErr => {
+      console.warn('⚠️ Errore invio email notifica admin (registrazione completata comunque):', emailErr?.message || emailErr);
+    });
 
     return res.status(201).json({
       pending: true,

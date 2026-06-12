@@ -219,9 +219,7 @@ function Register() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      if (response.data.pending) {
-        setSuccess(response.data.message);
-      }
+      setSuccess(response.data.message || 'Registrazione inviata con successo! La tua richiesta è in attesa di approvazione.');
     } catch (err: any) {
       const msg = err?.response?.data?.message;
       setError(msg || 'Impossibile registrarsi. Controlla i campi e riprova.');
