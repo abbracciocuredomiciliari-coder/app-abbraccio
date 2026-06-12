@@ -272,16 +272,20 @@ function Register() {
         {steps.map((s, idx) => {
           const Icon = s.icon;
           const isActive = step === s.id;
-          const isPast = steps.findIndex(x => x.id === step) > idx;
+          const currentIdx = steps.findIndex(x => x.id === step);
+          const isPast = currentIdx > idx;
+          const isClickable = isPast || isActive;
           return (
-            <div key={s.id} style={{
+            <button key={s.id} type="button" onClick={() => { if (isPast) setStep(s.id); }} style={{
               display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: '8px',
               background: isActive ? '#1e4d8c' : isPast ? '#dbeafe' : '#f3f4f6',
-              color: isActive ? 'white' : isPast ? '#1e4d8c' : '#9ca3af', fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap'
+              color: isActive ? 'white' : isPast ? '#1e4d8c' : '#9ca3af', fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap',
+              border: 'none', cursor: isClickable ? 'pointer' : 'default', opacity: isClickable ? 1 : 0.6,
+              transition: 'all 0.2s'
             }}>
               <Icon size={14} />
               {s.label}
-            </div>
+            </button>
           );
         })}
       </div>
