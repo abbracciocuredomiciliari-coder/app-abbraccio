@@ -1,4 +1,5 @@
 import { useEffect, useState, ChangeEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { Button } from '../components/ui/Button';
 
@@ -69,6 +70,7 @@ interface RichiestaPaziente {
 // Componente
 // ═════════════════════════════════════════════════════════════════════════════
 export default function GestioneRichieste() {
+  const navigate = useNavigate();
   const [richieste, setRichieste] = useState<Richiesta[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,8 +123,11 @@ export default function GestioneRichieste() {
     setApprovandoPazId(id);
     try {
       const res = await api.put(`/richieste-paziente/${id}/approva`);
-      alert(`✅ Paziente "${res.data.paziente.firstName} ${res.data.paziente.lastName}" creato con successo!`);
+      const pazienteId = res.data.pazienteId || res.data.paziente?._id;
       await caricaDati();
+      if (pazienteId) {
+        navigate(`/centro-prenotazioni?pazienteId=${pazienteId}&apriPiano=true`);
+      }
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore durante l\'approvazione');
     } finally { setApprovandoPazId(null); }

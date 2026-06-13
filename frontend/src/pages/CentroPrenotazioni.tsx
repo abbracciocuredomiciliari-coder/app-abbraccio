@@ -1,5 +1,5 @@
-import { FormEvent, useEffect, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { FormEvent, useEffect, useState, useMemo, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -136,6 +136,8 @@ function Cal({ anno, mese, sel, onDay, onPrev, onNext, dots }: { anno: number; m
 export default function CentroPrenotazioni() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const autoOpenDone = useRef(false);
   const puoGestire = user && ['admin', 'coordinator'].includes(user.role);
   const oggi = new Date();
   const [mainTab, setMainTab] = useState<'prelievi' | 'esami' | 'piani'>('prelievi');
@@ -302,8 +304,22 @@ export default function CentroPrenotazioni() {
       setLoading(true);
       try {
         const [pazRes, staffRes] = await Promise.all([api.get('/patients'), api.get('/staff', { params: { active: true } })]);
-        setPazienti((pazRes.data as Paz[]).filter(p => p.tipoGestione === 'privato' || !p.tipoGestione));
+        const pazList = (pazRes.data as Paz[]).filter(p => p.tipoGestione === 'privato' || !p.tipoGestione);
+        setPazienti(pazList);
         setStaff((staffRes.data as Staff[]).filter(s => s.active));
+
+        // Auto-apertura form piano se arrivati da GestioneRichieste dopo approvazione
+        if (!autoOpenDone.current) {
+          const pazienteId = searchParams.get('pazienteId');
+          const apriPiano = searchParams.get('apriPiano');
+          if (pazienteId && apriPiano === 'true') {
+            autoOpenDone.current = true;
+            setFpPaz(pazienteId);
+            setMainTab('piani');
+            setShowFPiano(true);
+            setSearchParams({}, { replace: true });
+          }
+        }
       } catch {/***/}
       await Promise.all([loadPrelievi(), loadEsami(), loadPiani()]);
       setLoading(false);
