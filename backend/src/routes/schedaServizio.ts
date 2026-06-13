@@ -98,6 +98,26 @@ router.get('/mie', authenticateToken, async (req: Request, res: Response) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// GET /api/scheda-servizio/:id — Singola scheda completa (per visualizzazione PDF)
+// ═══════════════════════════════════════════════════════════════════════════
+router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const scheda = await SchedaServizio.findById(req.params.id)
+      .populate('pazienteId', 'firstName lastName')
+      .populate('compilataDa', 'name email');
+    if (!scheda) return res.status(404).json({ message: 'Scheda non trovata' });
+    const isAdmin = user.role === 'admin' || user.role === 'coordinator';
+    const ownerId = (scheda.compilataDa as any)?._id?.toString() || scheda.compilataDa?.toString();
+    const isOwner = ownerId === user.userId;
+    if (!isAdmin && !isOwner) return res.status(403).json({ message: 'Non autorizzato' });
+    return res.json(scheda);
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore recupero scheda', error: err?.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // PATCH /api/scheda-servizio/:id/accetta — Admin accetta la scheda
 // ═══════════════════════════════════════════════════════════════════════════
 router.patch('/:id/accetta', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {

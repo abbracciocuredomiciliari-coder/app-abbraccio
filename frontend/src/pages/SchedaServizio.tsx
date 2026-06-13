@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import FirmaCanvas from '../components/FirmaCanvas';
 import {
   FileText, CheckCircle, Send, ChevronDown, Loader2,
-  User, Calendar, Activity, CreditCard, Clock
+  User, Calendar, Activity, CreditCard, Printer
 } from 'lucide-react';
 
 type FrequenzaPrestazione = 'singola' | 'multipla' | 'continuata';
@@ -15,9 +14,97 @@ type FrequenzaPagamento = 'giornaliera' | 'settimanale' | 'ogni_10_giorni' | 'me
 interface SchedaMia {
   _id: string;
   nomeCognomePaziente: string;
+  dataNascita?: string;
   tipoPrestazione: string;
+  frequenzaPrestazione?: string;
+  giorniContinuata?: number;
+  operatoreIncaricato?: string;
+  costoPrestazione?: number;
+  ivaPercentuale?: number;
+  metodoPagamento?: string;
+  frequenzaPagamento?: string;
+  pagamentoEffettuato?: boolean;
+  firmaBase64?: string;
+  nomeFirmatario?: string;
+  ruoloFirmatario?: string;
+  dataFirma?: string;
   stato: string;
+  noteAdmin?: string;
   createdAt: string;
+}
+
+// ─── Genera HTML per visualizzazione/stampa PDF ─────────────────────────────
+function generaHTMLScheda(s: SchedaMia): string {
+  const freq: Record<string, string> = { singola: 'Singola', multipla: 'Multipla', continuata: 'Continuata' };
+  const metodo: Record<string, string> = { contanti: 'Contanti', carta_credito: 'Carta di Credito', bonifico: 'Bonifico', altro: 'Altro' };
+  const freqPag: Record<string, string> = { giornaliera: 'Giornaliera', settimanale: 'Settimanale', ogni_10_giorni: 'Ogni 10 giorni', mensile: 'Mensile' };
+  const dataFirma = s.dataFirma ? new Date(s.dataFirma).toLocaleDateString('it-IT') : new Date(s.createdAt).toLocaleDateString('it-IT');
+  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">
+  <title>Scheda Servizi Assistenza Domiciliare</title>
+  <style>
+    *{box-sizing:border-box}
+    body{font-family:Arial,sans-serif;font-size:13px;color:#111;margin:30px;max-width:750px}
+    h1{font-size:20px;color:#1e4d8c;margin-bottom:4px;text-align:center}
+    h2{font-size:11px;color:#6b7280;text-align:center;margin:0 0 24px;text-transform:uppercase;letter-spacing:1px}
+    .section{margin-bottom:20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}
+    .section-title{background:#1e4d8c;color:white;padding:8px 14px;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.5px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px}
+    .field label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:3px}
+    .field span{font-size:13px;color:#111;font-weight:600}
+    .firma-box{padding:14px;border-top:1px solid #e2e8f0}
+    .firma-box img{max-width:220px;max-height:80px;border:1px solid #d1d5db;display:block;margin-top:8px}
+    .footer{margin-top:24px;font-size:10px;color:#9ca3af;border-top:1px solid #e2e8f0;padding-top:12px;text-align:center}
+    @media print{body{margin:10px} .no-print{display:none}}
+  </style></head><body>
+  <h1>Scheda Servizi Assistenza Domiciliare</h1>
+  <h2>Abbraccio Cure Domiciliari</h2>
+  <div class="section">
+    <div class="section-title">1. Dati del Paziente</div>
+    <div class="grid">
+      <div class="field"><label>Nome e Cognome</label><span>${s.nomeCognomePaziente}</span></div>
+      <div class="field"><label>Data di nascita</label><span>${s.dataNascita || '—'}</span></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">2. Dettagli della Prestazione</div>
+    <div class="grid">
+      <div class="field"><label>Tipo di prestazione</label><span>${s.tipoPrestazione}</span></div>
+      <div class="field"><label>Frequenza</label><span>${freq[s.frequenzaPrestazione || ''] || s.frequenzaPrestazione || '—'}${s.giorniContinuata ? ` — per ${s.giorniContinuata} giorni` : ''}</span></div>
+      <div class="field"><label>Operatore incaricato</label><span>${s.operatoreIncaricato || '—'}</span></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">3. Tariffa e Pagamento</div>
+    <div class="grid">
+      <div class="field"><label>Costo prestazione</label><span>€ ${Number(s.costoPrestazione || 0).toFixed(2)}${s.ivaPercentuale ? ` + IVA ${s.ivaPercentuale}%` : ''}</span></div>
+      <div class="field"><label>Metodo di pagamento</label><span>${metodo[s.metodoPagamento || ''] || s.metodoPagamento || '—'}</span></div>
+      <div class="field"><label>Frequenza pagamento</label><span>${freqPag[s.frequenzaPagamento || ''] || s.frequenzaPagamento || '—'}</span></div>
+      <div class="field"><label>Pagamento effettuato</label><span>${s.pagamentoEffettuato ? '✅ Sì' : '❌ No'}</span></div>
+    </div>
+    <div style="padding:8px 14px;font-size:11px;color:#6b7280;border-top:1px solid #f3f4f6">Intestato a: <strong>Abbraccio Cure Domiciliari</strong></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Firma del ${s.ruoloFirmatario === 'caregiver' ? 'Caregiver' : 'Paziente'}</div>
+    <div class="firma-box">
+      <div class="field"><label>Nome firmatario</label><span>${s.nomeFirmatario || '—'} (${s.ruoloFirmatario || '—'})</span></div>
+      <div class="field" style="margin-top:10px"><label>Data firma</label><span>${dataFirma}</span></div>
+      ${s.firmaBase64 ? `<img src="${s.firmaBase64}" alt="Firma" />` : '<p style="color:#9ca3af;font-style:italic">Firma non disponibile in anteprima</p>'}
+    </div>
+  </div>
+  ${s.noteAdmin ? `<div class="section"><div class="section-title">Note Amministrazione</div><div style="padding:12px 14px;color:#374151">${s.noteAdmin}</div></div>` : ''}
+  <div class="footer">Documento generato — App Abbraccio Cure Domiciliari — ${new Date().toLocaleString('it-IT')}</div>
+  <div class="no-print" style="margin-top:24px;text-align:center">
+    <button onclick="window.print()" style="background:#1e4d8c;color:white;border:none;border-radius:8px;padding:12px 28px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Stampa / Salva PDF</button>
+  </div>
+  </body></html>`;
+}
+
+function apriPDFScheda(s: SchedaMia) {
+  const html = generaHTMLScheda(s);
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const w = window.open(url, '_blank');
+  if (w) w.onload = () => URL.revokeObjectURL(url);
 }
 
 const TIPI_PRESTAZIONE = [
@@ -44,7 +131,6 @@ const STATO_CONFIG: Record<string, { label: string; bg: string; color: string }>
 
 export default function SchedaServizio() {
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   // Form state
   const [nomeCognomePaziente, setNomeCognomePaziente] = useState('');
@@ -69,6 +155,7 @@ export default function SchedaServizio() {
   const [errore, setErrore] = useState('');
   const [schedeInviate, setSchedeInviate] = useState<SchedaMia[]>([]);
   const [loadingSchede, setLoadingSchede] = useState(true);
+  const [ultimaScheda, setUltimaScheda] = useState<SchedaMia | null>(null);
 
   useEffect(() => {
     caricaSchede();
@@ -99,7 +186,7 @@ export default function SchedaServizio() {
     if (err) { setErrore(err); return; }
     setSaving(true); setErrore('');
     try {
-      await api.post('/scheda-servizio', {
+      const res = await api.post('/scheda-servizio', {
         nomeCognomePaziente: nomeCognomePaziente.trim(),
         dataNascita: dataNascita.trim(),
         tipoPrestazione: tipoFinale,
@@ -115,6 +202,7 @@ export default function SchedaServizio() {
         nomeFirmatario: nomeFirmatario.trim(),
         ruoloFirmatario,
       });
+      setUltimaScheda(res.data.scheda || null);
       setStep('inviata');
       await caricaSchede();
     } catch (e: any) {
@@ -168,12 +256,22 @@ export default function SchedaServizio() {
           <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '32px' }}>
             Riceverai conferma non appena elaborata.
           </p>
-          <button
-            onClick={() => { setStep('form'); setFirma(''); setNomeCognomePaziente(''); setDataNascita(''); setTipoPrestazione(''); setCostoPrestazione(''); setNomeFirmatario(''); }}
-            style={{ background: '#2563eb', color: 'white', border: 'none', borderRadius: '10px', padding: '14px 32px', cursor: 'pointer', fontWeight: 700, fontSize: '1rem' }}
-          >
-            Compila nuova scheda
-          </button>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {ultimaScheda && (
+              <button
+                onClick={() => apriPDFScheda(ultimaScheda)}
+                style={{ background: '#0369a1', color: 'white', border: 'none', borderRadius: '10px', padding: '14px 28px', cursor: 'pointer', fontWeight: 700, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <Printer size={20} /> Visualizza / Stampa PDF
+              </button>
+            )}
+            <button
+              onClick={() => { setStep('form'); setFirma(''); setNomeCognomePaziente(''); setDataNascita(''); setTipoPrestazione(''); setCostoPrestazione(''); setNomeFirmatario(''); setUltimaScheda(null); }}
+              style={{ background: '#2563eb', color: 'white', border: 'none', borderRadius: '10px', padding: '14px 28px', cursor: 'pointer', fontWeight: 700, fontSize: '1rem' }}
+            >
+              Compila nuova scheda
+            </button>
+          </div>
         </div>
 
         {schedeInviate.length > 0 && (
@@ -187,7 +285,20 @@ export default function SchedaServizio() {
                     <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.95rem' }}>{s.nomeCognomePaziente}</div>
                     <div style={{ fontSize: '0.82rem', color: '#6b7280', marginTop: '2px' }}>{s.tipoPrestazione} — {new Date(s.createdAt).toLocaleDateString('it-IT')}</div>
                   </div>
-                  <span style={{ background: cfg.bg, color: cfg.color, borderRadius: '20px', padding: '4px 12px', fontSize: '0.78rem', fontWeight: 700 }}>{cfg.label}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await api.get(`/scheda-servizio/${s._id}`);
+                          apriPDFScheda(res.data);
+                        } catch { alert('Errore nel recupero della scheda'); }
+                      }}
+                      style={{ background: '#0369a1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <Printer size={13} /> PDF
+                    </button>
+                    <span style={{ background: cfg.bg, color: cfg.color, borderRadius: '20px', padding: '4px 12px', fontSize: '0.78rem', fontWeight: 700 }}>{cfg.label}</span>
+                  </div>
                 </div>
               );
             })}

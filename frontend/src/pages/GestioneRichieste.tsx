@@ -2,6 +2,29 @@ import { useEffect, useState, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { Button } from '../components/ui/Button';
+import { Printer } from 'lucide-react';
+
+function apriPDFScheda(s: any) {
+  const freq: Record<string, string> = { singola: 'Singola', multipla: 'Multipla', continuata: 'Continuata' };
+  const metodo: Record<string, string> = { contanti: 'Contanti', carta_credito: 'Carta di Credito', bonifico: 'Bonifico', altro: 'Altro' };
+  const freqPag: Record<string, string> = { giornaliera: 'Giornaliera', settimanale: 'Settimanale', ogni_10_giorni: 'Ogni 10 giorni', mensile: 'Mensile' };
+  const dataFirma = s.dataFirma ? new Date(s.dataFirma).toLocaleDateString('it-IT') : new Date(s.createdAt).toLocaleDateString('it-IT');
+  const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Scheda Servizi</title>
+  <style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:13px;color:#111;margin:30px;max-width:750px}h1{font-size:20px;color:#1e4d8c;margin-bottom:4px;text-align:center}h2{font-size:11px;color:#6b7280;text-align:center;margin:0 0 24px;text-transform:uppercase;letter-spacing:1px}.section{margin-bottom:20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}.section-title{background:#1e4d8c;color:white;padding:8px 14px;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.5px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px}.field label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:3px}.field span{font-size:13px;color:#111;font-weight:600}.firma-box{padding:14px;border-top:1px solid #e2e8f0}.firma-box img{max-width:220px;max-height:80px;border:1px solid #d1d5db;display:block;margin-top:8px}.footer{margin-top:24px;font-size:10px;color:#9ca3af;border-top:1px solid #e2e8f0;padding-top:12px;text-align:center}@media print{.no-print{display:none}}</style></head><body>
+  <h1>Scheda Servizi Assistenza Domiciliare</h1><h2>Abbraccio Cure Domiciliari</h2>
+  <div class="section"><div class="section-title">1. Dati del Paziente</div><div class="grid"><div class="field"><label>Nome e Cognome</label><span>${s.nomeCognomePaziente}</span></div><div class="field"><label>Data di nascita</label><span>${s.dataNascita || '—'}</span></div></div></div>
+  <div class="section"><div class="section-title">2. Dettagli della Prestazione</div><div class="grid"><div class="field"><label>Tipo di prestazione</label><span>${s.tipoPrestazione}</span></div><div class="field"><label>Frequenza</label><span>${freq[s.frequenzaPrestazione] || s.frequenzaPrestazione}${s.giorniContinuata ? ` — per ${s.giorniContinuata} giorni` : ''}</span></div><div class="field"><label>Operatore incaricato</label><span>${s.operatoreIncaricato || '—'}</span></div></div></div>
+  <div class="section"><div class="section-title">3. Tariffa e Pagamento</div><div class="grid"><div class="field"><label>Costo prestazione</label><span>€ ${Number(s.costoPrestazione || 0).toFixed(2)}${s.ivaPercentuale ? ` + IVA ${s.ivaPercentuale}%` : ''}</span></div><div class="field"><label>Metodo di pagamento</label><span>${metodo[s.metodoPagamento] || s.metodoPagamento}</span></div><div class="field"><label>Frequenza pagamento</label><span>${freqPag[s.frequenzaPagamento] || s.frequenzaPagamento}</span></div><div class="field"><label>Pagamento effettuato</label><span>${s.pagamentoEffettuato ? '✅ Sì' : '❌ No'}</span></div></div><div style="padding:8px 14px;font-size:11px;color:#6b7280;border-top:1px solid #f3f4f6">Intestato a: <strong>Abbraccio Cure Domiciliari</strong></div></div>
+  <div class="section"><div class="section-title">Firma del ${s.ruoloFirmatario === 'caregiver' ? 'Caregiver' : 'Paziente'}</div><div class="firma-box"><div class="field"><label>Nome firmatario</label><span>${s.nomeFirmatario} (${s.ruoloFirmatario})</span></div><div class="field" style="margin-top:10px"><label>Data firma</label><span>${dataFirma}</span></div>${s.firmaBase64 ? `<img src="${s.firmaBase64}" alt="Firma" />` : '<p style="color:#9ca3af;font-style:italic">Firma non disponibile</p>'}</div></div>
+  ${s.noteAdmin ? `<div class="section"><div class="section-title">Note Amministrazione</div><div style="padding:12px 14px;color:#374151">${s.noteAdmin}</div></div>` : ''}
+  <div class="footer">Documento generato — App Abbraccio Cure Domiciliari — ${new Date().toLocaleString('it-IT')}</div>
+  <div class="no-print" style="margin-top:24px;text-align:center"><button onclick="window.print()" style="background:#1e4d8c;color:white;border:none;border-radius:8px;padding:12px 28px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Stampa / Salva PDF</button></div>
+  </body></html>`;
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const w = window.open(url, '_blank');
+  if (w) w.onload = () => URL.revokeObjectURL(url);
+}
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Tipi
@@ -393,6 +416,21 @@ export default function GestioneRichieste() {
                 <h3 style={{ margin: '0 0 20px', color: '#1e3a5f', fontSize: '1.2rem' }}>
                   {schedaAzione === 'accetta' ? '✅ Accetta scheda' : '📁 Archivia nella documentazione paziente'}
                 </h3>
+
+                {/* Pulsante PDF */}
+                <div style={{ marginBottom: '16px', textAlign: 'right' }}>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await api.get(`/scheda-servizio/${schedaSelezionata._id}`);
+                        apriPDFScheda(res.data);
+                      } catch { alert('Errore nel recupero della scheda'); }
+                    }}
+                    style={{ background: '#0369a1', color: 'white', border: 'none', borderRadius: '8px', padding: '9px 18px', cursor: 'pointer', fontWeight: 700, fontSize: '0.88rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <Printer size={15} /> Visualizza / Stampa PDF
+                  </button>
+                </div>
 
                 {/* Riepilogo scheda */}
                 <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px', marginBottom: '18px', fontSize: '0.88rem', color: '#374151' }}>
