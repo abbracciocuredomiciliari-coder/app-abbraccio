@@ -24,6 +24,7 @@ export default function FirmaCanvas({
   const [disegnando, setDisegnando] = useState(false);
   const [haFirmato, setHaFirmato] = useState(false);
   const [mostraFirmaEsistente, setMostraFirmaEsistente] = useState(!!firmaEsistente);
+  const [firmaSalvata, setFirmaSalvata] = useState<string>(firmaEsistente || '');
   const ultimoPunto = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -118,12 +119,14 @@ export default function FirmaCanvas({
     if (!canvas || !haFirmato) return;
     const firmaBase64 = canvas.toDataURL('image/png');
     onFirmaCompleta(firmaBase64);
+    setFirmaSalvata(firmaBase64);
     setMostraFirmaEsistente(true);
   };
 
   const cancellaFirma = () => {
     setHaFirmato(false);
     setMostraFirmaEsistente(false);
+    setFirmaSalvata('');
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -151,10 +154,10 @@ export default function FirmaCanvas({
         {sublabel && <div style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '2px' }}>{sublabel}</div>}
       </div>
 
-      {mostraFirmaEsistente && firmaEsistente ? (
+      {mostraFirmaEsistente && (firmaSalvata || firmaEsistente) ? (
         // Mostra firma esistente come immagine
         <div style={{ border: '2px solid #10b981', borderRadius: '12px', overflow: 'hidden', background: 'white', position: 'relative' }}>
-          <img src={firmaEsistente} alt="Firma" style={{ width: '100%', height: `${altezza}px`, objectFit: 'contain' }} />
+          <img src={firmaSalvata || firmaEsistente} alt="Firma" style={{ width: '100%', height: `${altezza}px`, objectFit: 'contain' }} />
           <div style={{ position: 'absolute', top: '8px', right: '8px', background: '#10b981', color: 'white', borderRadius: '20px', padding: '4px 12px', fontSize: '0.8rem', fontWeight: '600' }}>
             ✓ Firmato
           </div>
