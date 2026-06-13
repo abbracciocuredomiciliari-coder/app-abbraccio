@@ -194,6 +194,10 @@ function AppShell() {
                 <CalendarCheck size={18} />
                 Prenota singolo servizio
               </Link>
+              <Link to="/scheda-servizio" className={isActive('/scheda-servizio') ? 'active' : ''}>
+                <FileText size={18} />
+                Scheda Servizi Assistenza
+              </Link>
 
               <span className="nav-section-label">Operatori</span>
               <Link to="/register" className={isActive('/register') ? 'active' : ''}>
@@ -422,7 +426,7 @@ function AppShell() {
           <Route path="/gestione-richieste" element={<ProtectedRoute><GestioneRichieste /></ProtectedRoute>} />
           <Route path="/centro-prenotazioni-privato" element={<ProtectedRoute><CentroPrenotazioniPrivato /></ProtectedRoute>} />
           <Route path="/portale-paziente" element={<ProtectedRoute><PortalePaziente /></ProtectedRoute>} />
-          <Route path="/scheda-servizio" element={<ProtectedRoute><SchedaServizio /></ProtectedRoute>} />
+          <Route path="/scheda-servizio" element={<SchedaServizio />} />
 
           {/* Route condivise (tutti gli utenti autenticati) */}
           <Route path="/protocolli-procedure" element={<ProtectedRoute><ProtocolliProcedure /></ProtectedRoute>} />

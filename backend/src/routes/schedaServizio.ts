@@ -8,11 +8,11 @@ import { authorizeRole } from '../middleware/roles';
 const router = Router();
 
 // ═══════════════════════════════════════════════════════════════════════════
-// POST /api/scheda-servizio — Invia nuova scheda (paziente_registrato o pubblico)
+// POST /api/scheda-servizio — Invia nuova scheda (PUBBLICO — senza login)
 // ═══════════════════════════════════════════════════════════════════════════
-router.post('/', authenticateToken, async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
+    const user = (req as any).user; // opzionale se loggato
     const {
       nomeCognomePaziente,
       dataNascita,
@@ -41,7 +41,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
 
     const scheda = await SchedaServizio.create({
       pazienteId: pazienteId || undefined,
-      compilataDa: user.userId,
+      compilataDa: user?.userId || undefined,
       nomeCognomePaziente: nomeCognomePaziente.trim(),
       dataNascita: dataNascita.trim(),
       tipoPrestazione: tipoPrestazione.trim(),

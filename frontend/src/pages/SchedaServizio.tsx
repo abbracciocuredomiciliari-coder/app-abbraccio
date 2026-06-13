@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import FirmaCanvas from '../components/FirmaCanvas';
@@ -6,6 +7,8 @@ import {
   FileText, CheckCircle, Send, ChevronDown, Loader2,
   User, Calendar, Activity, CreditCard, Printer
 } from 'lucide-react';
+
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000/api';
 
 type FrequenzaPrestazione = 'singola' | 'multipla' | 'continuata';
 type MetodoPagamento = 'contanti' | 'carta_credito' | 'bonifico' | 'altro';
@@ -130,7 +133,8 @@ const STATO_CONFIG: Record<string, { label: string; bg: string; color: string }>
 };
 
 export default function SchedaServizio() {
-  const { user } = useAuth();
+  const authCtx = useAuth();
+  const user = authCtx?.user ?? null;
 
   // Form state
   const [nomeCognomePaziente, setNomeCognomePaziente] = useState('');
@@ -158,8 +162,9 @@ export default function SchedaServizio() {
   const [ultimaScheda, setUltimaScheda] = useState<SchedaMia | null>(null);
 
   useEffect(() => {
-    caricaSchede();
-  }, []);
+    if (user) caricaSchede();
+    else setLoadingSchede(false);
+  }, [user]);
 
   const caricaSchede = async () => {
     try {
@@ -186,7 +191,7 @@ export default function SchedaServizio() {
     if (err) { setErrore(err); return; }
     setSaving(true); setErrore('');
     try {
-      const res = await api.post('/scheda-servizio', {
+      const res = await axios.post(`${API_BASE}/scheda-servizio`, {
         nomeCognomePaziente: nomeCognomePaziente.trim(),
         dataNascita: dataNascita.trim(),
         tipoPrestazione: tipoFinale,
