@@ -78,8 +78,17 @@ export default function GestioneRichieste() {
 
   // Richieste registrazione paziente
   const [richiestePaziente, setRichiestePaziente] = useState<RichiestaPaziente[]>([]);
-  const [tabPrincipale, setTabPrincipale] = useState<'prenotazioni' | 'pazienti'>('prenotazioni');
+  const [tabPrincipale, setTabPrincipale] = useState<'prenotazioni' | 'pazienti' | 'schede'>('prenotazioni');
   const [approvandoPazId, setApprovandoPazId] = useState<string | null>(null);
+
+  // Schede servizi
+  const [schedeServizi, setSchedeServizi] = useState<any[]>([]);
+  const [pazientiList, setPazientiList] = useState<{_id: string; firstName: string; lastName: string}[]>([]);
+  const [schedaSelezionata, setSchedaSelezionata] = useState<any | null>(null);
+  const [schedaNoteAdmin, setSchedaNoteAdmin] = useState('');
+  const [schedaPazienteId, setSchedaPazienteId] = useState('');
+  const [schedaAzione, setSchedaAzione] = useState<'accetta' | 'archivia' | null>(null);
+  const [schedaSaving, setSchedaSaving] = useState(false);
   const [selectedRichiesta, setSelectedRichiesta] = useState<Richiesta | null>(null);
   const [gestioneModal, setGestioneModal] = useState(false);
 
@@ -102,15 +111,20 @@ export default function GestioneRichieste() {
 
   const caricaDati = async () => {
     try {
-      const [richiesteRes, staffRes, pazienteRes] = await Promise.allSettled([
+      const [richiesteRes, staffRes, pazienteRes, schedeRes, pazientiRes] = await Promise.allSettled([
         api.get('/richieste-prenotazioni'),
         api.get('/staff', { params: { active: 'true' } }),
         api.get('/richieste-paziente'),
+        api.get('/scheda-servizio'),
+        api.get('/patients'),
       ]);
       setRichieste(richiesteRes.status === 'fulfilled' ? (richiesteRes.value.data || []) : []);
       setStaff(staffRes.status === 'fulfilled' ? (staffRes.value.data || []) : []);
       setRichiestePaziente(pazienteRes.status === 'fulfilled' ? (pazienteRes.value.data || []) : []);
+      setSchedeServizi(schedeRes.status === 'fulfilled' ? (schedeRes.value.data || []) : []);
+      setPazientiList(pazientiRes.status === 'fulfilled' ? (pazientiRes.value.data || []) : []);
       if (staffRes.status === 'rejected') console.error('Errore caricamento staff:', staffRes.reason);
+      if (schedeRes.status === 'rejected') console.warn('Schede servizi non disponibili:', (schedeRes as any).reason?.message);
     } catch (err) {
       console.error('Errore caricaDati:', err);
       setRichieste([]);
@@ -306,6 +320,10 @@ export default function GestioneRichieste() {
           style={{ flex: 1, padding: '9px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '0.88rem', background: tabPrincipale === 'pazienti' ? 'white' : 'transparent', color: tabPrincipale === 'pazienti' ? '#7e22ce' : '#6b7280', boxShadow: tabPrincipale === 'pazienti' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', position: 'relative' as const }}>
           👤 Nuovi pazienti ({richiestePaziente.filter(r => r.stato === 'in_attesa').length} in attesa)
         </button>
+        <button type="button" onClick={() => setTabPrincipale('schede')}
+          style={{ flex: 1, padding: '9px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '0.88rem', background: tabPrincipale === 'schede' ? 'white' : 'transparent', color: tabPrincipale === 'schede' ? '#0369a1' : '#6b7280', boxShadow: tabPrincipale === 'schede' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
+          📄 Schede Servizi ({schedeServizi.filter(s => s.stato === 'inviata').length} nuove)
+        </button>
       </div>
 
       {/* ═══ SEZIONE REGISTRAZIONI PAZIENTI ═══ */}
@@ -360,6 +378,165 @@ export default function GestioneRichieste() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══ SEZIONE SCHEDE SERVIZI ═══ */}
+      {tabPrincipale === 'schede' && (
+        <div>
+          {/* Modale dettaglio/azione scheda */}
+          {schedaSelezionata && schedaAzione && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+              <div style={{ background: 'white', borderRadius: '16px', padding: '28px', maxWidth: '580px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+                <h3 style={{ margin: '0 0 20px', color: '#1e3a5f', fontSize: '1.2rem' }}>
+                  {schedaAzione === 'accetta' ? '✅ Accetta scheda' : '📁 Archivia nella documentazione paziente'}
+                </h3>
+
+                {/* Riepilogo scheda */}
+                <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px', marginBottom: '18px', fontSize: '0.88rem', color: '#374151' }}>
+                  <div><strong>Paziente:</strong> {schedaSelezionata.nomeCognomePaziente}</div>
+                  <div><strong>Prestazione:</strong> {schedaSelezionata.tipoPrestazione}</div>
+                  <div><strong>Costo:</strong> €{Number(schedaSelezionata.costoPrestazione).toFixed(2)}{schedaSelezionata.ivaPercentuale ? ` + IVA ${schedaSelezionata.ivaPercentuale}%` : ''}</div>
+                  <div><strong>Frequenza:</strong> {schedaSelezionata.frequenzaPrestazione}{schedaSelezionata.giorniContinuata ? ` — ${schedaSelezionata.giorniContinuata} giorni` : ''}</div>
+                  <div><strong>Pagamento:</strong> {schedaSelezionata.metodoPagamento?.replace('_', ' ')} — {schedaSelezionata.frequenzaPagamento?.replace(/_/g, ' ')}</div>
+                  <div><strong>Firmato da:</strong> {schedaSelezionata.nomeFirmatario} ({schedaSelezionata.ruoloFirmatario})</div>
+                  {schedaSelezionata.firmaBase64 && (
+                    <div style={{ marginTop: '10px' }}>
+                      <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '4px' }}>Firma:</div>
+                      <img src={schedaSelezionata.firmaBase64} alt="Firma" style={{ maxWidth: '200px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                    </div>
+                  )}
+                </div>
+
+                {schedaAzione === 'archivia' && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', fontWeight: 700, fontSize: '0.88rem', color: '#374151', marginBottom: '6px' }}>
+                      Seleziona paziente in cui archiviare *
+                    </label>
+                    <select
+                      value={schedaPazienteId || (schedaSelezionata.pazienteId?._id || schedaSelezionata.pazienteId || '')}
+                      onChange={e => setSchedaPazienteId(e.target.value)}
+                      style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.9rem' }}
+                    >
+                      <option value="">— Seleziona paziente —</option>
+                      {pazientiList.map(p => (
+                        <option key={p._id} value={p._id}>{p.firstName} {p.lastName}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontWeight: 700, fontSize: '0.88rem', color: '#374151', marginBottom: '6px' }}>Note admin (opzionale)</label>
+                  <textarea
+                    value={schedaNoteAdmin}
+                    onChange={e => setSchedaNoteAdmin(e.target.value)}
+                    rows={3}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.9rem', resize: 'vertical', boxSizing: 'border-box' }}
+                    placeholder="Note interne..."
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button onClick={() => { setSchedaSelezionata(null); setSchedaAzione(null); setSchedaNoteAdmin(''); setSchedaPazienteId(''); }}
+                    style={{ flex: 1, background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '8px', padding: '12px', cursor: 'pointer', fontWeight: 700 }}>
+                    Annulla
+                  </button>
+                  <button
+                    disabled={schedaSaving || (schedaAzione === 'archivia' && !schedaPazienteId && !schedaSelezionata.pazienteId)}
+                    onClick={async () => {
+                      setSchedaSaving(true);
+                      try {
+                        if (schedaAzione === 'accetta') {
+                          await api.patch(`/scheda-servizio/${schedaSelezionata._id}/accetta`, { noteAdmin: schedaNoteAdmin });
+                        } else {
+                          const pazId = schedaPazienteId || schedaSelezionata.pazienteId?._id || schedaSelezionata.pazienteId;
+                          await api.patch(`/scheda-servizio/${schedaSelezionata._id}/archivia`, { pazienteId: pazId, noteAdmin: schedaNoteAdmin });
+                        }
+                        setSchedaSelezionata(null); setSchedaAzione(null); setSchedaNoteAdmin(''); setSchedaPazienteId('');
+                        await caricaDati();
+                      } catch (err: any) {
+                        alert(err?.response?.data?.message || 'Errore');
+                      }
+                      setSchedaSaving(false);
+                    }}
+                    style={{ flex: 2, background: schedaAzione === 'archivia' ? '#0369a1' : '#15803d', color: 'white', border: 'none', borderRadius: '8px', padding: '12px', cursor: 'pointer', fontWeight: 700, opacity: schedaSaving ? 0.7 : 1 }}>
+                    {schedaSaving ? '⏳ Salvataggio...' : schedaAzione === 'archivia' ? '📁 Archivia' : '✅ Accetta'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Lista schede */}
+          {schedeServizi.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px', color: '#9ca3af' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📄</div>
+              Nessuna scheda servizi ricevuta
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {schedeServizi.map(s => {
+                const statoStyle: Record<string, { bg: string; color: string; label: string }> = {
+                  inviata:    { bg: '#fff7ed', color: '#c2410c', label: '⏳ Inviata' },
+                  accettata:  { bg: '#f0fdf4', color: '#15803d', label: '✅ Accettata' },
+                  archiviata: { bg: '#eff6ff', color: '#1d4ed8', label: '📁 Archiviata' },
+                  rifiutata:  { bg: '#fef2f2', color: '#dc2626', label: '❌ Rifiutata' },
+                };
+                const cfg = statoStyle[s.stato] || { bg: '#f3f4f6', color: '#374151', label: s.stato };
+                return (
+                  <div key={s._id} style={{ background: 'white', borderRadius: '12px', padding: '16px 20px', border: `2px solid ${s.stato === 'inviata' ? '#fcd34d' : '#e2e8f0'}`, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+                      <div style={{ flex: 1, minWidth: '260px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                          <strong style={{ fontSize: '1rem', color: '#1e293b' }}>{s.nomeCognomePaziente}</strong>
+                          <span style={{ background: cfg.bg, color: cfg.color, padding: '2px 10px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700 }}>{cfg.label}</span>
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: '#555', display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '4px' }}>
+                          <span>🏥 {s.tipoPrestazione}</span>
+                          <span>💶 €{Number(s.costoPrestazione).toFixed(2)}</span>
+                          <span>📅 {new Date(s.createdAt).toLocaleDateString('it-IT')}</span>
+                        </div>
+                        <div style={{ fontSize: '0.82rem', color: '#6b7280' }}>
+                          Firmato da: <strong>{s.nomeFirmatario}</strong> ({s.ruoloFirmatario}) — {s.metodoPagamento?.replace('_', ' ')} / {s.frequenzaPagamento?.replace(/_/g, ' ')}
+                        </div>
+                        {s.noteAdmin && <div style={{ fontSize: '0.8rem', color: '#7c3aed', marginTop: '4px' }}>📝 Note: {s.noteAdmin}</div>}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flexShrink: 0 }}>
+                        {s.stato === 'inviata' && (
+                          <>
+                            <button onClick={() => { setSchedaSelezionata(s); setSchedaAzione('accetta'); setSchedaNoteAdmin(''); setSchedaPazienteId(''); }}
+                              style={{ background: '#15803d', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
+                              ✅ Accetta
+                            </button>
+                            <button onClick={() => { setSchedaSelezionata(s); setSchedaAzione('archivia'); setSchedaNoteAdmin(''); setSchedaPazienteId(s.pazienteId?._id || s.pazienteId || ''); }}
+                              style={{ background: '#0369a1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
+                              📁 Archivia
+                            </button>
+                            <button onClick={async () => { if (!confirm('Rifiutare questa scheda?')) return; await api.patch(`/scheda-servizio/${s._id}/rifiuta`); await caricaDati(); }}
+                              style={{ background: '#dc2626', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
+                              ❌ Rifiuta
+                            </button>
+                          </>
+                        )}
+                        {s.stato === 'accettata' && (
+                          <button onClick={() => { setSchedaSelezionata(s); setSchedaAzione('archivia'); setSchedaNoteAdmin(''); setSchedaPazienteId(s.pazienteId?._id || s.pazienteId || ''); }}
+                            style={{ background: '#0369a1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
+                            📁 Archivia nella doc paziente
+                          </button>
+                        )}
+                        {s.stato === 'archiviata' && s.documentoArchiviatoId && (
+                          <span style={{ fontSize: '0.78rem', color: '#0369a1', background: '#eff6ff', padding: '4px 10px', borderRadius: '8px', fontWeight: 600 }}>
+                            ✓ Nella cartella del paziente
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
