@@ -279,7 +279,7 @@ router.get('/documents/:documentId', authenticateToken, async (req: Request, res
     }
 
     res.setHeader('Content-Type', document.contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${document.fileName}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
     return res.send(document.data);
   } catch (error) {
     return res.status(500).json({ message: 'Errore nel download del documento', error });

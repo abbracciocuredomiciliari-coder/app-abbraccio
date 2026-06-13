@@ -414,11 +414,50 @@ function Staff() {
       return;
     }
     try {
-      const res = await api.get(`/auth/users/${staff.userId}/details`);
-      const u = res.data;
+      const [resUser, resDocs] = await Promise.all([
+        api.get(`/auth/users/${staff.userId}/details`),
+        api.get(`/staff/${staff._id}/documents`),
+      ]);
+      const u = resUser.data;
+      const docs: StaffDocument[] = resDocs.data;
+      const contratti = docs.filter(d => d.documentType === 'contratto');
+      const altriDocs = docs.filter(d => d.documentType !== 'contratto');
+
       const roleLabel = u.professione || u.role || staff.role;
       const fd = (d?: string) => d ? new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' }) : '—';
       const esc = (v?: string) => v ? String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '—';
+
+      const baseUrl = (api.defaults.baseURL as string || 'http://localhost:4000/api').replace(/\/$/, '');
+      const token = localStorage.getItem('token') || '';
+
+      const contrattiHtml = contratti.length > 0
+        ? `<h2>📎 Contratto caricato</h2>
+           <table style="width:100%;border-collapse:collapse;margin-top:8px">
+             ${contratti.map(d => `
+               <tr>
+                 <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb">${esc(d.title)}</td>
+                 <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280">${esc(d.fileName)}</td>
+                 <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb">
+                   <a href="${baseUrl}/staff/documents/${d._id}?token=${encodeURIComponent(token)}" target="_blank" style="color:#1e4d8c;font-weight:600">Apri documento ↗</a>
+                 </td>
+               </tr>`).join('')}
+           </table>`
+        : `<h2>📎 Contratto caricato</h2><p style="color:#6b7280;font-style:italic">Nessun contratto caricato nella sezione Documenti.</p>`;
+
+      const altriDocsHtml = altriDocs.length > 0
+        ? `<h2>📄 Altri documenti</h2>
+           <table style="width:100%;border-collapse:collapse;margin-top:8px">
+             ${altriDocs.map(d => `
+               <tr>
+                 <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb">${esc(d.title)}</td>
+                 <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280">${esc(d.documentType)}</td>
+                 <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb">
+                   <a href="${baseUrl}/staff/documents/${d._id}?token=${encodeURIComponent(token)}" target="_blank" style="color:#1e4d8c">Apri ↗</a>
+                 </td>
+               </tr>`).join('')}
+           </table>`
+        : '';
+
       const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Profilo - ${esc(u.name)}</title>
       <style>body{font-family:Arial,sans-serif;margin:24px;color:#1f2937}h1{font-size:1.4rem;color:#1e4d8c;border-bottom:2px solid #1e4d8c;padding-bottom:8px}h2{font-size:1rem;margin-top:20px;border-bottom:1px solid #d1d5db;padding-bottom:6px}.f{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e5e7eb}.f strong{color:#111827}@media print{body{margin:12px}}</style>
       </head><body>
@@ -443,7 +482,10 @@ function Staff() {
       <div class="f"><strong>Inizio</strong><span>${esc(fd(staff.dataInizioCollaborazione))}</span></div>
       ${!staff.active && staff.dataFineCollaborazione ? `<div class="f"><strong>Fine</strong><span>${esc(fd(staff.dataFineCollaborazione))}</span></div>` : ''}
       <div class="f"><strong>Stato</strong><span>${staff.active ? 'Attivo' : 'Inattivo'}</span></div>
-      ${u.firmaContratto ? `<h2>Firma contratto</h2><img src="${u.firmaContratto}" style="max-width:280px;border:1px solid #d1d5db;padding:8px;background:#fff" />` : ''}
+      <h2>Firma digitale contratto</h2>
+      ${u.firmaContratto ? `<div style="margin:8px 0"><img src="${u.firmaContratto}" style="max-width:280px;border:1px solid #d1d5db;padding:8px;background:#fff" /></div><div class="f"><strong>Data firma</strong><span>${esc(fd(u.dataFirmaContratto))}</span></div><div class="f"><strong>Luogo firma</strong><span>${esc(u.luogoFirmaContratto)}</span></div>` : '<p style="color:#6b7280;font-style:italic">Firma digitale non disponibile.</p>'}
+      ${contrattiHtml}
+      ${altriDocsHtml}
       <p style="margin-top:24px;font-size:8pt;color:#6b7280;text-align:center;border-top:1px solid #e5e7eb;padding-top:12px">Generata il ${new Date().toLocaleString('it-IT')} - Abbraccio Cure Domiciliari</p>
       <script>window.onload=function(){window.print()}<\/script>
       </body></html>`;

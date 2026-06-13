@@ -25,11 +25,24 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ─── Interceptor risposta: logout automatico su 401 ──────────────────────────
+// ─── Interceptor risposta: logout automatico su 401, retry su 408/503 ────────
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
+  async (error) => {
+    const status = error.response?.status;
+    const config = error.config as any;
+
+    // Retry automatico su 408 (Request Timeout) e 503 (Service Unavailable)
+    // Causati dal cold start di Render free tier
+    if (status === 408 || status === 503) {
+      config._retryCount = (config._retryCount || 0) + 1;
+      if (config._retryCount <= 2) {
+        await new Promise(resolve => setTimeout(resolve, 3000 * config._retryCount));
+        return api(config);
+      }
+    }
+
+    if (status === 401) {
       const isAuthRoute = (error.config?.url || '').includes('/auth/');
       if (!isAuthRoute) {
         // Rimuovi solo i dati di autenticazione; il redirect viene gestito
