@@ -389,11 +389,29 @@ function Register() {
                 type="button"
                 onClick={async () => {
                   try {
-                    const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/contratto/testo`);
+                    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+                    const fullUrl = `${apiUrl}/api/contratto/testo`;
+                    console.log('Tentativo di caricamento contratto da:', fullUrl);
+                    
+                    const res = await fetch(fullUrl);
+                    console.log('Risposta status:', res.status, res.statusText);
+                    
+                    if (!res.ok) {
+                      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                    }
+                    
                     const data = await res.json();
-                    setTestoContrattoCompleto(data.testo);
-                  } catch {
-                    alert('Errore nel caricamento del testo del contratto');
+                    console.log('Dati ricevuti:', data);
+                    
+                    if (data.testo) {
+                      setTestoContrattoCompleto(data.testo);
+                    } else {
+                      throw new Error('Testo del contratto non presente nella risposta');
+                    }
+                  } catch (error) {
+                    console.error('Errore dettagliato caricamento contratto:', error);
+                    const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
+                    alert(`Errore nel caricamento del testo del contratto: ${errorMessage}`);
                   }
                 }}
                 style={{ background: '#0369a1', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
