@@ -359,7 +359,7 @@ router.patch('/:id/gestisci', authenticateToken, authorizeRole('admin', 'coordin
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
-// DELETE /api/richieste-prenotazioni/:id - Elimina richiesta (admin solo in_attesa)
+// DELETE /api/richieste-prenotazioni/:id - Elimina richiesta (admin/coordinator per qualsiasi stato)
 // ═════════════════════════════════════════════════════════════════════════════
 router.delete('/:id', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
   try {
@@ -368,9 +368,8 @@ router.delete('/:id', authenticateToken, authorizeRole('admin', 'coordinator'), 
       return res.status(404).json({ message: 'Richiesta non trovata' });
     }
 
-    if (richiesta.stato !== 'in_attesa') {
-      return res.status(400).json({ message: 'Solo richieste in attesa possono essere eliminate' });
-    }
+    // Permetti eliminazione di tutte le richieste indipendentemente dal stato
+    // Utile per pulire richieste confermate che non hanno liberato lo slot
 
     await RichiestaPrenotazione.findByIdAndDelete(req.params.id);
     return res.json({ message: 'Richiesta eliminata' });
