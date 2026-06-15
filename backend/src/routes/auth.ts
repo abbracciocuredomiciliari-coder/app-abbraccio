@@ -66,7 +66,10 @@ router.post('/register', registerLimiter, async (req: Request, res: Response) =>
   }
 
   try {
-    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+    const existingUser = await User.findOne({ 
+      email: email.toLowerCase().trim(),
+      status: { $ne: 'deleted' } // Escludi utenti marcati come cancellati
+    });
     if (existingUser) {
       return res.status(409).json({ message: 'Email già registrata' });
     }
@@ -139,7 +142,10 @@ router.post('/register-completo', registerLimiter, upload.fields([
       return res.status(400).json({ message: 'La firma del contratto è obbligatoria' });
     }
 
-    const existingUser = await User.findOne({ email: body.email.toLowerCase().trim() });
+    const existingUser = await User.findOne({ 
+      email: body.email.toLowerCase().trim(),
+      status: { $ne: 'deleted' } // Escludi utenti marcati come cancellati
+    });
     if (existingUser) {
       return res.status(409).json({ message: 'Email già registrata' });
     }
@@ -397,7 +403,7 @@ router.get('/pending', authenticateToken, authorizeRole('admin'), async (req: Au
 // GET /all-users — lista tutti gli utenti (solo admin)
 router.get('/all-users', authenticateToken, authorizeRole('admin'), async (req: AuthRequest, res: Response) => {
   try {
-    const users = await User.find().select('-password').sort({ createdAt: -1 });
+    const users = await User.find({ status: { $ne: 'deleted' } }).select('-password').sort({ createdAt: -1 });
     return res.json(users);
   } catch (error) {
     return res.status(500).json({ message: 'Errore nel recupero degli utenti', error });
@@ -501,7 +507,14 @@ router.put('/reject/:userId', authenticateToken, authorizeRole('admin'), async (
 router.delete('/users/:userId', authenticateToken, authorizeRole('admin'), async (req: AuthRequest, res: Response) => {
   try {
     const { userId } = req.params;
-    const user = await User.findByIdAndDelete(userId);
+    const user = await User.findByIdAndUpdate(
+      userId, 
+      { 
+        status: 'deleted',
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
     if (!user) {
       return res.status(404).json({ message: 'Utente non trovato' });
     }
