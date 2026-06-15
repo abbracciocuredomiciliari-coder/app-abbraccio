@@ -22,6 +22,8 @@ interface Consegna {
 }
 
 interface RichiestaItem {
+  _id?: string;
+  supplyId?: string;
   nome: string;
   categoria: 'presidio' | 'farmaco';
   unitaMisura: string;
@@ -92,6 +94,38 @@ export default function ReportConsegne() {
       setRichieste(res.data);
     } catch (err) {
       console.error('Errore caricamento richieste:', err);
+    }
+  };
+
+  // Funzioni per gestire le richieste
+  const gestisciRichiesta = async (id: string, items: any[], noteAdmin?: string) => {
+    try {
+      await api.patch(`/supply-requests/${id}/gestisci`, { items, noteAdmin });
+      await caricaDati();
+      alert('✅ Richiesta gestita con successo');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nella gestione richiesta');
+    }
+  };
+
+  const segnaComeConsegnato = async (id: string) => {
+    try {
+      await api.patch(`/supply-requests/${id}/consegna`);
+      await caricaDati();
+      alert('✅ Richiesta segnata come consegnata');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nella segnalazione consegna');
+    }
+  };
+
+  const eliminaRichiesta = async (id: string) => {
+    if (!confirm('Sei sicuro di voler eliminare questa richiesta?')) return;
+    try {
+      await api.delete(`/supply-requests/${id}`);
+      await caricaDati();
+      alert('✅ Richiesta eliminata');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nell\'eliminazione');
     }
   };
 
@@ -846,6 +880,106 @@ export default function ReportConsegne() {
                       color: '#92400e'
                     }}>
                       <strong>📝 Risposta Admin:</strong> {richiesta.noteAdmin}
+                    </div>
+                  )}
+
+                  {/* Pulsanti di azione per admin/coordinator */}
+                  {isAdmin && (
+                    <div style={{ 
+                      marginTop: '16px', 
+                      padding: '16px', 
+                      background: '#f8fafc', 
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      display: 'flex',
+                      gap: '8px',
+                      flexWrap: 'wrap'
+                    }}>
+                      {richiesta.stato === 'in attesa' && (
+                        <>
+                          <button
+                            onClick={() => {
+                              const itemsConAutorizzazione = richiesta.items.map(item => ({
+                                supplyId: item.supplyId || item._id,
+                                quantitaAutorizzata: item.quantitaRichiesta,
+                                statoItem: 'autorizzato'
+                              }));
+                              gestisciRichiesta(richiesta._id, itemsConAutorizzazione, 'Richiesta autorizzata automaticamente');
+                            }}
+                            style={{
+                              padding: '8px 16px',
+                              background: '#10b981',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '0.875rem',
+                              fontWeight: 600,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ✅ Conferma Richiesta
+                          </button>
+                          <button
+                            onClick={() => {
+                              const motivo = prompt('Motivo del rifiuto (opzionale):');
+                              if (motivo !== null) {
+                                const itemsRifiutati = richiesta.items.map(item => ({
+                                  supplyId: item.supplyId || item._id,
+                                  quantitaAutorizzata: 0,
+                                  statoItem: 'rifiutato'
+                                }));
+                                gestisciRichiesta(richiesta._id, itemsRifiutati, motivo || undefined);
+                              }
+                            }}
+                            style={{
+                              padding: '8px 16px',
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '0.875rem',
+                              fontWeight: 600,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ❌ Rifiuta Richiesta
+                          </button>
+                        </>
+                      )}
+                      
+                      {richiesta.stato === 'autorizzata' && (
+                        <button
+                          onClick={() => segnaComeConsegnato(richiesta._id)}
+                          style={{
+                            padding: '8px 16px',
+                            background: '#3b82f6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          🚚 Segna come Consegnato
+                        </button>
+                      )}
+                      
+                      <button
+                        onClick={() => eliminaRichiesta(richiesta._id)}
+                        style={{
+                          padding: '8px 16px',
+                          background: '#6b7280',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '0.875rem',
+                          fontWeight: 600,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🗑️ Elimina Richiesta
+                      </button>
                     </div>
                   )}
                 </div>
