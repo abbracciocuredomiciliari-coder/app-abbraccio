@@ -122,4 +122,25 @@ router.put('/:id/rifiuta', authenticateToken, authorizeRole('admin', 'coordinato
   }
 });
 
+// ═══════════════════════════════════════════════════════════
+// DELETE /api/richieste-paziente/:id — cancella richiesta
+// ═══════════════════════════════════════════════════════════
+router.delete('/:id', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
+  try {
+    const richiesta = await RichiestaRegistrazionePaziente.findById(req.params.id);
+    if (!richiesta) return res.status(404).json({ message: 'Richiesta non trovata' });
+
+    // Non permettere la cancellazione se è già stata approvata
+    if (richiesta.stato === 'approvata') {
+      return res.status(400).json({ message: 'Non è possibile cancellare una richiesta già approvata' });
+    }
+
+    await RichiestaRegistrazionePaziente.findByIdAndDelete(req.params.id);
+
+    return res.json({ message: 'Richiesta cancellata con successo' });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore nella cancellazione', error: err?.message });
+  }
+});
+
 export default router;

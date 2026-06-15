@@ -180,6 +180,17 @@ export default function GestioneRichieste() {
     }
   };
 
+  const cancellaRegistrazionePaziente = async (id: string) => {
+    if (!confirm('Sei sicuro di voler cancellare questa richiesta di registrazione? Questa azione non è reversibile.')) return;
+    try {
+      await api.delete(`/richieste-paziente/${id}`);
+      await caricaDati();
+      alert('✅ Richiesta di registrazione paziente cancellata');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore durante la cancellazione');
+    }
+  };
+
   // ════════════════════════════════════════════════════════════════════════════
   // Gestione richiesta
   // ════════════════════════════════════════════════════════════════════════════
@@ -386,7 +397,7 @@ export default function GestioneRichieste() {
                       </div>
                     </div>
                     {rp.stato === 'in_attesa' && (
-                      <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                      <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
                         <button type="button" onClick={() => approvaRegistrazionePaziente(rp._id)}
                           disabled={approvandoPazId === rp._id}
                           style={{ background: '#15803d', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', opacity: approvandoPazId === rp._id ? 0.6 : 1 }}>
@@ -395,6 +406,10 @@ export default function GestioneRichieste() {
                         <button type="button" onClick={() => rifiutaRegistrazionePaziente(rp._id)}
                           style={{ background: '#dc2626', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>
                           ❌ Rifiuta
+                        </button>
+                        <button type="button" onClick={() => cancellaRegistrazionePaziente(rp._id)}
+                          style={{ background: '#6b7280', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>
+                          🗑️ Cancella
                         </button>
                       </div>
                     )}
