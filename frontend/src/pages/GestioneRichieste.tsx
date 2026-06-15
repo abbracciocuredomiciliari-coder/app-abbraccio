@@ -726,14 +726,15 @@ export default function GestioneRichieste() {
                           >
                             ✓ Approva
                           </button>
-                          <button
-                            onClick={() => eliminaRichiesta(r._id)}
-                            style={{ padding: '6px 12px', background: '#f3f4f6', color: '#6b7280', border: 'none', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
-                          >
-                            🗑️
-                          </button>
                         </>
                       )}
+                      <button
+                        onClick={() => eliminaRichiesta(r._id)}
+                        style={{ padding: '6px 12px', background: '#f3f4f6', color: '#6b7280', border: 'none', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
+                        title="Elimina richiesta"
+                      >
+                        🗑️
+                      </button>
                     </div>
                   </td>
                 </tr>
