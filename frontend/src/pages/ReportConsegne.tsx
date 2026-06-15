@@ -37,7 +37,7 @@ interface Richiesta {
   operatoreNome: string;
   items: RichiestaItem[];
   dataRichiesta: string;
-  stato: 'in attesa' | 'autorizzata' | 'rifiutata' | 'consegnata';
+  stato: 'in_attesa' | 'gestita' | 'rifiutata' | 'consegnata';
   noteAdmin?: string;
   noteOperatore?: string;
 }
@@ -757,14 +757,14 @@ export default function ReportConsegne() {
                     height: '48px', 
                     borderRadius: '12px', 
                     background: richiesta.stato === 'consegnata' ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)' : 
-                                richiesta.stato === 'autorizzata' ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' :
+                                richiesta.stato === 'gestita' ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' :
                                 richiesta.stato === 'rifiutata' ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)' :
                                 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: richiesta.stato === 'consegnata' ? '#059669' : 
-                          richiesta.stato === 'autorizzata' ? '#1e4d8c' :
+                          richiesta.stato === 'gestita' ? '#1e4d8c' :
                           richiesta.stato === 'rifiutata' ? '#dc2626' :
                           '#b45309'
                   }}>
@@ -784,11 +784,11 @@ export default function ReportConsegne() {
                         fontSize: '0.75rem',
                         fontWeight: 600,
                         background: richiesta.stato === 'consegnata' ? '#d1fae5' :
-                                    richiesta.stato === 'autorizzata' ? '#dbeafe' :
+                                    richiesta.stato === 'gestita' ? '#dbeafe' :
                                     richiesta.stato === 'rifiutata' ? '#fee2e2' :
                                     '#fef3c7',
                         color: richiesta.stato === 'consegnata' ? '#059669' :
-                               richiesta.stato === 'autorizzata' ? '#1e4d8c' :
+                               richiesta.stato === 'gestita' ? '#1e4d8c' :
                                richiesta.stato === 'rifiutata' ? '#dc2626' :
                                '#b45309'
                       }}>
@@ -895,7 +895,7 @@ export default function ReportConsegne() {
                       gap: '8px',
                       flexWrap: 'wrap'
                     }}>
-                      {richiesta.stato === 'in attesa' && (
+                      {richiesta.stato === 'in_attesa' && (
                         <>
                           <button
                             onClick={() => {
@@ -947,7 +947,7 @@ export default function ReportConsegne() {
                         </>
                       )}
                       
-                      {richiesta.stato === 'autorizzata' && (
+                      {richiesta.stato === 'gestita' && (
                         <button
                           onClick={() => segnaComeConsegnato(richiesta._id)}
                           style={{
