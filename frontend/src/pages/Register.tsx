@@ -390,7 +390,9 @@ function Register() {
                 onClick={async () => {
                   try {
                     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-                    const fullUrl = `${apiUrl}/api/contratto/testo`;
+                    // Rimuovi /api finale se presente per evitare doppio /api
+                    const baseUrl = apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : apiUrl;
+                    const fullUrl = `${baseUrl}/api/contratto/testo`;
                     console.log('Tentativo di caricamento contratto da:', fullUrl);
                     
                     const res = await fetch(fullUrl);
