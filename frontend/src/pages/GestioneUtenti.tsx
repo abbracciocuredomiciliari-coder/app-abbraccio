@@ -33,6 +33,7 @@ interface UtenteDettaglio extends Utente {
   dataFirmaContratto?: string;
   luogoFirmaContratto?: string;
   contrattoPdfUrl?: string;
+  autoveicoli?: string;
   documenti?: {
     assicurazione?: string;
     documentoIdentita?: string;
@@ -144,7 +145,7 @@ function GestioneUtenti() {
     setLoadingPdfUserId(id);
     try {
       const res = await api.get(`/auth/users/${id}/details`);
-      const html = generaHtmlProfilo(res.data as UtenteDettaglio);
+      const html = await generaHtmlProfilo(res.data as UtenteDettaglio);
       const win = window.open('', '_blank');
       if (!win) {
         mostraToast('Impossibile aprire la finestra per la stampa.', 'err');
@@ -196,7 +197,7 @@ function GestioneUtenti() {
       return new Date(value).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
     };
 
-    const generaHtmlProfilo = (user: UtenteDettaglio) => {
+    const generaHtmlProfilo = async (user: UtenteDettaglio) => {
       const roleLabel = roleLabels[user.role] || user.role;
       const docs = Object.entries(user.documenti || {})
         .filter(([, path]) => !!path)
@@ -215,48 +216,31 @@ function GestioneUtenti() {
             </tr>
           `).join('');
 
-      const contractTesto = `
-        <h3 style="margin:0 0 10px; font-size:1rem;">CONTRATTO PROFESSIONISTI</h3>
-        <p><strong>Contratto di prestazione d'opera intellettuale ai sensi degli artt. 2229 e ss. C.C.</strong></p>
-        <p><strong>ABBRACCIO CURE DOMICILIARI</strong> con sede in Via di S.Maria Ausiliatrice 4B, 00181 (Roma), iscritta con codice fiscale e partita IVA n° 18316251000, rappresentata dal proprio amministratore Delegato Simona Schembri. PEC abbracciocuredomiciliari@facilepec.com.</p>
-        <p><strong>Professionista:</strong> Il Dr./La Dr.ssa ${escapeHtml(user.name || '___________________________________')} nato/a a ${escapeHtml(user.luogoNascita || '_____________')} il ${escapeHtml(formatDateString(user.dataNascita)) || '_____________'}, codice fiscale ${escapeHtml(user.codiceFiscale || '_____________')} e partita IVA n° ${escapeHtml(user.partitaIva || '______________________')} residente a ${escapeHtml(user.indirizzoResidenza || '______________')}. PEC Professionale ${escapeHtml(user.pec || '_________________________________')}.</p>
-        <h4 style="margin-top:10px;">Premesse</h4>
-        <p>- La Società opera nell'ambito dell'home care e dei servizi di assistenza sanitaria domiciliare integrata e necessita di professionisti competenti;</p>
-        <p>- Il Professionista è in possesso dei necessari titoli per svolgere la professione di ${escapeHtml(user.professione || '_____________')} ed è iscritto all'albo professionale dell'Ordine di ${escapeHtml(user.ordineAlbo || '_____________')} n. ${escapeHtml(user.numeroAlbo || '______')};</p>
-        <p>- Il Professionista è titolare di Partita Iva con regime fiscale ed opera abitualmente in favore di una pluralità di clienti;</p>
-        <p>- Il Professionista intende fornire alla Società la propria opera intellettuale mantenendo autonomia operativa e organizzativa;</p>
-        <p>- Le Parti dichiarano di non trovarsi in conflitto di interessi e di non avere incompatibilità normative;</p>
-        <p>- Alcuni contenuti sono descritti negli Allegati, parte integrante dell'accordo.</p>
-        <h4>Art. 1 - Oggetto</h4>
-        <p>1.1. Oggetto della prestazione d'opera intellettuale è l'esecuzione, esclusivamente personale e sotto la propria direzione e responsabilità, di attività professionale in ambito socio-sanitario nell'ambito dell'assistenza domiciliare, consistente nello svolgimento dei seguenti incarichi: ${escapeHtml(user.professione || '____________________')} che la Società affida al Professionista.</p>
-        <p>1.2. Il Professionista si impegna ad eseguire le prestazioni in piena autonomia e senza vincoli di subordinazione, senza esclusiva e senza obbligo di non concorrenza.</p>
-        <p>1.3. Il Professionista dichiara che gli incarichi verranno svolti direttamente, con propria organizzazione e mezzi, nel rispetto degli obblighi di diligenza professionale.</p>
-        <p>1.4. Il Professionista si impegna a rispettare il Codice Etico aziendale; in caso di comportamento gravemente contrario, la Società potrà agire, inclusa la risoluzione del contratto.</p>
-        <h4>Art. 2 - Modalità di esecuzione degli Incarichi</h4>
-        <p>2.1. Il Professionista rispetterà date e orari di disponibilità indicati e comunicati alla Società con congruo anticipo (almeno 20 gg lavorativi).</p>
-        <p>2.2. Ogni incarico potrà essere revocato o sospeso con comunicazione scritta, almeno 24 ore prima; nessun compenso per l'incarico revocato.</p>
-        <p>2.3. Per rendicontazione è richiesto l'uso delle piattaforme aziendali per cartella clinica, gestione materiali e registrazione accessi.</p>
-        <h4>Art. 3 - Corrispettivo e Pagamenti</h4>
-        <p>3.1. Il corrispettivo è determinato dal Professionista e riportato nel piano di assegnazione lavoro.</p>
-        <p>3.2. Pagamenti entro 30 giorni dalla emissione della fattura, con bonifico alle coordinate fornite dal Professionista.</p>
-        <h4>Art. 4 - Dichiarazioni e obbligazioni</h4>
-        <p>4.1. Il Professionista dichiara di possedere i requisiti professionali necessari e si impegna ad aggiornare la documentazione.</p>
-        <p>4.2. Il Professionista parteciperà ai corsi di formazione obbligatori; il mancato superamento potrà costituire giusta causa di recesso.</p>
-        <h4>Art. 5 - Durata e Recesso</h4>
-        <p>5.1. Gli incarichi avranno durata con rinnovo tacito annuale, salvo disdetta comunicata almeno 30 giorni prima.</p>
-        <p>5.2. Ciascuna parte potrà recedere con comunicazione PEC con preavviso di 30 giorni.</p>
-        <h4>Art. 6 - Clausola risolutiva</h4>
-        <p>6.1. Il contratto si risolverà di diritto in caso di violazione di obblighi indicati nei casi previsti dal testo completo.</p>
-        <h4>Art. 7 - Riservatezza</h4>
-        <p>7.1. Il Professionista si impegna al massimo riserbo e al rispetto della normativa sulla privacy.</p>
-        <h4>Art. 8 - Trattamento dati personali (GDPR)</h4>
-        <p>8.1. Il trattamento dei dati sarà effettuato ai sensi del GDPR; il Professionista firmerà l'eventuale nomina a responsabile esterno.</p>
-        <h4>Art. 9 - Geolocalizzazione</h4>
-        <p>9.1. Le parti potranno predisporre sistemi di localizzazione elettronica per necessità organizzative.</p>
-        <h4>Art. 10 - Responsabilità e manleva</h4>
-        <p>10.1. Il Professionista svolge le attività sotto la propria personale responsabilità e manleva la Società fino a €1.000.000,00.</p>
-        <p style="margin-top: 16px;">Letto, confermato e sottoscritto in ${escapeHtml(user.luogoFirmaContratto || '_____________')} il ${escapeHtml(formatDateString(user.dataFirmaContratto)) || '_____________'}.</p>
-      `;
+      // Recupera il testo completo del contratto dal backend
+      let testoContrattoCompleto = '';
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/contratto/testo`);
+        const data = await res.json();
+        testoContrattoCompleto = data.testo || '';
+      } catch {
+        testoContrattoCompleto = 'Errore nel caricamento del testo del contratto';
+      }
+
+      // Compila il testo con i dati dell'utente
+      const contractTesto = testoContrattoCompleto
+        .replace(/Il Dr\. ___________________________________nato a _____________ il ______________, codice fiscale ___________________-e partita Iva  n° ________________________residente a ______________\. PEC Professionale ___________________________________\./, 
+          `Il Dr. ${escapeHtml(user.name || '_________________')} nato a ${escapeHtml(user.luogoNascita || '___________')} il ${escapeHtml(formatDateString(user.dataNascita) || '____________')}, codice fiscale ${escapeHtml(user.codiceFiscale || '_________________')}-e partita Iva  n° ${escapeHtml(user.partitaIva || '______________________')}residente a ${escapeHtml(user.indirizzoResidenza || '____________')}. PEC Professionale ${escapeHtml(user.pec || '_________________________________')}.`)
+        .replace(/di ____________________  ed è iscritto all'albo professionale dell'Ordine di ______________ numero tessera iscrizione ____________________________\;/, 
+          `di ${escapeHtml(user.professione || '__________________')} ed è iscritto all'albo professionale dell'Ordine di ${escapeHtml(user.ordineAlbo || '____________')} numero tessera iscrizione ${escapeHtml(user.numeroAlbo || '__________________________')};`)
+        .replace(/____________________ DOMICILIARE/, `${escapeHtml(user.professione || '____________________')} DOMICILIARE`)
+        .replace(/dal __________________ al ________________/, `dal ${new Date().toLocaleDateString('it-IT')} al ${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString('it-IT')}`)
+        .replace(/Letto, confermato e sottoscritto in __________________ il ______________\./, `Letto, confermato e sottoscritto in ${escapeHtml(user.luogoFirmaContratto || '________________')} il ${escapeHtml(formatDateString(user.dataFirmaContratto)) || '_____________'}.`)
+        .replace(/Il\/La sottoscritto\/a _________________________ nato\/a a _________________ residente a ____________________ in _____________________________\./, 
+          `Il/La sottoscritto/a ${escapeHtml(user.name || '_________________________')} nato/a a ${escapeHtml(user.luogoNascita || '_______________')} residente a ${escapeHtml(user.indirizzoResidenza || '__________________')} in ${escapeHtml(user.indirizzoResidenza || '_________________________')}.`)
+        .replace(/Il\/La sottoscritto\/a \[OMISSIS\] nato\/a \[OMISSIS\] il residente in \[OMISSIS\] in/, `Il/La sottoscritto/a ${escapeHtml(user.name || '_________________________')} nato/a a ${escapeHtml(user.luogoNascita || '[OMISSIS]')} il ${escapeHtml(formatDateString(user.dataNascita) || '[OMISSIS]')} residente in ${escapeHtml(user.indirizzoResidenza || '[OMISSIS]')} in`)
+        .replace(/- Casella di posta elettronica certificata professionale privata\n- Telefono mobile per reperibilità nr: \n- Autoveicoli:/, 
+          `- Casella di posta elettronica certificata professionale privata: ${escapeHtml(user.pec || '_________________________')}\n- Telefono mobile per reperibilità nr: ${escapeHtml(user.telefono || '_________________________')}\n- Autoveicoli: ${escapeHtml(user.autoveicoli || '_________________________')}`)
+        .replace(/Sottoscritto in _______________ il __________________\./g, `Sottoscritto in ${escapeHtml(user.luogoFirmaContratto || '_____________')} il ${escapeHtml(formatDateString(user.dataFirmaContratto)) || '_____________'}.`);
 
       const contrattoSection = `
       <div class="section">
