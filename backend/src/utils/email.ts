@@ -410,3 +410,95 @@ export async function inviaEmailConfermaPrenotazione(
     </div>`
   );
 }
+
+// ─── Notifica operatore — gestione richiesta materiali ───────────────────────
+export async function inviaEmailGestioneRichiestaMateriali(
+  richiesta: any,
+  operatoreEmail: string
+): Promise<boolean> {
+  const transporter = getTransporter();
+  if (!transporter) return false;
+
+  try {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const dataGestione = richiesta.dataGestione 
+      ? new Date(richiesta.dataGestione).toLocaleDateString('it-IT')
+      : new Date().toLocaleDateString('it-IT');
+
+    const statoColor = richiesta.stato === 'rifiutata' ? '#dc2626' : 
+                       richiesta.stato === 'consegnata' ? '#16a34a' : '#3b82f6';
+    const statoLabel = richiesta.stato === 'rifiutata' ? '❌ Rifiutata' : 
+                       richiesta.stato === 'consegnata' ? '🚚 Consegnata' : '✅ Autorizzata';
+
+    await invia(
+      operatoreEmail,
+      `${statoLabel} — Richiesta Materiali`,
+      `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Notifica Abbraccio</title>
+        </head>
+        <body style="font-family:Arial,sans-serif;background:#f5f7fa;padding:20px;margin:0;">
+          <div style="max-width:600px;margin:0 auto;background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;">
+            <div style="background:${statoColor};color:white;padding:20px;text-align:center;">
+              <h1 style="margin:0;font-size:24px;">${statoLabel}</h1>
+            </div>
+            <div style="padding:30px;">
+              <p>Gentile <strong>${richiesta.operatoreNome}</strong>,</p>
+              <p>La sua richiesta di materiali è stata <strong>${richiesta.stato === 'rifiutata' ? 'rifiutata' : richiesta.stato === 'consegnata' ? 'consegnata' : 'autorizzata'}</strong> da Abbraccio Cure Domiciliari.</p>
+              
+              ${richiesta.stato === 'rifiutata' && richiesta.noteAdmin ? `<p style="background:#fef2f2;padding:12px;border-radius:6px;border-left:4px solid #dc2626;"><strong>Motivo:</strong> ${richiesta.noteAdmin}</p>` : ''}
+              ${richiesta.stato === 'autorizzata' ? `<p style="background:#eff6ff;padding:12px;border-radius:6px;border-left:4px solid #3b82f6;"><strong>📅 Data ritiro previsto:</strong> ${dataGestione}</p>` : ''}
+              ${richiesta.stato === 'consegnata' ? `<p style="background:#f0fdf4;padding:12px;border-radius:6px;border-left:4px solid #16a34a;"><strong>✅ Materiale consegnato in data:</strong> ${dataGestione}</p>` : ''}
+              
+              <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+                <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;width:140px;">Data richiesta:</td><td style="padding:8px;">${new Date(richiesta.dataRichiesta).toLocaleDateString('it-IT')}</td></tr>
+                <tr><td style="padding:8px;background:#f1f5f9;font-weight:bold;">Gestita da:</td><td style="padding:8px;">${richiesta.gestitaDa || 'Amministrazione'}</td></tr>
+                <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;">Articoli richiesti:</td><td style="padding:8px;">${richiesta.items.length} articoli</td></tr>
+              </table>
+
+              <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+                <thead>
+                  <tr style="background:#f8fafc;">
+                    <th style="padding:8px;text-align:left;font-weight:bold;">Articolo</th>
+                    <th style="padding:8px;text-align:center;font-weight:bold;">Categoria</th>
+                    <th style="padding:8px;text-align:center;font-weight:bold;">Richiesto</th>
+                    <th style="padding:8px;text-align:center;font-weight:bold;">Autorizzato</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${richiesta.items.map((item: any) => `
+                    <tr style="border-bottom:1px solid #f1f5f9;">
+                      <td style="padding:8px;">${item.nome}</td>
+                      <td style="padding:8px;text-align:center;">${item.categoria === 'farmaco' ? '💊 Farmaco' : '🏥 Presidio'}</td>
+                      <td style="padding:8px;text-align:center;font-weight:600;color:#b45309;">${item.quantitaRichiesta} ${item.unitaMisura}</td>
+                      <td style="padding:8px;text-align:center;font-weight:700;color:${item.quantitaAutorizzata > 0 ? '#16a34a' : '#dc2626'};">
+                        ${item.quantitaAutorizzata || 0} ${item.quantitaAutorizzata ? item.unitaMisura : ''}
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+              
+              ${richiesta.noteAdmin ? `<p style="background:#fffbeb;padding:12px;border-radius:6px;border-left:4px solid #f59e0b;"><strong>📝 Note:</strong> ${richiesta.noteAdmin}</p>` : ''}
+              
+              <a href="${frontendUrl}/richieste-consegne" style="display:inline-block;background:#1e4d8c;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:bold;">📋 Vedi le mie richieste →</a>
+            </div>
+            <div style="background:#f8fafc;padding:20px;text-align:center;font-size:12px;color:#6b7280;border-top:1px solid #e5e7eb;">
+              <p>© 2025 Abbraccio Cure Domiciliari S.r.l. | Tutti i diritti riservati</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    );
+
+    console.log(`📧 Email gestione richiesta materiali inviata a ${operatoreEmail}`);
+    return true;
+  } catch (err: any) {
+    console.error('❌ Errore invio email gestione richiesta materiali:', err?.message || err);
+    return false;
+  }
+}

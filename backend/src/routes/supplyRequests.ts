@@ -146,6 +146,18 @@ router.patch('/:id/gestisci', auth, isAdminOrCoord, async (req: Request, res: Re
     richiesta.stato = tuttiRifiutati ? 'rifiutata' : 'gestita';
 
     await richiesta.save();
+
+    // Invia notifica email all'operatore
+    try {
+      const operatore = await User.findById(richiesta.operatoreId).select('email').lean();
+      if (operatore && operatore.email) {
+        const { inviaEmailGestioneRichiestaMateriali } = await import('../utils/email');
+        await inviaEmailGestioneRichiestaMateriali(richiesta, operatore.email);
+      }
+    } catch (emailErr) {
+      console.warn('⚠️ Errore invio notifica email operatore:', emailErr);
+    }
+
     return res.json(richiesta);
   } catch (err: any) {
     return res.status(500).json({ message: err.message });
@@ -202,6 +214,18 @@ router.patch('/:id/consegna', auth, isAdminOrCoord, async (req: Request, res: Re
     richiesta.dataConsegna = new Date();
     richiesta.consegnataDa = adminNome;
     await richiesta.save();
+
+    // Invia notifica email all'operatore
+    try {
+      const operatore = await User.findById(richiesta.operatoreId).select('email').lean();
+      if (operatore && operatore.email) {
+        const { inviaEmailGestioneRichiestaMateriali } = await import('../utils/email');
+        await inviaEmailGestioneRichiestaMateriali(richiesta, operatore.email);
+      }
+    } catch (emailErr) {
+      console.warn('⚠️ Errore invio notifica email operatore:', emailErr);
+    }
+
     return res.json(richiesta);
   } catch (err: any) {
     return res.status(500).json({ message: err.message });
