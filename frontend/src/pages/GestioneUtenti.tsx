@@ -14,6 +14,7 @@ interface Utente {
   domicilioPartenza?: string;
   raggioAzioneKm?: number;
   domicilioCoords?: { lat: number; lng: number };
+  firmaContratto?: string;
 }
 
 interface UtenteDettaglio extends Utente {
@@ -75,6 +76,22 @@ function GestioneUtenti() {
   const mostraToast = (msg: string, tipo: 'ok' | 'err' = 'ok') => {
     setToast({ msg, tipo });
     setTimeout(() => setToast(null), 3500);
+  };
+
+  const apriPdfContratto = async (userId: string) => {
+    setLoadingPdfUserId(userId);
+    try {
+      const res = await api.get(`/contratto/pdf/${userId}`);
+      const html = res.data;
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const w = window.open(url, '_blank');
+      if (w) w.onload = () => URL.revokeObjectURL(url);
+    } catch (err: any) {
+      mostraToast(err?.response?.data?.message || 'Errore nel caricamento del contratto', 'err');
+    } finally {
+      setLoadingPdfUserId(null);
+    }
   };
 
   useEffect(() => {
@@ -504,6 +521,16 @@ function GestioneUtenti() {
                       >
                         {loadingPdfUserId === utente._id ? '⏳ Caricamento...' : '📄 Profilo PDF'}
                       </button>
+                      {utente.status === 'approved' && utente.firmaContratto && (
+                        <button
+                          type="button"
+                          onClick={() => apriPdfContratto(utente._id)}
+                          disabled={loadingPdfUserId === utente._id}
+                          style={{ background: '#059669', color: '#fff', fontSize: '0.85rem', padding: '6px 14px' }}
+                        >
+                          {loadingPdfUserId === utente._id ? '⏳ Caricamento...' : '📋 Contratto PDF'}
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => eliminaUtente(utente._id)}

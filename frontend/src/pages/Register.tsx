@@ -82,6 +82,7 @@ function Register() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [testoContrattoCompleto, setTestoContrattoCompleto] = useState<string | null>(null);
 
   const geocodifica = useCallback(async () => {
     if (!domicilioPartenza.trim()) return;
@@ -382,7 +383,24 @@ function Register() {
         {/* STEP 4: Contratto - da completare */}
         {step === 'contratto' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', color: '#1e3a5f' }}>📝 Firma contratto</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: '0', fontSize: '1.1rem', color: '#1e3a5f' }}>📝 Firma contratto</h3>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/contratto/testo`);
+                    const data = await res.json();
+                    setTestoContrattoCompleto(data.testo);
+                  } catch {
+                    alert('Errore nel caricamento del testo del contratto');
+                  }
+                }}
+                style={{ background: '#0369a1', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <FileText size={14} /> Leggi testo completo
+              </button>
+            </div>
             <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', maxHeight: '300px', overflowY: 'auto', fontSize: '0.8rem' }}>
               <h4 style={{ margin: '0 0 8px', textAlign: 'center' }}>CONTRATTO DI PRESTAZIONE D'OPERA</h4>
               <p><strong>TRA</strong> ABBRACCIO CURE DOMICILIARI S.r.l. (P.IVA 18316251000)</p>
@@ -525,6 +543,34 @@ function Register() {
           )}
         </div>
       </form>
+
+      {/* Modale per testo completo contratto */}
+      {testoContrattoCompleto && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'white', borderRadius: '12px', maxWidth: '800px', width: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1e3a5f' }}>📄 Testo completo del contratto</h3>
+              <button
+                onClick={() => setTestoContrattoCompleto(null)}
+                style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#6b7280', padding: '0', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ padding: '20px', overflowY: 'auto', flex: 1, fontSize: '0.85rem', lineHeight: '1.5', whiteSpace: 'pre-wrap', fontFamily: 'Arial, sans-serif' }}>
+              {testoContrattoCompleto}
+            </div>
+            <div style={{ padding: '12px 20px', borderTop: '1px solid #e5e7eb', textAlign: 'right' }}>
+              <button
+                onClick={() => setTestoContrattoCompleto(null)}
+                style={{ background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Chiudi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
