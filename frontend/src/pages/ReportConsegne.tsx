@@ -52,6 +52,8 @@ export default function ReportConsegne() {
   const [dataFine, setDataFine] = useState('');
   const [ricercaOperatore, setRicercaOperatore] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [confermaQuantitaId, setConfermaQuantitaId] = useState<string | null>(null);
+  const [quantitaModificate, setQuantitaModificate] = useState<{[key: string]: number}>({});
 
   // Verifica se l'utente è admin/coordinatore
   const isAdmin = user?.role === 'admin' || user?.role === 'coordinator' || user?.role === 'direttore';
@@ -897,28 +899,142 @@ export default function ReportConsegne() {
                     }}>
                       {richiesta.stato === 'in_attesa' && (
                         <>
-                          <button
-                            onClick={() => {
-                              const itemsConAutorizzazione = richiesta.items.map(item => ({
-                                supplyId: item.supplyId || item._id,
-                                quantitaAutorizzata: item.quantitaRichiesta,
-                                statoItem: 'autorizzato'
-                              }));
-                              gestisciRichiesta(richiesta._id, itemsConAutorizzazione, 'Richiesta autorizzata automaticamente');
-                            }}
-                            style={{
-                              padding: '8px 16px',
-                              background: '#10b981',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '6px',
-                              fontSize: '0.875rem',
-                              fontWeight: 600,
-                              cursor: 'pointer'
-                            }}
-                          >
-                            ✅ Conferma Richiesta
-                          </button>
+                          {confermaQuantitaId === richiesta._id ? (
+                            <div style={{
+                              background: 'white',
+                              border: '2px solid #10b981',
+                              borderRadius: '8px',
+                              padding: '16px',
+                              marginTop: '8px',
+                              boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                            }}>
+                              <h4 style={{ margin: '0 0 12px', color: '#10b981', fontSize: '1rem' }}>
+                                ✅ Conferma quantità da consegnare
+                              </h4>
+                              {richiesta.items.map((item, index) => (
+                                <div key={index} style={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  gap: '12px', 
+                                  marginBottom: '8px',
+                                  padding: '8px',
+                                  background: '#f9fafb',
+                                  borderRadius: '4px'
+                                }}>
+                                  <div style={{ flex: 1, fontSize: '0.875rem' }}>
+                                    <strong>{item.nome}</strong>
+                                    <div style={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                                      {item.categoria === 'farmaco' ? '💊 Farmaco' : '🏥 Presidio'} • Richiesto: {item.quantitaRichiesta} {item.unitaMisura}
+                                    </div>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <label style={{ fontSize: '0.875rem', fontWeight: 600 }}>Consegnare:</label>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max={item.quantitaRichiesta}
+                                      defaultValue={item.quantitaRichiesta}
+                                      onChange={(e) => {
+                                        const newValue = parseInt(e.target.value) || 0;
+                                        setQuantitaModificate(prev => ({
+                                          ...prev,
+                                          [`${richiesta._id}_${index}`]: newValue
+                                        }));
+                                      }}
+                                      style={{
+                                        width: '80px',
+                                        padding: '4px 8px',
+                                        border: '1px solid #d1d5db',
+                                        borderRadius: '4px',
+                                        fontSize: '0.875rem'
+                                      }}
+                                    />
+                                    <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                                      {item.unitaMisura}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                              <div style={{ 
+                                display: 'flex', 
+                                gap: '8px', 
+                                marginTop: '12px',
+                                justifyContent: 'flex-end'
+                              }}>
+                                <button
+                                  onClick={() => {
+                                    setConfermaQuantitaId(null);
+                                    setQuantitaModificate({});
+                                  }}
+                                  style={{
+                                    padding: '6px 12px',
+                                    background: '#6b7280',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    fontSize: '0.875rem',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  Annulla
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const itemsConAutorizzazione = richiesta.items.map((item, index) => {
+                                      const key = `${richiesta._id}_${index}`;
+                                      const quantitaAutorizzata = quantitaModificate[key] !== undefined 
+                                        ? quantitaModificate[key] 
+                                        : item.quantitaRichiesta;
+                                      
+                                      return {
+                                        supplyId: item.supplyId || item._id,
+                                        quantitaAutorizzata: quantitaAutorizzata,
+                                        statoItem: quantitaAutorizzata > 0 ? 'autorizzato' : 'rifiutato'
+                                      };
+                                    });
+                                    
+                                    const note = itemsConAutorizzazione.some(item => item.quantitaAutorizzata < richiesta.items.find(r => r.supplyId === item.supplyId)?.quantitaRichiesta!)
+                                      ? 'Quantità parzialmente autorizzata'
+                                      : 'Richiesta autorizzata';
+                                    
+                                    gestisciRichiesta(richiesta._id, itemsConAutorizzazione, note);
+                                    setConfermaQuantitaId(null);
+                                    setQuantitaModificate({});
+                                  }}
+                                  style={{
+                                    padding: '6px 12px',
+                                    background: '#10b981',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    fontSize: '0.875rem',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  Conferma
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setConfermaQuantitaId(richiesta._id);
+                                setQuantitaModificate({});
+                              }}
+                              style={{
+                                padding: '8px 16px',
+                                background: '#10b981',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontSize: '0.875rem',
+                                fontWeight: 600,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              ✅ Conferma Richiesta
+                            </button>
+                          )}
                           <button
                             onClick={() => {
                               const motivo = prompt('Motivo del rifiuto (opzionale):');
