@@ -255,13 +255,14 @@ function GestioneUtenti() {
       <div class="section">
         <h2>Contratto firmato</h2>
         ${user.contrattoPdfUrl ? `<p><a href="${getDocumentUrl(user.contrattoPdfUrl)}" target="_blank">Apri contratto PDF</a></p>` : ''}
-        <div class="contract-text" style="padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; background: #f9fafb; font-size: 0.9rem; line-height: 1.5;">
-          ${contractTesto}
+        <div class="contract-text" style="padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; background: #f9fafb; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap;">
+          ${contractTesto || 'Testo del contratto non disponibile'}
         </div>
         <div class="signature-block" style="margin-top: 16px;">
           ${user.firmaContratto ? `<div class="signature" style="margin-bottom: 12px;"><img src="${user.firmaContratto}" alt="Firma contratto" style="max-width: 280px; height: auto; border: 1px solid #d1d5db; padding: 8px; background: #fff;" /></div>` : '<p>Firma non disponibile</p>'}
           <div class="field"><strong>Data firma</strong><span>${escapeHtml(formatDateString(user.dataFirmaContratto))}</span></div>
-          <div class="field"><strong>Luogo firma</strong><span>${escapeHtml(user.luogoFirmaContratto)}</span></div>
+          <div class="field"><strong>Luogo firma</strong><span>${escapeHtml(user.luogoFirmaContratto || 'Non specificato')}</span></div>
+          ${!user.firmaContratto ? `<p style="color: #dc2626; font-size: 0.85rem; margin-top: 8px;">⚠️ Questo operatore non ha ancora firmato il contratto durante la registrazione.</p>` : ''}
         </div>
       </div>`;
 
