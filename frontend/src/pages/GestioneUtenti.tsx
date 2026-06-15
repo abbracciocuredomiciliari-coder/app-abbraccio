@@ -226,6 +226,15 @@ function GestioneUtenti() {
         testoContrattoCompleto = 'Errore nel caricamento del testo del contratto';
       }
 
+      // Debug: mostra se la firma è presente
+      console.log('Dati utente per PDF:', {
+        name: user.name,
+        hasFirma: !!user.firmaContratto,
+        dataFirma: user.dataFirmaContratto,
+        luogoFirma: user.luogoFirmaContratto,
+        testoLength: testoContrattoCompleto.length
+      });
+
       // Compila il testo con i dati dell'utente
       const contractTesto = testoContrattoCompleto
         .replace(/Il Dr\. ___________________________________nato a _____________ il ______________, codice fiscale ___________________-e partita Iva  n° ________________________residente a ______________\. PEC Professionale ___________________________________\./, 
