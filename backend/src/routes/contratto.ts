@@ -197,7 +197,7 @@ router.post('/genera-link-firma/:userId', authenticateToken, async (req: AuthReq
 
     const jwtSecret = process.env.JWT_SECRET as string;
     const token = jwt.sign({ userId: user._id, scope: 'firma-contratto' }, jwtSecret, { expiresIn: '7d' });
-    const frontendUrl = process.env.FRONTEND_URL || 'https://app-abbraccio-frontend.onrender.com';
+    const frontendUrl = (process.env.FRONTEND_URL || 'https://app-abbraccio-frontend.onrender.com').replace(/\/$/, '');
     const link = `${frontendUrl}/firma-contratto?token=${token}`;
     return res.json({ link, nome: user.name, email: user.email });
   } catch (err: any) {
