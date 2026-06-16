@@ -219,10 +219,8 @@ function GestioneUtenti() {
       // Recupera il testo completo del contratto dal backend
       let testoContrattoCompleto = '';
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-                    // Rimuovi /api finale se presente per evitare doppio /api
-                    const baseUrl = apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : apiUrl;
-                    const res = await fetch(`${baseUrl}/api/contratto/testo`);
+        const apiUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api').replace(/\/api$/, '');
+                    const res = await fetch(`${apiUrl}/api/contratto/testo`);
         const data = await res.json();
         testoContrattoCompleto = data.testo || '';
       } catch {
