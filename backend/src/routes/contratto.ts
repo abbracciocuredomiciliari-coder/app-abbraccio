@@ -1,5 +1,7 @@
 import { Router, Response, Request } from 'express';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
+import jwt from 'jsonwebtoken';
+import User from '../models/User';
 
 const router = Router();
 
@@ -180,6 +182,80 @@ router.get('/pdf/:userId', authenticateToken, async (req: AuthRequest, res: Resp
     return res.send(html);
   } catch (err: any) {
     return res.status(500).json({ message: 'Errore generazione PDF', error: err?.message });
+  }
+});
+
+// POST /api/contratto/genera-link-firma/:userId — genera token firma per un operatore (solo admin)
+router.post('/genera-link-firma/:userId', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const requester = req.user as { userId: string; role: string };
+    if (!requester || requester.role !== 'admin') {
+      return res.status(403).json({ message: 'Non autorizzato' });
+    }
+    const user = await User.findById(req.params.userId).select('name email');
+    if (!user) return res.status(404).json({ message: 'Utente non trovato' });
+
+    const jwtSecret = process.env.JWT_SECRET as string;
+    const token = jwt.sign({ userId: user._id, scope: 'firma-contratto' }, jwtSecret, { expiresIn: '7d' });
+    const frontendUrl = process.env.FRONTEND_URL || 'https://app-abbraccio-frontend.onrender.com';
+    const link = `${frontendUrl}/firma-contratto?token=${token}`;
+    return res.json({ link, nome: user.name, email: user.email });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore generazione link', error: err?.message });
+  }
+});
+
+// POST /api/contratto/firma-da-token — salva firma tramite token (pubblico, no auth)
+router.post('/firma-da-token', async (req: Request, res: Response) => {
+  try {
+    const { token, firmaContratto, dataFirma, luogoFirma } = req.body;
+    if (!token || !firmaContratto || firmaContratto === 'null' || firmaContratto.length < 10) {
+      return res.status(400).json({ message: 'Token e firma obbligatori' });
+    }
+    const jwtSecret = process.env.JWT_SECRET as string;
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, jwtSecret);
+    } catch {
+      return res.status(401).json({ message: 'Link non valido o scaduto' });
+    }
+    if (decoded.scope !== 'firma-contratto') {
+      return res.status(401).json({ message: 'Token non valido per questa operazione' });
+    }
+    const user = await User.findById(decoded.userId);
+    if (!user) return res.status(404).json({ message: 'Utente non trovato' });
+
+    user.firmaContratto = firmaContratto;
+    user.dataFirmaContratto = dataFirma ? new Date(dataFirma) : new Date();
+    user.luogoFirmaContratto = luogoFirma?.trim() || 'Roma';
+    await user.save();
+    return res.json({ message: 'Contratto firmato con successo!' });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore salvataggio firma', error: err?.message });
+  }
+});
+
+// GET /api/contratto/verifica-token — verifica token e restituisce nome utente (pubblico)
+router.get('/verifica-token', async (req: Request, res: Response) => {
+  try {
+    const { token } = req.query as { token: string };
+    if (!token) return res.status(400).json({ message: 'Token mancante' });
+    const jwtSecret = process.env.JWT_SECRET as string;
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, jwtSecret);
+    } catch {
+      return res.status(401).json({ message: 'Link non valido o scaduto' });
+    }
+    if (decoded.scope !== 'firma-contratto') {
+      return res.status(401).json({ message: 'Token non valido' });
+    }
+    const user = await User.findById(decoded.userId).select('name firmaContratto');
+    if (!user) return res.status(404).json({ message: 'Utente non trovato' });
+    const giàFirmato = !!(user.firmaContratto && user.firmaContratto !== 'null' && user.firmaContratto.length > 10);
+    return res.json({ nome: user.name, giàFirmato });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore verifica token', error: err?.message });
   }
 });
 

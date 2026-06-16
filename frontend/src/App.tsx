@@ -14,6 +14,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const FirmaContratto = lazy(() => import('./pages/FirmaContratto'));
 
 // Lazy load per pagine pesanti
 const Patients = lazy(() => import('./pages/Patients'));
@@ -405,6 +406,7 @@ function AppShell() {
           <Route path="/richiesta-assistenza" element={<RichiestaAssistenza />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/firma-contratto" element={<FirmaContratto />} />
 
           {/* Route privilegiati */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
