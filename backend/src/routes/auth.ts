@@ -209,7 +209,7 @@ router.post('/register-completo', registerLimiter, upload.fields([
       ordineAlbo: body.ordineAlbo?.trim() || '',
       numeroAlbo: body.numeroAlbo?.trim() || '',
       // Contratto
-      firmaContratto: body.firmaContratto,
+      firmaContratto: (body.firmaContratto && body.firmaContratto !== 'null' && body.firmaContratto.length > 10) ? body.firmaContratto : undefined,
       dataFirmaContratto: body.dataFirma ? new Date(body.dataFirma) : new Date(),
       luogoFirmaContratto: body.luogoFirma?.trim() || '',
       // Documenti
@@ -552,6 +552,19 @@ router.get('/documenti-registrazione/:path(*)', authenticateToken, authorizeRole
     return res.sendFile(filePath);
   } catch (error) {
     return res.status(500).json({ message: 'Errore nel download', error });
+  }
+});
+
+// POST /fix-null-signatures — pulizia one-shot firme salvate come stringa "null" (solo admin)
+router.post('/fix-null-signatures', authenticateToken, authorizeRole('admin'), async (req: AuthRequest, res: Response) => {
+  try {
+    const result = await User.updateMany(
+      { firmaContratto: { $in: ['null', '', 'undefined'] } },
+      { $unset: { firmaContratto: '' } }
+    );
+    return res.json({ message: `Corretti ${result.modifiedCount} utenti con firma non valida.` });
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore nella pulizia', error });
   }
 });
 

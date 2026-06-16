@@ -483,7 +483,7 @@ function Staff() {
       ${!staff.active && staff.dataFineCollaborazione ? `<div class="f"><strong>Fine</strong><span>${esc(fd(staff.dataFineCollaborazione))}</span></div>` : ''}
       <div class="f"><strong>Stato</strong><span>${staff.active ? 'Attivo' : 'Inattivo'}</span></div>
       <h2>Firma digitale contratto</h2>
-      ${u.firmaContratto ? `<div style="margin:8px 0"><img src="${u.firmaContratto}" style="max-width:280px;border:1px solid #d1d5db;padding:8px;background:#fff" /></div><div class="f"><strong>Data firma</strong><span>${esc(fd(u.dataFirmaContratto))}</span></div><div class="f"><strong>Luogo firma</strong><span>${esc(u.luogoFirmaContratto)}</span></div>` : '<p style="color:#6b7280;font-style:italic">Firma digitale non disponibile.</p>'}
+      ${(u.firmaContratto && u.firmaContratto !== 'null' && u.firmaContratto.length > 10) ? `<div style="margin:8px 0"><img src="${u.firmaContratto}" style="max-width:280px;border:1px solid #d1d5db;padding:8px;background:#fff" /></div><div class="f"><strong>Data firma</strong><span>${esc(fd(u.dataFirmaContratto))}</span></div><div class="f"><strong>Luogo firma</strong><span>${esc(u.luogoFirmaContratto)}</span></div>` : '<p style="color:#6b7280;font-style:italic">Firma digitale non disponibile.</p>'}
       ${contrattiHtml}
       ${altriDocsHtml}
       <p style="margin-top:24px;font-size:8pt;color:#6b7280;text-align:center;border-top:1px solid #e5e7eb;padding-top:12px">Generata il ${new Date().toLocaleString('it-IT')} - Abbraccio Cure Domiciliari</p>
