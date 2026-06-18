@@ -304,12 +304,10 @@ function AppShell() {
                 <Archive size={18} />
                 Archivio cartelle
               </Link>
-              {isConvenzione && (
-                <Link to="/assegnazione-pai" className={isActive('/assegnazione-pai') ? 'active' : ''}>
-                  <Map size={18} />
-                  Assegnazione PAI
-                </Link>
-              )}
+              <Link to="/assegnazione-pai" className={isActive('/assegnazione-pai') ? 'active' : ''}>
+                <Map size={18} />
+                {isConvenzione ? 'Assegnazione PAI' : 'Assegnazione Piano di Lavoro'}
+              </Link>
 
               {/* — Operativo — */}
               <span className="nav-section-label">Operativo</span>
