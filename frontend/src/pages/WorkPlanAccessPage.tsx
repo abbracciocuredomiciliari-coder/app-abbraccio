@@ -78,7 +78,7 @@ const statoObiettivoConfig: Record<string, { label: string; color: string; bg: s
 
 // Assicura che API_BASE termini sempre con /api
 
-const _rawBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+const _rawBase = import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api';
 
 const API_BASE = _rawBase.endsWith('/api') ? _rawBase : _rawBase.replace(/\/$/, '') + '/api';
 

@@ -21,7 +21,7 @@ export default function FirmaContratto() {
       setStato('errore');
       return;
     }
-    const apiUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api').replace(/\/api$/, '');
+    const apiUrl = (import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api').replace(/\/api$/, '');
     fetch(`${apiUrl}/api/contratto/verifica-token?token=${encodeURIComponent(token)}`)
       .then(r => r.json())
       .then(data => {
