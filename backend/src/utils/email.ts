@@ -54,8 +54,9 @@ async function invia(to: string, subject: string, html: string): Promise<boolean
     return false;
   }
   try {
+    const fromEmail = process.env.FROM_EMAIL || process.env.SMTP_USER;
     const info = await transporter.sendMail({
-      from: `"App Abbraccio" <${process.env.SMTP_USER}>`,
+      from: `"App Abbraccio" <${fromEmail}>`,
       to,
       subject,
       html,

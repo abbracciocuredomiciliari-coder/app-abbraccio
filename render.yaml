@@ -21,8 +21,10 @@ services:
       - key: CLOUDINARY_API_SECRET
         sync: false   # da impostare manualmente su Render dashboard
 
-      # Email notifiche — Aruba SMTP
+      # Email notifiche — Aruba SMTP (o Brevo se già configurato)
       - key: ADMIN_EMAIL
+        value: info@abbracciocuredomiciliari.it
+      - key: FROM_EMAIL
         value: info@abbracciocuredomiciliari.it
       - key: SMTP_HOST
         value: smtp.aruba.it
@@ -33,7 +35,7 @@ services:
       - key: SMTP_PASS
         sync: false   # da impostare manualmente su Render dashboard
       - key: FRONTEND_URL
-        value: https://app-abbraccio-frontend-rw2c.vercel.app
+        value: https://app.abbracciocuredomiciliari.it
 
   # ═══════════════════════════════════════════════════════════════════════════
   # FRONTEND - Web Service con Express (per SPA routing)

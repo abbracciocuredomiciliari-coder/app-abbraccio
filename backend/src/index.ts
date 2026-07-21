@@ -67,6 +67,7 @@ const allowedOrigins: string[] = [
   'https://app-abbraccio-frontend.vercel.app',
   'https://app-abbraccio-frontend.onrender.com',
   'https://abbraccio-cure.onrender.com',
+  'https://api.abbracciocuredomiciliari.it',
 ];
 // Aggiungi FRONTEND_URL da env se diverso da quelli già in lista
 if (process.env.FRONTEND_URL && !allowedOrigins.includes(process.env.FRONTEND_URL)) {
