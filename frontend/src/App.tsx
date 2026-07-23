@@ -33,6 +33,7 @@ const CheckListGlucometro = lazy(() => import('./pages/CheckListGlucometro'));
 const CheckListHub = lazy(() => import('./pages/CheckListHub'));
 const GestioneUtenti = lazy(() => import('./pages/GestioneUtenti'));
 const PortaleOperatore = lazy(() => import('./pages/PortaleOperatore'));
+const ChatPage = lazy(() => import('./pages/ChatPage'));
 const ProfiloPersonale = lazy(() => import('./pages/ProfiloPersonale'));
 const CompensoIncarichi = lazy(() => import('./pages/CompensoIncarichi'));
 const EsamiStrumentali = lazy(() => import('./pages/EsamiStrumentali'));
@@ -85,6 +86,7 @@ import {
   Map,
   Home,
   CalendarCheck,
+  MessageCircle,
 } from 'lucide-react';
 
 // Ruoli con accesso completo (admin/coordinamento/direzione)
@@ -233,6 +235,10 @@ function AppShell() {
                 <LayoutDashboard size={18} />
                 Dashboard
               </Link>
+              <Link to="/chat" className={isActive('/chat') ? 'active' : ''}>
+                <MessageCircle size={18} />
+                Chat coordinatore
+              </Link>
               <Link to="/piani-lavorativi" className={isActive('/piani-lavorativi') ? 'active' : ''}>
                 <Calendar size={18} />
                 Piani lavorativi
@@ -264,6 +270,10 @@ function AppShell() {
               <Link to="/dashboard" className={isActive('/dashboard') ? 'active' : ''}>
                 <LayoutDashboard size={18} />
                 Dashboard
+              </Link>
+              <Link to="/chat" className={isActive('/chat') ? 'active' : ''}>
+                <MessageCircle size={18} />
+                Chat operatore
               </Link>
 
               {/* — Clinico — */}
@@ -455,6 +465,7 @@ function AppShell() {
           {/* Route operatori */}
           <Route path="/portale-operatore" element={<ProtectedRoute><PortaleOperatore mode="dashboard" /></ProtectedRoute>} />
           <Route path="/piani-lavorativi" element={<ProtectedRoute><PortaleOperatore mode="piani" /></ProtectedRoute>} />
+          <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
           <Route path="/profilo-personale" element={<ProtectedRoute><ProfiloPersonale /></ProtectedRoute>} />
           <Route path="/compenso-incarichi" element={<ProtectedRoute><CompensoIncarichi /></ProtectedRoute>} />
           <Route path="/report-consegne" element={<ProtectedRoute><ReportConsegne /></ProtectedRoute>} />

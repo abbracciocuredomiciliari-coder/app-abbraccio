@@ -20,8 +20,11 @@ import {
   CheckCircle,
   Eye,
   Printer,
+  MessageCircle,
 } from 'lucide-react';
 import FirmaCanvas from '../components/FirmaCanvas';
+import { ChatWidget } from '../components/ChatWidget';
+import { ReportGenerator } from '../components/ReportGenerator';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
@@ -123,6 +126,7 @@ function Patients() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [documents, setDocuments] = useState<PatientDocument[]>([]);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+  const [chatPatient, setChatPatient] = useState<Patient | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [uploading, setUploading] = useState(false);
   const [uploadForm, setUploadForm] = useState({ title: '', description: '', category: '' as string });
@@ -782,6 +786,21 @@ function Patients() {
                     <FolderOpen size={16} />
                     Documenti
                   </button>
+                  <button
+                    onClick={() => setChatPatient(patient)}
+                    style={{
+                      background: '#0d9488',
+                      color: 'white',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <MessageCircle size={16} />
+                    Chat
+                  </button>
+                  <ReportGenerator
+                    patientId={patient._id}
+                    patientName={`${patient.firstName} ${patient.lastName}`}
+                  />
                   {user?.role === 'admin' && (
                     <button
                       onClick={() => deletePatient(patient._id)}
@@ -1293,6 +1312,28 @@ function Patients() {
                 })}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ MODAL CHAT PAZIENTE ═══ */}
+      {chatPatient && (
+        <div className="modal-overlay" onClick={() => setChatPatient(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '720px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+              <h3 style={{ margin: 0, color: '#1e4d8c' }}>
+                💬 Chat con operatore — {chatPatient.firstName} {chatPatient.lastName}
+              </h3>
+              <button onClick={() => setChatPatient(null)} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer' }}>
+                <X size={18} />
+              </button>
+            </div>
+            <ChatWidget
+              scope="patient"
+              patientId={chatPatient._id}
+              title=""
+              height={520}
+            />
           </div>
         </div>
       )}

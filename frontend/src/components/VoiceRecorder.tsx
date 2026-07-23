@@ -84,9 +84,17 @@ export function VoiceRecorder({ workPlanId, onResult, disabled }: VoiceRecorderP
       startTimer();
     } catch (err: any) {
       console.error('[VoiceRecorder] Errore avvio:', err);
-      setError(err.name === 'NotAllowedError'
-        ? 'Permesso microfono negato. Abilita il microfono nelle impostazioni del browser.'
-        : 'Impossibile avviare il microfono.');
+      let message = 'Impossibile avviare il microfono.';
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        message = 'Permesso microfono negato. Abilita il microfono nelle impostazioni del browser e ricarica la pagina.';
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        message = 'Nessun microfono rilevato. Collega un microfono esterno, attiva quello integrato o usa uno smartphone.';
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        message = 'Microfono occupato da un\'altra applicazione. Chiudi Teams/Zoom/altri programmi audio e riprova.';
+      } else if (err.message) {
+        message += ' ' + String(err.message);
+      }
+      setError(message);
     }
   };
 

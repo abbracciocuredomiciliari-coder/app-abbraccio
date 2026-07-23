@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
 import FirmaCanvas from '../components/FirmaCanvas';
 import { VoiceRecorder } from '../components/VoiceRecorder';
+import { ChatWidget } from '../components/ChatWidget';
+import { ReportGenerator } from '../components/ReportGenerator';
 import { Printer, Eye, CheckCircle, Plus, Calendar, User, Syringe, Clock, FileText, AlertTriangle, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
@@ -1298,12 +1300,27 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
           </div>
 
           <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', marginBottom: '20px' }}>
-            <strong>📋 {pazienteSelezionato?.firstName || 'N/D'} {pazienteSelezionato?.lastName || ''}</strong>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+              <strong>📋 {pazienteSelezionato?.firstName || 'N/D'} {pazienteSelezionato?.lastName || ''}</strong>
+              <ReportGenerator
+                patientId={pazienteSelezionato._id}
+                patientName={`${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName}`}
+              />
+            </div>
             <div style={{ fontSize: '0.88rem', color: '#555', marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
               {pazienteSelezionato.address && <span>📍 {pazienteSelezionato.address}</span>}
               {pazienteSelezionato.contactPhone && <span>📞 {pazienteSelezionato.contactPhone}</span>}
               {pazienteSelezionato.assistanceNeeds && <span>🩺 {pazienteSelezionato.assistanceNeeds}</span>}
             </div>
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <ChatWidget
+              scope="patient"
+              patientId={pazienteSelezionato._id}
+              title={`💬 Chat con coordinatore — ${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName}`}
+              height={420}
+            />
           </div>
 
           {piani.length === 0 ? (
