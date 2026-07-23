@@ -35,6 +35,7 @@ export function ChatWidget({ scope, patientId, title, height = 360 }: ChatWidget
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [channel, setChannel] = useState<'all' | 'coordinators' | 'office_admin'>('all');
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -46,6 +47,7 @@ export function ChatWidget({ scope, patientId, title, height = 360 }: ChatWidget
     try {
       const params: Record<string, string> = { scope };
       if (patientId) params.patientId = patientId;
+      if (scope === 'general') params.channel = channel;
       const qs = new URLSearchParams(params).toString();
       const res = await api.get(`/messages?${qs}`);
       setMessages(res.data.messages || []);
@@ -71,6 +73,12 @@ export function ChatWidget({ scope, patientId, title, height = 360 }: ChatWidget
   }, [scope, patientId]);
 
   useEffect(() => {
+    if (scope !== 'general') return;
+    fetchMessages(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channel]);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -84,6 +92,7 @@ export function ChatWidget({ scope, patientId, title, height = 360 }: ChatWidget
     try {
       const formData = new FormData();
       formData.append('scope', scope);
+      if (scope === 'general') formData.append('channel', channel);
       if (patientId) formData.append('patientId', patientId);
       formData.append('content', text);
       files.forEach(file => formData.append('attachments', file));
@@ -187,6 +196,21 @@ export function ChatWidget({ scope, patientId, title, height = 360 }: ChatWidget
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {scope === 'general' && (
+        <div style={{ padding: '8px 12px', borderTop: '1px solid #e2e8f0', background: '#f8fafc' }}>
+          <label style={{ fontSize: '0.75rem', color: '#64748b', marginRight: '8px' }}>Destinatari:</label>
+          <select
+            value={channel}
+            onChange={e => setChannel(e.target.value as 'all' | 'coordinators' | 'office_admin')}
+            style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+          >
+            <option value="all">Tutti</option>
+            <option value="coordinators">Solo coordinatori</option>
+            <option value="office_admin">Solo ufficio / admin</option>
+          </select>
         </div>
       )}
 

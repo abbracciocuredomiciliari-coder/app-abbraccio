@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { Users, Activity, CheckCircle, ClipboardList, MapPin, AlertTriangle, Bell, Eye } from 'lucide-react';
+import { Users, Activity, CheckCircle, ClipboardList, MapPin, AlertTriangle, Bell, Eye, MessageCircle } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Loading } from '../components/ui/Loading';
 import { Badge } from '../components/ui/Badge';
@@ -56,6 +56,7 @@ function Dashboard() {
     paiInScadenza7gg: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [unreadChat, setUnreadChat] = useState({ general: 0, patient: 0, total: 0 });
 
   // Alert PAI in scadenza
   const [paiScadenza, setPaiScadenza] = useState<PazienteScadenza[]>([]);
@@ -80,6 +81,10 @@ function Dashboard() {
           isPrivilegiato ? caricaScadenzePai() : Promise.resolve(),
         ]);
         setCounts(dashRes.data);
+        try {
+          const unreadRes = await api.get('/messages/unread-count');
+          setUnreadChat(unreadRes.data || { general: 0, patient: 0, total: 0 });
+        } catch { /* non bloccante */ }
         // Conta utenti pending (solo admin)
         if (user?.role === 'admin') {
           try {
@@ -144,6 +149,17 @@ function Dashboard() {
       color: '#4f46e5',
       bgColor: 'rgba(79, 70, 229, 0.1)',
       link: '/patients',
+    },
+    {
+      title: unreadChat.total > 0 ? 'Chat non lette' : 'Chat',
+      subtitle: unreadChat.total > 0
+        ? `${unreadChat.general} generali · ${unreadChat.patient} paziente`
+        : 'Nessun nuovo messaggio',
+      value: unreadChat.total,
+      icon: MessageCircle,
+      color: unreadChat.total > 0 ? '#ef4444' : '#0d9488',
+      bgColor: unreadChat.total > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(13, 148, 136, 0.1)',
+      link: '/chat',
     },
   ];
 

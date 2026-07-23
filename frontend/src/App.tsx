@@ -7,6 +7,7 @@ import { ModalitaProvider, useModalita } from './context/ModalitaContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoadingScreen from './components/LoadingScreen';
 import Breadcrumb from './components/Breadcrumb';
+import { ChatBadge } from './components/ChatBadge';
 
 // Eager load per pagine leggere (login, dashboard)
 import Login from './pages/Login';
@@ -236,9 +237,10 @@ function AppShell() {
                 <LayoutDashboard size={18} />
                 Dashboard
               </Link>
-              <Link to="/chat" className={isActive('/chat') ? 'active' : ''}>
+              <Link to="/chat" className={isActive('/chat') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <MessageCircle size={18} />
                 Chat coordinatore
+                <ChatBadge />
               </Link>
               <Link to="/piani-lavorativi" className={isActive('/piani-lavorativi') ? 'active' : ''}>
                 <Calendar size={18} />
@@ -272,9 +274,10 @@ function AppShell() {
                 <LayoutDashboard size={18} />
                 Dashboard
               </Link>
-              <Link to="/chat" className={isActive('/chat') ? 'active' : ''}>
+              <Link to="/chat" className={isActive('/chat') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <MessageCircle size={18} />
                 Chat operatore
+                <ChatBadge />
               </Link>
 
               {/* — Clinico — */}

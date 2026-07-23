@@ -1,6 +1,7 @@
 import mongoose, { Schema, model, Types } from 'mongoose';
 
 export type MessageScope = 'patient' | 'general';
+export type MessageChannel = 'all' | 'coordinators' | 'office_admin';
 
 export interface IMessageAttachment {
   url: string;
@@ -16,6 +17,7 @@ export interface IReadBy {
 
 export interface IMessage extends mongoose.Document {
   scope: MessageScope;
+  channel: MessageChannel;
   patientId?: Types.ObjectId;
   workPlanId?: Types.ObjectId;
   senderId: Types.ObjectId;
@@ -32,6 +34,7 @@ export interface IMessage extends mongoose.Document {
 const messageSchema = new Schema<IMessage>(
   {
     scope: { type: String, enum: ['patient', 'general'], required: true },
+    channel: { type: String, enum: ['all', 'coordinators', 'office_admin'], default: 'all' },
     patientId: { type: Schema.Types.ObjectId, ref: 'Patient', index: true },
     workPlanId: { type: Schema.Types.ObjectId, ref: 'WorkPlan', index: true },
     senderId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },

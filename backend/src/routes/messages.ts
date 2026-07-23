@@ -5,7 +5,7 @@ import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import path from 'path';
 import fs from 'fs';
 import mongoose from 'mongoose';
-import Message from '../models/Message';
+import Message, { type MessageChannel } from '../models/Message';
 import WorkPlan from '../models/WorkPlan';
 import Patient from '../models/Patient';
 import Staff from '../models/Staff';
@@ -17,6 +17,13 @@ const PRIVILEGED_ROLES = ['admin', 'coordinator', 'direttore'];
 
 function isPrivileged(role?: string) {
   return !!role && PRIVILEGED_ROLES.includes(role);
+}
+
+function allowedChannels(role?: string): MessageChannel[] {
+  if (!role) return [];
+  if (['admin', 'direttore'].includes(role)) return ['all', 'coordinators', 'office_admin'];
+  if (role === 'coordinator') return ['all', 'coordinators'];
+  return ['all'];
 }
 
 // ─── Cloudinary / storage locale ─────────────────────────────────────────────
@@ -101,6 +108,7 @@ function serializeMessage(msg: any) {
   return {
     _id: msg._id,
     scope: msg.scope,
+    channel: msg.channel,
     patientId: msg.patientId,
     workPlanId: msg.workPlanId,
     senderId: msg.senderId,
@@ -126,6 +134,18 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
     }
 
     const query: any = { scope };
+
+    if (scope === 'general') {
+      const requestedChannel = req.query.channel as MessageChannel | undefined;
+      if (requestedChannel) {
+        if (!allowedChannels(user.role).includes(requestedChannel)) {
+          return res.status(403).json({ message: 'Non autorizzato a questo canale' });
+        }
+        query.channel = requestedChannel;
+      } else {
+        query.channel = { $in: allowedChannels(user.role) };
+      }
+    }
 
     if (scope === 'patient') {
       if (!patientId || typeof patientId !== 'string') {
@@ -176,15 +196,28 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
 router.post(
   '/',
   authenticateToken,
-  upload.array('attachments', 5),
+  (req: Request, res: Response, next: any) => {
+    upload.array('attachments', 5)(req, res, (err: any) => {
+      if (err) {
+        console.error('[Messages Upload] Errore upload allegato:', err);
+        const message = err instanceof multer.MulterError
+          ? `Errore upload: ${err.message}`
+          : `Errore upload allegato: ${err.message || err}`;
+        return res.status(400).json({ message });
+      }
+      next();
+    });
+  },
   async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;
-      const { scope, patientId, workPlanId, content, recipientId } = req.body;
+      const { scope, patientId, workPlanId, content, recipientId, channel } = req.body;
 
       if (!scope || !['patient', 'general'].includes(scope)) {
         return res.status(400).json({ message: 'scope deve essere "patient" o "general"' });
       }
+
+      const msgChannel: MessageChannel = ['all', 'coordinators', 'office_admin'].includes(channel) ? channel : 'all';
 
       if (scope === 'patient') {
         if (!patientId) {
@@ -212,6 +245,7 @@ router.post(
 
       const message = await Message.create({
         scope,
+        channel: msgChannel,
         patientId: patientId ? new mongoose.Types.ObjectId(patientId) : undefined,
         workPlanId: workPlanId ? new mongoose.Types.ObjectId(workPlanId) : undefined,
         senderId: new mongoose.Types.ObjectId(user.userId || user.id),
@@ -237,9 +271,10 @@ router.get('/unread-count', authenticateToken, async (req: Request, res: Respons
     const user = (req as any).user;
     const userId = user.userId || user.id;
 
-    // Conta messaggi general non letti
+    // Conta messaggi general non letti sui canali visibili
     const generalCount = await Message.countDocuments({
       scope: 'general',
+      channel: { $in: allowedChannels(user.role) },
       senderId: { $ne: new mongoose.Types.ObjectId(userId) },
       'readBy.userId': { $ne: new mongoose.Types.ObjectId(userId) },
     });
