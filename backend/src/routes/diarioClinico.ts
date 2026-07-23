@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
+import mongoose from 'mongoose';
 import DiarioClinico from '../models/DiarioClinico';
 import WorkPlan from '../models/WorkPlan';
 import Staff from '../models/Staff';
@@ -109,7 +110,12 @@ router.post(
       }
 
       const user = (req as any).user;
-      const staffMember = await Staff.findOne({ userId: user.id || user._id });
+      const userId = user.userId || user.id;
+      const staffMember = await Staff.findOne({ userId: new mongoose.Types.ObjectId(userId) });
+
+      if (!staffMember) {
+        return res.status(403).json({ message: 'Operatore non collegato a uno staff: impossibile creare voce diario da audio' });
+      }
 
       const transcript = await transcribeAudio(req.file.buffer, req.file.originalname, req.file.mimetype);
       const extracted = await extractDiarioData(transcript, {
@@ -119,8 +125,8 @@ router.post(
       const entry = await DiarioClinico.create({
         workPlan: workPlanId,
         patient: workPlan.patient,
-        staff: staffMember?._id || user.id,
-        staffName: user.name || `${staffMember?.firstName} ${staffMember?.lastName}` || 'Operatore',
+        staff: staffMember._id,
+        staffName: user.name || `${staffMember.firstName} ${staffMember.lastName}` || 'Operatore',
         dataRegistrazione: new Date(),
         testo: extracted.testo,
         parametriVitali: extracted.parametriVitali || undefined,
