@@ -198,6 +198,17 @@ app.get('/api/test-email', authenticateToken, authorizeRole('admin'), async (req
   }
 });
 
+// ─── Error handler globale ─────────────────────────────────────────────────
+// Intercetta errori (inclusi multer/Cloudinary) e restituisce JSON
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('[Global Error]', err);
+  if (res.headersSent) return;
+  res.status(err.status || 500).json({
+    message: err.message || 'Errore interno del server',
+    error: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+  });
+});
+
 app.listen(port, async () => {
   console.log(`Backend avviato su http://localhost:${port}`);
   // Verifica connessione SMTP all'avvio

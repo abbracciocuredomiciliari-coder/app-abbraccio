@@ -99,13 +99,17 @@ export function ChatWidget({ scope, patientId, title, height = 360 }: ChatWidget
 
       await api.post('/messages', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 120000,
       });
 
       setInput('');
       setFiles([]);
       await fetchMessages(true);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Errore invio messaggio');
+      console.error('[ChatWidget] Errore invio:', err);
+      const detail = err.response?.data?.error || err.message || '';
+      const base = err.response?.data?.message || 'Errore invio messaggio';
+      setError(detail ? `${base} — ${detail}` : base);
     } finally {
       setSending(false);
     }
