@@ -37,4 +37,5 @@ coverage
 # Misc
 *.local
 deploy_vps.py
+ssh_run.py
 .vps_pass
