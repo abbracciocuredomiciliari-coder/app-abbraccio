@@ -34,6 +34,7 @@ const CheckListHub = lazy(() => import('./pages/CheckListHub'));
 const GestioneUtenti = lazy(() => import('./pages/GestioneUtenti'));
 const PortaleOperatore = lazy(() => import('./pages/PortaleOperatore'));
 const ChatPage = lazy(() => import('./pages/ChatPage'));
+const SignedReportsPage = lazy(() => import('./pages/SignedReportsPage'));
 const ProfiloPersonale = lazy(() => import('./pages/ProfiloPersonale'));
 const CompensoIncarichi = lazy(() => import('./pages/CompensoIncarichi'));
 const EsamiStrumentali = lazy(() => import('./pages/EsamiStrumentali'));
@@ -314,6 +315,10 @@ function AppShell() {
                 <Archive size={18} />
                 Archivio cartelle
               </Link>
+              <Link to="/relazioni-firmate" className={isActive('/relazioni-firmate') ? 'active' : ''}>
+                <FileText size={18} />
+                Relazioni firmate
+              </Link>
               <Link to="/assegnazione-pai" className={isActive('/assegnazione-pai') ? 'active' : ''}>
                 <Map size={18} />
                 {isConvenzione ? 'Assegnazione PAI' : 'Assegnazione Piano di Lavoro'}
@@ -426,6 +431,7 @@ function AppShell() {
           <Route path="/strumenti" element={<ProtectedRoute><Strumenti /></ProtectedRoute>} />
           <Route path="/storico-cliniche" element={<ProtectedRoute><StoricoCliniche /></ProtectedRoute>} />
           <Route path="/archivio-cartelle" element={<ProtectedRoute><ArchivioCartelle /></ProtectedRoute>} />
+          <Route path="/relazioni-firmate" element={<ProtectedRoute><SignedReportsPage /></ProtectedRoute>} />
           {/* Hub Check List (unico punto di accesso dalla sidebar) */}
           <Route path="/checklist-hub" element={<ProtectedRoute><CheckListHub /></ProtectedRoute>} />
           {/* Redirect vecchie URL → hub (compatibilità link esistenti) */}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api from '../api/api';
-import { FileText, Send, Loader2, X, Signature, Save } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { FileText, Send, Loader2, X, Signature, Save, Filter } from 'lucide-react';
 import { Button } from './ui';
 import FirmaCanvas from './FirmaCanvas';
 
@@ -9,7 +10,17 @@ interface ReportGeneratorProps {
   patientName: string;
 }
 
+const CATEGORIE = [
+  { value: 'infermieristica', label: 'Infermieristica' },
+  { value: 'riabilitativa', label: 'Fisioterapia / Riabilitativa' },
+  { value: 'medica', label: 'Medica' },
+  { value: 'assistenziale', label: 'Assistenziale OSS' },
+  { value: 'sociale', label: 'Sociale' },
+];
+
 export function ReportGenerator({ patientId, patientName }: ReportGeneratorProps) {
+  const { user } = useAuth();
+  const isPrivileged = ['admin', 'coordinator', 'direttore'].includes(user?.role || '');
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState('');
@@ -20,11 +31,32 @@ export function ReportGenerator({ patientId, patientName }: ReportGeneratorProps
   const [firmaBase64, setFirmaBase64] = useState<string | null>(null);
   const [savingSigned, setSavingSigned] = useState(false);
 
+  const [scope, setScope] = useState<'all' | 'category'>('all');
+  const [category, setCategory] = useState('');
+  const [workPlanType, setWorkPlanType] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [onlyMine, setOnlyMine] = useState(!isPrivileged);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const buildOpts = () => {
+    const opts: any = {};
+    if (scope === 'category') {
+      opts.scope = 'category';
+      if (category) opts.category = category;
+      if (workPlanType) opts.workPlanType = workPlanType;
+    }
+    if (fromDate) opts.fromDate = new Date(fromDate).toISOString();
+    if (toDate) opts.toDate = new Date(toDate).toISOString();
+    if (onlyMine && user?.id) opts.assignedToStaffId = user.id;
+    return opts;
+  };
+
   const generate = async () => {
     setLoading(true);
     setMessage(null);
     try {
-      const res = await api.post(`/reports/patient/${patientId}`, {});
+      const res = await api.post(`/reports/patient/${patientId}`, buildOpts());
       setReport(res.data.report || '');
       setOpen(true);
     } catch (err: any) {
@@ -39,7 +71,7 @@ export function ReportGenerator({ patientId, patientName }: ReportGeneratorProps
     setSendingEmail(true);
     setMessage(null);
     try {
-      const res = await api.post(`/reports/patient/${patientId}`, { recipientEmail: email });
+      const res = await api.post(`/reports/patient/${patientId}`, { ...buildOpts(), recipientEmail: email });
       if (res.data.emailSent) {
         setMessage('Relazione inviata con successo');
       } else {
@@ -63,6 +95,7 @@ export function ReportGenerator({ patientId, patientName }: ReportGeneratorProps
     setMessage(null);
     try {
       await api.post(`/reports/patient/${patientId}/sign`, {
+        ...buildOpts(),
         reportText: report,
         signatureBase64: firmaBase64,
       });
@@ -110,6 +143,89 @@ export function ReportGenerator({ patientId, patientName }: ReportGeneratorProps
                 {message}
               </div>
             )}
+
+            <div style={{ marginBottom: '12px' }}>
+              <button
+                type="button"
+                onClick={() => setShowFilters(!showFilters)}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '0.85rem', color: '#475569' }}
+              >
+                <Filter size={14} /> {showFilters ? 'Nascondi filtri' : 'Filtri relazione'}
+              </button>
+
+              {showFilters && (
+                <div style={{ marginTop: '10px', padding: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'grid', gap: '10px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginBottom: '4px' }}>Tipo relazione</label>
+                      <select
+                        value={scope}
+                        onChange={e => setScope(e.target.value as 'all' | 'category')}
+                        style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                      >
+                        <option value="all">Generale (tutto il percorso)</option>
+                        <option value="category">Per prestazione specifica</option>
+                      </select>
+                    </div>
+
+                    {scope === 'category' && (
+                      <>
+                        <div>
+                          <label style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginBottom: '4px' }}>Prestazione</label>
+                          <select
+                            value={category}
+                            onChange={e => setCategory(e.target.value)}
+                            style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                          >
+                            <option value="">Seleziona...</option>
+                            {CATEGORIE.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginBottom: '4px' }}>Tipologia piano</label>
+                          <select
+                            value={workPlanType}
+                            onChange={e => setWorkPlanType(e.target.value)}
+                            style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                          >
+                            <option value="">Tutte</option>
+                            <option value="prestazionale">Prestazionale</option>
+                            <option value="assistenziale">Assistenziale</option>
+                            <option value="esami_strumentali">Esami strumentali</option>
+                          </select>
+                        </div>
+                      </>
+                    )}
+
+                    <div>
+                      <label style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginBottom: '4px' }}>Dal</label>
+                      <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginBottom: '4px' }}>Al</label>
+                      <input type="date" value={toDate} onChange={e => setToDate(e.target.value)} style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
+                    </div>
+                  </div>
+
+                  {isPrivileged && (
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#475569', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={onlyMine}
+                        onChange={e => setOnlyMine(e.target.checked)}
+                      />
+                      Solo le mie attività / piani assegnati
+                    </label>
+                  )}
+
+                  <div>
+                    <Button type="button" onClick={generate} disabled={loading} variant="primary" icon={loading ? <Loader2 size={14} /> : <FileText size={14} />}>
+                      {loading ? 'Generazione...' : 'Rigenera con filtri'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <textarea
               value={report}

@@ -36,7 +36,7 @@ router.post('/patient/:patientId', authenticateToken, async (req: Request, res: 
   try {
     const user = (req as any).user;
     const { patientId } = req.params;
-    const { recipientEmail, fromDate, toDate } = req.body;
+    const { recipientEmail, fromDate, toDate, scope, category, workPlanType, assignedToStaffId } = req.body;
 
     const patient = await Patient.findById(patientId).lean();
     if (!patient) {
@@ -52,9 +52,12 @@ router.post('/patient/:patientId', authenticateToken, async (req: Request, res: 
       return res.status(503).json({ message: 'GROQ_API_KEY non configurata' });
     }
 
-    const opts: { fromDate?: Date; toDate?: Date } = {};
+    const opts: any = { scope: scope === 'category' ? 'category' : 'all' };
     if (fromDate) opts.fromDate = new Date(fromDate);
     if (toDate) opts.toDate = new Date(toDate);
+    if (category) opts.category = category;
+    if (workPlanType) opts.workPlanType = workPlanType;
+    if (assignedToStaffId) opts.assignedToStaffId = assignedToStaffId;
 
     const result = await generatePatientReport(patientId, opts);
 
@@ -84,7 +87,7 @@ router.post('/patient/:patientId/sign', authenticateToken, async (req: Request, 
   try {
     const user = (req as any).user;
     const { patientId } = req.params;
-    const { reportText, signatureBase64 } = req.body;
+    const { reportText, signatureBase64, scope, category, workPlanType, fromDate, toDate } = req.body;
 
     if (!reportText?.trim()) {
       return res.status(400).json({ message: 'Testo relazione obbligatorio' });
@@ -115,12 +118,63 @@ router.post('/patient/:patientId/sign', authenticateToken, async (req: Request, 
       staffName: user.name || `${staff.firstName} ${staff.lastName}` || 'Operatore',
       reportText: reportText.trim(),
       signatureBase64: signatureBase64.trim(),
+      scope: scope === 'category' ? 'category' : 'all',
+      category: category || undefined,
+      workPlanType: workPlanType || undefined,
+      fromDate: fromDate ? new Date(fromDate) : undefined,
+      toDate: toDate ? new Date(toDate) : undefined,
     });
 
     return res.status(201).json({ message: 'Relazione firmata salvata', signedReport });
   } catch (error: any) {
     console.error('[Reports Sign] Errore:', error);
     return res.status(500).json({ message: 'Errore nel salvataggio della relazione firmata', error: error.message });
+  }
+});
+
+// GET /api/reports/signed/patient/:patientId - Elenco relazioni firmate di un paziente
+router.get('/signed/patient/:patientId', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const { patientId } = req.params;
+
+    const ok = await canAccessPatient(user, patientId);
+    if (!ok) {
+      return res.status(403).json({ message: 'Non autorizzato a visualizzare le relazioni di questo paziente' });
+    }
+
+    const reports = await SignedReport.find({ patient: new mongoose.Types.ObjectId(patientId) })
+      .populate('patient', 'firstName lastName')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.json(reports);
+  } catch (error: any) {
+    console.error('[Reports Signed Patient] Errore:', error);
+    return res.status(500).json({ message: 'Errore nel recupero relazioni firmate', error: error.message });
+  }
+});
+
+// GET /api/reports/signed - Tutte le relazioni firmate (admin/coordinator/direttore)
+router.get('/signed', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!PRIVILEGED_ROLES.includes(user.role)) {
+      return res.status(403).json({ message: 'Non autorizzato' });
+    }
+
+    const patientId = req.query.patientId as string | undefined;
+    const query: any = patientId ? { patient: new mongoose.Types.ObjectId(patientId) } : {};
+
+    const reports = await SignedReport.find(query)
+      .populate('patient', 'firstName lastName')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.json(reports);
+  } catch (error: any) {
+    console.error('[Reports Signed] Errore:', error);
+    return res.status(500).json({ message: 'Errore nel recupero relazioni firmate', error: error.message });
   }
 });
 

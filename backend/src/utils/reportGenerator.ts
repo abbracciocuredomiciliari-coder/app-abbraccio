@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Patient from '../models/Patient';
 import DiarioClinico from '../models/DiarioClinico';
 import WorkPlan from '../models/WorkPlan';
@@ -41,7 +42,14 @@ function safeString(v: any): string {
 
 export async function generatePatientReport(
   patientId: string,
-  options: { fromDate?: Date; toDate?: Date } = {}
+  options: {
+    fromDate?: Date;
+    toDate?: Date;
+    scope?: 'all' | 'category';
+    category?: string;
+    workPlanType?: string;
+    assignedToStaffId?: string;
+  } = {}
 ) {
   if (!isReportAiAvailable()) {
     throw new Error('GROQ_API_KEY non configurata');
@@ -50,18 +58,43 @@ export async function generatePatientReport(
   const patient = await Patient.findById(patientId).lean();
   if (!patient) throw new Error('Paziente non trovato');
 
-  const { fromDate, toDate } = options;
-  const diarioQuery: any = { patient: patientId };
+  const { fromDate, toDate, scope = 'all', category, workPlanType, assignedToStaffId } = options;
+
+  // Costruisci filtro workPlan
+  const workPlanQuery: any = { patient: patientId };
+  if (assignedToStaffId) {
+    workPlanQuery.$or = [
+      { staff: new mongoose.Types.ObjectId(assignedToStaffId) },
+      { 'prestazioni.staff': new mongoose.Types.ObjectId(assignedToStaffId) },
+    ];
+  }
+  if (scope === 'category' && category) {
+    if (category === 'assistenziale') {
+      const orConditions: any[] = [{ type: 'assistenziale' }];
+      if (!workPlanQuery.$or) workPlanQuery.$or = orConditions;
+      else workPlanQuery.$or = [...workPlanQuery.$or, { 'prestazioni.categoria': 'assistenziale' }];
+    } else {
+      workPlanQuery['prestazioni.categoria'] = category;
+    }
+  }
+  if (workPlanType && scope === 'category') {
+    workPlanQuery.type = workPlanType;
+  }
+
+  const workplans = await WorkPlan.find(workPlanQuery).sort({ date: -1 }).lean();
+  const workPlanIds = workplans.map(w => w._id.toString());
+
+  // Costruisci filtro diario
+  const diarioQuery: any = { patient: patientId, workPlan: { $in: workPlanIds } };
   if (fromDate || toDate) {
     diarioQuery.createdAt = {};
     if (fromDate) diarioQuery.createdAt.$gte = fromDate;
     if (toDate) diarioQuery.createdAt.$lte = toDate;
   }
 
-  const [diario, workplans, accessi] = await Promise.all([
+  const [diario, accessi] = await Promise.all([
     DiarioClinico.find(diarioQuery).sort({ createdAt: 1 }).lean(),
-    WorkPlan.find({ patient: patientId }).sort({ date: -1 }).lean(),
-    WorkPlanAccess.find({ workPlan: { $in: await WorkPlan.find({ patient: patientId }).distinct('_id') } })
+    WorkPlanAccess.find({ workPlan: { $in: workPlanIds } })
       .sort({ oraEntrata: -1 })
       .lean(),
   ]);
@@ -107,6 +140,8 @@ export async function generatePatientReport(
   }));
 
   const userContent = `Genera una relazione medico-infermieristica formale, professionale e chiara, adatta per ASL, medico di famiglia o coordinamento.
+
+SCOPE RELAZIONE: ${scope === 'category' && category ? `solo prestazione ${category}${workPlanType ? ` (${workPlanType})` : ''}` : 'generale su tutto il percorso'}${assignedToStaffId ? ' - limitata ai piani assegnati al professionista che redige' : ''}
 
 DATI PAZIENTE:
 ${JSON.stringify(datiPaziente, null, 2)}
