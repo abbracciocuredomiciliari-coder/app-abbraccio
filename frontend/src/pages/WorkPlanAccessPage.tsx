@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthContext';
 
 import api from '../api/api';
 
+import { VoiceRecorder } from '../components/VoiceRecorder';
+
 import {
 
   CheckCircle, LogIn, LogOut, BookOpen, Activity,
@@ -834,7 +836,42 @@ export default function WorkPlanAccessPage() {
 
             <div style={{ marginBottom: '16px', padding: '14px', backgroundColor: '#f0f9ff', borderRadius: '8px', border: '1px solid #bae6fd' }}>
 
-              <textarea value={testoDiario} onChange={e => setTestoDiario(e.target.value)} placeholder="Descrivi l'intervento, le osservazioni cliniche..." rows={4} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #bae6fd', fontSize: '0.9rem', resize: 'vertical', boxSizing: 'border-box', marginBottom: '10px' }} />
+              <VoiceRecorder
+                workPlanId={workPlanId!}
+                onResult={data => {
+                  setTestoDiario(prev => (prev ? `${prev.trim()}\n\n${data.testo}`.trim() : data.testo));
+                  if (data.parametriVitali) {
+                    setParametri(prev => ({
+                      ...prev,
+                      ...Object.fromEntries(
+                        Object.entries(data.parametriVitali!).map(([k, v]) => [k, String(v)])
+                      ),
+                    }));
+                  }
+                  if (data.scaleValutazione) {
+                    setScale(prev => ({
+                      ...prev,
+                      ...Object.fromEntries(
+                        Object.entries(data.scaleValutazione!).map(([k, v]) => [k, String(v)])
+                      ),
+                    }));
+                    setShowScale(true);
+                  }
+                  if (data.terapiaFarmacologica?.length) {
+                    setTerapia(data.terapiaFarmacologica.map(item => ({
+                      farmaco: item.farmaco,
+                      dosaggio: item.dosaggio || '',
+                      mattina: !!item.mattina,
+                      pomeriggio: !!item.pomeriggio,
+                      sera: !!item.sera,
+                      notte: !!item.notte,
+                    })));
+                    setShowTerapia(true);
+                  }
+                }}
+              />
+
+              <textarea value={testoDiario} onChange={e => setTestoDiario(e.target.value)} placeholder="Descrivi l'intervento, le osservazioni cliniche..." rows={4} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #bae6fd', fontSize: '0.9rem', resize: 'vertical', boxSizing: 'border-box', marginBottom: '10px', marginTop: '10px' }} />
 
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
 

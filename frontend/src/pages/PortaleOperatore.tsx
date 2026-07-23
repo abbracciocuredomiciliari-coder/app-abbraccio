@@ -4,6 +4,7 @@ import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
 import FirmaCanvas from '../components/FirmaCanvas';
+import { VoiceRecorder } from '../components/VoiceRecorder';
 import { Printer, Eye, CheckCircle, Plus, Calendar, User, Syringe, Clock, FileText, AlertTriangle, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
@@ -1458,6 +1459,25 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                 <div style={{ padding: '16px' }}>
                   <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
                     <h5 style={{ margin: '0 0 12px', color: '#1e4d8c' }}>✏️ Nuova voce diario</h5>
+                    {pianoSelezionato && (
+                      <div style={{ marginBottom: '12px' }}>
+                        <VoiceRecorder
+                          workPlanId={pianoSelezionato._id}
+                          onResult={data => {
+                            setTestoDiario(prev => (prev ? `${prev.trim()}\n\n${data.testo}`.trim() : data.testo));
+                            if (data.parametriVitali) {
+                              setParametri(prev => ({
+                                ...prev,
+                                ...Object.fromEntries(
+                                  Object.entries(data.parametriVitali!).map(([k, v]) => [k, String(v)])
+                                ),
+                              }));
+                            }
+                          }}
+                          disabled={salvandoDiario}
+                        />
+                      </div>
+                    )}
                     <label style={{ display: 'block', marginBottom: '12px' }}>
                       Diaria *
                       <textarea

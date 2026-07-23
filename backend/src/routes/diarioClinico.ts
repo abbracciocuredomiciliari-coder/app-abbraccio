@@ -1,10 +1,12 @@
 import { Router, Request, Response } from 'express';
+import multer from 'multer';
 import DiarioClinico from '../models/DiarioClinico';
 import WorkPlan from '../models/WorkPlan';
 import Staff from '../models/Staff';
 import { authenticateToken } from '../middleware/auth';
 import { auditLog } from '../middleware/audit';
 import { addTimestampToDocument } from '../utils/timestamp';
+import { transcribeAudio, extractDiarioData, isVoiceAiAvailable } from '../utils/voiceAi';
 
 const router = Router();
 
@@ -71,6 +73,75 @@ router.post('/:workPlanId', authenticateToken, auditLog('diario', 'CREATE', req 
     return res.status(500).json({ message: 'Errore nel salvataggio del diario', error: error?.message });
   }
 });
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB, limite Groq Whisper
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('audio/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Solo file audio sono accettati') as any);
+    }
+  },
+});
+
+// POST /api/diario/:workPlanId/voice - Crea voce diario da audio (STT + LLM)
+router.post(
+  '/:workPlanId/voice',
+  authenticateToken,
+  auditLog('diario-voice', 'CREATE', req => req.params.workPlanId),
+  upload.single('audio'),
+  async (req: Request, res: Response) => {
+    try {
+      if (!isVoiceAiAvailable()) {
+        return res.status(503).json({ message: 'Voice AI non configurata. Imposta GROQ_API_KEY.' });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: 'Nessun file audio ricevuto' });
+      }
+
+      const { workPlanId } = req.params;
+      const workPlan = await WorkPlan.findById(workPlanId);
+      if (!workPlan) {
+        return res.status(404).json({ message: 'Piano di lavoro non trovato' });
+      }
+
+      const user = (req as any).user;
+      const staffMember = await Staff.findOne({ userId: user.id || user._id });
+
+      const transcript = await transcribeAudio(req.file.buffer, req.file.originalname, req.file.mimetype);
+      const extracted = await extractDiarioData(transcript, {
+        workPlanType: workPlan.type,
+      });
+
+      const entry = await DiarioClinico.create({
+        workPlan: workPlanId,
+        patient: workPlan.patient,
+        staff: staffMember?._id || user.id,
+        staffName: user.name || `${staffMember?.firstName} ${staffMember?.lastName}` || 'Operatore',
+        dataRegistrazione: new Date(),
+        testo: extracted.testo,
+        parametriVitali: extracted.parametriVitali || undefined,
+        scaleValutazione: extracted.scaleValutazione || undefined,
+        terapiaFarmacologica: extracted.terapiaFarmacologica?.length ? extracted.terapiaFarmacologica : undefined,
+        firmaLogin: user.name || user.email || 'Operatore',
+        firmato: false,
+      });
+
+      return res.status(201).json({
+        entry,
+        transcript,
+        extracted,
+        message: 'Voce diario registrata da audio',
+      });
+    } catch (error: any) {
+      console.error('[Diario Voice] Errore:', error);
+      return res.status(500).json({ message: 'Errore nella trascrizione audio', error: error?.message });
+    }
+  }
+);
 
 // POST /api/diario/firma/:entryId - Firma una voce del diario (blocca definitivamente) con marcatura temporale
 router.post('/firma/:entryId', authenticateToken, auditLog('diario', 'UPDATE', req => req.params.entryId), async (req: Request, res: Response) => {

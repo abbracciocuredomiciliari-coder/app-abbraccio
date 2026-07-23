@@ -37,6 +37,14 @@ services:
       - key: FRONTEND_URL
         value: https://app.abbracciocuredomiciliari.it
 
+      # Groq AI — Speech-to-Text + LLM per dettatura vocale nel diario clinico
+      - key: GROQ_API_KEY
+        sync: false   # da impostare manualmente su Render dashboard
+      - key: GROQ_STT_MODEL
+        value: whisper-large-v3-turbo
+      - key: GROQ_LLM_MODEL
+        value: llama-3.3-70b-versatile
+
   # ═══════════════════════════════════════════════════════════════════════════
   # FRONTEND - Web Service con Express (per SPA routing)
   # ═══════════════════════════════════════════════════════════════════════════
