@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import api from '../api/api';
-import { FileText, Send, Loader2, X } from 'lucide-react';
+import { FileText, Send, Loader2, X, Signature, Save } from 'lucide-react';
 import { Button } from './ui';
+import FirmaCanvas from './FirmaCanvas';
 
 interface ReportGeneratorProps {
   patientId: string;
@@ -15,6 +16,9 @@ export function ReportGenerator({ patientId, patientName }: ReportGeneratorProps
   const [email, setEmail] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [showFirma, setShowFirma] = useState(false);
+  const [firmaBase64, setFirmaBase64] = useState<string | null>(null);
+  const [savingSigned, setSavingSigned] = useState(false);
 
   const generate = async () => {
     setLoading(true);
@@ -51,6 +55,24 @@ export function ReportGenerator({ patientId, patientName }: ReportGeneratorProps
   const copy = () => {
     navigator.clipboard.writeText(report);
     setMessage('Testo copiato negli appunti');
+  };
+
+  const saveSignedReport = async () => {
+    if (!report || !firmaBase64) return;
+    setSavingSigned(true);
+    setMessage(null);
+    try {
+      await api.post(`/reports/patient/${patientId}/sign`, {
+        reportText: report,
+        signatureBase64: firmaBase64,
+      });
+      setMessage('Relazione firmata salvata');
+      setShowFirma(false);
+    } catch (err: any) {
+      setMessage(err.response?.data?.message || 'Errore salvataggio relazione firmata');
+    } finally {
+      setSavingSigned(false);
+    }
   };
 
   return (
@@ -112,7 +134,36 @@ export function ReportGenerator({ patientId, patientName }: ReportGeneratorProps
               <Button type="button" onClick={copy} variant="secondary" icon={<FileText size={16} />}>
                 Copia
               </Button>
+              <Button type="button" onClick={() => setShowFirma(prev => !prev)} variant="secondary" icon={<Signature size={16} />}>
+                {showFirma ? 'Chiudi firma' : 'Firma e salva'}
+              </Button>
             </div>
+
+            {showFirma && (
+              <div style={{ marginTop: '16px', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#f8fafc' }}>
+                {firmaBase64 ? (
+                  <div style={{ textAlign: 'center' }}>
+                    <img src={firmaBase64} alt="Firma" style={{ maxWidth: '100%', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white' }} />
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '12px', justifyContent: 'center' }}>
+                      <Button type="button" onClick={() => { setFirmaBase64(null); }} variant="secondary">
+                        Rifirma
+                      </Button>
+                      <Button type="button" onClick={saveSignedReport} disabled={savingSigned} variant="success" icon={savingSigned ? <Loader2 size={16} /> : <Save size={16} />}>
+                        {savingSigned ? 'Salvataggio...' : 'Salva relazione firmata'}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <FirmaCanvas
+                    label="Firma della relazione"
+                    sublabel="Usa il dito o una penna sullo schermo"
+                    onFirmaCompleta={setFirmaBase64}
+                    onCancella={() => setFirmaBase64(null)}
+                    altezza={200}
+                  />
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

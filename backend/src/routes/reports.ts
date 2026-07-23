@@ -6,6 +6,7 @@ import { generatePatientReport, isReportAiAvailable } from '../utils/reportGener
 import Patient from '../models/Patient';
 import WorkPlan from '../models/WorkPlan';
 import Staff from '../models/Staff';
+import SignedReport from '../models/SignedReport';
 
 const router = Router();
 
@@ -75,6 +76,51 @@ router.post('/patient/:patientId', authenticateToken, async (req: Request, res: 
   } catch (error: any) {
     console.error('[Reports POST] Errore:', error);
     return res.status(500).json({ message: 'Errore nella generazione della relazione', error: error.message });
+  }
+});
+
+// POST /api/reports/patient/:patientId/sign - Salva relazione firmata con firma touch
+router.post('/patient/:patientId/sign', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const { patientId } = req.params;
+    const { reportText, signatureBase64 } = req.body;
+
+    if (!reportText?.trim()) {
+      return res.status(400).json({ message: 'Testo relazione obbligatorio' });
+    }
+    if (!signatureBase64?.trim()) {
+      return res.status(400).json({ message: 'Firma obbligatoria' });
+    }
+
+    const patient = await Patient.findById(patientId).lean();
+    if (!patient) {
+      return res.status(404).json({ message: 'Paziente non trovato' });
+    }
+
+    const ok = await canAccessPatient(user, patientId);
+    if (!ok) {
+      return res.status(403).json({ message: 'Non autorizzato a salvare la relazione per questo paziente' });
+    }
+
+    const userId = user.userId || user.id;
+    const staff = await Staff.findOne({ userId: new mongoose.Types.ObjectId(userId) }).lean();
+    if (!staff) {
+      return res.status(403).json({ message: 'Operatore non collegato a uno staff' });
+    }
+
+    const signedReport = await SignedReport.create({
+      patient: new mongoose.Types.ObjectId(patientId),
+      staff: staff._id,
+      staffName: user.name || `${staff.firstName} ${staff.lastName}` || 'Operatore',
+      reportText: reportText.trim(),
+      signatureBase64: signatureBase64.trim(),
+    });
+
+    return res.status(201).json({ message: 'Relazione firmata salvata', signedReport });
+  } catch (error: any) {
+    console.error('[Reports Sign] Errore:', error);
+    return res.status(500).json({ message: 'Errore nel salvataggio della relazione firmata', error: error.message });
   }
 });
 
