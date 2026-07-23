@@ -234,7 +234,7 @@ router.get('/piano/:workPlanId/info', authenticateToken, async (req: Request, re
     const { workPlanId } = req.params;
 
     const workPlan = await WorkPlan.findById(workPlanId)
-      .populate('patient', 'firstName lastName address allergie caregiverRiferimento caregiverTelefono diagnosiAmmissione comorbilita codiceFiscale')
+      .populate('patient', 'firstName lastName address allergie caregiverRiferimento caregiverTelefono diagnosiAmmissione comorbilita codiceFiscale _id')
       .populate('staff', 'firstName lastName role');
 
     if (!workPlan) {

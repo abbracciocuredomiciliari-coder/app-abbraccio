@@ -7,6 +7,9 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 
 import { VoiceRecorder } from '../components/VoiceRecorder';
+import { ChatWidget } from '../components/ChatWidget';
+import { ReportGenerator } from '../components/ReportGenerator';
+import FirmaCanvas from '../components/FirmaCanvas';
 
 import {
 
@@ -14,7 +17,7 @@ import {
 
   Target, Plus, ChevronDown, ChevronUp, AlertCircle, Trash2, PenLine, Lock,
 
-  Paperclip, FileText, Image, File, ExternalLink
+  Paperclip, FileText, Image, File, ExternalLink, MessageCircle, Shield
 
 } from 'lucide-react';
 
@@ -26,7 +29,7 @@ interface WorkPlanInfo {
 
   date: string; time?: string; notes?: string; status: string;
 
-  patient: { firstName: string; lastName: string; allergie?: string; caregiverRiferimento?: string; caregiverTelefono?: string; diagnosiAmmissione?: string; };
+  patient: { _id: string; firstName: string; lastName: string; allergie?: string; caregiverRiferimento?: string; caregiverTelefono?: string; diagnosiAmmissione?: string; };
 
   staff: { firstName: string; lastName: string; role: string };
 
@@ -160,7 +163,14 @@ export default function WorkPlanAccessPage() {
 
   const [showNuovoObiettivo, setShowNuovoObiettivo] = useState(false);
 
-
+  // Chat, relazione e consenso
+  const [showChat, setShowChat] = useState(false);
+  const [showConsenso, setShowConsenso] = useState(false);
+  const [consensoFirmato, setConsensoFirmato] = useState(false);
+  const [nomeConsenso, setNomeConsenso] = useState('');
+  const [cognomeConsenso, setCognomeConsenso] = useState('');
+  const [firmaConsenso, setFirmaConsenso] = useState('');
+  const [savingConsenso, setSavingConsenso] = useState(false);
 
   const isAdminOrCoord = user?.role === 'admin' || user?.role === 'coordinator';
 
@@ -197,6 +207,16 @@ export default function WorkPlanAccessPage() {
       setWorkPlan(wpRes.data.workPlan);
 
       setAccessoCorrente(wpRes.data.accessoApertoUtente || null);
+
+      const patientId = wpRes.data.workPlan?.patient?._id;
+      if (patientId) {
+        try {
+          const consensoRes = await api.get(`/gdpr/consenso/${patientId}`);
+          setConsensoFirmato(!!consensoRes.data?.consensoAttivo);
+        } catch {
+          setConsensoFirmato(false);
+        }
+      }
 
       setDiario(diarioRes.data);
 
@@ -257,6 +277,39 @@ export default function WorkPlanAccessPage() {
   };
 
 
+
+  const salvaConsensoGDPR = async () => {
+    const patientId = workPlan?.patient._id;
+    if (!patientId) return;
+    if (!nomeConsenso.trim() || !cognomeConsenso.trim() || !firmaConsenso) {
+      setError('Inserire nome, cognome e firma del firmatario');
+      return;
+    }
+    setSavingConsenso(true);
+    setError('');
+    try {
+      await api.post('/gdpr/consenso', {
+        patientId,
+        finalita: { prestazioneSanitaria: true, auditInterno: true, fatturazione: true, ricercaScientifica: false },
+        modalita: { informatico: true, cartaceo: true, telefonico: true },
+        datiSensibili: { datiSanitari: true, datiEconomici: false, immagini: true },
+        comunicazioneTerzi: { mediciSpecialisti: true, struttureSanitarie: true, familiari: false, assicurazioni: false },
+        firmatoDa: 'paziente',
+        nomeFirmatario: nomeConsenso.trim(),
+        cognomeFirmatario: cognomeConsenso.trim(),
+        versioneInformativa: 'v2025.1',
+        firmaDigitale: firmaConsenso,
+      });
+      setConsensoFirmato(true);
+      setShowConsenso(false);
+      setSuccess('Consenso GDPR firmato e archiviato');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Errore salvataggio consenso');
+    } finally {
+      setSavingConsenso(false);
+    }
+  };
 
   const salvaDiario = async () => {
 
@@ -596,7 +649,34 @@ export default function WorkPlanAccessPage() {
 
       </div>
 
+      {/* Azioni rapide */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+        <button
+          onClick={() => setShowChat(true)}
+          style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', color: '#1e40af', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+        >
+          <MessageCircle size={18} /> Chat coord./ufficio
+        </button>
+        {workPlan.patient._id && (
+          <div style={{ display: 'contents' }}>
+            <ReportGenerator patientId={workPlan.patient._id} patientName={`${workPlan.patient.firstName} ${workPlan.patient.lastName}`} />
+          </div>
+        )}
+      </div>
 
+      {/* Consenso GDPR */}
+      {!consensoFirmato ? (
+        <button
+          onClick={() => setShowConsenso(true)}
+          style={{ width: '100%', marginBottom: '16px', background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', borderRadius: '10px', padding: '12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+        >
+          <Shield size={18} /> Firma consenso GDPR
+        </button>
+      ) : (
+        <div style={{ marginBottom: '16px', background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '12px', fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+          <CheckCircle size={18} /> Consenso GDPR firmato
+        </div>
+      )}
 
       {/* Messaggi */}
 
@@ -1287,8 +1367,58 @@ export default function WorkPlanAccessPage() {
 
       )}
 
-    </div>
+      {/* Modale Chat */}
+      {showChat && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }} onClick={() => setShowChat(false)}>
+          <div style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem' }}>Chat con coordinatore / ufficio</h3>
+              <button onClick={() => setShowChat(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <ChatWidget scope="general" title="Coordinatore / Ufficio" height="100%" />
+            </div>
+          </div>
+        </div>
+      )}
 
+      {/* Modale Consenso GDPR */}
+      {showConsenso && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }} onClick={() => setShowConsenso(false)}>
+          <div style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto', padding: '20px' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 8px', color: '#1e3a5f' }}>Consenso GDPR</h3>
+            <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '16px' }}>
+              Il paziente / caregiver firma il consenso al trattamento dei dati per prestazioni sanitarie, fatturazione e finalità interne.
+            </p>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '4px' }}>Nome firmatario</label>
+              <input type="text" value={nomeConsenso} onChange={e => setNomeConsenso(e.target.value)} placeholder="Nome" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+            </div>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '4px' }}>Cognome firmatario</label>
+              <input type="text" value={cognomeConsenso} onChange={e => setCognomeConsenso(e.target.value)} placeholder="Cognome" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+            </div>
+
+            <FirmaCanvas
+              label="Firma del paziente / caregiver"
+              sublabel="Firma per accettare l'informativa privacy"
+              onFirmaCompleta={(firma) => setFirmaConsenso(firma)}
+              onCancella={() => setFirmaConsenso('')}
+              altezza={160}
+            />
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+              <button onClick={() => setShowConsenso(false)} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f3f4f6', cursor: 'pointer' }}>Annulla</button>
+              <button onClick={salvaConsensoGDPR} disabled={savingConsenso} style={{ flex: 2, padding: '12px', borderRadius: '8px', border: 'none', background: '#16a34a', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
+                {savingConsenso ? 'Salvataggio...' : 'Salva consenso'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
   );
 
 }
