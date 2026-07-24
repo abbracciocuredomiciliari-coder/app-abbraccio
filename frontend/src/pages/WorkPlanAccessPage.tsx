@@ -118,6 +118,8 @@ export default function WorkPlanAccessPage() {
   const [diario, setDiario] = useState<DiarioEntry[]>([]);
 
   const [showDiario, setShowDiario] = useState(false);
+  const [diarioDaFirmare, setDiarioDaFirmare] = useState<string | null>(null);
+  const [firmaDiarioGrafometrica, setFirmaDiarioGrafometrica] = useState('');
 
   const [testoDiario, setTestoDiario] = useState('');
 
@@ -464,22 +466,16 @@ export default function WorkPlanAccessPage() {
 
 
 
-  const firmaDiario = async (id: string) => {
-
-    if (!confirm('Firmare questa voce? Una volta firmata non sarà più modificabile.')) return;
-
+  const firmaDiario = async () => {
+    if (!diarioDaFirmare || !firmaDiarioGrafometrica) return;
     try {
-
-      const res = await api.post(`/diario/firma/${id}`);
-
-      setDiario(prev => prev.map(d => d._id === id ? { ...d, firmato: res.data.firmato, dataFirma: res.data.dataFirma, firmaLogin: res.data.firmaLogin } : d));
-
+      const res = await api.post(`/diario/firma/${diarioDaFirmare}`, { firmaGrafometrica: firmaDiarioGrafometrica });
+      setDiario(prev => prev.map(d => d._id === diarioDaFirmare ? { ...d, firmato: true, dataFirma: res.data.entry?.dataFirma } : d));
+      setDiarioDaFirmare(null);
+      setFirmaDiarioGrafometrica('');
       setSuccess('✍️ Voce firmata e bloccata!');
-
       setTimeout(() => setSuccess(''), 3000);
-
     } catch (err: any) { setError(err.response?.data?.message || 'Errore firma'); }
-
   };
 
 
@@ -1221,9 +1217,9 @@ export default function WorkPlanAccessPage() {
 
                       <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
 
-                        {!entry.firmato && <button type="button" onClick={() => firmaDiario(entry._id)} style={{ background: 'none', border: '1px solid #16a34a', cursor: 'pointer', color: '#16a34a', padding: '2px 6px', borderRadius: '4px', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '3px' }}><PenLine size={12} /> Firma</button>}
+                        {!entry.firmato && <button type="button" onClick={() => setDiarioDaFirmare(entry._id)} style={{ background: 'none', border: '1px solid #16a34a', cursor: 'pointer', color: '#16a34a', padding: '2px 6px', borderRadius: '4px', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '3px' }}><PenLine size={12} /> Firma con dito/penna</button>}
 
-                        {canDelete && <button type="button" onClick={() => eliminaDiario(entry._id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', padding: '2px' }}><Trash2 size={14} /></button>}
+                        {!entry.firmato && <button type="button" onClick={() => eliminaDiario(entry._id)} title="Elimina voce non firmata" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', padding: '2px', fontWeight: 700 }}>✕</button>}
 
                       </div>
 
@@ -1461,6 +1457,20 @@ export default function WorkPlanAccessPage() {
             </div>
             <div style={{ flex: 1, overflow: 'hidden' }}>
               <ChatWidget scope="general" title="Coordinatore / Ufficio" height="100%" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {diarioDaFirmare && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }} onClick={() => { setDiarioDaFirmare(null); setFirmaDiarioGrafometrica(''); }}>
+          <div style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '560px', padding: '20px' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 8px', color: '#065f46' }}>Firma voce del diario</h3>
+            <p style={{ color: '#475569', fontSize: '0.86rem' }}>Firma con il dito o la penna. Alla conferma la voce sarà bloccata definitivamente.</p>
+            <FirmaCanvas label="Firma grafometrica dell’operatore" sublabel="Disegna la firma nel riquadro" onFirmaCompleta={setFirmaDiarioGrafometrica} onCancella={() => setFirmaDiarioGrafometrica('')} altezza={160} />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="button" onClick={() => { setDiarioDaFirmare(null); setFirmaDiarioGrafometrica(''); }} style={{ flex: 1, padding: '11px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '7px', cursor: 'pointer' }}>Annulla</button>
+              <button type="button" onClick={firmaDiario} disabled={!firmaDiarioGrafometrica} style={{ flex: 2, padding: '11px', background: firmaDiarioGrafometrica ? '#16a34a' : '#bbf7d0', color: 'white', border: 'none', borderRadius: '7px', fontWeight: 700, cursor: firmaDiarioGrafometrica ? 'pointer' : 'not-allowed' }}>Firma e blocca voce</button>
             </div>
           </div>
         </div>

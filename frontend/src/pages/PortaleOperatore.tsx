@@ -262,6 +262,8 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
   const [testoDiario, setTestoDiario] = useState('');
   const [parametri, setParametri] = useState<Record<string, string>>({});
   const [salvandoDiario, setSalvandoDiario] = useState(false);
+  const [diarioDaFirmare, setDiarioDaFirmare] = useState<string | null>(null);
+  const [firmaDiarioGrafometrica, setFirmaDiarioGrafometrica] = useState('');
   const [showDiario, setShowDiario] = useState(false);
 
   // Allegati
@@ -677,13 +679,25 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
     }
   };
 
-  const firmaDiario = async (entryId: string) => {
-    if (!confirm('Firmare questa voce? Non sarà più modificabile.')) return;
+  const firmaDiario = async () => {
+    if (!diarioDaFirmare || !firmaDiarioGrafometrica) return;
     try {
-      await api.post(`/diario/firma/${entryId}`);
-      setDiario(prev => prev.map(e => e._id === entryId ? { ...e, firmato: true } : e));
+      const res = await api.post(`/diario/firma/${diarioDaFirmare}`, { firmaGrafometrica: firmaDiarioGrafometrica });
+      setDiario(prev => prev.map(e => e._id === diarioDaFirmare ? { ...e, firmato: true, dataFirma: res.data.entry?.dataFirma } : e));
+      setDiarioDaFirmare(null);
+      setFirmaDiarioGrafometrica('');
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore nella firma');
+    }
+  };
+
+  const eliminaDiario = async (entryId: string) => {
+    if (!confirm('Eliminare questa voce non firmata?')) return;
+    try {
+      await api.delete(`/diario/entry/${entryId}`);
+      setDiario(prev => prev.filter(e => e._id !== entryId));
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nell’eliminazione');
     }
   };
 
@@ -1719,10 +1733,10 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                                 )}
                               </div>
                               {!entry.firmato && entry.firmaLogin === user?.name && (
-                                <button type="button" onClick={() => firmaDiario(entry._id)}
-                                  style={{ background: '#059669', fontSize: '0.82rem', padding: '5px 12px', whiteSpace: 'nowrap' }}>
-                                  ✍️ Firma
-                                </button>
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                  <button type="button" onClick={() => setDiarioDaFirmare(entry._id)} style={{ background: '#059669', fontSize: '0.82rem', padding: '5px 12px', whiteSpace: 'nowrap' }}>✍️ Firma con dito/penna</button>
+                                  <button type="button" onClick={() => eliminaDiario(entry._id)} title="Elimina voce non firmata" style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+                                </div>
                               )}
                             </div>
                           </li>
@@ -2285,6 +2299,20 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
           </div>
         );
       })()}
+
+      {diarioDaFirmare && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }} onClick={() => { setDiarioDaFirmare(null); setFirmaDiarioGrafometrica(''); }}>
+          <div style={{ background: 'white', borderRadius: '14px', padding: '20px', width: '100%', maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 8px', color: '#065f46' }}>Firma voce del diario</h3>
+            <p style={{ fontSize: '0.86rem', color: '#475569' }}>Firma con il dito o con la penna. Dopo la conferma la voce sarà bloccata e non potrà essere eliminata.</p>
+            <FirmaCanvas label="Firma grafometrica dell’operatore" sublabel="Disegna la firma nel riquadro" onFirmaCompleta={setFirmaDiarioGrafometrica} onCancella={() => setFirmaDiarioGrafometrica('')} altezza={160} />
+            <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+              <button type="button" onClick={() => { setDiarioDaFirmare(null); setFirmaDiarioGrafometrica(''); }} style={{ flex: 1, padding: '11px', borderRadius: '7px', border: '1px solid #d1d5db', background: '#f3f4f6', cursor: 'pointer' }}>Annulla</button>
+              <button type="button" disabled={!firmaDiarioGrafometrica} onClick={firmaDiario} style={{ flex: 2, padding: '11px', borderRadius: '7px', border: 'none', background: firmaDiarioGrafometrica ? '#059669' : '#a7f3d0', color: 'white', fontWeight: 700, cursor: firmaDiarioGrafometrica ? 'pointer' : 'not-allowed' }}>Firma e blocca voce</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showConsensoGDPR && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }} onClick={() => setShowConsensoGDPR(false)}>

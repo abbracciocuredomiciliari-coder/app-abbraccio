@@ -158,7 +158,12 @@ router.post(
 router.post('/firma/:entryId', authenticateToken, auditLog('diario', 'UPDATE', req => req.params.entryId), async (req: Request, res: Response) => {
   try {
     const { entryId } = req.params;
+    const { firmaGrafometrica } = req.body;
     const user = (req as any).user;
+
+    if (!firmaGrafometrica || typeof firmaGrafometrica !== 'string' || !firmaGrafometrica.startsWith('data:image/')) {
+      return res.status(400).json({ message: 'La firma eseguita con dito o penna è obbligatoria' });
+    }
 
     const entry = await DiarioClinico.findById(entryId);
     if (!entry) {
@@ -179,6 +184,7 @@ router.post('/firma/:entryId', authenticateToken, auditLog('diario', 'UPDATE', r
       dataRegistrazione: entry.dataRegistrazione,
       testo: entry.testo,
       parametriVitali: entry.parametriVitali,
+      firmaGrafometrica,
     };
 
     // Genera marcatura temporale e prepara firma digitale futura
@@ -201,8 +207,10 @@ router.post('/firma/:entryId', authenticateToken, auditLog('diario', 'UPDATE', r
       hashValue: timestamp.hashValue,
     };
     entry.firmaDigitale = {
-      tipo: 'FEA', // Preparato per Firma Elettronica Avanzata
+      tipo: 'FEA',
       hashToSign: signaturePlaceholder,
+      signatureValue: firmaGrafometrica,
+      signedAt: entry.dataFirma,
     };
 
     await entry.save();
@@ -222,23 +230,23 @@ router.post('/firma/:entryId', authenticateToken, auditLog('diario', 'UPDATE', r
   }
 });
 
-// DELETE /api/diario/entry/:entryId - Elimina voce (solo admin o direttore sanitario)
 router.delete('/entry/:entryId', authenticateToken, auditLog('diario', 'DELETE', req => req.params.entryId), async (req: Request, res: Response) => {
   try {
     const { entryId } = req.params;
     const user = (req as any).user;
+    const entry = await DiarioClinico.findById(entryId);
+    if (!entry) return res.status(404).json({ message: 'Voce non trovata' });
+    if (entry.firmato) return res.status(400).json({ message: 'La voce firmata e bloccata non può essere eliminata' });
 
-    // Solo admin o direttore sanitario possono eliminare
-    if (user.role !== 'admin' && user.role !== 'direttore') {
-      return res.status(403).json({ message: 'Solo l\'amministratore o il direttore sanitario possono eliminare voci del diario' });
+    const userId = user.userId || user.id;
+    const staffMember = userId ? await Staff.findOne({ userId: new mongoose.Types.ObjectId(userId) }) : null;
+    const autore = !!staffMember && entry.staff.toString() === staffMember._id.toString();
+    if (!autore && user.role !== 'admin' && user.role !== 'direttore') {
+      return res.status(403).json({ message: 'Puoi eliminare solo le tue voci non firmate' });
     }
 
-    const entry = await DiarioClinico.findByIdAndDelete(entryId);
-    if (!entry) {
-      return res.status(404).json({ message: 'Voce non trovata' });
-    }
-
-    return res.json({ message: 'Voce eliminata' });
+    await entry.deleteOne();
+    return res.json({ message: 'Voce non firmata eliminata' });
   } catch (error) {
     return res.status(500).json({ message: 'Errore nell\'eliminazione', error });
   }
