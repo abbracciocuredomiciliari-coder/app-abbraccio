@@ -318,6 +318,21 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
   const [salvandoEvento, setSalvandoEvento] = useState(false);
   const [eventoSalvato, setEventoSalvato] = useState(false);
   const [dettaturaEventoAttiva, setDettaturaEventoAttiva] = useState(false);
+  const [showChatPaziente, setShowChatPaziente] = useState(false);
+  const [showConsensoGDPR, setShowConsensoGDPR] = useState(false);
+  const [showConsensoPrestazione, setShowConsensoPrestazione] = useState(false);
+  const [consensoGDPRFirmato, setConsensoGDPRFirmato] = useState(false);
+  const [consensoPrestazioneFirmato, setConsensoPrestazioneFirmato] = useState(false);
+  const [nomeFirmatarioGDPR, setNomeFirmatarioGDPR] = useState('');
+  const [cognomeFirmatarioGDPR, setCognomeFirmatarioGDPR] = useState('');
+  const [firmaGDPR, setFirmaGDPR] = useState('');
+  const [nomeFirmatarioPrestazione, setNomeFirmatarioPrestazione] = useState('');
+  const [cognomeFirmatarioPrestazione, setCognomeFirmatarioPrestazione] = useState('');
+  const [firmaPrestazione, setFirmaPrestazione] = useState('');
+  const [ruoloFirmatarioPrestazione, setRuoloFirmatarioPrestazione] = useState<'paziente' | 'caregiver' | 'tutore' | 'rappresentanteLegale'>('paziente');
+  const [accettaPrestazione, setAccettaPrestazione] = useState(false);
+  const [accettaRischiPrestazione, setAccettaRischiPrestazione] = useState(false);
+  const [salvandoConsenso, setSalvandoConsenso] = useState(false);
 
   const avviaDettaturaEvento = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -496,6 +511,8 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
     setPianoSelezionato(null);
     setMostraTuttiPiani(false);
     resetDettagliPiano();
+    setConsensoGDPRFirmato(false); setConsensoPrestazioneFirmato(false);
+    caricaConsensiPaziente(paz._id);
     try {
       const res = await api.get('/workplan');
       const pianiPaz = res.data.filter((p: Piano) => p.patient?._id === paz._id);
@@ -511,7 +528,45 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
     setAccessi([]); setRiepilogo(null); setAccessoAperto(null);
     setDiario([]); setAllegati([]); setObiettivi([]);
     setShowDiario(false); setShowAllegati(false); setShowObiettivi(false);
-    setShowExport(false); setExportData(null);
+    setShowExport(false); setExportData(null); setShowChatPaziente(false);
+  };
+
+  const caricaConsensiPaziente = async (patientId: string) => {
+    const [gdpr, prestazione] = await Promise.allSettled([
+      api.get(`/gdpr/consenso/${patientId}`),
+      api.get(`/gdpr/consenso-prestazione/${patientId}`),
+    ]);
+    setConsensoGDPRFirmato(gdpr.status === 'fulfilled' && !!gdpr.value.data?.consensoAttivo);
+    setConsensoPrestazioneFirmato(prestazione.status === 'fulfilled' && !!prestazione.value.data?.consensoAttivo);
+  };
+
+  const salvaConsensoGDPR = async () => {
+    if (!pazienteSelezionato || !nomeFirmatarioGDPR.trim() || !cognomeFirmatarioGDPR.trim() || !firmaGDPR) return;
+    setSalvandoConsenso(true);
+    try {
+      await api.post('/gdpr/consenso', {
+        patientId: pazienteSelezionato._id,
+        finalita: { prestazioneSanitaria: true, auditInterno: true, fatturazione: true, ricercaScientifica: false },
+        modalita: { informatico: true, cartaceo: true, telefonico: true },
+        datiSensibili: { datiSanitari: true, datiEconomici: false, immagini: true },
+        comunicazioneTerzi: { mediciSpecialisti: true, struttureSanitarie: true, familiari: false, assicurazioni: false },
+        firmatoDa: 'paziente', nomeFirmatario: nomeFirmatarioGDPR.trim(), cognomeFirmatario: cognomeFirmatarioGDPR.trim(), versioneInformativa: 'v2025.1', firmaDigitale: firmaGDPR,
+      });
+      setConsensoGDPRFirmato(true); setShowConsensoGDPR(false);
+    } catch (error: any) { alert(error.response?.data?.message || 'Errore nel salvataggio del consenso GDPR'); }
+    setSalvandoConsenso(false);
+  };
+
+  const salvaConsensoPrestazione = async () => {
+    if (!pazienteSelezionato || !nomeFirmatarioPrestazione.trim() || !cognomeFirmatarioPrestazione.trim() || !firmaPrestazione || !accettaPrestazione || !accettaRischiPrestazione) return;
+    setSalvandoConsenso(true);
+    try {
+      await api.post('/gdpr/consenso-prestazione', {
+        patientId: pazienteSelezionato._id, firmatoDa: ruoloFirmatarioPrestazione, nomeFirmatario: nomeFirmatarioPrestazione.trim(), cognomeFirmatario: cognomeFirmatarioPrestazione.trim(), relazioneConPaziente: ruoloFirmatarioPrestazione, prestazioneSanitaria: true, rischiTrattamento: true, firmaDigitale: firmaPrestazione,
+      });
+      setConsensoPrestazioneFirmato(true); setShowConsensoPrestazione(false);
+    } catch (error: any) { alert(error.response?.data?.message || 'Errore nel salvataggio del consenso alla prestazione'); }
+    setSalvandoConsenso(false);
   };
 
   // ─── Vista tutti i piani attivi ───────────────────────────────────────────
@@ -528,6 +583,8 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
     const paz = pazienti.find(p => p._id === piano.patient._id);
     if (paz) {
       setPazienteSelezionato(paz);
+      setConsensoGDPRFirmato(false); setConsensoPrestazioneFirmato(false);
+      caricaConsensiPaziente(paz._id);
       const res = await api.get('/workplan');
       setPiani(res.data.filter((p: Piano) => p.patient?._id === paz._id));
     }
@@ -1339,10 +1396,14 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
           <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', marginBottom: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
               <strong>📋 {pazienteSelezionato?.firstName || 'N/D'} {pazienteSelezionato?.lastName || ''}</strong>
-              <ReportGenerator
-                patientId={pazienteSelezionato._id}
-                patientName={`${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName}`}
-              />
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button type="button" onClick={() => setShowChatPaziente(v => !v)} style={{ background: '#0d9488', color: 'white', border: 'none', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>💬 {showChatPaziente ? 'Chiudi chat' : 'Apri chat paziente'}</button>
+                <ReportGenerator patientId={pazienteSelezionato._id} patientName={`${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName}`} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
+              <button type="button" onClick={() => setShowConsensoGDPR(true)} style={{ background: consensoGDPRFirmato ? '#dcfce7' : '#dc2626', color: consensoGDPRFirmato ? '#166534' : 'white', border: `1px solid ${consensoGDPRFirmato ? '#86efac' : '#b91c1c'}`, borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>{consensoGDPRFirmato ? '✅ Consenso GDPR firmato' : '⚠️ Firma consenso GDPR'}</button>
+              <button type="button" onClick={() => setShowConsensoPrestazione(true)} style={{ background: consensoPrestazioneFirmato ? '#dcfce7' : '#c2410c', color: consensoPrestazioneFirmato ? '#166534' : 'white', border: `1px solid ${consensoPrestazioneFirmato ? '#86efac' : '#9a3412'}`, borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>{consensoPrestazioneFirmato ? '✅ Consenso prestazione firmato' : '⚠️ Firma consenso prestazione e rischi'}</button>
             </div>
             <div style={{ fontSize: '0.88rem', color: '#555', marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
               {pazienteSelezionato.address && <span>📍 {pazienteSelezionato.address}</span>}
@@ -1351,14 +1412,16 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
             </div>
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <ChatWidget
-              scope="patient"
-              patientId={pazienteSelezionato._id}
-              title={`💬 Chat con coordinatore — ${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName}`}
-              height={420}
-            />
-          </div>
+          {showChatPaziente && (
+            <div style={{ marginBottom: '20px' }}>
+              <ChatWidget
+                scope="patient"
+                patientId={pazienteSelezionato._id}
+                title={`💬 Chat con coordinatore — ${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName}`}
+                height={420}
+              />
+            </div>
+          )}
 
           {piani.length === 0 ? (
             <p style={{ color: '#888', fontStyle: 'italic' }}>Nessun piano assegnato per questo paziente.</p>
@@ -1423,14 +1486,19 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
               <h3 style={{ margin: '0 0 6px', color: '#1e4d8c' }}>📋 {pianoSelezionato.category}</h3>
               <p style={{ margin: '0 0 4px', color: '#374151' }}>{pianoSelezionato.task}</p>
               {pianoSelezionato.notes && <p style={{ margin: '0 0 12px', color: '#666', fontSize: '0.9rem' }}>📝 {pianoSelezionato.notes}</p>}
-              <button
-                type="button"
-                onClick={() => navigate(`/workplan-access/${pianoSelezionato._id}`)}
-                style={{ marginTop: pianoSelezionato.notes ? 0 : '10px', background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: '700', fontSize: '0.84rem' }}
-              >
-                ✍️ Apri consensi GDPR e prestazione sanitaria
-              </button>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: pianoSelezionato.notes ? 0 : '10px' }}>
+                <button type="button" onClick={() => setShowChatPaziente(v => !v)} style={{ background: '#0d9488', color: 'white', border: 'none', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>💬 {showChatPaziente ? 'Chiudi chat' : 'Apri chat paziente'}</button>
+                {pazienteSelezionato && <ReportGenerator patientId={pazienteSelezionato._id} patientName={`${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName}`} />}
+                <button type="button" onClick={() => setShowConsensoGDPR(true)} style={{ background: consensoGDPRFirmato ? '#dcfce7' : '#dc2626', color: consensoGDPRFirmato ? '#166534' : 'white', border: `1px solid ${consensoGDPRFirmato ? '#86efac' : '#b91c1c'}`, borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>{consensoGDPRFirmato ? '✅ GDPR firmato' : '⚠️ Firma GDPR'}</button>
+                <button type="button" onClick={() => setShowConsensoPrestazione(true)} style={{ background: consensoPrestazioneFirmato ? '#dcfce7' : '#c2410c', color: consensoPrestazioneFirmato ? '#166534' : 'white', border: `1px solid ${consensoPrestazioneFirmato ? '#86efac' : '#9a3412'}`, borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>{consensoPrestazioneFirmato ? '✅ Prestazione firmata' : '⚠️ Firma prestazione e rischi'}</button>
+              </div>
             </div>
+
+            {showChatPaziente && pazienteSelezionato && (
+              <div style={{ marginBottom: '16px' }}>
+                <ChatWidget scope="patient" patientId={pazienteSelezionato._id} title={`💬 Chat con coordinatore — ${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName}`} height={420} />
+              </div>
+            )}
 
             {/* ── COMPENSO MATURATO ── */}
             {pianoSelezionato.tipoCompenso && pianoSelezionato.tipoCompenso !== 'nessuno' && (
@@ -2180,6 +2248,45 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
           </div>
         );
       })()}
+
+      {showConsensoGDPR && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }} onClick={() => setShowConsensoGDPR(false)}>
+          <div style={{ background: 'white', borderRadius: '14px', padding: '20px', width: '100%', maxWidth: '540px', maxHeight: '92vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 8px', color: '#991b1b' }}>Consenso GDPR</h3>
+            <p style={{ fontSize: '0.85rem', color: '#475569', marginBottom: '14px' }}>Il paziente o il firmatario autorizza il trattamento dei dati per le prestazioni sanitarie e assistenziali.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+              <input value={nomeFirmatarioGDPR} onChange={e => setNomeFirmatarioGDPR(e.target.value)} placeholder="Nome firmatario" style={{ padding: '10px', borderRadius: '7px', border: '1px solid #d1d5db' }} />
+              <input value={cognomeFirmatarioGDPR} onChange={e => setCognomeFirmatarioGDPR(e.target.value)} placeholder="Cognome firmatario" style={{ padding: '10px', borderRadius: '7px', border: '1px solid #d1d5db' }} />
+            </div>
+            <FirmaCanvas label="Firma del paziente / firmatario" sublabel="Firma per accettare l'informativa privacy" onFirmaCompleta={setFirmaGDPR} onCancella={() => setFirmaGDPR('')} altezza={160} />
+            <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+              <button type="button" onClick={() => setShowConsensoGDPR(false)} style={{ flex: 1, padding: '11px', borderRadius: '7px', border: '1px solid #d1d5db', background: '#f3f4f6', cursor: 'pointer' }}>Annulla</button>
+              <button type="button" disabled={salvandoConsenso || !nomeFirmatarioGDPR.trim() || !cognomeFirmatarioGDPR.trim() || !firmaGDPR} onClick={salvaConsensoGDPR} style={{ flex: 2, padding: '11px', borderRadius: '7px', border: 'none', background: '#dc2626', color: 'white', fontWeight: 700, cursor: 'pointer', opacity: salvandoConsenso ? 0.7 : 1 }}>{salvandoConsenso ? 'Salvataggio...' : 'Firma e archivia consenso'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConsensoPrestazione && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }} onClick={() => setShowConsensoPrestazione(false)}>
+          <div style={{ background: 'white', borderRadius: '14px', padding: '20px', width: '100%', maxWidth: '620px', maxHeight: '92vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 8px', color: '#9a3412' }}>Consenso alla prestazione sanitaria e rischi</h3>
+            <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.5 }}>Il firmatario dichiara di aver ricevuto informazioni sulle prestazioni assistenziali e sanitarie, sui rischi prevedibili e sulle limitazioni connesse alle condizioni cliniche.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '14px 0' }}>
+              <input value={nomeFirmatarioPrestazione} onChange={e => setNomeFirmatarioPrestazione(e.target.value)} placeholder="Nome firmatario" style={{ padding: '10px', borderRadius: '7px', border: '1px solid #d1d5db' }} />
+              <input value={cognomeFirmatarioPrestazione} onChange={e => setCognomeFirmatarioPrestazione(e.target.value)} placeholder="Cognome firmatario" style={{ padding: '10px', borderRadius: '7px', border: '1px solid #d1d5db' }} />
+            </div>
+            <select value={ruoloFirmatarioPrestazione} onChange={e => setRuoloFirmatarioPrestazione(e.target.value as typeof ruoloFirmatarioPrestazione)} style={{ width: '100%', padding: '10px', borderRadius: '7px', border: '1px solid #d1d5db', marginBottom: '12px' }}><option value="paziente">Paziente</option><option value="caregiver">Caregiver</option><option value="tutore">Tutore</option><option value="rappresentanteLegale">Rappresentante legale</option></select>
+            <label style={{ display: 'flex', gap: '8px', fontSize: '0.85rem', marginBottom: '10px' }}><input type="checkbox" checked={accettaPrestazione} onChange={e => setAccettaPrestazione(e.target.checked)} /> Confermo di aver ricevuto informazioni sulla prestazione e di acconsentire alla sua esecuzione.</label>
+            <label style={{ display: 'flex', gap: '8px', fontSize: '0.85rem', marginBottom: '14px' }}><input type="checkbox" checked={accettaRischiPrestazione} onChange={e => setAccettaRischiPrestazione(e.target.checked)} /> Dichiaro di aver letto e compreso rischi e limitazioni del trattamento.</label>
+            <FirmaCanvas label="Firma del paziente / firmatario" sublabel="Firmare con il dito sullo schermo" onFirmaCompleta={setFirmaPrestazione} onCancella={() => setFirmaPrestazione('')} altezza={160} />
+            <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+              <button type="button" onClick={() => setShowConsensoPrestazione(false)} style={{ flex: 1, padding: '11px', borderRadius: '7px', border: '1px solid #d1d5db', background: '#f3f4f6', cursor: 'pointer' }}>Annulla</button>
+              <button type="button" disabled={salvandoConsenso || !nomeFirmatarioPrestazione.trim() || !cognomeFirmatarioPrestazione.trim() || !firmaPrestazione || !accettaPrestazione || !accettaRischiPrestazione} onClick={salvaConsensoPrestazione} style={{ flex: 2, padding: '11px', borderRadius: '7px', border: 'none', background: '#c2410c', color: 'white', fontWeight: 700, cursor: 'pointer', opacity: salvandoConsenso ? 0.7 : 1 }}>{salvandoConsenso ? 'Salvataggio...' : 'Firma e archivia consenso'}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </section>
   );
