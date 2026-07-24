@@ -321,7 +321,7 @@ export async function inviaEmailConsensoGDPR(
   versioneInformativa: string
 ) {
   console.log(`📧 Invio copia consenso GDPR a: ${emailDestinatario}`);
-  await invia(
+  return invia(
     emailDestinatario,
     '✅ Consenso GDPR firmato — Abbraccio Cure Domiciliari',
     `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:28px;border:1px solid #e2e8f0;border-radius:10px;">
@@ -359,6 +359,33 @@ export async function inviaEmailConsensoGDPR(
         Abbraccio Cure Domiciliari — Roma, Via Di Santa Maria Ausiliatrice 4b<br/>
         Questa è una email automatica di conferma. Non rispondere a questo messaggio.
       </p>
+    </div>`
+  );
+}
+
+export async function inviaEmailConsensoPrestazione(
+  emailDestinatario: string,
+  nomePaziente: string,
+  nomeFirmatario: string,
+  ruoloFirmatario: string,
+  dataFirma: string,
+  versioneDocumento: string
+) {
+  return invia(
+    emailDestinatario,
+    '✅ Consenso alla prestazione sanitaria firmato — Abbraccio Cure Domiciliari',
+    `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:28px;border:1px solid #e2e8f0;border-radius:10px;">
+      <h2 style="color:#9a3412;margin:0 0 16px;">Consenso alla prestazione sanitaria e ai rischi del trattamento</h2>
+      <p>Gentile <strong>${nomeFirmatario}</strong>,</p>
+      <p>Le confermiamo che il consenso informato per il/la paziente <strong>${nomePaziente}</strong> è stato firmato e archiviato.</p>
+      <div style="background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:16px 20px;margin:20px 0;">
+        <p style="margin:0 0 8px;"><strong>Paziente:</strong> ${nomePaziente}</p>
+        <p style="margin:0 0 8px;"><strong>Firmatario:</strong> ${nomeFirmatario} (${ruoloFirmatario})</p>
+        <p style="margin:0 0 8px;"><strong>Data firma:</strong> ${dataFirma}</p>
+        <p style="margin:0;"><strong>Versione documento:</strong> ${versioneDocumento}</p>
+      </div>
+      <p style="font-size:0.88rem;color:#374151;">Il consenso comprende l'informativa sulle prestazioni sanitarie e assistenziali, i rischi prevedibili e le limitazioni del trattamento.</p>
+      <p style="font-size:11px;color:#9ca3af;border-top:1px solid #e2e8f0;padding-top:12px;">Abbraccio Cure Domiciliari — Questa è una email automatica di conferma.</p>
     </div>`
   );
 }

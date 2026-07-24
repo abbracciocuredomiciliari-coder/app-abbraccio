@@ -60,6 +60,7 @@ export interface IConsensoGDPR extends Document {
   // Audit
   ipAddress?: string;
   userAgent?: string;
+  inviiEmail: { email: string; dataInvio: Date }[];
   
   createdAt: Date;
   updatedAt: Date;
@@ -116,6 +117,7 @@ const consensoSchema = new Schema<IConsensoGDPR>(
     
     ipAddress: { type: String },
     userAgent: { type: String },
+    inviiEmail: [{ email: { type: String, required: true }, dataInvio: { type: Date, default: Date.now } }],
   },
   { timestamps: true }
 );

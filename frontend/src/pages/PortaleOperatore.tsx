@@ -323,6 +323,10 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
   const [showConsensoPrestazione, setShowConsensoPrestazione] = useState(false);
   const [consensoGDPRFirmato, setConsensoGDPRFirmato] = useState(false);
   const [consensoPrestazioneFirmato, setConsensoPrestazioneFirmato] = useState(false);
+  const [consensoGDPR, setConsensoGDPR] = useState<any>(null);
+  const [consensoPrestazione, setConsensoPrestazione] = useState<any>(null);
+  const [emailConsensoGDPR, setEmailConsensoGDPR] = useState('');
+  const [emailConsensoPrestazione, setEmailConsensoPrestazione] = useState('');
   const [nomeFirmatarioGDPR, setNomeFirmatarioGDPR] = useState('');
   const [cognomeFirmatarioGDPR, setCognomeFirmatarioGDPR] = useState('');
   const [firmaGDPR, setFirmaGDPR] = useState('');
@@ -536,8 +540,37 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
       api.get(`/gdpr/consenso/${patientId}`),
       api.get(`/gdpr/consenso-prestazione/${patientId}`),
     ]);
-    setConsensoGDPRFirmato(gdpr.status === 'fulfilled' && !!gdpr.value.data?.consensoAttivo);
-    setConsensoPrestazioneFirmato(prestazione.status === 'fulfilled' && !!prestazione.value.data?.consensoAttivo);
+    const gdprAttivo = gdpr.status === 'fulfilled' && !!gdpr.value.data?.consensoAttivo;
+    const prestazioneAttiva = prestazione.status === 'fulfilled' && !!prestazione.value.data?.consensoAttivo;
+    setConsensoGDPRFirmato(gdprAttivo);
+    setConsensoPrestazioneFirmato(prestazioneAttiva);
+    setConsensoGDPR(gdprAttivo ? gdpr.value.data.consenso : null);
+    setConsensoPrestazione(prestazioneAttiva ? prestazione.value.data.consenso : null);
+  };
+
+  const esportaConsensoPdf = (tipo: 'gdpr' | 'prestazione') => {
+    const consenso = tipo === 'gdpr' ? consensoGDPR : consensoPrestazione;
+    if (!consenso || !pazienteSelezionato) return;
+    const titolo = tipo === 'gdpr' ? 'CONSENSO AL TRATTAMENTO DEI DATI PERSONALI (GDPR)' : 'CONSENSO INFORMATO ALLA PRESTAZIONE SANITARIA E AI RISCHI DEL TRATTAMENTO';
+    const dataFirma = new Date(consenso.dataFirma).toLocaleDateString('it-IT');
+    const firma = consenso.firmaDigitale ? `<img src="${consenso.firmaDigitale}" style="max-width:260px;max-height:100px;border-bottom:1px solid #334155;" />` : 'Firma digitale archiviata';
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>${titolo}</title><style>body{font-family:Arial,sans-serif;color:#1f2937;line-height:1.55;padding:32px;max-width:820px;margin:auto}h1{font-size:18px;color:#1e4d8c;text-align:center}h2{font-size:14px;color:#1e4d8c;margin-top:24px}.box{border:1px solid #bfdbfe;background:#eff6ff;border-radius:8px;padding:14px;margin:16px 0}.firma{margin-top:22px}@media print{body{padding:16px}}</style></head><body><h1>${titolo}</h1><p style="text-align:center">Abbraccio Cure Domiciliari</p><div class="box"><strong>Paziente:</strong> ${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName}<br><strong>Firmatario:</strong> ${consenso.nomeFirmatario} ${consenso.cognomeFirmatario} (${consenso.firmatoDa})<br><strong>Data firma:</strong> ${dataFirma}<br><strong>Operatore:</strong> ${consenso.operatoreEmail || 'N/D'}</div><h2>Attestazione</h2><p>${tipo === 'gdpr' ? 'Il firmatario autorizza il trattamento dei dati personali e sanitari necessari all’erogazione dei servizi, ai sensi del Regolamento UE 2016/679.' : 'Il firmatario conferma di aver ricevuto informazioni sulla prestazione sanitaria, sui rischi prevedibili e sulle limitazioni del trattamento.'}</p><div class="firma"><strong>Firma digitale del firmatario</strong><br>${firma}</div><p style="font-size:11px;color:#64748b;border-top:1px solid #cbd5e1;padding-top:12px;margin-top:28px;">Documento archiviato il ${dataFirma} — Abbraccio Cure Domiciliari</p><script>window.onload=function(){window.print()}</script></body></html>`);
+    win.document.close();
+    win.focus();
+  };
+
+  const inviaEmailConsenso = async (tipo: 'gdpr' | 'prestazione') => {
+    if (!pazienteSelezionato) return;
+    const email = window.prompt('Inserisci l’email del paziente o del firmatario');
+    if (!email?.trim()) return;
+    try {
+      const endpoint = tipo === 'gdpr' ? `/gdpr/consenso/${pazienteSelezionato._id}/invia-email` : `/gdpr/consenso-prestazione/${pazienteSelezionato._id}/invia-email`;
+      await api.post(endpoint, { email: email.trim() });
+      alert('Copia del consenso inviata e registrata nello storico.');
+      caricaConsensiPaziente(pazienteSelezionato._id);
+    } catch (error: any) { alert(error.response?.data?.message || 'Errore durante l’invio email'); }
   };
 
   const salvaConsensoGDPR = async () => {
@@ -550,9 +583,9 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
         modalita: { informatico: true, cartaceo: true, telefonico: true },
         datiSensibili: { datiSanitari: true, datiEconomici: false, immagini: true },
         comunicazioneTerzi: { mediciSpecialisti: true, struttureSanitarie: true, familiari: false, assicurazioni: false },
-        firmatoDa: 'paziente', nomeFirmatario: nomeFirmatarioGDPR.trim(), cognomeFirmatario: cognomeFirmatarioGDPR.trim(), versioneInformativa: 'v2025.1', firmaDigitale: firmaGDPR,
+        firmatoDa: 'paziente', nomeFirmatario: nomeFirmatarioGDPR.trim(), cognomeFirmatario: cognomeFirmatarioGDPR.trim(), versioneInformativa: 'v2025.1', firmaDigitale: firmaGDPR, emailNotifica: emailConsensoGDPR.trim() || undefined,
       });
-      setConsensoGDPRFirmato(true); setShowConsensoGDPR(false);
+      setConsensoGDPRFirmato(true); setShowConsensoGDPR(false); caricaConsensiPaziente(pazienteSelezionato._id);
     } catch (error: any) { alert(error.response?.data?.message || 'Errore nel salvataggio del consenso GDPR'); }
     setSalvandoConsenso(false);
   };
@@ -562,9 +595,9 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
     setSalvandoConsenso(true);
     try {
       await api.post('/gdpr/consenso-prestazione', {
-        patientId: pazienteSelezionato._id, firmatoDa: ruoloFirmatarioPrestazione, nomeFirmatario: nomeFirmatarioPrestazione.trim(), cognomeFirmatario: cognomeFirmatarioPrestazione.trim(), relazioneConPaziente: ruoloFirmatarioPrestazione, prestazioneSanitaria: true, rischiTrattamento: true, firmaDigitale: firmaPrestazione,
+        patientId: pazienteSelezionato._id, firmatoDa: ruoloFirmatarioPrestazione, nomeFirmatario: nomeFirmatarioPrestazione.trim(), cognomeFirmatario: cognomeFirmatarioPrestazione.trim(), relazioneConPaziente: ruoloFirmatarioPrestazione, prestazioneSanitaria: true, rischiTrattamento: true, firmaDigitale: firmaPrestazione, emailNotifica: emailConsensoPrestazione.trim() || undefined,
       });
-      setConsensoPrestazioneFirmato(true); setShowConsensoPrestazione(false);
+      setConsensoPrestazioneFirmato(true); setShowConsensoPrestazione(false); caricaConsensiPaziente(pazienteSelezionato._id);
     } catch (error: any) { alert(error.response?.data?.message || 'Errore nel salvataggio del consenso alla prestazione'); }
     setSalvandoConsenso(false);
   };
@@ -1404,6 +1437,8 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
               <button type="button" onClick={() => setShowConsensoGDPR(true)} style={{ background: consensoGDPRFirmato ? '#dcfce7' : '#dc2626', color: consensoGDPRFirmato ? '#166534' : 'white', border: `1px solid ${consensoGDPRFirmato ? '#86efac' : '#b91c1c'}`, borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>{consensoGDPRFirmato ? '✅ Consenso GDPR firmato' : '⚠️ Firma consenso GDPR'}</button>
               <button type="button" onClick={() => setShowConsensoPrestazione(true)} style={{ background: consensoPrestazioneFirmato ? '#dcfce7' : '#c2410c', color: consensoPrestazioneFirmato ? '#166534' : 'white', border: `1px solid ${consensoPrestazioneFirmato ? '#86efac' : '#9a3412'}`, borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>{consensoPrestazioneFirmato ? '✅ Consenso prestazione firmato' : '⚠️ Firma consenso prestazione e rischi'}</button>
+              {consensoGDPRFirmato && <><button type="button" onClick={() => esportaConsensoPdf('gdpr')} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #93c5fd', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>📄 PDF GDPR</button><button type="button" onClick={() => inviaEmailConsenso('gdpr')} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #93c5fd', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>✉️ Invia GDPR</button></>}
+              {consensoPrestazioneFirmato && <><button type="button" onClick={() => esportaConsensoPdf('prestazione')} style={{ background: '#fff7ed', color: '#9a3412', border: '1px solid #fdba74', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>📄 PDF prestazione</button><button type="button" onClick={() => inviaEmailConsenso('prestazione')} style={{ background: '#fff7ed', color: '#9a3412', border: '1px solid #fdba74', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>✉️ Invia prestazione</button></>}
             </div>
             <div style={{ fontSize: '0.88rem', color: '#555', marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
               {pazienteSelezionato.address && <span>📍 {pazienteSelezionato.address}</span>}
@@ -1491,6 +1526,8 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                 {pazienteSelezionato && <ReportGenerator patientId={pazienteSelezionato._id} patientName={`${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName}`} />}
                 <button type="button" onClick={() => setShowConsensoGDPR(true)} style={{ background: consensoGDPRFirmato ? '#dcfce7' : '#dc2626', color: consensoGDPRFirmato ? '#166534' : 'white', border: `1px solid ${consensoGDPRFirmato ? '#86efac' : '#b91c1c'}`, borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>{consensoGDPRFirmato ? '✅ GDPR firmato' : '⚠️ Firma GDPR'}</button>
                 <button type="button" onClick={() => setShowConsensoPrestazione(true)} style={{ background: consensoPrestazioneFirmato ? '#dcfce7' : '#c2410c', color: consensoPrestazioneFirmato ? '#166534' : 'white', border: `1px solid ${consensoPrestazioneFirmato ? '#86efac' : '#9a3412'}`, borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>{consensoPrestazioneFirmato ? '✅ Prestazione firmata' : '⚠️ Firma prestazione e rischi'}</button>
+                {consensoGDPRFirmato && <><button type="button" onClick={() => esportaConsensoPdf('gdpr')} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #93c5fd', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>📄 PDF GDPR</button><button type="button" onClick={() => inviaEmailConsenso('gdpr')} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #93c5fd', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>✉️ Invia GDPR</button></>}
+                {consensoPrestazioneFirmato && <><button type="button" onClick={() => esportaConsensoPdf('prestazione')} style={{ background: '#fff7ed', color: '#9a3412', border: '1px solid #fdba74', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>📄 PDF prestazione</button><button type="button" onClick={() => inviaEmailConsenso('prestazione')} style={{ background: '#fff7ed', color: '#9a3412', border: '1px solid #fdba74', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>✉️ Invia prestazione</button></>}
               </div>
             </div>
 
@@ -2258,6 +2295,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
               <input value={nomeFirmatarioGDPR} onChange={e => setNomeFirmatarioGDPR(e.target.value)} placeholder="Nome firmatario" style={{ padding: '10px', borderRadius: '7px', border: '1px solid #d1d5db' }} />
               <input value={cognomeFirmatarioGDPR} onChange={e => setCognomeFirmatarioGDPR(e.target.value)} placeholder="Cognome firmatario" style={{ padding: '10px', borderRadius: '7px', border: '1px solid #d1d5db' }} />
             </div>
+            <input type="email" value={emailConsensoGDPR} onChange={e => setEmailConsensoGDPR(e.target.value)} placeholder="Email del paziente / firmatario (facoltativa)" style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '7px', border: '1px solid #d1d5db', marginBottom: '14px' }} />
             <FirmaCanvas label="Firma del paziente / firmatario" sublabel="Firma per accettare l'informativa privacy" onFirmaCompleta={setFirmaGDPR} onCancella={() => setFirmaGDPR('')} altezza={160} />
             <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
               <button type="button" onClick={() => setShowConsensoGDPR(false)} style={{ flex: 1, padding: '11px', borderRadius: '7px', border: '1px solid #d1d5db', background: '#f3f4f6', cursor: 'pointer' }}>Annulla</button>
@@ -2279,6 +2317,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
             <select value={ruoloFirmatarioPrestazione} onChange={e => setRuoloFirmatarioPrestazione(e.target.value as typeof ruoloFirmatarioPrestazione)} style={{ width: '100%', padding: '10px', borderRadius: '7px', border: '1px solid #d1d5db', marginBottom: '12px' }}><option value="paziente">Paziente</option><option value="caregiver">Caregiver</option><option value="tutore">Tutore</option><option value="rappresentanteLegale">Rappresentante legale</option></select>
             <label style={{ display: 'flex', gap: '8px', fontSize: '0.85rem', marginBottom: '10px' }}><input type="checkbox" checked={accettaPrestazione} onChange={e => setAccettaPrestazione(e.target.checked)} /> Confermo di aver ricevuto informazioni sulla prestazione e di acconsentire alla sua esecuzione.</label>
             <label style={{ display: 'flex', gap: '8px', fontSize: '0.85rem', marginBottom: '14px' }}><input type="checkbox" checked={accettaRischiPrestazione} onChange={e => setAccettaRischiPrestazione(e.target.checked)} /> Dichiaro di aver letto e compreso rischi e limitazioni del trattamento.</label>
+            <input type="email" value={emailConsensoPrestazione} onChange={e => setEmailConsensoPrestazione(e.target.value)} placeholder="Email del paziente / firmatario (facoltativa)" style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '7px', border: '1px solid #d1d5db', marginBottom: '14px' }} />
             <FirmaCanvas label="Firma del paziente / firmatario" sublabel="Firmare con il dito sullo schermo" onFirmaCompleta={setFirmaPrestazione} onCancella={() => setFirmaPrestazione('')} altezza={160} />
             <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
               <button type="button" onClick={() => setShowConsensoPrestazione(false)} style={{ flex: 1, padding: '11px', borderRadius: '7px', border: '1px solid #d1d5db', background: '#f3f4f6', cursor: 'pointer' }}>Annulla</button>

@@ -6,7 +6,7 @@ import ConsensoGDPR from '../models/ConsensoGDPR';
 import ConsensoPrestazioneSanitaria from '../models/ConsensoPrestazioneSanitaria';
 import Patient from '../models/Patient';
 import crypto from 'crypto';
-import { inviaEmailConsensoGDPR } from '../utils/email';
+import { inviaEmailConsensoGDPR, inviaEmailConsensoPrestazione } from '../utils/email';
 
 const router = Router();
 
@@ -52,27 +52,21 @@ router.post(
         userAgent: req.headers['user-agent']?.substring(0, 200),
       });
 
-      // Invia email di conferma al paziente/firmatario (non bloccante)
-      const destinatarioEmail = emailNotifica || patient.email;
+      const destinatarioEmail = emailNotifica?.trim();
+      let emailInviata = false;
       if (destinatarioEmail) {
         const nomePaziente = `${patient.firstName} ${patient.lastName}`;
         const nomeFirmatario = `${consensoData.nomeFirmatario || ''} ${consensoData.cognomeFirmatario || ''}`.trim() || nomePaziente;
         const dataFirmaFmt = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        inviaEmailConsensoGDPR(
-          destinatarioEmail,
-          nomePaziente,
-          nomeFirmatario,
-          consensoData.firmatoDa || 'paziente',
-          dataFirmaFmt,
-          consensoData.versioneInformativa || 'v2025.1'
-        ).catch((e: any) => console.warn('⚠️ Email consenso GDPR non inviata:', e?.message));
+        emailInviata = await inviaEmailConsensoGDPR(destinatarioEmail, nomePaziente, nomeFirmatario, consensoData.firmatoDa || 'paziente', dataFirmaFmt, consensoData.versioneInformativa || 'v2025.1');
+        if (emailInviata) await ConsensoGDPR.findByIdAndUpdate(consenso._id, { $push: { inviiEmail: { email: destinatarioEmail, dataInvio: new Date() } } });
       }
       
       return res.status(201).json({
         message: 'Consenso registrato con successo',
         consensoId: consenso._id,
         pazienteAnonimoId: consenso.pazienteAnonimoId,
-        emailInviata: !!destinatarioEmail,
+        emailInviata,
       });
     } catch (error: any) {
       console.error('[GDPR] Errore registrazione consenso:', error);
@@ -130,6 +124,7 @@ router.post(
         prestazioneSanitaria,
         rischiTrattamento,
         firmaDigitale,
+        emailNotifica,
       } = req.body;
 
       if (!patientId || !firmatoDa || !nomeFirmatario?.trim() || !cognomeFirmatario?.trim() || !firmaDigitale) {
@@ -167,13 +162,46 @@ router.post(
         userAgent: req.headers['user-agent']?.substring(0, 200),
       });
 
-      return res.status(201).json({ message: 'Consenso alla prestazione sanitaria archiviato', consenso });
+      const destinatarioEmail = emailNotifica?.trim();
+      let emailInviata = false;
+      if (destinatarioEmail) {
+        emailInviata = await inviaEmailConsensoPrestazione(destinatarioEmail, `${patient.firstName} ${patient.lastName}`, `${consenso.nomeFirmatario} ${consenso.cognomeFirmatario}`, consenso.firmatoDa, new Date(consenso.dataFirma).toLocaleDateString('it-IT'), consenso.versioneDocumento);
+        if (emailInviata) await ConsensoPrestazioneSanitaria.findByIdAndUpdate(consenso._id, { $push: { inviiEmail: { email: destinatarioEmail, dataInvio: new Date() } } });
+      }
+
+      return res.status(201).json({ message: 'Consenso alla prestazione sanitaria archiviato', consenso, emailInviata });
     } catch (error: any) {
       console.error('[GDPR] Errore consenso prestazione:', error);
       return res.status(500).json({ message: 'Errore nel salvataggio del consenso alla prestazione', error: error.message });
     }
   }
 );
+
+router.post('/consenso/:patientId/invia-email', authorizeRole('admin', 'coordinator', 'operatore'), auditLog('consenso', 'UPDATE', (req) => req.params.patientId), async (req: AuthRequest, res: Response) => {
+  try {
+    const email = req.body.email?.trim();
+    if (!email) return res.status(400).json({ message: 'Inserire un indirizzo email valido' });
+    const [patient, consenso] = await Promise.all([Patient.findById(req.params.patientId), ConsensoGDPR.findOne({ patientId: req.params.patientId, revocato: false }).sort({ dataFirma: -1 })]);
+    if (!patient || !consenso) return res.status(404).json({ message: 'Consenso GDPR archiviato non trovato' });
+    const inviata = await inviaEmailConsensoGDPR(email, `${patient.firstName} ${patient.lastName}`, `${consenso.nomeFirmatario} ${consenso.cognomeFirmatario}`, consenso.firmatoDa, new Date(consenso.dataFirma).toLocaleDateString('it-IT'), consenso.versioneInformativa);
+    if (!inviata) return res.status(503).json({ message: 'Invio email non riuscito. Verificare la configurazione SMTP.' });
+    await ConsensoGDPR.findByIdAndUpdate(consenso._id, { $push: { inviiEmail: { email, dataInvio: new Date() } } });
+    return res.json({ message: 'Copia del consenso GDPR inviata e registrata' });
+  } catch (error: any) { return res.status(500).json({ message: 'Errore invio consenso GDPR', error: error.message }); }
+});
+
+router.post('/consenso-prestazione/:patientId/invia-email', authorizeRole('admin', 'coordinator', 'operatore'), auditLog('consenso_prestazione', 'UPDATE', (req) => req.params.patientId), async (req: AuthRequest, res: Response) => {
+  try {
+    const email = req.body.email?.trim();
+    if (!email) return res.status(400).json({ message: 'Inserire un indirizzo email valido' });
+    const [patient, consenso] = await Promise.all([Patient.findById(req.params.patientId), ConsensoPrestazioneSanitaria.findOne({ patientId: req.params.patientId, revocato: false }).sort({ dataFirma: -1 })]);
+    if (!patient || !consenso) return res.status(404).json({ message: 'Consenso alla prestazione archiviato non trovato' });
+    const inviata = await inviaEmailConsensoPrestazione(email, `${patient.firstName} ${patient.lastName}`, `${consenso.nomeFirmatario} ${consenso.cognomeFirmatario}`, consenso.firmatoDa, new Date(consenso.dataFirma).toLocaleDateString('it-IT'), consenso.versioneDocumento);
+    if (!inviata) return res.status(503).json({ message: 'Invio email non riuscito. Verificare la configurazione SMTP.' });
+    await ConsensoPrestazioneSanitaria.findByIdAndUpdate(consenso._id, { $push: { inviiEmail: { email, dataInvio: new Date() } } });
+    return res.json({ message: 'Copia del consenso alla prestazione inviata e registrata' });
+  } catch (error: any) { return res.status(500).json({ message: 'Errore invio consenso alla prestazione', error: error.message }); }
+});
 
 router.get(
   '/consenso-prestazione/:patientId',

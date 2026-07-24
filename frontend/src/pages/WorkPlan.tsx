@@ -566,11 +566,13 @@ function WorkPlan() {
     try {
       const patientId = item.patient?._id;
       if (!patientId) { setError('ID paziente non trovato'); return; }
-      const [patientRes, diarioRes] = await Promise.all([
+      const [patientRes, diarioRes, gdprRes, prestazioneRes] = await Promise.all([
         api.get(`/patients/${patientId}`),
         api.get(`/diario/paziente/${patientId}`),
+        api.get(`/gdpr/consenso/${patientId}`).catch(() => ({ data: { consenso: null } })),
+        api.get(`/gdpr/consenso-prestazione/${patientId}`).catch(() => ({ data: { consenso: null } })),
       ]);
-      const html = generaCartellaClinicaHtml(patientRes.data, item, diarioRes.data || []);
+      const html = generaCartellaClinicaHtml(patientRes.data, item, diarioRes.data || [], gdprRes.data?.consenso, prestazioneRes.data?.consenso);
       const win = window.open('', '_blank');
       if (!win) { setError('Impossibile aprire il PDF. Controlla il blocco popup.'); return; }
       win.document.write(html);
@@ -582,8 +584,11 @@ function WorkPlan() {
     }
   };
 
-  const generaCartellaClinicaHtml = (patient: any, wp: WorkPlanItem, entries: any[]) => {
+  const generaCartellaClinicaHtml = (patient: any, wp: WorkPlanItem, entries: any[], consensoGDPR?: any, consensoPrestazione?: any) => {
     const fd = (d?: string) => d ? new Date(d).toLocaleDateString('it-IT') : 'N/D';
+    const consensoHtml = (titolo: string, consenso: any, descrizione: string) => !consenso
+      ? `<div class="consenso assente"><strong>${titolo}:</strong> non archiviato.</div>`
+      : `<div class="consenso"><strong>${titolo}</strong><br><span>Stato: <b>Archiviato e firmato</b></span><br><span>Firmatario: ${consenso.nomeFirmatario || ''} ${consenso.cognomeFirmatario || ''} (${consenso.firmatoDa || 'N/D'})</span><br><span>Data firma: ${fd(consenso.dataFirma)}</span><br><span>Operatore: ${consenso.operatoreEmail || 'N/D'}</span><p>${descrizione}</p></div>`;
     const diarioHtml = entries.length === 0
       ? '<p style="color:#6b7280;">Nessuna voce di diario clinico registrata.</p>'
       : entries.map((e, i) => `
@@ -610,6 +615,7 @@ function WorkPlan() {
       .section{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-bottom:16px}
       .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
       .label{font-weight:600;color:#4b5563;font-size:0.9rem}
+      .consenso{border:1px solid #86efac;background:#f0fdf4;border-radius:8px;padding:12px;margin:10px 0;font-size:0.9rem}.consenso.assente{border-color:#fecaca;background:#fef2f2}
       @media print{body{padding:12px}}
     </style></head><body>
       <h1>🏥 CARTELLA CLINICA</h1>
@@ -635,6 +641,7 @@ function WorkPlan() {
         <div><span class="label">Data:</span> ${fd(wp.date)}</div>
       </div></div>
       <div class="section"><h2>Diario Clinico (${entries.length} voci)</h2>${diarioHtml}</div>
+      <div class="section"><h2>Consensi archiviati</h2>${consensoHtml('Consenso al trattamento dei dati personali (GDPR)', consensoGDPR, 'Autorizzazione al trattamento dei dati personali e sanitari per l’erogazione dei servizi.')}${consensoHtml('Consenso alla prestazione sanitaria e ai rischi', consensoPrestazione, 'Consenso informato alla prestazione sanitaria, ai rischi prevedibili e alle limitazioni del trattamento.')}</div>
       <p style="margin-top:24px;font-size:8pt;color:#6b7280;text-align:center;border-top:1px solid #e5e7eb;padding-top:12px;">
         Generata il ${new Date().toLocaleString('it-IT')} - Abbraccio Cure Domiciliari
       </p>

@@ -15,6 +15,7 @@ export interface IConsensoPrestazioneSanitaria extends Document {
   operatoreEmail: string;
   ipAddress?: string;
   userAgent?: string;
+  inviiEmail: { email: string; dataInvio: Date }[];
   revocato: boolean;
   dataRevoca?: Date;
   motivoRevoca?: string;
@@ -38,6 +39,7 @@ const consensoPrestazioneSanitariaSchema = new Schema<IConsensoPrestazioneSanita
     operatoreEmail: { type: String, required: true },
     ipAddress: { type: String },
     userAgent: { type: String },
+    inviiEmail: [{ email: { type: String, required: true }, dataInvio: { type: Date, default: Date.now } }],
     revocato: { type: Boolean, default: false },
     dataRevoca: { type: Date },
     motivoRevoca: { type: String },
