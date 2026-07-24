@@ -1,0 +1,29 @@
+TASK IN CODA - prossima sessione
+
+1. Fix invio foto diretta dalla fotocamera in chat
+   - Sintomo: allegare una foto gia in galleria o un documento funziona; aprire la fotocamera, scattare e allegare porta a "Network Error".
+   - File coinvolti: frontend/src/components/ChatWidget.tsx, backend/src/routes/messages.ts, backend/src/index.ts.
+   - Da verificare: CORS per multipart/file di grandi dimensioni, timeout, mimetype da camera, dimensione limite Cloudinary/multer.
+
+2. Notifiche chat con link diretto al paziente
+   - Quando arriva un messaggio in una chat paziente, il badge mostra il numero ma cliccando si apre solo la chat generale.
+   - Deve essere possibile aprire direttamente la chat del paziente dalla notifica/dalla dashboard.
+   - File coinvolti: frontend/src/components/ChatBadge.tsx, frontend/src/pages/Dashboard.tsx, frontend/src/App.tsx, frontend/src/pages/WorkPlanAccessPage.tsx, frontend/src/components/ChatWidget.tsx.
+   - Implementare endpoint GET /api/messages/unread-list che restituisca i pazienti con messaggi non letti + link navigabile.
+
+3. Nuova scheda: consenso al trattamento prestazione sanitaria e rischio
+   - L'operatore deve far firmare al paziente/caregiver un consenso specifico per il trattamento dei dati sanitari, prestazione e relativo rischio.
+   - Deve essere archiviato, non piu richiedibile se gia firmato.
+   - Opzioni: nuovo modello backend ConsensoPrestazione o estendere ConsensoGDPR con flag prestazioneSanitariaFirmata.
+   - File coinvolti: backend/src/models/ConsensoGDPR.ts o nuovo modello, backend/src/routes/gdpr.ts, frontend/src/pages/WorkPlanAccessPage.tsx.
+
+4. Chat generale: selezione dell'interlocutore/destinatario
+   - Admin/coordinatore quando aprono chat generale devono poter scegliere con quale operatore chattare (o canale tutti).
+   - Operatore invece deve poter scegliere se chattare con admin, coordinatore o tutti.
+   - Attualmente esiste il canale all/coordinators/office_admin. Aggiungere destinatario specifico per admin/coordinator e filtro lato backend per visibilita.
+   - File coinvolti: frontend/src/components/ChatWidget.tsx, backend/src/routes/messages.ts, backend/src/models/Message.ts.
+
+5. Scheda evento avverso: pulsante "ALL" per descrivere l'evento
+   - Nella pagina/evento avverso aggiungere un pulsante che apre un campo testo libero per descrivere l'evento.
+   - Il testo deve essere trascritto nella scheda evento avverso.
+   - File coinvolti: frontend/src/pages/EventiAvversiPage.tsx (o componente evento avverso), backend/src/routes/eventiAvversi.ts.

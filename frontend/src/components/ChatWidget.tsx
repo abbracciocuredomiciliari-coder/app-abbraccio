@@ -98,7 +98,6 @@ export function ChatWidget({ scope, patientId, title, height = 360 }: ChatWidget
       files.forEach(file => formData.append('attachments', file));
 
       await api.post('/messages', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 120000,
       });
 
@@ -120,6 +119,16 @@ export function ChatWidget({ scope, patientId, title, height = 360 }: ChatWidget
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const addFiles = (selectedFiles: File[]) => {
+    const oversized = selectedFiles.find(file => file.size > 20 * 1024 * 1024);
+    if (oversized) {
+      setError(`Il file "${oversized.name}" supera il limite di 20 MB.`);
+      return;
+    }
+    setError(null);
+    setFiles(prev => [...prev, ...selectedFiles].slice(0, 5));
   };
 
   const removeFile = (idx: number) => setFiles(prev => prev.filter((_, i) => i !== idx));
@@ -225,7 +234,10 @@ export function ChatWidget({ scope, patientId, title, height = 360 }: ChatWidget
           capture="environment"
           style={{ display: 'none' }}
           ref={cameraInputRef}
-          onChange={e => e.target.files && setFiles(prev => [...prev, ...Array.from(e.target.files!)])}
+          onChange={e => {
+            if (e.target.files) addFiles(Array.from(e.target.files));
+            e.target.value = '';
+          }}
         />
         <input
           type="file"
@@ -233,7 +245,10 @@ export function ChatWidget({ scope, patientId, title, height = 360 }: ChatWidget
           multiple
           style={{ display: 'none' }}
           ref={fileInputRef}
-          onChange={e => e.target.files && setFiles(prev => [...prev, ...Array.from(e.target.files!)])}
+          onChange={e => {
+            if (e.target.files) addFiles(Array.from(e.target.files));
+            e.target.value = '';
+          }}
         />
         <button type="button" onClick={() => cameraInputRef.current?.click()} title="Foto" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#0d9488', padding: '8px' }}>
           <ImageIcon size={20} />
