@@ -904,6 +904,22 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
               <div style={{ fontSize: '0.68rem', color: '#dc2626', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>⚠️ Evento Avverso</div>
               <div style={{ fontSize: '1.8rem', lineHeight: 1 }}>🚨</div>
             </button>
+            <button
+              type="button"
+              onClick={() => navigate('/chat')}
+              style={{ background: 'rgba(13,148,136,0.07)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: '10px', padding: '14px 10px', textAlign: 'center', cursor: 'pointer', minWidth: 0, overflow: 'hidden' }}
+            >
+              <div style={{ fontSize: '0.68rem', color: '#0f766e', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Chat coordinatore</div>
+              <div style={{ fontSize: '1.8rem', lineHeight: 1 }}>💬</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/piani-lavorativi')}
+              style={{ background: 'rgba(30,77,140,0.07)', border: '1px solid rgba(30,77,140,0.3)', borderRadius: '10px', padding: '14px 10px', textAlign: 'center', cursor: 'pointer', minWidth: 0, overflow: 'hidden' }}
+            >
+              <div style={{ fontSize: '0.68rem', color: '#1e4d8c', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Consensi e firme</div>
+              <div style={{ fontSize: '1.8rem', lineHeight: 1 }}>✍️</div>
+            </button>
             {compensoTotaleGlobale > 0 && (
               <button
                 type="button"
@@ -1406,7 +1422,14 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
             <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
               <h3 style={{ margin: '0 0 6px', color: '#1e4d8c' }}>📋 {pianoSelezionato.category}</h3>
               <p style={{ margin: '0 0 4px', color: '#374151' }}>{pianoSelezionato.task}</p>
-              {pianoSelezionato.notes && <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>📝 {pianoSelezionato.notes}</p>}
+              {pianoSelezionato.notes && <p style={{ margin: '0 0 12px', color: '#666', fontSize: '0.9rem' }}>📝 {pianoSelezionato.notes}</p>}
+              <button
+                type="button"
+                onClick={() => navigate(`/workplan-access/${pianoSelezionato._id}`)}
+                style={{ marginTop: pianoSelezionato.notes ? 0 : '10px', background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: '700', fontSize: '0.84rem' }}
+              >
+                ✍️ Apri consensi GDPR e prestazione sanitaria
+              </button>
             </div>
 
             {/* ── COMPENSO MATURATO ── */}
