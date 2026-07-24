@@ -11,6 +11,7 @@ import { CustomerSatisfactionModal } from '../components/CustomerSatisfactionMod
 import { SchedaDimissioneModal } from '../components/SchedaDimissioneModal';
 import { RiformulazionePAIModal } from '../components/RiformulazionePAIModal';
 import { DatiCliniciADIModal } from '../components/DatiCliniciADIModal';
+import { FormazioneSanitariaModal } from '../components/FormazioneSanitariaModal';
 import { Printer, Eye, CheckCircle, Plus, Calendar, User, Syringe, Clock, FileText, AlertTriangle, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
@@ -330,6 +331,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
   const [showSchedaDimissione, setShowSchedaDimissione] = useState(false);
   const [showRiformulazionePAI, setShowRiformulazionePAI] = useState(false);
   const [showDatiCliniciADI, setShowDatiCliniciADI] = useState(false);
+  const [showFormazioneSanitaria, setShowFormazioneSanitaria] = useState(false);
   const [showConsensoPrestazione, setShowConsensoPrestazione] = useState(false);
   const [consensoGDPRFirmato, setConsensoGDPRFirmato] = useState(false);
   const [consensoPrestazioneFirmato, setConsensoPrestazioneFirmato] = useState(false);
@@ -1646,11 +1648,14 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
 
             {/* ── SEZIONE DIARIO CLINICO ── */}
             <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '16px', overflow: 'hidden' }}>
-              <button type="button" onClick={() => setShowDiario(!showDiario)}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch', background: '#f8fafc' }}>
+                <button type="button" onClick={() => setShowDiario(!showDiario)}
                 style={{ width: '100%', background: '#f8fafc', border: 'none', padding: '14px 16px', textAlign: 'left', cursor: 'pointer', fontWeight: '600', fontSize: '0.95rem', color: '#374151', display: 'flex', justifyContent: 'space-between' }}>
                 <span>📓 Diario clinico ({diario.length} voci)</span>
                 <span>{showDiario ? '▲' : '▼'}</span>
-              </button>
+                </button>
+                <button type="button" onClick={() => setShowFormazioneSanitaria(true)} style={{ margin: '8px 10px 8px 0', padding: '8px 12px', border: '1px solid #99f6e4', borderRadius: '7px', cursor: 'pointer', background: '#f0fdfa', color: '#0f766e', fontWeight: 700, whiteSpace: 'nowrap' }}>🎓 Formazione sanitaria</button>
+              </div>
               {showDiario && (
                 <div style={{ padding: '16px' }}>
                   <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
@@ -2320,6 +2325,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
       {showSchedaDimissione && pazienteSelezionato && <SchedaDimissioneModal patient={pazienteSelezionato} dataInizioServizio={pianoSelezionato?.date} onClose={() => setShowSchedaDimissione(false)} />}
       {showRiformulazionePAI && pazienteSelezionato && <RiformulazionePAIModal patient={pazienteSelezionato} workPlan={pianoSelezionato} onClose={() => setShowRiformulazionePAI(false)} />}
       {showDatiCliniciADI && pazienteSelezionato && <DatiCliniciADIModal patient={pazienteSelezionato} onClose={() => setShowDatiCliniciADI(false)} onSaved={(pazienteAggiornato) => setPazienteSelezionato(prev => prev ? { ...prev, ...pazienteAggiornato } : prev)} />}
+      {showFormazioneSanitaria && pazienteSelezionato && <FormazioneSanitariaModal patient={pazienteSelezionato} workPlan={pianoSelezionato} onClose={() => setShowFormazioneSanitaria(false)} />}
 
       {diarioDaFirmare && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }} onClick={() => { setDiarioDaFirmare(null); setFirmaDiarioGrafometrica(''); }}>
