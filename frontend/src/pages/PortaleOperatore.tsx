@@ -317,6 +317,27 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
   const [firmaEventoOp, setFirmaEventoOp] = useState('');
   const [salvandoEvento, setSalvandoEvento] = useState(false);
   const [eventoSalvato, setEventoSalvato] = useState(false);
+  const [dettaturaEventoAttiva, setDettaturaEventoAttiva] = useState(false);
+
+  const avviaDettaturaEvento = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('La dettatura non è supportata da questo browser. Usa Chrome aggiornato e autorizza il microfono.');
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'it-IT';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    setDettaturaEventoAttiva(true);
+    recognition.onresult = (event: any) => {
+      const testo = event.results?.[0]?.[0]?.transcript?.trim();
+      if (testo) setEventoForm(p => ({ ...p, descrizioneEvento: [p.descrizioneEvento, testo].filter(Boolean).join(p.descrizioneEvento ? ' ' : '') }));
+    };
+    recognition.onerror = () => alert('Impossibile trascrivere l\'audio. Verifica l\'autorizzazione del microfono e riprova.');
+    recognition.onend = () => setDettaturaEventoAttiva(false);
+    recognition.start();
+  };
 
   // ─── Genera HTML per PDF prelievo ───────────────────────────────────────────
   const generaHTMLPrelievo = (prel: PrelievoOperatore) => {
@@ -2002,6 +2023,10 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                       <textarea value={eventoForm.descrizioneEvento} onChange={e => setEventoForm(p => ({ ...p, descrizioneEvento: e.target.value }))}
                         placeholder="Descrivi l'evento in modo sintetico ma esaustivo..."
                         rows={4} style={{ width: '100%', padding: '9px 10px', borderRadius: '7px', border: `1px solid ${eventoForm.descrizioneEvento ? '#d1d5db' : '#fca5a5'}`, fontSize: '0.88rem', resize: 'vertical', boxSizing: 'border-box' }} />
+                      <button type="button" onClick={avviaDettaturaEvento} disabled={dettaturaEventoAttiva} style={{ marginTop: '8px', background: dettaturaEventoAttiva ? '#94a3b8' : '#7c3aed', color: 'white', border: 'none', borderRadius: '7px', padding: '8px 12px', fontWeight: 700, cursor: dettaturaEventoAttiva ? 'not-allowed' : 'pointer', fontSize: '0.82rem' }}>
+                        {dettaturaEventoAttiva ? '🎙️ Ascolto in corso...' : '🤖 AI - detta e trascrivi evento'}
+                      </button>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>Premi il pulsante, descrivi l'evento a voce e la trascrizione verrà inserita nella scheda.</div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '10px' }}>
                       <div>

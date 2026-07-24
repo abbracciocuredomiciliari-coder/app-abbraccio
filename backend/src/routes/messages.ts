@@ -9,6 +9,7 @@ import Message, { type MessageChannel } from '../models/Message';
 import WorkPlan from '../models/WorkPlan';
 import Patient from '../models/Patient';
 import Staff from '../models/Staff';
+import User from '../models/User';
 import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
@@ -23,7 +24,7 @@ function allowedChannels(role?: string): MessageChannel[] {
   if (!role) return [];
   if (['admin', 'direttore'].includes(role)) return ['all', 'coordinators', 'office_admin'];
   if (role === 'coordinator') return ['all', 'coordinators'];
-  return ['all'];
+  return ['all', 'coordinators', 'office_admin'];
 }
 
 // ─── Cloudinary / storage locale ─────────────────────────────────────────────
@@ -147,6 +148,28 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
       }
     }
 
+    if (scope === 'general') {
+      const requestedRecipientId = req.query.recipientId as string | undefined;
+      const currentUserId = new mongoose.Types.ObjectId(user.userId || user.id);
+      if (requestedRecipientId) {
+        if (!mongoose.Types.ObjectId.isValid(requestedRecipientId)) {
+          return res.status(400).json({ message: 'Destinatario non valido' });
+        }
+        const recipientObjectId = new mongoose.Types.ObjectId(requestedRecipientId);
+        query.$or = [
+          { recipientId: recipientObjectId, senderId: currentUserId },
+          { recipientId: currentUserId, senderId: recipientObjectId },
+        ];
+      } else {
+        query.$or = [
+          { recipientId: { $exists: false } },
+          { recipientId: null },
+          { recipientId: currentUserId },
+          { senderId: currentUserId },
+        ];
+      }
+    }
+
     if (scope === 'patient') {
       if (!patientId || typeof patientId !== 'string') {
         return res.status(400).json({ message: 'patientId richiesto per scope patient' });
@@ -218,6 +241,21 @@ router.post(
       }
 
       const msgChannel: MessageChannel = ['all', 'coordinators', 'office_admin'].includes(channel) ? channel : 'all';
+      let recipientObjectId: mongoose.Types.ObjectId | undefined;
+
+      if (scope === 'general' && recipientId) {
+        if (!mongoose.Types.ObjectId.isValid(recipientId)) {
+          return res.status(400).json({ message: 'Destinatario non valido' });
+        }
+        if (!isPrivileged(user.role)) {
+          return res.status(403).json({ message: 'Solo admin, coordinatore e direttore possono scegliere un singolo operatore' });
+        }
+        const recipient = await User.findById(recipientId).select('role status').lean();
+        if (!recipient || recipient.status !== 'approved' || isPrivileged(recipient.role)) {
+          return res.status(400).json({ message: 'Selezionare un operatore attivo come destinatario' });
+        }
+        recipientObjectId = new mongoose.Types.ObjectId(recipientId);
+      }
 
       if (scope === 'patient') {
         if (!patientId) {
@@ -251,7 +289,7 @@ router.post(
         senderId: new mongoose.Types.ObjectId(user.userId || user.id),
         senderRole: user.role || 'unknown',
         senderName: user.name || 'Utente',
-        recipientId: recipientId ? new mongoose.Types.ObjectId(recipientId) : undefined,
+        recipientId: recipientObjectId,
         content: text,
         attachments,
         readBy: [{ userId: new mongoose.Types.ObjectId(user.userId || user.id), at: new Date() }],
@@ -264,6 +302,28 @@ router.post(
     }
   }
 );
+
+// ─── GET /api/messages/recipients ───────────────────────────────────────────
+router.get('/recipients', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!isPrivileged(user.role)) return res.json({ recipients: [] });
+    const recipients = await User.find({
+      status: { $ne: 'deleted' },
+      role: { $nin: ['admin', 'coordinator', 'direttore', 'paziente_registrato'] },
+    })
+      .select('firstName lastName name email role')
+      .sort({ lastName: 1, firstName: 1, name: 1 })
+      .lean();
+    return res.json({ recipients: recipients.map((recipient: any) => ({
+      id: recipient._id.toString(),
+      name: `${recipient.firstName || ''} ${recipient.lastName || ''}`.trim() || recipient.name || recipient.email,
+      role: recipient.role,
+    })) });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore nel recupero operatori', error: error.message });
+  }
+});
 
 // ─── GET /api/messages/unread-count ─────────────────────────────────────────
 router.get('/unread-count', authenticateToken, async (req: Request, res: Response) => {
