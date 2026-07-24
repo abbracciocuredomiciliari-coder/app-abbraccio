@@ -302,6 +302,58 @@ router.get('/unread-count', authenticateToken, async (req: Request, res: Respons
   }
 });
 
+// ─── GET /api/messages/unread-list ──────────────────────────────────────────
+router.get('/unread-list', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const userId = user.userId || user.id;
+    const unreadMessages = await Message.find({
+      scope: 'patient',
+      senderId: { $ne: new mongoose.Types.ObjectId(userId) },
+      'readBy.userId': { $ne: new mongoose.Types.ObjectId(userId) },
+    })
+      .select('patientId content attachments createdAt senderName')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const messagesByPatient = new Map<string, any[]>();
+    for (const message of unreadMessages) {
+      const patientId = message.patientId?.toString();
+      if (!patientId) continue;
+      const messages = messagesByPatient.get(patientId) || [];
+      messages.push(message);
+      messagesByPatient.set(patientId, messages);
+    }
+
+    const patientIds = [...messagesByPatient.keys()];
+    const patients = await Patient.find({ _id: { $in: patientIds } })
+      .select('firstName lastName')
+      .lean();
+    const patientsById = new Map(patients.map((patient: any) => [patient._id.toString(), patient]));
+
+    const items = [];
+    for (const [patientId, messages] of messagesByPatient) {
+      if (!(await canAccessPatient(user, patientId))) continue;
+      const patient = patientsById.get(patientId);
+      if (!patient) continue;
+      const latest = messages[0];
+      items.push({
+        patientId,
+        patientName: `${patient.firstName} ${patient.lastName}`,
+        unreadCount: messages.length,
+        lastMessage: latest.content || (latest.attachments?.length ? 'Allegato' : 'Nuovo messaggio'),
+        senderName: latest.senderName,
+        createdAt: latest.createdAt,
+      });
+    }
+
+    return res.json({ items });
+  } catch (error: any) {
+    console.error('[Messages unread-list] Errore:', error);
+    return res.status(500).json({ message: 'Errore nel recupero chat non lette', error: error.message });
+  }
+});
+
 // ─── POST /api/messages/:messageId/read ───────────────────────────────────────
 router.post('/:messageId/read', authenticateToken, async (req: Request, res: Response) => {
   try {
