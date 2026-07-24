@@ -40,16 +40,18 @@ export default function Breadcrumb() {
   }
 
   const pathSegments = location.pathname.split('/').filter(Boolean);
+  const dashboardPath = ['admin', 'coordinator', 'direttore'].includes(user.role) ? '/dashboard' : '/portale-operatore';
+  const dashboardLabel = dashboardPath === '/dashboard' ? 'Dashboard' : 'Portale Operatore';
   
   // Costruisci i breadcrumb items
   const items: BreadcrumbItem[] = [];
   let currentPath = '';
   
   // Aggiungi sempre Home per prima (tranne che nella home)
-  if (location.pathname !== '/dashboard') {
+  if (location.pathname !== dashboardPath) {
     items.push({
-      label: 'Dashboard',
-      path: '/dashboard',
+      label: dashboardLabel,
+      path: dashboardPath,
       isLast: false,
     });
   }
@@ -67,19 +69,19 @@ export default function Breadcrumb() {
     });
   });
 
-  // Se siamo sulla home, mostra solo "Dashboard"
-  if (location.pathname === '/dashboard') {
+  // Se siamo sulla home, mostra solo il nome della dashboard appropriata al ruolo
+  if (location.pathname === dashboardPath) {
     return (
       <nav className="breadcrumb">
         <Home size={16} />
-        <span className="breadcrumb-current">Dashboard</span>
+        <span className="breadcrumb-current">{dashboardLabel}</span>
       </nav>
     );
   }
 
   return (
     <nav className="breadcrumb">
-      <Link to="/dashboard">
+      <Link to={dashboardPath}>
         <Home size={16} />
       </Link>
       <ChevronRight size={14} className="breadcrumb-separator" />

@@ -191,6 +191,10 @@ function Dashboard() {
     return <Navigate to="/portale-paziente" replace />;
   }
 
+  if (user && !isPrivilegiato) {
+    return <Navigate to="/portale-operatore" replace />;
+  }
+
   if (loading) {
     return (
       <section>
