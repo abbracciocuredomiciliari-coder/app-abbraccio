@@ -171,6 +171,16 @@ export default function WorkPlanAccessPage() {
   const [cognomeConsenso, setCognomeConsenso] = useState('');
   const [firmaConsenso, setFirmaConsenso] = useState('');
   const [savingConsenso, setSavingConsenso] = useState(false);
+  const [showConsensoPrestazione, setShowConsensoPrestazione] = useState(false);
+  const [consensoPrestazioneFirmato, setConsensoPrestazioneFirmato] = useState(false);
+  const [nomeConsensoPrestazione, setNomeConsensoPrestazione] = useState('');
+  const [cognomeConsensoPrestazione, setCognomeConsensoPrestazione] = useState('');
+  const [ruoloConsensoPrestazione, setRuoloConsensoPrestazione] = useState<'paziente' | 'caregiver' | 'tutore' | 'rappresentanteLegale'>('paziente');
+  const [firmaConsensoPrestazione, setFirmaConsensoPrestazione] = useState('');
+  const [accettaPrestazione, setAccettaPrestazione] = useState(false);
+  const [accettaRischi, setAccettaRischi] = useState(false);
+  const [savingConsensoPrestazione, setSavingConsensoPrestazione] = useState(false);
+  const [consensoPrestazione, setConsensoPrestazione] = useState<any>(null);
 
   const isAdminOrCoord = user?.role === 'admin' || user?.role === 'coordinator';
 
@@ -211,10 +221,22 @@ export default function WorkPlanAccessPage() {
       const patientId = wpRes.data.workPlan?.patient?._id;
       if (patientId) {
         try {
-          const consensoRes = await api.get(`/gdpr/consenso/${patientId}`);
-          setConsensoFirmato(!!consensoRes.data?.consensoAttivo);
+          const [consensoRes, consensoPrestazioneRes] = await Promise.allSettled([
+            api.get(`/gdpr/consenso/${patientId}`),
+            api.get(`/gdpr/consenso-prestazione/${patientId}`),
+          ]);
+          setConsensoFirmato(consensoRes.status === 'fulfilled' && !!consensoRes.value.data?.consensoAttivo);
+          if (consensoPrestazioneRes.status === 'fulfilled') {
+            setConsensoPrestazioneFirmato(!!consensoPrestazioneRes.value.data?.consensoAttivo);
+            setConsensoPrestazione(consensoPrestazioneRes.value.data?.consenso || null);
+          } else {
+            setConsensoPrestazioneFirmato(false);
+            setConsensoPrestazione(null);
+          }
         } catch {
           setConsensoFirmato(false);
+          setConsensoPrestazioneFirmato(false);
+          setConsensoPrestazione(null);
         }
       }
 
@@ -309,6 +331,53 @@ export default function WorkPlanAccessPage() {
     } finally {
       setSavingConsenso(false);
     }
+  };
+
+  const salvaConsensoPrestazione = async () => {
+    const patientId = workPlan?.patient._id;
+    if (!patientId) return;
+    if (!nomeConsensoPrestazione.trim() || !cognomeConsensoPrestazione.trim() || !firmaConsensoPrestazione) {
+      setError('Inserire nome, cognome e firma del firmatario');
+      return;
+    }
+    if (!accettaPrestazione || !accettaRischi) {
+      setError('È necessario confermare sia la prestazione sanitaria sia l\'informativa sui rischi');
+      return;
+    }
+    setSavingConsensoPrestazione(true);
+    setError('');
+    try {
+      const res = await api.post('/gdpr/consenso-prestazione', {
+        patientId,
+        firmatoDa: ruoloConsensoPrestazione,
+        nomeFirmatario: nomeConsensoPrestazione.trim(),
+        cognomeFirmatario: cognomeConsensoPrestazione.trim(),
+        relazioneConPaziente: ruoloConsensoPrestazione === 'paziente' ? 'Paziente' : ruoloConsensoPrestazione,
+        prestazioneSanitaria: accettaPrestazione,
+        rischiTrattamento: accettaRischi,
+        firmaDigitale: firmaConsensoPrestazione,
+      });
+      setConsensoPrestazioneFirmato(true);
+      setConsensoPrestazione(res.data.consenso);
+      setShowConsensoPrestazione(false);
+      setSuccess('Consenso alla prestazione sanitaria firmato e archiviato');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Errore salvataggio consenso alla prestazione');
+    } finally {
+      setSavingConsensoPrestazione(false);
+    }
+  };
+
+  const esportaConsensoPrestazionePDF = () => {
+    if (!workPlan || !consensoPrestazione) return;
+    const dataFirma = new Date(consensoPrestazione.dataFirma).toLocaleDateString('it-IT');
+    const nomePaziente = `${workPlan.patient.firstName} ${workPlan.patient.lastName}`;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Consenso prestazione sanitaria - ${nomePaziente}</title><style>body{font-family:Arial,sans-serif;color:#1f2937;line-height:1.5;padding:32px;max-width:800px;margin:auto}h1{font-size:20px;color:#1e4d8c;text-align:center}h2{font-size:15px;color:#1e4d8c;margin-top:24px}.box{border:1px solid #bfdbfe;background:#eff6ff;border-radius:8px;padding:14px;margin:16px 0}.firma{max-width:260px;max-height:120px;border-bottom:1px solid #374151}footer{font-size:11px;color:#64748b;margin-top:28px;border-top:1px solid #cbd5e1;padding-top:12px}@media print{body{padding:16px}}</style></head><body><h1>CONSENSO INFORMATO ALLA PRESTAZIONE SANITARIA E AI RISCHI DEL TRATTAMENTO</h1><p style="text-align:center">Abbraccio Cure Domiciliari</p><div class="box"><strong>Paziente:</strong> ${nomePaziente}<br><strong>Firmatario:</strong> ${consensoPrestazione.nomeFirmatario} ${consensoPrestazione.cognomeFirmatario} (${consensoPrestazione.firmatoDa})<br><strong>Data firma:</strong> ${dataFirma}</div><h2>Informativa</h2><p>Il sottoscritto dichiara di aver ricevuto informazioni chiare e comprensibili sulle prestazioni sanitarie e assistenziali erogate da Abbraccio Cure Domiciliari e dai suoi operatori incaricati.</p><p>Dichiara inoltre di essere stato informato che le prestazioni sono svolte nel rispetto delle procedure aziendali, delle competenze professionali degli operatori e delle condizioni cliniche rilevate al momento dell'intervento.</p><h2>Rischi e limitazioni</h2><p>Il firmatario prende atto che ogni prestazione sanitaria può comportare rischi prevedibili connessi alle condizioni cliniche, alla risposta individuale al trattamento e alle attività assistenziali eseguite al domicilio. L'operatore informa tempestivamente il paziente o il caregiver di eventuali anomalie e, quando necessario, attiva il medico o i servizi di emergenza.</p><div class="box"><strong>☑ Prestazione sanitaria:</strong> consenso espresso.<br><strong>☑ Informativa sui rischi:</strong> presa visione e accettata.</div><h2>Firma del firmatario</h2><img class="firma" src="${consensoPrestazione.firmaDigitale}" alt="Firma digitale"><p>${consensoPrestazione.nomeFirmatario} ${consensoPrestazione.cognomeFirmatario}</p><footer>Documento archiviato digitalmente. Versione v2026.1 — Generato il ${new Date().toLocaleDateString('it-IT')}</footer><script>window.onload=()=>window.print()</script></body></html>`);
+    win.document.close();
+    win.focus();
   };
 
   const salvaDiario = async () => {
@@ -675,6 +744,21 @@ export default function WorkPlanAccessPage() {
       ) : (
         <div style={{ marginBottom: '16px', background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '12px', fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
           <CheckCircle size={18} /> Consenso GDPR firmato
+        </div>
+      )}
+
+      {/* Consenso alla prestazione sanitaria */}
+      {!consensoPrestazioneFirmato ? (
+        <button
+          onClick={() => setShowConsensoPrestazione(true)}
+          style={{ width: '100%', marginBottom: '16px', background: '#fff7ed', color: '#9a3412', border: '1px solid #fdba74', borderRadius: '10px', padding: '12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+        >
+          <FileText size={18} /> Firma consenso prestazione e rischi
+        </button>
+      ) : (
+        <div style={{ marginBottom: '16px', background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '12px', fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle size={18} /> Consenso prestazione firmato</span>
+          <button onClick={esportaConsensoPrestazionePDF} style={{ background: '#166534', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', fontWeight: 600 }}>Esporta PDF</button>
         </div>
       )}
 
@@ -1413,6 +1497,48 @@ export default function WorkPlanAccessPage() {
               <button onClick={salvaConsensoGDPR} disabled={savingConsenso} style={{ flex: 2, padding: '12px', borderRadius: '8px', border: 'none', background: '#16a34a', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
                 {savingConsenso ? 'Salvataggio...' : 'Salva consenso'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConsensoPrestazione && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 110, padding: '12px', overflowY: 'auto' }} onClick={() => setShowConsensoPrestazione(false)}>
+          <div style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '620px', margin: 'auto', padding: '20px', minHeight: 'min-content' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 8px', color: '#9a3412' }}>Consenso alla prestazione sanitaria e rischi</h3>
+            <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.55, marginBottom: '14px' }}>
+              Il firmatario dichiara di aver ricevuto informazioni sulle prestazioni sanitarie e assistenziali svolte da Abbraccio Cure Domiciliari e dai suoi operatori incaricati.
+            </p>
+            <div style={{ padding: '12px', borderRadius: '8px', background: '#fff7ed', border: '1px solid #fed7aa', fontSize: '0.83rem', color: '#7c2d12', lineHeight: 1.5, marginBottom: '16px' }}>
+              Le prestazioni sono effettuate secondo le procedure aziendali e le condizioni cliniche rilevate. Possono sussistere rischi prevedibili connessi allo stato di salute, alla risposta individuale al trattamento e alle attività svolte al domicilio. In caso di necessità l'operatore attiva il medico o i servizi di emergenza.
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+              <input type="text" value={nomeConsensoPrestazione} onChange={e => setNomeConsensoPrestazione(e.target.value)} placeholder="Nome firmatario" style={{ padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+              <input type="text" value={cognomeConsensoPrestazione} onChange={e => setCognomeConsensoPrestazione(e.target.value)} placeholder="Cognome firmatario" style={{ padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+            </div>
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '5px' }}>Il firmatario è</label>
+              <select value={ruoloConsensoPrestazione} onChange={e => setRuoloConsensoPrestazione(e.target.value as typeof ruoloConsensoPrestazione)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}>
+                <option value="paziente">Paziente</option>
+                <option value="caregiver">Caregiver</option>
+                <option value="tutore">Tutore</option>
+                <option value="rappresentanteLegale">Rappresentante legale</option>
+              </select>
+            </div>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.85rem', marginBottom: '10px', cursor: 'pointer' }}>
+              <input type="checkbox" checked={accettaPrestazione} onChange={e => setAccettaPrestazione(e.target.checked)} style={{ marginTop: '3px' }} />
+              Confermo di aver ricevuto informazioni sulla prestazione sanitaria e di acconsentire alla sua esecuzione.
+            </label>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.85rem', marginBottom: '16px', cursor: 'pointer' }}>
+              <input type="checkbox" checked={accettaRischi} onChange={e => setAccettaRischi(e.target.checked)} style={{ marginTop: '3px' }} />
+              Dichiaro di aver letto e compreso i rischi e le limitazioni del trattamento descritti sopra.
+            </label>
+
+            <FirmaCanvas label="Firma del paziente / firmatario" sublabel="Firmare con il dito sullo schermo" onFirmaCompleta={setFirmaConsensoPrestazione} onCancella={() => setFirmaConsensoPrestazione('')} altezza={160} />
+            <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+              <button onClick={() => setShowConsensoPrestazione(false)} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f3f4f6', cursor: 'pointer' }}>Annulla</button>
+              <button onClick={salvaConsensoPrestazione} disabled={savingConsensoPrestazione} style={{ flex: 2, padding: '12px', borderRadius: '8px', border: 'none', background: '#c2410c', color: 'white', fontWeight: 700, cursor: 'pointer' }}>{savingConsensoPrestazione ? 'Salvataggio...' : 'Firma e archivia consenso'}</button>
             </div>
           </div>
         </div>

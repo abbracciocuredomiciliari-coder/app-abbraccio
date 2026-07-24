@@ -3,6 +3,7 @@ import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { auditLog } from '../middleware/audit';
 import ConsensoGDPR from '../models/ConsensoGDPR';
+import ConsensoPrestazioneSanitaria from '../models/ConsensoPrestazioneSanitaria';
 import Patient from '../models/Patient';
 import crypto from 'crypto';
 import { inviaEmailConsensoGDPR } from '../utils/email';
@@ -110,6 +111,84 @@ router.get(
       });
     } catch (error: any) {
       return res.status(500).json({ message: 'Errore recupero consenso', error: error.message });
+    }
+  }
+);
+
+router.post(
+  '/consenso-prestazione',
+  authorizeRole('admin', 'coordinator', 'operatore'),
+  auditLog('consenso_prestazione', 'CREATE'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const {
+        patientId,
+        firmatoDa,
+        nomeFirmatario,
+        cognomeFirmatario,
+        relazioneConPaziente,
+        prestazioneSanitaria,
+        rischiTrattamento,
+        firmaDigitale,
+      } = req.body;
+
+      if (!patientId || !firmatoDa || !nomeFirmatario?.trim() || !cognomeFirmatario?.trim() || !firmaDigitale) {
+        return res.status(400).json({ message: 'Paziente, firmatario e firma sono obbligatori' });
+      }
+      if (!prestazioneSanitaria || !rischiTrattamento) {
+        return res.status(400).json({ message: "È necessario accettare la prestazione sanitaria e l'informativa sui rischi" });
+      }
+
+      const patient = await Patient.findById(patientId);
+      if (!patient) return res.status(404).json({ message: 'Paziente non trovato' });
+
+      const consensoEsistente = await ConsensoPrestazioneSanitaria.findOne({ patientId, revocato: false });
+      if (consensoEsistente) {
+        return res.status(409).json({ message: 'Il consenso alla prestazione sanitaria risulta già firmato e archiviato' });
+      }
+
+      const user = req.user as { userId: string; email: string };
+      const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
+        || req.socket?.remoteAddress
+        || 'unknown';
+      const consenso = await ConsensoPrestazioneSanitaria.create({
+        patientId,
+        firmatoDa,
+        nomeFirmatario: nomeFirmatario.trim(),
+        cognomeFirmatario: cognomeFirmatario.trim(),
+        relazioneConPaziente: relazioneConPaziente?.trim(),
+        prestazioneSanitaria: true,
+        rischiTrattamento: true,
+        firmaDigitale,
+        versioneDocumento: 'v2026.1',
+        operatoreId: user.userId,
+        operatoreEmail: user.email,
+        ipAddress,
+        userAgent: req.headers['user-agent']?.substring(0, 200),
+      });
+
+      return res.status(201).json({ message: 'Consenso alla prestazione sanitaria archiviato', consenso });
+    } catch (error: any) {
+      console.error('[GDPR] Errore consenso prestazione:', error);
+      return res.status(500).json({ message: 'Errore nel salvataggio del consenso alla prestazione', error: error.message });
+    }
+  }
+);
+
+router.get(
+  '/consenso-prestazione/:patientId',
+  authorizeRole('admin', 'coordinator', 'operatore', 'direttore'),
+  auditLog('consenso_prestazione', 'READ', (req) => req.params.patientId),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const consenso = await ConsensoPrestazioneSanitaria.findOne({
+        patientId: req.params.patientId,
+        revocato: false,
+      }).sort({ dataFirma: -1 });
+      if (!consenso) return res.status(404).json({ consensoAttivo: false, message: 'Nessun consenso alla prestazione sanitaria trovato' });
+      return res.json({ consensoAttivo: true, consenso });
+    } catch (error: any) {
+      return res.status(500).json({ message: 'Errore recupero consenso alla prestazione', error: error.message });
     }
   }
 );
