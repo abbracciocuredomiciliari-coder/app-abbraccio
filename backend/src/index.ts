@@ -40,6 +40,7 @@ import schedaServizioRouter from './routes/schedaServizio';
 import contrattoRouter from './routes/contratto';
 import customerSatisfactionRouter from './routes/customerSatisfaction';
 import schedeDimissioneRouter from './routes/schedeDimissione';
+import riformulazioniPAIRouter from './routes/riformulazioniPAI';
 
 if (!process.env.JWT_SECRET) {
   console.error('ERRORE: JWT_SECRET non è impostato. Configurare la variabile d\'ambiente nel file .env prima di avviare il server.');
@@ -165,6 +166,7 @@ app.use('/api/scheda-servizio', schedaServizioRouter);
 app.use('/api/contratto', contrattoRouter);
 app.use('/api/customer-satisfaction', customerSatisfactionRouter);
 app.use('/api/schede-dimissione', schedeDimissioneRouter);
+app.use('/api/riformulazioni-pai', riformulazioniPAIRouter);
 // Alias senza prefisso /api per compatibilità con URL diretti degli allegati
 app.use('/allegati', allegatiRouter);
 
