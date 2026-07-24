@@ -38,6 +38,7 @@ import richiestePazienteRouter from './routes/richiestePaziente';
 import eventiAvversiRouter from './routes/eventiAvversi';
 import schedaServizioRouter from './routes/schedaServizio';
 import contrattoRouter from './routes/contratto';
+import customerSatisfactionRouter from './routes/customerSatisfaction';
 
 if (!process.env.JWT_SECRET) {
   console.error('ERRORE: JWT_SECRET non è impostato. Configurare la variabile d\'ambiente nel file .env prima di avviare il server.');
@@ -161,6 +162,7 @@ app.use('/api/richieste-paziente', richiestePazienteRouter);
 app.use('/api/eventi-avversi', eventiAvversiRouter);
 app.use('/api/scheda-servizio', schedaServizioRouter);
 app.use('/api/contratto', contrattoRouter);
+app.use('/api/customer-satisfaction', customerSatisfactionRouter);
 // Alias senza prefisso /api per compatibilità con URL diretti degli allegati
 app.use('/allegati', allegatiRouter);
 

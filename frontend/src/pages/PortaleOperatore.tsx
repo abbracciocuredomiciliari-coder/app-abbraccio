@@ -7,6 +7,7 @@ import FirmaCanvas from '../components/FirmaCanvas';
 import { VoiceRecorder } from '../components/VoiceRecorder';
 import { ChatWidget } from '../components/ChatWidget';
 import { ReportGenerator } from '../components/ReportGenerator';
+import { CustomerSatisfactionModal } from '../components/CustomerSatisfactionModal';
 import { Printer, Eye, CheckCircle, Plus, Calendar, User, Syringe, Clock, FileText, AlertTriangle, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
@@ -322,6 +323,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
   const [dettaturaEventoAttiva, setDettaturaEventoAttiva] = useState(false);
   const [showChatPaziente, setShowChatPaziente] = useState(false);
   const [showConsensoGDPR, setShowConsensoGDPR] = useState(false);
+  const [showCustomerSatisfaction, setShowCustomerSatisfaction] = useState(false);
   const [showConsensoPrestazione, setShowConsensoPrestazione] = useState(false);
   const [consensoGDPRFirmato, setConsensoGDPRFirmato] = useState(false);
   const [consensoPrestazioneFirmato, setConsensoPrestazioneFirmato] = useState(false);
@@ -1451,6 +1453,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
               <button type="button" onClick={() => setShowConsensoGDPR(true)} style={{ background: consensoGDPRFirmato ? '#dcfce7' : '#dc2626', color: consensoGDPRFirmato ? '#166534' : 'white', border: `1px solid ${consensoGDPRFirmato ? '#86efac' : '#b91c1c'}`, borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>{consensoGDPRFirmato ? '✅ Consenso GDPR firmato' : '⚠️ Firma consenso GDPR'}</button>
               <button type="button" onClick={() => setShowConsensoPrestazione(true)} style={{ background: consensoPrestazioneFirmato ? '#dcfce7' : '#c2410c', color: consensoPrestazioneFirmato ? '#166534' : 'white', border: `1px solid ${consensoPrestazioneFirmato ? '#86efac' : '#9a3412'}`, borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>{consensoPrestazioneFirmato ? '✅ Consenso prestazione firmato' : '⚠️ Firma consenso prestazione e rischi'}</button>
+              <button type="button" onClick={() => setShowCustomerSatisfaction(true)} style={{ background: '#ede9fe', color: '#5b21b6', border: '1px solid #c4b5fd', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>⭐ Customer Satisfaction</button>
               {consensoGDPRFirmato && <><button type="button" onClick={() => esportaConsensoPdf('gdpr')} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #93c5fd', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>📄 PDF GDPR</button><button type="button" onClick={() => inviaEmailConsenso('gdpr')} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #93c5fd', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>✉️ Invia GDPR</button></>}
               {consensoPrestazioneFirmato && <><button type="button" onClick={() => esportaConsensoPdf('prestazione')} style={{ background: '#fff7ed', color: '#9a3412', border: '1px solid #fdba74', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>📄 PDF prestazione</button><button type="button" onClick={() => inviaEmailConsenso('prestazione')} style={{ background: '#fff7ed', color: '#9a3412', border: '1px solid #fdba74', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>✉️ Invia prestazione</button></>}
             </div>
@@ -1540,6 +1543,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                 {pazienteSelezionato && <ReportGenerator patientId={pazienteSelezionato._id} patientName={`${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName}`} />}
                 <button type="button" onClick={() => setShowConsensoGDPR(true)} style={{ background: consensoGDPRFirmato ? '#dcfce7' : '#dc2626', color: consensoGDPRFirmato ? '#166534' : 'white', border: `1px solid ${consensoGDPRFirmato ? '#86efac' : '#b91c1c'}`, borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>{consensoGDPRFirmato ? '✅ GDPR firmato' : '⚠️ Firma GDPR'}</button>
                 <button type="button" onClick={() => setShowConsensoPrestazione(true)} style={{ background: consensoPrestazioneFirmato ? '#dcfce7' : '#c2410c', color: consensoPrestazioneFirmato ? '#166534' : 'white', border: `1px solid ${consensoPrestazioneFirmato ? '#86efac' : '#9a3412'}`, borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>{consensoPrestazioneFirmato ? '✅ Prestazione firmata' : '⚠️ Firma prestazione e rischi'}</button>
+                <button type="button" onClick={() => setShowCustomerSatisfaction(true)} style={{ background: '#ede9fe', color: '#5b21b6', border: '1px solid #c4b5fd', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>⭐ Customer Satisfaction</button>
                 {consensoGDPRFirmato && <><button type="button" onClick={() => esportaConsensoPdf('gdpr')} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #93c5fd', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>📄 PDF GDPR</button><button type="button" onClick={() => inviaEmailConsenso('gdpr')} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #93c5fd', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>✉️ Invia GDPR</button></>}
                 {consensoPrestazioneFirmato && <><button type="button" onClick={() => esportaConsensoPdf('prestazione')} style={{ background: '#fff7ed', color: '#9a3412', border: '1px solid #fdba74', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>📄 PDF prestazione</button><button type="button" onClick={() => inviaEmailConsenso('prestazione')} style={{ background: '#fff7ed', color: '#9a3412', border: '1px solid #fdba74', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>✉️ Invia prestazione</button></>}
               </div>
@@ -2299,6 +2303,8 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
           </div>
         );
       })()}
+
+      {showCustomerSatisfaction && pazienteSelezionato && <CustomerSatisfactionModal patient={pazienteSelezionato} onClose={() => setShowCustomerSatisfaction(false)} />}
 
       {diarioDaFirmare && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }} onClick={() => { setDiarioDaFirmare(null); setFirmaDiarioGrafometrica(''); }}>
