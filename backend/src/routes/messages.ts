@@ -250,8 +250,12 @@ router.post(
         if (!isPrivileged(user.role)) {
           return res.status(403).json({ message: 'Solo admin, coordinatore e direttore possono scegliere un singolo operatore' });
         }
-        const recipient = await User.findById(recipientId).select('role status').lean();
-        if (!recipient || recipient.status !== 'approved' || isPrivileged(recipient.role)) {
+        const recipient = await User.findById(recipientId).select('role status email').lean();
+        const staffAttivo = recipient && await Staff.exists({
+          active: true,
+          $or: [{ userId: recipient._id }, { email: recipient.email.toLowerCase() }],
+        });
+        if (!recipient || recipient.status !== 'approved' || isPrivileged(recipient.role) || !staffAttivo) {
           return res.status(400).json({ message: 'Selezionare un operatore attivo come destinatario' });
         }
         recipientObjectId = new mongoose.Types.ObjectId(recipientId);
@@ -308,9 +312,13 @@ router.get('/recipients', authenticateToken, async (req: Request, res: Response)
   try {
     const user = (req as any).user;
     if (!isPrivileged(user.role)) return res.json({ recipients: [] });
+    const staffAttivo = await Staff.find({ active: true }).select('userId email').lean();
+    const userIds = staffAttivo.filter((staff: any) => staff.userId).map((staff: any) => staff.userId);
+    const emails = staffAttivo.map((staff: any) => staff.email?.toLowerCase()).filter(Boolean);
     const recipients = await User.find({
-      status: { $ne: 'deleted' },
+      status: 'approved',
       role: { $nin: ['admin', 'coordinator', 'direttore', 'paziente_registrato'] },
+      $or: [{ _id: { $in: userIds } }, { email: { $in: emails } }],
     })
       .select('firstName lastName name email role')
       .sort({ lastName: 1, firstName: 1, name: 1 })
