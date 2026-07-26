@@ -157,13 +157,21 @@ export function ChatWidget({ scope, patientId, title, height = 360 }: ChatWidget
   const isMine = (m: Message) => m.senderId === userId;
   const isRead = (m: Message) => m.readBy.some(r => r.userId !== m.senderId);
 
+  const esportaPdf = () => {
+    const win = window.open('', '_blank');
+    if (!win) return;
+    const titolo = title || (scope === 'patient' ? 'Chat paziente' : 'Chat generale');
+    const righe = messages.map(m => `<div class="messaggio"><strong>${m.senderName.replace(/</g, '&lt;')} · ${m.senderRole.replace(/</g, '&lt;')}</strong><span>${new Date(m.createdAt).toLocaleString('it-IT')}</span><p>${(m.content || '').replace(/</g, '&lt;').replace(/\n/g, '<br>')}</p>${m.attachments?.length ? `<small>Allegati: ${m.attachments.map(a => a.name.replace(/</g, '&lt;')).join(', ')}</small>` : ''}</div>`).join('');
+    win.document.write(`<!doctype html><html lang="it"><head><meta charset="utf-8"><title>${titolo}</title><style>body{font-family:Arial,sans-serif;max-width:800px;margin:auto;padding:28px;color:#1f2937}h1{color:#0d9488;font-size:20px;border-bottom:2px solid #0d9488;padding-bottom:10px}.messaggio{border-bottom:1px solid #cbd5e1;padding:12px 0;white-space:normal}.messaggio span{float:right;color:#64748b;font-size:12px}.messaggio p{white-space:normal;line-height:1.45;margin:7px 0}@media print{body{padding:12px}}</style></head><body><h1>${titolo}</h1><p>Esportata il ${new Date().toLocaleString('it-IT')}</p>${righe || '<p>Nessun messaggio nella conversazione.</p>'}<script>window.onload=()=>window.print()</script></body></html>`);
+    win.document.close();
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', background: '#fff', height }}>
-      {title && (
-        <div style={{ padding: '10px 14px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontWeight: 600, color: '#1e4d8c' }}>
-          {title}
-        </div>
-      )}
+      <div style={{ padding: '10px 14px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontWeight: 600, color: '#1e4d8c', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+        <span>{title || (scope === 'patient' ? 'Chat paziente' : 'Chat generale')}</span>
+        <button type="button" onClick={esportaPdf} style={{ border: '1px solid #93c5fd', borderRadius: '6px', background: '#eff6ff', color: '#1d4ed8', cursor: 'pointer', padding: '5px 8px', fontSize: '.75rem', fontWeight: 700 }}>📄 Esporta PDF</button>
+      </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px', background: '#f1f5f9' }}>
         {loading && (

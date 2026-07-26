@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api from '../api/api';
 import FirmaCanvas from './FirmaCanvas';
+import { RelazioneVocaleALL } from './RelazioneVocaleALL';
 
 interface Props { patient: { _id: string; firstName: string; lastName: string }; workPlan?: { _id: string; type?: string; category?: string } | null; onClose: () => void; }
 const argomenti = ['Nutrizione e idratazione', 'Eliminazione', 'Medicazione', 'Igiene / lavaggio personale', 'Mobilizzazione e prevenzione cadute', 'Terapia farmacologica', 'Gestione presidi sanitari', 'Prevenzione lesioni da pressione', 'Altro'];
@@ -13,21 +14,8 @@ export function FormazioneSanitariaModal({ patient, workPlan, onClose }: Props) 
   const [relazione, setRelazione] = useState('');
   const [dataIntervento, setDataIntervento] = useState(new Date().toISOString().slice(0, 10));
   const [firma, setFirma] = useState('');
-  const [loadingAll, setLoadingAll] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-
-  const generaAll = async () => {
-    setLoadingAll(true); setError('');
-    try {
-      const res = await api.post(`/reports/patient/${patient._id}`, { scope: 'category', category: workPlan?.category, workPlanType: workPlan?.type });
-      const testo = res.data.report || '';
-      setRelazione(`${tipoScheda === 'formazione_educazione' ? 'Intervento di formazione/educazione sanitaria' : 'Valutazione della formazione/educazione sanitaria'} su: ${argomento || 'argomento da specificare'}.
-
-${testo}`);
-    } catch (err: any) { setError(err.response?.data?.message || 'Impossibile generare la relazione ALL.'); }
-    finally { setLoadingAll(false); }
-  };
 
   const salva = async () => {
     if (!personaFormata.trim() || !argomento || !relazione.trim() || !firma) { setError('Compilare persona formata, argomento, relazione e firma.'); return; }
@@ -53,7 +41,7 @@ ${testo}`);
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}><label>Tipo scheda<select value={tipoScheda} onChange={e => setTipoScheda(e.target.value as typeof tipoScheda)} style={{ display: 'block', width: '100%', padding: '9px', border: '1px solid #cbd5e1', borderRadius: '6px' }}><option value="formazione_educazione">Formazione / educazione sanitaria</option><option value="valutazione_formazione">Valutazione della formazione</option></select></label><label>Data<input type="date" value={dataIntervento} onChange={e => setDataIntervento(e.target.value)} style={{ display: 'block', width: '100%', boxSizing: 'border-box', padding: '9px', border: '1px solid #cbd5e1', borderRadius: '6px' }} /></label></div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '12px' }}><label>Chi è stato formato / valutato<input value={personaFormata} onChange={e => setPersonaFormata(e.target.value)} placeholder="Nome e cognome" style={{ display: 'block', width: '100%', boxSizing: 'border-box', padding: '9px', border: '1px solid #cbd5e1', borderRadius: '6px' }} /></label><label>Ruolo<select value={ruolo} onChange={e => setRuolo(e.target.value as typeof ruolo)} style={{ display: 'block', width: '100%', padding: '9px', border: '1px solid #cbd5e1', borderRadius: '6px' }}><option value="paziente">Paziente</option><option value="caregiver">Caregiver</option><option value="familiare">Familiare</option><option value="altro">Altro</option></select></label></div>
       <label style={{ display: 'block', marginTop: '12px', fontWeight: 600 }}>Tipologia di formazione / educazione<select value={argomento} onChange={e => setArgomento(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '5px', padding: '9px', border: '1px solid #cbd5e1', borderRadius: '6px' }}><option value="">Seleziona argomento</option>{argomenti.map(x => <option key={x}>{x}</option>)}</select></label>
-      <div style={{ marginTop: '14px' }}><strong>Relazione</strong><div><button type="button" onClick={generaAll} disabled={loadingAll} style={{ margin: '8px 0', padding: '9px 12px', cursor: 'pointer', border: '1px solid #7c3aed', borderRadius: '6px', background: '#f5f3ff', color: '#6d28d9', fontWeight: 700 }}>{loadingAll ? 'ALL in elaborazione...' : '✨ ALL - Genera relazione'}</button></div><textarea value={relazione} onChange={e => setRelazione(e.target.value)} rows={9} placeholder="Descrivere contenuti trattati, comprensione, dimostrazione e eventuali criticità." style={{ width: '100%', boxSizing: 'border-box', padding: '10px', border: '1px solid #64748b', borderRadius: '6px' }} /></div>
+      <div style={{ marginTop: '14px' }}><strong>Relazione</strong><div><RelazioneVocaleALL contesto={`${tipoScheda === 'formazione_educazione' ? 'Formazione ed educazione sanitaria' : 'Valutazione della formazione sanitaria'}. Persona: ${personaFormata}. Ruolo: ${ruolo}. Argomento: ${argomento}.`} onRelazione={setRelazione} onError={setError} /></div><textarea value={relazione} onChange={e => setRelazione(e.target.value)} rows={9} placeholder="Descrivere contenuti trattati, comprensione, dimostrazione e eventuali criticità." style={{ width: '100%', boxSizing: 'border-box', padding: '10px', border: '1px solid #64748b', borderRadius: '6px' }} /></div>
       <FirmaCanvas label="Firma finale dell’operatore" sublabel="Firma con dito o penna per archiviare la scheda" onFirmaCompleta={setFirma} onCancella={() => setFirma('')} altezza={135} />
       <div style={{ display: 'flex', gap: '10px' }}><button type="button" onClick={onClose} style={{ flex: 1, padding: '11px', cursor: 'pointer', border: '1px solid #cbd5e1', borderRadius: '7px' }}>Annulla</button><button type="button" onClick={salva} disabled={saving} style={{ flex: 2, padding: '11px', cursor: 'pointer', border: 0, borderRadius: '7px', background: '#0e7490', color: 'white', fontWeight: 700 }}>{saving ? 'Archiviazione...' : 'Archivia e genera PDF'}</button></div>
     </div>

@@ -1,6 +1,7 @@
 import { ChangeEvent, useState } from 'react';
 import api from '../api/api';
 import FirmaCanvas from './FirmaCanvas';
+import { RelazioneVocaleALL } from './RelazioneVocaleALL';
 
 interface Props {
   patient: { _id: string; firstName: string; lastName: string };
@@ -18,7 +19,6 @@ export function RiformulazionePAIModal({ patient, workPlan, onClose }: Props) {
   const [relazione, setRelazione] = useState('');
   const [allegati, setAllegati] = useState<Allegato[]>([]);
   const [firma, setFirma] = useState('');
-  const [loadingAll, setLoadingAll] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -31,16 +31,6 @@ export function RiformulazionePAIModal({ patient, workPlan, onClose }: Props) {
       setAllegati(prev => prev.length < 5 ? [...prev, { nome: file.name, tipo: file.type || 'application/octet-stream', dati }] : prev);
     }
     event.target.value = '';
-  };
-
-  const generaAll = async () => {
-    setLoadingAll(true); setError('');
-    try {
-      const body: any = { scope: prestazione === 'Tutte le prestazioni' ? 'all' : 'category', category: prestazione === 'Tutte le prestazioni' ? undefined : prestazione, workPlanType: workPlan?.type };
-      const res = await api.post(`/reports/patient/${patient._id}`, body);
-      setRelazione(res.data.report || '');
-    } catch (err: any) { setError(err.response?.data?.message || 'Impossibile generare la relazione ALL.'); }
-    finally { setLoadingAll(false); }
   };
 
   const salva = async () => {
@@ -69,7 +59,7 @@ export function RiformulazionePAIModal({ patient, workPlan, onClose }: Props) {
       <p><strong>Paziente:</strong> {patient.firstName} {patient.lastName}</p>{error && <p style={{ color: '#b91c1c', background: '#fef2f2', padding: '9px', borderRadius: '6px' }}>{error}</p>}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}><label>Tipo scheda<select value={tipo} onChange={e => setTipo(e.target.value as typeof tipo)} style={{ display: 'block', width: '100%', padding: '9px', border: '1px solid #cbd5e1', borderRadius: '6px' }}><option value="riformulazione">Riformulazione PAI</option><option value="rinnovo">Rinnovo PAI</option></select></label><label>Filtro prestazione<select value={prestazione} onChange={e => setPrestazione(e.target.value)} style={{ display: 'block', width: '100%', padding: '9px', border: '1px solid #cbd5e1', borderRadius: '6px' }}>{tipiPrestazione.map(x => <option key={x}>{x}</option>)}</select></label></div>
       <label style={{ display: 'block', marginTop: '14px', fontWeight: 600 }}>Motivazioni<textarea value={motivazioni} onChange={e => setMotivazioni(e.target.value)} rows={4} placeholder="Indicare variazione clinica, obiettivi, bisogni, frequenza o tipologia della prestazione" style={{ display: 'block', width: '100%', boxSizing: 'border-box', marginTop: '5px', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '6px' }} /></label>
-      <div style={{ marginTop: '14px' }}><strong>Relazione verbale per ASL / Medico di Medicina Generale</strong><div><button type="button" onClick={generaAll} disabled={loadingAll} style={{ margin: '8px 0', padding: '9px 12px', cursor: 'pointer', border: '1px solid #7c3aed', borderRadius: '6px', background: '#f5f3ff', color: '#6d28d9', fontWeight: 700 }}>{loadingAll ? 'ALL in elaborazione...' : '✨ ALL - Genera relazione'}</button></div><textarea value={relazione} onChange={e => setRelazione(e.target.value)} rows={9} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', border: '1px solid #64748b', borderRadius: '6px' }} /></div>
+      <div style={{ marginTop: '14px' }}><strong>Relazione verbale per ASL / Medico di Medicina Generale</strong><div><RelazioneVocaleALL contesto={`Riformulazione o rinnovo PAI. Prestazione: ${prestazione}. Motivazioni: ${motivazioni}.`} onRelazione={setRelazione} onError={setError} /></div><textarea value={relazione} onChange={e => setRelazione(e.target.value)} rows={9} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', border: '1px solid #64748b', borderRadius: '6px' }} /></div>
       <div style={{ marginTop: '16px', padding: '12px', border: '1px dashed #94a3b8', borderRadius: '7px' }}><strong>Foto e documentazione</strong><p style={{ fontSize: '.82rem', margin: '5px 0' }}>Puoi scattare foto con la fotocamera o allegare fino a cinque file da 4 MB ciascuno.</p><input type="file" accept="image/*" capture="environment" multiple onChange={aggiungiFile} /><input type="file" accept="image/*,application/pdf,.doc,.docx" multiple onChange={aggiungiFile} style={{ marginLeft: '8px' }} />{allegati.length > 0 && <ul>{allegati.map((a, i) => <li key={`${a.nome}-${i}`}>{a.nome} <button type="button" onClick={() => setAllegati(prev => prev.filter((_, n) => n !== i))} style={{ color: '#b91c1c', border: 0, background: 'none', cursor: 'pointer' }}>✕</button></li>)}</ul>}</div>
       <FirmaCanvas label="Firma del coordinatore" sublabel="Firma obbligatoria per archiviare la scheda" onFirmaCompleta={setFirma} onCancella={() => setFirma('')} altezza={135} />
       <div style={{ display: 'flex', gap: '10px' }}><button type="button" onClick={onClose} style={{ flex: 1, padding: '11px', cursor: 'pointer', border: '1px solid #cbd5e1', borderRadius: '7px' }}>Annulla</button><button type="button" onClick={salva} disabled={saving} style={{ flex: 2, padding: '11px', cursor: 'pointer', border: 0, borderRadius: '7px', color: 'white', background: '#1e4d8c', fontWeight: 700 }}>{saving ? 'Archiviazione...' : 'Archivia e genera PDF'}</button></div>

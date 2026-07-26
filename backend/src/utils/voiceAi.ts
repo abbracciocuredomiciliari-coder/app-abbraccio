@@ -190,6 +190,26 @@ export async function generateMeetingMinutes(transcript: string, context: { tito
   return String(data.choices?.[0]?.message?.content || '').trim();
 }
 
+export async function generateProfessionalRelation(transcript: string, context: string): Promise<string> {
+  if (!isVoiceAiAvailable()) throw new Error('GROQ_API_KEY non configurata');
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: LLM_MODEL,
+      temperature: 0.15,
+      max_tokens: 2200,
+      messages: [
+        { role: 'system', content: 'Rielabora una dettatura in una relazione sanitaria professionale in italiano. Mantieni esclusivamente informazioni presenti nella dettatura, senza inventare dati. Usa un linguaggio chiaro, oggettivo e strutturato in paragrafi. Restituisci solo il testo della relazione, senza premesse.' },
+        { role: 'user', content: `Contesto: ${context}\n\nDettatura:\n${transcript}` },
+      ],
+    }),
+  });
+  if (!res.ok) throw new Error(`Groq LLM error ${res.status}: ${await res.text()}`);
+  const data: any = await res.json();
+  return String(data.choices?.[0]?.message?.content || '').trim();
+}
+
 function cleanNumericRecord(input: unknown): Record<string, number> | undefined {
   if (!input || typeof input !== 'object') return undefined;
   const out: Record<string, number> = {};
