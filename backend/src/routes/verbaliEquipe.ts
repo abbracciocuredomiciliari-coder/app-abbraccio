@@ -107,7 +107,12 @@ router.post('/:id/generate-minutes', auditLog('verbali_equipe', 'UPDATE', req =>
     if (!canManage(req)) return res.status(403).json({ message: 'Solo coordinatori, direzione e admin possono generare il verbale' });
     const verbale = await VerbaleEquipe.findById(req.params.id);
     if (!verbale?.trascrizione) return res.status(400).json({ message: 'Prima termina la registrazione e verifica la trascrizione' });
-    verbale.verbale = await generateMeetingMinutes(verbale.trascrizione, { titolo: verbale.titolo, ordineDelGiorno: verbale.ordineDelGiorno });
+    verbale.verbale = await generateMeetingMinutes(verbale.trascrizione, {
+      titolo: verbale.titolo,
+      ordineDelGiorno: verbale.ordineDelGiorno,
+      partecipanti: verbale.partecipanti.map(p => p.nome).join(', '),
+      presenzeConfermate: verbale.partecipanti.filter(p => p.confermatoIl).map(p => p.nome).join(', '),
+    });
     await verbale.save();
     return res.json(verbale);
   } catch (error: any) { return res.status(500).json({ message: 'Errore generazione verbale', error: error.message }); }

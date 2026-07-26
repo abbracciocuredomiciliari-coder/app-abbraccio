@@ -170,7 +170,7 @@ export async function extractDiarioData(
   };
 }
 
-export async function generateMeetingMinutes(transcript: string, context: { titolo: string; ordineDelGiorno: string }): Promise<string> {
+export async function generateMeetingMinutes(transcript: string, context: { titolo: string; ordineDelGiorno: string; partecipanti?: string; presenzeConfermate?: string }): Promise<string> {
   if (!isVoiceAiAvailable()) throw new Error('GROQ_API_KEY non configurata');
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -181,7 +181,7 @@ export async function generateMeetingMinutes(transcript: string, context: { tito
       max_tokens: 3000,
       messages: [
         { role: 'system', content: 'Redigi un verbale professionale di riunione di équipe sanitaria in italiano. Riporta sinteticamente: oggetto, punti discussi, decisioni, azioni assegnate e criticità. Non inventare informazioni e non includere dati non presenti nella trascrizione.' },
-        { role: 'user', content: `Titolo: ${context.titolo}\nOrdine del giorno: ${context.ordineDelGiorno}\n\nTrascrizione:\n${transcript}` },
+        { role: 'user', content: `Titolo: ${context.titolo}\nOrdine del giorno: ${context.ordineDelGiorno}\nPartecipanti invitati: ${context.partecipanti || 'non indicati'}\nPresenze confermate nel portale: ${context.presenzeConfermate || 'nessuna conferma registrata'}\n\nRedigi il verbale iniziando con una sezione "Partecipanti" che riporti le presenze confermate; se non presenti, riporta gli invitati come partecipanti da verificare.\n\nTrascrizione:\n${transcript}` },
       ],
     }),
   });
