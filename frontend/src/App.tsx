@@ -57,7 +57,7 @@ const GestioneRichieste = lazy(() => import('./pages/GestioneRichieste'));
 const PortalePaziente = lazy(() => import('./pages/PortalePaziente'));
 const RichiestaServizio = lazy(() => import('./pages/RichiestaServizio'));
 const RichiestaAssistenza = lazy(() => import('./pages/RichiestaAssistenza'));
-const VerbaliEquipe = lazy(() => import('./pages/VerbaliEquipe'));
+const VerbaliEquipe = lazy(() => import('./pages/VerbaliEquipeRiunioni'));
 const SchedaServizio = lazy(() => import('./pages/SchedaServizio'));
 import {
   Heart,

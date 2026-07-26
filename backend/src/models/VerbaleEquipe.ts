@@ -5,6 +5,7 @@ interface IPartecipanteVerbale {
   nome: string;
   email: string;
   invitatoIl?: Date;
+  confermatoIl?: Date;
   firma?: string;
   firmatoIl?: Date;
 }
@@ -14,8 +15,12 @@ export interface IVerbaleEquipe extends Document {
   dataRiunione: Date;
   ordineDelGiorno: string;
   stanzaVideo: string;
+  modalita: 'video' | 'presenza';
+  allegato?: { nome: string; url: string; tipo: string };
   partecipanti: IPartecipanteVerbale[];
   confermaInformativaTrascrizione: boolean;
+  registrazioneInCorso: boolean;
+  registrazioneIniziataIl?: Date;
   trascrizione?: string;
   verbale?: string;
   stato: 'bozza' | 'in_firma' | 'firmato';
@@ -30,6 +35,7 @@ const partecipanteSchema = new Schema<IPartecipanteVerbale>({
   nome: { type: String, required: true },
   email: { type: String, required: true },
   invitatoIl: { type: Date },
+  confermatoIl: { type: Date },
   firma: { type: String },
   firmatoIl: { type: Date },
 }, { _id: false });
@@ -39,8 +45,12 @@ const verbaleEquipeSchema = new Schema<IVerbaleEquipe>({
   dataRiunione: { type: Date, required: true },
   ordineDelGiorno: { type: String, required: true, trim: true },
   stanzaVideo: { type: String, required: true, unique: true },
+  modalita: { type: String, enum: ['video', 'presenza'], default: 'video' },
+  allegato: { nome: String, url: String, tipo: String },
   partecipanti: { type: [partecipanteSchema], required: true },
   confermaInformativaTrascrizione: { type: Boolean, default: false },
+  registrazioneInCorso: { type: Boolean, default: false },
+  registrazioneIniziataIl: { type: Date },
   trascrizione: { type: String, trim: true },
   verbale: { type: String, trim: true },
   stato: { type: String, enum: ['bozza', 'in_firma', 'firmato'], default: 'bozza' },
