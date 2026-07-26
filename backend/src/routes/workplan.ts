@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import WorkPlan from '../models/WorkPlan';
 import WorkPlanAccess from '../models/WorkPlanAccess';
 import Staff from '../models/Staff';
+import User from '../models/User';
 import { authenticateToken } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { inviaEmailNuovoPianoDiLavoro } from '../utils/email';
@@ -127,6 +128,47 @@ router.get('/mio-profilo-staff', authenticateToken, async (req: Request, res: Re
     return res.json(staffMember);
   } catch (error) {
     return res.status(500).json({ message: 'Errore nel recupero del profilo staff', error });
+  }
+});
+
+router.patch('/mio-profilo-staff', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const userId = user.id || user.userId;
+    const staffMember = await getStaffByUser(userId, user.email);
+    if (!staffMember) return res.status(404).json({ message: 'Profilo staff non trovato' });
+
+    const firstName = String(req.body.firstName || '').trim();
+    const lastName = String(req.body.lastName || '').trim();
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const phone = String(req.body.phone || '').trim();
+    if (!firstName || !lastName || !email) return res.status(400).json({ message: 'Nome, cognome ed email sono obbligatori' });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ message: 'Inserisci un indirizzo email valido' });
+
+    const account = await User.findById(userId);
+    if (!account) return res.status(404).json({ message: 'Account utente non trovato' });
+    const [emailUserEsistente, emailStaffEsistente] = await Promise.all([
+      User.findOne({ email, _id: { $ne: account._id } }),
+      Staff.findOne({ email, _id: { $ne: staffMember._id } }),
+    ]);
+    if (emailUserEsistente || emailStaffEsistente) return res.status(409).json({ message: 'Questa email è già utilizzata da un altro account' });
+
+    account.firstName = firstName;
+    account.lastName = lastName;
+    account.name = `${firstName} ${lastName}`;
+    account.email = email;
+    account.phone = phone;
+    account.telefono = phone;
+    staffMember.firstName = firstName;
+    staffMember.lastName = lastName;
+    staffMember.email = email;
+    staffMember.phone = phone;
+    await Promise.all([account.save(), staffMember.save()]);
+
+    return res.json({ message: 'Dati personali aggiornati. Al prossimo accesso usa la nuova email.', staff: staffMember });
+  } catch (error: any) {
+    if (error?.code === 11000) return res.status(409).json({ message: 'Questa email è già utilizzata da un altro account' });
+    return res.status(500).json({ message: 'Errore nell\'aggiornamento del profilo', error: error?.message });
   }
 });
 
