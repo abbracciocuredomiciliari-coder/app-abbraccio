@@ -170,6 +170,26 @@ export async function extractDiarioData(
   };
 }
 
+export async function generateMeetingMinutes(transcript: string, context: { titolo: string; ordineDelGiorno: string }): Promise<string> {
+  if (!isVoiceAiAvailable()) throw new Error('GROQ_API_KEY non configurata');
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: LLM_MODEL,
+      temperature: 0.2,
+      max_tokens: 3000,
+      messages: [
+        { role: 'system', content: 'Redigi un verbale professionale di riunione di équipe sanitaria in italiano. Riporta sinteticamente: oggetto, punti discussi, decisioni, azioni assegnate e criticità. Non inventare informazioni e non includere dati non presenti nella trascrizione.' },
+        { role: 'user', content: `Titolo: ${context.titolo}\nOrdine del giorno: ${context.ordineDelGiorno}\n\nTrascrizione:\n${transcript}` },
+      ],
+    }),
+  });
+  if (!res.ok) throw new Error(`Groq LLM error ${res.status}: ${await res.text()}`);
+  const data: any = await res.json();
+  return String(data.choices?.[0]?.message?.content || '').trim();
+}
+
 function cleanNumericRecord(input: unknown): Record<string, number> | undefined {
   if (!input || typeof input !== 'object') return undefined;
   const out: Record<string, number> = {};
