@@ -130,6 +130,23 @@ router.get('/mio-profilo-staff', authenticateToken, async (req: Request, res: Re
   }
 });
 
+router.get('/assignment-status', authenticateToken, authorizeRole('admin', 'coordinator', 'direttore'), async (_req: Request, res: Response) => {
+  try {
+    const assignments = await WorkPlan.find({ status: 'pending' })
+      .populate('patient', 'firstName lastName')
+      .populate('staff', 'firstName lastName role email')
+      .sort({ updatedAt: -1 })
+      .limit(100)
+      .lean();
+    const counts = assignments.reduce((result: Record<string, number>, assignment: any) => {
+      const status = assignment.statoAccettazione || 'in_attesa';
+      result[status] = (result[status] || 0) + 1;
+      return result;
+    }, { in_attesa: 0, accettato: 0, rifiutato: 0 });
+    return res.json({ counts, assignments });
+  } catch (error: any) { return res.status(500).json({ message: 'Errore recupero stato assegnazioni', error: error.message }); }
+});
+
 // Create new workplan item
 router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
   try {
@@ -138,7 +155,11 @@ router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async
     if (body.prestazioni?.length > 0 && !body.staff) {
       body.staff = body.prestazioni[0].staff;
     }
-    const workplan = await WorkPlan.create(body);
+    const workplan = await WorkPlan.create({
+      ...body,
+      statoAccettazione: body.staff ? 'in_attesa' : undefined,
+      storicoAssegnazioni: body.staff ? [{ staff: body.staff, stato: 'assegnato', data: new Date() }] : [],
+    });
 
     // Invia email notifica all'operatore assegnato
     try {
@@ -530,7 +551,7 @@ router.post('/:id/accetta', authenticateToken, async (req: Request, res: Respons
 
     const workplan = await WorkPlan.findById(id)
       .populate('patient', 'firstName lastName')
-      .populate('staff', 'firstName lastName email');
+      .populate('staff', 'firstName lastName email role');
     if (!workplan) {
       return res.status(404).json({ message: 'Incarico non trovato' });
     }
@@ -543,6 +564,7 @@ router.post('/:id/accetta', authenticateToken, async (req: Request, res: Respons
 
     workplan.statoAccettazione = 'accettato';
     workplan.dataAccettazione = new Date();
+    workplan.storicoAssegnazioni = [...(workplan.storicoAssegnazioni || []), { staff: staffDoc._id, stato: 'accettato', data: new Date() }];
     await workplan.save();
 
     return res.json({ message: 'Incarico accettato', workplan });
@@ -562,7 +584,7 @@ router.post('/:id/rifiuta', authenticateToken, async (req: Request, res: Respons
 
     const workplan = await WorkPlan.findById(id)
       .populate('patient', 'firstName lastName')
-      .populate('staff', 'firstName lastName email');
+      .populate('staff', 'firstName lastName email role');
     if (!workplan) {
       return res.status(404).json({ message: 'Incarico non trovato' });
     }
@@ -573,12 +595,28 @@ router.post('/:id/rifiuta', authenticateToken, async (req: Request, res: Respons
       return res.status(403).json({ message: 'Non autorizzato: incarico assegnato ad altro operatore' });
     }
 
-    workplan.statoAccettazione = 'rifiutato';
-    workplan.dataAccettazione = new Date();
-    workplan.motivoRifiuto = motivo || 'Rifiutato dall\'operatore';
-    await workplan.save();
+    const motivoRifiuto = motivo || 'Rifiutato dall\'operatore';
+    const excludedStaffIds = (workplan.storicoAssegnazioni || []).map(item => item.staff.toString());
+    excludedStaffIds.push(staffDoc._id.toString());
+    const candidate = await Staff.findOne({ active: true, role: staffDoc.role, _id: { $nin: excludedStaffIds } }).sort({ updatedAt: 1 });
 
-    return res.json({ message: 'Incarico rifiutato', workplan });
+    workplan.storicoAssegnazioni = [...(workplan.storicoAssegnazioni || []), { staff: staffDoc._id, stato: 'rifiutato', data: new Date(), motivo: motivoRifiuto }];
+    workplan.dataAccettazione = new Date();
+    workplan.motivoRifiuto = motivoRifiuto;
+
+    if (candidate) {
+      workplan.staff = candidate._id as any;
+      workplan.statoAccettazione = 'in_attesa';
+      workplan.storicoAssegnazioni.push({ staff: candidate._id, stato: 'assegnato', data: new Date() } as any);
+      await workplan.save();
+      const patient = (workplan as any).patient;
+      await inviaEmailNuovoPianoDiLavoro(candidate.email, `${candidate.firstName} ${candidate.lastName}`, `${patient?.firstName || ''} ${patient?.lastName || ''}`.trim(), new Date(workplan.date).toLocaleDateString('it-IT'), workplan.task, workplan._id.toString());
+      return res.json({ message: 'Incarico rifiutato e riassegnato automaticamente al prossimo operatore disponibile', workplan, riassegnato: true });
+    }
+
+    workplan.statoAccettazione = 'rifiutato';
+    await workplan.save();
+    return res.json({ message: 'Incarico rifiutato: nessun altro operatore attivo con lo stesso ruolo disponibile', workplan, riassegnato: false });
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore nel rifiuto', error: error?.message });
   }

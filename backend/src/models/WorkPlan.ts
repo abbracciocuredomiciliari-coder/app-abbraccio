@@ -31,6 +31,7 @@ export interface IWorkPlan extends Document {
   statoAccettazione?: 'in_attesa' | 'accettato' | 'rifiutato';
   dataAccettazione?: Date;
   motivoRifiuto?: string;
+  storicoAssegnazioni?: Array<{ staff: Types.ObjectId; stato: 'assegnato' | 'accettato' | 'rifiutato'; data: Date; motivo?: string }>;
   // Pianificazione settimanale
   giorniSettimana?: IGiornoSettimana[];  // giorni attivi con dettagli
   // Compenso operatore
@@ -87,6 +88,12 @@ const workPlanSchema = new Schema<IWorkPlan>(
       enum: ['pending', 'completed', 'cancelled'], 
       default: 'pending' 
     },
+    storicoAssegnazioni: [{
+      staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: true },
+      stato: { type: String, enum: ['assegnato', 'accettato', 'rifiutato'], required: true },
+      data: { type: Date, required: true },
+      motivo: { type: String, trim: true },
+    }],
     tipoCompenso: { type: String, enum: ['orario', 'fisso', 'nessuno'], default: 'nessuno' },
     tariffa: { type: Number, default: 0 },
     compensoTotale: { type: Number, default: 0 },

@@ -904,7 +904,8 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
       ? p.patient?.tipoGestione === 'convenzione'
       : (p.patient?.tipoGestione === 'privato' || !p.patient?.tipoGestione)
   );
-  const pianiAttiviTutti = pianiModalita.filter(p => p.status === 'pending');
+  const pazientiDaAccettare = pianiModalita.filter(p => p.status === 'pending' && p.statoAccettazione === 'in_attesa');
+  const pianiAttiviTutti = pianiModalita.filter(p => p.status === 'pending' && p.statoAccettazione !== 'in_attesa');
   const compensoTotaleGlobale = pianiModalita
     .filter(p => p.tipoCompenso && p.tipoCompenso !== 'nessuno')
     .reduce((sum, p) => sum + (p.compensoTotale || 0), 0);
@@ -917,6 +918,19 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
       <h2>
         {mode === 'piani' ? '📋 Piani Lavorativi' : (pazienteSelezionato || mostraTuttiPiani ? '🏥 Il mio Piano di Lavoro' : '📊 Dashboard')}
       </h2>
+
+      {!pazienteSelezionato && !mostraTuttiPiani && pazientiDaAccettare.length > 0 && (
+        <div style={{ marginBottom: 18, padding: 16, borderRadius: 10, background: '#eff6ff', border: '1px solid #93c5fd' }}>
+          <h3 style={{ margin: '0 0 6px', color: '#1d4ed8' }}>📋 Pazienti da accettare ({pazientiDaAccettare.length})</h3>
+          <p style={{ margin: '0 0 12px', color: '#475569', fontSize: '.9rem' }}>Accetta o rifiuta l'incarico prima di accedere ai dati del paziente.</p>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {pazientiDaAccettare.map(piano => <div key={piano._id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: 'white', borderRadius: 8, padding: '10px 12px' }}>
+              <div><strong>{piano.patient?.firstName} {piano.patient?.lastName}</strong><br /><small>{piano.task} · {new Date(piano.date).toLocaleDateString('it-IT')}</small></div>
+              <button onClick={() => { setPianoDaAccettare(piano); setMostraModalAccettazione(true); }} style={{ padding: '8px 11px', background: '#1d4ed8', color: 'white', border: 0, borderRadius: 6, fontWeight: 700, cursor: 'pointer' }}>Apri richiesta</button>
+            </div>)}
+          </div>
+        </div>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════════════
           MODAL ACCETTAZIONE INCARICO (da email)

@@ -57,6 +57,7 @@ function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [unreadChat, setUnreadChat] = useState({ general: 0, patient: 0, total: 0 });
+  const [assignmentCounts, setAssignmentCounts] = useState({ in_attesa: 0, accettato: 0, rifiutato: 0 });
 
   // Alert PAI in scadenza
   const [paiScadenza, setPaiScadenza] = useState<PazienteScadenza[]>([]);
@@ -85,6 +86,12 @@ function Dashboard() {
           const unreadRes = await api.get('/messages/unread-count');
           setUnreadChat(unreadRes.data || { general: 0, patient: 0, total: 0 });
         } catch { /* non bloccante */ }
+        if (isPrivilegiato) {
+          try {
+            const assignmentsRes = await api.get('/workplan/assignment-status');
+            setAssignmentCounts(assignmentsRes.data.counts || { in_attesa: 0, accettato: 0, rifiutato: 0 });
+          } catch { /* non bloccante */ }
+        }
         // Conta utenti pending (solo admin)
         if (user?.role === 'admin') {
           try {
@@ -150,6 +157,15 @@ function Dashboard() {
       bgColor: 'rgba(79, 70, 229, 0.1)',
       link: '/patients',
     },
+    ...(isPrivilegiato ? [{
+      title: 'Pazienti assegnati',
+      subtitle: `${assignmentCounts.in_attesa} in attesa · ${assignmentCounts.accettato} accettati · ${assignmentCounts.rifiutato} rifiutati`,
+      value: assignmentCounts.in_attesa,
+      icon: ClipboardList,
+      color: assignmentCounts.in_attesa > 0 ? '#dc2626' : '#2563eb',
+      bgColor: assignmentCounts.in_attesa > 0 ? 'rgba(220, 38, 38, 0.1)' : 'rgba(37, 99, 235, 0.1)',
+      link: '/workplan',
+    }] : []),
     {
       title: unreadChat.total > 0 ? 'Chat non lette' : 'Chat',
       subtitle: unreadChat.total > 0

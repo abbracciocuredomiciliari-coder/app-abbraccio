@@ -77,6 +77,9 @@ router.post('/:workPlanId/entrata', authenticateToken, async (req: Request, res:
     if (!workPlan) {
       return res.status(404).json({ message: 'Piano di lavoro non trovato' });
     }
+    if (!['admin', 'coordinator', 'direttore'].includes(user.role) && workPlan.statoAccettazione === 'in_attesa') {
+      return res.status(403).json({ message: 'Accetta prima l\'incarico dal portale operatore.' });
+    }
 
     // Cerca il profilo staff corrispondente all'utente loggato
     const staffMember = await getStaffByUser(user.userId, user.email);
@@ -241,11 +244,15 @@ router.get('/piano/:workPlanId/info', authenticateToken, async (req: Request, re
       return res.status(404).json({ message: 'Piano di lavoro non trovato' });
     }
 
+    const user = (req as any).user;
+    if (!['admin', 'coordinator', 'direttore'].includes(user.role) && workPlan.statoAccettazione === 'in_attesa') {
+      return res.status(403).json({ message: 'Accetta prima l\'incarico dal portale operatore.' });
+    }
+
     const accessi = await WorkPlanAccess.find({ workPlan: workPlanId })
       .sort({ oraEntrata: -1 })
       .limit(20);
 
-    const user = (req as any).user;
     const staffMember = await getStaffByUser(user.userId, user.email);
 
     const accessoApertoUtente = await WorkPlanAccess.findOne({
