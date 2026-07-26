@@ -6,7 +6,7 @@ import Staff from '../models/Staff';
 import User from '../models/User';
 import { authenticateToken } from '../middleware/auth';
 import { auditLog } from '../middleware/audit';
-import { generateMeetingMinutes, isVoiceAiAvailable, transcribeAudio } from '../utils/voiceAI';
+import { generateMeetingMinutes, isVoiceAiAvailable, transcribeAudio } from '../utils/voiceAi';
 import { inviaEmail } from '../utils/email';
 
 const router = Router();
