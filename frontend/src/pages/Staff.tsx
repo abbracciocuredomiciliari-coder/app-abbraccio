@@ -20,6 +20,7 @@ import {
   LogOut,
   CheckCircle,
   UserX,
+  Pencil,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -107,6 +108,9 @@ function Staff() {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [staffInModifica, setStaffInModifica] = useState<StaffMember | null>(null);
+  const [modificaForm, setModificaForm] = useState({ firstName: '', lastName: '', email: '', phone: '', role: '', category: 'infermieristico' as StaffMember['category'], note: '', modalitaAbilitata: 'entrambi' as 'entrambi' | 'privato' | 'convenzione' });
+  const [salvataggioModifica, setSalvataggioModifica] = useState(false);
 
   // Document management state
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
@@ -240,6 +244,29 @@ function Staff() {
   const handleInputChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const apriModificaStaff = (staff: StaffMember) => {
+    setStaffInModifica(staff);
+    setModificaForm({ firstName: staff.firstName, lastName: staff.lastName, email: staff.email, phone: staff.phone || '', role: staff.role, category: staff.category, note: staff.note || '', modalitaAbilitata: staff.modalitaAbilitata || 'entrambi' });
+    setError('');
+  };
+
+  const salvaModificaStaff = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!staffInModifica) return;
+    setSalvataggioModifica(true);
+    setError('');
+    try {
+      await api.put(`/staff/${staffInModifica._id}`, modificaForm);
+      setStaffInModifica(null);
+      setSuccess('Dati dell’operatore aggiornati. Se è cambiata l’email, l’operatore dovrà usare il nuovo indirizzo dal prossimo accesso.');
+      await loadStaff();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Impossibile aggiornare i dati dell’operatore.');
+    } finally {
+      setSalvataggioModifica(false);
+    }
   };
 
   const openDocumentsModal = async (staff: StaffMember) => {
@@ -864,6 +891,16 @@ function Staff() {
                         <option value="convenzione">🏥 Solo SIAT</option>
                       </select>
                     )}
+                    {canEdit && (
+                      <button
+                        onClick={() => apriModificaStaff(staff)}
+                        style={{ background: '#1e4d8c' }}
+                        title="Modifica dati operatore"
+                      >
+                        <Pencil size={16} />
+                        Modifica
+                      </button>
+                    )}
                     <button
                       onClick={() => openProfiloPdf(staff)}
                       style={{ background: '#2563eb' }}
@@ -912,6 +949,25 @@ function Staff() {
           </ul>
         )}
       </div>
+
+      <Modal isOpen={Boolean(staffInModifica)} onClose={() => setStaffInModifica(null)} title="Modifica dati operatore" size="lg">
+        {staffInModifica && <form onSubmit={salvaModificaStaff} style={{ display: 'grid', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <label>Nome *<input required value={modificaForm.firstName} onChange={e => setModificaForm(f => ({ ...f, firstName: e.target.value }))} /></label>
+            <label>Cognome *<input required value={modificaForm.lastName} onChange={e => setModificaForm(f => ({ ...f, lastName: e.target.value }))} /></label>
+          </div>
+          <label>Email di accesso *<input type="email" required value={modificaForm.email} onChange={e => setModificaForm(f => ({ ...f, email: e.target.value }))} /></label>
+          <label>Telefono<input type="tel" value={modificaForm.phone} onChange={e => setModificaForm(f => ({ ...f, phone: e.target.value }))} /></label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <label>Categoria<select value={modificaForm.category} onChange={e => setModificaForm(f => ({ ...f, category: e.target.value as StaffMember['category'], role: rolesByCategory[e.target.value]?.includes(f.role) ? f.role : '' }))}>{categories.map(category => <option key={category.value} value={category.value}>{category.label}</option>)}</select></label>
+            <label>Ruolo *<select required value={modificaForm.role} onChange={e => setModificaForm(f => ({ ...f, role: e.target.value }))}><option value="">Seleziona ruolo</option>{rolesByCategory[modificaForm.category].map(role => <option key={role} value={role}>{role}</option>)}</select></label>
+          </div>
+          <label>Modalità abilitata<select value={modificaForm.modalitaAbilitata} onChange={e => setModificaForm(f => ({ ...f, modalitaAbilitata: e.target.value as 'entrambi' | 'privato' | 'convenzione' }))}><option value="entrambi">Entrambi</option><option value="privato">Solo privati</option><option value="convenzione">Solo SIAT</option></select></label>
+          <label>Note<textarea value={modificaForm.note} onChange={e => setModificaForm(f => ({ ...f, note: e.target.value }))} rows={3} /></label>
+          <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>La modifica dell’email aggiorna anche l’account di accesso dell’operatore.</p>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}><Button type="button" variant="secondary" onClick={() => setStaffInModifica(null)}>Annulla</Button><Button type="submit" disabled={salvataggioModifica}>{salvataggioModifica ? 'Salvataggio...' : 'Salva modifiche'}</Button></div>
+        </form>}
+      </Modal>
 
       {/* Documents Modal */}
       {showDocumentsModal && selectedStaff && (

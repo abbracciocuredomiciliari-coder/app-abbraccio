@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import Staff from '../models/Staff';
+import User from '../models/User';
 import StaffDocument from '../models/StaffDocument';
 import { authenticateToken } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
@@ -121,10 +122,19 @@ router.put('/:staffId', authenticateToken, authorizeRole('admin', 'coordinator')
     const staffId = req.params.staffId;
     const { firstName, lastName, email, role, category, phone, note, modalitaAbilitata, domicilioPartenza, raggioAzioneKm, domicilioCoords } = req.body;
     
+    const staffCurrent = await Staff.findById(staffId);
+    if (!staffCurrent) return res.status(404).json({ message: 'Membro dello staff non trovato' });
+
     const updateData: any = {};
     if (firstName) updateData.firstName = firstName.trim();
     if (lastName) updateData.lastName = lastName.trim();
-    if (email) updateData.email = email.trim().toLowerCase();
+    if (email) {
+      const normalizedEmail = email.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) return res.status(400).json({ message: 'Inserisci un indirizzo email valido' });
+      const duplicateStaff = await Staff.findOne({ email: normalizedEmail, _id: { $ne: staffCurrent._id } });
+      if (duplicateStaff) return res.status(409).json({ message: 'Questa email è già utilizzata da un altro operatore' });
+      updateData.email = normalizedEmail;
+    }
     if (role) updateData.role = role;
     if (category && ['infermieristico', 'oss', 'riabilitativo', 'medico', 'coordinamento', 'direzione'].includes(category)) {
       updateData.category = category;
@@ -138,13 +148,27 @@ router.put('/:staffId', authenticateToken, authorizeRole('admin', 'coordinator')
     if (raggioAzioneKm !== undefined) updateData.raggioAzioneKm = Number(raggioAzioneKm);
     if (domicilioCoords?.lat !== undefined) updateData.domicilioCoords = domicilioCoords;
 
+    const account = staffCurrent.userId
+      ? await User.findById(staffCurrent.userId)
+      : await User.findOne({ email: staffCurrent.email });
+    if (account && updateData.email) {
+      const duplicateUser = await User.findOne({ email: updateData.email, _id: { $ne: account._id } });
+      if (duplicateUser) return res.status(409).json({ message: 'Questa email è già utilizzata da un altro account' });
+    }
+
     const staffMember = await Staff.findByIdAndUpdate(staffId, updateData, { new: true });
-    if (!staffMember) {
-      return res.status(404).json({ message: 'Membro dello staff non trovato' });
+    if (account) {
+      if (updateData.firstName) account.firstName = updateData.firstName;
+      if (updateData.lastName) account.lastName = updateData.lastName;
+      if (updateData.firstName || updateData.lastName) account.name = `${updateData.firstName || account.firstName || ''} ${updateData.lastName || account.lastName || ''}`.trim() || account.name;
+      if (updateData.email) account.email = updateData.email;
+      if (phone !== undefined) { account.phone = updateData.phone; account.telefono = updateData.phone; }
+      await account.save();
     }
     return res.json(staffMember);
-  } catch (error) {
-    return res.status(500).json({ message: 'Errore durante l\'aggiornamento del personale', error });
+  } catch (error: any) {
+    if (error?.code === 11000) return res.status(409).json({ message: 'Questa email è già utilizzata da un altro account' });
+    return res.status(500).json({ message: 'Errore durante l\'aggiornamento del personale', error: error?.message });
   }
 });
 

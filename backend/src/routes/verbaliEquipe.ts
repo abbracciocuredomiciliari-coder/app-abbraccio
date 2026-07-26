@@ -148,6 +148,23 @@ router.patch('/:id', auditLog('verbali_equipe', 'UPDATE', req => req.params.id),
   } catch (error: any) { return res.status(500).json({ message: 'Errore aggiornamento verbale', error: error.message }); }
 });
 
+router.delete('/:id', auditLog('verbali_equipe', 'DELETE', req => req.params.id), async (req: Request, res: Response) => {
+  try {
+    if (!canManage(req)) return res.status(403).json({ message: 'Solo coordinatori, direzione e admin possono eliminare una riunione' });
+    const verbale = await VerbaleEquipe.findById(req.params.id);
+    if (!verbale) return res.status(404).json({ message: 'Verbale non trovato' });
+    if (verbale.stato !== 'bozza' || verbale.partecipanti.some(p => Boolean(p.firma))) return res.status(400).json({ message: 'Possono essere eliminate solo riunioni in bozza senza firme' });
+    if (verbale.registrazioneInCorso) return res.status(400).json({ message: 'Termina prima la registrazione in corso' });
+    if (verbale.allegato?.url) {
+      const filename = path.basename(verbale.allegato.url);
+      const filePath = path.join(documentDirectory, filename);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
+    await verbale.deleteOne();
+    return res.json({ message: 'Riunione eliminata' });
+  } catch (error: any) { return res.status(500).json({ message: 'Errore eliminazione riunione', error: error.message }); }
+});
+
 router.post('/:id/request-signatures', auditLog('verbali_equipe', 'UPDATE', req => req.params.id), async (req: Request, res: Response) => {
   try {
     if (!canManage(req)) return res.status(403).json({ message: 'Solo coordinatori, direzione e admin possono richiedere le firme' });
