@@ -278,6 +278,7 @@ export async function inviaEmailNuovaRichiestaPrenotazione(
     prelievo: '💉 Prelievo',
     esame_strumentale: '🔬 Esame Strumentale',
     prestazione: '🏥 Prestazione',
+    psicologia: '🧠 Terapia psicologica',
     assistenza: '🤝 Assistenza'
   };
 
@@ -402,6 +403,7 @@ export async function inviaEmailConfermaPrenotazione(
     prelievo: '💉 Prelievo',
     esame_strumentale: '🔬 Esame Strumentale',
     prestazione: '🏥 Prestazione',
+    psicologia: '🧠 Terapia psicologica',
     assistenza: '🤝 Assistenza'
   };
 

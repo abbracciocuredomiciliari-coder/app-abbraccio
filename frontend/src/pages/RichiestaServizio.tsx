@@ -22,6 +22,8 @@ const TIPI_SERVIZIO = [
     tipi: ['Fisioterapia','Logopedia','Ergoterapia','Neuro-riabilitazione','Riabilitazione respiratoria','Altro'] },
   { value: 'medico', label: 'Visita Medica', emoji: '👨‍⚕️', color: '#2563eb', bg: '#dbeafe', Icon: HeartPulse,
     tipi: ['Visita generale','Visita specialista','Consulenza geriatrica','Valutazione clinica','Prescrizione terapia','Altro'] },
+  { value: 'psicologia', label: 'Terapia psicologica', emoji: '🧠', color: '#9333ea', bg: '#f3e8ff', Icon: HeartPulse,
+    tipi: ['Primo colloquio psicologico','Seduta individuale','Supporto psicologico al caregiver','Valutazione psicodiagnostica','Altro'] },
 ];
 
 const PRIORITA = [

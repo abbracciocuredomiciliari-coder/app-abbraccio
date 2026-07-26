@@ -184,6 +184,7 @@ const CATALOGO_PRESTAZIONI: CatalogoPrestazione[] = [
   // ── SOCIALI ──
   { value: 'valutazione_sociale',            label: 'Valutazione sociale domiciliare',         categoria: 'sociale', color: '#7c3aed' },
   { value: 'sostegno_psicologico',           label: 'Sostegno psicologico / ascolto attivo',   categoria: 'sociale', color: '#7c3aed' },
+  { value: 'terapia_psicologica',            label: 'Terapia psicologica',                     categoria: 'sociale', color: '#7c3aed' },
   { value: 'attivazione_servizi',            label: 'Attivazione servizi territoriali',        categoria: 'sociale', color: '#7c3aed' },
   { value: 'segretariato_sociale',           label: 'Segretariato sociale / orientamento',     categoria: 'sociale', color: '#7c3aed' },
 ];

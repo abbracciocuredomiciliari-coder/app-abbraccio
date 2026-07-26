@@ -19,6 +19,8 @@ const TIPI_SERVIZIO = [
     tipi: ['ECG','Holter ECG','Holter pressorio','Glicemia capillare','EGA','Spirometria','Ecocardiogramma','Polisonnografia','Titolazione CPAP','Altro'] },
   { value: 'prestazione', label: '🏥 Prestazione Infermieristica', color: '#0369a1', bg: '#eff6ff', Icon: Activity,
     tipi: ['Medicazione','Somministrazione farmaci','Misurazione parametri vitali','Cateterismo','Gestione stomia','Prelievo arterioso','Altro'] },
+  { value: 'psicologia', label: '🧠 Terapia psicologica', color: '#9333ea', bg: '#f3e8ff', Icon: HeartPulse,
+    tipi: ['Primo colloquio psicologico','Seduta individuale','Supporto psicologico al caregiver','Valutazione psicodiagnostica','Altro'] },
 ];
 
 const PRIORITA = [
