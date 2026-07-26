@@ -57,6 +57,7 @@ const GestioneRichieste = lazy(() => import('./pages/GestioneRichieste'));
 const PortalePaziente = lazy(() => import('./pages/PortalePaziente'));
 const RichiestaServizio = lazy(() => import('./pages/RichiestaServizio'));
 const RichiestaAssistenza = lazy(() => import('./pages/RichiestaAssistenza'));
+const VerbaliEquipe = lazy(() => import('./pages/VerbaliEquipe'));
 const SchedaServizio = lazy(() => import('./pages/SchedaServizio'));
 import {
   Heart,
@@ -258,6 +259,10 @@ function AppShell() {
                 <Briefcase size={18} />
                 Richiesta Presidi/Farmaci
               </Link>
+              <Link to="/verbali-equipe" className={isActive('/verbali-equipe') ? 'active' : ''}>
+                <Users size={18} />
+                Verbali équipe
+              </Link>
               <Link to="/profilo-personale" className={isActive('/profilo-personale') ? 'active' : ''}>
                 <UserCircle size={18} />
                 Il mio profilo
@@ -278,6 +283,10 @@ function AppShell() {
                 <MessageCircle size={18} />
                 Chat operatore
                 <ChatBadge />
+              </Link>
+              <Link to="/verbali-equipe" className={isActive('/verbali-equipe') ? 'active' : ''}>
+                <Users size={18} />
+                Verbali équipe
               </Link>
 
               {/* — Clinico — */}
@@ -475,6 +484,8 @@ function AppShell() {
           <Route path="/portale-operatore" element={<ProtectedRoute><PortaleOperatore mode="dashboard" /></ProtectedRoute>} />
           <Route path="/piani-lavorativi" element={<ProtectedRoute><PortaleOperatore mode="piani" /></ProtectedRoute>} />
           <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+          <Route path="/verbali-equipe" element={<ProtectedRoute><VerbaliEquipe /></ProtectedRoute>} />
+          <Route path="/verbali-equipe/:id" element={<ProtectedRoute><VerbaliEquipe /></ProtectedRoute>} />
           <Route path="/profilo-personale" element={<ProtectedRoute><ProfiloPersonale /></ProtectedRoute>} />
           <Route path="/compenso-incarichi" element={<ProtectedRoute><CompensoIncarichi /></ProtectedRoute>} />
           <Route path="/report-consegne" element={<ProtectedRoute><ReportConsegne /></ProtectedRoute>} />
