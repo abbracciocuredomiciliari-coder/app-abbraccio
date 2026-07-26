@@ -10,6 +10,7 @@ export function RelazioneVocaleALL({ contesto, onRelazione, onError }: { contest
   const streamRef = useRef<MediaStream | null>(null);
 
   const start = async () => {
+    if (!window.confirm('Confermi di essere autorizzato alla dettatura? L’audio viene usato solo temporaneamente per trascrivere e creare la relazione, poi non viene archiviato.')) return;
     onError(''); chunksRef.current = [];
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
