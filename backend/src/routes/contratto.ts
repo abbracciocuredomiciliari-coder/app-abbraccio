@@ -6,7 +6,7 @@ import User from '../models/User';
 const router = Router();
 
 // Testo completo del contratto (versione attuale)
-const TESTO_CONTRATTO = `CONTRATTO PROFESSIONISTI
+export const TESTO_CONTRATTO = `CONTRATTO PROFESSIONISTI
 Contratto di prestazione d'opera intellettuale ai sensi degli artt. 2229 e ss. C.C.
 ABBRACCIO CURE DOMICILIARI con sede in Via di S.Maria Ausiliatrice 4B, 00181 (Roma), iscritta con codice fiscale e partita IVA n° 18316251000 , rappresentata dal proprio amministratore Delegato Simona Schembri. PEC abbracciocuredomiciliari@facilepec.com.
 e

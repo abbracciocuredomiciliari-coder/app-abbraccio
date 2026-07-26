@@ -14,6 +14,7 @@ export default function FirmaContratto() {
   const [dataFirma] = useState(new Date().toISOString().split('T')[0]);
   const [luogoFirma, setLuogoFirma] = useState('Roma');
   const [loading, setLoading] = useState(false);
+  const [testoContratto, setTestoContratto] = useState('');
 
   useEffect(() => {
     if (!token) {
@@ -22,6 +23,7 @@ export default function FirmaContratto() {
       return;
     }
     const apiUrl = (import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api').replace(/\/api$/, '');
+    fetch(`${apiUrl}/api/contratto/testo`).then(r => r.json()).then(data => setTestoContratto(data.testo || '')).catch(() => setTestoContratto(''));
     fetch(`${apiUrl}/api/contratto/verifica-token?token=${encodeURIComponent(token)}`)
       .then(r => r.json())
       .then(data => {
@@ -98,16 +100,9 @@ export default function FirmaContratto() {
               </p>
             </div>
 
-            {/* Estratto contratto */}
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', maxHeight: '220px', overflowY: 'auto', fontSize: '0.78rem', color: '#374151', lineHeight: 1.5, marginBottom: '20px' }}>
-              <strong style={{ display: 'block', textAlign: 'center', marginBottom: '8px', fontSize: '0.85rem', color: '#1e4d8c' }}>CONTRATTO DI PRESTAZIONE D'OPERA</strong>
-              <p><strong>TRA:</strong> ABBRACCIO CURE DOMICILIARI S.r.l. (P.IVA 18316251000) — Via S. Maria Ausiliatrice 4B, 00181 Roma</p>
-              <p><strong>E:</strong> {nomeUtente}</p>
-              <p><strong>Oggetto:</strong> Prestazioni professionali in ambito socio-sanitario e assistenza domiciliare.</p>
-              <p><strong>Durata:</strong> 1 anno dalla data di firma, con rinnovo tacito.</p>
-              <p><strong>Corrispettivo:</strong> Da concordare nel piano lavoro, pagamento 30gg fine mese.</p>
-              <p><strong>Privacy:</strong> Impegno riservatezza dati pazienti (GDPR art.28).</p>
-              <p><strong>Recesso:</strong> 30 giorni di preavviso.</p>
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', maxHeight: '420px', overflowY: 'auto', fontSize: '0.78rem', color: '#374151', lineHeight: 1.5, marginBottom: '20px', whiteSpace: 'pre-wrap' }}>
+              <strong style={{ display: 'block', textAlign: 'center', marginBottom: '8px', fontSize: '0.85rem', color: '#1e4d8c' }}>TESTO INTEGRALE DEL CONTRATTO</strong>
+              {testoContratto ? testoContratto.replace(/Il Dr\. ___________________________________/, `Il Dr. ${nomeUtente}`) : 'Caricamento del contratto completo...'}
             </div>
 
             {/* Data e luogo */}

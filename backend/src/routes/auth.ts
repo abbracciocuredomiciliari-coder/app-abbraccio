@@ -6,11 +6,13 @@ import rateLimit from 'express-rate-limit';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
+import PDFDocument from 'pdfkit';
 import User from '../models/User';
 import Staff from '../models/Staff';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
-import { inviaEmailNotificaAdmin, inviaEmailResetPassword } from '../utils/email';
+import { inviaEmail, inviaEmailNotificaAdmin, inviaEmailResetPassword } from '../utils/email';
+import { TESTO_CONTRATTO } from './contratto';
 
 const router = Router();
 const jwtSecret = process.env.JWT_SECRET as string;
@@ -23,7 +25,60 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 const uploadsDir = path.join(__dirname, '../../uploads/documenti-registrazione');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
-} // Ridotto da 30d a 8h per sicurezza dati sanitari
+}
+
+const dataItaliana = (value?: Date | string) => value ? new Date(value).toLocaleDateString('it-IT') : '_____________';
+
+function compilaTestoContratto(user: any) {
+  const dataScadenza = new Date(user.dataFirmaContratto || Date.now());
+  dataScadenza.setFullYear(dataScadenza.getFullYear() + 1);
+  return TESTO_CONTRATTO
+    .replace(/Il Dr\. ___________________________________nato a _____________ il ______________, codice fiscale ___________________-e partita Iva  n° ________________________residente a ______________\. PEC Professionale ___________________________________\./, `Il Dr. ${user.name} nato a ${user.luogoNascita || '_____________'} il ${dataItaliana(user.dataNascita)}, codice fiscale ${user.codiceFiscale || '_________________'}-e partita Iva n° ${user.partitaIva || '______________________'} residente a ${user.indirizzoResidenza || '______________'}. PEC Professionale ${user.pec || '_________________________________'}.`)
+    .replace(/di ____________________  ed è iscritto all'albo professionale dell'Ordine di ______________ numero tessera iscrizione ____________________________;/, `di ${user.professione || '____________________'} ed è iscritto all'albo professionale dell'Ordine di ${user.ordineAlbo || '______________'} numero tessera iscrizione ${user.numeroAlbo || '____________________________'};`)
+    .replace(/____________________ DOMICILIARE/, `${user.professione || '____________________'} DOMICILIARE`)
+    .replace(/dal __________________ al ________________/, `dal ${dataItaliana(user.dataFirmaContratto)} al ${dataItaliana(dataScadenza)}`)
+    .replace(/Letto, confermato e sottoscritto in __________________ il ______________\./, `Letto, confermato e sottoscritto in ${user.luogoFirmaContratto || '_____________'} il ${dataItaliana(user.dataFirmaContratto)}.`)
+    .replace(/Il\/La sottoscritto\/a _________________________ nato\/a a _________________ residente a ____________________ in _____________________________\./, `Il/La sottoscritto/a ${user.name} nato/a a ${user.luogoNascita || '_______________'} residente a ${user.indirizzoResidenza || '__________________'} in ${user.indirizzoResidenza || '_________________________'}.`)
+    .replace(/Il\/La sottoscritto\/a \[OMISSIS\] nato\/a \[OMISSIS\] il residente in \[OMISSIS\] in/, `Il/La sottoscritto/a ${user.name} nato/a a ${user.luogoNascita || '[OMISSIS]'} il ${dataItaliana(user.dataNascita)} residente in ${user.indirizzoResidenza || '[OMISSIS]'} in`)
+    .replace(/- Casella di posta elettronica certificata professionale privata\n- Telefono mobile per reperibilità nr: \n- Autoveicoli:/, `- Casella di posta elettronica certificata professionale privata: ${user.pec || '_________________________'}\n- Telefono mobile per reperibilità nr: ${user.telefono || '_________________________'}\n- Autoveicoli:`)
+    .replace(/Sottoscritto in _______________ il __________________\./g, `Sottoscritto in ${user.luogoFirmaContratto || '_____________'} il ${dataItaliana(user.dataFirmaContratto)}.`);
+}
+
+export async function archiviaPdfContratto(user: any, directory?: string) {
+  const archiveDirectory = directory || path.join(uploadsDir, `contratto_${user._id}`);
+  if (!fs.existsSync(archiveDirectory)) fs.mkdirSync(archiveDirectory, { recursive: true });
+  const fileName = 'contratto_firmato.pdf';
+  const filePath = path.join(archiveDirectory, fileName);
+  await generaPdfContratto(user, filePath);
+  user.contrattoPdfUrl = path.join('documenti-registrazione', path.basename(archiveDirectory), fileName).replace(/\\/g, '/');
+  await user.save();
+  return filePath;
+}
+
+function generaPdfContratto(user: any, outputPath: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const pdf = new PDFDocument({ margin: 45, size: 'A4', bufferPages: true });
+    const output = fs.createWriteStream(outputPath);
+    output.on('finish', resolve);
+    output.on('error', reject);
+    pdf.pipe(output);
+    pdf.fontSize(15).font('Helvetica-Bold').fillColor('#1e4d8c').text('CONTRATTO PROFESSIONISTI', { align: 'center' });
+    pdf.moveDown(0.3).fontSize(9).font('Helvetica').fillColor('#111111').text('Contratto di prestazione d’opera intellettuale ai sensi degli artt. 2229 e ss. C.C.', { align: 'center' });
+    pdf.moveDown(1).fontSize(9).text(compilaTestoContratto(user), { align: 'justify', lineGap: 2 });
+    pdf.moveDown(2).fontSize(11).font('Helvetica-Bold').fillColor('#1e4d8c').text('SOTTOSCRIZIONE DIGITALE');
+    pdf.moveDown(0.5).fontSize(9).font('Helvetica').fillColor('#111111').text(`Professionista: ${user.name}\nLuogo: ${user.luogoFirmaContratto || 'Roma'}\nData: ${dataItaliana(user.dataFirmaContratto)}`);
+    if (user.firmaContratto) {
+      const image = Buffer.from(user.firmaContratto.replace(/^data:image\/png;base64,/, ''), 'base64');
+      pdf.moveDown(0.5).image(image, { fit: [220, 80] });
+    }
+    const pages = pdf.bufferedPageRange();
+    for (let page = 0; page < pages.count; page += 1) {
+      pdf.switchToPage(page);
+      pdf.fontSize(7).fillColor('#6b7280').text(`Contratto firmato digitalmente — ${user.name} — Pagina ${page + 1}/${pages.count}`, 45, 800, { align: 'center', width: 505 });
+    }
+    pdf.end();
+  });
+}
 
 // Rate limiting: max 10 tentativi di login ogni 15 minuti per IP
 const loginLimiter = rateLimit({
@@ -215,6 +270,14 @@ router.post('/register-completo', registerLimiter, upload.fields([
       // Documenti
       documenti,
     });
+
+    const contrattoPdfPath = await archiviaPdfContratto(user, userDir);
+    inviaEmail({
+      to: user.email,
+      subject: '📄 Copia del contratto firmato — Abbraccio Cure Domiciliari',
+      html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px"><h2>Contratto firmato</h2><p>Ciao <strong>${user.name}</strong>,</p><p>in allegato trovi la copia completa del contratto firmato digitalmente e archiviato nei nostri sistemi.</p><p>Conserva questo documento.</p></div>`,
+      attachments: [{ filename: 'contratto_firmato.pdf', path: contrattoPdfPath, contentType: 'application/pdf' }],
+    }).catch(error => console.warn('⚠️ Errore invio copia contratto:', error));
 
     // Invia notifica email all'admin (fire-and-forget, non blocca la risposta)
     inviaEmailNotificaAdmin(user.name, user.email, user.professione || '').catch(emailErr => {

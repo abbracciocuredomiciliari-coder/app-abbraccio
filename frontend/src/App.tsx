@@ -261,7 +261,7 @@ function AppShell() {
               </Link>
               <Link to="/verbali-equipe" className={isActive('/verbali-equipe') ? 'active' : ''}>
                 <Users size={18} />
-                Verbali équipe
+                Riunione Équipe
               </Link>
               <Link to="/profilo-personale" className={isActive('/profilo-personale') ? 'active' : ''}>
                 <UserCircle size={18} />
@@ -286,7 +286,7 @@ function AppShell() {
               </Link>
               <Link to="/verbali-equipe" className={isActive('/verbali-equipe') ? 'active' : ''}>
                 <Users size={18} />
-                Verbali équipe
+                Riunione Équipe
               </Link>
 
               {/* — Clinico — */}

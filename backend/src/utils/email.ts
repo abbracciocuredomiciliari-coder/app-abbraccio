@@ -47,7 +47,7 @@ export async function verificaConnessioneSMTP() {
 }
 
 // ─── Funzione generica di invio ───────────────────────────────────────────────
-async function invia(to: string, subject: string, html: string): Promise<boolean> {
+async function invia(to: string, subject: string, html: string, attachments?: { filename: string; path: string; contentType?: string }[]): Promise<boolean> {
   const transporter = getTransporter();
   if (!transporter) {
     console.warn(`⚠️ Email non inviata a ${to} — SMTP non configurato`);
@@ -60,6 +60,7 @@ async function invia(to: string, subject: string, html: string): Promise<boolean
       to,
       subject,
       html,
+      attachments,
     });
     console.log(`✅ Email inviata a ${to} — messageId: ${info.messageId}`);
     return true;
@@ -80,9 +81,10 @@ export async function inviaEmail(options: {
   subject: string;
   html: string;
   from?: string;
+  attachments?: { filename: string; path: string; contentType?: string }[];
 }): Promise<boolean> {
   // Per ora ignora il campo from (usa default), in futuro può essere esteso
-  return invia(options.to, options.subject, options.html);
+  return invia(options.to, options.subject, options.html, options.attachments);
 }
 
 // ─── Notifica admin — nuova registrazione ─────────────────────────────────────
