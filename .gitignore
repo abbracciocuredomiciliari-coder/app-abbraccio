@@ -42,3 +42,6 @@ coverage
 deploy_vps.py
 ssh_run.py
 .vps_pass
+
+backend/.env.production
+

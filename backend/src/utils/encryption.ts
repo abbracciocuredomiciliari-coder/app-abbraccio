@@ -2,6 +2,7 @@ import crypto from 'crypto';
 
 const SALT = 'abbraccio-field-encryption-salt-v1';
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || process.env.JWT_SECRET;
+const LEGACY_KEY = process.env.JWT_SECRET || ENCRYPTION_KEY;
 const IV_LENGTH = 16;
 const TAG_LENGTH = 16;
 
@@ -48,7 +49,7 @@ export const decrypt = (encryptedText: string): string => {
     try {
       const iv = Buffer.from(parts[0], 'hex');
       const encrypted = parts[1];
-      const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY.slice(0, 32)), iv);
+      const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(LEGACY_KEY.slice(0, 32)), iv);
       let decrypted = decipher.update(encrypted, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
       return decrypted;
