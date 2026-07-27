@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc -p tsconfig.json",
+    "build:prod": "cd ../frontend && npm run build && cd ../backend && npm run build && node scripts/copy-frontend.js",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit"
   },

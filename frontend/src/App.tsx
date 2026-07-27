@@ -60,6 +60,9 @@ const RichiestaServizio = lazy(() => import('./pages/RichiestaServizio'));
 const RichiestaAssistenza = lazy(() => import('./pages/RichiestaAssistenza'));
 const VerbaliEquipe = lazy(() => import('./pages/VerbaliEquipeRiunioni'));
 const SchedaServizio = lazy(() => import('./pages/SchedaServizio'));
+const Telemedicina = lazy(() => import('./pages/Telemedicina'));
+const TelemedicinaSala = lazy(() => import('./pages/TelemedicinaSala'));
+const TelemedicinaPaziente = lazy(() => import('./pages/TelemedicinaPaziente'));
 import {
   Heart,
   LayoutDashboard,
@@ -91,6 +94,7 @@ import {
   Home,
   CalendarCheck,
   MessageCircle,
+  Video,
 } from 'lucide-react';
 
 // Ruoli con accesso completo (admin/coordinamento/direzione)
@@ -221,6 +225,10 @@ function AppShell() {
                 <Calendar size={18} />
                 Prenota Servizio
               </Link>
+              <Link to="/telemedicina-paziente" className={isActive('/telemedicina-paziente') ? 'active' : ''}>
+                <Video size={18} />
+                Telemedicina
+              </Link>
               <Link to="/scheda-servizio" className={isActive('/scheda-servizio') ? 'active' : ''}>
                 <FileText size={18} />
                 Scheda Servizi
@@ -263,6 +271,10 @@ function AppShell() {
               <Link to="/verbali-equipe" className={isActive('/verbali-equipe') ? 'active' : ''}>
                 <Users size={18} />
                 Riunione Équipe
+              </Link>
+              <Link to="/telemedicina" className={isActive('/telemedicina') ? 'active' : ''}>
+                <Video size={18} />
+                Telemedicina
               </Link>
               <Link to="/profilo-personale" className={isActive('/profilo-personale') ? 'active' : ''}>
                 <UserCircle size={18} />
@@ -327,6 +339,10 @@ function AppShell() {
               <Link to="/archivio-cartelle" className={isActive('/archivio-cartelle') ? 'active' : ''}>
                 <Archive size={18} />
                 Archivio cartelle
+              </Link>
+              <Link to="/telemedicina" className={isActive('/telemedicina') ? 'active' : ''}>
+                <Video size={18} />
+                Telemedicina
               </Link>
               <Link to="/relazioni-firmate" className={isActive('/relazioni-firmate') ? 'active' : ''}>
                 <FileText size={18} />
@@ -456,6 +472,7 @@ function AppShell() {
           <Route path="/gestione-richieste" element={<ProtectedRoute><GestioneRichieste /></ProtectedRoute>} />
           <Route path="/centro-prenotazioni-privato" element={<ProtectedRoute><CentroPrenotazioniPrivato /></ProtectedRoute>} />
           <Route path="/portale-paziente" element={<ProtectedRoute><PortalePaziente /></ProtectedRoute>} />
+          <Route path="/telemedicina-paziente" element={<ProtectedRoute><TelemedicinaPaziente /></ProtectedRoute>} />
           <Route path="/scheda-servizio" element={<SchedaServizio />} />
 
           {/* Route condivise (tutti gli utenti autenticati) */}
@@ -488,6 +505,8 @@ function AppShell() {
           <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
           <Route path="/verbali-equipe" element={<ProtectedRoute><VerbaliEquipe /></ProtectedRoute>} />
           <Route path="/verbali-equipe/:id" element={<ProtectedRoute><VerbaliEquipe /></ProtectedRoute>} />
+          <Route path="/telemedicina" element={<ProtectedRoute><Telemedicina /></ProtectedRoute>} />
+          <Route path="/telemedicina/sala" element={<ProtectedRoute><TelemedicinaSala /></ProtectedRoute>} />
           <Route path="/profilo-personale" element={<ProtectedRoute><ProfiloPersonale /></ProtectedRoute>} />
           <Route path="/compenso-incarichi" element={<ProtectedRoute><CompensoIncarichi /></ProtectedRoute>} />
           <Route path="/report-consegne" element={<ProtectedRoute><ReportConsegne /></ProtectedRoute>} />

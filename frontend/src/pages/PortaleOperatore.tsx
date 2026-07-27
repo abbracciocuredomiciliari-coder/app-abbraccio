@@ -12,7 +12,7 @@ import { SchedaDimissioneModal } from '../components/SchedaDimissioneModal';
 import { RiformulazionePAIModal } from '../components/RiformulazionePAIModal';
 import { DatiCliniciADIModal } from '../components/DatiCliniciADIModal';
 import { FormazioneSanitariaModal } from '../components/FormazioneSanitariaModal';
-import { Printer, Eye, CheckCircle, Plus, Calendar, User, Syringe, Clock, FileText, AlertTriangle, X } from 'lucide-react';
+import { Printer, Eye, CheckCircle, Plus, Calendar, User, Syringe, Clock, FileText, AlertTriangle, X, Video } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
 import { Card } from '../components/ui/Card';
@@ -1047,6 +1047,14 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
             >
               <div style={{ fontSize: '0.68rem', color: '#1e4d8c', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Consensi e firme</div>
               <div style={{ fontSize: '1.8rem', lineHeight: 1 }}>✍️</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/telemedicina')}
+              style={{ background: 'rgba(15,118,110,0.07)', border: '1px solid rgba(15,118,110,0.3)', borderRadius: '10px', padding: '14px 10px', textAlign: 'center', cursor: 'pointer', minWidth: 0, overflow: 'hidden' }}
+            >
+              <div style={{ fontSize: '0.68rem', color: '#0f766e', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Telemedicina</div>
+              <div style={{ fontSize: '1.8rem', lineHeight: 1 }}>🎥</div>
             </button>
             {compensoTotaleGlobale > 0 && (
               <button

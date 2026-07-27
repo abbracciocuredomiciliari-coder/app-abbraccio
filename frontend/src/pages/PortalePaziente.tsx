@@ -1,9 +1,10 @@
 import { FormEvent, useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import {
   Syringe, HeartPulse, Activity, Calendar, Clock, Plus, X,
-  CheckCircle, AlertCircle, ChevronLeft, ChevronRight, RefreshCw
+  CheckCircle, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, Video
 } from 'lucide-react';
 
 function getDaysInMonth(y: number, m: number) { return new Date(y, m + 1, 0).getDate(); }
@@ -86,6 +87,7 @@ function CalendarioMese({ year, month, onPrev, onNext, selectedDate, onSelectDat
 
 export default function PortalePaziente() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const today = toISO(new Date());
 
   const [tab, setTab] = useState<'nuova' | 'mie'>('nuova');
@@ -160,6 +162,14 @@ export default function PortalePaziente() {
 
       {error && <div style={{ background: '#fee2e2', border: '1px solid #ef4444', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '8px' }}>⚠️ {error}<button onClick={() => setError('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626' }}>✕</button></div>}
       {success && <div style={{ background: '#dcfce7', border: '1px solid #22c55e', borderRadius: '8px', padding: '12px 14px', marginBottom: '14px', color: '#15803d' }}>✅ {success}<button onClick={() => setSuccess('')} style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#15803d', float: 'right' }}>✕</button></div>}
+
+      <button onClick={() => navigate('/telemedicina-paziente')} style={{ width: '100%', marginBottom: '20px', padding: '16px', borderRadius: '12px', border: '1px solid rgba(15,118,110,0.3)', background: 'rgba(15,118,110,0.07)', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', textAlign: 'left' }}>
+        <div style={{ background: 'white', borderRadius: '10px', padding: '10px', display: 'flex' }}><Video size={24} color="#0f766e" /></div>
+        <div>
+          <div style={{ fontWeight: 700, color: '#0f766e' }}>Telemedicina</div>
+          <div style={{ fontSize: '0.85rem', color: '#334155' }}>Accedi ai tuoi video-consulti e agli appuntamenti</div>
+        </div>
+      </button>
 
       <div style={{ display: 'flex', gap: '4px', background: '#f1f5f9', borderRadius: '12px', padding: '4px', marginBottom: '20px' }}>
         <button onClick={() => setTab('nuova')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem', background: tab === 'nuova' ? 'white' : 'transparent', color: tab === 'nuova' ? '#1e3a5f' : '#6b7280', boxShadow: tab === 'nuova' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>

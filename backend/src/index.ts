@@ -44,6 +44,7 @@ import riformulazioniPAIRouter from './routes/riformulazioniPAI';
 import formazioneSanitariaRouter from './routes/formazioneSanitaria';
 import verbaliEquipeRouter from './routes/verbaliEquipe';
 import relazioniVocaliRouter from './routes/relazioniVocali';
+import telemedicinaRouter from './routes/telemedicina';
 
 if (!process.env.JWT_SECRET) {
   console.error('ERRORE: JWT_SECRET non è impostato. Configurare la variabile d\'ambiente nel file .env prima di avviare il server.');
@@ -173,6 +174,7 @@ app.use('/api/riformulazioni-pai', riformulazioniPAIRouter);
 app.use('/api/formazione-sanitaria', formazioneSanitariaRouter);
 app.use('/api/verbali-equipe', verbaliEquipeRouter);
 app.use('/api/relazioni-vocali', relazioniVocaliRouter);
+app.use('/api/telemedicina', telemedicinaRouter);
 // Alias senza prefisso /api per compatibilità con URL diretti degli allegati
 app.use('/allegati', allegatiRouter);
 
@@ -209,6 +211,14 @@ app.get('/api/test-email', authenticateToken, authorizeRole('admin'), async (req
     return res.status(500).json({ success: false, error: err?.message || String(err) });
   }
 });
+
+// ─── Servizio frontend di produzione ───────────────────────────────────────────
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../public')));
+  app.get('*', (_req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, '../public', 'index.html'));
+  });
+}
 
 // ─── Error handler globale ─────────────────────────────────────────────────
 // Intercetta errori (inclusi multer/Cloudinary) e restituisce JSON
