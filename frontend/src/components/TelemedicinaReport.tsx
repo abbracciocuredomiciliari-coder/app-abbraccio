@@ -50,6 +50,19 @@ export default function TelemedicinaReport({ patients }: { patients: PatientMini
     } catch (err: any) { addToast('Errore esportazione FHIR', 'error'); }
   };
 
+  const scaricaHl7 = async () => {
+    if (!patientId) return;
+    try {
+      const res = await api.get(`/telemedicina/hl7/${patientId}`, { params: { days }, responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'text/plain' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `hl7-${patientId}-${new Date().toISOString().slice(0, 10)}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) { addToast('Errore esportazione HL7', 'error'); }
+  };
+
   return (
     <div className="bg-white border rounded-xl p-5 shadow-sm">
       <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><TrendingUp size={20} /> Report e AI di supporto</h2>
@@ -68,6 +81,7 @@ export default function TelemedicinaReport({ patients }: { patients: PatientMini
             </div>
             <div className="flex gap-2 print:hidden">
               <button onClick={scaricaFhir} className="p-2 border rounded hover:bg-white" title="Esporta FHIR"><Download size={16} /></button>
+              <button onClick={scaricaHl7} className="p-2 border rounded hover:bg-white" title="Esporta HL7 v2.x">HL7</button>
               <button onClick={stampa} className="p-2 border rounded hover:bg-white"><Printer size={16} /></button>
             </div>
           </div>

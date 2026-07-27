@@ -11,11 +11,13 @@ import AlertTelemedicina from '../models/AlertTelemedicina';
 import SogliaTelemedicina from '../models/SogliaTelemedicina';
 import ProtocolloTelemedicina from '../models/ProtocolloTelemedicina';
 import PacchettoTelemedicina from '../models/PacchettoTelemedicina';
+import SottoscrizioneTelemedicina from '../models/SottoscrizioneTelemedicina';
 import Patient from '../models/Patient';
 import Staff from '../models/Staff';
 import { inviaEmail } from '../utils/email';
-import { generateTelemedicinaSummary } from '../utils/telemedicinaAi';
+import { generateTelemedicinaSummary, prioritizePatients, detectTrend } from '../utils/telemedicinaAi';
 import { exportFhirBundle } from '../utils/telemedicinaFhir';
+import { exportHl7Message } from '../utils/telemedicinaHl7';
 
 const router = Router();
 
@@ -398,7 +400,10 @@ router.post('/parametri', authenticateToken, async (req: Request, res: Response)
 // ─── AI / REPORT TELEMEDICINA ─────────────────────────────────────────────────
 
 router.get('/ai/summary/:pazienteId', authenticateToken, generateTelemedicinaSummary);
+router.get('/ai/prioritized', authenticateToken, authorizeRole(...ruoliGestione), prioritizePatients);
+router.get('/ai/trend/:pazienteId', authenticateToken, detectTrend);
 router.get('/fhir/:pazienteId', authenticateToken, exportFhirBundle);
+router.get('/hl7/:pazienteId', authenticateToken, authorizeRole(...ruoliGestione), exportHl7Message);
 
 // ─── ALERT TELEMEDICINA ───────────────────────────────────────────────────────
 
@@ -637,17 +642,20 @@ router.get('/pacchetti', authenticateToken, async (req: Request, res: Response) 
 
 router.post('/pacchetti', authenticateToken, authorizeRole(...ruoliGestione), async (req: Request, res: Response) => {
   try {
-    const { codice, nome, descrizione, prezzoMensile, durataMinimaMesi, incluseProfessioni, dispositiviInclusi, visiteIncluse, parametriInclusi, note } = req.body;
+    const { codice, nome, descrizione, tipo, prezzoMensile, prezzoAttivazione, durataMinimaMesi, incluseProfessioni, dispositiviInclusi, visiteIncluse, parametriInclusi, verticali, note } = req.body;
     const pacchetto = await PacchettoTelemedicina.create({
       codice,
       nome,
       descrizione,
+      tipo: tipo || 'canone',
       prezzoMensile: Number(prezzoMensile),
+      prezzoAttivazione: Number(prezzoAttivazione || 0),
       durataMinimaMesi: Number(durataMinimaMesi || 12),
       incluseProfessioni: Array.isArray(incluseProfessioni) ? incluseProfessioni : [],
       dispositiviInclusi: Array.isArray(dispositiviInclusi) ? dispositiviInclusi : [],
       visiteIncluse: Number(visiteIncluse || 0),
       parametriInclusi: Array.isArray(parametriInclusi) ? parametriInclusi : [],
+      verticali: Array.isArray(verticali) ? verticali : (typeof verticali === 'string' ? verticali.split(',').map((s: string) => s.trim()).filter(Boolean) : []),
       note,
       creatoDa: userId(req),
     });
@@ -660,6 +668,80 @@ router.patch('/pacchetti/:id', authenticateToken, authorizeRole(...ruoliGestione
     const pacchetto = await PacchettoTelemedicina.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!pacchetto) return sendError(res, 404, 'Pacchetto non trovato');
     return res.json(pacchetto);
+  } catch (error: any) { return sendError(res, 500, error.message); }
+});
+
+// ─── SOTTOSCRIZIONI PACCHETTI TELEMEDICINA ────────────────────────────────────
+
+router.get('/sottoscrizioni', authenticateToken, authorizeRole(...ruoliGestione), async (req: Request, res: Response) => {
+  try {
+    const { pazienteId, attivo } = req.query as any;
+    const q: any = {};
+    if (pazienteId) q.pazienteId = pazienteId;
+    if (attivo !== undefined) q.stato = attivo === 'true' ? 'attiva' : { $ne: 'attiva' };
+    const list = await SottoscrizioneTelemedicina.find(q).sort({ createdAt: -1 });
+    return res.json(list);
+  } catch (error: any) { return sendError(res, 500, error.message); }
+});
+
+router.post('/sottoscrizioni', authenticateToken, authorizeRole(...ruoliGestione), async (req: Request, res: Response) => {
+  try {
+    const { pazienteId, pacchettoId, dataInizio, dispositiviAssegnati, note } = req.body;
+    if (!pazienteId || !pacchettoId || !dataInizio) return sendError(res, 400, 'Paziente, pacchetto e data inizio sono obbligatori');
+    const [paziente, pacchetto] = await Promise.all([Patient.findById(pazienteId), PacchettoTelemedicina.findById(pacchettoId)]);
+    if (!paziente || !pacchetto) return sendError(res, 400, 'Paziente o pacchetto non trovato');
+    const start = new Date(dataInizio);
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + pacchetto.durataMinimaMesi);
+    const sub = await SottoscrizioneTelemedicina.create({
+      pazienteId,
+      pazienteNome: `${paziente.firstName || ''} ${paziente.lastName || ''}`.trim() || 'Paziente',
+      pacchettoId: pacchetto._id.toString(),
+      pacchettoNome: pacchetto.nome,
+      pacchettoCodice: pacchetto.codice,
+      tipo: pacchetto.tipo,
+      prezzoMensile: pacchetto.prezzoMensile,
+      prezzoAttivazione: pacchetto.prezzoAttivazione,
+      durataMinimaMesi: pacchetto.durataMinimaMesi,
+      dataInizio: start,
+      dataFine: end,
+      incluseProfessioni: pacchetto.incluseProfessioni,
+      dispositiviInclusi: pacchetto.dispositiviInclusi,
+      parametriInclusi: pacchetto.parametriInclusi,
+      verticali: pacchetto.verticali,
+      dispositiviAssegnati: Array.isArray(dispositiviAssegnati) ? dispositiviAssegnati : [],
+      stato: 'attiva',
+      note,
+      creatoDa: userId(req),
+    });
+    return res.json(sub);
+  } catch (error: any) { return sendError(res, 500, error.message); }
+});
+
+router.patch('/sottoscrizioni/:id', authenticateToken, authorizeRole(...ruoliGestione), async (req: Request, res: Response) => {
+  try {
+    const { stato, dataFine, note } = req.body;
+    const update: any = {};
+    if (stato) update.stato = stato;
+    if (dataFine) update.dataFine = new Date(dataFine);
+    if (note !== undefined) update.note = note;
+    const sub = await SottoscrizioneTelemedicina.findByIdAndUpdate(req.params.id, update, { new: true });
+    if (!sub) return sendError(res, 404, 'Sottoscrizione non trovata');
+    return res.json(sub);
+  } catch (error: any) { return sendError(res, 500, error.message); }
+});
+
+router.get('/sottoscrizioni/billing', authenticateToken, authorizeRole(...ruoliGestione), async (req: Request, res: Response) => {
+  try {
+    const { mese, anno } = req.query as any;
+    const now = new Date();
+    const target = new Date(Number(anno || now.getFullYear()), Number(mese || now.getMonth() + 1) - 1, 1);
+    const start = target;
+    const end = new Date(target);
+    end.setMonth(end.getMonth() + 1);
+    const active = await SottoscrizioneTelemedicina.find({ stato: 'attiva', dataInizio: { $lte: end }, $or: [{ dataFine: { $exists: false } }, { dataFine: { $gte: start } }] });
+    const total = active.reduce((sum, s) => sum + (s.prezzoMensile || 0), 0);
+    return res.json({ periodo: `${target.getMonth() + 1}/${target.getFullYear()}`, sottoscrizioni: active.length, importoTotale: total, dettaglio: active });
   } catch (error: any) { return sendError(res, 500, error.message); }
 });
 
