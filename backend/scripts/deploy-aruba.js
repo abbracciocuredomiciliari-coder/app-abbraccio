@@ -9,12 +9,13 @@ const username = process.env.ARUBA_USER;
 const password = process.env.ARUBA_PASSWORD;
 const suggested = process.env.ARUBA_REMOTE_PATH;
 const localBase = path.resolve(__dirname, '..');
+const pm2Name = process.env.ARUBA_PM2_NAME || 'abbraccio-backend';
 
 const conn = new Client();
 
 function connect() {
   return new Promise((resolve, reject) => {
-    conn.on('ready', resolve).on('error', reject).connect({ host, port, username, password, readyTimeout: 30000 });
+    conn.on('ready', resolve).on('error', reject).connect({ host, port, username, password, readyTimeout: 30000, keepaliveInterval: 5000 });
   });
 }
 
@@ -104,16 +105,21 @@ async function main() {
   const sftp = await getSftp();
   const remoteDir = await findRemoteDir(sftp);
 
+  // L'app reale gira nella sottocartella backend su Aruba
+  const { err: backendPkgErr } = await stat(sftp, `${remoteDir}/backend/package.json`);
+  const deployDir = backendPkgErr ? remoteDir : `${remoteDir}/backend`;
+  console.log('Deploy directory:', deployDir);
+
   console.log('Caricamento dist/...');
-  await uploadDir(sftp, path.join(localBase, 'dist'), `${remoteDir}/dist`);
+  await uploadDir(sftp, path.join(localBase, 'dist'), `${deployDir}/dist`);
   console.log('Caricamento public/...');
-  await uploadDir(sftp, path.join(localBase, 'public'), `${remoteDir}/public`);
+  await uploadDir(sftp, path.join(localBase, 'public'), `${deployDir}/public`);
 
   console.log('Caricamento package.json e package-lock.json...');
-  await fastPut(sftp, path.join(localBase, 'package.json'), `${remoteDir}/package.json`);
+  await fastPut(sftp, path.join(localBase, 'package.json'), `${deployDir}/package.json`);
   const lockLocal = path.join(localBase, 'package-lock.json');
   if (fs.existsSync(lockLocal)) {
-    await fastPut(sftp, lockLocal, `${remoteDir}/package-lock.json`);
+    await fastPut(sftp, lockLocal, `${deployDir}/package-lock.json`);
   }
 
   conn.end();
@@ -122,7 +128,7 @@ async function main() {
   await connect();
 
   console.log('Installazione dipendenze remote...');
-  const install = await exec(`cd ${remoteDir} && npm install --production`);
+  const install = await exec(`cd ${deployDir} && npm install --production`);
   if (install.code !== 0) {
     console.error('npm install fallito:', install.stderr, install.out);
     throw new Error('npm install remoto fallito');
@@ -130,11 +136,11 @@ async function main() {
   console.log('npm install completato.');
 
   console.log('Riavvio applicazione...');
-  const restart = await exec(`cd ${remoteDir} && (pkill -f "node dist/index.js" || true) && nohup npm start > app.log 2>&1 & echo "PID:$!"`);
+  const restart = await exec(`cd ${deployDir} && (pm2 restart ${pm2Name} 2>/dev/null || ((pkill -f "node dist/index.js" || true) && nohup npm start > app.log 2>&1 & echo "PID:$!"))`);
   console.log('Riavvio output:', restart.out, restart.stderr);
 
   conn.end();
-  console.log('Deploy completato su', remoteDir);
+  console.log('Deploy completato su', deployDir);
 }
 
 main().catch(e => {
