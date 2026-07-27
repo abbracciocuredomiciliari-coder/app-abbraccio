@@ -21,7 +21,11 @@ export interface IAlertTelemedicina extends Document {
   risoltoIl?: Date;
   azioni: { data: Date; autore: string; autoreId: string; nota: string }[];
   teleconsultoId?: string;
+  slaMinuti?: number;
   slaScadenza?: Date;
+  escalationLevel: number;
+  inRitardo?: boolean;
+  storicoAssegnazioni: { data: Date; assegnatoA?: string; assegnatoANome?: string; autore: string; autoreId: string; nota?: string }[];
   creatoDa: string;
 }
 
@@ -31,6 +35,18 @@ const azioneSchema = new Schema(
     autore: { type: String, required: true },
     autoreId: { type: String, required: true },
     nota: { type: String, required: true },
+  },
+  { _id: false }
+);
+
+const assegnaSchema = new Schema(
+  {
+    data: { type: Date, default: Date.now },
+    assegnatoA: { type: String },
+    assegnatoANome: { type: String },
+    autore: { type: String, required: true },
+    autoreId: { type: String, required: true },
+    nota: { type: String },
   },
   { _id: false }
 );
@@ -53,7 +69,11 @@ const alertSchema = new Schema<IAlertTelemedicina>(
     risoltoIl: { type: Date },
     azioni: [azioneSchema],
     teleconsultoId: { type: String, index: true },
+    slaMinuti: { type: Number },
     slaScadenza: { type: Date, index: true },
+    escalationLevel: { type: Number, default: 0 },
+    inRitardo: { type: Boolean, default: false },
+    storicoAssegnazioni: [assegnaSchema],
     creatoDa: { type: String, required: true },
   },
   { timestamps: true }

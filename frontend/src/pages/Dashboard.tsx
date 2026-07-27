@@ -7,6 +7,7 @@ import { Card } from '../components/ui/Card';
 import { Loading } from '../components/ui/Loading';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
+import DashboardTelemedicina from '../components/DashboardTelemedicina';
 
 interface DashboardCounts {
   patientsCount: number;
@@ -316,6 +317,8 @@ function Dashboard() {
               </button>
             ))}
           </div>
+
+          <DashboardTelemedicina />
 
           {/* ════ ALERT PAI IN SCADENZA 7 GIORNI ════ */}
           {isPrivilegiato && counts.paiInScadenza7gg > 0 && (

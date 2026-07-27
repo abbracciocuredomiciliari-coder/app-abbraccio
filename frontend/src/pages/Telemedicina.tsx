@@ -9,6 +9,7 @@ import TelemedicinaProfessioni from '../components/TelemedicinaProfessioni';
 import TelemedicinaReport from '../components/TelemedicinaReport';
 import TelemedicinaGovernance from '../components/TelemedicinaGovernance';
 import TelemedicinaPacchetti from '../components/TelemedicinaPacchetti';
+import TelemedicinaCentrale from '../components/TelemedicinaCentrale';
 import './Telemedicina.css';
 
 type Teleconsulto = {
@@ -43,7 +44,7 @@ export default function Telemedicina() {
   const { addToast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [tab, setTab] = useState<'agenda' | 'nuovo' | 'dispositivi' | 'professioni' | 'report' | 'governance' | 'pacchetti'>((searchParams.get('tab') as any) || 'agenda');
+  const [tab, setTab] = useState<'agenda' | 'nuovo' | 'dispositivi' | 'professioni' | 'report' | 'governance' | 'pacchetti' | 'centrale'>((searchParams.get('tab') as any) || 'agenda');
   const [teleconsulti, setTeleconsulti] = useState<Teleconsulto[]>([]);
   const [patients, setPatients] = useState<PatientMini[]>([]);
   const [loading, setLoading] = useState(true);
@@ -141,6 +142,7 @@ export default function Telemedicina() {
         <h1 className="telemedicina-title"><Video /> Telemedicina</h1>
         <div className="telemedicina-tabs">
           <button onClick={() => setTab('agenda')} className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === 'agenda' ? 'bg-teal-600 text-white' : 'bg-white border'}`}>Agenda</button>
+          <button onClick={() => setTab('centrale')} className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === 'centrale' ? 'bg-teal-600 text-white' : 'bg-white border'}`}>Centrale</button>
           <button onClick={() => setTab('nuovo')} className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === 'nuovo' ? 'bg-teal-600 text-white' : 'bg-white border'}`}>Nuovo</button>
           {isPriv && <button onClick={() => setTab('dispositivi')} className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === 'dispositivi' ? 'bg-teal-600 text-white' : 'bg-white border'}`}>Dispositivi</button>}
           <button onClick={() => setTab('professioni')} className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === 'professioni' ? 'bg-teal-600 text-white' : 'bg-white border'}`}>Professioni</button>
@@ -247,6 +249,10 @@ export default function Telemedicina() {
 
       {tab === 'pacchetti' && isPriv && (
         <TelemedicinaPacchetti />
+      )}
+
+      {tab === 'centrale' && (
+        <TelemedicinaCentrale />
       )}
     </div>
   );

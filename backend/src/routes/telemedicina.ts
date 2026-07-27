@@ -22,6 +22,23 @@ const router = Router();
 const ruoliGestione = ['admin', 'coordinator', 'direttore'];
 const ruoliOperatori = ['admin', 'coordinator', 'direttore', 'caregiver'];
 
+const SLA_MINUTI: Record<string, number> = {
+  bassa: 1440,
+  media: 240,
+  alta: 60,
+  critica: 15,
+};
+
+function prioritaPiuAlta(p: string): string {
+  const ord = ['bassa', 'media', 'alta', 'critica'];
+  const i = ord.indexOf(p);
+  return ord[Math.min(ord.length - 1, (i < 0 ? 1 : i) + 1)];
+}
+
+function dataScadenzaSLA(minuti?: number, da = new Date()): Date {
+  return new Date(da.getTime() + (minuti || 240) * 60 * 1000);
+}
+
 function userId(req: Request): string { return (req as any).user?.userId || ''; }
 function userRole(req: Request): string { return (req as any).user?.role || ''; }
 function userName(req: Request): string { return (req as any).user?.name || ''; }
@@ -358,15 +375,19 @@ router.post('/parametri', authenticateToken, async (req: Request, res: Response)
       creatoDa: userId(req),
     });
     if (ev.anomalo && ev.messaggio) {
+      const priorita = 'alta';
+      const sla = SLA_MINUTI[priorita] || 60;
       await AlertTelemedicina.create({
         pazienteId,
         pazienteNome,
         tipo: 'parametro_fuori_range',
-        priorita: 'alta',
+        priorita,
         messaggio: ev.messaggio,
         dettagli: `Soglia di riferimento: ${ev.soglia}`,
         parametroId: param._id?.toString(),
         dispositivoId,
+        slaMinuti: sla,
+        slaScadenza: dataScadenzaSLA(sla),
         creatoDa: userId(req),
       });
     }
@@ -395,16 +416,21 @@ router.get('/alert', authenticateToken, async (req: Request, res: Response) => {
 
 router.post('/alert', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const { pazienteId, pazienteNome, tipo, priorita, messaggio, dettagli, parametroId, dispositivoId } = req.body;
+    const { pazienteId, pazienteNome, tipo, priorita, messaggio, dettagli, parametroId, dispositivoId, teleconsultoId } = req.body;
+    const prioritaNorm = priorita || 'media';
+    const sla = SLA_MINUTI[prioritaNorm] || 240;
     const alert = await AlertTelemedicina.create({
       pazienteId,
       pazienteNome,
       tipo,
-      priorita: priorita || 'media',
+      priorita: prioritaNorm,
       messaggio,
       dettagli,
       parametroId,
       dispositivoId,
+      teleconsultoId,
+      slaMinuti: sla,
+      slaScadenza: dataScadenzaSLA(sla),
       creatoDa: userId(req),
     });
     return res.json(alert);
@@ -413,10 +439,24 @@ router.post('/alert', authenticateToken, async (req: Request, res: Response) => 
 
 router.patch('/alert/:id/azione', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const { nota, assegnaA, stato } = req.body;
+    const { nota, assegnaA, assegnaANome, priorita, stato } = req.body;
     const alert = await AlertTelemedicina.findById(req.params.id);
     if (!alert) return sendError(res, 404, 'Alert non trovato');
-    if (assegnaA) { alert.assegnatoA = assegnaA; alert.inCaricoIl = new Date(); }
+    if (priorita && ['bassa', 'media', 'alta', 'critica'].includes(priorita)) {
+      if (priorita !== alert.priorita) {
+        alert.priorita = priorita as any;
+        alert.slaMinuti = SLA_MINUTI[priorita] || 240;
+        alert.slaScadenza = dataScadenzaSLA(alert.slaMinuti);
+        alert.storicoAssegnazioni.push({ data: new Date(), autore: userName(req), autoreId: userId(req), nota: `Cambio priorità a ${priorita}` });
+      }
+    }
+    if (assegnaA) {
+      alert.assegnatoA = assegnaA;
+      alert.assegnatoANome = assegnaANome || assegnaA;
+      alert.inCaricoIl = new Date();
+      alert.storicoAssegnazioni.push({ data: new Date(), assegnatoA: assegnaA, assegnatoANome: assegnaANome || assegnaA, autore: userName(req), autoreId: userId(req), nota: nota || 'Assegnazione' });
+      if (alert.stato === 'aperto') alert.stato = 'in_carico';
+    }
     if (stato) alert.stato = stato;
     if (stato === 'chiuso' || stato === 'risolto') alert.risoltoIl = new Date();
     if (nota) alert.azioni.push({ data: new Date(), autore: userName(req), autoreId: userId(req), nota });
@@ -493,6 +533,91 @@ router.patch('/protocolli/:id', authenticateToken, authorizeRole(...ruoliGestion
     const protocollo = await ProtocolloTelemedicina.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!protocollo) return sendError(res, 404, 'Protocollo non trovato');
     return res.json(protocollo);
+  } catch (error: any) { return sendError(res, 500, error.message); }
+});
+
+// ─── CENTRALE OPERATIVA E DASHBOARD TELEMEDICINA ─────────────────────────────
+
+async function processEscalations() {
+  try {
+    const now = new Date();
+    const alerti = await AlertTelemedicina.find({ stato: { $in: ['aperto', 'in_carico'] }, slaScadenza: { $lt: now } });
+    for (const alert of alerti) {
+      if (!alert.inRitardo) {
+        alert.inRitardo = true;
+        alert.escalationLevel = (alert.escalationLevel || 0) + 1;
+        const nuovaPriorita = prioritaPiuAlta(alert.priorita as string);
+        if (nuovaPriorita !== alert.priorita) {
+          alert.priorita = nuovaPriorita as any;
+          alert.slaMinuti = SLA_MINUTI[nuovaPriorita] || 240;
+        }
+        alert.slaScadenza = dataScadenzaSLA(alert.slaMinuti || 240);
+        await alert.save();
+      }
+    }
+  } catch (e) { console.error('Errore processEscalations', e); }
+}
+
+router.get('/centrale', authenticateToken, authorizeRole(...ruoliGestione), async (req: Request, res: Response) => {
+  try {
+    await processEscalations();
+    const { pazienteId, stato, priorita, assegnatoA, scaduto } = req.query as any;
+    const q: any = {};
+    if (pazienteId) q.pazienteId = pazienteId;
+    if (stato) q.stato = stato;
+    if (priorita) q.priorita = priorita;
+    if (assegnatoA) q.assegnatoA = assegnatoA;
+    if (scaduto === 'true') q.slaScadenza = { $lt: new Date() };
+    const [aperti, inCarico, critici, scaduti] = await Promise.all([
+      AlertTelemedicina.countDocuments({ stato: { $in: ['aperto', 'in_carico'] } }),
+      AlertTelemedicina.countDocuments({ stato: 'in_carico' }),
+      AlertTelemedicina.countDocuments({ stato: { $in: ['aperto', 'in_carico'] }, priorita: 'critica' }),
+      AlertTelemedicina.countDocuments({ stato: { $in: ['aperto', 'in_carico'] }, slaScadenza: { $lt: new Date() } }),
+    ]);
+    const alerts = await AlertTelemedicina.find(q).sort({ priorita: -1, slaScadenza: 1 }).limit(200);
+    return res.json({ summary: { aperti, inCarico, critici, scaduti }, alerts });
+  } catch (error: any) { return sendError(res, 500, error.message); }
+});
+
+router.post('/alert/:id/escalate', authenticateToken, authorizeRole(...ruoliGestione), async (req: Request, res: Response) => {
+  try {
+    const alert = await AlertTelemedicina.findById(req.params.id);
+    if (!alert) return sendError(res, 404, 'Alert non trovato');
+    const nuovaPriorita = prioritaPiuAlta(alert.priorita as string);
+    alert.escalationLevel = (alert.escalationLevel || 0) + 1;
+    alert.priorita = nuovaPriorita as any;
+    alert.slaMinuti = SLA_MINUTI[nuovaPriorita] || 240;
+    alert.slaScadenza = dataScadenzaSLA(alert.slaMinuti);
+    alert.storicoAssegnazioni.push({ data: new Date(), autore: userName(req), autoreId: userId(req), nota: `Escalation manuale a priorità ${nuovaPriorita}` });
+    await alert.save();
+    return res.json(alert);
+  } catch (error: any) { return sendError(res, 500, error.message); }
+});
+
+router.get('/dashboard', authenticateToken, authorizeRole(...ruoliGestione), async (req: Request, res: Response) => {
+  try {
+    await processEscalations();
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const pazientiIds = await ParametroVita.distinct('pazienteId');
+    const [alertCritici, alertAperti, teleconsultiOggi, dispositiviOffline, parametri24h] = await Promise.all([
+      AlertTelemedicina.countDocuments({ stato: { $in: ['aperto', 'in_carico'] }, priorita: 'critica' }),
+      AlertTelemedicina.countDocuments({ stato: { $in: ['aperto', 'in_carico'] } }),
+      Teleconsulto.countDocuments({ dataOra: { $gte: startOfDay } }),
+      DispositivoMedico.countDocuments({ stato: 'offline' }),
+      ParametroVita.countDocuments({ rilevatoIl: { $gte: yesterday } }),
+    ]);
+    const topAlerts = await AlertTelemedicina.find({ stato: { $in: ['aperto', 'in_carico'] } }).sort({ priorita: -1, slaScadenza: 1 }).limit(5);
+    return res.json({
+      alertCritici,
+      alertAperti,
+      teleconsultiOggi,
+      dispositiviOffline,
+      parametri24h,
+      pazientiMonitorati: pazientiIds.length,
+      topAlerts,
+    });
   } catch (error: any) { return sendError(res, 500, error.message); }
 });
 
