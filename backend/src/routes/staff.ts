@@ -5,6 +5,7 @@ import User from '../models/User';
 import StaffDocument from '../models/StaffDocument';
 import { authenticateToken } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
+import { encrypt } from '../utils/encryption';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 const router = Router();
@@ -139,7 +140,8 @@ router.put('/:staffId', authenticateToken, authorizeRole('admin', 'coordinator')
     if (category && ['infermieristico', 'oss', 'riabilitativo', 'medico', 'coordinamento', 'direzione'].includes(category)) {
       updateData.category = category;
     }
-    if (phone !== undefined) updateData.phone = phone.trim();
+    const phonePlain = phone !== undefined ? phone.trim() : undefined;
+    if (phone !== undefined) updateData.phone = phonePlain ? encrypt(phonePlain) : undefined;
     if (note !== undefined) updateData.note = note.trim();
     if (modalitaAbilitata && ['entrambi', 'privato', 'convenzione'].includes(modalitaAbilitata)) {
       updateData.modalitaAbilitata = modalitaAbilitata;
@@ -162,7 +164,7 @@ router.put('/:staffId', authenticateToken, authorizeRole('admin', 'coordinator')
       if (updateData.lastName) account.lastName = updateData.lastName;
       if (updateData.firstName || updateData.lastName) account.name = `${updateData.firstName || account.firstName || ''} ${updateData.lastName || account.lastName || ''}`.trim() || account.name;
       if (updateData.email) account.email = updateData.email;
-      if (phone !== undefined) { account.phone = updateData.phone; account.telefono = updateData.phone; }
+      if (phone !== undefined) { account.phone = phonePlain; account.telefono = phonePlain; }
       await account.save();
     }
     return res.json(staffMember);

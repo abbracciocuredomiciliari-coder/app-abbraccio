@@ -3,6 +3,7 @@ import Patient from '../models/Patient';
 import { authenticateToken } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { auditLog } from '../middleware/audit';
+import { encrypt, hashForSearch } from '../utils/encryption';
 
 const router = Router();
 
@@ -10,8 +11,9 @@ router.use(authenticateToken);
 
 router.get('/', auditLog('patients', 'READ'), async (req: Request, res: Response) => {
   try {
-    const { tipo, page, limit, search } = req.query;
+    const { tipo, page, limit, search, cf } = req.query;
     const filter: any = {};
+    if (cf && typeof cf === 'string' && cf.trim()) filter.codiceFiscaleHash = hashForSearch(cf.trim().toUpperCase());
     if (tipo === 'privato') filter.tipoGestione = 'privato';
     else if (tipo === 'convenzione') filter.tipoGestione = 'convenzione';
     // Ricerca per nome/cognome se passato
@@ -118,9 +120,9 @@ router.post('/import-siat', authorizeRole('admin', 'coordinator'), auditLog('pat
           importatoIl: dataImport,
         };
 
-        // Cerca per codice fiscale o nome+data nascita
+        // Cerca per codice fiscale hash o nome+data nascita
         const filtroEsistente: any = p.codiceFiscale
-          ? { codiceFiscale: p.codiceFiscale.toUpperCase() }
+          ? { codiceFiscaleHash: hashForSearch(p.codiceFiscale.toUpperCase().trim()) }
           : { firstName: { $regex: p.firstName, $options: 'i' }, lastName: { $regex: p.lastName, $options: 'i' } };
 
         const esistente = await Patient.findOne(filtroEsistente);
@@ -246,9 +248,16 @@ router.patch('/:id/segna-alert-visto', authorizeRole('admin', 'coordinator', 'di
 router.patch('/:id/dati-clinici', authorizeRole('admin', 'coordinator', 'operatore'), auditLog('patients', 'UPDATE'), async (req: Request, res: Response) => {
   try {
     const { diagnosiAmmissione, comorbilita, allergie, caregiverRiferimento, caregiverTelefono, codiceFiscale } = req.body;
+    const update: any = { diagnosiAmmissione, comorbilita, allergie, caregiverRiferimento };
+    if (caregiverTelefono) update.caregiverTelefono = encrypt(caregiverTelefono.trim());
+    if (codiceFiscale) {
+      const cf = codiceFiscale.toUpperCase().trim();
+      update.codiceFiscale = encrypt(cf);
+      update.codiceFiscaleHash = hashForSearch(cf);
+    }
     const paziente = await Patient.findByIdAndUpdate(
       req.params.id,
-      { $set: { diagnosiAmmissione, comorbilita, allergie, caregiverRiferimento, caregiverTelefono, codiceFiscale } },
+      { $set: update },
       { new: true }
     );
     if (!paziente) return res.status(404).json({ message: 'Paziente non trovato' });

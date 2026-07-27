@@ -1,4 +1,5 @@
 import { Document, Schema, model, Types } from 'mongoose';
+import { encrypt, decrypt } from '../utils/encryption';
 
 // Categorie di ruolo
 export type StaffCategory = 'infermieristico' | 'oss' | 'riabilitativo' | 'medico' | 'coordinamento' | 'direzione';
@@ -59,5 +60,17 @@ const staffSchema = new Schema<IStaff>(
 staffSchema.index({ category: 1, active: 1, lastName: 1 });
 staffSchema.index({ userId: 1 });
 staffSchema.index({ email: 1, active: 1 });
+
+staffSchema.pre('save', function (next) {
+  if (this.isModified('phone') && this.phone) this.phone = encrypt(this.phone);
+  next();
+});
+
+staffSchema.set('toJSON', {
+  transform: function (_doc, ret) {
+    if (ret.phone) ret.phone = decrypt(ret.phone);
+    return ret;
+  },
+});
 
 export default model<IStaff>('Staff', staffSchema);

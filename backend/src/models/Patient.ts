@@ -1,4 +1,5 @@
 import { Document, Schema, model } from 'mongoose';
+import { encrypt, decrypt, hashForSearch } from '../utils/encryption';
 
 export interface IPatient extends Document {
   firstName: string;
@@ -9,6 +10,7 @@ export interface IPatient extends Document {
   contactPhone?: string;
   email?: string;
   codiceFiscale?: string;
+  codiceFiscaleHash?: string;
   // === DATI CLINICI ADI ===
   diagnosiAmmissione?: string;
   comorbilita?: string;
@@ -54,6 +56,7 @@ const patientSchema = new Schema<IPatient>(
     contactPhone: { type: String, trim: true },
     email: { type: String, trim: true, lowercase: true },
     codiceFiscale: { type: String, trim: true, uppercase: true },
+    codiceFiscaleHash: { type: String, index: true },
     diagnosiAmmissione: { type: String, trim: true },
     comorbilita: { type: String, trim: true },
     allergie: { type: String, trim: true },
@@ -85,5 +88,29 @@ const patientSchema = new Schema<IPatient>(
 );
 
 patientSchema.index({ tipoGestione: 1, lastName: 1 });
+patientSchema.index({ codiceFiscaleHash: 1 });
+
+patientSchema.pre('save', function (next) {
+  if (this.isModified('address')) this.address = encrypt(this.address);
+  if (this.isModified('contactPhone') && this.contactPhone) this.contactPhone = encrypt(this.contactPhone);
+  if (this.isModified('caregiverTelefono') && this.caregiverTelefono) this.caregiverTelefono = encrypt(this.caregiverTelefono);
+  if (this.isModified('codiceFiscale') && this.codiceFiscale) {
+    const cf = this.codiceFiscale.toUpperCase().trim();
+    this.codiceFiscaleHash = hashForSearch(cf);
+    this.codiceFiscale = encrypt(cf);
+  }
+  next();
+});
+
+patientSchema.set('toJSON', {
+  transform: function (_doc, ret) {
+    ret.address = decrypt(ret.address);
+    if (ret.contactPhone) ret.contactPhone = decrypt(ret.contactPhone);
+    if (ret.caregiverTelefono) ret.caregiverTelefono = decrypt(ret.caregiverTelefono);
+    if (ret.codiceFiscale) ret.codiceFiscale = decrypt(ret.codiceFiscale);
+    delete ret.codiceFiscaleHash;
+    return ret;
+  },
+});
 
 export default model<IPatient>('Patient', patientSchema);
