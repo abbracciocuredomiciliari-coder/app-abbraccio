@@ -9,6 +9,7 @@ import TelemedicinaProfessioni from '../components/TelemedicinaProfessioni';
 import TelemedicinaReport from '../components/TelemedicinaReport';
 import TelemedicinaGovernance from '../components/TelemedicinaGovernance';
 import TelemedicinaPacchetti from '../components/TelemedicinaPacchetti';
+import './Telemedicina.css';
 
 type Teleconsulto = {
   _id: string;
@@ -135,10 +136,10 @@ export default function Telemedicina() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2 text-teal-700"><Video /> Telemedicina</h1>
-        <div className="flex gap-2">
+    <div className="telemedicina-page">
+      <div className="telemedicina-header">
+        <h1 className="telemedicina-title"><Video /> Telemedicina</h1>
+        <div className="telemedicina-tabs">
           <button onClick={() => setTab('agenda')} className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === 'agenda' ? 'bg-teal-600 text-white' : 'bg-white border'}`}>Agenda</button>
           <button onClick={() => setTab('nuovo')} className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === 'nuovo' ? 'bg-teal-600 text-white' : 'bg-white border'}`}>Nuovo</button>
           {isPriv && <button onClick={() => setTab('dispositivi')} className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === 'dispositivi' ? 'bg-teal-600 text-white' : 'bg-white border'}`}>Dispositivi</button>}
