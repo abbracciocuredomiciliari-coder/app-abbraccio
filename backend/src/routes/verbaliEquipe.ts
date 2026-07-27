@@ -23,6 +23,45 @@ const uploadDocument = multer({
 });
 const userId = (req: Request) => (req as any).user.userId || (req as any).user.id;
 const canManage = (req: Request) => privilegedRoles.includes((req as any).user.role);
+const tokenHash = (token: string) => crypto.createHash('sha256').update(token).digest('hex');
+
+router.get('/firma-esterna/:token', async (req: Request, res: Response) => {
+  try {
+    const verbale = await VerbaleEquipe.findOne({ 'partecipanti.tokenFirmaHash': tokenHash(req.params.token) }).lean();
+    const partecipante = verbale?.partecipanti.find((p: any) => p.tokenFirmaHash === tokenHash(req.params.token));
+    if (!verbale || !partecipante || !partecipante.esterno) return res.status(404).json({ message: 'Link di firma non valido' });
+    if (verbale.stato !== 'in_firma') return res.status(400).json({ message: 'Il verbale non è disponibile per la firma' });
+    return res.json({ titolo: verbale.titolo, dataRiunione: verbale.dataRiunione, ordineDelGiorno: verbale.ordineDelGiorno, verbale: verbale.verbale, allegato: verbale.allegato ? { nome: verbale.allegato.nome } : undefined, partecipante: { nome: partecipante.nome, firma: partecipante.firma } });
+  } catch (error: any) { return res.status(500).json({ message: 'Errore caricamento verbale', error: error.message }); }
+});
+
+router.get('/firma-esterna/:token/allegato', async (req: Request, res: Response) => {
+  try {
+    const verbale = await VerbaleEquipe.findOne({ 'partecipanti.tokenFirmaHash': tokenHash(req.params.token) }).lean();
+    const partecipante = verbale?.partecipanti.find((p: any) => p.tokenFirmaHash === tokenHash(req.params.token));
+    if (!verbale || !partecipante?.esterno || !verbale.allegato?.url) return res.status(404).json({ message: 'Allegato non disponibile' });
+    const filePath = path.join(documentDirectory, path.basename(verbale.allegato.url));
+    if (!fs.existsSync(filePath)) return res.status(404).json({ message: 'Allegato non trovato' });
+    return res.sendFile(filePath);
+  } catch (error: any) { return res.status(500).json({ message: 'Errore caricamento allegato', error: error.message }); }
+});
+
+router.post('/firma-esterna/:token', async (req: Request, res: Response) => {
+  try {
+    const { firma } = req.body;
+    if (!firma?.startsWith('data:image/')) return res.status(400).json({ message: 'La firma con dito o penna è obbligatoria' });
+    const hash = tokenHash(req.params.token);
+    const verbale = await VerbaleEquipe.findOne({ 'partecipanti.tokenFirmaHash': hash });
+    const partecipante = verbale?.partecipanti.find((p: any) => p.tokenFirmaHash === hash);
+    if (!verbale || !partecipante || !partecipante.esterno || verbale.stato !== 'in_firma') return res.status(400).json({ message: 'Verbale non disponibile per la firma' });
+    if (partecipante.firma) return res.status(400).json({ message: 'Il verbale risulta già firmato' });
+    partecipante.firma = firma;
+    partecipante.tokenFirmaHash = undefined;
+    if (verbale.partecipanti.every(p => Boolean(p.firma))) verbale.stato = 'firmato';
+    await verbale.save();
+    return res.json({ message: 'Verbale firmato con successo' });
+  } catch (error: any) { return res.status(500).json({ message: 'Errore firma verbale', error: error.message }); }
+});
 
 router.use(authenticateToken);
 
@@ -58,16 +97,20 @@ router.post('/', auditLog('verbali_equipe', 'CREATE'), uploadDocument.single('al
     if (!canManage(req)) return res.status(403).json({ message: 'Solo coordinatori, direzione e admin possono creare riunioni' });
     const { titolo, dataRiunione, ordineDelGiorno, modalita = 'video', verbale: testoVerbale } = req.body;
     const partecipanti = typeof req.body.partecipanti === 'string' ? JSON.parse(req.body.partecipanti) : req.body.partecipanti;
-    if (!titolo?.trim() || !dataRiunione || !ordineDelGiorno?.trim() || !Array.isArray(partecipanti) || !partecipanti.length) return res.status(400).json({ message: 'Compilare titolo, data, ordine del giorno e partecipanti' });
-    const users = await User.find({ _id: { $in: partecipanti }, status: 'approved' }).select('firstName lastName name email').lean();
+    const partecipantiEsterni = typeof req.body.partecipantiEsterni === 'string' ? JSON.parse(req.body.partecipantiEsterni) : req.body.partecipantiEsterni;
+    const esterniValidi = Array.isArray(partecipantiEsterni) ? partecipantiEsterni.filter((p: any) => p?.nome?.trim() && /^\S+@\S+\.\S+$/.test(p.email?.trim() || '')) : [];
+    if (!titolo?.trim() || !dataRiunione || !ordineDelGiorno?.trim() || (!Array.isArray(partecipanti) || !partecipanti.length) && !esterniValidi.length) return res.status(400).json({ message: 'Compilare titolo, data, ordine del giorno e almeno un partecipante' });
+    const users = await User.find({ _id: { $in: partecipanti || [] }, status: 'approved' }).select('firstName lastName name email').lean();
     const creator = (req as any).user;
     if (!users.some((u: any) => u._id.toString() === userId(req))) users.push({ _id: userId(req), firstName: creator.firstName, lastName: creator.lastName, name: creator.name, email: creator.email } as any);
-    if (!users.length) return res.status(400).json({ message: 'Nessun partecipante attivo selezionato' });
+    if (!users.length && !esterniValidi.length) return res.status(400).json({ message: 'Nessun partecipante valido selezionato' });
     const stanzaVideo = `abbraccio-equipe-${crypto.randomBytes(12).toString('hex')}`;
-    const verbale = await VerbaleEquipe.create({ titolo: titolo.trim(), dataRiunione, ordineDelGiorno: ordineDelGiorno.trim(), stanzaVideo, modalita, verbale: typeof testoVerbale === 'string' && testoVerbale.trim() ? testoVerbale.trim() : undefined, allegato: req.file ? { nome: req.file.originalname, url: `/api/verbali-equipe/allegato/${req.file.filename}`, tipo: req.file.mimetype } : undefined, partecipanti: users.map((u: any) => ({ userId: u._id.toString(), nome: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.name || u.email, email: u.email, invitatoIl: new Date() })), creatoDaId: userId(req), creatoDaNome: creator.name || creator.email });
+    const partecipantiInterni = users.map((u: any) => ({ userId: u._id.toString(), nome: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.name || u.email, email: u.email, invitatoIl: new Date() }));
+    const esterni = esterniValidi.map((p: any) => ({ userId: `esterno_${crypto.randomBytes(12).toString('hex')}`, nome: p.nome.trim(), email: p.email.trim().toLowerCase(), esterno: true, invitatoIl: new Date() }));
+    const verbale = await VerbaleEquipe.create({ titolo: titolo.trim(), dataRiunione, ordineDelGiorno: ordineDelGiorno.trim(), stanzaVideo, modalita, verbale: typeof testoVerbale === 'string' && testoVerbale.trim() ? testoVerbale.trim() : undefined, allegato: req.file ? { nome: req.file.originalname, url: `/api/verbali-equipe/allegato/${req.file.filename}`, tipo: req.file.mimetype } : undefined, partecipanti: [...partecipantiInterni, ...esterni], creatoDaId: userId(req), creatoDaNome: creator.name || creator.email });
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const link = `${frontendUrl}/verbali-equipe/${verbale._id}`;
-    const results = await Promise.all(verbale.partecipanti.map(p => inviaEmail({ to: p.email, subject: `📅 Invito riunione équipe: ${verbale.titolo}`, html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px"><h2>Invito riunione équipe</h2><p>Ciao <strong>${p.nome}</strong>, sei invitato/a alla riunione <strong>${verbale.titolo}</strong>.</p><p><strong>Data:</strong> ${new Date(verbale.dataRiunione).toLocaleString('it-IT')}<br><strong>Ordine del giorno:</strong> ${verbale.ordineDelGiorno}</p><a href="${link}" style="display:inline-block;background:#0f766e;color:#fff;padding:12px 18px;border-radius:6px;text-decoration:none;font-weight:bold">Apri e conferma partecipazione</a><p>Accedi al portale con il tuo account.</p></div>` })));
+    const results = await Promise.all(verbale.partecipanti.filter(p => !p.esterno).map(p => inviaEmail({ to: p.email, subject: `📅 Invito riunione équipe: ${verbale.titolo}`, html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px"><h2>Invito riunione équipe</h2><p>Ciao <strong>${p.nome}</strong>, sei invitato/a alla riunione <strong>${verbale.titolo}</strong>.</p><p><strong>Data:</strong> ${new Date(verbale.dataRiunione).toLocaleString('it-IT')}<br><strong>Ordine del giorno:</strong> ${verbale.ordineDelGiorno}</p><a href="${link}" style="display:inline-block;background:#0f766e;color:#fff;padding:12px 18px;border-radius:6px;text-decoration:none;font-weight:bold">Apri e conferma partecipazione</a><p>Accedi al portale con il tuo account.</p></div>` })));
     return res.status(201).json({ ...verbale.toObject(), emailInviate: results.filter(Boolean).length });
   } catch (error: any) { return res.status(500).json({ message: 'Errore creazione riunione', error: error.message }); }
 });
@@ -169,13 +212,24 @@ router.post('/:id/request-signatures', auditLog('verbali_equipe', 'UPDATE', req 
   try {
     if (!canManage(req)) return res.status(403).json({ message: 'Solo coordinatori, direzione e admin possono richiedere le firme' });
     const verbale = await VerbaleEquipe.findById(req.params.id);
-    if (!verbale?.verbale) return res.status(400).json({ message: 'Redigere il verbale prima di richiedere le firme' });
+    if (!verbale || (!verbale.verbale && !verbale.allegato)) return res.status(400).json({ message: 'Inserire il testo oppure allegare il verbale prima di richiedere le firme' });
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const link = `${frontendUrl}/verbali-equipe/${verbale._id}`;
+    const externalLinks = new Map<string, string>();
     verbale.stato = 'in_firma';
-    verbale.partecipanti.forEach(p => { p.invitatoIl = new Date(); });
+    verbale.partecipanti.forEach(p => {
+      p.invitatoIl = new Date();
+      if (p.esterno && !p.firma) {
+        const token = crypto.randomBytes(32).toString('hex');
+        p.tokenFirmaHash = tokenHash(token);
+        externalLinks.set(p.userId, `${frontendUrl}/firma-verbale?token=${token}`);
+      }
+    });
     await verbale.save();
-    const results = await Promise.all(verbale.partecipanti.map(p => inviaEmail({ to: p.email, subject: `✍️ Firma richiesta: ${verbale.titolo}`, html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px"><h2 style="color:#0f766e">Firma verbale riunione équipe</h2><p>Ciao <strong>${p.nome}</strong>,</p><p>È richiesta la tua firma sul verbale: <strong>${verbale.titolo}</strong>.</p><a href="${link}" style="display:inline-block;background:#0f766e;color:white;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold">Apri e firma il verbale</a><p style="font-size:12px;color:#64748b">Accedi al portale con il tuo account per visualizzare e firmare.</p></div>` })));
+    const results = await Promise.all(verbale.partecipanti.map(p => {
+      const externalLink = externalLinks.get(p.userId);
+      return inviaEmail({ to: p.email, subject: `✍️ Firma richiesta: ${verbale.titolo}`, html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px"><h2 style="color:#0f766e">Firma verbale riunione équipe</h2><p>Ciao <strong>${p.nome}</strong>,</p><p>È richiesta la tua firma sul verbale: <strong>${verbale.titolo}</strong>.</p><a href="${externalLink || link}" style="display:inline-block;background:#0f766e;color:white;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold">Apri e firma il verbale</a><p style="font-size:12px;color:#64748b">${externalLink ? 'Il link è personale e consente di firmare senza creare un account.' : 'Accedi al portale con il tuo account per visualizzare e firmare.'}</p></div>` });
+    }));
     return res.json({ message: 'Richieste firma inviate', emailInviate: results.filter(Boolean).length, verbale });
   } catch (error: any) { return res.status(500).json({ message: 'Errore invio richieste firma', error: error.message }); }
 });

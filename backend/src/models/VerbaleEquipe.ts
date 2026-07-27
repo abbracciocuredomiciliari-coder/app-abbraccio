@@ -8,6 +8,8 @@ interface IPartecipanteVerbale {
   confermatoIl?: Date;
   firma?: string;
   firmatoIl?: Date;
+  esterno?: boolean;
+  tokenFirmaHash?: string;
 }
 
 export interface IVerbaleEquipe extends Document {
@@ -38,6 +40,8 @@ const partecipanteSchema = new Schema<IPartecipanteVerbale>({
   confermatoIl: { type: Date },
   firma: { type: String },
   firmatoIl: { type: Date },
+  esterno: { type: Boolean, default: false },
+  tokenFirmaHash: { type: String },
 }, { _id: false });
 
 const verbaleEquipeSchema = new Schema<IVerbaleEquipe>({
