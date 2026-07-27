@@ -54,7 +54,7 @@ export default function Telemedicina() {
     patientId: '',
     dataOra: '',
     durataMinuti: 30,
-    professione: 'generico',
+    professione: searchParams.get('professione') || 'generico',
     titolo: '',
     note: '',
     partecipanteEmail: '',
@@ -236,7 +236,7 @@ export default function Telemedicina() {
       )}
 
       {tab === 'professioni' && (
-        <TelemedicinaProfessioni pazienteNome={patients[0] ? `${patients[0].firstName} ${patients[0].lastName}` : undefined} />
+        <TelemedicinaProfessioni />
       )}
 
       {tab === 'report' && isPriv && (

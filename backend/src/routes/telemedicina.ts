@@ -515,12 +515,14 @@ router.get('/protocolli', authenticateToken, async (req: Request, res: Response)
 
 router.post('/protocolli', authenticateToken, authorizeRole(...ruoliGestione), async (req: Request, res: Response) => {
   try {
-    const { nome, professione, descrizione, passi, soglieTipo } = req.body;
+    const { nome, professione, descrizione, passi, esercizi, questionari, soglieTipo } = req.body;
     const protocollo = await ProtocolloTelemedicina.create({
       nome,
       professione,
       descrizione,
       passi: Array.isArray(passi) ? passi : [],
+      esercizi: Array.isArray(esercizi) ? esercizi : [],
+      questionari: Array.isArray(questionari) ? questionari : [],
       soglieTipo: Array.isArray(soglieTipo) ? soglieTipo : [],
       creatoDa: userId(req),
     });

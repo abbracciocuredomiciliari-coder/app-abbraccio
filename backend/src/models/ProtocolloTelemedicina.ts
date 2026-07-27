@@ -5,6 +5,8 @@ export interface IProtocolloTelemedicina extends Document {
   professione: string;
   descrizione: string;
   passi: string[];
+  esercizi: string[];
+  questionari: string[];
   soglieTipo: string[];
   attivo: boolean;
   creatoDa: string;
@@ -16,6 +18,8 @@ const protocolloSchema = new Schema<IProtocolloTelemedicina>(
     professione: { type: String, required: true },
     descrizione: { type: String, required: true },
     passi: [{ type: String }],
+    esercizi: [{ type: String }],
+    questionari: [{ type: String }],
     soglieTipo: [{ type: String }],
     attivo: { type: Boolean, default: true },
     creatoDa: { type: String, required: true },
