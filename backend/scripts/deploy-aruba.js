@@ -1,0 +1,144 @@
+require('dotenv').config({ path: '.env.deploy' });
+const { Client } = require('ssh2');
+const fs = require('fs');
+const path = require('path');
+
+const host = process.env.ARUBA_HOST;
+const port = Number(process.env.ARUBA_PORT || 22);
+const username = process.env.ARUBA_USER;
+const password = process.env.ARUBA_PASSWORD;
+const suggested = process.env.ARUBA_REMOTE_PATH;
+const localBase = path.resolve(__dirname, '..');
+
+const conn = new Client();
+
+function connect() {
+  return new Promise((resolve, reject) => {
+    conn.on('ready', resolve).on('error', reject).connect({ host, port, username, password, readyTimeout: 30000 });
+  });
+}
+
+function exec(cmd) {
+  return new Promise((resolve, reject) => {
+    conn.exec(cmd, { env: { PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.nvm/versions/node/v18/bin' } }, (err, stream) => {
+      if (err) return reject(err);
+      let out = '', stderr = '';
+      stream.on('close', (code, signal) => resolve({ code, out, stderr }));
+      stream.on('data', d => out += d.toString());
+      stream.stderr.on('data', d => stderr += d.toString());
+    });
+  });
+}
+
+function getSftp() {
+  return new Promise((resolve, reject) => {
+    conn.sftp((err, sftp) => {
+      if (err) return reject(err);
+      resolve(sftp);
+    });
+  });
+}
+
+function stat(sftp, p) {
+  return new Promise(resolve => {
+    sftp.stat(p, (err, stats) => resolve({ err, stats }));
+  });
+}
+
+function mkdir(sftp, p) {
+  return new Promise(resolve => {
+    sftp.mkdir(p, err => {
+      if (err && err.code !== 2 && !err.message?.includes('exists')) return resolve(false);
+      resolve(true);
+    });
+  });
+}
+
+function fastPut(sftp, local, remote) {
+  return new Promise((resolve, reject) => {
+    sftp.fastPut(local, remote, err => {
+      if (err) return reject(err);
+      resolve();
+    });
+  });
+}
+
+async function uploadDir(sftp, localDir, remoteDir) {
+  await mkdir(sftp, remoteDir);
+  const entries = fs.readdirSync(localDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const localPath = path.join(localDir, entry.name);
+    const remotePath = `${remoteDir}/${entry.name}`;
+    if (entry.isDirectory()) {
+      await uploadDir(sftp, localPath, remotePath);
+    } else {
+      await fastPut(sftp, localPath, remotePath);
+    }
+  }
+}
+
+async function findRemoteDir(sftp) {
+  const candidates = [];
+  const domains = [process.env.ARUBA_DOMAIN || 'app.abbracciocuredomiciliari.it', 'app-abbraccio', 'abbraccio'];
+  for (const domain of domains) {
+    candidates.push(`/var/www/${domain}`, `/var/www/vhosts/${domain}/httpdocs`, `/var/www/vhosts/${domain}/app`, `/var/www/html/${domain}`);
+  }
+  candidates.push('/var/www/html', '/var/www/app-abbraccio', '/root/app-abbraccio', '/opt/app-abbraccio', suggested);
+  for (const c of candidates) {
+    if (!c) continue;
+    const { err: errPkg } = await stat(sftp, `${c}/package.json`);
+    const { err: errIdx } = await stat(sftp, `${c}/dist/index.js`);
+    if (!errPkg || !errIdx) {
+      console.log('Trovata directory remota:', c);
+      return c;
+    }
+  }
+  throw new Error('Directory remota non trovata. Specifica ARUBA_REMOTE_PATH.');
+}
+
+async function main() {
+  if (!host || !username || !password) throw new Error('Credenziali Aruba mancanti in .env.deploy');
+  await connect();
+  console.log('Connessione SSH stabilita.');
+
+  const sftp = await getSftp();
+  const remoteDir = await findRemoteDir(sftp);
+
+  console.log('Caricamento dist/...');
+  await uploadDir(sftp, path.join(localBase, 'dist'), `${remoteDir}/dist`);
+  console.log('Caricamento public/...');
+  await uploadDir(sftp, path.join(localBase, 'public'), `${remoteDir}/public`);
+
+  console.log('Caricamento package.json e package-lock.json...');
+  await fastPut(sftp, path.join(localBase, 'package.json'), `${remoteDir}/package.json`);
+  const lockLocal = path.join(localBase, 'package-lock.json');
+  if (fs.existsSync(lockLocal)) {
+    await fastPut(sftp, lockLocal, `${remoteDir}/package-lock.json`);
+  }
+
+  conn.end();
+
+  await new Promise(resolve => setTimeout(resolve, 500));
+  await connect();
+
+  console.log('Installazione dipendenze remote...');
+  const install = await exec(`cd ${remoteDir} && npm install --production`);
+  if (install.code !== 0) {
+    console.error('npm install fallito:', install.stderr, install.out);
+    throw new Error('npm install remoto fallito');
+  }
+  console.log('npm install completato.');
+
+  console.log('Riavvio applicazione...');
+  const restart = await exec(`cd ${remoteDir} && (pkill -f "node dist/index.js" || true) && nohup npm start > app.log 2>&1 & echo "PID:$!"`);
+  console.log('Riavvio output:', restart.out, restart.stderr);
+
+  conn.end();
+  console.log('Deploy completato su', remoteDir);
+}
+
+main().catch(e => {
+  console.error('Errore deploy:', e.message || e);
+  try { conn.end(); } catch {}
+  process.exit(1);
+});
