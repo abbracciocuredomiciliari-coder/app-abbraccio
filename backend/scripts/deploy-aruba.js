@@ -135,8 +135,17 @@ async function main() {
   }
   console.log('npm install completato.');
 
+  console.log('Scrittura script di riavvio remoto...');
+  const restartScript = '/tmp/restart-abbraccio.sh';
+  const restartScriptContent = `cat > ${restartScript} <<'EOF'\n#!/bin/bash\ncd ${deployDir}\npkill -f "node ${deployDir}/dist/index.js" || true\nsleep 5\necho "Riavvio completato"\nEOF`;
+  const writeRestart = await exec(restartScriptContent);
+  if (writeRestart.code !== 0) {
+    console.error('Errore scrittura script di riavvio:', writeRestart.stderr, writeRestart.out);
+    throw new Error('Scrittura script di riavvio fallita');
+  }
+
   console.log('Riavvio applicazione...');
-  const restart = await exec(`cd ${deployDir} && (pm2 restart ${pm2Name} 2>/dev/null || ((pkill -f "node dist/index.js" || true) && nohup npm start > app.log 2>&1 & echo "PID:$!"))`);
+  const restart = await exec(`bash ${restartScript}`);
   console.log('Riavvio output:', restart.out, restart.stderr);
 
   conn.end();
