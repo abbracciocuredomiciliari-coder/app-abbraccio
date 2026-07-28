@@ -27,9 +27,9 @@ services:
       - key: FROM_EMAIL
         value: info@abbracciocuredomiciliari.it
       - key: SMTP_HOST
-        value: smtp.aruba.it
+        value: smtps.aruba.it
       - key: SMTP_PORT
-        value: "587"
+        value: "465"
       - key: SMTP_USER
         value: info@abbracciocuredomiciliari.it
       - key: SMTP_PASS
