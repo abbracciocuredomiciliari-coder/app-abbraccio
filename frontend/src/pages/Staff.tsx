@@ -37,7 +37,7 @@ interface StaffMember {
   lastName: string;
   email: string;
   role: string;
-  category: 'infermieristico' | 'oss' | 'riabilitativo' | 'medico' | 'coordinamento' | 'direzione';
+  category: 'infermieristico' | 'oss' | 'riabilitativo' | 'medico' | 'sociale' | 'coordinamento' | 'direzione';
   phone?: string;
   active: boolean;
   dataInizioCollaborazione?: string;
@@ -65,6 +65,7 @@ const categories = [
   { value: 'oss', label: 'Personale OSS', color: '#06b6d4' },
   { value: 'riabilitativo', label: 'Personale Riabilitativo', color: '#10b981' },
   { value: 'medico', label: 'Medico', color: '#f59e0b' },
+  { value: 'sociale', label: 'Personale Sociale', color: '#db2777' },
   { value: 'coordinamento', label: 'Coordinamento', color: '#8b5cf6' },
   { value: 'direzione', label: 'Direttore Sanitario', color: '#ef4444' },
 ];
@@ -74,7 +75,8 @@ const rolesByCategory: Record<string, string[]> = {
   oss: ['OSS - Operatore Socio Sanitario'],
   riabilitativo: ['Fisioterapista', 'Neuropsicomotricista', 'Logopedista', 'Terapista occupazionale'],
   medico: ['Medico rianimatore', 'Broncopneumologo', 'Psicologo', 'Neurologo', 'Geriatra'],
-  coordinamento: ['Coordinatore infermieristico', 'Coordinatore medico', 'Coordinatore fisioterapico', 'Assistente sociale'],
+  sociale: ['Assistente sociale'],
+  coordinamento: ['Coordinatore infermieristico', 'Coordinatore medico', 'Coordinatore fisioterapico'],
   direzione: ['Direttore sanitario'],
 };
 

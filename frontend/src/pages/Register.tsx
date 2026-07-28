@@ -25,9 +25,13 @@ const figurePerCategoria: Record<string, { label: string; ruoli: string[] }> = {
     label: 'Medico',
     ruoli: ['Medico rianimatore', 'Broncopneumologo', 'Psicologo', 'Neurologo', 'Geriatra'],
   },
+  sociale: {
+    label: 'Personale Sociale',
+    ruoli: ['Assistente sociale'],
+  },
   coordinamento: {
     label: 'Coordinamento',
-    ruoli: ['Coordinatore infermieristico', 'Coordinatore medico', 'Coordinatore fisioterapico', 'Assistente sociale'],
+    ruoli: ['Coordinatore infermieristico', 'Coordinatore medico', 'Coordinatore fisioterapico'],
   },
   direzione: {
     label: 'Direttore Sanitario',

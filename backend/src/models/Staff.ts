@@ -2,7 +2,7 @@ import { Document, Schema, model, Types } from 'mongoose';
 import { encrypt, decrypt } from '../utils/encryption';
 
 // Categorie di ruolo
-export type StaffCategory = 'infermieristico' | 'oss' | 'riabilitativo' | 'medico' | 'coordinamento' | 'direzione';
+export type StaffCategory = 'infermieristico' | 'oss' | 'riabilitativo' | 'medico' | 'sociale' | 'coordinamento' | 'direzione';
 
 export interface IStaff extends Document {
   firstName: string;
@@ -33,7 +33,7 @@ const staffSchema = new Schema<IStaff>(
     category: {
       type: String,
       required: true,
-      enum: ['infermieristico', 'oss', 'riabilitativo', 'medico', 'coordinamento', 'direzione'],
+      enum: ['infermieristico', 'oss', 'riabilitativo', 'medico', 'sociale', 'coordinamento', 'direzione'],
       default: 'infermieristico'
     },
     phone: { type: String, trim: true },
