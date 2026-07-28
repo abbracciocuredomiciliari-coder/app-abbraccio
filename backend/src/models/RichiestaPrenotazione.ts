@@ -1,6 +1,6 @@
 import { Document, Schema, model, Types } from 'mongoose';
 
-export type TipoServizio = 'prelievo' | 'esame_strumentale' | 'prestazione' | 'assistenza';
+export type TipoServizio = 'prelievo' | 'esame_strumentale' | 'prestazione' | 'assistenza' | 'telemedicina';
 export type StatoRichiesta = 'in_attesa' | 'in_revisione' | 'confermata' | 'modificata' | 'rifiutata' | 'completata';
 
 export interface IRichiestaPrenotazione extends Document {
@@ -72,7 +72,7 @@ const richiestaPrenotazioneSchema = new Schema<IRichiestaPrenotazione>(
     tipoServizio: {
       type: String,
       required: true,
-      enum: ['prelievo', 'esame_strumentale', 'prestazione', 'assistenza']
+      enum: ['prelievo', 'esame_strumentale', 'prestazione', 'assistenza', 'telemedicina']
     },
     tipoSpecifico: { type: String, trim: true },
 

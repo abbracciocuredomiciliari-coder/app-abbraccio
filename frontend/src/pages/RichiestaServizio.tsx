@@ -24,6 +24,8 @@ const TIPI_SERVIZIO = [
     tipi: ['Visita generale','Visita specialista','Consulenza geriatrica','Valutazione clinica','Prescrizione terapia','Altro'] },
   { value: 'psicologia', label: 'Terapia psicologica', emoji: '🧠', color: '#9333ea', bg: '#f3e8ff', Icon: HeartPulse,
     tipi: ['Primo colloquio psicologico','Seduta individuale','Supporto psicologico al caregiver','Valutazione psicodiagnostica','Altro'] },
+  { value: 'telemedicina', label: 'Telemedicina / Telemonitoraggio', emoji: '📡', color: '#0f766e', bg: '#ccfbf1', Icon: Activity,
+    tipi: ['Telemonitoraggio parametri vitali','Video consulto','Telemedicina specialistica','Altro'] },
 ];
 
 const PRIORITA = [
