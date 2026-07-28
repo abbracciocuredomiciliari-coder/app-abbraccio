@@ -110,7 +110,11 @@ router.post('/', auditLog('verbali_equipe', 'CREATE'), uploadDocument.single('al
     const verbale = await VerbaleEquipe.create({ titolo: titolo.trim(), dataRiunione, ordineDelGiorno: ordineDelGiorno.trim(), stanzaVideo, modalita, verbale: typeof testoVerbale === 'string' && testoVerbale.trim() ? testoVerbale.trim() : undefined, allegato: req.file ? { nome: req.file.originalname, url: `/api/verbali-equipe/allegato/${req.file.filename}`, tipo: req.file.mimetype } : undefined, partecipanti: [...partecipantiInterni, ...esterni], creatoDaId: userId(req), creatoDaNome: creator.name || creator.email });
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const link = `${frontendUrl}/verbali-equipe/${verbale._id}`;
-    const results = await Promise.all(verbale.partecipanti.filter(p => !p.esterno).map(p => inviaEmail({ to: p.email, subject: `📅 Invito riunione équipe: ${verbale.titolo}`, html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px"><h2>Invito riunione équipe</h2><p>Ciao <strong>${p.nome}</strong>, sei invitato/a alla riunione <strong>${verbale.titolo}</strong>.</p><p><strong>Data:</strong> ${new Date(verbale.dataRiunione).toLocaleString('it-IT')}<br><strong>Ordine del giorno:</strong> ${verbale.ordineDelGiorno}</p><a href="${link}" style="display:inline-block;background:#0f766e;color:#fff;padding:12px 18px;border-radius:6px;text-decoration:none;font-weight:bold">Apri e conferma partecipazione</a><p>Accedi al portale con il tuo account.</p></div>` })));
+    const results: boolean[] = [];
+    for (const p of verbale.partecipanti.filter(p => !p.esterno)) {
+      const success = await inviaEmail({ to: p.email, subject: `📅 Invito riunione équipe: ${verbale.titolo}`, html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px"><h2>Invito riunione équipe</h2><p>Ciao <strong>${p.nome}</strong>, sei invitato/a alla riunione <strong>${verbale.titolo}</strong>.</p><p><strong>Data:</strong> ${new Date(verbale.dataRiunione).toLocaleString('it-IT')}<br><strong>Ordine del giorno:</strong> ${verbale.ordineDelGiorno}</p><a href="${link}" style="display:inline-block;background:#0f766e;color:#fff;padding:12px 18px;border-radius:6px;text-decoration:none;font-weight:bold">Apri e conferma partecipazione</a><p>Accedi al portale con il tuo account.</p></div>` });
+      results.push(Boolean(success));
+    }
     return res.status(201).json({ ...verbale.toObject(), emailInviate: results.filter(Boolean).length });
   } catch (error: any) { return res.status(500).json({ message: 'Errore creazione riunione', error: error.message }); }
 });
@@ -227,11 +231,13 @@ router.post('/:id/request-signatures', auditLog('verbali_equipe', 'UPDATE', req 
       }
     });
     await verbale.save();
-    const dettagli = await Promise.all(destinatari.map(async p => {
+    const dettagli: { email: string; nome: string; success: boolean }[] = [];
+    for (const p of destinatari) {
       const externalLink = externalLinks.get(p.userId);
       const success = await inviaEmail({ to: p.email, from: 'Portale Firma', subject: `✍️ Firma richiesta: ${verbale.titolo}`, html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px"><h2 style="color:#0f766e">Firma verbale riunione équipe</h2><p>Ciao <strong>${p.nome}</strong>,</p><p>È richiesta la tua firma sul verbale: <strong>${verbale.titolo}</strong>.</p><a href="${externalLink || link}" style="display:inline-block;background:#0f766e;color:white;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold">Apri e firma il verbale</a><p style="font-size:12px;color:#64748b">${externalLink ? 'Il link è personale e consente di firmare senza creare un account.' : 'Accedi al portale con il tuo account per visualizzare e firmare.'}</p></div>` });
-      return { email: p.email, nome: p.nome, success: Boolean(success) };
-    }));
+      dettagli.push({ email: p.email, nome: p.nome, success: Boolean(success) });
+      if (dettagli.length < destinatari.length) await new Promise(r => setTimeout(r, 200));
+    }
     return res.json({ message: 'Richieste firma inviate', emailInviate: dettagli.filter(d => d.success).length, totale: dettagli.length, dettagli, verbale });
   } catch (error: any) { return res.status(500).json({ message: 'Errore invio richieste firma', error: error.message }); }
 });
