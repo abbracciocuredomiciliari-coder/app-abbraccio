@@ -123,15 +123,12 @@ router.get('/pdf/:userId', authenticateToken, async (req: AuthRequest, res: Resp
     }
 
     const User = require('../models/User');
-    const Staff = require('../models/Staff');
 
     const user = await User.findById(req.params.userId).select('-password');
     if (!user || !user.firmaContratto) {
       return res.status(404).json({ message: 'Contratto non trovato o non firmato' });
     }
 
-    const staff = await Staff.findOne({ user: user._id });
-    
     const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Contratto Professionale - ${user.name}</title>
     <style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:12px;color:#111;margin:25px;max-width:850px;line-height:1.4}
     h1{font-size:18px;color:#1e4d8c;margin-bottom:4px;text-align:center}
@@ -148,17 +145,17 @@ router.get('/pdf/:userId', authenticateToken, async (req: AuthRequest, res: Resp
     <h2>Contratto di prestazione d'opera intellettuale ai sensi degli artt. 2229 e ss. C.C.</h2>
     <div class="pre">${TESTO_CONTRATTO
       .replace(/Il Dr\. ___________________________________nato a _____________ il ______________, codice fiscale ___________________-e partita Iva  n° ________________________residente a ______________\. PEC Professionale ___________________________________\./, 
-        `Il Dr. ${user.name || '_________________'} nato a ${staff?.luogoNascita || '___________'} il ${staff?.dataNascita || '____________'}, codice fiscale ${staff?.codiceFiscale || '_________________'}-e partita Iva  n° ${staff?.partitaIva || '______________________'}residente a ${staff?.indirizzoResidenza || '____________'}. PEC Professionale ${staff?.pec || '_________________________________'}.`)
+        `Il Dr. ${user.name || '_________________'} nato a ${user.luogoNascita || '___________'} il ${user.dataNascita || '____________'}, codice fiscale ${user.codiceFiscale || '_________________'}-e partita Iva  n° ${user.partitaIva || '______________________'}residente a ${user.indirizzoResidenza || '____________'}. PEC Professionale ${user.pec || '_________________________________'}.`)
       .replace(/di ____________________  ed è iscritto all'albo professionale dell'Ordine di ______________ numero tessera iscrizione ____________________________\;/, 
-        `di ${staff?.professione || '__________________'} ed è iscritto all'albo professionale dell'Ordine di ${staff?.ordineAlbo || '____________'} numero tessera iscrizione ${staff?.numeroAlbo || '__________________________'};`)
-      .replace(/____________________ DOMICILIARE/, `${staff?.professione || '____________________'} DOMICILIARE`)
+        `di ${user.professione || '__________________'} ed è iscritto all'albo professionale dell'Ordine di ${user.ordineAlbo || '____________'} numero tessera iscrizione ${user.numeroAlbo || '__________________________'};`)
+      .replace(/____________________ DOMICILIARE/, `${user.professione || '____________________'} DOMICILIARE`)
       .replace(/dal __________________ al ________________/, `dal ${new Date().toLocaleDateString('it-IT')} al ${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString('it-IT')}`)
       .replace(/Letto, confermato e sottoscritto in __________________ il ______________\./, `Letto, confermato e sottoscritto in ${user.luogoFirmaContratto || '________________'} il ${new Date(user.dataFirmaContratto || Date.now()).toLocaleDateString('it-IT')}.`)
       .replace(/Il\/La sottoscritto\/a _________________________ nato\/a a _________________ residente a ____________________ in _____________________________\./, 
-        `Il/La sottoscritto/a ${user.name || '_________________________'} nato/a a ${staff?.luogoNascita || '_______________'} residente a ${staff?.indirizzoResidenza || '__________________'} in ${staff?.indirizzoResidenza || '_________________________'}.`)
-      .replace(/Il\/La sottoscritto\/a \[OMISSIS\] nato\/a \[OMISSIS\] il residente in \[OMISSIS\] in/, `Il/La sottoscritto/a ${user.name || '_________________________'} nato/a a ${staff?.luogoNascita || '[OMISSIS]'} il ${staff?.dataNascita || '[OMISSIS]'} residente in ${staff?.indirizzoResidenza || '[OMISSIS]'} in`)
+        `Il/La sottoscritto/a ${user.name || '_________________________'} nato/a a ${user.luogoNascita || '_______________'} residente a ${user.indirizzoResidenza || '__________________'} in ${user.indirizzoResidenza || '_________________________'}.`)
+      .replace(/Il\/La sottoscritto\/a \[OMISSIS\] nato\/a \[OMISSIS\] il residente in \[OMISSIS\] in/, `Il/La sottoscritto/a ${user.name || '_________________________'} nato/a a ${user.luogoNascita || '[OMISSIS]'} il ${user.dataNascita || '[OMISSIS]'} residente in ${user.indirizzoResidenza || '[OMISSIS]'} in`)
       .replace(/- Casella di posta elettronica certificata professionale privata\n- Telefono mobile per reperibilità nr: \n- Autoveicoli:/, 
-        `- Casella di posta elettronica certificata professionale privata: ${staff?.pec || '_________________________'}\n- Telefono mobile per reperibilità nr: ${staff?.telefono || '_________________________'}\n- Autoveicoli: ${staff?.autoveicoli || '_________________________'}`)
+        `- Casella di posta elettronica certificata professionale privata: ${user.pec || '_________________________'}\n- Telefono mobile per reperibilità nr: ${user.telefono || '_________________________'}\n- Autoveicoli: ${user.autoveicoli || '_________________________'}`)
       .replace(/Sottoscritto in _______________ il __________________\./g, `Sottoscritto in ${user.luogoFirmaContratto || '_____________'} il ${new Date(user.dataFirmaContratto || Date.now()).toLocaleDateString('it-IT')}.`)
     }</div>
     <div class="firma-section">
