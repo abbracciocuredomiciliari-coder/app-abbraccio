@@ -21,6 +21,7 @@ export default function FirmaVerbaleEsterno() {
   const [messaggio, setMessaggio] = useState('');
 
   useEffect(() => {
+    document.title = 'Firma digitale verbale';
     if (!token) { setStato('error'); setMessaggio('Link di firma non valido.'); return; }
     api.get(`/verbali-equipe/firma-esterna/${token}`)
       .then(response => { setVerbale(response.data); setStato('ready'); })
@@ -42,7 +43,7 @@ export default function FirmaVerbaleEsterno() {
   if (!verbale) return null;
 
   return <main style={card}>
-    <p style={{ margin: 0, color: '#0f766e', fontWeight: 700 }}>ABBRACCIO CURE DOMICILIARI</p>
+    <p style={{ margin: 0, color: '#0f766e', fontWeight: 700 }}>PORTALE FIRMA DIGITALE</p>
     <h1 style={{ color: '#134e4a' }}>Firma verbale riunione</h1>
     <p>Ciao <strong>{verbale.partecipante.nome}</strong>, leggi il verbale e firma nello spazio sottostante.</p>
     <section style={{ padding: 16, background: '#f0fdfa', borderRadius: 9, margin: '20px 0' }}>
