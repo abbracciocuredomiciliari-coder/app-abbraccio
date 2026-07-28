@@ -139,13 +139,9 @@ async function main() {
   }
   console.log('npm install completato.');
 
-  console.log('Diagnostica pubblico remoto...');
-  const diag = await exec(`ls -la ${deployDir}/public/index.html 2>/dev/null || true; echo '---PUBLIC INDEX---'; head -c 800 ${deployDir}/public/index.html 2>/dev/null || true; echo '---NGINX ROOTS---'; nginx -T 2>/dev/null | grep -E 'server_name|root' | head -30 || true`);
-  console.log('Diagnostica output:', diag.out, diag.stderr);
-
   console.log('Riavvio applicazione...');
   const restartScript = '/tmp/restart-abbraccio.sh';
-  const restartScriptContent = `cat > ${restartScript} <<'EOF'\n#!/bin/bash\ncd ${deployDir}\n(command -v pm2 && pm2 restart ${pm2Name}) || pkill -f "node ${deployDir}/dist/index.js" || true\nsleep 5\necho "Riavvio completato"\nEOF`;
+  const restartScriptContent = `cat > ${restartScript} <<'EOF'\n#!/bin/bash\ncd ${deployDir}\n(command -v pm2 && timeout 60 pm2 restart ${pm2Name} --silent) || pkill -f "node ${deployDir}/dist/index.js" || true\nsleep 5\necho "Riavvio completato"\nEOF`;
   const writeRestart = await exec(restartScriptContent);
   if (writeRestart.code !== 0) {
     console.error('Errore scrittura script di riavvio:', writeRestart.stderr, writeRestart.out);

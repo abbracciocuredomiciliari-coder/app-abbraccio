@@ -47,17 +47,17 @@ export async function verificaConnessioneSMTP() {
 }
 
 // ─── Funzione generica di invio ───────────────────────────────────────────────
-async function invia(to: string, subject: string, html: string, attachments?: { filename: string; path: string; contentType?: string }[], fromName?: string): Promise<boolean> {
+async function invia(to: string, subject: string, html: string, attachments?: { filename: string; path: string; contentType?: string }[], fromName?: string, fromEmail?: string): Promise<boolean> {
   const transporter = getTransporter();
   if (!transporter) {
     console.warn(`⚠️ Email non inviata a ${to} — SMTP non configurato`);
     return false;
   }
   try {
-    const fromEmail = process.env.FROM_EMAIL || process.env.SMTP_USER;
+    const resolvedFromEmail = fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
     const displayName = fromName || process.env.FROM_NAME || 'App Abbraccio';
     const info = await transporter.sendMail({
-      from: `"${displayName}" <${fromEmail}>`,
+      from: `"${displayName}" <${resolvedFromEmail}>`,
       to,
       subject,
       html,
@@ -82,9 +82,10 @@ export async function inviaEmail(options: {
   subject: string;
   html: string;
   from?: string;
+  fromEmail?: string;
   attachments?: { filename: string; path: string; contentType?: string }[];
 }): Promise<boolean> {
-  return invia(options.to, options.subject, options.html, options.attachments, options.from);
+  return invia(options.to, options.subject, options.html, options.attachments, options.from, options.fromEmail);
 }
 
 // ─── Notifica admin — nuova registrazione ─────────────────────────────────────
