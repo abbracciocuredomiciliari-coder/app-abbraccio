@@ -114,6 +114,10 @@ async function main() {
   await uploadDir(sftp, path.join(localBase, 'dist'), `${deployDir}/dist`);
   console.log('Caricamento public/...');
   await uploadDir(sftp, path.join(localBase, 'public'), `${deployDir}/public`);
+  console.log('Caricamento frontend/dist per Nginx...');
+  const frontendDist = `${remoteDir}/frontend/dist`;
+  await mkdir(sftp, frontendDist);
+  await uploadDir(sftp, path.join(localBase, 'public'), frontendDist);
 
   console.log('Caricamento package.json e package-lock.json...');
   await fastPut(sftp, path.join(localBase, 'package.json'), `${deployDir}/package.json`);
@@ -135,18 +139,24 @@ async function main() {
   }
   console.log('npm install completato.');
 
-  console.log('Scrittura script di riavvio remoto...');
+  console.log('Diagnostica pubblico remoto...');
+  const diag = await exec(`ls -la ${deployDir}/public/index.html 2>/dev/null || true; echo '---PUBLIC INDEX---'; head -c 800 ${deployDir}/public/index.html 2>/dev/null || true; echo '---NGINX ROOTS---'; nginx -T 2>/dev/null | grep -E 'server_name|root' | head -30 || true`);
+  console.log('Diagnostica output:', diag.out, diag.stderr);
+
+  console.log('Riavvio applicazione...');
   const restartScript = '/tmp/restart-abbraccio.sh';
-  const restartScriptContent = `cat > ${restartScript} <<'EOF'\n#!/bin/bash\ncd ${deployDir}\npkill -f "node ${deployDir}/dist/index.js" || true\nsleep 5\necho "Riavvio completato"\nEOF`;
+  const restartScriptContent = `cat > ${restartScript} <<'EOF'\n#!/bin/bash\ncd ${deployDir}\n(command -v pm2 && pm2 restart ${pm2Name}) || pkill -f "node ${deployDir}/dist/index.js" || true\nsleep 5\necho "Riavvio completato"\nEOF`;
   const writeRestart = await exec(restartScriptContent);
   if (writeRestart.code !== 0) {
     console.error('Errore scrittura script di riavvio:', writeRestart.stderr, writeRestart.out);
     throw new Error('Scrittura script di riavvio fallita');
   }
-
-  console.log('Riavvio applicazione...');
   const restart = await exec(`bash ${restartScript}`);
   console.log('Riavvio output:', restart.out, restart.stderr);
+
+  console.log('Reload eventuale Nginx/Apache per svuotare cache...');
+  const reload = await exec('(command -v nginx && nginx -s reload) || (command -v apache2 && apache2ctl graceful) || (command -v httpd && httpd -k graceful) || true');
+  console.log('Reload output:', reload.out, reload.stderr);
 
   conn.end();
   console.log('Deploy completato su', deployDir);
