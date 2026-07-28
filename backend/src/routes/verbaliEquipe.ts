@@ -217,21 +217,22 @@ router.post('/:id/request-signatures', auditLog('verbali_equipe', 'UPDATE', req 
     const link = `${frontendUrl}/verbali-equipe/${verbale._id}`;
     const externalLinks = new Map<string, string>();
     verbale.stato = 'in_firma';
-    verbale.partecipanti.forEach(p => {
+    const destinatari = verbale.partecipanti.filter(p => !p.firma);
+    destinatari.forEach(p => {
       p.invitatoIl = new Date();
-      if (p.esterno && !p.firma) {
+      if (p.esterno) {
         const token = crypto.randomBytes(32).toString('hex');
         p.tokenFirmaHash = tokenHash(token);
         externalLinks.set(p.userId, `${frontendUrl}/firma-verbale?token=${token}`);
       }
     });
     await verbale.save();
-    const results = await Promise.all(verbale.partecipanti.map(p => {
+    const dettagli = await Promise.all(destinatari.map(async p => {
       const externalLink = externalLinks.get(p.userId);
-      const isExternal = Boolean(externalLink);
-      return inviaEmail({ to: p.email, from: isExternal ? 'Portale Firma' : undefined, subject: `✍️ Firma richiesta: ${verbale.titolo}`, html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px"><h2 style="color:#0f766e">Firma verbale riunione équipe</h2><p>Ciao <strong>${p.nome}</strong>,</p><p>È richiesta la tua firma sul verbale: <strong>${verbale.titolo}</strong>.</p><a href="${externalLink || link}" style="display:inline-block;background:#0f766e;color:white;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold">Apri e firma il verbale</a><p style="font-size:12px;color:#64748b">${externalLink ? 'Il link è personale e consente di firmare senza creare un account.' : 'Accedi al portale con il tuo account per visualizzare e firmare.'}</p></div>` });
+      const success = await inviaEmail({ to: p.email, from: externalLink ? 'Portale Firma' : undefined, subject: `✍️ Firma richiesta: ${verbale.titolo}`, html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px"><h2 style="color:#0f766e">Firma verbale riunione équipe</h2><p>Ciao <strong>${p.nome}</strong>,</p><p>È richiesta la tua firma sul verbale: <strong>${verbale.titolo}</strong>.</p><a href="${externalLink || link}" style="display:inline-block;background:#0f766e;color:white;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold">Apri e firma il verbale</a><p style="font-size:12px;color:#64748b">${externalLink ? 'Il link è personale e consente di firmare senza creare un account.' : 'Accedi al portale con il tuo account per visualizzare e firmare.'}</p></div>` });
+      return { email: p.email, nome: p.nome, success: Boolean(success) };
     }));
-    return res.json({ message: 'Richieste firma inviate', emailInviate: results.filter(Boolean).length, verbale });
+    return res.json({ message: 'Richieste firma inviate', emailInviate: dettagli.filter(d => d.success).length, totale: dettagli.length, dettagli, verbale });
   } catch (error: any) { return res.status(500).json({ message: 'Errore invio richieste firma', error: error.message }); }
 });
 
