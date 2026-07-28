@@ -114,6 +114,7 @@ function AppShell() {
   const { toasts, removeToast } = useToast();
 
   const isActive = (path: string) => location.pathname === path;
+  const hideBranding = location.pathname.startsWith('/firma-');
   const operatore = user && !isPrivilegiato(user.role);
 
   // Chiudi il menu mobile a ogni cambio pagina
@@ -139,7 +140,11 @@ function AppShell() {
         <button type="button" className="hamburger" onClick={() => setMenuOpen(true)} aria-label="Apri menu">
           <Menu size={24} />
         </button>
-        <img src="/logo.png" alt="Abbraccio Cure Domiciliari" className="mobile-topbar-logo" />
+        {hideBranding ? (
+          <span style={{ color: '#fff', fontWeight: 700, fontSize: '1rem' }}>Portale Firma</span>
+        ) : (
+          <img src="/logo.png" alt="Abbraccio Cure Domiciliari" className="mobile-topbar-logo" />
+        )}
       </header>
 
       {/* Overlay scuro quando il menu mobile è aperto */}
@@ -150,7 +155,11 @@ function AppShell() {
           <X size={22} />
         </button>
         <div style={{ padding: '16px 12px 8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.15)', marginBottom: '8px' }}>
-          <img src="/logo.png" alt="Abbraccio Cure Domiciliari" style={{ width: '100%', maxWidth: '160px', height: 'auto', display: 'block', margin: '0 auto' }} />
+          {hideBranding ? (
+            <h2 style={{ color: '#fff', margin: 0, fontSize: '1.1rem' }}>Portale Firma</h2>
+          ) : (
+            <img src="/logo.png" alt="Abbraccio Cure Domiciliari" style={{ width: '100%', maxWidth: '160px', height: 'auto', display: 'block', margin: '0 auto' }} />
+          )}
           {/* Pulsante switch modalità */}
           {user && (
             <button

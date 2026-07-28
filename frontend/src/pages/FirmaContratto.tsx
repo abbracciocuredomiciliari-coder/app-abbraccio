@@ -60,10 +60,9 @@ export default function FirmaContratto() {
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
       <div style={{ background: 'white', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.10)', padding: '36px 32px', maxWidth: '560px', width: '100%' }}>
-        {/* Logo */}
+        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '4px' }}>🏥</div>
-          <h1 style={{ margin: 0, fontSize: '1.3rem', color: '#1e4d8c', fontWeight: 700 }}>Abbraccio Cure Domiciliari</h1>
+          <h1 style={{ margin: 0, fontSize: '1.3rem', color: '#0f766e', fontWeight: 700 }}>Portale Firma Digitale</h1>
           <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: '0.9rem' }}>Firma digitale contratto</p>
         </div>
 
@@ -96,7 +95,7 @@ export default function FirmaContratto() {
           <div>
             <div style={{ background: '#eff6ff', borderRadius: '10px', padding: '14px 16px', marginBottom: '20px', border: '1px solid #bfdbfe' }}>
               <p style={{ margin: 0, color: '#1e40af', fontSize: '0.9rem' }}>
-                Ciao <strong>{nomeUtente}</strong>, firma il contratto di collaborazione con Abbraccio Cure Domiciliari qui sotto.
+                Ciao <strong>{nomeUtente}</strong>, firma il contratto di collaborazione qui sotto.
               </p>
             </div>
 
