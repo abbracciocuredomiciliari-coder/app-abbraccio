@@ -245,6 +245,38 @@ router.get('/mio', authenticateToken, async (req: AuthRequest, res: Response) =>
   }
 });
 
+// GET /api/contratto/mio/stato — verifica se l'operatore loggato ha già firmato il contratto
+router.get('/mio/stato', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const requester = req.user as { userId: string };
+    if (!requester?.userId) return res.status(401).json({ message: 'Non autenticato' });
+    const user = await User.findById(requester.userId).select('name firmaContratto');
+    if (!user) return res.status(404).json({ message: 'Utente non trovato' });
+    const giàFirmato = !!(user.firmaContratto && user.firmaContratto !== 'null' && user.firmaContratto.length > 10);
+    return res.json({ nome: user.name, giàFirmato });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore verifica stato', error: err?.message });
+  }
+});
+
+// GET /api/contratto/mio/link-firma — genera link firma per l'operatore loggato
+router.get('/mio/link-firma', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const requester = req.user as { userId: string };
+    if (!requester?.userId) return res.status(401).json({ message: 'Non autenticato' });
+    const user = await User.findById(requester.userId).select('name email');
+    if (!user) return res.status(404).json({ message: 'Utente non trovato' });
+
+    const jwtSecret = process.env.JWT_SECRET as string;
+    const token = jwt.sign({ userId: user._id, scope: 'firma-contratto' }, jwtSecret, { expiresIn: '7d' });
+    const frontendUrl = (process.env.FRONTEND_URL || 'https://app.abbracciocuredomiciliari.it').replace(/\/$/, '');
+    const link = `${frontendUrl}/firma-contratto?token=${token}`;
+    return res.json({ link, nome: user.name, email: user.email });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore generazione link', error: err?.message });
+  }
+});
+
 // POST /api/contratto/genera-link-firma/:userId — genera token firma per un operatore (solo admin)
 router.post('/genera-link-firma/:userId', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {

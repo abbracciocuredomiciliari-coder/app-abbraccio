@@ -105,7 +105,7 @@ router.get('/miei-pazienti', authenticateToken, async (req: Request, res: Respon
       const p = piano.patient as any;
       if (p && !pazientiMap.has(p._id.toString())) {
         pazientiMap.set(p._id.toString(), {
-          ...p.toObject(),
+          ...p.toJSON(),
           pianiAssegnati: piani.filter(pl => (pl.patient as any)?._id?.toString() === p._id.toString()).length,
         });
       }

@@ -55,6 +55,8 @@ export default function ProfiloPersonale() {
   const [datiError, setDatiError] = useState('');
   const [contractLoading, setContractLoading] = useState(false);
   const [contractError, setContractError] = useState('');
+  const [contrattoFirmato, setContrattoFirmato] = useState<boolean | null>(null);
+  const [firmaLoading, setFirmaLoading] = useState(false);
 
   // ── Zona lavorativa ──
   const [editZona, setEditZona] = useState(false);
@@ -80,6 +82,10 @@ export default function ProfiloPersonale() {
     fetchProfilo();
   }, []);
 
+  useEffect(() => {
+    verificaContratto();
+  }, []);
+
   const apriContratto = async () => {
     setContractError('');
     setContractLoading(true);
@@ -94,6 +100,29 @@ export default function ProfiloPersonale() {
       setContractError(err?.response?.data?.message || 'Impossibile caricare il contratto.');
     } finally {
       setContractLoading(false);
+    }
+  };
+
+  const verificaContratto = async () => {
+    try {
+      const res = await api.get('/contratto/mio/stato');
+      setContrattoFirmato(res.data.giàFirmato === true);
+    } catch {
+      setContrattoFirmato(false);
+    }
+  };
+
+  const apriFirmaContratto = async () => {
+    setContractError('');
+    setFirmaLoading(true);
+    try {
+      const res = await api.get('/contratto/mio/link-firma');
+      const w = window.open(res.data.link, '_blank');
+      if (!w) setContractError('Impossibile aprire la finestra di firma. Controlla il blocco popup.');
+    } catch (err: any) {
+      setContractError(err?.response?.data?.message || 'Errore nella generazione del link di firma.');
+    } finally {
+      setFirmaLoading(false);
     }
   };
 
@@ -352,19 +381,37 @@ export default function ProfiloPersonale() {
             ❌ {contractError}
           </div>
         )}
-        <button
-          type="button"
-          onClick={apriContratto}
-          disabled={contractLoading}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '7px',
-            padding: '9px 20px', cursor: contractLoading ? 'not-allowed' : 'pointer',
-            fontWeight: 700, fontSize: '0.88rem', opacity: contractLoading ? 0.7 : 1
-          }}
-        >
-          {contractLoading ? '⏳ Apertura...' : '📄 Visualizza / Stampa contratto'}
-        </button>
+        {contrattoFirmato === null ? (
+          <p style={{ color: '#6b7280', fontStyle: 'italic', margin: 0 }}>⏳ Verifica stato contratto...</p>
+        ) : contrattoFirmato ? (
+          <button
+            type="button"
+            onClick={apriContratto}
+            disabled={contractLoading}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '7px',
+              padding: '9px 20px', cursor: contractLoading ? 'not-allowed' : 'pointer',
+              fontWeight: 700, fontSize: '0.88rem', opacity: contractLoading ? 0.7 : 1
+            }}
+          >
+            {contractLoading ? '⏳ Apertura...' : '📄 Visualizza / Stampa contratto'}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={apriFirmaContratto}
+            disabled={firmaLoading}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: '#f59e0b', color: '#fff', border: 'none', borderRadius: '7px',
+              padding: '9px 20px', cursor: firmaLoading ? 'not-allowed' : 'pointer',
+              fontWeight: 700, fontSize: '0.88rem', opacity: firmaLoading ? 0.7 : 1
+            }}
+          >
+            {firmaLoading ? '⏳ Apertura...' : '✍️ Firma contratto'}
+          </button>
+        )}
       </div>
 
       {/* Documenti allegati */}
