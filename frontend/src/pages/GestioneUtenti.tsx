@@ -516,7 +516,7 @@ function GestioneUtenti() {
                       >
                         {loadingPdfUserId === utente._id ? '⏳ Caricamento...' : '📄 Profilo PDF'}
                       </button>
-                      {utente.status === 'approved' && utente.firmaContratto && (
+                      {utente.firmaContratto && (
                         <button
                           type="button"
                           onClick={() => apriPdfContratto(utente._id)}
