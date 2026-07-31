@@ -94,6 +94,7 @@ function Staff() {
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [filteredStaff, setFilteredStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingContratto, setLoadingContratto] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -433,6 +434,28 @@ function Staff() {
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError('Errore nell\'eliminazione');
+    }
+  };
+
+  const apriContrattoStaff = async (staff: StaffMember) => {
+    if (!staff.userId) {
+      setError('Operatore non collegato a un account utente.');
+      setTimeout(() => setError(''), 4000);
+      return;
+    }
+    setLoadingContratto(staff._id);
+    try {
+      const res = await api.get(`/contratto/pdf/${staff.userId}`);
+      const html = res.data;
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const w = window.open(url, '_blank');
+      if (w) w.onload = () => URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Errore nel caricamento del contratto.');
+      setTimeout(() => setError(''), 4000);
+    } finally {
+      setLoadingContratto(null);
     }
   };
 
@@ -910,6 +933,15 @@ function Staff() {
                     >
                       <FileText size={16} />
                       Profilo PDF
+                    </button>
+                    <button
+                      onClick={() => apriContrattoStaff(staff)}
+                      style={{ background: '#059669' }}
+                      title="Visualizza contratto firmato"
+                      disabled={loadingContratto === staff._id}
+                    >
+                      <FileText size={16} />
+                      {loadingContratto === staff._id ? 'Apertura...' : 'Contratto'}
                     </button>
                     <button
                       onClick={() => openDocumentsModal(staff)}
