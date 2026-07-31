@@ -37,6 +37,7 @@ export interface IUser extends Document {
   dataFirmaContratto?: Date;
   luogoFirmaContratto?: string;
   contrattoPdfUrl?: string; // URL al PDF generato
+  autoveicoli?: string;
   // Documenti allegati (riferimenti a file)
   documenti?: {
     assicurazione?: string; // path/url file
@@ -95,6 +96,7 @@ const userSchema = new Schema<IUser>(
     dataFirmaContratto: { type: Date },
     luogoFirmaContratto: { type: String, trim: true },
     contrattoPdfUrl: { type: String, trim: true },
+    autoveicoli: { type: String, trim: true },
     // Documenti allegati
     documenti: {
       assicurazione: { type: String, trim: true },

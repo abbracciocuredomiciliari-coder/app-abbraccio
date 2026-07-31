@@ -122,8 +122,6 @@ router.get('/pdf/:userId', authenticateToken, async (req: AuthRequest, res: Resp
       return res.status(403).json({ message: 'Non autorizzato' });
     }
 
-    const User = require('../models/User');
-
     const user = await User.findById(req.params.userId).select('-password');
     if (!user || !user.firmaContratto) {
       return res.status(404).json({ message: 'Contratto non trovato o non firmato' });
@@ -189,7 +187,6 @@ router.get('/mio', authenticateToken, async (req: AuthRequest, res: Response) =>
     if (!requester?.userId) {
       return res.status(401).json({ message: 'Non autenticato' });
     }
-    const User = require('../models/User');
     const user = await User.findById(requester.userId).select('-password');
     if (!user || !user.firmaContratto) {
       return res.status(404).json({ message: 'Contratto non trovato o non firmato' });
