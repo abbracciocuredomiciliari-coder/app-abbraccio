@@ -182,6 +182,72 @@ router.get('/pdf/:userId', authenticateToken, async (req: AuthRequest, res: Resp
   }
 });
 
+// GET /api/contratto/mio — Contratto compilato dell'operatore loggato
+router.get('/mio', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const requester = req.user as { userId: string };
+    if (!requester?.userId) {
+      return res.status(401).json({ message: 'Non autenticato' });
+    }
+    const User = require('../models/User');
+    const user = await User.findById(requester.userId).select('-password');
+    if (!user || !user.firmaContratto) {
+      return res.status(404).json({ message: 'Contratto non trovato o non firmato' });
+    }
+
+    const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Contratto Professionale - ${user.name}</title>
+    <style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:12px;color:#111;margin:25px;max-width:850px;line-height:1.4}
+    h1{font-size:18px;color:#1e4d8c;margin-bottom:4px;text-align:center}
+    h2{font-size:10px;color:#6b7280;text-align:center;margin:0 0 20px;text-transform:uppercase;letter-spacing:1px}
+    .pre{white-space:pre-wrap;font-family:Arial,sans-serif;font-size:11px;line-height:1.4}
+    .firma-section{margin-top:30px;border-top:2px solid #1e4d8c;padding-top:20px}
+    .firma-box{display:inline-block;vertical-align:top;margin-right:60px}
+    .firma-box img{max-width:200px;max-height:70px;border:1px solid #d1d5db;margin-top:8px}
+    .field{margin-bottom:8px}
+    .field label{font-weight:700;display:inline-block;width:120px}
+    .footer{margin-top:30px;font-size:9px;color:#9ca3af;border-top:1px solid #e2e8f0;padding-top:10px;text-align:center}
+    @media print{body{margin:15px} .no-print{display:none}}</style></head><body>
+    <h1>CONTRATTO PROFESSIONISTI</h1>
+    <h2>Contratto di prestazione d'opera intellettuale ai sensi degli artt. 2229 e ss. C.C.</h2>
+    <div class="pre">${TESTO_CONTRATTO
+      .replace(/Il Dr\. ___________________________________nato a _____________ il ______________, codice fiscale ___________________-e partita Iva  n° ________________________residente a ______________\. PEC Professionale ___________________________________\./,
+        `Il Dr. ${user.name || '_________________'} nato a ${user.luogoNascita || '___________'} il ${user.dataNascita || '____________'}, codice fiscale ${user.codiceFiscale || '_________________'}-e partita Iva  n° ${user.partitaIva || '______________________'}residente a ${user.indirizzoResidenza || '____________'}. PEC Professionale ${user.pec || '_________________________________'}.`)
+      .replace(/di ____________________  ed è iscritto all'albo professionale dell'Ordine di ______________ numero tessera iscrizione ____________________________\;/,
+        `di ${user.professione || '__________________'} ed è iscritto all'albo professionale dell'Ordine di ${user.ordineAlbo || '____________'} numero tessera iscrizione ${user.numeroAlbo || '__________________________'};`)
+      .replace(/____________________ DOMICILIARE/, `${user.professione || '____________________'} DOMICILIARE`)
+      .replace(/dal __________________ al ________________/, `dal ${new Date().toLocaleDateString('it-IT')} al ${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString('it-IT')}`)
+      .replace(/Letto, confermato e sottoscritto in __________________ il ______________\./, `Letto, confermato e sottoscritto in ${user.luogoFirmaContratto || '________________'} il ${new Date(user.dataFirmaContratto || Date.now()).toLocaleDateString('it-IT')}.`)
+      .replace(/Il\/La sottoscritto\/a _________________________ nato\/a a _________________ residente a ____________________ in _____________________________\./,
+        `Il/La sottoscritto/a ${user.name || '_________________________'} nato/a a ${user.luogoNascita || '_______________'} residente a ${user.indirizzoResidenza || '__________________'} in ${user.indirizzoResidenza || '_________________________'}.`)
+      .replace(/Il\/La sottoscritto\/a \[OMISSIS\] nato\/a \[OMISSIS\] il residente in \[OMISSIS\] in/, `Il/La sottoscritto/a ${user.name || '_________________________'} nato/a a ${user.luogoNascita || '[OMISSIS]'} il ${user.dataNascita || '[OMISSIS]'} residente in ${user.indirizzoResidenza || '[OMISSIS]'} in`)
+      .replace(/- Casella di posta elettronica certificata professionale privata\n- Telefono mobile per reperibilità nr: \n- Autoveicoli:/,
+        `- Casella di posta elettronica certificata professionale privata: ${user.pec || '_________________________'}\n- Telefono mobile per reperibilità nr: ${user.telefono || '_________________________'}\n- Autoveicoli: ${user.autoveicoli || '_________________________'}`)
+      .replace(/Sottoscritto in _______________ il __________________\./g, `Sottoscritto in ${user.luogoFirmaContratto || '_____________'} il ${new Date(user.dataFirmaContratto || Date.now()).toLocaleDateString('it-IT')}.`)
+    }</div>
+    <div class="firma-section">
+      <div class="firma-box">
+        <div class="field"><label>Società:</label> ABBRACCIO CURE DOMICILIARI S.r.l.</div>
+        <div class="field"><label>Data firma:</label> ${new Date(user.dataFirmaContratto || Date.now()).toLocaleDateString('it-IT')}</div>
+        <div class="field"><label>Luogo firma:</label> ${user.luogoFirmaContratto || 'Roma'}</div>
+      </div>
+      <div class="firma-box">
+        <div class="field"><label>Professionista:</label> ${user.name}</div>
+        <div class="field"><label>Data firma:</label> ${new Date(user.dataFirmaContratto || Date.now()).toLocaleDateString('it-IT')}</div>
+        <div class="field"><label>Luogo firma:</label> ${user.luogoFirmaContratto || 'Roma'}</div>
+        ${user.firmaContratto ? `<img src="${user.firmaContratto}" alt="Firma operatore" />` : '<p>Firma non disponibile</p>'}
+      </div>
+    </div>
+    <div class="footer">Documento generato — App Abbraccio Cure Domiciliari — ${new Date().toLocaleString('it-IT')}</div>
+    <div class="no-print" style="margin-top:24px;text-align:center"><button onclick="window.print()" style="background:#1e4d8c;color:white;border:none;border-radius:8px;padding:12px 28px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Stampa / Salva PDF</button></div>
+    </body></html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.send(html);
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore generazione contratto', error: err?.message });
+  }
+});
+
 // POST /api/contratto/genera-link-firma/:userId — genera token firma per un operatore (solo admin)
 router.post('/genera-link-firma/:userId', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {

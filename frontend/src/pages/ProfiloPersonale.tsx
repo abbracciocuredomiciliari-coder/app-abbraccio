@@ -53,6 +53,8 @@ export default function ProfiloPersonale() {
   const [datiSaving, setDatiSaving] = useState(false);
   const [datiSuccess, setDatiSuccess] = useState('');
   const [datiError, setDatiError] = useState('');
+  const [contractLoading, setContractLoading] = useState(false);
+  const [contractError, setContractError] = useState('');
 
   // ── Zona lavorativa ──
   const [editZona, setEditZona] = useState(false);
@@ -77,6 +79,23 @@ export default function ProfiloPersonale() {
   useEffect(() => {
     fetchProfilo();
   }, []);
+
+  const apriContratto = async () => {
+    setContractError('');
+    setContractLoading(true);
+    try {
+      const res = await api.get('/contratto/mio');
+      const html = res.data;
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const w = window.open(url, '_blank');
+      if (w) w.onload = () => URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setContractError(err?.response?.data?.message || 'Impossibile caricare il contratto.');
+    } finally {
+      setContractLoading(false);
+    }
+  };
 
   const fetchProfilo = async () => {
     try {
@@ -325,9 +344,32 @@ export default function ProfiloPersonale() {
         )}
       </div>
 
+      {/* Contratto */}
+      <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '20px', marginBottom: '20px' }}>
+        <h3 style={{ margin: '0 0 16px', color: '#1e4d8c', fontSize: '1rem' }}>📋 Contratto di collaborazione</h3>
+        {contractError && (
+          <div style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid #fca5a5', borderRadius: '6px', padding: '10px 14px', color: '#7f1d1d', fontSize: '0.88rem', marginBottom: '12px' }}>
+            ❌ {contractError}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={apriContratto}
+          disabled={contractLoading}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '7px',
+            padding: '9px 20px', cursor: contractLoading ? 'not-allowed' : 'pointer',
+            fontWeight: 700, fontSize: '0.88rem', opacity: contractLoading ? 0.7 : 1
+          }}
+        >
+          {contractLoading ? '⏳ Apertura...' : '📄 Visualizza / Stampa contratto'}
+        </button>
+      </div>
+
       {/* Documenti allegati */}
       <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '20px', marginBottom: '20px' }}>
-        <h3 style={{ margin: '0 0 16px', color: '#1e4d8c', fontSize: '1rem' }}>📎 Documenti e contratto</h3>
+        <h3 style={{ margin: '0 0 16px', color: '#1e4d8c', fontSize: '1rem' }}>📎 Documenti allegati</h3>
         {documenti.length === 0 ? (
           <p style={{ color: '#888', fontStyle: 'italic', margin: 0 }}>Nessun documento allegato. Contatta l'amministratore.</p>
         ) : (
