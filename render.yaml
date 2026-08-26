@@ -43,7 +43,7 @@ services:
       - key: GROQ_STT_MODEL
         value: whisper-large-v3-turbo
       - key: GROQ_LLM_MODEL
-        value: llama-3.3-70b-versatile
+        value: openai/gpt-oss-120b
 
   # ═══════════════════════════════════════════════════════════════════════════
   # FRONTEND - Web Service con Express (per SPA routing)

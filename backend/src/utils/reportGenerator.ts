@@ -5,7 +5,7 @@ import WorkPlan from '../models/WorkPlan';
 import WorkPlanAccess from '../models/WorkPlanAccess';
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
-const LLM_MODEL = process.env.GROQ_LLM_MODEL || 'llama-3.3-70b-versatile';
+const LLM_MODEL = process.env.GROQ_LLM_MODEL || 'openai/gpt-oss-120b';
 
 export function isReportAiAvailable(): boolean {
   return Boolean(GROQ_API_KEY && GROQ_API_KEY.trim().length > 0);
