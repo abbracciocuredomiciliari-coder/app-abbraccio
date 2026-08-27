@@ -10,6 +10,7 @@ export default {
     './index.html',
     './src/pages/Dashboard.tsx',
     './src/pages/PortaleOperatore.tsx',
+    './src/pages/Patients.tsx',
   ],
   theme: {
     extend: {

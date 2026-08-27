@@ -546,8 +546,8 @@ function Patients() {
   const canEdit = user && (user.role === 'admin' || user.role === 'coordinator');
 
   return (
-    <section>
-      <h2>
+    <section className="tw-max-w-none">
+      <h2 className="tw-flex tw-items-center tw-gap-2">
         <FileText size={28} />
         Gestione Pazienti
       </h2>
@@ -559,18 +559,15 @@ function Patients() {
       )}
 
       {/* Search Bar */}
-      <div style={{
-        display: 'flex',
-        gap: '12px',
-        marginBottom: '20px',
-        alignItems: 'center',
-      }}>
-        <Input
-          placeholder="Cerca per nome, cognome o ID..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          icon={<Search size={18} />}
-        />
+      <div className="tw-flex tw-flex-wrap tw-gap-3 tw-mb-5 tw-items-center">
+        <div className="tw-flex-1 tw-min-w-[220px]">
+          <Input
+            placeholder="Cerca per nome, cognome o ID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            icon={<Search size={18} />}
+          />
+        </div>
         {canEdit && (
           <Button
             variant={showForm ? 'secondary' : 'primary'}
@@ -584,7 +581,7 @@ function Patients() {
 
       {/* Search Results Info */}
       {searchTerm && (
-        <p style={{ marginBottom: '16px', color: 'var(--gray-500)', fontSize: '0.92rem' }}>
+        <p className="tw-mb-4 tw-text-slate-500 tw-text-[0.92rem]">
           Trovati {filteredPatients.length} paziente{filteredPatients.length !== 1 ? 'i' : ''} per "{searchTerm}"
         </p>
       )}
@@ -596,7 +593,7 @@ function Patients() {
             <UserPlus size={18} />
             Nuovo Paziente
           </h4>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="tw-grid sm:tw-grid-cols-2 tw-gap-4">
             <label>
               Nome *
               <input
@@ -669,16 +666,7 @@ function Patients() {
             />
           </label>
           {error && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px',
-              backgroundColor: 'var(--danger-bg)',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--danger)',
-              fontSize: '0.92rem',
-            }}>
+            <div className="tw-flex tw-items-center tw-gap-2 tw-p-3 tw-rounded-lg tw-bg-red-600/10 tw-text-red-600 tw-text-[0.92rem]">
               <AlertCircle size={18} />
               {error}
             </div>
@@ -688,60 +676,48 @@ function Patients() {
       )}
 
       {/* Patients List */}
-      <div className="patients-list">
-        <h3>
+      <div className="tw-bg-white tw-border tw-border-slate-200 tw-rounded-2xl tw-shadow-sm tw-p-5">
+        <h3 className="tw-flex tw-items-center tw-gap-2 tw-m-0 tw-mb-4 tw-text-slate-700">
           <FileText size={20} />
           Elenco Pazienti ({filteredPatients.length})
         </h3>
         {loading ? (
           <div style={{ padding: '8px 0' }}><SkeletonList rows={6} showHeader={false} /></div>
         ) : filteredPatients.length === 0 ? (
-          <p style={{ textAlign: 'center', padding: '32px', color: 'var(--gray-500)' }}>
+          <p className="tw-text-center tw-py-8 tw-text-slate-500">
             {searchTerm ? 'Nessun paziente trovato.' : 'Nessun paziente presente.'}
           </p>
         ) : (
-          <ul>
+          <ul className="tw-flex tw-flex-col tw-gap-3 tw-list-none tw-m-0 tw-p-0">
             {filteredPatients.map((patient) => (
-              <li key={patient._id} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: '16px',
-              }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
-                    <strong style={{ fontSize: '1.05rem' }}>
+              <li key={patient._id} className="tw-flex tw-flex-wrap tw-justify-between tw-items-center tw-gap-4 tw-p-4 tw-rounded-xl tw-border tw-border-slate-200 hover:tw-border-slate-300 tw-transition-colors">
+                <div className="tw-flex-1 tw-min-w-[240px]">
+                  <div className="tw-flex tw-items-center tw-gap-3 tw-mb-1">
+                    <strong className="tw-text-[1.05rem]">
                       {patient.firstName} {patient.lastName}
                     </strong>
-                    <span style={{
-                      fontSize: '0.78rem',
-                      padding: '2px 8px',
-                      backgroundColor: 'var(--primary-bg)',
-                      color: 'var(--primary)',
-                      borderRadius: 'var(--radius-full',
-                      fontWeight: 500,
-                    }}>
+                    <span className="tw-text-xs tw-px-2 tw-py-0.5 tw-rounded-full tw-bg-brand/10 tw-text-brand tw-font-medium">
                       ID: {patient._id.slice(-6).toUpperCase()}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.88rem', color: 'var(--gray-500)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                  <div className="tw-flex tw-flex-wrap tw-gap-4 tw-text-[0.88rem] tw-text-slate-500">
                     <span>📅 Nato il: {formatDate(patient.birthDate)}</span>
                     <span>📍 {patient.address}</span>
                     {patient.contactPhone && <span>📞 {patient.contactPhone}</span>}
                     {patient.email && <span>✉️ {patient.email}</span>}
                   </div>
-                  <div style={{ fontSize: '0.88rem', color: 'var(--gray-600)', marginTop: '4px', fontStyle: 'italic' }}>
+                  <div className="tw-text-[0.88rem] tw-text-slate-600 tw-mt-1 tw-italic">
                     💡 {patient.assistanceNeeds}
                   </div>
                   {(patient.diagnosiAmmissione || patient.allergie || patient.caregiverRiferimento) && (
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
-                      {patient.diagnosiAmmissione && <span style={{ fontSize: '0.78rem', background: '#eff6ff', color: '#1d4ed8', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>🏥 {patient.diagnosiAmmissione.slice(0, 40)}{patient.diagnosiAmmissione.length > 40 ? '…' : ''}</span>}
-                      {patient.allergie && <span style={{ fontSize: '0.78rem', background: '#fef2f2', color: '#dc2626', padding: '2px 8px', borderRadius: '4px', border: '1px solid #fecaca', fontWeight: '600' }}>⚠️ {patient.allergie.slice(0, 30)}{patient.allergie.length > 30 ? '…' : ''}</span>}
-                      {patient.caregiverRiferimento && <span style={{ fontSize: '0.78rem', background: '#f0fdf4', color: '#16a34a', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bbf7d0' }}>👤 {patient.caregiverRiferimento}</span>}
+                    <div className="tw-flex tw-flex-wrap tw-gap-2 tw-mt-1.5">
+                      {patient.diagnosiAmmissione && <span className="tw-text-xs tw-bg-blue-50 tw-text-blue-700 tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-blue-200">🏥 {patient.diagnosiAmmissione.slice(0, 40)}{patient.diagnosiAmmissione.length > 40 ? '…' : ''}</span>}
+                      {patient.allergie && <span className="tw-text-xs tw-bg-red-50 tw-text-red-600 tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-red-200 tw-font-semibold">⚠️ {patient.allergie.slice(0, 30)}{patient.allergie.length > 30 ? '…' : ''}</span>}
+                      {patient.caregiverRiferimento && <span className="tw-text-xs tw-bg-green-50 tw-text-green-700 tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-green-200">👤 {patient.caregiverRiferimento}</span>}
                     </div>
                   )}
                 </div>
-                <div style={{ display: 'flex', gap: '8px', flexShrink: 0, alignItems: 'center' }}>
+                <div className="tw-flex tw-gap-2 tw-flex-shrink-0 tw-items-center">
                   <button
                     onClick={() => openDocumentsModal(patient)}
                     style={{
