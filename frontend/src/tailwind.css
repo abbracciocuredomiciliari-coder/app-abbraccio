@@ -1,0 +1,5 @@
+/* Solo utilities/components Tailwind, senza reset "preflight":
+   così le regole globali di styles.css restano intatte per tutte le
+   pagine non ancora migrate. Usato solo da Dashboard e Portale Operatore. */
+@tailwind components;
+@tailwind utilities;

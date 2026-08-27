@@ -223,9 +223,9 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <section>
+      <section className="tw-max-w-none">
         <h2><Activity size={28} />Dashboard</h2>
-        <div className="dashboard-grid" style={{ marginBottom: '24px' }}>
+        <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 lg:tw-grid-cols-3 xl:tw-grid-cols-6 tw-gap-4 tw-mb-6">
           {[1, 2, 3, 4].map(i => (
             <Card key={i} padding="md">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
@@ -251,216 +251,170 @@ function Dashboard() {
   }
 
   return (
-    <section>
-      <h2>
+    <section className="tw-max-w-none">
+      <h2 className="tw-flex tw-items-center tw-gap-2">
         <Activity size={28} />
         Dashboard
       </h2>
-      <>
-          {/* Banner utenti in attesa — solo admin */}
-          {user?.role === 'admin' && pendingCount > 0 && (
-            <div
-              onClick={() => navigate('/gestione-utenti')}
-              style={{ background: 'rgba(245,158,11,0.12)', border: '2px solid #f59e0b', borderRadius: '12px', padding: '14px 18px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'background 0.15s' }}
-            >
-              <Bell size={22} color="#d97706" style={{ flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: '700', color: '#92400e', fontSize: '0.95rem' }}>
-                  {pendingCount} {pendingCount === 1 ? 'nuova richiesta di accesso' : 'nuove richieste di accesso'} in attesa
-                </div>
-                <div style={{ color: '#b45309', fontSize: '0.82rem', marginTop: '2px' }}>
-                  Clicca per approvare o rifiutare gli utenti registrati
-                </div>
-              </div>
-              <span style={{ background: '#f59e0b', color: 'white', borderRadius: '20px', padding: '4px 12px', fontWeight: '800', fontSize: '0.9rem', flexShrink: 0 }}>{pendingCount}</span>
+
+      {/* Banner utenti in attesa — solo admin */}
+      {user?.role === 'admin' && pendingCount > 0 && (
+        <div
+          onClick={() => navigate('/gestione-utenti')}
+          className="tw-flex tw-items-center tw-gap-3 tw-mb-5 tw-cursor-pointer tw-rounded-xl tw-border-2 tw-border-amber-400 tw-bg-amber-400/10 tw-px-4 tw-py-3 hover:tw-bg-amber-400/20 tw-transition-colors"
+        >
+          <Bell size={22} color="#d97706" className="tw-flex-shrink-0" />
+          <div className="tw-flex-1">
+            <div className="tw-font-bold tw-text-amber-800 tw-text-sm">
+              {pendingCount} {pendingCount === 1 ? 'nuova richiesta di accesso' : 'nuove richieste di accesso'} in attesa
             </div>
-          )}
-          <div className="dashboard-grid">
-            {dashboardCards.map((card) => (
-              <button
-                key={card.title}
-                type="button"
-                onClick={() => navigate(card.link)}
-                className="dashboard-card"
-                style={{ cursor: 'pointer', textAlign: 'left', background: 'white', border: '1px solid #e2e8f0', width: '100%' }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    justifyContent: 'space-between',
-                    gap: '12px',
-                    marginBottom: '12px',
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <h3 style={{ margin: '0 0 4px', color: 'var(--gray-500)', fontSize: '0.9rem', fontWeight: 700, lineHeight: 1.2, wordBreak: 'break-word' }}>{card.title}</h3>
-                    <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--gray-400)', lineHeight: 1.3, wordBreak: 'break-word' }}>{card.subtitle}</p>
-                  </div>
-                  <div
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: card.bgColor,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <card.icon size={20} color={card.color} />
-                  </div>
-                </div>
-                <p
-                  style={{
-                    fontSize: typeof card.value === 'number' ? '2.2rem' : '1.15rem',
-                    fontWeight: 700,
-                    color: card.color,
-                    margin: 0,
-                    lineHeight: typeof card.value === 'number' ? 1 : 1.2,
-                    letterSpacing: typeof card.value === 'number' ? '-0.03em' : '0em',
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  {card.value}
-                </p>
-              </button>
-            ))}
+            <div className="tw-text-amber-700 tw-text-xs tw-mt-0.5">
+              Clicca per approvare o rifiutare gli utenti registrati
+            </div>
           </div>
+          <span className="tw-flex-shrink-0 tw-rounded-full tw-bg-amber-500 tw-text-white tw-font-extrabold tw-text-sm tw-px-3 tw-py-1">{pendingCount}</span>
+        </div>
+      )}
 
-          <DashboardTelemedicina />
-
-          {/* ════ ALERT PAI IN SCADENZA 7 GIORNI ════ */}
-          {isPrivilegiato && counts.paiInScadenza7gg > 0 && (
-            <div style={{ marginTop: '20px' }}>
-              <button
-                type="button"
-                onClick={() => setShowPaiAlert(v => !v)}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  background: 'rgba(220,38,38,0.07)', border: '2px solid #fca5a5',
-                  borderBottom: showPaiAlert ? '2px solid #fca5a5' : '2px solid #fca5a5',
-                  borderRadius: showPaiAlert ? '10px 10px 0 0' : '10px',
-                  padding: '12px 16px', cursor: 'pointer', gap: '12px',
-                }}
+      <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 lg:tw-grid-cols-3 xl:tw-grid-cols-6 tw-gap-4">
+        {dashboardCards.map((card) => (
+          <button
+            key={card.title}
+            type="button"
+            onClick={() => navigate(card.link)}
+            className="tw-group tw-relative tw-flex tw-flex-col tw-min-w-0 tw-w-full tw-text-left tw-bg-white tw-border tw-border-slate-200 tw-rounded-2xl tw-p-5 tw-shadow-sm tw-cursor-pointer tw-transition-all hover:tw-shadow-md hover:tw--translate-y-0.5"
+          >
+            <span className="tw-absolute tw-top-0 tw-left-0 tw-right-0 tw-h-1 tw-rounded-t-2xl tw-bg-gradient-to-r tw-from-brand tw-to-brand-light" />
+            <div className="tw-flex tw-items-start tw-justify-between tw-gap-3 tw-mb-3">
+              <div className="tw-flex-1 tw-min-w-0">
+                <h3 className="tw-m-0 tw-mb-1 tw-text-slate-500 tw-text-sm tw-font-bold tw-leading-tight tw-break-words">{card.title}</h3>
+                <p className="tw-m-0 tw-text-slate-400 tw-text-[0.82rem] tw-leading-snug tw-break-words">{card.subtitle}</p>
+              </div>
+              <div
+                className="tw-flex tw-items-center tw-justify-center tw-w-10 tw-h-10 tw-rounded-lg tw-flex-shrink-0"
+                style={{ backgroundColor: card.bgColor }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Bell size={20} color="#dc2626" />
-                  <span style={{ fontWeight: 700, color: '#dc2626', fontSize: '0.95rem' }}>
-                    ⚠️ {counts.paiInScadenza7gg} PAI SIAT in scadenza entro 7 giorni
-                  </span>
-                  <span style={{ background: '#dc2626', color: 'white', borderRadius: '10px', padding: '1px 8px', fontSize: '0.78rem', fontWeight: 800 }}>
-                    {counts.paiInScadenza7gg}
-                  </span>
-                </div>
-                <span style={{ fontSize: '0.8rem', color: '#dc2626', fontWeight: 600 }}>{showPaiAlert ? '▲ Chiudi' : '▼ Mostra lista'}</span>
-              </button>
+                <card.icon size={20} color={card.color} />
+              </div>
+            </div>
+            <p
+              className={`tw-m-0 tw-font-bold tw-break-words ${typeof card.value === 'number' ? 'tw-text-[2.2rem] tw-leading-none tw-tracking-tight' : 'tw-text-[1.15rem] tw-leading-snug'}`}
+              style={{ color: card.color }}
+            >
+              {card.value}
+            </p>
+          </button>
+        ))}
+      </div>
 
-              {showPaiAlert && (
-                <div style={{
-                  border: '2px solid #fca5a5', borderTop: 'none', borderRadius: '0 0 10px 10px',
-                  background: 'white', overflow: 'hidden',
-                }}>
-                  {paiScadenza.length === 0 ? (
-                    <p style={{ padding: '16px', color: '#888', margin: 0, fontSize: '0.88rem' }}>Caricamento lista...</p>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      {paiScadenza.map((paz, i) => {
-                        const giorni = giorniAllaScadenza(paz.siat?.dataScadenzaAutorizzazione);
-                        const scaduto = giorni !== null && giorni < 0;
-                        const urgente = giorni !== null && giorni <= 2 && !scaduto;
-                        return (
-                          <div
-                            key={paz._id}
-                            style={{
-                              padding: '14px 16px',
-                              borderTop: i > 0 ? '1px solid #fee2e2' : 'none',
-                              background: scaduto ? 'rgba(220,38,38,0.04)' : urgente ? 'rgba(245,158,11,0.04)' : 'white',
-                              display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap',
-                            }}
-                          >
-                            <div style={{ flex: 1, minWidth: '200px' }}>
-                              <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#1e4d8c', marginBottom: '3px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                {paz.firstName} {paz.lastName}
-                                {scaduto ? (
-                                  <span style={{ background: '#dc2626', color: 'white', borderRadius: '5px', padding: '1px 7px', fontSize: '0.72rem', fontWeight: 800 }}>SCADUTO {Math.abs(giorni!)} gg fa</span>
-                                ) : urgente ? (
-                                  <span style={{ background: '#f59e0b', color: 'white', borderRadius: '5px', padding: '1px 7px', fontSize: '0.72rem', fontWeight: 800 }}>⚡ {giorni} gg</span>
-                                ) : (
-                                  <span style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d', borderRadius: '5px', padding: '1px 7px', fontSize: '0.72rem', fontWeight: 700 }}>{giorni} gg</span>
-                                )}
-                              </div>
-                              <div style={{ fontSize: '0.8rem', color: '#555', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                <span>📅 Scadenza: <strong>{formatDataBreve(paz.siat?.dataScadenzaAutorizzazione)}</strong></span>
-                                {paz.siat?.tipologiaCura && <span>🩺 {paz.siat.tipologiaCura}</span>}
-                                {paz.siat?.npi && <span>NPI: {paz.siat.npi}</span>}
-                                {paz.siat?.asl && <span>ASL: {paz.siat.asl}</span>}
-                                {paz.siat?.distretto && <span>Distretto: {paz.siat.distretto}</span>}
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => segnaVisto(paz._id)}
-                              disabled={chiudendoId === paz._id}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: '6px',
-                                background: chiudendoId === paz._id ? '#e5e7eb' : '#f0fdf4',
-                                border: '1px solid #bbf7d0', borderRadius: '8px',
-                                padding: '8px 14px', cursor: chiudendoId === paz._id ? 'not-allowed' : 'pointer',
-                                color: '#065f46', fontWeight: 700, fontSize: '0.82rem', whiteSpace: 'nowrap', flexShrink: 0,
-                              }}
-                            >
-                              <Eye size={14} />
-                              {chiudendoId === paz._id ? '...' : 'Ho visto – chiudi'}
-                            </button>
+      <DashboardTelemedicina />
+
+      {/* ════ ALERT PAI IN SCADENZA 7 GIORNI ════ */}
+      {isPrivilegiato && counts.paiInScadenza7gg > 0 && (
+        <div className="tw-mt-5">
+          <button
+            type="button"
+            onClick={() => setShowPaiAlert(v => !v)}
+            className={`tw-w-full tw-flex tw-items-center tw-justify-between tw-gap-3 tw-bg-red-600/[0.07] tw-border-2 tw-border-red-300 tw-px-4 tw-py-3 tw-cursor-pointer ${showPaiAlert ? 'tw-rounded-t-lg' : 'tw-rounded-lg'}`}
+          >
+            <div className="tw-flex tw-items-center tw-gap-2.5">
+              <Bell size={20} color="#dc2626" />
+              <span className="tw-font-bold tw-text-red-600 tw-text-sm">
+                ⚠️ {counts.paiInScadenza7gg} PAI SIAT in scadenza entro 7 giorni
+              </span>
+              <span className="tw-bg-red-600 tw-text-white tw-rounded-lg tw-px-2 tw-py-0.5 tw-text-xs tw-font-extrabold">
+                {counts.paiInScadenza7gg}
+              </span>
+            </div>
+            <span className="tw-text-xs tw-text-red-600 tw-font-semibold">{showPaiAlert ? '▲ Chiudi' : '▼ Mostra lista'}</span>
+          </button>
+
+          {showPaiAlert && (
+            <div className="tw-border-2 tw-border-t-0 tw-border-red-300 tw-rounded-b-lg tw-bg-white tw-overflow-hidden">
+              {paiScadenza.length === 0 ? (
+                <p className="tw-p-4 tw-text-slate-400 tw-m-0 tw-text-sm">Caricamento lista...</p>
+              ) : (
+                <div className="tw-flex tw-flex-col">
+                  {paiScadenza.map((paz, i) => {
+                    const giorni = giorniAllaScadenza(paz.siat?.dataScadenzaAutorizzazione);
+                    const scaduto = giorni !== null && giorni < 0;
+                    const urgente = giorni !== null && giorni <= 2 && !scaduto;
+                    return (
+                      <div
+                        key={paz._id}
+                        className={`tw-flex tw-items-start tw-justify-between tw-gap-3 tw-flex-wrap tw-px-4 tw-py-3.5 ${i > 0 ? 'tw-border-t tw-border-red-100' : ''} ${scaduto ? 'tw-bg-red-600/[0.04]' : urgente ? 'tw-bg-amber-500/[0.04]' : 'tw-bg-white'}`}
+                      >
+                        <div className="tw-flex-1 tw-min-w-[200px]">
+                          <div className="tw-flex tw-items-center tw-gap-2 tw-flex-wrap tw-font-bold tw-text-[0.92rem] tw-text-brand tw-mb-0.5">
+                            {paz.firstName} {paz.lastName}
+                            {scaduto ? (
+                              <span className="tw-bg-red-600 tw-text-white tw-rounded tw-px-1.5 tw-py-0.5 tw-text-[0.72rem] tw-font-extrabold">SCADUTO {Math.abs(giorni!)} gg fa</span>
+                            ) : urgente ? (
+                              <span className="tw-bg-amber-500 tw-text-white tw-rounded tw-px-1.5 tw-py-0.5 tw-text-[0.72rem] tw-font-extrabold">⚡ {giorni} gg</span>
+                            ) : (
+                              <span className="tw-bg-amber-100 tw-text-amber-800 tw-border tw-border-amber-300 tw-rounded tw-px-1.5 tw-py-0.5 tw-text-[0.72rem] tw-font-bold">{giorni} gg</span>
+                            )}
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                          <div className="tw-flex tw-flex-wrap tw-gap-2 tw-text-[0.8rem] tw-text-slate-600">
+                            <span>📅 Scadenza: <strong>{formatDataBreve(paz.siat?.dataScadenzaAutorizzazione)}</strong></span>
+                            {paz.siat?.tipologiaCura && <span>🩺 {paz.siat.tipologiaCura}</span>}
+                            {paz.siat?.npi && <span>NPI: {paz.siat.npi}</span>}
+                            {paz.siat?.asl && <span>ASL: {paz.siat.asl}</span>}
+                            {paz.siat?.distretto && <span>Distretto: {paz.siat.distretto}</span>}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => segnaVisto(paz._id)}
+                          disabled={chiudendoId === paz._id}
+                          className={`tw-flex tw-items-center tw-gap-1.5 tw-flex-shrink-0 tw-whitespace-nowrap tw-rounded-lg tw-border tw-border-green-300 tw-px-3.5 tw-py-2 tw-text-[0.82rem] tw-font-bold tw-text-emerald-800 ${chiudendoId === paz._id ? 'tw-bg-slate-200 tw-cursor-not-allowed' : 'tw-bg-green-50 tw-cursor-pointer'}`}
+                        >
+                          <Eye size={14} />
+                          {chiudendoId === paz._id ? '...' : 'Ho visto – chiudi'}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
           )}
+        </div>
+      )}
 
-          {/* Alert cards */}
-          {alertCards.length > 0 && (
-            <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <h3 style={{ margin: '0 0 4px', fontSize: '0.95rem', color: '#374151', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <AlertTriangle size={18} color="#d97706" /> Attenzione richiesta
-              </h3>
-              {alertCards.map((card) => (
-                <div
-                  key={card.title}
-                  style={{
-                    background: card.bgColor,
-                    border: `1px solid ${card.border}`,
-                    borderLeft: `4px solid ${card.color}`,
-                    borderRadius: '10px',
-                    padding: '14px 16px',
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px',
-                  }}
+      {/* Alert cards */}
+      {alertCards.length > 0 && (
+        <div className="tw-mt-5 tw-flex tw-flex-col tw-gap-3">
+          <h3 className="tw-m-0 tw-mb-1 tw-text-sm tw-text-slate-700 tw-flex tw-items-center tw-gap-2">
+            <AlertTriangle size={18} color="#d97706" /> Attenzione richiesta
+          </h3>
+          {alertCards.map((card) => (
+            <div
+              key={card.title}
+              className="tw-flex tw-items-start tw-gap-3 tw-rounded-lg tw-px-4 tw-py-3.5"
+              style={{
+                backgroundColor: card.bgColor,
+                border: `1px solid ${card.border}`,
+                borderLeft: `4px solid ${card.color}`,
+              }}
+            >
+              <card.icon size={20} color={card.color} className="tw-flex-shrink-0 tw-mt-0.5" />
+              <div className="tw-flex-1">
+                <div className="tw-font-bold tw-text-sm tw-mb-0.5" style={{ color: card.color }}>{card.title}</div>
+                <div className="tw-text-[0.83rem] tw-text-slate-700 tw-mb-2">{card.desc}</div>
+                <button
+                  type="button"
+                  onClick={() => navigate(card.link)}
+                  className="tw-bg-transparent tw-border-0 tw-cursor-pointer tw-font-bold tw-text-[0.83rem] tw-p-0 tw-underline"
+                  style={{ color: card.color }}
                 >
-                  <card.icon size={20} color={card.color} style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, color: card.color, fontSize: '0.9rem', marginBottom: '3px' }}>{card.title}</div>
-                    <div style={{ fontSize: '0.83rem', color: '#374151', marginBottom: '8px' }}>{card.desc}</div>
-                    <button
-                      type="button"
-                      onClick={() => navigate(card.link)}
-                      style={{ background: 'none', border: 'none', color: card.color, cursor: 'pointer', fontWeight: 700, fontSize: '0.83rem', padding: 0, textDecoration: 'underline' }}
-                    >
-                      {card.btnLabel}
-                    </button>
-                  </div>
-                </div>
-              ))}
+                  {card.btnLabel}
+                </button>
+              </div>
             </div>
-          )}
-      </>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
