@@ -8,3 +8,5 @@ export { Modal } from './Modal';
 export { DataTable } from './DataTable';
 export { Loading } from './Loading';
 export { EmptyState } from './EmptyState';
+export { Dropdown } from './Dropdown';
+export type { DropdownItem } from './Dropdown';

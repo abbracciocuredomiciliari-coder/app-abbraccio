@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { FileText, Send, Loader2, X, Signature, Save, Filter } from 'lucide-react';
@@ -8,6 +8,7 @@ import FirmaCanvas from './FirmaCanvas';
 interface ReportGeneratorProps {
   patientId: string;
   patientName: string;
+  renderTrigger?: (props: { onClick: () => void; loading: boolean }) => ReactNode;
 }
 
 const CATEGORIE = [
@@ -18,7 +19,7 @@ const CATEGORIE = [
   { value: 'sociale', label: 'Sociale' },
 ];
 
-export function ReportGenerator({ patientId, patientName }: ReportGeneratorProps) {
+export function ReportGenerator({ patientId, patientName, renderTrigger }: ReportGeneratorProps) {
   const { user } = useAuth();
   const isPrivileged = ['admin', 'coordinator', 'direttore'].includes(user?.role || '');
   const [open, setOpen] = useState(false);
@@ -110,15 +111,19 @@ export function ReportGenerator({ patientId, patientName }: ReportGeneratorProps
 
   return (
     <>
-      <Button
-        type="button"
-        onClick={generate}
-        disabled={loading}
-        variant="secondary"
-        icon={loading ? <Loader2 size={16} /> : <FileText size={16} />}
-      >
-        {loading ? 'Generazione...' : 'Relazione LLM'}
-      </Button>
+      {renderTrigger ? (
+        renderTrigger({ onClick: generate, loading })
+      ) : (
+        <Button
+          type="button"
+          onClick={generate}
+          disabled={loading}
+          variant="secondary"
+          icon={loading ? <Loader2 size={16} /> : <FileText size={16} />}
+        >
+          {loading ? 'Generazione...' : 'Relazione LLM'}
+        </Button>
+      )}
 
       {message && !open && (
         <span style={{ color: message.includes('fallito') || message.includes('Errore') ? '#b91c1c' : '#15803d', fontSize: '0.8rem', marginLeft: '8px' }}>

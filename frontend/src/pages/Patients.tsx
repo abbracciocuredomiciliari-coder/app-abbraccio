@@ -32,6 +32,7 @@ import { Input } from '../components/ui/Input';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { Loading } from '../components/ui/Loading';
+import { Dropdown } from '../components/ui/Dropdown';
 
 // Assicura che API_BASE_URL termini sempre con /api
 const _rawBasePatients = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
@@ -740,42 +741,7 @@ function Patients() {
                     </div>
                   )}
                 </div>
-                <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
-                  <button
-                    onClick={() => {
-                      setDatiCliniciPaziente(patient);
-                      setDatiCliniciForm({
-                        codiceFiscale: patient.codiceFiscale || '',
-                        diagnosiAmmissione: patient.diagnosiAmmissione || '',
-                        comorbilita: patient.comorbilita || '',
-                        allergie: patient.allergie || '',
-                        caregiverRiferimento: patient.caregiverRiferimento || '',
-                        caregiverTelefono: patient.caregiverTelefono || '',
-                      });
-                      setShowDatiCliniciModal(true);
-                    }}
-                    style={{ background: '#0369a1', color: 'white', whiteSpace: 'nowrap' }}
-                    title="Dati Clinici ADI"
-                  >
-                    <Stethoscope size={16} />
-                    ADI
-                  </button>
-                  <button
-                    onClick={() => {
-                      setConsensoPaziente(patient);
-                      setFirmaConsenso('');
-                      setFirmaConsensoNome(patient.firstName + ' ' + patient.lastName);
-                      setFirmaConsensoRuolo('paziente');
-                      setConsensoSalvato(false);
-                      setEmailConsenso(patient.email || '');
-                      setShowConsensoModal(true);
-                    }}
-                    style={{ background: '#7e22ce', color: 'white', whiteSpace: 'nowrap' }}
-                    title="Consenso GDPR"
-                  >
-                    <Shield size={16} />
-                    GDPR
-                  </button>
+                <div style={{ display: 'flex', gap: '8px', flexShrink: 0, alignItems: 'center' }}>
                   <button
                     onClick={() => openDocumentsModal(patient)}
                     style={{
@@ -800,19 +766,54 @@ function Patients() {
                   <ReportGenerator
                     patientId={patient._id}
                     patientName={`${patient.firstName} ${patient.lastName}`}
+                    renderTrigger={({ onClick, loading }) => (
+                      <Dropdown
+                        items={[
+                          {
+                            label: 'Dati Clinici ADI',
+                            icon: <Stethoscope size={16} />,
+                            onClick: () => {
+                              setDatiCliniciPaziente(patient);
+                              setDatiCliniciForm({
+                                codiceFiscale: patient.codiceFiscale || '',
+                                diagnosiAmmissione: patient.diagnosiAmmissione || '',
+                                comorbilita: patient.comorbilita || '',
+                                allergie: patient.allergie || '',
+                                caregiverRiferimento: patient.caregiverRiferimento || '',
+                                caregiverTelefono: patient.caregiverTelefono || '',
+                              });
+                              setShowDatiCliniciModal(true);
+                            },
+                          },
+                          {
+                            label: 'Consenso GDPR',
+                            icon: <Shield size={16} />,
+                            onClick: () => {
+                              setConsensoPaziente(patient);
+                              setFirmaConsenso('');
+                              setFirmaConsensoNome(patient.firstName + ' ' + patient.lastName);
+                              setFirmaConsensoRuolo('paziente');
+                              setConsensoSalvato(false);
+                              setEmailConsenso(patient.email || '');
+                              setShowConsensoModal(true);
+                            },
+                          },
+                          {
+                            label: loading ? 'Generazione relazione...' : 'Relazione LLM',
+                            icon: <FileText size={16} />,
+                            onClick,
+                          },
+                          {
+                            label: 'Elimina paziente',
+                            icon: <Trash2 size={16} />,
+                            onClick: () => deletePatient(patient._id),
+                            danger: true,
+                            hidden: user?.role !== 'admin',
+                          },
+                        ]}
+                      />
+                    )}
                   />
-                  {user?.role === 'admin' && (
-                    <button
-                      onClick={() => deletePatient(patient._id)}
-                      style={{
-                        background: 'var(--danger)',
-                        whiteSpace: 'nowrap',
-                      }}
-                      title="Elimina paziente"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
                 </div>
               </li>
             ))}
