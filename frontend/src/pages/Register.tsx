@@ -37,6 +37,22 @@ const figurePerCategoria: Record<string, { label: string; ruoli: string[] }> = {
     label: 'Direttore Sanitario',
     ruoli: ['Direttore sanitario'],
   },
+  privato: {
+    label: 'Personale Privato',
+    ruoli: ['Assistente familiare', 'Assistente sanitario', 'OSS - Operatore Socio Sanitario', 'Badante'],
+  },
+  osa: {
+    label: 'OSA - Operatore Socio Assistenziale',
+    ruoli: ['OSA - Operatore Socio Assistenziale'],
+  },
+  'assistente-familiare': {
+    label: 'Assistente familiare',
+    ruoli: ['Assistente familiare'],
+  },
+  badante: {
+    label: 'Badante',
+    ruoli: ['Badante'],
+  },
 };
 
 type Step = 'anagrafica' | 'zona' | 'tipo-collab' | 'contratto' | 'documenti' | 'riepilogo';

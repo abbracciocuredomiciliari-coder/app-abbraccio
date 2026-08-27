@@ -37,7 +37,7 @@ interface StaffMember {
   lastName: string;
   email: string;
   role: string;
-  category: 'infermieristico' | 'oss' | 'riabilitativo' | 'medico' | 'sociale' | 'coordinamento' | 'direzione';
+  category: 'infermieristico' | 'oss' | 'riabilitativo' | 'medico' | 'sociale' | 'coordinamento' | 'direzione' | 'privato' | 'osa' | 'assistente-familiare' | 'badante';
   phone?: string;
   active: boolean;
   dataInizioCollaborazione?: string;
@@ -68,6 +68,10 @@ const categories = [
   { value: 'sociale', label: 'Personale Sociale', color: '#db2777' },
   { value: 'coordinamento', label: 'Coordinamento', color: '#8b5cf6' },
   { value: 'direzione', label: 'Direttore Sanitario', color: '#ef4444' },
+  { value: 'privato', label: 'Personale Privato', color: '#84cc16' },
+  { value: 'osa', label: 'OSA - Operatore Socio Assistenziale', color: '#06b6d4' },
+  { value: 'assistente-familiare', label: 'Assistente familiare', color: '#f59e0b' },
+  { value: 'badante', label: 'Badante', color: '#ec4899' },
 ];
 
 const rolesByCategory: Record<string, string[]> = {
@@ -78,6 +82,10 @@ const rolesByCategory: Record<string, string[]> = {
   sociale: ['Assistente sociale'],
   coordinamento: ['Coordinatore infermieristico', 'Coordinatore medico', 'Coordinatore fisioterapico'],
   direzione: ['Direttore sanitario'],
+  privato: ['Assistente familiare', 'Assistente sanitario', 'OSS - Operatore Socio Sanitario', 'Badante'],
+  osa: ['OSA - Operatore Socio Assistenziale'],
+  'assistente-familiare': ['Assistente familiare'],
+  badante: ['Badante'],
 };
 
 const documentTypes = [
@@ -246,7 +254,14 @@ function Staff() {
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+      const next = { ...prev, [name]: value };
+      if (name === 'modalitaAbilitata' && value === 'convenzione' && ['privato','osa','assistente-familiare','badante'].includes(prev.category)) {
+        next.category = 'infermieristico';
+        next.role = '';
+      }
+      return next;
+    });
   };
 
   const apriModificaStaff = (staff: StaffMember) => {
@@ -686,9 +701,11 @@ function Staff() {
                 value={formData.category}
                 onChange={handleInputChange}
               >
-                {categories.map(cat => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
-                ))}
+                {categories
+                  .filter(cat => !['privato','osa','assistente-familiare','badante'].includes(cat.value) || formData.modalitaAbilitata !== 'convenzione')
+                  .map(cat => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  ))}
               </select>
             </label>
             <label>
@@ -993,10 +1010,17 @@ function Staff() {
           <label>Email di accesso *<input type="email" required value={modificaForm.email} onChange={e => setModificaForm(f => ({ ...f, email: e.target.value }))} /></label>
           <label>Telefono<input type="tel" value={modificaForm.phone} onChange={e => setModificaForm(f => ({ ...f, phone: e.target.value }))} /></label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <label>Categoria<select value={modificaForm.category} onChange={e => setModificaForm(f => ({ ...f, category: e.target.value as StaffMember['category'], role: rolesByCategory[e.target.value]?.includes(f.role) ? f.role : '' }))}>{categories.map(category => <option key={category.value} value={category.value}>{category.label}</option>)}</select></label>
+            <label>Categoria<select value={modificaForm.category} onChange={e => setModificaForm(f => ({ ...f, category: e.target.value as StaffMember['category'], role: rolesByCategory[e.target.value]?.includes(f.role) ? f.role : '' }))}>{categories.filter(c => !['privato','osa','assistente-familiare','badante'].includes(c.value) || modificaForm.modalitaAbilitata !== 'convenzione').map(category => <option key={category.value} value={category.value}>{category.label}</option>)}</select></label>
             <label>Ruolo *<select required value={modificaForm.role} onChange={e => setModificaForm(f => ({ ...f, role: e.target.value }))}><option value="">Seleziona ruolo</option>{rolesByCategory[modificaForm.category].map(role => <option key={role} value={role}>{role}</option>)}</select></label>
           </div>
-          <label>Modalità abilitata<select value={modificaForm.modalitaAbilitata} onChange={e => setModificaForm(f => ({ ...f, modalitaAbilitata: e.target.value as 'entrambi' | 'privato' | 'convenzione' }))}><option value="entrambi">Entrambi</option><option value="privato">Solo privati</option><option value="convenzione">Solo SIAT</option></select></label>
+          <label>Modalità abilitata<select value={modificaForm.modalitaAbilitata} onChange={e => setModificaForm(f => {
+              const next = { ...f, modalitaAbilitata: e.target.value as 'entrambi' | 'privato' | 'convenzione' };
+              if (e.target.value === 'convenzione' && ['privato','osa','assistente-familiare','badante'].includes(f.category)) {
+                next.category = 'infermieristico';
+                next.role = '';
+              }
+              return next;
+            })}><option value="entrambi">Entrambi</option><option value="privato">Solo privati</option><option value="convenzione">Solo SIAT</option></select></label>
           <label>Note<textarea value={modificaForm.note} onChange={e => setModificaForm(f => ({ ...f, note: e.target.value }))} rows={3} /></label>
           <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>La modifica dell’email aggiorna anche l’account di accesso dell’operatore.</p>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}><Button type="button" variant="secondary" onClick={() => setStaffInModifica(null)}>Annulla</Button><Button type="submit" disabled={salvataggioModifica}>{salvataggioModifica ? 'Salvataggio...' : 'Salva modifiche'}</Button></div>

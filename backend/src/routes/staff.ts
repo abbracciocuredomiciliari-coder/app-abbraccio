@@ -64,7 +64,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
     const { category, active } = req.query;
     const query: any = {};
     
-    if (category && ['infermieristico', 'oss', 'riabilitativo', 'medico', 'coordinamento', 'direzione'].includes(category as string)) {
+    if (category && ['infermieristico', 'oss', 'riabilitativo', 'medico', 'coordinamento', 'direzione', 'privato', 'osa', 'assistente-familiare', 'badante'].includes(category as string)) {
       query.category = category;
     }
     
@@ -87,8 +87,12 @@ router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async
     return res.status(400).json({ message: 'I campi nome, cognome, email e ruolo sono obbligatori' });
   }
 
-  if (!category || !['infermieristico', 'oss', 'riabilitativo', 'medico', 'coordinamento', 'direzione'].includes(category)) {
+  if (!category || !['infermieristico', 'oss', 'riabilitativo', 'medico', 'coordinamento', 'direzione', 'privato', 'osa', 'assistente-familiare', 'badante'].includes(category)) {
     return res.status(400).json({ message: 'Categoria non valida. Usare: infermieristico, oss, riabilitativo, medico, coordinamento, direzione' });
+  }
+
+  if (['privato','osa','assistente-familiare','badante'].includes(category) && modalitaAbilitata === 'convenzione') {
+    return res.status(400).json({ message: 'La categoria selezionata non può essere abilitata solo per la convenzione SIAT' });
   }
 
   try {
@@ -136,8 +140,13 @@ router.put('/:staffId', authenticateToken, authorizeRole('admin', 'coordinator')
       if (duplicateStaff) return res.status(409).json({ message: 'Questa email è già utilizzata da un altro operatore' });
       updateData.email = normalizedEmail;
     }
+
+    if (['privato','osa','assistente-familiare','badante'].includes(updateData.category) && modalitaAbilitata === 'convenzione') {
+      return res.status(400).json({ message: 'La categoria selezionata non può essere abilitata solo per la convenzione SIAT' });
+    }
+
     if (role) updateData.role = role;
-    if (category && ['infermieristico', 'oss', 'riabilitativo', 'medico', 'coordinamento', 'direzione'].includes(category)) {
+    if (category && ['infermieristico', 'oss', 'riabilitativo', 'medico', 'coordinamento', 'direzione', 'privato', 'osa', 'assistente-familiare', 'badante'].includes(category)) {
       updateData.category = category;
     }
     const phonePlain = phone !== undefined ? phone.trim() : undefined;

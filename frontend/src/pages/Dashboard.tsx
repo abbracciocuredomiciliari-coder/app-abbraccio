@@ -287,14 +287,15 @@ function Dashboard() {
                 <div
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     justifyContent: 'space-between',
+                    gap: '12px',
                     marginBottom: '12px',
                   }}
                 >
-                  <div>
-                    <h3 style={{ margin: 0, color: 'var(--gray-500)', fontSize: '0.9rem' }}>{card.title}</h3>
-                    <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: 'var(--gray-400)' }}>{card.subtitle}</p>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h3 style={{ margin: '0 0 4px', color: 'var(--gray-500)', fontSize: '0.9rem', fontWeight: 700, lineHeight: 1.2, wordBreak: 'break-word' }}>{card.title}</h3>
+                    <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--gray-400)', lineHeight: 1.3, wordBreak: 'break-word' }}>{card.subtitle}</p>
                   </div>
                   <div
                     style={{
@@ -311,7 +312,17 @@ function Dashboard() {
                     <card.icon size={20} color={card.color} />
                   </div>
                 </div>
-                <p style={{ fontSize: '2.5rem', fontWeight: 700, color: card.color, margin: 0, lineHeight: 1 }}>
+                <p
+                  style={{
+                    fontSize: typeof card.value === 'number' ? '2.2rem' : '1.15rem',
+                    fontWeight: 700,
+                    color: card.color,
+                    margin: 0,
+                    lineHeight: typeof card.value === 'number' ? 1 : 1.2,
+                    letterSpacing: typeof card.value === 'number' ? '-0.03em' : '0em',
+                    wordBreak: 'break-word',
+                  }}
+                >
                   {card.value}
                 </p>
               </button>
