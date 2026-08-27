@@ -914,19 +914,19 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
     .reduce((sum, p) => sum + (p.compensoTotale || 0), 0);
 
   return (
-    <section>
-      <h2>
+    <section className="tw-max-w-none">
+      <h2 className="tw-flex tw-items-center tw-gap-2">
         {mode === 'piani' ? '📋 Piani Lavorativi' : (pazienteSelezionato || mostraTuttiPiani ? '🏥 Il mio Piano di Lavoro' : '📊 Dashboard')}
       </h2>
 
       {!pazienteSelezionato && !mostraTuttiPiani && pazientiDaAccettare.length > 0 && (
-        <div style={{ marginBottom: 18, padding: 16, borderRadius: 10, background: '#eff6ff', border: '1px solid #93c5fd' }}>
-          <h3 style={{ margin: '0 0 6px', color: '#1d4ed8' }}>📋 Pazienti da accettare ({pazientiDaAccettare.length})</h3>
-          <p style={{ margin: '0 0 12px', color: '#475569', fontSize: '.9rem' }}>Accetta o rifiuta l'incarico prima di accedere ai dati del paziente.</p>
-          <div style={{ display: 'grid', gap: 8 }}>
-            {pazientiDaAccettare.map(piano => <div key={piano._id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: 'white', borderRadius: 8, padding: '10px 12px' }}>
+        <div className="tw-mb-5 tw-p-4 tw-rounded-xl tw-bg-blue-50 tw-border tw-border-blue-300">
+          <h3 className="tw-m-0 tw-mb-1.5 tw-text-blue-700">📋 Pazienti da accettare ({pazientiDaAccettare.length})</h3>
+          <p className="tw-m-0 tw-mb-3 tw-text-slate-600 tw-text-[0.9rem]">Accetta o rifiuta l'incarico prima di accedere ai dati del paziente.</p>
+          <div className="tw-grid tw-gap-2">
+            {pazientiDaAccettare.map(piano => <div key={piano._id} className="tw-flex tw-items-center tw-justify-between tw-gap-2.5 tw-bg-white tw-rounded-lg tw-px-3 tw-py-2.5">
               <div><strong>{piano.patient?.firstName} {piano.patient?.lastName}</strong><br /><small>{piano.task} · {new Date(piano.date).toLocaleDateString('it-IT')}</small></div>
-              <button onClick={() => { setPianoDaAccettare(piano); setMostraModalAccettazione(true); }} style={{ padding: '8px 11px', background: '#1d4ed8', color: 'white', border: 0, borderRadius: 6, fontWeight: 700, cursor: 'pointer' }}>Apri richiesta</button>
+              <button onClick={() => { setPianoDaAccettare(piano); setMostraModalAccettazione(true); }} className="tw-px-2.5 tw-py-2 tw-bg-blue-700 tw-text-white tw-border-0 tw-rounded-md tw-font-bold tw-cursor-pointer hover:tw-bg-blue-800">Apri richiesta</button>
             </div>)}
           </div>
         </div>
@@ -936,21 +936,21 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
           MODAL ACCETTAZIONE INCARICO (da email)
       ══════════════════════════════════════════════════════════════════════ */}
       {mostraModalAccettazione && pianoDaAccettare && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: 'white', borderRadius: '12px', padding: '28px', maxWidth: '480px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-            <h3 style={{ margin: '0 0 8px', color: '#1e4d8c', fontSize: '1.3rem' }}>📋 Nuovo incarico assegnato</h3>
-            <p style={{ color: '#666', margin: '0 0 20px', fontSize: '0.95rem' }}>
+        <div className="tw-fixed tw-inset-0 tw-z-50 tw-bg-black/60 tw-flex tw-items-center tw-justify-center tw-p-5" onClick={() => setMostraModalAccettazione(false)}>
+          <div className="tw-bg-white tw-rounded-2xl tw-p-7 tw-w-full tw-max-w-[480px] tw-shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="tw-m-0 tw-mb-2 tw-text-brand tw-text-xl">📋 Nuovo incarico assegnato</h3>
+            <p className="tw-text-slate-500 tw-m-0 tw-mb-5 tw-text-[0.95rem]">
               Ti è stato assegnato un nuovo piano di lavoro. Accetta o rifiuta l'incarico.
             </p>
 
-            <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
-              <p style={{ margin: '0 0 8px', fontSize: '0.9rem' }}><strong>Paziente:</strong> {pianoDaAccettare.patient?.firstName} {pianoDaAccettare.patient?.lastName}</p>
-              <p style={{ margin: '0 0 8px', fontSize: '0.9rem' }}><strong>Attività:</strong> {pianoDaAccettare.task}</p>
-              <p style={{ margin: 0, fontSize: '0.9rem' }}><strong>Data inizio:</strong> {new Date(pianoDaAccettare.date).toLocaleDateString('it-IT')}</p>
+            <div className="tw-bg-slate-50 tw-rounded-lg tw-p-4 tw-mb-5">
+              <p className="tw-m-0 tw-mb-2 tw-text-[0.9rem]"><strong>Paziente:</strong> {pianoDaAccettare.patient?.firstName} {pianoDaAccettare.patient?.lastName}</p>
+              <p className="tw-m-0 tw-mb-2 tw-text-[0.9rem]"><strong>Attività:</strong> {pianoDaAccettare.task}</p>
+              <p className="tw-m-0 tw-text-[0.9rem]"><strong>Data inizio:</strong> {new Date(pianoDaAccettare.date).toLocaleDateString('it-IT')}</p>
             </div>
 
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: '#374151' }}>
+            <div className="tw-mb-5">
+              <label className="tw-block tw-mb-1.5 tw-text-[0.9rem] tw-text-slate-700">
                 Motivo rifiuto (solo se rifiuti):
               </label>
               <textarea
@@ -958,22 +958,22 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                 onChange={e => setMotivoRifiuto(e.target.value)}
                 placeholder="Es. impegnato in altro incarico, indisponibilità..."
                 rows={2}
-                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.9rem', resize: 'vertical' }}
+                className="tw-w-full tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem] tw-resize-y"
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <div className="tw-flex tw-flex-wrap tw-gap-3">
               <button
                 onClick={accettaIncarico}
                 disabled={loadingAccettazione}
-                style={{ flex: 1, padding: '14px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '1rem', cursor: loadingAccettazione ? 'not-allowed' : 'pointer', opacity: loadingAccettazione ? 0.7 : 1 }}
+                className={`tw-flex-1 tw-py-3.5 tw-rounded-lg tw-text-white tw-font-bold tw-text-base tw-border-0 tw-cursor-pointer ${loadingAccettazione ? 'tw-bg-green-500 tw-cursor-not-allowed tw-opacity-70' : 'tw-bg-green-600 hover:tw-bg-green-700'}`}
               >
                 {loadingAccettazione ? '⏳...' : '✅ Accetta'}
               </button>
               <button
                 onClick={rifiutaIncarico}
                 disabled={loadingAccettazione}
-                style={{ flex: 1, padding: '14px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '1rem', cursor: loadingAccettazione ? 'not-allowed' : 'pointer', opacity: loadingAccettazione ? 0.7 : 1 }}
+                className={`tw-flex-1 tw-py-3.5 tw-rounded-lg tw-text-white tw-font-bold tw-text-base tw-border-0 tw-cursor-pointer ${loadingAccettazione ? 'tw-bg-red-500 tw-cursor-not-allowed tw-opacity-70' : 'tw-bg-red-600 hover:tw-bg-red-700'}`}
               >
                 {loadingAccettazione ? '⏳...' : '❌ Rifiuta'}
               </button>
@@ -987,85 +987,85 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
       ══════════════════════════════════════════════════════════════════════ */}
       {mode === 'dashboard' && !pazienteSelezionato && !mostraTuttiPiani && (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+          <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-3 xl:tw-grid-cols-4 tw-gap-3 tw-mb-5">
             <button
               type="button"
               onClick={() => navigate('/piani-lavorativi')}
-              style={{ background: 'rgba(5,150,105,0.07)', border: '1px solid rgba(5,150,105,0.3)', borderRadius: '10px', padding: '14px 12px', textAlign: 'center', cursor: 'pointer', minWidth: 0 }}
+              className="tw-bg-emerald-50 tw-border tw-border-emerald-200 tw-rounded-xl tw-px-2.5 tw-py-3.5 tw-text-center tw-cursor-pointer tw-min-w-0 hover:tw-bg-emerald-100"
             >
-              <div style={{ fontSize: '0.7rem', color: '#059669', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap' }}>Pazienti</div>
-              <div style={{ fontSize: '2rem', fontWeight: '800', color: '#059669', lineHeight: 1 }}>{pazienti.length}</div>
+              <div className="tw-text-[0.7rem] tw-text-emerald-600 tw-font-bold tw-uppercase tw-mb-1 tw-whitespace-nowrap">Pazienti</div>
+              <div className="tw-text-2xl tw-font-extrabold tw-text-emerald-600 tw-leading-none">{pazienti.length}</div>
             </button>
             <button
               type="button"
               onClick={() => navigate('/piani-lavorativi')}
-              style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '10px', padding: '14px 12px', textAlign: 'center', cursor: 'pointer', minWidth: 0 }}
+              className="tw-bg-amber-50 tw-border tw-border-amber-200 tw-rounded-xl tw-px-2.5 tw-py-3.5 tw-text-center tw-cursor-pointer tw-min-w-0 hover:tw-bg-amber-100"
             >
-              <div style={{ fontSize: '0.7rem', color: '#d97706', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap' }}>Incarichi</div>
-              <div style={{ fontSize: '2rem', fontWeight: '800', color: '#d97706', lineHeight: 1 }}>{pianiAttiviTutti.length}</div>
+              <div className="tw-text-[0.7rem] tw-text-amber-600 tw-font-bold tw-uppercase tw-mb-1 tw-whitespace-nowrap">Incarichi</div>
+              <div className="tw-text-2xl tw-font-extrabold tw-text-amber-600 tw-leading-none">{pianiAttiviTutti.length}</div>
             </button>
             {/* Esami strumentali solo in modalità privata */}
             {!isConvenzione && (
               <button
                 type="button"
                 onClick={() => navigate('/esami-strumentali')}
-                style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.3)', borderRadius: '10px', padding: '14px 10px', textAlign: 'center', cursor: 'pointer', minWidth: 0, overflow: 'hidden' }}
+                className="tw-bg-red-50 tw-border tw-border-red-200 tw-rounded-xl tw-px-2.5 tw-py-3.5 tw-text-center tw-cursor-pointer tw-min-w-0 tw-overflow-hidden hover:tw-bg-red-100"
               >
-                <div style={{ fontSize: '0.7rem', color: '#dc2626', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Esami Strumentali</div>
-                <div style={{ fontSize: '2rem', fontWeight: '800', color: '#dc2626', lineHeight: 1 }}>{esamiAttivi}</div>
+                <div className="tw-text-[0.7rem] tw-text-red-600 tw-font-bold tw-uppercase tw-mb-1 tw-whitespace-nowrap tw-overflow-hidden tw-text-ellipsis">Esami Strumentali</div>
+                <div className="tw-text-2xl tw-font-extrabold tw-text-red-600 tw-leading-none">{esamiAttivi}</div>
               </button>
             )}
             {/* Gestione Prelievi */}
             <button
               type="button"
               onClick={() => navigate('/centro-prelievi')}
-              style={{ background: 'rgba(14,165,233,0.07)', border: '1px solid rgba(14,165,233,0.3)', borderRadius: '10px', padding: '14px 10px', textAlign: 'center', cursor: 'pointer', minWidth: 0, overflow: 'hidden' }}
+              className="tw-bg-sky-50 tw-border tw-border-sky-200 tw-rounded-xl tw-px-2.5 tw-py-3.5 tw-text-center tw-cursor-pointer tw-min-w-0 tw-overflow-hidden hover:tw-bg-sky-100"
             >
-              <div style={{ fontSize: '0.7rem', color: '#0ea5e9', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Gestione Prelievi</div>
-              <div style={{ fontSize: '2rem', fontWeight: '800', color: '#0ea5e9', lineHeight: 1 }}>💉</div>
+              <div className="tw-text-[0.7rem] tw-text-sky-500 tw-font-bold tw-uppercase tw-mb-1 tw-whitespace-nowrap tw-overflow-hidden tw-text-ellipsis">Gestione Prelievi</div>
+              <div className="tw-text-2xl tw-font-extrabold tw-text-sky-500 tw-leading-none">💉</div>
             </button>
             <button
               type="button"
               onClick={() => { setShowEventoAvverso(true); setEventoSalvato(false); setFirmaEventoOp(''); setEventoForm({ ...eventoFormDefault }); }}
-              style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.3)', borderRadius: '10px', padding: '14px 10px', textAlign: 'center', cursor: 'pointer', minWidth: 0, overflow: 'hidden' }}
+              className="tw-bg-red-50 tw-border tw-border-red-200 tw-rounded-xl tw-px-2.5 tw-py-3.5 tw-text-center tw-cursor-pointer tw-min-w-0 tw-overflow-hidden hover:tw-bg-red-100"
             >
-              <div style={{ fontSize: '0.68rem', color: '#dc2626', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>⚠️ Evento Avverso</div>
-              <div style={{ fontSize: '1.8rem', lineHeight: 1 }}>🚨</div>
+              <div className="tw-text-[0.68rem] tw-text-red-600 tw-font-bold tw-uppercase tw-mb-1 tw-whitespace-nowrap tw-overflow-hidden tw-text-ellipsis">⚠️ Evento Avverso</div>
+              <div className="tw-text-[1.8rem] tw-leading-none">🚨</div>
             </button>
             <button
               type="button"
               onClick={() => navigate('/chat')}
-              style={{ background: 'rgba(13,148,136,0.07)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: '10px', padding: '14px 10px', textAlign: 'center', cursor: 'pointer', minWidth: 0, overflow: 'hidden' }}
+              className="tw-bg-teal-50 tw-border tw-border-teal-200 tw-rounded-xl tw-px-2.5 tw-py-3.5 tw-text-center tw-cursor-pointer tw-min-w-0 tw-overflow-hidden hover:tw-bg-teal-100"
             >
-              <div style={{ fontSize: '0.68rem', color: '#0f766e', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Chat coordinatore</div>
-              <div style={{ fontSize: '1.8rem', lineHeight: 1 }}>💬</div>
+              <div className="tw-text-[0.68rem] tw-text-teal-700 tw-font-bold tw-uppercase tw-mb-1 tw-whitespace-nowrap tw-overflow-hidden tw-text-ellipsis">Chat coordinatore</div>
+              <div className="tw-text-[1.8rem] tw-leading-none">💬</div>
             </button>
             <button
               type="button"
               onClick={() => navigate('/piani-lavorativi')}
-              style={{ background: 'rgba(30,77,140,0.07)', border: '1px solid rgba(30,77,140,0.3)', borderRadius: '10px', padding: '14px 10px', textAlign: 'center', cursor: 'pointer', minWidth: 0, overflow: 'hidden' }}
+              className="tw-bg-blue-50 tw-border tw-border-blue-200 tw-rounded-xl tw-px-2.5 tw-py-3.5 tw-text-center tw-cursor-pointer tw-min-w-0 tw-overflow-hidden hover:tw-bg-blue-100"
             >
-              <div style={{ fontSize: '0.68rem', color: '#1e4d8c', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Consensi e firme</div>
-              <div style={{ fontSize: '1.8rem', lineHeight: 1 }}>✍️</div>
+              <div className="tw-text-[0.68rem] tw-text-brand tw-font-bold tw-uppercase tw-mb-1 tw-whitespace-nowrap tw-overflow-hidden tw-text-ellipsis">Consensi e firme</div>
+              <div className="tw-text-[1.8rem] tw-leading-none">✍️</div>
             </button>
             <button
               type="button"
               onClick={() => navigate('/telemedicina')}
-              style={{ background: 'rgba(15,118,110,0.07)', border: '1px solid rgba(15,118,110,0.3)', borderRadius: '10px', padding: '14px 10px', textAlign: 'center', cursor: 'pointer', minWidth: 0, overflow: 'hidden' }}
+              className="tw-bg-teal-50 tw-border tw-border-teal-200 tw-rounded-xl tw-px-2.5 tw-py-3.5 tw-text-center tw-cursor-pointer tw-min-w-0 tw-overflow-hidden hover:tw-bg-teal-100"
             >
-              <div style={{ fontSize: '0.68rem', color: '#0f766e', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Telemedicina</div>
-              <div style={{ fontSize: '1.8rem', lineHeight: 1 }}>🎥</div>
+              <div className="tw-text-[0.68rem] tw-text-teal-700 tw-font-bold tw-uppercase tw-mb-1 tw-whitespace-nowrap tw-overflow-hidden tw-text-ellipsis">Telemedicina</div>
+              <div className="tw-text-[1.8rem] tw-leading-none">🎥</div>
             </button>
             {compensoTotaleGlobale > 0 && (
               <button
                 type="button"
                 onClick={() => navigate('/compenso-incarichi')}
-                style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: '10px', padding: '12px 10px', textAlign: 'center', cursor: 'pointer', minWidth: 0, overflow: 'hidden' }}
+                className="tw-bg-violet-50 tw-border tw-border-violet-200 tw-rounded-xl tw-px-2.5 tw-py-3 tw-text-center tw-cursor-pointer tw-min-w-0 tw-overflow-hidden hover:tw-bg-violet-100"
               >
-                <div style={{ fontSize: '0.7rem', color: '#7c3aed', fontWeight: '700', textTransform: 'uppercase', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Compenso</div>
-                <div style={{ fontSize: '1.4rem', fontWeight: '800', color: '#7c3aed', lineHeight: 1.1 }}>€{compensoTotaleGlobale.toFixed(0)}</div>
+                <div className="tw-text-[0.7rem] tw-text-violet-600 tw-font-bold tw-uppercase tw-mb-0.5 tw-whitespace-nowrap tw-overflow-hidden tw-text-ellipsis">Compenso</div>
+                <div className="tw-text-[1.4rem] tw-font-extrabold tw-text-violet-600 tw-leading-tight">€{compensoTotaleGlobale.toFixed(0)}</div>
                 {compensoPagatoGlobale > 0 && (
-                  <div style={{ fontSize: '0.65rem', color: '#059669', fontWeight: '600', marginTop: '2px', whiteSpace: 'nowrap' }}>✓ €{compensoPagatoGlobale.toFixed(0)}</div>
+                  <div className="tw-text-[0.65rem] tw-text-emerald-600 tw-font-semibold tw-mt-0.5 tw-whitespace-nowrap">✓ €{compensoPagatoGlobale.toFixed(0)}</div>
                 )}
               </button>
             )}
@@ -1073,51 +1073,51 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
 
           {/* ─── PLANNING PRELIEVI OGGI ─────────────────────────────────── */}
           {prelieviOggi.length > 0 && (
-            <div style={{ marginBottom: '20px' }}>
-              <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0369a1', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="tw-mb-5">
+              <div className="tw-font-bold tw-text-[0.9rem] tw-text-sky-700 tw-mb-2.5 tw-flex tw-items-center tw-gap-2">
                 💉 Prelievi pianificati oggi ({prelieviOggi.length})
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className="tw-flex tw-flex-col tw-gap-2">
                 {prelieviOggi.map(prel => {
                   const aperto = prelievoAperto === prel._id;
                   return (
-                    <div key={prel._id} style={{ background: 'white', border: '1px solid #bae6fd', borderLeft: `4px solid ${prel.status === 'eseguito' ? '#059669' : '#0369a1'}`, borderRadius: '8px', overflow: 'hidden' }}>
+                    <div key={prel._id} className="tw-bg-white tw-border tw-border-sky-200 tw-rounded-lg tw-overflow-hidden" style={{ borderLeftWidth: '4px', borderLeftColor: prel.status === 'eseguito' ? '#059669' : '#0369a1' }}>
                       <button
                         type="button"
                         onClick={() => { setPrelievoAperto(aperto ? null : prel._id); setTestoDiariaPrelievo(''); setNoteEsecuzione(''); }}
-                        style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '12px 14px', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}
+                        className="tw-w-full tw-bg-transparent tw-border-0 tw-cursor-pointer tw-px-3.5 tw-py-3 tw-text-left tw-flex tw-justify-between tw-items-center tw-gap-2.5"
                       >
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 700, color: '#0369a1', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                            {prel.orario && <span style={{ background: '#eff6ff', padding: '1px 6px', borderRadius: '4px', fontSize: '0.78rem' }}>⏰ {prel.orario}</span>}
+                        <div className="tw-flex-1">
+                          <div className="tw-font-bold tw-text-sky-700 tw-text-[0.9rem] tw-flex tw-items-center tw-gap-2 tw-flex-wrap">
+                            {prel.orario && <span className="tw-bg-blue-50 tw-px-1.5 tw-py-px tw-rounded tw-text-[0.78rem]">⏰ {prel.orario}</span>}
                             {prel.patient?.firstName || 'N/D'} {prel.patient?.lastName || ''}
-                            <span style={{ padding: '1px 7px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 700, background: prel.status === 'eseguito' ? '#f0fdf4' : '#eff6ff', color: prel.status === 'eseguito' ? '#059669' : '#0369a1' }}>
+                            <span className="tw-px-1.5 tw-py-px tw-rounded-full tw-text-[0.7rem] tw-font-bold" style={{ background: prel.status === 'eseguito' ? '#f0fdf4' : '#eff6ff', color: prel.status === 'eseguito' ? '#059669' : '#0369a1' }}>
                               {prel.status === 'eseguito' ? '✅ Eseguito' : '🔵 Da eseguire'}
                             </span>
                           </div>
-                          <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px' }}>💉 {prel.tipoPrelievo}</div>
+                          <div className="tw-text-[0.8rem] tw-text-slate-500 tw-mt-0.5">💉 {prel.tipoPrelievo}</div>
                         </div>
-                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{aperto ? '▲' : '▼'}</span>
+                        <span className="tw-text-[0.75rem] tw-text-slate-400">{aperto ? '▲' : '▼'}</span>
                       </button>
 
                       {aperto && (
-                        <div style={{ borderTop: '1px solid #e0f2fe', padding: '14px' }}>
-                          {prel.note && <p style={{ fontSize: '0.83rem', color: '#475569', marginBottom: '10px' }}>📝 {prel.note}</p>}
+                        <div className="tw-border-t tw-border-sky-100 tw-p-3.5">
+                          {prel.note && <p className="tw-text-[0.83rem] tw-text-slate-600 tw-mb-2.5">📝 {prel.note}</p>}
 
                           {/* Registra esecuzione con firma touch */}
                           {prel.status === 'pianificato' && !stepFirmaPrelievo[prel._id] && (
-                            <div style={{ marginBottom: '12px' }}>
+                            <div className="tw-mb-3">
                               <textarea
                                 value={noteEsecuzione}
                                 onChange={e => setNoteEsecuzione(e.target.value)}
                                 placeholder="Note sull'esecuzione (facoltativo)..."
                                 rows={2}
-                                style={{ width: '100%', borderRadius: '6px', border: '1px solid #bae6fd', padding: '8px', fontSize: '0.83rem', resize: 'vertical', marginBottom: '8px' }}
+                                className="tw-w-full tw-rounded-md tw-border tw-border-sky-200 tw-p-2 tw-text-[0.83rem] tw-resize-y tw-mb-2"
                               />
                               <button
                                 type="button"
                                 onClick={() => setStepFirmaPrelievo(s => ({ ...s, [prel._id]: 'firma-operatore' }))}
-                                style={{ background: '#0369a1', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer', fontWeight: 700, fontSize: '0.83rem', width: '100%' }}
+                                className="tw-w-full tw-bg-sky-700 tw-text-white tw-border-0 tw-rounded-md tw-px-4 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.83rem] hover:tw-bg-sky-800"
                               >
                                 ✍️ Procedi con firma
                               </button>
@@ -1126,8 +1126,8 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
 
                           {/* Step 1: Firma operatore */}
                           {prel.status === 'pianificato' && stepFirmaPrelievo[prel._id] === 'firma-operatore' && (
-                            <div style={{ background: '#f0f9ff', borderRadius: '10px', padding: '14px', marginBottom: '12px' }}>
-                              <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0369a1', marginBottom: '10px' }}>✍️ Step 1 — Firma Operatore</div>
+                            <div className="tw-bg-sky-50 tw-rounded-lg tw-p-3.5 tw-mb-3">
+                              <div className="tw-font-bold tw-text-[0.85rem] tw-text-sky-700 tw-mb-2.5">✍️ Step 1 — Firma Operatore</div>
                               <FirmaCanvas
                                 label="Firma Operatore"
                                 sublabel={`${user?.name}`}
@@ -1135,13 +1135,13 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                                 onCancella={() => setFirmaOpPrelievo(s => ({ ...s, [prel._id]: '' }))}
                                 altezza={140}
                               />
-                              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                                <button type="button" onClick={() => setStepFirmaPrelievo(s => { const n = { ...s }; delete n[prel._id]; return n; })} style={{ flex: 1, background: '#f1f5f9', border: '1px solid #d1d5db', borderRadius: '6px', padding: '8px', cursor: 'pointer', fontSize: '0.83rem' }}>Annulla</button>
+                              <div className="tw-flex tw-gap-2 tw-mt-1">
+                                <button type="button" onClick={() => setStepFirmaPrelievo(s => { const n = { ...s }; delete n[prel._id]; return n; })} className="tw-flex-1 tw-bg-slate-100 tw-border tw-border-slate-300 tw-rounded-md tw-p-2 tw-cursor-pointer tw-text-[0.83rem] hover:tw-bg-slate-200">Annulla</button>
                                 <button
                                   type="button"
                                   disabled={!firmaOpPrelievo[prel._id]}
                                   onClick={() => setStepFirmaPrelievo(s => ({ ...s, [prel._id]: 'firma-paziente' }))}
-                                  style={{ flex: 2, background: firmaOpPrelievo[prel._id] ? '#0369a1' : '#bae6fd', color: 'white', border: 'none', borderRadius: '6px', padding: '8px', cursor: firmaOpPrelievo[prel._id] ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: '0.83rem' }}
+                                  className={`tw-flex-[2] tw-rounded-md tw-text-white tw-border-0 tw-p-2 tw-cursor-pointer tw-font-bold tw-text-[0.83rem] ${firmaOpPrelievo[prel._id] ? 'tw-bg-sky-700 tw-cursor-pointer hover:tw-bg-sky-800' : 'tw-bg-sky-300 tw-cursor-not-allowed'}`}
                                 >
                                   Avanti → Firma Paziente
                                 </button>
@@ -1151,13 +1151,13 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
 
                           {/* Step 2: Firma paziente */}
                           {prel.status === 'pianificato' && stepFirmaPrelievo[prel._id] === 'firma-paziente' && (
-                            <div style={{ background: '#f0fdf4', borderRadius: '10px', padding: '14px', marginBottom: '12px' }}>
-                              <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#059669', marginBottom: '10px' }}>👇 Step 2 — Consegna al Paziente</div>
-                              <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                            <div className="tw-bg-emerald-50 tw-rounded-lg tw-p-3.5 tw-mb-3">
+                              <div className="tw-font-bold tw-text-[0.85rem] tw-text-emerald-700 tw-mb-2.5">👇 Step 2 — Consegna al Paziente</div>
+                              <div className="tw-flex tw-gap-2 tw-mb-2.5">
                                 {(['paziente', 'caregiver'] as const).map(r => (
                                   <button key={r} type="button"
                                     onClick={() => setRuoloFirmatarioPrelievo(s => ({ ...s, [prel._id]: r }))}
-                                    style={{ flex: 1, padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.83rem', background: ruoloFirmatarioPrelievo[prel._id] === r ? '#059669' : '#f3f4f6', color: ruoloFirmatarioPrelievo[prel._id] === r ? 'white' : '#374151', border: `2px solid ${ruoloFirmatarioPrelievo[prel._id] === r ? '#059669' : '#d1d5db'}` }}
+                                    className={`tw-flex-1 tw-p-2 tw-rounded-lg tw-cursor-pointer tw-font-semibold tw-text-[0.83rem] tw-border-2 ${ruoloFirmatarioPrelievo[prel._id] === r ? 'tw-bg-emerald-600 tw-border-emerald-600 tw-text-white' : 'tw-bg-slate-100 tw-border-slate-300 tw-text-slate-700'}`}
                                   >{r === 'paziente' ? '🧑 Paziente' : '👨‍👩‍👧 Caregiver'}</button>
                                 ))}
                               </div>
@@ -1166,7 +1166,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                                 placeholder={`Nome ${ruoloFirmatarioPrelievo[prel._id] === 'caregiver' ? 'caregiver' : `${prel.patient?.firstName || 'N/D'} ${prel.patient?.lastName || ''}`}`}
                                 value={nomeFirmatarioPrelievo[prel._id] || ''}
                                 onChange={e => setNomeFirmatarioPrelievo(s => ({ ...s, [prel._id]: e.target.value }))}
-                                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', marginBottom: '10px', fontSize: '0.83rem' }}
+                                className="tw-w-full tw-p-2 tw-rounded-md tw-border tw-border-slate-300 tw-mb-2.5 tw-text-[0.83rem]"
                               />
                               <FirmaCanvas
                                 label={`Firma ${ruoloFirmatarioPrelievo[prel._id] === 'caregiver' ? 'Caregiver' : 'Paziente'}`}
@@ -1175,8 +1175,8 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                                 onCancella={() => setFirmaPazPrelievo(s => ({ ...s, [prel._id]: '' }))}
                                 altezza={140}
                               />
-                              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                                <button type="button" onClick={() => setStepFirmaPrelievo(s => ({ ...s, [prel._id]: 'firma-operatore' }))} style={{ flex: 1, background: '#f1f5f9', border: '1px solid #d1d5db', borderRadius: '6px', padding: '8px', cursor: 'pointer', fontSize: '0.83rem' }}>← Indietro</button>
+                              <div className="tw-flex tw-gap-2 tw-mt-1">
+                                <button type="button" onClick={() => setStepFirmaPrelievo(s => ({ ...s, [prel._id]: 'firma-operatore' }))} className="tw-flex-1 tw-bg-slate-100 tw-border tw-border-slate-300 tw-rounded-md tw-p-2 tw-cursor-pointer tw-text-[0.83rem] hover:tw-bg-slate-200">← Indietro</button>
                                 <button
                                   type="button"
                                   disabled={registrandoPrelievo === prel._id || !firmaPazPrelievo[prel._id]}
@@ -1199,7 +1199,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                                     } catch { /* noop */ }
                                     setRegistrandoPrelievo(null);
                                   }}
-                                  style={{ flex: 2, background: firmaPazPrelievo[prel._id] ? '#059669' : '#d1fae5', color: 'white', border: 'none', borderRadius: '6px', padding: '8px', cursor: firmaPazPrelievo[prel._id] ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: '0.83rem' }}
+                                  className={`tw-flex-[2] tw-rounded-md tw-text-white tw-border-0 tw-p-2 tw-cursor-pointer tw-font-bold tw-text-[0.83rem] ${firmaPazPrelievo[prel._id] ? 'tw-bg-emerald-600 hover:tw-bg-emerald-700' : 'tw-bg-emerald-200 tw-cursor-not-allowed'}`}
                                 >
                                   {registrandoPrelievo === prel._id ? '...' : '✅ Conferma e salva'}
                                 </button>
@@ -1207,28 +1207,28 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                             </div>
                           )}
                           {prel.status === 'eseguito' && prel.dataEsecuzione && (
-                            <div style={{ background: '#f0fdf4', borderRadius: '8px', padding: '10px', marginBottom: '12px', fontSize: '0.83rem', color: '#166534' }}>
+                            <div className="tw-bg-emerald-50 tw-rounded-lg tw-p-2.5 tw-mb-3 tw-text-[0.83rem] tw-text-green-800">
                               ✅ Eseguito il {new Date(prel.dataEsecuzione).toLocaleString('it-IT')}
-                              {prel.noteEsecuzione && <div style={{ marginTop: '4px', color: '#374151' }}>{prel.noteEsecuzione}</div>}
+                              {prel.noteEsecuzione && <div className="tw-mt-1 tw-text-slate-700">{prel.noteEsecuzione}</div>}
                             </div>
                           )}
 
                           {/* Firme */}
                           {prel.status === 'eseguito' && (prel.firmaOperatore || prel.firmaPaziente) && (
-                            <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '12px', marginBottom: '12px', border: '1px solid #e2e8f0' }}>
-                              <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#374151', marginBottom: '10px' }}>✍️ Firme Registrate</div>
+                            <div className="tw-bg-slate-50 tw-rounded-lg tw-p-3 tw-mb-3 tw-border tw-border-slate-200">
+                              <div className="tw-font-bold tw-text-[0.85rem] tw-text-slate-700 tw-mb-2.5">✍️ Firme Registrate</div>
                               {prel.firmaOperatore && (
-                                <div style={{ marginBottom: '10px' }}>
-                                  <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '4px' }}>Firma Operatore:</div>
-                                  <img src={prel.firmaOperatore} alt="Firma operatore" style={{ maxWidth: '200px', maxHeight: '100px', border: '1px solid #d1d5db', borderRadius: '4px', background: 'white' }} />
+                                <div className="tw-mb-2.5">
+                                  <div className="tw-text-[0.8rem] tw-text-slate-500 tw-mb-1">Firma Operatore:</div>
+                                  <img src={prel.firmaOperatore} alt="Firma operatore" className="tw-max-w-[200px] tw-max-h-[100px] tw-border tw-border-slate-300 tw-rounded tw-bg-white" />
                                 </div>
                               )}
                               {prel.firmaPaziente && (
                                 <div>
-                                  <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '4px' }}>
+                                  <div className="tw-text-[0.8rem] tw-text-slate-500 tw-mb-1">
                                     Firma {prel.ruoloFirmatario === 'caregiver' ? 'Caregiver' : 'Paziente'} {prel.nomeFirmatarioPaziente && `(${prel.nomeFirmatarioPaziente})`}:
                                   </div>
-                                  <img src={prel.firmaPaziente} alt="Firma paziente" style={{ maxWidth: '200px', maxHeight: '100px', border: '1px solid #d1d5db', borderRadius: '4px', background: 'white' }} />
+                                  <img src={prel.firmaPaziente} alt="Firma paziente" className="tw-max-w-[200px] tw-max-h-[100px] tw-border tw-border-slate-300 tw-rounded tw-bg-white" />
                                 </div>
                               )}
                             </div>
@@ -1236,16 +1236,16 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
 
                           {/* Pulsanti PDF */}
                           {prel.status === 'eseguito' && (
-                            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                            <div className="tw-flex tw-gap-2 tw-mb-3">
                               <button
                                 onClick={() => stampaPrelievoPDF(prel)}
-                                style={{ flex: 1, background: '#0d9488', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.83rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                className="tw-flex-1 tw-bg-teal-600 tw-text-white tw-border-0 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-semibold tw-text-[0.83rem] tw-flex tw-items-center tw-justify-center tw-gap-1.5 hover:tw-bg-teal-700"
                               >
                                 <Printer size={14} /> Stampa Verbale
                               </button>
                               <button
                                 onClick={() => visualizzaPrelievoPDF(prel)}
-                                style={{ flex: 1, background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.83rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                className="tw-flex-1 tw-bg-blue-500 tw-text-white tw-border-0 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-semibold tw-text-[0.83rem] tw-flex tw-items-center tw-justify-center tw-gap-1.5 hover:tw-bg-blue-600"
                               >
                                 <Eye size={14} /> Visualizza Verbale
                               </button>
@@ -1253,22 +1253,22 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                           )}
 
                           {/* Diaria */}
-                          <div style={{ fontWeight: 600, fontSize: '0.83rem', color: '#374151', marginBottom: '6px' }}>
+                          <div className="tw-font-semibold tw-text-[0.83rem] tw-text-slate-700 tw-mb-1.5">
                             📋 Diaria ({prel.diaria.length})
                           </div>
                           {prel.diaria.map(d => (
-                            <div key={d._id} style={{ background: '#f8fafc', borderRadius: '6px', padding: '6px 10px', marginBottom: '4px', fontSize: '0.8rem' }}>
-                              <div style={{ fontWeight: 600, color: '#475569' }}>{d.autore} · {new Date(d.data).toLocaleString('it-IT')}</div>
-                              <div style={{ color: '#334155' }}>{d.testo}</div>
+                            <div key={d._id} className="tw-bg-slate-50 tw-rounded-md tw-px-2.5 tw-py-1.5 tw-mb-1 tw-text-[0.8rem]">
+                              <div className="tw-font-semibold tw-text-slate-600">{d.autore} · {new Date(d.data).toLocaleString('it-IT')}</div>
+                              <div className="tw-text-slate-700">{d.testo}</div>
                             </div>
                           ))}
-                          <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                          <div className="tw-flex tw-gap-1.5 tw-mt-2">
                             <textarea
                               value={testoDiariaPrelievo}
                               onChange={e => setTestoDiariaPrelievo(e.target.value)}
                               placeholder="Aggiungi nota clinica..."
                               rows={2}
-                              style={{ flex: 1, borderRadius: '6px', border: '1px solid #d1d5db', padding: '6px 8px', fontSize: '0.8rem', resize: 'vertical' }}
+                              className="tw-flex-1 tw-rounded-md tw-border tw-border-slate-300 tw-px-2 tw-py-1.5 tw-text-[0.8rem] tw-resize-y"
                             />
                             <button
                               type="button"
@@ -1282,7 +1282,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                                 } catch { /* noop */ }
                                 setSalvandoDiariaPrelievo(false);
                               }}
-                              style={{ background: '#0369a1', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', alignSelf: 'flex-end' }}
+                              className="tw-bg-sky-700 tw-text-white tw-border-0 tw-rounded-md tw-px-3 tw-py-1.5 tw-cursor-pointer tw-font-semibold tw-text-[0.8rem] tw-self-end hover:tw-bg-sky-800"
                             >
                               {salvandoDiariaPrelievo ? '...' : 'Salva'}
                             </button>
@@ -1296,14 +1296,14 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
             </div>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-            <p style={{ color: 'var(--gray-500)', margin: 0, fontSize: '0.95rem' }}>
+          <div className="tw-flex tw-justify-between tw-items-center tw-mb-4 tw-flex-wrap tw-gap-2.5">
+            <p className="tw-text-slate-500 tw-m-0 tw-text-[0.95rem]">
               Seleziona un paziente per operare, oppure visualizza tutti i piani attivi.
             </p>
             <button
               type="button"
               onClick={apriTuttiPiani}
-              style={{ background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 18px', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem' }}
+              className="tw-bg-brand tw-text-white tw-border-0 tw-rounded-lg tw-px-4.5 tw-py-2.5 tw-cursor-pointer tw-font-semibold tw-text-[0.9rem] hover:tw-bg-brand-dark"
             >
               📋 Tutti i piani attivi ({pianiAttiviTutti.length})
             </button>
@@ -1317,26 +1317,26 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
       {(mode === 'piani' || mostraTuttiPiani) && !pazienteSelezionato && (
         <div>
           {mode === 'piani' && (
-            <div style={{ marginBottom: '16px' }}>
+            <div className="tw-mb-4">
               <button
                 type="button"
                 onClick={() => navigate('/portale-operatore')}
-                style={{ background: '#f1f5f9', color: '#374151', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px 14px', cursor: 'pointer', fontSize: '0.88rem' }}
+                className="tw-bg-slate-100 tw-text-slate-700 tw-border tw-border-slate-200 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-text-[0.88rem] hover:tw-bg-slate-200"
               >
                 ← Torna alla dashboard
               </button>
             </div>
           )}
           {pazienti.length === 0 ? (
-            <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid #f59e0b', borderRadius: '8px', padding: '16px', color: '#92400e' }}>
+            <div className="tw-bg-amber-50 tw-border tw-border-amber-400 tw-rounded-lg tw-p-4 tw-text-amber-800">
               ⚠️ Nessun paziente assegnato. Contatta il coordinatore.
             </div>
           ) : (
             <div>
-              <div style={{ fontWeight: '600', marginBottom: '12px', fontSize: '0.95rem', color: '#374151' }}>
+              <div className="tw-font-semibold tw-mb-3 tw-text-[0.95rem] tw-text-slate-700">
                 {isConvenzione ? '🏥 Pazienti in convenzione' : '👤 Pazienti in carico'} ({pazienti.length})
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div className="tw-flex tw-flex-col tw-gap-2.5">
                 {pazienti.map(paz => {
                   const pianiPaz = tuttiIPiani.filter(p => p.patient?._id === paz._id && p.status === 'pending');
                   const compensoTotale = tuttiIPiani
@@ -1351,20 +1351,16 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                       key={paz._id}
                       type="button"
                       onClick={() => selezionaPaziente(paz)}
-                      style={{
-                        background: '#fff', border: '1px solid #e2e8f0', borderLeft: '4px solid #1e4d8c',
-                        borderRadius: '8px', padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
-                      }}
+                      className="tw-bg-white tw-border tw-border-slate-200 tw-border-l-4 tw-border-l-brand tw-rounded-lg tw-px-4 tw-py-3.5 tw-cursor-pointer tw-text-left tw-flex tw-justify-between tw-items-center tw-gap-3 tw-flex-wrap hover:tw-bg-slate-50"
                     >
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: '700', fontSize: '1rem', color: '#1e4d8c', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <div className="tw-flex-1">
+                        <div className="tw-font-bold tw-text-base tw-text-brand tw-mb-1 tw-flex tw-items-center tw-gap-2 tw-flex-wrap">
                           {paz.tipoGestione === 'convenzione' ? '🏥' : '👤'} {paz?.firstName || 'N/D'} {paz?.lastName || ''}
                           {paz.tipoGestione === 'convenzione' && (
-                            <span style={{ background: '#0284c7', color: 'white', fontSize: '0.68rem', fontWeight: '700', padding: '2px 7px', borderRadius: '4px', letterSpacing: '0.03em' }}>CONVENZIONE</span>
+                            <span className="tw-bg-sky-600 tw-text-white tw-text-[0.68rem] tw-font-bold tw-px-1.5 tw-py-0.5 tw-rounded tw-tracking-wide">CONVENZIONE</span>
                           )}
                         </div>
-                        <div style={{ fontSize: '0.83rem', color: '#555', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                        <div className="tw-text-[0.83rem] tw-text-slate-600 tw-flex tw-flex-wrap tw-gap-2.5">
                           {paz.address && <span>📍 {paz.address}</span>}
                           {paz.contactPhone && <span>📞 {paz.contactPhone}</span>}
                           {paz.tipoGestione === 'convenzione' && paz.siat?.tipologiaCura
@@ -1373,21 +1369,20 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                           {paz.siat?.asl && <span>🏛 {paz.siat.asl}</span>}
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', flexShrink: 0 }}>
+                      <div className="tw-flex tw-gap-2 tw-flex-wrap tw-items-center tw-flex-shrink-0">
                         {haCompenso && (
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '0.72rem', color: '#7c3aed', fontWeight: '600', textTransform: 'uppercase' }}>Compenso maturato</div>
-                            <div style={{ fontWeight: '800', color: '#7c3aed', fontSize: '1rem' }}>€ {compensoTotale.toFixed(2)}</div>
+                          <div className="tw-text-right">
+                            <div className="tw-text-[0.72rem] tw-text-violet-600 tw-font-semibold tw-uppercase">Compenso maturato</div>
+                            <div className="tw-font-extrabold tw-text-violet-600 tw-text-base">€ {compensoTotale.toFixed(2)}</div>
                             {compensoPagato > 0 && (
-                              <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: '600' }}>✅ € {compensoPagato.toFixed(2)} pagato</div>
+                              <div className="tw-text-[0.72rem] tw-text-emerald-600 tw-font-semibold">✅ € {compensoPagato.toFixed(2)} pagato</div>
                             )}
                           </div>
                         )}
-                        <span style={{
+                        <span className="tw-rounded-full tw-px-3 tw-py-1 tw-text-[0.82rem] tw-font-bold" style={{
                           background: pianiPaz.length > 0 ? 'rgba(5,150,105,0.1)' : 'rgba(107,114,128,0.1)',
                           color: pianiPaz.length > 0 ? '#065f46' : '#6b7280',
                           border: `1px solid ${pianiPaz.length > 0 ? '#059669' : '#9ca3af'}`,
-                          borderRadius: '20px', padding: '4px 12px', fontSize: '0.82rem', fontWeight: '700',
                         }}>
                           {pianiPaz.length} {pianiPaz.length === 1 ? 'piano attivo' : 'piani attivi'}
                         </span>
@@ -1406,48 +1401,44 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
       ══════════════════════════════════════════════════════════════════════ */}
       {mostraTuttiPiani && (
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+          <div className="tw-flex tw-items-center tw-gap-3 tw-mb-4 tw-flex-wrap">
             <button
               type="button"
               onClick={() => setMostraTuttiPiani(false)}
-              style={{ background: '#f1f5f9', color: '#374151', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px 14px', cursor: 'pointer', fontSize: '0.88rem' }}
+              className="tw-bg-slate-100 tw-text-slate-700 tw-border tw-border-slate-200 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-text-[0.88rem] hover:tw-bg-slate-200"
             >
               ← Torna ai pazienti
             </button>
-            <h3 style={{ margin: 0, color: '#1e4d8c', fontSize: '1.05rem' }}>
+            <h3 className="tw-m-0 tw-text-brand tw-text-[1.05rem]">
               📋 Tutti i piani attivi ({pianiAttiviTutti.length})
             </h3>
           </div>
 
           {pianiAttiviTutti.length === 0 ? (
-            <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid #f59e0b', borderRadius: '8px', padding: '16px', color: '#92400e' }}>
+            <div className="tw-bg-amber-50 tw-border tw-border-amber-400 tw-rounded-lg tw-p-4 tw-text-amber-800">
               ⚠️ Nessun piano attivo al momento.
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div className="tw-flex tw-flex-col tw-gap-2.5">
               {pianiAttiviTutti.map(piano => (
                 <button
                   key={piano._id}
                   type="button"
                   onClick={() => selezionaPianoDaLista(piano)}
-                  style={{
-                    background: '#fff', border: '1px solid #e2e8f0', borderLeft: '4px solid #059669',
-                    borderRadius: '8px', padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
-                  }}
+                  className="tw-bg-white tw-border tw-border-slate-200 tw-border-l-4 tw-border-l-emerald-600 tw-rounded-lg tw-px-4 tw-py-3.5 tw-cursor-pointer tw-text-left tw-flex tw-justify-between tw-items-center tw-gap-3 tw-flex-wrap hover:tw-bg-slate-50"
                 >
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '700', fontSize: '0.95rem', color: '#1e4d8c', marginBottom: '3px' }}>
+                  <div className="tw-flex-1">
+                    <div className="tw-font-bold tw-text-[0.95rem] tw-text-brand tw-mb-0.5">
                       👤 {piano.patient?.firstName || 'N/D'} {piano.patient?.lastName || ''}
                     </div>
-                    <div style={{ fontSize: '0.85rem', color: '#374151', marginBottom: '2px' }}>
+                    <div className="tw-text-[0.85rem] tw-text-slate-700 tw-mb-0.5">
                       {piano.category} — {piano.task}
                     </div>
-                    <div style={{ fontSize: '0.78rem', color: '#888' }}>
+                    <div className="tw-text-[0.78rem] tw-text-slate-400">
                       📅 {formatData(piano.date)}{piano.dataFine ? ` → ${formatData(piano.dataFine)}` : ''}
                     </div>
                   </div>
-                  <span style={{ background: 'rgba(5,150,105,0.1)', color: '#065f46', border: '1px solid #059669', borderRadius: '20px', padding: '4px 12px', fontSize: '0.8rem', fontWeight: '700', flexShrink: 0 }}>
+                  <span className="tw-bg-emerald-50 tw-text-emerald-800 tw-border tw-border-emerald-600 tw-rounded-full tw-px-3 tw-py-1 tw-text-[0.8rem] tw-font-bold tw-flex-shrink-0">
                     ✅ Attivo
                   </span>
                 </button>
@@ -1462,35 +1453,35 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
       ══════════════════════════════════════════════════════════════════════ */}
       {pazienteSelezionato && !pianoSelezionato && (
         <div>
-          <div style={{ marginBottom: '12px' }}>
+          <div className="tw-mb-3">
             <button
               type="button"
               onClick={() => { setPazienteSelezionato(null); setPianoSelezionato(null); resetDettagliPiano(); }}
-              style={{ background: '#f1f5f9', color: '#374151', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px 14px', cursor: 'pointer', fontSize: '0.88rem' }}
+              className="tw-bg-slate-100 tw-text-slate-700 tw-border tw-border-slate-200 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-text-[0.88rem] hover:tw-bg-slate-200"
             >
               ← Torna ai pazienti
             </button>
           </div>
 
-          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
-              <strong>📋 {pazienteSelezionato?.firstName || 'N/D'} {pazienteSelezionato?.lastName || ''}</strong>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <button type="button" onClick={() => setShowChatPaziente(v => !v)} style={{ background: '#0d9488', color: 'white', border: 'none', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>💬 {showChatPaziente ? 'Chiudi chat' : 'Apri chat paziente'}</button>
+          <div className="tw-bg-slate-50 tw-border tw-border-slate-200 tw-rounded-lg tw-p-3.5 tw-mb-5">
+            <div className="tw-flex tw-justify-between tw-items-start tw-flex-wrap tw-gap-2.5">
+              <strong className="tw-text-base">📋 {pazienteSelezionato?.firstName || 'N/D'} {pazienteSelezionato?.lastName || ''}</strong>
+              <div className="tw-flex tw-gap-2 tw-flex-wrap">
+                <button type="button" onClick={() => setShowChatPaziente(v => !v)} className="tw-bg-teal-600 tw-text-white tw-border-0 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-teal-700">💬 {showChatPaziente ? 'Chiudi chat' : 'Apri chat paziente'}</button>
                 <ReportGenerator patientId={pazienteSelezionato._id} patientName={`${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName}`} />
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
-              <button type="button" onClick={() => setShowConsensoGDPR(true)} style={{ background: consensoGDPRFirmato ? '#dcfce7' : '#dc2626', color: consensoGDPRFirmato ? '#166534' : 'white', border: `1px solid ${consensoGDPRFirmato ? '#86efac' : '#b91c1c'}`, borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>{consensoGDPRFirmato ? '✅ Consenso GDPR firmato' : '⚠️ Firma consenso GDPR'}</button>
-              <button type="button" onClick={() => setShowConsensoPrestazione(true)} style={{ background: consensoPrestazioneFirmato ? '#dcfce7' : '#c2410c', color: consensoPrestazioneFirmato ? '#166534' : 'white', border: `1px solid ${consensoPrestazioneFirmato ? '#86efac' : '#9a3412'}`, borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>{consensoPrestazioneFirmato ? '✅ Consenso prestazione firmato' : '⚠️ Firma consenso prestazione e rischi'}</button>
-              <button type="button" onClick={() => setShowCustomerSatisfaction(true)} style={{ background: '#ede9fe', color: '#5b21b6', border: '1px solid #c4b5fd', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>⭐ Customer Satisfaction</button>
-              <button type="button" onClick={() => setShowSchedaDimissione(true)} style={{ background: '#dbeafe', color: '#1d4ed8', border: '1px solid #93c5fd', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>📋 Scheda dimissione</button>
-              <button type="button" onClick={() => setShowRiformulazionePAI(true)} style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #7dd3fc', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>🔄 Riformula / rinnova PAI</button>
-              <button type="button" onClick={() => setShowDatiCliniciADI(true)} style={{ background: '#e0f7fa', color: '#0e7490', border: '1px solid #67e8f9', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>🩺 Dati clinici ADI</button>
-              {consensoGDPRFirmato && <><button type="button" onClick={() => esportaConsensoPdf('gdpr')} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #93c5fd', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>📄 PDF GDPR</button><button type="button" onClick={() => inviaEmailConsenso('gdpr')} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #93c5fd', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>✉️ Invia GDPR</button></>}
-              {consensoPrestazioneFirmato && <><button type="button" onClick={() => esportaConsensoPdf('prestazione')} style={{ background: '#fff7ed', color: '#9a3412', border: '1px solid #fdba74', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>📄 PDF prestazione</button><button type="button" onClick={() => inviaEmailConsenso('prestazione')} style={{ background: '#fff7ed', color: '#9a3412', border: '1px solid #fdba74', borderRadius: '7px', padding: '8px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>✉️ Invia prestazione</button></>}
+            <div className="tw-flex tw-gap-2 tw-flex-wrap tw-mt-3">
+              <button type="button" onClick={() => setShowConsensoGDPR(true)} className={`tw-border tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] ${consensoGDPRFirmato ? 'tw-bg-green-100 tw-text-green-800 tw-border-green-300' : 'tw-bg-red-600 tw-text-white tw-border-red-700 hover:tw-bg-red-700'}`}>{consensoGDPRFirmato ? '✅ Consenso GDPR firmato' : '⚠️ Firma consenso GDPR'}</button>
+              <button type="button" onClick={() => setShowConsensoPrestazione(true)} className={`tw-border tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] ${consensoPrestazioneFirmato ? 'tw-bg-green-100 tw-text-green-800 tw-border-green-300' : 'tw-bg-orange-700 tw-text-white tw-border-orange-800 hover:tw-bg-orange-800'}`}>{consensoPrestazioneFirmato ? '✅ Consenso prestazione firmato' : '⚠️ Firma consenso prestazione e rischi'}</button>
+              <button type="button" onClick={() => setShowCustomerSatisfaction(true)} className="tw-bg-violet-100 tw-text-violet-800 tw-border tw-border-violet-300 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-violet-200">⭐ Customer Satisfaction</button>
+              <button type="button" onClick={() => setShowSchedaDimissione(true)} className="tw-bg-blue-100 tw-text-blue-700 tw-border tw-border-blue-300 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-blue-200">📋 Scheda dimissione</button>
+              <button type="button" onClick={() => setShowRiformulazionePAI(true)} className="tw-bg-sky-100 tw-text-sky-700 tw-border tw-border-sky-300 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-sky-200">🔄 Riformula / rinnova PAI</button>
+              <button type="button" onClick={() => setShowDatiCliniciADI(true)} className="tw-bg-cyan-100 tw-text-cyan-800 tw-border tw-border-cyan-300 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-cyan-200">🩺 Dati clinici ADI</button>
+              {consensoGDPRFirmato && <><button type="button" onClick={() => esportaConsensoPdf('gdpr')} className="tw-bg-blue-50 tw-text-blue-700 tw-border tw-border-blue-300 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-blue-100">📄 PDF GDPR</button><button type="button" onClick={() => inviaEmailConsenso('gdpr')} className="tw-bg-blue-50 tw-text-blue-700 tw-border tw-border-blue-300 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-blue-100">✉️ Invia GDPR</button></>}
+              {consensoPrestazioneFirmato && <><button type="button" onClick={() => esportaConsensoPdf('prestazione')} className="tw-bg-orange-50 tw-text-orange-800 tw-border tw-border-orange-300 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-orange-100">📄 PDF prestazione</button><button type="button" onClick={() => inviaEmailConsenso('prestazione')} className="tw-bg-orange-50 tw-text-orange-800 tw-border tw-border-orange-300 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-orange-100">✉️ Invia prestazione</button></>}
             </div>
-            <div style={{ fontSize: '0.88rem', color: '#555', marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+            <div className="tw-text-[0.88rem] tw-text-slate-600 tw-mt-1.5 tw-flex tw-flex-wrap tw-gap-3">
               {pazienteSelezionato.address && <span>📍 {pazienteSelezionato.address}</span>}
               {pazienteSelezionato.contactPhone && <span>📞 {pazienteSelezionato.contactPhone}</span>}
               {pazienteSelezionato.assistanceNeeds && <span>🩺 {pazienteSelezionato.assistanceNeeds}</span>}
@@ -1498,7 +1489,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
           </div>
 
           {showChatPaziente && (
-            <div style={{ marginBottom: '20px' }}>
+            <div className="tw-mb-5">
               <ChatWidget
                 scope="patient"
                 patientId={pazienteSelezionato._id}
@@ -1509,31 +1500,31 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
           )}
 
           {piani.length === 0 ? (
-            <p style={{ color: '#888', fontStyle: 'italic' }}>Nessun piano assegnato per questo paziente.</p>
+            <p className="tw-text-slate-500 tw-italic">Nessun piano assegnato per questo paziente.</p>
           ) : (
-            <div style={{ marginBottom: '20px' }}>
-              <div style={{ fontWeight: '600', marginBottom: '10px', fontSize: '0.95rem', color: '#374151' }}>
+            <div className="tw-mb-5">
+              <div className="tw-font-semibold tw-mb-2.5 tw-text-[0.95rem] tw-text-slate-700">
                 📋 Piani di lavoro ({piani.length})
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+              <div className="tw-flex tw-flex-wrap tw-gap-2.5">
                 {piani.map(piano => (
                   <button
                     key={piano._id}
                     type="button"
                     onClick={() => selezionaPiano(piano)}
+                    className="tw-cursor-pointer tw-text-left tw-px-4 tw-py-2.5 tw-text-[0.9rem] tw-rounded-md tw-min-w-[180px]"
                     style={{
                       background: piano.status === 'pending' ? '#fff' : '#f9fafb',
                       border: `1px solid ${piano.status === 'pending' ? '#059669' : '#e2e8f0'}`,
-                      borderLeft: `4px solid ${piano.status === 'pending' ? '#059669' : '#9ca3af'}`,
-                      borderRadius: '6px', padding: '10px 16px', cursor: 'pointer', fontSize: '0.9rem',
-                      textAlign: 'left', minWidth: '180px',
+                      borderLeftWidth: '4px',
+                      borderLeftColor: piano.status === 'pending' ? '#059669' : '#9ca3af',
                     }}
                   >
-                    <div style={{ fontWeight: '600', color: '#1e4d8c' }}>{piano.category}</div>
-                    <div style={{ fontSize: '0.8rem', color: '#555', marginTop: '2px' }}>
+                    <div className="tw-font-semibold tw-text-brand">{piano.category}</div>
+                    <div className="tw-text-[0.8rem] tw-text-slate-600 tw-mt-0.5">
                       {formatData(piano.date)}{piano.dataFine ? ` → ${formatData(piano.dataFine)}` : ''}
                     </div>
-                    <div style={{ fontSize: '0.75rem', marginTop: '3px', color: piano.status === 'pending' ? '#059669' : '#6b7280', fontWeight: '600' }}>
+                    <div className="tw-text-[0.75rem] tw-mt-0.5 tw-font-semibold" style={{ color: piano.status === 'pending' ? '#059669' : '#6b7280' }}>
                       {piano.status === 'pending' ? '✅ Attivo' : piano.status === 'completed' ? '✔ Completato' : '✕ Annullato'}
                     </div>
                   </button>
@@ -1551,92 +1542,92 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
         loadingPiano ? <p>Caricamento piano...</p> : (
           <div>
             {/* Breadcrumb */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+            <div className="tw-flex tw-items-center tw-gap-2 tw-mb-3 tw-flex-wrap">
               <button
                 type="button"
                 onClick={() => { setPianoSelezionato(null); resetDettagliPiano(); }}
-                style={{ background: '#f1f5f9', color: '#374151', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '0.85rem' }}
+                className="tw-bg-slate-100 tw-text-slate-700 tw-border tw-border-slate-200 tw-rounded-md tw-px-3 tw-py-1.5 tw-cursor-pointer tw-text-[0.85rem] hover:tw-bg-slate-200"
               >
                 ← Torna ai piani
               </button>
               {pazienteSelezionato && (
-                <span style={{ fontSize: '0.85rem', color: '#888' }}>
+                <span className="tw-text-[0.85rem] tw-text-slate-500">
                   {pazienteSelezionato?.firstName || 'N/D'} {pazienteSelezionato?.lastName || ''} › {pianoSelezionato?.category || 'N/D'}
                 </span>
               )}
             </div>
 
             {/* Info piano */}
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
-              <h3 style={{ margin: '0 0 6px', color: '#1e4d8c' }}>📋 {pianoSelezionato.category}</h3>
-              <p style={{ margin: '0 0 4px', color: '#374151' }}>{pianoSelezionato.task}</p>
-              {pianoSelezionato.notes && <p style={{ margin: '0 0 12px', color: '#666', fontSize: '0.9rem' }}>📝 {pianoSelezionato.notes}</p>}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: pianoSelezionato.notes ? 0 : '10px' }}>
-                <button type="button" onClick={() => setShowChatPaziente(v => !v)} style={{ background: '#0d9488', color: 'white', border: 'none', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>💬 {showChatPaziente ? 'Chiudi chat' : 'Apri chat paziente'}</button>
+            <div className="tw-bg-slate-50 tw-border tw-border-slate-200 tw-rounded-lg tw-p-4 tw-mb-4">
+              <h3 className="tw-m-0 tw-mb-1.5 tw-text-brand">📋 {pianoSelezionato.category}</h3>
+              <p className="tw-m-0 tw-mb-1 tw-text-slate-700">{pianoSelezionato.task}</p>
+              {pianoSelezionato.notes && <p className="tw-m-0 tw-mb-3 tw-text-slate-500 tw-text-[0.9rem]">📝 {pianoSelezionato.notes}</p>}
+              <div className="tw-flex tw-gap-2 tw-flex-wrap" style={{ marginTop: pianoSelezionato.notes ? 0 : '10px' }}>
+                <button type="button" onClick={() => setShowChatPaziente(v => !v)} className="tw-bg-teal-600 tw-text-white tw-border-0 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-teal-700">💬 {showChatPaziente ? 'Chiudi chat' : 'Apri chat paziente'}</button>
                 {pazienteSelezionato && <ReportGenerator patientId={pazienteSelezionato._id} patientName={`${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName}`} />}
-                <button type="button" onClick={() => setShowConsensoGDPR(true)} style={{ background: consensoGDPRFirmato ? '#dcfce7' : '#dc2626', color: consensoGDPRFirmato ? '#166534' : 'white', border: `1px solid ${consensoGDPRFirmato ? '#86efac' : '#b91c1c'}`, borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>{consensoGDPRFirmato ? '✅ GDPR firmato' : '⚠️ Firma GDPR'}</button>
-                <button type="button" onClick={() => setShowConsensoPrestazione(true)} style={{ background: consensoPrestazioneFirmato ? '#dcfce7' : '#c2410c', color: consensoPrestazioneFirmato ? '#166534' : 'white', border: `1px solid ${consensoPrestazioneFirmato ? '#86efac' : '#9a3412'}`, borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>{consensoPrestazioneFirmato ? '✅ Prestazione firmata' : '⚠️ Firma prestazione e rischi'}</button>
-                <button type="button" onClick={() => setShowCustomerSatisfaction(true)} style={{ background: '#ede9fe', color: '#5b21b6', border: '1px solid #c4b5fd', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>⭐ Customer Satisfaction</button>
-                <button type="button" onClick={() => setShowSchedaDimissione(true)} style={{ background: '#dbeafe', color: '#1d4ed8', border: '1px solid #93c5fd', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>📋 Scheda dimissione</button>
-                <button type="button" onClick={() => setShowRiformulazionePAI(true)} style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #7dd3fc', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>🔄 Riformula / rinnova PAI</button>
-                <button type="button" onClick={() => setShowDatiCliniciADI(true)} style={{ background: '#e0f7fa', color: '#0e7490', border: '1px solid #67e8f9', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>🩺 Dati clinici ADI</button>
-                {consensoGDPRFirmato && <><button type="button" onClick={() => esportaConsensoPdf('gdpr')} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #93c5fd', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>📄 PDF GDPR</button><button type="button" onClick={() => inviaEmailConsenso('gdpr')} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #93c5fd', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>✉️ Invia GDPR</button></>}
-                {consensoPrestazioneFirmato && <><button type="button" onClick={() => esportaConsensoPdf('prestazione')} style={{ background: '#fff7ed', color: '#9a3412', border: '1px solid #fdba74', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>📄 PDF prestazione</button><button type="button" onClick={() => inviaEmailConsenso('prestazione')} style={{ background: '#fff7ed', color: '#9a3412', border: '1px solid #fdba74', borderRadius: '7px', padding: '9px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>✉️ Invia prestazione</button></>}
+                <button type="button" onClick={() => setShowConsensoGDPR(true)} className={`tw-border tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] ${consensoGDPRFirmato ? 'tw-bg-green-100 tw-text-green-800 tw-border-green-300' : 'tw-bg-red-600 tw-text-white tw-border-red-700 hover:tw-bg-red-700'}`}>{consensoGDPRFirmato ? '✅ GDPR firmato' : '⚠️ Firma GDPR'}</button>
+                <button type="button" onClick={() => setShowConsensoPrestazione(true)} className={`tw-border tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] ${consensoPrestazioneFirmato ? 'tw-bg-green-100 tw-text-green-800 tw-border-green-300' : 'tw-bg-orange-700 tw-text-white tw-border-orange-800 hover:tw-bg-orange-800'}`}>{consensoPrestazioneFirmato ? '✅ Prestazione firmata' : '⚠️ Firma prestazione e rischi'}</button>
+                <button type="button" onClick={() => setShowCustomerSatisfaction(true)} className="tw-bg-violet-100 tw-text-violet-800 tw-border tw-border-violet-300 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-violet-200">⭐ Customer Satisfaction</button>
+                <button type="button" onClick={() => setShowSchedaDimissione(true)} className="tw-bg-blue-100 tw-text-blue-700 tw-border tw-border-blue-300 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-blue-200">📋 Scheda dimissione</button>
+                <button type="button" onClick={() => setShowRiformulazionePAI(true)} className="tw-bg-sky-100 tw-text-sky-700 tw-border tw-border-sky-300 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-sky-200">🔄 Riformula / rinnova PAI</button>
+                <button type="button" onClick={() => setShowDatiCliniciADI(true)} className="tw-bg-cyan-100 tw-text-cyan-800 tw-border tw-border-cyan-300 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-cyan-200">🩺 Dati clinici ADI</button>
+                {consensoGDPRFirmato && <><button type="button" onClick={() => esportaConsensoPdf('gdpr')} className="tw-bg-blue-50 tw-text-blue-700 tw-border tw-border-blue-300 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-blue-100">📄 PDF GDPR</button><button type="button" onClick={() => inviaEmailConsenso('gdpr')} className="tw-bg-blue-50 tw-text-blue-700 tw-border tw-border-blue-300 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-blue-100">✉️ Invia GDPR</button></>}
+                {consensoPrestazioneFirmato && <><button type="button" onClick={() => esportaConsensoPdf('prestazione')} className="tw-bg-orange-50 tw-text-orange-800 tw-border tw-border-orange-300 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-orange-100">📄 PDF prestazione</button><button type="button" onClick={() => inviaEmailConsenso('prestazione')} className="tw-bg-orange-50 tw-text-orange-800 tw-border tw-border-orange-300 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-orange-100">✉️ Invia prestazione</button></>}
               </div>
             </div>
 
             {showChatPaziente && pazienteSelezionato && (
-              <div style={{ marginBottom: '16px' }}>
+              <div className="tw-mb-4">
                 <ChatWidget scope="patient" patientId={pazienteSelezionato._id} title={`💬 Chat con coordinatore — ${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName}`} height={420} />
               </div>
             )}
 
             {/* ── COMPENSO MATURATO ── */}
             {pianoSelezionato.tipoCompenso && pianoSelezionato.tipoCompenso !== 'nessuno' && (
-              <div style={{ background: riepilogo?.compensoPagato ? 'rgba(5,150,105,0.06)' : 'rgba(124,58,237,0.06)', border: `1px solid ${riepilogo?.compensoPagato ? 'rgba(5,150,105,0.3)' : 'rgba(124,58,237,0.3)'}`, borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
-                <h4 style={{ margin: '0 0 12px', color: riepilogo?.compensoPagato ? '#065f46' : '#7c3aed', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="tw-rounded-lg tw-p-4 tw-mb-4" style={{ background: riepilogo?.compensoPagato ? 'rgba(5,150,105,0.06)' : 'rgba(124,58,237,0.06)', border: `1px solid ${riepilogo?.compensoPagato ? 'rgba(5,150,105,0.3)' : 'rgba(124,58,237,0.3)'}` }}>
+                <h4 className="tw-m-0 tw-mb-3 tw-flex tw-items-center tw-gap-2" style={{ color: riepilogo?.compensoPagato ? '#065f46' : '#7c3aed' }}>
                   💰 Compenso maturato
                 </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
-                  <div style={{ background: '#f5f3ff', borderRadius: '8px', padding: '10px 14px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.72rem', color: '#7c3aed', fontWeight: '600', marginBottom: '2px', textTransform: 'uppercase' }}>
+                <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-2.5">
+                  <div className="tw-bg-violet-50 tw-rounded-lg tw-px-3.5 tw-py-2.5 tw-text-center">
+                    <div className="tw-text-[0.72rem] tw-text-violet-600 tw-font-semibold tw-mb-0.5 tw-uppercase">
                       {pianoSelezionato.tipoCompenso === 'orario' ? 'Tariffa/ora' : 'Compenso fisso'}
                     </div>
-                    <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#7c3aed' }}>
+                    <div className="tw-text-[1.2rem] tw-font-extrabold tw-text-violet-600">
                       € {(pianoSelezionato.tariffa || 0).toFixed(2)}
-                      {pianoSelezionato.tipoCompenso === 'orario' && <span style={{ fontSize: '0.7rem', fontWeight: '400' }}>/h</span>}
+                      {pianoSelezionato.tipoCompenso === 'orario' && <span className="tw-text-[0.7rem] tw-font-normal">/h</span>}
                     </div>
                   </div>
                   {pianoSelezionato.tipoCompenso === 'orario' && riepilogo && (
-                    <div style={{ background: '#f0f9ff', borderRadius: '8px', padding: '10px 14px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.72rem', color: '#0284c7', fontWeight: '600', marginBottom: '2px', textTransform: 'uppercase' }}>Ore lavorate</div>
-                      <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#0284c7' }}>{riepilogo.oreTotali}h</div>
+                    <div className="tw-bg-sky-50 tw-rounded-lg tw-px-3.5 tw-py-2.5 tw-text-center">
+                      <div className="tw-text-[0.72rem] tw-text-sky-600 tw-font-semibold tw-mb-0.5 tw-uppercase">Ore lavorate</div>
+                      <div className="tw-text-[1.2rem] tw-font-extrabold tw-text-sky-600">{riepilogo.oreTotali}h</div>
                     </div>
                   )}
                   {riepilogo && (
-                    <div style={{ background: '#fefce8', borderRadius: '8px', padding: '10px 14px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.72rem', color: '#d97706', fontWeight: '600', marginBottom: '2px', textTransform: 'uppercase' }}>Accessi</div>
-                      <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#d97706' }}>{riepilogo.accessiCompletati}</div>
+                    <div className="tw-bg-amber-50 tw-rounded-lg tw-px-3.5 tw-py-2.5 tw-text-center">
+                      <div className="tw-text-[0.72rem] tw-text-amber-600 tw-font-semibold tw-mb-0.5 tw-uppercase">Accessi</div>
+                      <div className="tw-text-[1.2rem] tw-font-extrabold tw-text-amber-600">{riepilogo.accessiCompletati}</div>
                     </div>
                   )}
                   {riepilogo && (
-                    <div style={{ background: riepilogo.compensoPagato ? '#f0fdf4' : '#fdf4ff', borderRadius: '8px', padding: '10px 14px', textAlign: 'center', border: `1px solid ${riepilogo.compensoPagato ? '#bbf7d0' : '#e9d5ff'}` }}>
-                      <div style={{ fontSize: '0.72rem', color: riepilogo.compensoPagato ? '#059669' : '#7c3aed', fontWeight: '600', marginBottom: '2px', textTransform: 'uppercase' }}>
+                    <div className="tw-rounded-lg tw-px-3.5 tw-py-2.5 tw-text-center" style={{ background: riepilogo.compensoPagato ? '#f0fdf4' : '#fdf4ff', border: `1px solid ${riepilogo.compensoPagato ? '#bbf7d0' : '#e9d5ff'}` }}>
+                      <div className="tw-text-[0.72rem] tw-font-semibold tw-mb-0.5 tw-uppercase" style={{ color: riepilogo.compensoPagato ? '#059669' : '#7c3aed' }}>
                         {riepilogo.compensoPagato ? '✅ Pagato' : '💰 Maturato'}
                       </div>
-                      <div style={{ fontSize: '1.3rem', fontWeight: '800', color: riepilogo.compensoPagato ? '#059669' : '#7c3aed' }}>
+                      <div className="tw-text-[1.3rem] tw-font-extrabold" style={{ color: riepilogo.compensoPagato ? '#059669' : '#7c3aed' }}>
                         € {(riepilogo.compensoSalvato > 0 ? riepilogo.compensoSalvato : riepilogo.compensoCalcolato).toFixed(2)}
                       </div>
                     </div>
                   )}
                 </div>
                 {riepilogo && !riepilogo.compensoPagato && (
-                  <p style={{ margin: '10px 0 0', fontSize: '0.8rem', color: '#888', fontStyle: 'italic' }}>
+                  <p className="tw-m-0 tw-mt-2.5 tw-text-[0.8rem] tw-text-slate-400 tw-italic">
                     ⏳ In attesa di pagamento da parte del coordinatore.
                   </p>
                 )}
                 {riepilogo?.compensoPagato && (
-                  <p style={{ margin: '10px 0 0', fontSize: '0.8rem', color: '#059669', fontWeight: '600' }}>
+                  <p className="tw-m-0 tw-mt-2.5 tw-text-[0.8rem] tw-text-emerald-600 tw-font-semibold">
                     ✅ Compenso già pagato.
                   </p>
                 )}
@@ -1644,46 +1635,42 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
             )}
 
             {/* ── REGISTRAZIONE ACCESSO (apre pagina dedicata ottimizzata tablet) ── */}
-            <div style={{ background: accessoAperto ? 'rgba(5,150,105,0.06)' : 'rgba(30,77,140,0.04)', border: `1px solid ${accessoAperto ? 'rgba(5,150,105,0.3)' : 'rgba(30,77,140,0.2)'}`, borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
-              <h4 style={{ margin: '0 0 10px', color: accessoAperto ? '#065f46' : '#1e4d8c' }}>
+            <div className="tw-rounded-lg tw-p-4 tw-mb-4" style={{ background: accessoAperto ? 'rgba(5,150,105,0.06)' : 'rgba(30,77,140,0.04)', border: `1px solid ${accessoAperto ? 'rgba(5,150,105,0.3)' : 'rgba(30,77,140,0.2)'}` }}>
+              <h4 className="tw-m-0 tw-mb-2.5" style={{ color: accessoAperto ? '#065f46' : '#1e4d8c' }}>
                 {accessoAperto ? '🟢 Accesso in corso' : '🔵 Registra accesso'}
               </h4>
               {accessoAperto && (
-                <p style={{ margin: '0 0 12px', fontSize: '0.9rem', color: '#374151' }}>
+                <p className="tw-m-0 tw-mb-3 tw-text-[0.9rem] tw-text-slate-700">
                   Entrata: <strong>{formatOra(accessoAperto.oraEntrata)}</strong> del <strong>{formatData(accessoAperto.oraEntrata)}</strong>
                 </p>
               )}
               <button
                 type="button"
                 onClick={() => pianoSelezionato && navigate(`/registrazione-accesso/${pianoSelezionato._id}`)}
-                style={{
-                  width: '100%', padding: '16px', borderRadius: '10px', border: 'none',
-                  cursor: 'pointer', backgroundColor: accessoAperto ? '#16a34a' : '#1e4d8c',
-                  color: 'white', fontWeight: '700', fontSize: '1.05rem',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                }}
+                className="tw-w-full tw-p-4 tw-rounded-xl tw-border-0 tw-cursor-pointer tw-text-white tw-font-bold tw-text-[1.05rem] tw-flex tw-items-center tw-justify-center tw-gap-2.5"
+                style={{ backgroundColor: accessoAperto ? '#16a34a' : '#1e4d8c' }}
               >
                 {accessoAperto ? '⏹️ Registra Uscita con Firma' : '▶️ Registra Entrata'}
-                <span style={{ fontSize: '0.75rem', opacity: 0.9 }}>(ottimizzato tablet)</span>
+                <span className="tw-text-[0.75rem] tw-opacity-90">(ottimizzato tablet)</span>
               </button>
             </div>
 
             {/* ── SEZIONE DIARIO CLINICO ── */}
-            <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '16px', overflow: 'hidden' }}>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch', background: '#f8fafc' }}>
+            <div className="tw-border tw-border-slate-200 tw-rounded-lg tw-mb-4 tw-overflow-hidden">
+              <div className="tw-flex tw-gap-2 tw-items-stretch tw-bg-slate-50">
                 <button type="button" onClick={() => setShowDiario(!showDiario)}
-                style={{ width: '100%', background: '#f8fafc', border: 'none', padding: '14px 16px', textAlign: 'left', cursor: 'pointer', fontWeight: '600', fontSize: '0.95rem', color: '#374151', display: 'flex', justifyContent: 'space-between' }}>
+                className="tw-w-full tw-bg-slate-50 tw-border-0 tw-px-4 tw-py-3.5 tw-text-left tw-cursor-pointer tw-font-semibold tw-text-[0.95rem] tw-text-slate-700 tw-flex tw-justify-between hover:tw-bg-slate-100">
                 <span>📓 Diario clinico ({diario.length} voci)</span>
                 <span>{showDiario ? '▲' : '▼'}</span>
                 </button>
-                <button type="button" onClick={() => setShowFormazioneSanitaria(true)} style={{ margin: '8px 10px 8px 0', padding: '8px 12px', border: '1px solid #99f6e4', borderRadius: '7px', cursor: 'pointer', background: '#f0fdfa', color: '#0f766e', fontWeight: 700, whiteSpace: 'nowrap' }}>🎓 Formazione sanitaria</button>
+                <button type="button" onClick={() => setShowFormazioneSanitaria(true)} className="tw-my-2 tw-mr-2.5 tw-px-3 tw-py-2 tw-border tw-border-teal-200 tw-rounded-md tw-cursor-pointer tw-bg-teal-50 tw-text-teal-700 tw-font-bold tw-whitespace-nowrap hover:tw-bg-teal-100">🎓 Formazione sanitaria</button>
               </div>
               {showDiario && (
-                <div style={{ padding: '16px' }}>
-                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
-                    <h5 style={{ margin: '0 0 12px', color: '#1e4d8c' }}>✏️ Nuova voce diario</h5>
+                <div className="tw-p-4">
+                  <div className="tw-bg-slate-50 tw-border tw-border-slate-200 tw-rounded-lg tw-p-4 tw-mb-4">
+                    <h5 className="tw-m-0 tw-mb-3 tw-text-brand">✏️ Nuova voce diario</h5>
                     {pianoSelezionato && (
-                      <div style={{ marginBottom: '12px' }}>
+                      <div className="tw-mb-3">
                         <VoiceRecorder
                           workPlanId={pianoSelezionato._id}
                           onResult={data => {
@@ -1701,22 +1688,22 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                         />
                       </div>
                     )}
-                    <label style={{ display: 'block', marginBottom: '12px' }}>
+                    <label className="tw-block tw-mb-3">
                       Diaria *
                       <textarea
                         value={testoDiario}
                         onChange={e => setTestoDiario(e.target.value)}
                         placeholder="Descrivi le attività svolte, le condizioni del paziente, le osservazioni cliniche..."
                         rows={4}
-                        style={{ width: '100%', marginTop: '4px', padding: '8px 12px', border: '1px solid #ced4da', borderRadius: '6px', fontSize: '0.9rem', resize: 'vertical', boxSizing: 'border-box' }}
+                        className="tw-w-full tw-mt-1 tw-px-3 tw-py-2 tw-border tw-border-slate-300 tw-rounded-md tw-text-[0.9rem] tw-resize-y tw-box-border"
                       />
                     </label>
-                    <h6 style={{ margin: '0 0 10px', color: '#374151', fontWeight: '600' }}>📊 Parametri vitali (opzionali)</h6>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px', marginBottom: '12px' }}>
+                    <h6 className="tw-m-0 tw-mb-2.5 tw-text-slate-700 tw-font-semibold">📊 Parametri vitali (opzionali)</h6>
+                    <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 md:tw-grid-cols-3 xl:tw-grid-cols-4 tw-gap-2.5 tw-mb-3">
                       {PARAMETRI_VITALI.map(({ key, label, unit, step }) => (
-                        <label key={key} style={{ fontSize: '0.82rem' }}>
+                        <label key={key} className="tw-text-[0.82rem]">
                           {label}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                          <div className="tw-flex tw-items-center tw-gap-1 tw-mt-0.5">
                             <input
                               type="number"
                               value={parametri[key] || ''}
@@ -1725,9 +1712,9 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                               min={key === 'dolore' ? '0' : undefined}
                               max={key === 'dolore' ? '10' : undefined}
                               placeholder="—"
-                              style={{ flex: 1, padding: '5px 8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '0.85rem' }}
+                              className="tw-flex-1 tw-px-2 tw-py-1 tw-border tw-border-slate-300 tw-rounded tw-text-[0.85rem]"
                             />
-                            <span style={{ fontSize: '0.75rem', color: '#888', whiteSpace: 'nowrap' }}>{unit}</span>
+                            <span className="tw-text-[0.75rem] tw-text-slate-400 tw-whitespace-nowrap">{unit}</span>
                           </div>
                         </label>
                       ))}
@@ -1744,26 +1731,26 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                   </div>
 
                   {diario.length === 0 ? (
-                    <p style={{ color: '#888', fontStyle: 'italic' }}>Nessuna voce nel diario.</p>
+                    <p className="tw-text-slate-500 tw-italic">Nessuna voce nel diario.</p>
                   ) : (
                     <div className="document-list">
                       <ul>
                         {diario.map(entry => (
                           <li key={entry._id}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
-                              <div style={{ flex: 1 }}>
-                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap' }}>
-                                  <span style={{ fontWeight: '600', fontSize: '0.88rem' }}>📅 {formatData(entry.dataRegistrazione)} {formatOra(entry.dataRegistrazione)}</span>
-                                  <span style={{ fontSize: '0.8rem', color: '#888' }}>✍️ {entry.staffName}</span>
+                            <div className="tw-flex tw-justify-between tw-items-start tw-flex-wrap tw-gap-2">
+                              <div className="tw-flex-1">
+                                <div className="tw-flex tw-gap-2 tw-items-center tw-mb-1.5 tw-flex-wrap">
+                                  <span className="tw-font-semibold tw-text-[0.88rem]">📅 {formatData(entry.dataRegistrazione)} {formatOra(entry.dataRegistrazione)}</span>
+                                  <span className="tw-text-[0.8rem] tw-text-slate-400">✍️ {entry.staffName}</span>
                                   {entry.firmato && (
-                                    <span style={{ background: 'rgba(5,150,105,0.1)', color: '#065f46', border: '1px solid #059669', borderRadius: '10px', padding: '1px 8px', fontSize: '0.75rem', fontWeight: '700' }}>
+                                    <span className="tw-bg-emerald-50 tw-text-emerald-800 tw-border tw-border-emerald-600 tw-rounded-full tw-px-2 tw-py-px tw-text-[0.75rem] tw-font-bold">
                                       ✅ Firmato {entry.dataFirma ? formatData(entry.dataFirma) : ''}
                                     </span>
                                   )}
                                 </div>
-                                <p style={{ margin: '0 0 8px', color: '#374151', fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>{entry.testo}</p>
+                                <p className="tw-m-0 tw-mb-2 tw-text-slate-700 tw-text-[0.9rem] tw-whitespace-pre-wrap">{entry.testo}</p>
                                 {entry.parametriVitali && Object.values(entry.parametriVitali).some(v => v !== undefined && v !== null) && (
-                                  <div style={{ background: '#f1f5f9', borderRadius: '6px', padding: '8px 12px', fontSize: '0.82rem', color: '#555', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                                  <div className="tw-bg-slate-100 tw-rounded-md tw-px-3 tw-py-2 tw-text-[0.82rem] tw-text-slate-600 tw-flex tw-flex-wrap tw-gap-2.5">
                                     {entry.parametriVitali.pressioneSistolica !== undefined && <span>🩸 {entry.parametriVitali.pressioneSistolica}/{entry.parametriVitali.pressioneDiastolica} mmHg</span>}
                                     {entry.parametriVitali.frequenzaCardiaca !== undefined && <span>❤️ {entry.parametriVitali.frequenzaCardiaca} bpm</span>}
                                     {entry.parametriVitali.frequenzaRespiratoria !== undefined && <span>🫁 {entry.parametriVitali.frequenzaRespiratoria} atti/min</span>}
@@ -1776,9 +1763,9 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                                 )}
                               </div>
                               {!entry.firmato && entry.firmaLogin === user?.name && (
-                                <div style={{ display: 'flex', gap: '6px' }}>
-                                  <button type="button" onClick={() => setDiarioDaFirmare(entry._id)} style={{ background: '#059669', fontSize: '0.82rem', padding: '5px 12px', whiteSpace: 'nowrap' }}>✍️ Firma con dito/penna</button>
-                                  <button type="button" onClick={() => eliminaDiario(entry._id)} title="Elimina voce non firmata" style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+                                <div className="tw-flex tw-gap-1.5">
+                                  <button type="button" onClick={() => setDiarioDaFirmare(entry._id)} className="tw-bg-emerald-600 tw-text-white tw-text-[0.82rem] tw-px-3 tw-py-1.5 tw-whitespace-nowrap tw-rounded-md tw-cursor-pointer hover:tw-bg-emerald-700">✍️ Firma con dito/penna</button>
+                                  <button type="button" onClick={() => eliminaDiario(entry._id)} title="Elimina voce non firmata" className="tw-bg-red-100 tw-text-red-700 tw-border tw-border-red-300 tw-rounded-md tw-px-2 tw-py-1 tw-cursor-pointer tw-font-bold hover:tw-bg-red-200">✕</button>
                                 </div>
                               )}
                             </div>
@@ -1792,48 +1779,48 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
             </div>
 
             {/* ── SEZIONE ALLEGATI ── */}
-            <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '16px', overflow: 'hidden' }}>
+            <div className="tw-border tw-border-slate-200 tw-rounded-lg tw-mb-4 tw-overflow-hidden">
               <button type="button" onClick={() => setShowAllegati(!showAllegati)}
-                style={{ width: '100%', background: '#f8fafc', border: 'none', padding: '14px 16px', textAlign: 'left', cursor: 'pointer', fontWeight: '600', fontSize: '0.95rem', color: '#374151', display: 'flex', justifyContent: 'space-between' }}>
+                className="tw-w-full tw-bg-slate-50 tw-border-0 tw-px-4 tw-py-3.5 tw-text-left tw-cursor-pointer tw-font-semibold tw-text-[0.95rem] tw-text-slate-700 tw-flex tw-justify-between hover:tw-bg-slate-100">
                 <span>📎 Allegati ({allegati.length})</span>
                 <span>{showAllegati ? '▲' : '▼'}</span>
               </button>
               {showAllegati && (
-                <div style={{ padding: '16px' }}>
-                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
-                    <h5 style={{ margin: '0 0 12px', color: '#1e4d8c' }}>📤 Carica documento</h5>
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                      <label style={{ flex: 2, minWidth: '200px' }}>
+                <div className="tw-p-4">
+                  <div className="tw-bg-slate-50 tw-border tw-border-slate-200 tw-rounded-lg tw-p-4 tw-mb-4">
+                    <h5 className="tw-m-0 tw-mb-3 tw-text-brand">📤 Carica documento</h5>
+                    <div className="tw-flex tw-gap-2.5 tw-flex-wrap tw-items-end">
+                      <label className="tw-flex-[2] tw-min-w-[200px] tw-block">
                         File *
                         <input ref={fileInputRef} type="file" onChange={e => setFileAllegato(e.target.files?.[0] || null)}
                           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.txt"
-                          style={{ marginTop: '4px', display: 'block' }} />
+                          className="tw-mt-1 tw-block tw-w-full" />
                       </label>
-                      <label style={{ flex: 2, minWidth: '200px' }}>
+                      <label className="tw-flex-[2] tw-min-w-[200px] tw-block">
                         Descrizione (opzionale)
                         <input value={descrizioneAllegato} onChange={e => setDescrizioneAllegato(e.target.value)}
-                          placeholder="Es. Referto ECG, Prescrizione..." style={{ marginTop: '4px' }} />
+                          placeholder="Es. Referto ECG, Prescrizione..." className="tw-mt-1 tw-w-full tw-px-2 tw-py-1.5 tw-border tw-border-slate-300 tw-rounded-md" />
                       </label>
                       <button type="button" onClick={caricaAllegato} disabled={caricandoAllegato || !fileAllegato}
-                        style={{ background: '#1e4d8c', padding: '10px 18px', opacity: !fileAllegato ? 0.5 : 1, whiteSpace: 'nowrap' }}>
+                        className="tw-bg-brand tw-text-white tw-px-4.5 tw-py-2.5 tw-rounded-md tw-cursor-pointer tw-font-semibold tw-whitespace-nowrap hover:tw-bg-brand-dark disabled:tw-opacity-50 disabled:tw-cursor-not-allowed">
                         {caricandoAllegato ? '⏳' : '📤 Carica'}
                       </button>
                     </div>
-                    <p style={{ margin: '8px 0 0', fontSize: '0.8rem', color: '#888' }}>Formati accettati: PDF, immagini, Word, Excel, testo. Max 20 MB.</p>
+                    <p className="tw-m-0 tw-mt-2 tw-text-[0.8rem] tw-text-slate-400">Formati accettati: PDF, immagini, Word, Excel, testo. Max 20 MB.</p>
                   </div>
                   {allegati.length === 0 ? (
-                    <p style={{ color: '#888', fontStyle: 'italic' }}>Nessun allegato.</p>
+                    <p className="tw-text-slate-500 tw-italic">Nessun allegato.</p>
                   ) : (
                     <div className="document-list">
                       <ul>
                         {allegati.map(all => (
                           <li key={all._id}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                            <div className="tw-flex tw-justify-between tw-items-center tw-flex-wrap tw-gap-2">
                               <div>
-                                <div style={{ fontWeight: '600', marginBottom: '2px' }}>
+                                <div className="tw-font-semibold tw-mb-0.5">
                                   {all.mimeType.startsWith('image/') ? '🖼️' : all.mimeType === 'application/pdf' ? '📄' : '📎'} {all.nomeFile}
                                 </div>
-                                <div style={{ fontSize: '0.82rem', color: '#888', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                <div className="tw-text-[0.82rem] tw-text-slate-400 tw-flex tw-gap-2.5 tw-flex-wrap">
                                   {all.descrizione && <span>{all.descrizione}</span>}
                                   <span>{formatBytes(all.dimensione)}</span>
                                   <span>📅 {formatData(all.dataCaricamento)}</span>
@@ -1841,7 +1828,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                                 </div>
                               </div>
                               <button type="button" onClick={() => apriAllegato(all)}
-                                style={{ background: '#1e4d8c', fontSize: '0.85rem', padding: '6px 14px' }}>
+                                className="tw-bg-brand tw-text-white tw-text-[0.85rem] tw-px-3.5 tw-py-1.5 tw-rounded-md tw-cursor-pointer hover:tw-bg-brand-dark">
                                 👁️ Apri
                               </button>
                             </div>
@@ -1855,58 +1842,58 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
             </div>
 
             {/* ── SEZIONE OBIETTIVI ── */}
-            <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '16px', overflow: 'hidden' }}>
+            <div className="tw-border tw-border-slate-200 tw-rounded-lg tw-mb-4 tw-overflow-hidden">
               <button type="button" onClick={() => setShowObiettivi(!showObiettivi)}
-                style={{ width: '100%', background: '#f8fafc', border: 'none', padding: '14px 16px', textAlign: 'left', cursor: 'pointer', fontWeight: '600', fontSize: '0.95rem', color: '#374151', display: 'flex', justifyContent: 'space-between' }}>
+                className="tw-w-full tw-bg-slate-50 tw-border-0 tw-px-4 tw-py-3.5 tw-text-left tw-cursor-pointer tw-font-semibold tw-text-[0.95rem] tw-text-slate-700 tw-flex tw-justify-between hover:tw-bg-slate-100">
                 <span>🎯 Obiettivi del piano ({obiettivi.length})</span>
                 <span>{showObiettivi ? '▲' : '▼'}</span>
               </button>
               {showObiettivi && (
-                <div style={{ padding: '16px' }}>
+                <div className="tw-p-4">
                   {obiettivi.length === 0 ? (
-                    <p style={{ color: '#888', fontStyle: 'italic' }}>Nessun obiettivo definito. Gli obiettivi vengono formulati dal coordinatore.</p>
+                    <p className="tw-text-slate-500 tw-italic">Nessun obiettivo definito. Gli obiettivi vengono formulati dal coordinatore.</p>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div className="tw-flex tw-flex-col tw-gap-3">
                       {obiettivi.map(ob => {
                         const badge = statoObiettivoBadge[ob.stato] || statoObiettivoBadge.attivo;
                         const isRivalutando = rivalutandoId === ob._id;
                         return (
-                          <div key={ob._id} style={{ background: badge.bg, border: `1px solid ${badge.color}30`, borderRadius: '8px', padding: '14px 16px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
-                              <div style={{ flex: 1 }}>
-                                <p style={{ margin: '0 0 4px', fontWeight: '600', color: '#374151' }}>{ob.descrizione}</p>
-                                <div style={{ fontSize: '0.82rem', color: '#888', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                          <div key={ob._id} className="tw-rounded-lg tw-px-4 tw-py-3.5" style={{ background: badge.bg, border: `1px solid ${badge.color}30` }}>
+                            <div className="tw-flex tw-justify-between tw-items-start tw-flex-wrap tw-gap-2 tw-mb-2">
+                              <div className="tw-flex-1">
+                                <p className="tw-m-0 tw-mb-1 tw-font-semibold tw-text-slate-700">{ob.descrizione}</p>
+                                <div className="tw-text-[0.82rem] tw-text-slate-400 tw-flex tw-gap-2.5 tw-flex-wrap">
                                   <span>📅 Inizio: {formatData(ob.dataInizio)}</span>
                                   {ob.dataRivalutazione && <span>🔄 Rivalutazione: {formatData(ob.dataRivalutazione)}</span>}
                                 </div>
                               </div>
-                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                <span style={{ color: badge.color, fontWeight: '700', fontSize: '0.85rem', background: badge.bg, border: `1px solid ${badge.color}`, borderRadius: '12px', padding: '2px 10px' }}>{badge.label}</span>
+                              <div className="tw-flex tw-gap-2 tw-items-center tw-flex-wrap">
+                                <span className="tw-text-[0.85rem] tw-font-bold tw-rounded-xl tw-px-2.5 tw-py-0.5" style={{ color: badge.color, background: badge.bg, border: `1px solid ${badge.color}` }}>{badge.label}</span>
                                 <button type="button"
                                   onClick={() => { setRivalutandoId(isRivalutando ? null : ob._id); setStatoRivalutazione(ob.stato); setNoteRivalutazione(''); }}
-                                  style={{ background: isRivalutando ? '#6c757d' : '#f59e0b', fontSize: '0.82rem', padding: '5px 12px' }}>
+                                  className={`tw-text-[0.82rem] tw-px-3 tw-py-1.5 tw-rounded-md tw-cursor-pointer tw-text-white ${isRivalutando ? 'tw-bg-slate-500 hover:tw-bg-slate-600' : 'tw-bg-amber-500 hover:tw-bg-amber-600'}`}>
                                   {isRivalutando ? '✕ Annulla' : '🔄 Rivaluta'}
                                 </button>
                               </div>
                             </div>
                             {isRivalutando && (
-                              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '12px', marginTop: '8px' }}>
-                                <h6 style={{ margin: '0 0 10px', color: '#374151' }}>🔄 Rivaluta obiettivo</h6>
-                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                                  <label style={{ flex: 1, minWidth: '160px' }}>
+                              <div className="tw-bg-white tw-border tw-border-slate-200 tw-rounded-md tw-p-3 tw-mt-2">
+                                <h6 className="tw-m-0 tw-mb-2.5 tw-text-slate-700">🔄 Rivaluta obiettivo</h6>
+                                <div className="tw-flex tw-gap-2.5 tw-flex-wrap tw-items-end">
+                                  <label className="tw-flex-1 tw-min-w-[160px] tw-block">
                                     Nuovo stato *
                                     <select value={statoRivalutazione} onChange={e => setStatoRivalutazione(e.target.value)}
-                                      style={{ marginTop: '4px', padding: '7px 10px', border: '1px solid #ced4da', borderRadius: '4px', width: '100%' }}>
+                                      className="tw-w-full tw-mt-1 tw-px-2.5 tw-py-1.5 tw-border tw-border-slate-300 tw-rounded-md">
                                       <option value="">— Seleziona —</option>
                                       {STATI_OBIETTIVO.map(s => (
                                         <option key={s} value={s}>{statoObiettivoBadge[s]?.label || s}</option>
                                       ))}
                                     </select>
                                   </label>
-                                  <label style={{ flex: 2, minWidth: '200px' }}>
+                                  <label className="tw-flex-[2] tw-min-w-[200px] tw-block">
                                     Note rivalutazione
                                     <input value={noteRivalutazione} onChange={e => setNoteRivalutazione(e.target.value)}
-                                      placeholder="Osservazioni sulla rivalutazione..." style={{ marginTop: '4px' }} />
+                                      placeholder="Osservazioni sulla rivalutazione..." className="tw-w-full tw-mt-1 tw-px-2 tw-py-1.5 tw-border tw-border-slate-300 tw-rounded-md" />
                                   </label>
                                   <Button
                                     onClick={() => salvaRivalutazione(ob._id)}
@@ -1921,14 +1908,14 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                               </div>
                             )}
                             {ob.valutazioni && ob.valutazioni.length > 0 && (
-                              <details style={{ marginTop: '8px' }}>
-                                <summary style={{ cursor: 'pointer', fontSize: '0.82rem', color: '#888' }}>📋 Storico valutazioni ({ob.valutazioni.length})</summary>
-                                <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <details className="tw-mt-2">
+                                <summary className="tw-cursor-pointer tw-text-[0.82rem] tw-text-slate-400">📋 Storico valutazioni ({ob.valutazioni.length})</summary>
+                                <div className="tw-mt-2 tw-flex tw-flex-col tw-gap-1">
                                   {ob.valutazioni.map((v, i) => (
-                                    <div key={i} style={{ fontSize: '0.82rem', color: '#555', background: '#f8fafc', padding: '6px 10px', borderRadius: '4px' }}>
+                                    <div key={i} className="tw-text-[0.82rem] tw-text-slate-600 tw-bg-slate-50 tw-px-2.5 tw-py-1.5 tw-rounded-md">
                                       <strong>{formatData(v.data)}</strong> — {statoObiettivoBadge[v.stato]?.label || v.stato}
                                       {v.note && ` — ${v.note}`}
-                                      <span style={{ color: '#888', marginLeft: '8px' }}>({v.valutatoDa})</span>
+                                      <span className="tw-text-slate-400 tw-ml-2">({v.valutatoDa})</span>
                                     </div>
                                   ))}
                                 </div>
@@ -1944,48 +1931,48 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
             </div>
 
             {/* ── STORICO ACCESSI + EXPORT PDF ── */}
-            <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
-              <div style={{ background: '#f8fafc', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                <span style={{ fontWeight: '600', fontSize: '0.95rem', color: '#374151' }}>📅 Storico accessi ({accessi.length})</span>
+            <div className="tw-border tw-border-slate-200 tw-rounded-lg tw-overflow-hidden">
+              <div className="tw-bg-slate-50 tw-px-4 tw-py-3.5 tw-flex tw-justify-between tw-items-center tw-flex-wrap tw-gap-2">
+                <span className="tw-font-semibold tw-text-[0.95rem] tw-text-slate-700">📅 Storico accessi ({accessi.length})</span>
                 <button type="button" onClick={() => setShowExport(!showExport)}
-                  style={{ background: '#f1f5f9', color: '#374151', border: '1px solid #e2e8f0', padding: '6px 14px', fontSize: '0.85rem' }}>
+                  className="tw-bg-slate-100 tw-text-slate-700 tw-border tw-border-slate-200 tw-px-3.5 tw-py-1.5 tw-text-[0.85rem] tw-cursor-pointer tw-rounded-md hover:tw-bg-slate-200">
                   📄 Esporta / Visualizza PDF
                 </button>
               </div>
 
               {showExport && (
-                <div style={{ padding: '16px', borderTop: '1px solid #e2e8f0', background: '#fafafa' }}>
-                  <h5 style={{ margin: '0 0 12px', color: '#374151' }}>📄 Esporta registro accessi (rendicontazione)</h5>
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '8px' }}>
-                    <label style={{ flex: 1, minWidth: '140px' }}>
+                <div className="tw-p-4 tw-border-t tw-border-slate-200 tw-bg-slate-50/50">
+                  <h5 className="tw-m-0 tw-mb-3 tw-text-slate-700">📄 Esporta registro accessi (rendicontazione)</h5>
+                  <div className="tw-flex tw-gap-3 tw-flex-wrap tw-items-end tw-mb-2">
+                    <label className="tw-flex-1 tw-min-w-[140px] tw-block">
                       Da data
-                      <input type="date" value={exportDaData} onChange={e => setExportDaData(e.target.value)} style={{ marginTop: '4px' }} />
+                      <input type="date" value={exportDaData} onChange={e => setExportDaData(e.target.value)} className="tw-w-full tw-mt-1 tw-px-2 tw-py-1.5 tw-border tw-border-slate-300 tw-rounded-md" />
                     </label>
-                    <label style={{ flex: 1, minWidth: '140px' }}>
+                    <label className="tw-flex-1 tw-min-w-[140px] tw-block">
                       A data
-                      <input type="date" value={exportAData} onChange={e => setExportAData(e.target.value)} style={{ marginTop: '4px' }} />
+                      <input type="date" value={exportAData} onChange={e => setExportAData(e.target.value)} className="tw-w-full tw-mt-1 tw-px-2 tw-py-1.5 tw-border tw-border-slate-300 tw-rounded-md" />
                     </label>
                     <button type="button" onClick={caricaExport} disabled={loadingExport}
-                      style={{ background: '#1e4d8c', padding: '10px 18px', whiteSpace: 'nowrap' }}>
+                      className="tw-bg-brand tw-text-white tw-px-4.5 tw-py-2.5 tw-rounded-md tw-cursor-pointer tw-font-semibold tw-whitespace-nowrap hover:tw-bg-brand-dark disabled:tw-opacity-50 disabled:tw-cursor-not-allowed">
                       {loadingExport ? '⏳' : '🔍 Carica'}
                     </button>
                     {exportData && (
                       <>
                         <button type="button" onClick={visualizzaPDF}
-                          style={{ background: '#3b82f6', padding: '10px 18px', whiteSpace: 'nowrap' }}>
+                          className="tw-bg-blue-500 tw-text-white tw-px-4.5 tw-py-2.5 tw-rounded-md tw-cursor-pointer tw-font-semibold tw-whitespace-nowrap hover:tw-bg-blue-600">
                           👁️ Visualizza PDF
                         </button>
                         <button type="button" onClick={stampaPDF}
-                          style={{ background: '#059669', padding: '10px 18px', whiteSpace: 'nowrap' }}>
+                          className="tw-bg-emerald-600 tw-text-white tw-px-4.5 tw-py-2.5 tw-rounded-md tw-cursor-pointer tw-font-semibold tw-whitespace-nowrap hover:tw-bg-emerald-700">
                           🖨️ Stampa PDF
                         </button>
                       </>
                     )}
                   </div>
-                  <p style={{ margin: 0, fontSize: '0.82rem', color: '#888' }}>Lascia vuoto per il mese corrente. Il PDF non include le tariffe.</p>
+                  <p className="tw-m-0 tw-text-[0.82rem] tw-text-slate-400">Lascia vuoto per il mese corrente. Il PDF non include le tariffe.</p>
 
                   {exportData && (
-                    <div ref={printRef} style={{ marginTop: '16px', background: '#fff', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                    <div ref={printRef} className="tw-mt-4 tw-bg-white tw-p-4 tw-border tw-border-slate-200 tw-rounded-md">
                       <h1>Registro Accessi — {exportData.piano.paziente}</h1>
                       <h2>Operatore: {exportData.piano.operatore} ({exportData.piano.ruoloOperatore})</h2>
                       <p><strong>Attività:</strong> {exportData.piano.task}</p>
@@ -2005,18 +1992,18 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                               <td>{acc.oraUscita || '—'}</td>
                               <td>{acc.durataOre}</td>
                               <td>{acc.note || '—'}</td>
-                              <td style={{ verticalAlign: 'top' }}>
+                              <td className="tw-align-top">
                                 {acc.firmaOperatore
-                                  ? <img src={acc.firmaOperatore} alt="Firma op" style={{ maxWidth: '160px', maxHeight: '55px', border: '1px solid #d1d5db', borderRadius: '4px', display: 'block' }} />
-                                  : <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Non raccolta</span>}
+                                  ? <img src={acc.firmaOperatore} alt="Firma op" className="tw-max-w-[160px] tw-max-h-[55px] tw-border tw-border-slate-300 tw-rounded tw-block" />
+                                  : <span className="tw-text-[0.75rem] tw-text-slate-400">Non raccolta</span>}
                               </td>
-                              <td style={{ verticalAlign: 'top' }}>
+                              <td className="tw-align-top">
                                 {acc.firmaPaziente
                                   ? <div>
-                                      <img src={acc.firmaPaziente} alt="Firma paz" style={{ maxWidth: '160px', maxHeight: '55px', border: '1px solid #d1d5db', borderRadius: '4px', display: 'block' }} />
-                                      {acc.nomeFirmatarioPaziente && <span style={{ fontSize: '0.7rem', color: '#6b7280' }}>{acc.ruoloFirmatario === 'caregiver' ? 'Caregiver' : 'Paziente'}: {acc.nomeFirmatarioPaziente}</span>}
+                                      <img src={acc.firmaPaziente} alt="Firma paz" className="tw-max-w-[160px] tw-max-h-[55px] tw-border tw-border-slate-300 tw-rounded tw-block" />
+                                      {acc.nomeFirmatarioPaziente && <span className="tw-text-[0.7rem] tw-text-slate-500">{acc.ruoloFirmatario === 'caregiver' ? 'Caregiver' : 'Paziente'}: {acc.nomeFirmatarioPaziente}</span>}
                                     </div>
-                                  : <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Non raccolta</span>}
+                                  : <span className="tw-text-[0.75rem] tw-text-slate-400">Non raccolta</span>}
                               </td>
                             </tr>
                           ))}
@@ -2031,43 +2018,43 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                 </div>
               )}
 
-              <div style={{ padding: accessi.length > 0 ? '0' : '16px' }}>
+              <div className={accessi.length > 0 ? 'tw-p-0' : 'tw-p-4'}>
                 {accessi.length === 0 ? (
-                  <p style={{ color: '#888', fontStyle: 'italic', margin: 0 }}>Nessun accesso registrato.</p>
+                  <p className="tw-text-slate-500 tw-italic tw-m-0">Nessun accesso registrato.</p>
                 ) : (
-                  <div className="document-list" style={{ margin: 0 }}>
+                  <div className="document-list tw-m-0">
                     <ul>
                       {accessi.map(acc => (
                         <li key={acc._id}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+                          <div className="tw-flex tw-justify-between tw-flex-wrap tw-gap-2">
+                            <div className="tw-flex-1">
+                              <div className="tw-font-semibold tw-mb-1">
                                 📅 {formatData(acc.oraEntrata)} — {formatOra(acc.oraEntrata)}
                                 {acc.oraUscita ? ` → ${formatOra(acc.oraUscita)}` : ' 🟢 In corso'}
                               </div>
-                              <div style={{ fontSize: '0.85rem', color: '#555', display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                              <div className="tw-text-[0.85rem] tw-text-slate-600 tw-flex tw-gap-3 tw-flex-wrap tw-mb-1.5">
                                 {acc.durataMinuti > 0 && <span>⏱️ {formatDurata(acc.durataMinuti)}</span>}
                                 {acc.note && <span>📝 {acc.note}</span>}
                               </div>
-                              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '6px' }}>
-                                <div style={{ fontSize: '0.78rem' }}>
-                                  <span style={{ color: '#6b7280', fontWeight: 600 }}>Firma operatore: </span>
+                              <div className="tw-flex tw-gap-4 tw-flex-wrap tw-mt-1.5">
+                                <div className="tw-text-[0.78rem]">
+                                  <span className="tw-text-slate-500 tw-font-semibold">Firma operatore: </span>
                                   {acc.firmaOperatore
-                                    ? <img src={acc.firmaOperatore} alt="Firma op" style={{ maxWidth: '120px', maxHeight: '40px', verticalAlign: 'middle', border: '1px solid #d1d5db', borderRadius: '4px', marginLeft: '4px' }} />
-                                    : <span style={{ color: '#f59e0b' }}>⚠️ non raccolta</span>}
+                                    ? <img src={acc.firmaOperatore} alt="Firma op" className="tw-max-w-[120px] tw-max-h-[40px] tw-align-middle tw-border tw-border-slate-300 tw-rounded tw-ml-1" />
+                                    : <span className="tw-text-amber-500">⚠️ non raccolta</span>}
                                 </div>
-                                <div style={{ fontSize: '0.78rem' }}>
-                                  <span style={{ color: '#6b7280', fontWeight: 600 }}>Firma paziente: </span>
+                                <div className="tw-text-[0.78rem]">
+                                  <span className="tw-text-slate-500 tw-font-semibold">Firma paziente: </span>
                                   {acc.firmaPaziente
                                     ? <span>
-                                        <img src={acc.firmaPaziente} alt="Firma paz" style={{ maxWidth: '120px', maxHeight: '40px', verticalAlign: 'middle', border: '1px solid #d1d5db', borderRadius: '4px', marginLeft: '4px' }} />
-                                        {acc.nomeFirmatarioPaziente && <span style={{ color: '#6b7280', marginLeft: '4px' }}>({acc.nomeFirmatarioPaziente})</span>}
+                                        <img src={acc.firmaPaziente} alt="Firma paz" className="tw-max-w-[120px] tw-max-h-[40px] tw-align-middle tw-border tw-border-slate-300 tw-rounded tw-ml-1" />
+                                        {acc.nomeFirmatarioPaziente && <span className="tw-text-slate-500 tw-ml-1">({acc.nomeFirmatarioPaziente})</span>}
                                       </span>
-                                    : <span style={{ color: '#9ca3af' }}>non raccolta</span>}
+                                    : <span className="tw-text-slate-400">non raccolta</span>}
                                 </div>
                               </div>
                             </div>
-                            <div style={{ fontSize: '0.8rem', color: '#888', textAlign: 'right' }}>
+                            <div className="tw-text-[0.8rem] tw-text-slate-400 tw-text-right">
                               <div>✍️ {acc.staffName}</div>
                               <div>({acc.staffRole})</div>
                             </div>
@@ -2094,61 +2081,61 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
           });
         };
         const sezLabel = (txt: string) => (
-          <div style={{ fontWeight: '700', fontSize: '0.8rem', color: '#1e4d8c', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #1e4d8c', paddingBottom: '4px', marginBottom: '10px', marginTop: '4px' }}>{txt}</div>
+          <div className="tw-font-bold tw-text-[0.8rem] tw-text-brand tw-uppercase tw-tracking-wider tw-border-b-2 tw-border-brand tw-pb-1 tw-mb-2.5 tw-mt-1">{txt}</div>
         );
         const checkRow = (campo: 'fattoriPaziente'|'fattoriStaff'|'fattoriComunicazione'|'fattoriAmbiente', val: string) => (
-          <label key={val} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', fontSize: '0.86rem', lineHeight: 1.4, padding: '4px 0' }}>
+          <label key={val} className="tw-flex tw-items-start tw-gap-2.5 tw-cursor-pointer tw-text-[0.86rem] tw-leading-snug tw-py-1">
             <input type="checkbox" checked={(eventoForm[campo] as string[]).includes(val)} onChange={() => toggleFattore(campo, val)}
-              style={{ width: '16px', height: '16px', flexShrink: 0, marginTop: '2px', cursor: 'pointer', accentColor: '#1e4d8c' }} />
+              className="tw-w-4 tw-h-4 tw-flex-shrink-0 tw-mt-0.5 tw-cursor-pointer" style={{ accentColor: '#1e4d8c' }} />
             <span>{val}</span>
           </label>
         );
         const canSend = eventoForm.patientId && eventoForm.ruoloOperatore && eventoForm.dataEvento && eventoForm.luogoEvento && eventoForm.descrizioneEvento && firmaEventoOp;
         return (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '12px' }}>
-            <div style={{ background: 'white', borderRadius: '14px', width: '100%', maxWidth: '660px', marginTop: '16px', marginBottom: '24px', boxShadow: '0 24px 64px rgba(0,0,0,0.35)', fontFamily: 'Arial, sans-serif' }}>
+          <div className="tw-fixed tw-inset-0 tw-bg-black/65 tw-z-50 tw-flex tw-items-start tw-justify-center tw-overflow-y-auto tw-p-3">
+            <div className="tw-bg-white tw-rounded-2xl tw-w-full tw-max-w-[660px] tw-mt-4 tw-mb-6 tw-shadow-2xl" style={{ fontFamily: 'Arial, sans-serif' }}>
 
               {/* ── Intestazione scheda ── */}
-              <div style={{ background: 'linear-gradient(135deg,#1e4d8c,#1e3a5f)', color: 'white', borderRadius: '14px 14px 0 0', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="tw-bg-gradient-to-br tw-from-brand tw-to-brand-dark tw-text-white tw-rounded-t-2xl tw-px-5 tw-py-4 tw-flex tw-justify-between tw-items-center">
                 <div>
-                  <div style={{ fontSize: '0.72rem', opacity: 0.8, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '2px' }}>Abbraccio Cure Domiciliari</div>
-                  <div style={{ fontWeight: '700', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className="tw-text-[0.72rem] tw-opacity-80 tw-tracking-widest tw-uppercase tw-mb-0.5">Abbraccio Cure Domiciliari</div>
+                  <div className="tw-font-bold tw-text-[1.1rem] tw-flex tw-items-center tw-gap-2">
                     <AlertTriangle size={20} /> SCHEDA SEGNALAZIONE EVENTO AVVERSO
                   </div>
                 </div>
-                <button onClick={() => setShowEventoAvverso(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex' }}>
+                <button onClick={() => setShowEventoAvverso(false)} className="tw-bg-white/15 tw-border-0 tw-text-white tw-rounded-lg tw-p-1.5 tw-cursor-pointer tw-flex hover:tw-bg-white/25">
                   <X size={20} />
                 </button>
               </div>
 
               {eventoSalvato ? (
-                <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '3.5rem', marginBottom: '14px' }}>✅</div>
-                  <div style={{ fontWeight: '700', fontSize: '1.15rem', color: '#16a34a', marginBottom: '8px' }}>Segnalazione registrata con successo</div>
-                  <div style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '28px' }}>La scheda è stata inviata e sarà esaminata dalla Direzione di Area.</div>
-                  <button onClick={() => setShowEventoAvverso(false)} style={{ background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '8px', padding: '12px 32px', fontWeight: '700', cursor: 'pointer', fontSize: '1rem' }}>Chiudi</button>
+                <div className="tw-px-6 tw-py-12 tw-text-center">
+                  <div className="tw-text-[3.5rem] tw-mb-3.5">✅</div>
+                  <div className="tw-font-bold tw-text-[1.15rem] tw-text-green-600 tw-mb-2">Segnalazione registrata con successo</div>
+                  <div className="tw-text-slate-500 tw-text-[0.9rem] tw-mb-7">La scheda è stata inviata e sarà esaminata dalla Direzione di Area.</div>
+                  <button onClick={() => setShowEventoAvverso(false)} className="tw-bg-brand tw-text-white tw-border-0 tw-rounded-lg tw-px-8 tw-py-3 tw-font-bold tw-cursor-pointer tw-text-base hover:tw-bg-brand-dark">Chiudi</button>
                 </div>
               ) : (
-                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div className="tw-p-5 tw-flex tw-flex-col tw-gap-5">
 
                   {/* ── SEZIONE 1: Chi segnala ── */}
                   {sezLabel('Operatore che segnala l\'evento')}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div className="tw-flex tw-flex-col tw-gap-3">
                     <div>
-                      <label style={{ fontWeight: '600', fontSize: '0.83rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Direzione di area</label>
+                      <label className="tw-font-semibold tw-text-[0.83rem] tw-text-slate-700 tw-block tw-mb-1">Direzione di area</label>
                       <input type="text" value={eventoForm.direzioneDiArea} onChange={e => setEventoForm(p => ({ ...p, direzioneDiArea: e.target.value }))}
                         placeholder="es. Distretto Sud, Area Metropolitana..."
-                        style={{ width: '100%', padding: '8px 10px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.88rem', boxSizing: 'border-box' }} />
+                        className="tw-w-full tw-px-2.5 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.88rem] tw-box-border" />
                     </div>
                     <div>
-                      <label style={{ fontWeight: '700', fontSize: '0.83rem', color: '#374151', display: 'block', marginBottom: '8px' }}>Ruolo operatore *</label>
-                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                      <label className="tw-font-bold tw-text-[0.83rem] tw-text-slate-700 tw-block tw-mb-2">Ruolo operatore *</label>
+                      <div className="tw-flex tw-gap-2.5 tw-flex-wrap">
                         {[
                           { val: 'infermiere_oss', label: '👩‍⚕️ Infermiere / OSS' },
                           { val: 'medico', label: '🩺 Medico' },
                           { val: 'altro', label: '✏️ Altro' },
                         ].map(r => (
-                          <label key={r.val} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem', padding: '8px 14px', borderRadius: '8px', border: `2px solid ${eventoForm.ruoloOperatore === r.val ? '#1e4d8c' : '#e5e7eb'}`, background: eventoForm.ruoloOperatore === r.val ? '#eff6ff' : 'white', fontWeight: eventoForm.ruoloOperatore === r.val ? '700' : '400' }}>
+                          <label key={r.val} className={`tw-flex tw-items-center tw-gap-2 tw-cursor-pointer tw-text-[0.88rem] tw-px-3.5 tw-py-2 tw-rounded-lg tw-border-2 ${eventoForm.ruoloOperatore === r.val ? 'tw-border-brand tw-bg-blue-50 tw-font-bold' : 'tw-border-slate-200 tw-bg-white'}`}>
                             <input type="radio" name="ruoloOp" value={r.val} checked={eventoForm.ruoloOperatore === r.val} onChange={() => setEventoForm(p => ({ ...p, ruoloOperatore: r.val }))} style={{ accentColor: '#1e4d8c' }} />
                             {r.label}
                           </label>
@@ -2157,39 +2144,39 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                       {eventoForm.ruoloOperatore === 'altro' && (
                         <input type="text" value={eventoForm.ruoloOperatoreAltro} onChange={e => setEventoForm(p => ({ ...p, ruoloOperatoreAltro: e.target.value }))}
                           placeholder="Specificare ruolo..."
-                          style={{ marginTop: '8px', width: '100%', padding: '8px 10px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.88rem', boxSizing: 'border-box' }} />
+                          className="tw-w-full tw-mt-2 tw-px-2.5 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.88rem] tw-box-border" />
                       )}
                     </div>
                   </div>
 
                   {/* ── SEZIONE 2: Dati paziente (facoltativi) ── */}
                   {sezLabel('Dati relativi al paziente (facoltativi)')}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div className="tw-flex tw-flex-col tw-gap-2.5">
                     <div>
-                      <label style={{ fontWeight: '700', fontSize: '0.83rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Paziente in carico *</label>
+                      <label className="tw-font-bold tw-text-[0.83rem] tw-text-slate-700 tw-block tw-mb-1">Paziente in carico *</label>
                       <select value={eventoForm.patientId} onChange={e => {
                         const paz = pazienti.find(p => p._id === e.target.value);
                         setEventoForm(p => ({ ...p, patientId: e.target.value, pazienteNomeCognome: paz ? `${paz.firstName} ${paz.lastName}` : '' }));
-                      }} style={{ width: '100%', padding: '9px 10px', borderRadius: '7px', border: `2px solid ${eventoForm.patientId ? '#d1d5db' : '#fca5a5'}`, fontSize: '0.88rem', background: 'white' }}>
+                      }} className={`tw-w-full tw-px-2.5 tw-py-2 tw-rounded-lg tw-text-[0.88rem] tw-bg-white ${eventoForm.patientId ? 'tw-border-slate-300' : 'tw-border-red-300'}`} style={{ borderWidth: '2px' }}>
                         <option value="">— Seleziona paziente —</option>
                         {pazienti.map(p => <option key={p._id} value={p._id}>{p.firstName} {p.lastName}</option>)}
                       </select>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '10px' }}>
-                      <div>
-                        <label style={{ fontWeight: '600', fontSize: '0.8rem', color: '#6b7280', display: 'block', marginBottom: '3px' }}>CSTV di appartenenza</label>
+                    <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-2.5">
+                      <div className="tw-col-span-2">
+                        <label className="tw-font-semibold tw-text-[0.8rem] tw-text-slate-500 tw-block tw-mb-0.5">CSTV di appartenenza</label>
                         <input type="text" value={eventoForm.pazienteCSTV} onChange={e => setEventoForm(p => ({ ...p, pazienteCSTV: e.target.value }))}
-                          placeholder="es. ASL Roma 1" style={{ width: '100%', padding: '7px 9px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                          placeholder="es. ASL Roma 1" className="tw-w-full tw-px-2 tw-py-1.5 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.85rem] tw-box-border" />
                       </div>
                       <div>
-                        <label style={{ fontWeight: '600', fontSize: '0.8rem', color: '#6b7280', display: 'block', marginBottom: '3px' }}>Età</label>
+                        <label className="tw-font-semibold tw-text-[0.8rem] tw-text-slate-500 tw-block tw-mb-0.5">Età</label>
                         <input type="number" value={eventoForm.pazienteEta} onChange={e => setEventoForm(p => ({ ...p, pazienteEta: e.target.value }))}
-                          min={0} max={130} placeholder="anni" style={{ width: '100%', padding: '7px 9px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                          min={0} max={130} placeholder="anni" className="tw-w-full tw-px-2 tw-py-1.5 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.85rem] tw-box-border" />
                       </div>
                       <div>
-                        <label style={{ fontWeight: '600', fontSize: '0.8rem', color: '#6b7280', display: 'block', marginBottom: '3px' }}>Sesso</label>
+                        <label className="tw-font-semibold tw-text-[0.8rem] tw-text-slate-500 tw-block tw-mb-0.5">Sesso</label>
                         <select value={eventoForm.pazienteSesso} onChange={e => setEventoForm(p => ({ ...p, pazienteSesso: e.target.value as any }))}
-                          style={{ width: '100%', padding: '7px 9px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.85rem', background: 'white' }}>
+                          className="tw-w-full tw-px-2 tw-py-1.5 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.85rem] tw-bg-white">
                           <option value="">—</option>
                           <option value="M">M</option>
                           <option value="F">F</option>
@@ -2200,50 +2187,50 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
 
                   {/* ── SEZIONE 3: Descrizione evento ── */}
                   {sezLabel('Descrizione dell\'evento')}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div className="tw-flex tw-flex-col tw-gap-2.5">
                     <div>
-                      <label style={{ fontWeight: '600', fontSize: '0.83rem', color: '#374151', display: 'block', marginBottom: '4px' }}>
+                      <label className="tw-font-semibold tw-text-[0.83rem] tw-text-slate-700 tw-block tw-mb-1">
                         Cos'è successo? Dove? Quando? Come e perché è successo? Chi si è accorto? *
                       </label>
                       <textarea value={eventoForm.descrizioneEvento} onChange={e => setEventoForm(p => ({ ...p, descrizioneEvento: e.target.value }))}
                         placeholder="Descrivi l'evento in modo sintetico ma esaustivo..."
-                        rows={4} style={{ width: '100%', padding: '9px 10px', borderRadius: '7px', border: `1px solid ${eventoForm.descrizioneEvento ? '#d1d5db' : '#fca5a5'}`, fontSize: '0.88rem', resize: 'vertical', boxSizing: 'border-box' }} />
-                      <button type="button" onClick={avviaDettaturaEvento} disabled={dettaturaEventoAttiva} style={{ marginTop: '8px', background: dettaturaEventoAttiva ? '#94a3b8' : '#7c3aed', color: 'white', border: 'none', borderRadius: '7px', padding: '8px 12px', fontWeight: 700, cursor: dettaturaEventoAttiva ? 'not-allowed' : 'pointer', fontSize: '0.82rem' }}>
+                        rows={4} className={`tw-w-full tw-px-2.5 tw-py-2 tw-rounded-lg tw-text-[0.88rem] tw-resize-y tw-box-border ${eventoForm.descrizioneEvento ? 'tw-border-slate-300' : 'tw-border-red-300'}`} style={{ borderWidth: '1px' }} />
+                      <button type="button" onClick={avviaDettaturaEvento} disabled={dettaturaEventoAttiva} className={`tw-mt-2 tw-px-3 tw-py-2 tw-rounded-lg tw-text-white tw-border-0 tw-font-bold tw-text-[0.82rem] tw-cursor-pointer ${dettaturaEventoAttiva ? 'tw-bg-slate-400 tw-cursor-not-allowed' : 'tw-bg-violet-600 hover:tw-bg-violet-700'}`}>
                         {dettaturaEventoAttiva ? '🎙️ Ascolto in corso...' : '🤖 AI - detta e trascrivi evento'}
                       </button>
-                      <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>Premi il pulsante, descrivi l'evento a voce e la trascrizione verrà inserita nella scheda.</div>
+                      <div className="tw-text-[0.75rem] tw-text-slate-500 tw-mt-1">Premi il pulsante, descrivi l'evento a voce e la trascrizione verrà inserita nella scheda.</div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '10px' }}>
+                    <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-4 tw-gap-2.5">
                       <div>
-                        <label style={{ fontWeight: '600', fontSize: '0.8rem', color: '#374151', display: 'block', marginBottom: '3px' }}>📅 Data *</label>
+                        <label className="tw-font-semibold tw-text-[0.8rem] tw-text-slate-700 tw-block tw-mb-0.5">📅 Data *</label>
                         <input type="date" value={eventoForm.dataEvento} onChange={e => setEventoForm(p => ({ ...p, dataEvento: e.target.value }))}
-                          style={{ width: '100%', padding: '7px 8px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                          className="tw-w-full tw-px-2 tw-py-1.5 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.85rem] tw-box-border" />
                       </div>
                       <div>
-                        <label style={{ fontWeight: '600', fontSize: '0.8rem', color: '#374151', display: 'block', marginBottom: '3px' }}>⏰ Ora</label>
+                        <label className="tw-font-semibold tw-text-[0.8rem] tw-text-slate-700 tw-block tw-mb-0.5">⏰ Ora</label>
                         <input type="time" value={eventoForm.oraEvento} onChange={e => setEventoForm(p => ({ ...p, oraEvento: e.target.value }))}
-                          style={{ width: '100%', padding: '7px 8px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                          className="tw-w-full tw-px-2 tw-py-1.5 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.85rem] tw-box-border" />
                       </div>
-                      <div>
-                        <label style={{ fontWeight: '600', fontSize: '0.8rem', color: '#374151', display: 'block', marginBottom: '3px' }}>📍 Luogo *</label>
+                      <div className="tw-col-span-2">
+                        <label className="tw-font-semibold tw-text-[0.8rem] tw-text-slate-700 tw-block tw-mb-0.5">📍 Luogo *</label>
                         <input type="text" value={eventoForm.luogoEvento} onChange={e => setEventoForm(p => ({ ...p, luogoEvento: e.target.value }))}
-                          placeholder="es. Domicilio paziente" style={{ width: '100%', padding: '7px 8px', borderRadius: '7px', border: `1px solid ${eventoForm.luogoEvento ? '#d1d5db' : '#fca5a5'}`, fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                          placeholder="es. Domicilio paziente" className={`tw-w-full tw-px-2 tw-py-1.5 tw-rounded-lg tw-text-[0.85rem] tw-box-border ${eventoForm.luogoEvento ? 'tw-border-slate-300' : 'tw-border-red-300'}`} style={{ borderWidth: '1px' }} />
                       </div>
                     </div>
                     <div>
-                      <label style={{ fontWeight: '600', fontSize: '0.83rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Come si sono svolti i fatti</label>
+                      <label className="tw-font-semibold tw-text-[0.83rem] tw-text-slate-700 tw-block tw-mb-1">Come si sono svolti i fatti</label>
                       <textarea value={eventoForm.svolgimentoFatti} onChange={e => setEventoForm(p => ({ ...p, svolgimentoFatti: e.target.value }))}
                         placeholder="Descrivi la sequenza degli eventi, il contesto, le azioni intraprese..."
-                        rows={3} style={{ width: '100%', padding: '9px 10px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.88rem', resize: 'vertical', boxSizing: 'border-box' }} />
+                        rows={3} className="tw-w-full tw-px-2.5 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.88rem] tw-resize-y tw-box-border" />
                     </div>
                   </div>
 
                   {/* ── SEZIONE 4: Esito / Grado danno ── */}
                   {sezLabel('Esito dell\'evento')}
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <div className="tw-flex tw-gap-2 tw-flex-wrap">
                     {GRADI_DANNO.map(g => (
                       <button key={g.value} type="button" onClick={() => setEventoForm(p => ({ ...p, dannoRiscontrato: g.value as any }))}
-                        style={{ padding: '7px 13px', borderRadius: '8px', border: `2px solid ${eventoForm.dannoRiscontrato === g.value ? g.color : '#e5e7eb'}`, background: eventoForm.dannoRiscontrato === g.value ? g.color + '18' : 'white', color: eventoForm.dannoRiscontrato === g.value ? g.color : '#374151', fontWeight: eventoForm.dannoRiscontrato === g.value ? '700' : '400', cursor: 'pointer', fontSize: '0.82rem' }}>
+                        className="tw-px-3.5 tw-py-1.5 tw-rounded-lg tw-cursor-pointer tw-text-[0.82rem] tw-border-2" style={{ borderColor: eventoForm.dannoRiscontrato === g.value ? g.color : '#e5e7eb', background: eventoForm.dannoRiscontrato === g.value ? g.color + '18' : 'white', color: eventoForm.dannoRiscontrato === g.value ? g.color : '#374151', fontWeight: eventoForm.dannoRiscontrato === g.value ? 700 : 400 }}>
                         {g.label}
                       </button>
                     ))}
@@ -2251,21 +2238,21 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
 
                   {/* ── SEZIONE 5: Fattori contribuenti ── */}
                   {sezLabel('Fattori che possono aver contribuito all\'evento (più risposte possibili)')}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div style={{ background: '#f0f9ff', borderRadius: '10px', padding: '14px', border: '1px solid #bae6fd' }}>
-                      <div style={{ fontWeight: '700', fontSize: '0.78rem', color: '#0369a1', marginBottom: '10px', textTransform: 'uppercase' }}>👤 Fattori paziente</div>
+                  <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-2 tw-gap-4">
+                    <div className="tw-bg-sky-50 tw-rounded-xl tw-p-3.5 tw-border tw-border-sky-200">
+                      <div className="tw-font-bold tw-text-[0.78rem] tw-text-sky-700 tw-mb-2.5 tw-uppercase">👤 Fattori paziente</div>
                       {FATTORI_PAZIENTE.map(v => checkRow('fattoriPaziente', v))}
                     </div>
-                    <div style={{ background: '#fdf4ff', borderRadius: '10px', padding: '14px', border: '1px solid #e9d5ff' }}>
-                      <div style={{ fontWeight: '700', fontSize: '0.78rem', color: '#7c3aed', marginBottom: '10px', textTransform: 'uppercase' }}>👥 Fattori staff / organizzazione</div>
+                    <div className="tw-bg-violet-50 tw-rounded-xl tw-p-3.5 tw-border tw-border-violet-200">
+                      <div className="tw-font-bold tw-text-[0.78rem] tw-text-violet-700 tw-mb-2.5 tw-uppercase">👥 Fattori staff / organizzazione</div>
                       {FATTORI_STAFF.map(v => checkRow('fattoriStaff', v))}
                     </div>
-                    <div style={{ background: '#fff7ed', borderRadius: '10px', padding: '14px', border: '1px solid #fed7aa' }}>
-                      <div style={{ fontWeight: '700', fontSize: '0.78rem', color: '#c2410c', marginBottom: '10px', textTransform: 'uppercase' }}>💬 Comunicazione / task</div>
+                    <div className="tw-bg-orange-50 tw-rounded-xl tw-p-3.5 tw-border tw-border-orange-200">
+                      <div className="tw-font-bold tw-text-[0.78rem] tw-text-orange-700 tw-mb-2.5 tw-uppercase">💬 Comunicazione / task</div>
                       {FATTORI_COMUNICAZIONE.map(v => checkRow('fattoriComunicazione', v))}
                     </div>
-                    <div style={{ background: '#f0fdf4', borderRadius: '10px', padding: '14px', border: '1px solid #bbf7d0' }}>
-                      <div style={{ fontWeight: '700', fontSize: '0.78rem', color: '#15803d', marginBottom: '10px', textTransform: 'uppercase' }}>🏠 Ambiente / attrezzatura</div>
+                    <div className="tw-bg-emerald-50 tw-rounded-xl tw-p-3.5 tw-border tw-border-emerald-200">
+                      <div className="tw-font-bold tw-text-[0.78rem] tw-text-emerald-700 tw-mb-2.5 tw-uppercase">🏠 Ambiente / attrezzatura</div>
                       {FATTORI_AMBIENTE.map(v => checkRow('fattoriAmbiente', v))}
                     </div>
                   </div>
@@ -2274,7 +2261,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                   {sezLabel('Suggerimenti per prevenire / evitare il ripetersi dell\'evento')}
                   <textarea value={eventoForm.suggerimenti} onChange={e => setEventoForm(p => ({ ...p, suggerimenti: e.target.value }))}
                     placeholder="Inserisci eventuali proposte migliorative, raccomandazioni o azioni correttive suggerite..."
-                    rows={3} style={{ width: '100%', padding: '9px 10px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '0.88rem', resize: 'vertical', boxSizing: 'border-box' }} />
+                    rows={3} className="tw-w-full tw-px-2.5 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.88rem] tw-resize-y tw-box-border" />
 
                   {/* ── SEZIONE 7: Firma ── */}
                   {sezLabel('Firma dell\'operatore segnalante')}
@@ -2323,17 +2310,12 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                         setSalvandoEvento(false);
                       }
                     }}
-                    style={{
-                      width: '100%', padding: '14px', borderRadius: '10px', border: 'none', fontWeight: '700', fontSize: '1rem', cursor: canSend && !salvandoEvento ? 'pointer' : 'not-allowed',
-                      background: canSend && !salvandoEvento ? '#dc2626' : '#d1d5db',
-                      color: canSend && !salvandoEvento ? 'white' : '#9ca3af',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                    }}
+                    className={`tw-w-full tw-py-3.5 tw-rounded-xl tw-border-0 tw-font-bold tw-text-base tw-flex tw-items-center tw-justify-center tw-gap-2 ${canSend && !salvandoEvento ? 'tw-bg-red-600 tw-text-white tw-cursor-pointer hover:tw-bg-red-700' : 'tw-bg-slate-300 tw-text-slate-400 tw-cursor-not-allowed'}`}
                   >
                     <AlertTriangle size={18} />
                     {salvandoEvento ? 'Invio in corso...' : 'Invia segnalazione evento avverso'}
                   </button>
-                  <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af', margin: 0 }}>
+                  <p className="tw-text-center tw-text-[0.75rem] tw-text-slate-400 tw-m-0">
                     * Campi obbligatori. La firma è necessaria per validare la segnalazione.
                   </p>
                 </div>
@@ -2350,55 +2332,55 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
       {showFormazioneSanitaria && pazienteSelezionato && <FormazioneSanitariaModal patient={pazienteSelezionato} workPlan={pianoSelezionato} onClose={() => setShowFormazioneSanitaria(false)} />}
 
       {diarioDaFirmare && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }} onClick={() => { setDiarioDaFirmare(null); setFirmaDiarioGrafometrica(''); }}>
-          <div style={{ background: 'white', borderRadius: '14px', padding: '20px', width: '100%', maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 8px', color: '#065f46' }}>Firma voce del diario</h3>
-            <p style={{ fontSize: '0.86rem', color: '#475569' }}>Firma con il dito o con la penna. Dopo la conferma la voce sarà bloccata e non potrà essere eliminata.</p>
+        <div className="tw-fixed tw-inset-0 tw-z-50 tw-bg-black/55 tw-flex tw-items-center tw-justify-center tw-p-3" onClick={() => { setDiarioDaFirmare(null); setFirmaDiarioGrafometrica(''); }}>
+          <div className="tw-bg-white tw-rounded-2xl tw-p-5 tw-w-full tw-max-w-[600px]" onClick={e => e.stopPropagation()}>
+            <h3 className="tw-m-0 tw-mb-2 tw-text-green-800">Firma voce del diario</h3>
+            <p className="tw-text-[0.86rem] tw-text-slate-600">Firma con il dito o con la penna. Dopo la conferma la voce sarà bloccata e non potrà essere eliminata.</p>
             <FirmaCanvas label="Firma grafometrica dell’operatore" sublabel="Disegna la firma nel riquadro" onFirmaCompleta={setFirmaDiarioGrafometrica} onCancella={() => setFirmaDiarioGrafometrica('')} altezza={160} />
-            <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
-              <button type="button" onClick={() => { setDiarioDaFirmare(null); setFirmaDiarioGrafometrica(''); }} style={{ flex: 1, padding: '11px', borderRadius: '7px', border: '1px solid #d1d5db', background: '#f3f4f6', cursor: 'pointer' }}>Annulla</button>
-              <button type="button" disabled={!firmaDiarioGrafometrica} onClick={firmaDiario} style={{ flex: 2, padding: '11px', borderRadius: '7px', border: 'none', background: firmaDiarioGrafometrica ? '#059669' : '#a7f3d0', color: 'white', fontWeight: 700, cursor: firmaDiarioGrafometrica ? 'pointer' : 'not-allowed' }}>Firma e blocca voce</button>
+            <div className="tw-flex tw-gap-2.5 tw-mt-3">
+              <button type="button" onClick={() => { setDiarioDaFirmare(null); setFirmaDiarioGrafometrica(''); }} className="tw-flex-1 tw-py-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-bg-slate-100 tw-cursor-pointer hover:tw-bg-slate-200">Annulla</button>
+              <button type="button" disabled={!firmaDiarioGrafometrica} onClick={firmaDiario} className={`tw-flex-[2] tw-py-2.5 tw-rounded-lg tw-border-0 tw-text-white tw-font-bold tw-cursor-pointer ${firmaDiarioGrafometrica ? 'tw-bg-emerald-600 hover:tw-bg-emerald-700' : 'tw-bg-emerald-200 tw-cursor-not-allowed'}`}>Firma e blocca voce</button>
             </div>
           </div>
         </div>
       )}
 
       {showConsensoGDPR && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }} onClick={() => setShowConsensoGDPR(false)}>
-          <div style={{ background: 'white', borderRadius: '14px', padding: '20px', width: '100%', maxWidth: '540px', maxHeight: '92vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 8px', color: '#991b1b' }}>Consenso GDPR</h3>
-            <p style={{ fontSize: '0.85rem', color: '#475569', marginBottom: '14px' }}>Il paziente o il firmatario autorizza il trattamento dei dati per le prestazioni sanitarie e assistenziali.</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
-              <input value={nomeFirmatarioGDPR} onChange={e => setNomeFirmatarioGDPR(e.target.value)} placeholder="Nome firmatario" style={{ padding: '10px', borderRadius: '7px', border: '1px solid #d1d5db' }} />
-              <input value={cognomeFirmatarioGDPR} onChange={e => setCognomeFirmatarioGDPR(e.target.value)} placeholder="Cognome firmatario" style={{ padding: '10px', borderRadius: '7px', border: '1px solid #d1d5db' }} />
+        <div className="tw-fixed tw-inset-0 tw-z-50 tw-bg-black/55 tw-flex tw-items-center tw-justify-center tw-p-3" onClick={() => setShowConsensoGDPR(false)}>
+          <div className="tw-bg-white tw-rounded-2xl tw-p-5 tw-w-full tw-max-w-[540px] tw-max-h-[92vh] tw-overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <h3 className="tw-m-0 tw-mb-2 tw-text-red-800">Consenso GDPR</h3>
+            <p className="tw-text-[0.85rem] tw-text-slate-600 tw-mb-3.5">Il paziente o il firmatario autorizza il trattamento dei dati per le prestazioni sanitarie e assistenziali.</p>
+            <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-2 tw-gap-2.5 tw-mb-3.5">
+              <input value={nomeFirmatarioGDPR} onChange={e => setNomeFirmatarioGDPR(e.target.value)} placeholder="Nome firmatario" className="tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300" />
+              <input value={cognomeFirmatarioGDPR} onChange={e => setCognomeFirmatarioGDPR(e.target.value)} placeholder="Cognome firmatario" className="tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300" />
             </div>
-            <input type="email" value={emailConsensoGDPR} onChange={e => setEmailConsensoGDPR(e.target.value)} placeholder="Email del paziente / firmatario (facoltativa)" style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '7px', border: '1px solid #d1d5db', marginBottom: '14px' }} />
+            <input type="email" value={emailConsensoGDPR} onChange={e => setEmailConsensoGDPR(e.target.value)} placeholder="Email del paziente / firmatario (facoltativa)" className="tw-w-full tw-box-border tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-mb-3.5" />
             <FirmaCanvas label="Firma del paziente / firmatario" sublabel="Firma per accettare l'informativa privacy" onFirmaCompleta={setFirmaGDPR} onCancella={() => setFirmaGDPR('')} altezza={160} />
-            <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-              <button type="button" onClick={() => setShowConsensoGDPR(false)} style={{ flex: 1, padding: '11px', borderRadius: '7px', border: '1px solid #d1d5db', background: '#f3f4f6', cursor: 'pointer' }}>Annulla</button>
-              <button type="button" disabled={salvandoConsenso || !nomeFirmatarioGDPR.trim() || !cognomeFirmatarioGDPR.trim() || !firmaGDPR} onClick={salvaConsensoGDPR} style={{ flex: 2, padding: '11px', borderRadius: '7px', border: 'none', background: '#dc2626', color: 'white', fontWeight: 700, cursor: 'pointer', opacity: salvandoConsenso ? 0.7 : 1 }}>{salvandoConsenso ? 'Salvataggio...' : 'Firma e archivia consenso'}</button>
+            <div className="tw-flex tw-gap-2.5 tw-mt-4">
+              <button type="button" onClick={() => setShowConsensoGDPR(false)} className="tw-flex-1 tw-py-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-bg-slate-100 tw-cursor-pointer hover:tw-bg-slate-200">Annulla</button>
+              <button type="button" disabled={salvandoConsenso || !nomeFirmatarioGDPR.trim() || !cognomeFirmatarioGDPR.trim() || !firmaGDPR} onClick={salvaConsensoGDPR} className={`tw-flex-[2] tw-py-2.5 tw-rounded-lg tw-border-0 tw-text-white tw-font-bold tw-cursor-pointer hover:tw-bg-red-700 ${salvandoConsenso ? 'tw-opacity-70' : ''}`} style={{ background: '#dc2626' }}>{salvandoConsenso ? 'Salvataggio...' : 'Firma e archivia consenso'}</button>
             </div>
           </div>
         </div>
       )}
 
       {showConsensoPrestazione && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }} onClick={() => setShowConsensoPrestazione(false)}>
-          <div style={{ background: 'white', borderRadius: '14px', padding: '20px', width: '100%', maxWidth: '620px', maxHeight: '92vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 8px', color: '#9a3412' }}>Consenso alla prestazione sanitaria e rischi</h3>
-            <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.5 }}>Il firmatario dichiara di aver ricevuto informazioni sulle prestazioni assistenziali e sanitarie, sui rischi prevedibili e sulle limitazioni connesse alle condizioni cliniche.</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '14px 0' }}>
-              <input value={nomeFirmatarioPrestazione} onChange={e => setNomeFirmatarioPrestazione(e.target.value)} placeholder="Nome firmatario" style={{ padding: '10px', borderRadius: '7px', border: '1px solid #d1d5db' }} />
-              <input value={cognomeFirmatarioPrestazione} onChange={e => setCognomeFirmatarioPrestazione(e.target.value)} placeholder="Cognome firmatario" style={{ padding: '10px', borderRadius: '7px', border: '1px solid #d1d5db' }} />
+        <div className="tw-fixed tw-inset-0 tw-z-50 tw-bg-black/55 tw-flex tw-items-center tw-justify-center tw-p-3" onClick={() => setShowConsensoPrestazione(false)}>
+          <div className="tw-bg-white tw-rounded-2xl tw-p-5 tw-w-full tw-max-w-[620px] tw-max-h-[92vh] tw-overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <h3 className="tw-m-0 tw-mb-2 tw-text-orange-800">Consenso alla prestazione sanitaria e rischi</h3>
+            <p className="tw-text-[0.85rem] tw-text-slate-600 tw-leading-relaxed">Il firmatario dichiara di aver ricevuto informazioni sulle prestazioni assistenziali e sanitarie, sui rischi prevedibili e sulle limitazioni connesse alle condizioni cliniche.</p>
+            <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-2 tw-gap-2.5 tw-my-3.5">
+              <input value={nomeFirmatarioPrestazione} onChange={e => setNomeFirmatarioPrestazione(e.target.value)} placeholder="Nome firmatario" className="tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300" />
+              <input value={cognomeFirmatarioPrestazione} onChange={e => setCognomeFirmatarioPrestazione(e.target.value)} placeholder="Cognome firmatario" className="tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300" />
             </div>
-            <select value={ruoloFirmatarioPrestazione} onChange={e => setRuoloFirmatarioPrestazione(e.target.value as typeof ruoloFirmatarioPrestazione)} style={{ width: '100%', padding: '10px', borderRadius: '7px', border: '1px solid #d1d5db', marginBottom: '12px' }}><option value="paziente">Paziente</option><option value="caregiver">Caregiver</option><option value="tutore">Tutore</option><option value="rappresentanteLegale">Rappresentante legale</option></select>
-            <label style={{ display: 'flex', gap: '8px', fontSize: '0.85rem', marginBottom: '10px' }}><input type="checkbox" checked={accettaPrestazione} onChange={e => setAccettaPrestazione(e.target.checked)} /> Confermo di aver ricevuto informazioni sulla prestazione e di acconsentire alla sua esecuzione.</label>
-            <label style={{ display: 'flex', gap: '8px', fontSize: '0.85rem', marginBottom: '14px' }}><input type="checkbox" checked={accettaRischiPrestazione} onChange={e => setAccettaRischiPrestazione(e.target.checked)} /> Dichiaro di aver letto e compreso rischi e limitazioni del trattamento.</label>
-            <input type="email" value={emailConsensoPrestazione} onChange={e => setEmailConsensoPrestazione(e.target.value)} placeholder="Email del paziente / firmatario (facoltativa)" style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '7px', border: '1px solid #d1d5db', marginBottom: '14px' }} />
+            <select value={ruoloFirmatarioPrestazione} onChange={e => setRuoloFirmatarioPrestazione(e.target.value as typeof ruoloFirmatarioPrestazione)} className="tw-w-full tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-mb-3"><option value="paziente">Paziente</option><option value="caregiver">Caregiver</option><option value="tutore">Tutore</option><option value="rappresentanteLegale">Rappresentante legale</option></select>
+            <label className="tw-flex tw-gap-2 tw-text-[0.85rem] tw-mb-2.5"><input type="checkbox" checked={accettaPrestazione} onChange={e => setAccettaPrestazione(e.target.checked)} /> Confermo di aver ricevuto informazioni sulla prestazione e di acconsentire alla sua esecuzione.</label>
+            <label className="tw-flex tw-gap-2 tw-text-[0.85rem] tw-mb-3.5"><input type="checkbox" checked={accettaRischiPrestazione} onChange={e => setAccettaRischiPrestazione(e.target.checked)} /> Dichiaro di aver letto e compreso rischi e limitazioni del trattamento.</label>
+            <input type="email" value={emailConsensoPrestazione} onChange={e => setEmailConsensoPrestazione(e.target.value)} placeholder="Email del paziente / firmatario (facoltativa)" className="tw-w-full tw-box-border tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-mb-3.5" />
             <FirmaCanvas label="Firma del paziente / firmatario" sublabel="Firmare con il dito sullo schermo" onFirmaCompleta={setFirmaPrestazione} onCancella={() => setFirmaPrestazione('')} altezza={160} />
-            <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-              <button type="button" onClick={() => setShowConsensoPrestazione(false)} style={{ flex: 1, padding: '11px', borderRadius: '7px', border: '1px solid #d1d5db', background: '#f3f4f6', cursor: 'pointer' }}>Annulla</button>
-              <button type="button" disabled={salvandoConsenso || !nomeFirmatarioPrestazione.trim() || !cognomeFirmatarioPrestazione.trim() || !firmaPrestazione || !accettaPrestazione || !accettaRischiPrestazione} onClick={salvaConsensoPrestazione} style={{ flex: 2, padding: '11px', borderRadius: '7px', border: 'none', background: '#c2410c', color: 'white', fontWeight: 700, cursor: 'pointer', opacity: salvandoConsenso ? 0.7 : 1 }}>{salvandoConsenso ? 'Salvataggio...' : 'Firma e archivia consenso'}</button>
+            <div className="tw-flex tw-gap-2.5 tw-mt-4">
+              <button type="button" onClick={() => setShowConsensoPrestazione(false)} className="tw-flex-1 tw-py-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-bg-slate-100 tw-cursor-pointer hover:tw-bg-slate-200">Annulla</button>
+              <button type="button" disabled={salvandoConsenso || !nomeFirmatarioPrestazione.trim() || !cognomeFirmatarioPrestazione.trim() || !firmaPrestazione || !accettaPrestazione || !accettaRischiPrestazione} onClick={salvaConsensoPrestazione} className={`tw-flex-[2] tw-py-2.5 tw-rounded-lg tw-border-0 tw-text-white tw-font-bold tw-cursor-pointer hover:tw-bg-orange-800 ${salvandoConsenso ? 'tw-opacity-70' : ''}`} style={{ background: '#c2410c' }}>{salvandoConsenso ? 'Salvataggio...' : 'Firma e archivia consenso'}</button>
             </div>
           </div>
         </div>

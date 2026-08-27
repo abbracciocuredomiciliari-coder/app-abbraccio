@@ -799,102 +799,102 @@ function Patients() {
 
       {/* ═══ MODAL CONSENSO GDPR ═══ */}
       {showConsensoModal && consensoPaziente && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, overflowY: 'auto', padding: '0' }}>
-          <div style={{ background: 'white', minHeight: '100vh', maxWidth: '700px', margin: '0 auto', padding: '0' }}>
+        <div className="tw-fixed tw-inset-0 tw-z-50 tw-overflow-y-auto tw-bg-black/60" onClick={() => setShowConsensoModal(false)}>
+          <div className="tw-min-h-screen tw-max-w-[700px] tw-mx-auto tw-bg-white tw-shadow-2xl" onClick={e => e.stopPropagation()}>
 
             {/* Header fisso */}
-            <div style={{ position: 'sticky', top: 0, background: '#1e4d8c', color: 'white', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
+            <div className="tw-sticky tw-top-0 tw-z-10 tw-bg-brand tw-text-white tw-px-5 tw-py-3.5 tw-flex tw-justify-between tw-items-center">
               <div>
-                <div style={{ fontWeight: '700', fontSize: '1rem' }}>🛡️ Consenso GDPR</div>
-                <div style={{ fontSize: '0.82rem', opacity: 0.8 }}>{consensoPaziente.firstName} {consensoPaziente.lastName}</div>
+                <div className="tw-font-bold tw-text-base">🛡️ Consenso GDPR</div>
+                <div className="tw-text-xs tw-opacity-80">{consensoPaziente.firstName} {consensoPaziente.lastName}</div>
               </div>
-              <button onClick={() => setShowConsensoModal(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '6px', color: 'white', padding: '6px 10px', cursor: 'pointer' }}>
+              <button onClick={() => setShowConsensoModal(false)} className="tw-bg-white/20 tw-border-0 tw-rounded-md tw-text-white tw-px-2.5 tw-py-1.5 tw-cursor-pointer hover:tw-bg-white/30">
                 <X size={18} />
               </button>
             </div>
 
-            <div style={{ padding: '20px 24px' }}>
+            <div className="tw-px-6 tw-py-5">
 
               {consensoSalvato ? (
-                <div style={{ textAlign: 'center', padding: '48px 24px' }}>
-                  <CheckCircle size={64} color="#16a34a" style={{ marginBottom: '16px' }} />
-                  <h2 style={{ color: '#15803d', marginBottom: '8px' }}>Consenso registrato!</h2>
-                  <p style={{ color: '#6b7280', marginBottom: '8px' }}>Il consenso GDPR di <strong>{consensoPaziente.firstName} {consensoPaziente.lastName}</strong> è stato salvato con firma digitale.</p>
+                <div className="tw-text-center tw-py-12 tw-px-6">
+                  <CheckCircle size={64} color="#16a34a" className="tw-mb-4" />
+                  <h2 className="tw-text-green-700 tw-text-2xl tw-font-bold tw-mb-2">Consenso registrato!</h2>
+                  <p className="tw-text-slate-500 tw-mb-2">Il consenso GDPR di <strong>{consensoPaziente.firstName} {consensoPaziente.lastName}</strong> è stato salvato con firma digitale.</p>
                   {consensoSalvato === 'email' && (
-                    <p style={{ color: '#059669', fontWeight: '600', marginBottom: '20px', fontSize: '0.95rem' }}>✉️ Copia email inviata a <strong>{emailConsenso}</strong></p>
+                    <p className="tw-text-emerald-600 tw-font-semibold tw-mb-5 tw-text-[0.95rem]">✉️ Copia email inviata a <strong>{emailConsenso}</strong></p>
                   )}
-                  <button onClick={() => setShowConsensoModal(false)} style={{ background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '8px', padding: '12px 28px', fontWeight: '700', cursor: 'pointer' }}>Chiudi</button>
+                  <button onClick={() => setShowConsensoModal(false)} className="tw-bg-brand tw-text-white tw-border-0 tw-rounded-lg tw-px-7 tw-py-3 tw-font-bold tw-cursor-pointer hover:tw-bg-brand-dark">Chiudi</button>
                 </div>
               ) : (
                 <>
                   {/* Testo informativa */}
-                  <div style={{ fontSize: '0.82rem', color: '#374151', lineHeight: 1.7, marginBottom: '20px' }}>
-                    <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px 16px', marginBottom: '14px', fontSize: '0.83rem' }}>
+                  <div className="tw-text-[0.82rem] tw-text-slate-700 tw-leading-relaxed tw-mb-5">
+                    <div className="tw-bg-blue-50 tw-border tw-border-blue-200 tw-rounded-lg tw-p-3 tw-mb-3.5 tw-text-[0.83rem]">
                       <strong>Gent. Sig./Sig.ra {consensoPaziente.firstName} {consensoPaziente.lastName}</strong>,<br/>
                       con la presente La informiamo che la nostra Società <strong>Abbraccio Cure Domiciliari</strong> (Roma, Via Di Santa Maria Ausiliatrice 4b) tratterà i Suoi dati personali in qualità di Responsabile del trattamento per l'erogazione dei servizi di assistenza domiciliare, ai sensi del Reg. UE 2016/679 (GDPR).
                     </div>
 
-                    <strong style={{ display: 'block', color: '#1e4d8c', marginBottom: '4px' }}>Dati trattati:</strong>
-                    <ul style={{ marginLeft: '18px', marginBottom: '10px' }}>
+                    <strong className="tw-block tw-text-brand tw-mb-1">Dati trattati:</strong>
+                    <ul className="tw-list-disc tw-pl-5 tw-mb-2.5">
                       <li>Dati comuni identificativi (nome, indirizzo, telefono, email)</li>
                       <li>Categorie particolari (dati sanitari, cartella clinica) — art. 9 GDPR</li>
                     </ul>
 
-                    <strong style={{ display: 'block', color: '#1e4d8c', marginBottom: '4px' }}>Finalità:</strong>
-                    <ul style={{ marginLeft: '18px', marginBottom: '10px' }}>
+                    <strong className="tw-block tw-text-brand tw-mb-1">Finalità:</strong>
+                    <ul className="tw-list-disc tw-pl-5 tw-mb-2.5">
                       <li>Erogazione delle cure domiciliari e gestione della cartella clinica</li>
                       <li>Adempimenti di legge (conservazione 10 anni dalla cessazione del servizio)</li>
                       <li>Comunicazione a enti pubblici (ASL), medici specialisti, strutture sanitarie</li>
                     </ul>
 
-                    <strong style={{ display: 'block', color: '#1e4d8c', marginBottom: '4px' }}>I Suoi diritti (artt. 15–21 GDPR):</strong>
-                    <ul style={{ marginLeft: '18px', marginBottom: '10px' }}>
+                    <strong className="tw-block tw-text-brand tw-mb-1">I Suoi diritti (artt. 15–21 GDPR):</strong>
+                    <ul className="tw-list-disc tw-pl-5 tw-mb-2.5">
                       <li>Accesso, rettifica, cancellazione ("diritto all'oblio"), limitazione, portabilità, opposizione</li>
                       <li>Revoca del consenso in qualsiasi momento senza pregiudizio per il trattamento pregresso</li>
                     </ul>
 
-                    <strong style={{ display: 'block', color: '#1e4d8c', marginBottom: '4px' }}>Contatti:</strong>
-                    <p style={{ marginBottom: '0', color: '#555' }}>abbracciocuredomiciliari@gmail.com — Tel. 351 417 5117 | Garante Privacy: garante@gpdp.it</p>
+                    <strong className="tw-block tw-text-brand tw-mb-1">Contatti:</strong>
+                    <p className="tw-text-slate-600 tw-mb-0">abbracciocuredomiciliari@gmail.com — Tel. 351 417 5117 | Garante Privacy: garante@gpdp.it</p>
                   </div>
 
-                  <div style={{ background: '#fef3c7', borderLeft: '3px solid #f59e0b', padding: '10px 14px', borderRadius: '0 6px 6px 0', fontSize: '0.82rem', marginBottom: '20px' }}>
+                  <div className="tw-bg-amber-50 tw-border-l-4 tw-border-amber-500 tw-p-2.5 tw-rounded-r-lg tw-text-[0.82rem] tw-mb-5">
                     Il mancato conferimento dei dati sanitari potrebbe impedire la corretta erogazione delle cure domiciliari.
                   </div>
 
                   {/* Selezione ruolo firmatario */}
-                  <div style={{ marginBottom: '14px' }}>
-                    <label style={{ display: 'block', fontWeight: '600', color: '#374151', marginBottom: '8px', fontSize: '0.9rem' }}>Chi firma?</label>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <div className="tw-mb-3.5">
+                    <label className="tw-block tw-font-semibold tw-text-slate-700 tw-mb-2 tw-text-[0.9rem]">Chi firma?</label>
+                    <div className="tw-flex tw-flex-wrap tw-gap-2">
                       {(['paziente', 'familiare', 'tutore'] as const).map(r => (
                         <button key={r} type="button" onClick={() => setFirmaConsensoRuolo(r)}
-                          style={{ padding: '9px 16px', borderRadius: '8px', border: `2px solid ${firmaConsensoRuolo === r ? '#1e4d8c' : '#d1d5db'}`, background: firmaConsensoRuolo === r ? '#1e4d8c' : 'white', color: firmaConsensoRuolo === r ? 'white' : '#374151', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', textTransform: 'capitalize' }}>
+                          className={`tw-px-4 tw-py-2 tw-rounded-lg tw-border-2 tw-font-semibold tw-text-[0.85rem] tw-capitalize tw-cursor-pointer tw-transition-colors ${firmaConsensoRuolo === r ? 'tw-bg-brand tw-border-brand tw-text-white' : 'tw-bg-white tw-border-slate-300 tw-text-slate-700 hover:tw-bg-slate-50'}`}>
                           {r === 'paziente' ? '🧑 Paziente' : r === 'familiare' ? '👨‍👩‍👧 Familiare' : '📋 Tutore legale'}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', fontWeight: '600', color: '#374151', marginBottom: '6px', fontSize: '0.9rem' }}>Nome del firmatario *</label>
+                  <div className="tw-mb-4">
+                    <label className="tw-block tw-font-semibold tw-text-slate-700 tw-mb-1.5 tw-text-[0.9rem]">Nome del firmatario *</label>
                     <input type="text" value={firmaConsensoNome} onChange={e => setFirmaConsensoNome(e.target.value)}
                       placeholder="Nome e Cognome"
-                      style={{ width: '100%', padding: '11px 14px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem', boxSizing: 'border-box' }} />
+                      className="tw-w-full tw-px-3.5 tw-py-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.95rem]" />
                   </div>
 
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', fontWeight: '600', color: '#374151', marginBottom: '6px', fontSize: '0.9rem' }}>
-                      📧 Email per copia consenso <span style={{ fontWeight: 400, color: '#9ca3af' }}>(opzionale)</span>
+                  <div className="tw-mb-4">
+                    <label className="tw-block tw-font-semibold tw-text-slate-700 tw-mb-1.5 tw-text-[0.9rem]">
+                      📧 Email per copia consenso <span className="tw-font-normal tw-text-slate-400">(opzionale)</span>
                     </label>
                     <input type="email" value={emailConsenso} onChange={e => setEmailConsenso(e.target.value)}
                       placeholder="es. nome@email.it"
-                      style={{ width: '100%', padding: '11px 14px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem', boxSizing: 'border-box' }} />
-                    {emailConsenso && <p style={{ fontSize: '0.78rem', color: '#6b7280', marginTop: '4px' }}>✉️ Al salvataggio verrà inviata una copia email con il riepilogo del consenso firmato.</p>}
+                      className="tw-w-full tw-px-3.5 tw-py-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.95rem]" />
+                    {emailConsenso && <p className="tw-text-[0.78rem] tw-text-slate-500 tw-mt-1">✉️ Al salvataggio verrà inviata una copia email con il riepilogo del consenso firmato.</p>}
                   </div>
 
                   {/* Consenso checkbox */}
-                  <div style={{ border: '2px solid #1e4d8c', borderRadius: '10px', padding: '16px', marginBottom: '20px', background: '#f8faff' }}>
-                    <p style={{ fontSize: '0.88rem', color: '#374151', marginBottom: '12px', fontWeight: '600' }}>📋 Preso atto dell'informativa sul trattamento dei dati personali e di categoria particolare:</p>
-                    <p style={{ fontSize: '0.88rem', color: '#374151', lineHeight: 1.6 }}>
+                  <div className="tw-border-2 tw-border-brand tw-rounded-xl tw-p-4 tw-mb-5 tw-bg-blue-50/50">
+                    <p className="tw-text-[0.88rem] tw-text-slate-700 tw-mb-3 tw-font-semibold">📋 Preso atto dell'informativa sul trattamento dei dati personali e di categoria particolare:</p>
+                    <p className="tw-text-[0.88rem] tw-text-slate-700 tw-leading-snug">
                       Acconsento al trattamento dei miei Dati Personali per le finalità connesse alla corretta esecuzione del/i servizio/i di assistenza domiciliare richiesto/i.
                     </p>
                   </div>
@@ -933,9 +933,9 @@ function Patients() {
                         alert(err?.response?.data?.message || 'Errore nel salvataggio del consenso');
                       } finally { setSalvandoConsenso(false); }
                     }}
-                    style={{ width: '100%', padding: '14px', background: firmaConsenso && firmaConsensoNome ? '#15803d' : '#d1d5db', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '1rem', cursor: firmaConsenso && firmaConsensoNome ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '12px' }}
+                    className={`tw-w-full tw-flex tw-items-center tw-justify-center tw-gap-2 tw-py-3.5 tw-rounded-xl tw-text-white tw-font-bold tw-text-base tw-border-0 tw-mb-3 ${firmaConsenso && firmaConsensoNome ? 'tw-bg-green-700 tw-cursor-pointer hover:tw-bg-green-800' : 'tw-bg-slate-300 tw-cursor-not-allowed'}`}
                   >
-                    {salvandoConsenso ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Shield size={18} />}
+                    {salvandoConsenso ? <Loader2 size={18} className="tw-animate-spin" /> : <Shield size={18} />}
                     {salvandoConsenso ? 'Salvataggio...' : 'Conferma e salva consenso GDPR'}
                   </button>
                 </>
@@ -947,47 +947,47 @@ function Patients() {
 
       {/* === Modal Dati Clinici ADI === */}
       {showDatiCliniciModal && datiCliniciPaziente && (
-        <div className="modal-overlay" onClick={() => setShowDatiCliniciModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div className="tw-fixed tw-inset-0 tw-z-50 tw-bg-black/60 tw-flex tw-items-start tw-justify-center tw-p-4 tw-overflow-y-auto" onClick={() => setShowDatiCliniciModal(false)}>
+          <div className="tw-bg-white tw-rounded-2xl tw-shadow-2xl tw-w-full tw-max-w-[600px] tw-my-10 tw-p-6" onClick={e => e.stopPropagation()}>
+            <div className="tw-flex tw-justify-between tw-items-center tw-mb-5">
               <div>
-                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px', color: '#0369a1' }}>
+                <h3 className="tw-m-0 tw-flex tw-items-center tw-gap-2.5 tw-text-sky-700 tw-text-lg">
                   <Stethoscope size={22} /> Dati Clinici ADI
                 </h3>
-                <p style={{ margin: '4px 0 0', color: 'var(--gray-500)', fontSize: '0.9rem' }}>
+                <p className="tw-m-0 tw-mt-1 tw-text-slate-500 tw-text-[0.9rem]">
                   {datiCliniciPaziente.firstName} {datiCliniciPaziente.lastName}
                 </p>
               </div>
-              <button onClick={() => setShowDatiCliniciModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-500)' }}>
+              <button onClick={() => setShowDatiCliniciModal(false)} className="tw-bg-transparent tw-border-0 tw-cursor-pointer tw-text-slate-400 hover:tw-text-slate-600">
                 <X size={24} />
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div className="tw-flex tw-flex-col tw-gap-3.5">
               <div>
-                <label style={{ fontWeight: '600', fontSize: '0.85rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Codice Fiscale</label>
-                <input type="text" value={datiCliniciForm.codiceFiscale} onChange={e => setDatiCliniciForm(p => ({ ...p, codiceFiscale: e.target.value.toUpperCase() }))} placeholder="es. RSSMRA80A01H501Z" style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.9rem', boxSizing: 'border-box', fontFamily: 'monospace' }} />
+                <label className="tw-block tw-font-semibold tw-text-sm tw-text-slate-700 tw-mb-1">Codice Fiscale</label>
+                <input type="text" value={datiCliniciForm.codiceFiscale} onChange={e => setDatiCliniciForm(p => ({ ...p, codiceFiscale: e.target.value.toUpperCase() }))} placeholder="es. RSSMRA80A01H501Z" className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem] tw-font-mono" />
               </div>
               <div>
-                <label style={{ fontWeight: '600', fontSize: '0.85rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Diagnosi di ammissione / Patologia principale</label>
-                <textarea value={datiCliniciForm.diagnosiAmmissione} onChange={e => setDatiCliniciForm(p => ({ ...p, diagnosiAmmissione: e.target.value }))} placeholder="es. Scompenso cardiaco cronico, BPCO, ..." rows={3} style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.9rem', resize: 'vertical', boxSizing: 'border-box' }} />
+                <label className="tw-block tw-font-semibold tw-text-sm tw-text-slate-700 tw-mb-1">Diagnosi di ammissione / Patologia principale</label>
+                <textarea value={datiCliniciForm.diagnosiAmmissione} onChange={e => setDatiCliniciForm(p => ({ ...p, diagnosiAmmissione: e.target.value }))} placeholder="es. Scompenso cardiaco cronico, BPCO, ..." rows={3} className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem] tw-resize-y" />
               </div>
               <div>
-                <label style={{ fontWeight: '600', fontSize: '0.85rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Comorbilità / Patologie associate</label>
-                <textarea value={datiCliniciForm.comorbilita} onChange={e => setDatiCliniciForm(p => ({ ...p, comorbilita: e.target.value }))} placeholder="es. Diabete mellito tipo 2, Ipertensione arteriosa, ..." rows={3} style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.9rem', resize: 'vertical', boxSizing: 'border-box' }} />
+                <label className="tw-block tw-font-semibold tw-text-sm tw-text-slate-700 tw-mb-1">Comorbilità / Patologie associate</label>
+                <textarea value={datiCliniciForm.comorbilita} onChange={e => setDatiCliniciForm(p => ({ ...p, comorbilita: e.target.value }))} placeholder="es. Diabete mellito tipo 2, Ipertensione arteriosa, ..." rows={3} className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem] tw-resize-y" />
               </div>
               <div>
-                <label style={{ fontWeight: '600', fontSize: '0.85rem', color: '#dc2626', display: 'block', marginBottom: '4px' }}>⚠️ Allergie / Intolleranze farmacologiche</label>
-                <textarea value={datiCliniciForm.allergie} onChange={e => setDatiCliniciForm(p => ({ ...p, allergie: e.target.value }))} placeholder="es. Penicillina, FANS, lattice, ... (NESSUNA se assenti)" rows={2} style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #fca5a5', fontSize: '0.9rem', resize: 'vertical', boxSizing: 'border-box', background: '#fff7f7' }} />
+                <label className="tw-block tw-font-semibold tw-text-sm tw-text-red-600 tw-mb-1">⚠️ Allergie / Intolleranze farmacologiche</label>
+                <textarea value={datiCliniciForm.allergie} onChange={e => setDatiCliniciForm(p => ({ ...p, allergie: e.target.value }))} placeholder="es. Penicillina, FANS, lattice, ... (NESSUNA se assenti)" rows={2} className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-red-300 tw-text-[0.9rem] tw-resize-y tw-bg-red-50/50" />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="tw-grid sm:tw-grid-cols-2 tw-gap-3">
                 <div>
-                  <label style={{ fontWeight: '600', fontSize: '0.85rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Caregiver / Familiare di riferimento</label>
-                  <input type="text" value={datiCliniciForm.caregiverRiferimento} onChange={e => setDatiCliniciForm(p => ({ ...p, caregiverRiferimento: e.target.value }))} placeholder="Nome e cognome" style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+                  <label className="tw-block tw-font-semibold tw-text-sm tw-text-slate-700 tw-mb-1">Caregiver / Familiare di riferimento</label>
+                  <input type="text" value={datiCliniciForm.caregiverRiferimento} onChange={e => setDatiCliniciForm(p => ({ ...p, caregiverRiferimento: e.target.value }))} placeholder="Nome e cognome" className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]" />
                 </div>
                 <div>
-                  <label style={{ fontWeight: '600', fontSize: '0.85rem', color: '#374151', display: 'block', marginBottom: '4px' }}>Telefono caregiver</label>
-                  <input type="tel" value={datiCliniciForm.caregiverTelefono} onChange={e => setDatiCliniciForm(p => ({ ...p, caregiverTelefono: e.target.value }))} placeholder="es. 3331234567" style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+                  <label className="tw-block tw-font-semibold tw-text-sm tw-text-slate-700 tw-mb-1">Telefono caregiver</label>
+                  <input type="tel" value={datiCliniciForm.caregiverTelefono} onChange={e => setDatiCliniciForm(p => ({ ...p, caregiverTelefono: e.target.value }))} placeholder="es. 3331234567" className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]" />
                 </div>
               </div>
             </div>
@@ -1008,9 +1008,9 @@ function Patients() {
                   alert(err?.response?.data?.message || 'Errore nel salvataggio');
                 } finally { setSalvandoDatiCliniciADI(false); }
               }}
-              style={{ marginTop: '20px', width: '100%', padding: '13px', background: salvandoDatiCliniciADI ? '#93c5fd' : '#0369a1', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '1rem', cursor: salvandoDatiCliniciADI ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              className={`tw-w-full tw-mt-5 tw-py-3.5 tw-rounded-xl tw-text-white tw-font-bold tw-text-base tw-border-0 tw-flex tw-items-center tw-justify-center tw-gap-2 tw-cursor-pointer ${salvandoDatiCliniciADI ? 'tw-bg-sky-300 tw-cursor-not-allowed' : 'tw-bg-sky-700 hover:tw-bg-sky-800'}`}
             >
-              {salvandoDatiCliniciADI ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <CheckCircle size={18} />}
+              {salvandoDatiCliniciADI ? <Loader2 size={18} className="tw-animate-spin" /> : <CheckCircle size={18} />}
               {salvandoDatiCliniciADI ? 'Salvataggio...' : 'Salva dati clinici ADI'}
             </button>
           </div>
@@ -1019,23 +1019,23 @@ function Patients() {
 
       {/* Documents Modal */}
       {showDocumentsModal && selectedPatient && (
-        <div className="modal-overlay" onClick={closeDocumentsModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
-<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '12px', flexWrap: 'wrap' }}>
+        <div className="tw-fixed tw-inset-0 tw-z-50 tw-bg-black/60 tw-flex tw-items-start tw-justify-center tw-p-4 tw-overflow-y-auto" onClick={closeDocumentsModal}>
+          <div className="tw-bg-white tw-rounded-2xl tw-shadow-2xl tw-w-full tw-max-w-[800px] tw-my-10 tw-p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="tw-flex tw-justify-between tw-items-center tw-mb-5 tw-gap-3 tw-flex-wrap">
               <div>
-                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h3 className="tw-m-0 tw-flex tw-items-center tw-gap-2.5 tw-text-lg tw-text-slate-800">
                   <FolderOpen size={24} />
                   Documenti Paziente
                 </h3>
-                <p style={{ margin: '4px 0 0', color: 'var(--gray-500)', fontSize: '0.92rem' }}>
+                <p className="tw-m-0 tw-mt-1 tw-text-slate-500 tw-text-[0.92rem]">
                   {selectedPatient.firstName} {selectedPatient.lastName} - {formatDate(selectedPatient.birthDate)}
                 </p>
               </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div className="tw-flex tw-flex-wrap tw-gap-2">
                 <button
                   type="button"
                   onClick={() => openPatientSummaryPdf(selectedPatient)}
-                  style={{ background: '#2563eb', color: 'white', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                  className="tw-bg-blue-600 tw-text-white tw-px-3.5 tw-py-2.5 tw-rounded-lg tw-flex tw-items-center tw-gap-2 tw-text-sm tw-font-semibold hover:tw-bg-blue-700"
                 >
                   <Eye size={16} />
                   Visualizza PDF
@@ -1043,21 +1043,14 @@ function Patients() {
                 <button
                   type="button"
                   onClick={() => printPatientSummaryPdf(selectedPatient)}
-                  style={{ background: '#059669', color: 'white', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                  className="tw-bg-emerald-600 tw-text-white tw-px-3.5 tw-py-2.5 tw-rounded-lg tw-flex tw-items-center tw-gap-2 tw-text-sm tw-font-semibold hover:tw-bg-emerald-700"
                 >
                   <Printer size={16} />
                   Stampa PDF
                 </button>
                 <button
                   onClick={closeDocumentsModal}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '8px',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--gray-500)',
-                  }}
+                  className="tw-bg-transparent tw-border-0 tw-cursor-pointer tw-p-2 tw-text-slate-400 hover:tw-text-slate-600"
                 >
                   <X size={24} />
                 </button>
@@ -1066,33 +1059,29 @@ function Patients() {
 
             {/* Upload Section */}
             {canEdit && (
-              <div style={{
-                marginBottom: '24px',
-                padding: '20px',
-                border: '2px dashed var(--gray-300)',
-                borderRadius: 'var(--radius-lg)',
-                backgroundColor: 'var(--gray-50)',
-              }}>
-                <h4 style={{ margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="tw-mb-6 tw-p-5 tw-border-2 tw-border-dashed tw-border-slate-300 tw-rounded-xl tw-bg-slate-50">
+                <h4 className="tw-m-0 tw-mb-4 tw-flex tw-items-center tw-gap-2 tw-text-base tw-font-bold tw-text-slate-700">
                   <Upload size={18} />
                   Carica Nuovo Documento
                 </h4>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                  <label>
+                <div className="tw-grid sm:tw-grid-cols-2 tw-gap-4 tw-mb-4">
+                  <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700">
                     Titolo *
                     <input
                       type="text"
                       value={uploadForm.title}
                       onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
                       placeholder="Es. Emocromo completo"
+                      className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]"
                     />
                   </label>
-                  <label>
+                  <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700">
                     Categoria *
                     <select
                       value={uploadForm.category}
                       onChange={(e) => setUploadForm({ ...uploadForm, category: e.target.value })}
+                      className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]"
                     >
                       <option value="">Seleziona categoria...</option>
                       <option value="cartella_clinica">Cartella Clinica</option>
@@ -1103,32 +1092,33 @@ function Patients() {
                   </label>
                 </div>
 
-                <label style={{ marginBottom: '16px', display: 'block' }}>
+                <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-4">
                   Descrizione (opzionale)
                   <textarea
                     value={uploadForm.description}
                     onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
                     placeholder="Breve descrizione del documento..."
                     rows={2}
+                    className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem] tw-resize-y"
                   />
                 </label>
 
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div className="tw-flex tw-items-center tw-gap-3">
                   <input
                     ref={fileInputRef}
                     type="file"
-                    style={{ display: 'none' }}
+                    className="tw-hidden"
                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                   />
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    style={{ background: 'var(--gray-500)' }}
+                    className="tw-bg-slate-500 tw-text-white tw-px-3.5 tw-py-2 tw-rounded-lg tw-text-sm tw-font-semibold hover:tw-bg-slate-600"
                   >
                     Scegli file...
                   </button>
                   {fileInputRef.current?.files?.[0] && (
-                    <span style={{ color: 'var(--gray-600)', fontSize: '0.92rem' }}>
+                    <span className="tw-text-slate-600 tw-text-[0.92rem]">
                       {fileInputRef.current.files[0].name}
                     </span>
                   )}
@@ -1136,15 +1126,11 @@ function Patients() {
                     type="button"
                     onClick={handleUpload}
                     disabled={uploading || !fileInputRef.current?.files?.[0]}
-                    style={{
-                      background: 'var(--success)',
-                      marginLeft: 'auto',
-                      opacity: uploading || !fileInputRef.current?.files?.[0] ? 0.6 : 1,
-                    }}
+                    className={`tw-ml-auto tw-px-3.5 tw-py-2 tw-rounded-lg tw-text-white tw-font-semibold tw-flex tw-items-center tw-gap-1.5 ${uploading || !fileInputRef.current?.files?.[0] ? 'tw-bg-green-400 tw-cursor-not-allowed' : 'tw-bg-green-600 tw-cursor-pointer hover:tw-bg-green-700'}`}
                   >
                     {uploading ? (
                       <>
-                        <Loader2 size={16} className="spin" />
+                        <Loader2 size={16} className="tw-animate-spin" />
                         Caricamento...
                       </>
                     ) : (
@@ -1159,16 +1145,11 @@ function Patients() {
             )}
 
             {/* Filter by Category */}
-            <div style={{ marginBottom: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div className="tw-flex tw-flex-wrap tw-gap-2 tw-mb-4">
               <button
                 type="button"
                 onClick={() => { setSelectedCategory(''); loadPatientDocuments(selectedPatient._id); }}
-                style={{
-                  background: !selectedCategory ? 'var(--primary)' : 'var(--gray-200)',
-                  color: !selectedCategory ? 'white' : 'var(--gray-700)',
-                  padding: '8px 16px',
-                  fontSize: '0.88rem',
-                }}
+                className={`tw-px-4 tw-py-2 tw-rounded-lg tw-text-sm tw-font-semibold ${!selectedCategory ? 'tw-bg-brand tw-text-white' : 'tw-bg-slate-200 tw-text-slate-700 hover:tw-bg-slate-300'}`}
               >
                 Tutti
               </button>
@@ -1177,12 +1158,8 @@ function Patients() {
                   key={cat}
                   type="button"
                   onClick={() => { setSelectedCategory(cat); loadPatientDocuments(selectedPatient._id); }}
-                  style={{
-                    background: selectedCategory === cat ? categoryColors[cat] : 'var(--gray-200)',
-                    color: selectedCategory === cat ? 'white' : 'var(--gray-700)',
-                    padding: '8px 16px',
-                    fontSize: '0.88rem',
-                  }}
+                  className={`tw-px-4 tw-py-2 tw-rounded-lg tw-text-sm tw-font-semibold ${selectedCategory === cat ? 'tw-text-white' : 'tw-bg-slate-200 tw-text-slate-700 hover:tw-bg-slate-300'}`}
+                  style={{ background: selectedCategory === cat ? categoryColors[cat] : undefined }}
                 >
                   {categoryLabels[cat]}
                 </button>
@@ -1191,69 +1168,50 @@ function Patients() {
 
             {/* Documents List */}
             {documents.length === 0 ? (
-              <p style={{ textAlign: 'center', padding: '32px', color: 'var(--gray-500)' }}>
+              <p className="tw-text-center tw-py-8 tw-text-slate-500">
                 Nessun documento presente per questo paziente.
               </p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="tw-flex tw-flex-col tw-gap-3">
                 {documents.map((doc) => {
                   const Icon = categoryIcons[doc.category] || FolderOpen;
                   return (
                     <div
                       key={doc._id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '16px',
-                        padding: '16px',
-                        border: '1px solid var(--gray-200)',
-                        borderRadius: 'var(--radius-lg)',
-                        backgroundColor: 'white',
-                      }}
+                      className="tw-flex tw-items-center tw-gap-4 tw-p-4 tw-border tw-border-slate-200 tw-rounded-xl tw-bg-white"
                     >
-                      <div style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: 'var(--radius-md)',
-                        backgroundColor: `${categoryColors[doc.category]}20`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}>
+                      <div
+                        className="tw-w-12 tw-h-12 tw-rounded-lg tw-flex tw-items-center tw-justify-center tw-flex-shrink-0"
+                        style={{ backgroundColor: `${categoryColors[doc.category]}20` }}
+                      >
                         <Icon size={24} color={categoryColors[doc.category]} />
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                          <span style={{
-                            fontSize: '0.75rem',
-                            padding: '2px 8px',
-                            backgroundColor: `${categoryColors[doc.category]}20`,
-                            color: categoryColors[doc.category],
-                            borderRadius: 'var(--radius-full)',
-                            fontWeight: 600,
-                            whiteSpace: 'nowrap',
-                          }}>
+                      <div className="tw-flex-1 tw-min-w-0">
+                        <div className="tw-flex tw-items-center tw-gap-2 tw-mb-1">
+                          <span
+                            className="tw-text-xs tw-px-2 tw-py-0.5 tw-rounded-full tw-font-semibold tw-whitespace-nowrap"
+                            style={{ backgroundColor: `${categoryColors[doc.category]}20`, color: categoryColors[doc.category] }}
+                          >
                             {categoryLabels[doc.category]}
                           </span>
-                          <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <strong className="tw-truncate">
                             {doc.title}
                           </strong>
                         </div>
                         {doc.description && (
-                          <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--gray-500)', marginBottom: '4px' }}>
+                          <p className="tw-m-0 tw-text-[0.85rem] tw-text-slate-500 tw-mb-1">
                             {doc.description}
                           </p>
                         )}
-                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--gray-400)' }}>
+                        <p className="tw-m-0 tw-text-[0.8rem] tw-text-slate-400">
                           {formatDate(doc.createdAt)} {doc.uploadedByNome && `• Caricato da ${doc.uploadedByNome}`}
                         </p>
                       </div>
-                      <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
+                      <div className="tw-flex tw-flex-wrap tw-gap-2 tw-flex-shrink-0">
                         <button
                           type="button"
                           onClick={() => openDocument(doc._id, doc.contentType, doc.fileName)}
-                          style={{ background: '#2563eb', color: 'white', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                          className="tw-bg-blue-600 tw-text-white tw-px-3 tw-py-2 tw-rounded-lg tw-flex tw-items-center tw-gap-1.5 tw-text-sm tw-font-semibold hover:tw-bg-blue-700"
                         >
                           <Eye size={16} />
                           Apri
@@ -1261,7 +1219,7 @@ function Patients() {
                         <button
                           type="button"
                           onClick={() => printDocument(doc._id, doc.contentType, doc.fileName)}
-                          style={{ background: '#0f766e', color: 'white', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                          className="tw-bg-teal-700 tw-text-white tw-px-3 tw-py-2 tw-rounded-lg tw-flex tw-items-center tw-gap-1.5 tw-text-sm tw-font-semibold hover:tw-bg-teal-800"
                         >
                           <Printer size={16} />
                           Stampa
@@ -1269,7 +1227,7 @@ function Patients() {
                         <button
                           type="button"
                           onClick={() => downloadDocument(doc._id, doc.fileName)}
-                          style={{ background: 'var(--success)', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                          className="tw-bg-green-600 tw-text-white tw-px-3 tw-py-2 tw-rounded-lg tw-flex tw-items-center tw-gap-1.5 tw-text-sm tw-font-semibold hover:tw-bg-green-700"
                         >
                           <Download size={16} />
                           Scarica
@@ -1278,7 +1236,7 @@ function Patients() {
                           <button
                             type="button"
                             onClick={() => deleteDocument(doc._id)}
-                            style={{ background: 'var(--danger)', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                            className="tw-bg-red-600 tw-text-white tw-px-3 tw-py-2 tw-rounded-lg tw-flex tw-items-center tw-gap-1.5 tw-text-sm tw-font-semibold hover:tw-bg-red-700"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -1295,13 +1253,13 @@ function Patients() {
 
       {/* ═══ MODAL CHAT PAZIENTE ═══ */}
       {chatPatient && (
-        <div className="modal-overlay" onClick={() => setChatPatient(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '720px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-              <h3 style={{ margin: 0, color: '#1e4d8c' }}>
+        <div className="tw-fixed tw-inset-0 tw-z-50 tw-bg-black/60 tw-flex tw-items-start tw-justify-center tw-p-4 tw-overflow-y-auto" onClick={() => setChatPatient(null)}>
+          <div className="tw-bg-white tw-rounded-2xl tw-shadow-2xl tw-w-full tw-max-w-[720px] tw-my-10 tw-p-6" onClick={e => e.stopPropagation()}>
+            <div className="tw-flex tw-justify-between tw-items-center tw-mb-4 tw-flex-wrap tw-gap-2">
+              <h3 className="tw-m-0 tw-text-brand tw-text-lg">
                 💬 Chat con operatore — {chatPatient.firstName} {chatPatient.lastName}
               </h3>
-              <button onClick={() => setChatPatient(null)} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer' }}>
+              <button onClick={() => setChatPatient(null)} className="tw-bg-slate-100 tw-border tw-border-slate-200 tw-rounded-md tw-px-2.5 tw-py-1.5 tw-cursor-pointer hover:tw-bg-slate-200">
                 <X size={18} />
               </button>
             </div>
