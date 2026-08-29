@@ -11,6 +11,7 @@ export default {
     './src/pages/Dashboard.tsx',
     './src/pages/PortaleOperatore.tsx',
     './src/pages/Patients.tsx',
+    './src/pages/Staff.tsx',
   ],
   theme: {
     extend: {

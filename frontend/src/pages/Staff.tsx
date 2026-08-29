@@ -592,42 +592,31 @@ function Staff() {
       </h2>
 
       {success && (
-        <Alert type="success" onClose={() => setSuccess('')} style={{ marginBottom: '16px' }}>
+        <Alert type="success" onClose={() => setSuccess('')} className="tw-mb-4">
           {success}
         </Alert>
       )}
       {error && (
-        <Alert type="error" onClose={() => setError('')} style={{ marginBottom: '16px' }}>
+        <Alert type="error" onClose={() => setError('')} className="tw-mb-4">
           {error}
         </Alert>
       )}
 
       {/* Search and Filter Bar */}
-      <div style={{
-        display: 'flex',
-        gap: '12px',
-        marginBottom: '20px',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-      }}>
-        <Input
-          placeholder="Cerca per nome, email o ruolo..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          icon={<Search size={18} />}
-          style={{ flex: 1, minWidth: '200px' }}
-        />
+      <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-3 tw-mb-5">
+        <div className="tw-flex-1 tw-min-w-[200px]">
+          <Input
+            placeholder="Cerca per nome, email o ruolo..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            icon={<Search size={18} />}
+          />
+        </div>
 
         <select
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
-          style={{
-            padding: '12px 14px',
-            border: '1px solid var(--gray-300)',
-            borderRadius: 'var(--radius-md)',
-            fontSize: '0.95rem',
-            minWidth: '200px',
-          }}
+          className="tw-py-3 tw-px-3.5 tw-border tw-border-slate-300 tw-rounded-md tw-text-[0.95rem] tw-min-w-[200px] tw-bg-white"
         >
           <option value="">Tutte le categorie</option>
           {categories.map(cat => (
@@ -648,7 +637,7 @@ function Staff() {
 
       {/* Search Results Info */}
       {(searchTerm || selectedCategory) && (
-        <p style={{ marginBottom: '16px', color: 'var(--gray-500)', fontSize: '0.92rem' }}>
+        <p className="tw-mb-4 tw-text-slate-500 tw-text-[0.92rem]">
           Trovati {filteredStaff.length} membro{filteredStaff.length !== 1 ? 'i' : ''} dello staff
         </p>
       )}
@@ -660,7 +649,7 @@ function Staff() {
             <UserPlus size={18} />
             Nuovo Membro dello Staff
           </h4>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="tw-grid tw-grid-cols-2 tw-gap-4">
             <label>
               Nome *
               <input
@@ -693,7 +682,7 @@ function Staff() {
               placeholder="mario.rossi@email.com"
             />
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="tw-grid tw-grid-cols-2 tw-gap-4">
             <label>
               Categoria *
               <select
@@ -765,16 +754,7 @@ function Staff() {
             />
           </label>
           {error && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px',
-              backgroundColor: 'var(--danger-bg)',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--danger)',
-              fontSize: '0.92rem',
-            }}>
+            <div className="tw-flex tw-items-center tw-gap-2 tw-p-3 tw-rounded-md tw-text-[0.92rem] tw-text-red-600 tw-bg-red-600/[0.08]">
               <AlertCircle size={18} />
               {error}
             </div>
@@ -790,9 +770,9 @@ function Staff() {
           Elenco Personale ({filteredStaff.length})
         </h3>
         {loading ? (
-          <div style={{ padding: '8px 0' }}><SkeletonList rows={6} showHeader={false} /></div>
+          <div className="tw-py-2"><SkeletonList rows={6} showHeader={false} /></div>
         ) : filteredStaff.length === 0 ? (
-          <p style={{ textAlign: 'center', padding: '32px', color: 'var(--gray-500)' }}>
+          <p className="tw-text-center tw-py-8 tw-text-slate-500">
             Nessun membro dello staff trovato.
           </p>
         ) : (
@@ -802,19 +782,15 @@ function Staff() {
                 borderLeft: `4px solid ${getCategoryColor(staff.category)}`,
                 opacity: !staff.active ? 0.6 : 1,
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                      <strong style={{ fontSize: '1.05rem' }}>
+                <div className="tw-flex tw-justify-between tw-items-start tw-gap-4">
+                  <div className="tw-flex-1">
+                    <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-3 tw-mb-2">
+                      <strong className="tw-text-[1.05rem]">
                         {staff.firstName} {staff.lastName}
                       </strong>
-                      <span style={{
-                        fontSize: '0.78rem',
-                        padding: '2px 10px',
+                      <span className="tw-text-[0.78rem] tw-px-2.5 tw-py-0.5 tw-rounded-full tw-font-semibold" style={{
                         backgroundColor: `${getCategoryColor(staff.category)}20`,
                         color: getCategoryColor(staff.category),
-                        borderRadius: 'var(--radius-full)',
-                        fontWeight: 600,
                       }}>
                         {getCategoryLabel(staff.category)}
                       </span>
@@ -823,46 +799,42 @@ function Staff() {
                       )}
                       {/* Badge modalità abilitata */}
                       {staff.modalitaAbilitata && staff.modalitaAbilitata !== 'entrambi' && (
-                        <span style={{
-                          fontSize: '0.72rem',
-                          padding: '2px 8px',
+                        <span className="tw-text-[0.72rem] tw-px-2 tw-py-0.5 tw-rounded-full tw-font-bold" style={{
                           backgroundColor: staff.modalitaAbilitata === 'convenzione' ? '#eff6ff' : '#f0fdf4',
                           color: staff.modalitaAbilitata === 'convenzione' ? '#0369a1' : '#166534',
-                          borderRadius: 'var(--radius-full)',
-                          fontWeight: 700,
                           border: `1px solid ${staff.modalitaAbilitata === 'convenzione' ? '#bae6fd' : '#bbf7d0'}`,
                         }}>
                           {staff.modalitaAbilitata === 'convenzione' ? '🏥 Solo SIAT' : '👤 Solo Privati'}
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: '0.88rem', color: 'var(--gray-600)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div className="tw-text-[0.88rem] tw-text-slate-600 tw-flex tw-flex-wrap tw-gap-4">
+                      <span className="tw-inline-flex tw-items-center tw-gap-1">
                         <Mail size={14} /> {staff.email}
                       </span>
                       {staff.phone && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span className="tw-inline-flex tw-items-center tw-gap-1">
                           <Phone size={14} /> {staff.phone}
                         </span>
                       )}
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span className="tw-inline-flex tw-items-center tw-gap-1">
                         <Calendar size={14} /> Dal {formatDate(staff.dataInizioCollaborazione)}
                       </span>
                     </div>
                     {!staff.active && staff.dataFineCollaborazione && (
-                      <p style={{ fontSize: '0.85rem', color: 'var(--danger)', marginTop: '4px', marginBottom: 0 }}>
+                      <p className="tw-text-[0.85rem] tw-text-red-600 tw-mt-1 tw-mb-0">
                         Fine collaborazione: {formatDate(staff.dataFineCollaborazione)}
                       </p>
                     )}
                     {/* ── Zona lavorativa ── */}
-                    <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <div className="tw-mt-1.5 tw-flex tw-flex-wrap tw-items-center tw-gap-2">
                       {staff.domicilioPartenza ? (
-                        <span style={{ fontSize: '0.8rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '2px 8px', color: '#065f46', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span className="tw-text-[0.8rem] tw-bg-green-50 tw-border tw-border-green-200 tw-rounded-md tw-px-2 tw-py-0.5 tw-text-green-800 tw-inline-flex tw-items-center tw-gap-1">
                           📍 {staff.domicilioPartenza} — {staff.raggioAzioneKm ?? 10} km
-                          {staff.domicilioCoords && <span style={{ color: '#059669' }}>✓</span>}
+                          {staff.domicilioCoords && <span className="tw-text-green-600">✓</span>}
                         </span>
                       ) : (
-                        <span style={{ fontSize: '0.78rem', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '6px', padding: '2px 8px', color: '#92400e' }}>
+                        <span className="tw-text-[0.78rem] tw-bg-amber-50 tw-border tw-border-amber-300 tw-rounded-md tw-px-2 tw-py-0.5 tw-text-amber-800">
                           ⚠️ Zona non impostata
                         </span>
                       )}
@@ -878,42 +850,42 @@ function Staff() {
                     </div>
                     {/* Form inline zona */}
                     {zonaEditId === staff._id && (
-                      <div style={{ marginTop: '10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e4d8c', marginBottom: '2px' }}>📍 Zona lavorativa</div>
-                        <div style={{ display: 'flex', gap: '6px' }}>
+                      <div className="tw-mt-2.5 tw-bg-slate-50 tw-border tw-border-slate-200 tw-rounded-lg tw-p-3 tw-flex tw-flex-col tw-gap-2.5">
+                        <div className="tw-font-bold tw-text-[0.85rem] tw-text-brand tw-mb-0.5">📍 Zona lavorativa</div>
+                        <div className="tw-flex tw-gap-1.5">
                           <input
                             value={zonaForm.domicilioPartenza}
                             onChange={e => { setZonaForm(f => ({ ...f, domicilioPartenza: e.target.value, domicilioCoords: null })); setZonaGeoError(''); }}
                             placeholder="Es. Via Roma 10, Roma RM"
-                            style={{ flex: 1, padding: '7px 10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.85rem' }}
+                            className="tw-flex-1 tw-py-1.5 tw-px-2.5 tw-rounded-md tw-border tw-border-slate-300 tw-text-[0.85rem]"
                           />
                           <button type="button" onClick={geocodificaZona} disabled={zonaGeoLoading || !zonaForm.domicilioPartenza.trim()}
-                            style={{ background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '6px', padding: '7px 12px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700, opacity: zonaGeoLoading ? 0.7 : 1 }}>
+                            className="tw-bg-brand tw-text-white tw-border-0 tw-rounded-md tw-py-1.5 tw-px-3 tw-cursor-pointer tw-text-[0.82rem] tw-font-bold disabled:tw-opacity-70" style={{ opacity: zonaGeoLoading ? 0.7 : 1 }}>
                             {zonaGeoLoading ? '...' : '📍'}
                           </button>
                         </div>
-                        {zonaGeoError && <span style={{ fontSize: '0.78rem', color: '#dc2626' }}>{zonaGeoError}</span>}
-                        {zonaForm.domicilioCoords && <span style={{ fontSize: '0.78rem', color: '#059669' }}>✓ Posizione trovata ({zonaForm.domicilioCoords.lat.toFixed(4)}, {zonaForm.domicilioCoords.lng.toFixed(4)})</span>}
-                        <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#374151' }}>
+                        {zonaGeoError && <span className="tw-text-[0.78rem] tw-text-red-600">{zonaGeoError}</span>}
+                        {zonaForm.domicilioCoords && <span className="tw-text-[0.78rem] tw-text-green-600">✓ Posizione trovata ({zonaForm.domicilioCoords.lat.toFixed(4)}, {zonaForm.domicilioCoords.lng.toFixed(4)})</span>}
+                        <label className="tw-text-[0.82rem] tw-font-semibold tw-text-slate-700">
                           Raggio: <strong>{zonaForm.raggioAzioneKm} km</strong>
                           <input type="range" min={1} max={80} step={1} value={zonaForm.raggioAzioneKm}
                             onChange={e => setZonaForm(f => ({ ...f, raggioAzioneKm: Number(e.target.value) }))}
-                            style={{ width: '100%', marginTop: '4px' }} />
+                            className="tw-w-full tw-mt-1" />
                         </label>
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                        <div className="tw-flex tw-gap-2">
                           <button type="button" onClick={() => setZonaEditId(null)}
-                            style={{ flex: 1, background: '#f1f5f9', border: '1px solid #d1d5db', borderRadius: '6px', padding: '7px', cursor: 'pointer', fontSize: '0.82rem' }}>
+                            className="tw-flex-1 tw-bg-slate-100 tw-border tw-border-slate-300 tw-rounded-md tw-py-1.5 tw-cursor-pointer tw-text-[0.82rem]">
                             Annulla
                           </button>
                           <button type="button" onClick={() => salvaZona(staff._id)} disabled={zonaSalvando}
-                            style={{ flex: 2, background: zonaSalvando ? '#d1d5db' : '#059669', color: 'white', border: 'none', borderRadius: '6px', padding: '7px', cursor: zonaSalvando ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>
+                            className="tw-flex-[2] tw-text-white tw-border-0 tw-rounded-md tw-py-1.5 tw-font-bold tw-text-[0.82rem] tw-cursor-pointer disabled:tw-cursor-not-allowed" style={{ backgroundColor: zonaSalvando ? '#d1d5db' : '#059669' }}>
                             {zonaSalvando ? '...' : '✅ Salva zona'}
                           </button>
                         </div>
                       </div>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flexShrink: 0, alignItems: 'center' }}>
+                  <div className="tw-flex tw-flex-wrap tw-gap-2 tw-flex-shrink-0 tw-items-center">
                     {/* Select modalità inline — solo admin/coordinator */}
                     {canEdit && staff.active && (
                       <select
@@ -925,7 +897,7 @@ function Staff() {
                             loadStaff();
                           } catch {}
                         }}
-                        style={{ fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px', border: '1px solid #d1d5db', cursor: 'pointer', background: 'white', color: '#374151' }}
+                        className="tw-text-[0.78rem] tw-py-1 tw-px-2 tw-rounded-md tw-border tw-border-slate-300 tw-cursor-pointer tw-bg-white tw-text-slate-700"
                         title="Modalità abilitata per questo operatore"
                       >
                         <option value="entrambi">🔓 Entrambi</option>
@@ -936,7 +908,7 @@ function Staff() {
                     {canEdit && (
                       <button
                         onClick={() => apriModificaStaff(staff)}
-                        style={{ background: '#1e4d8c' }}
+                        className="!tw-bg-brand tw-text-white"
                         title="Modifica dati operatore"
                       >
                         <Pencil size={16} />
@@ -945,7 +917,7 @@ function Staff() {
                     )}
                     <button
                       onClick={() => openProfiloPdf(staff)}
-                      style={{ background: '#2563eb' }}
+                      className="!tw-bg-blue-600 tw-text-white"
                       title="Visualizza profilo PDF"
                     >
                       <FileText size={16} />
@@ -953,7 +925,7 @@ function Staff() {
                     </button>
                     <button
                       onClick={() => apriContrattoStaff(staff)}
-                      style={{ background: '#059669' }}
+                      className="!tw-bg-green-600 tw-text-white"
                       title="Visualizza contratto firmato"
                       disabled={loadingContratto === staff._id}
                     >
@@ -962,7 +934,7 @@ function Staff() {
                     </button>
                     <button
                       onClick={() => openDocumentsModal(staff)}
-                      style={{ background: 'var(--info)' }}
+                      className="!tw-bg-sky-600 tw-text-white"
                     >
                       <FileText size={16} />
                       Documenti
@@ -970,7 +942,7 @@ function Staff() {
                     {staff.active && canEdit && (
                       <button
                         onClick={() => openDimissioniModal(staff)}
-                        style={{ background: 'var(--warning)' }}
+                        className="!tw-bg-amber-600 tw-text-white"
                       >
                         <LogOut size={16} />
                         Dimetti
@@ -979,7 +951,7 @@ function Staff() {
                     {!staff.active && canEdit && (
                       <button
                         onClick={() => riattivaStaff(staff._id)}
-                        style={{ background: 'var(--success)' }}
+                        className="!tw-bg-green-600 tw-text-white"
                       >
                         <CheckCircle size={16} />
                         Riattiva
@@ -988,7 +960,7 @@ function Staff() {
                     {canEdit && (
                       <button
                         onClick={() => deleteStaff(staff._id)}
-                        style={{ background: 'var(--danger)' }}
+                        className="!tw-bg-red-600 tw-text-white"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -1002,14 +974,14 @@ function Staff() {
       </div>
 
       <Modal isOpen={Boolean(staffInModifica)} onClose={() => setStaffInModifica(null)} title="Modifica dati operatore" size="lg">
-        {staffInModifica && <form onSubmit={salvaModificaStaff} style={{ display: 'grid', gap: '14px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        {staffInModifica && <form onSubmit={salvaModificaStaff} className="tw-grid tw-gap-3.5">
+          <div className="tw-grid tw-grid-cols-2 tw-gap-3">
             <label>Nome *<input required value={modificaForm.firstName} onChange={e => setModificaForm(f => ({ ...f, firstName: e.target.value }))} /></label>
             <label>Cognome *<input required value={modificaForm.lastName} onChange={e => setModificaForm(f => ({ ...f, lastName: e.target.value }))} /></label>
           </div>
           <label>Email di accesso *<input type="email" required value={modificaForm.email} onChange={e => setModificaForm(f => ({ ...f, email: e.target.value }))} /></label>
           <label>Telefono<input type="tel" value={modificaForm.phone} onChange={e => setModificaForm(f => ({ ...f, phone: e.target.value }))} /></label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="tw-grid tw-grid-cols-2 tw-gap-3">
             <label>Categoria<select value={modificaForm.category} onChange={e => setModificaForm(f => ({ ...f, category: e.target.value as StaffMember['category'], role: rolesByCategory[e.target.value]?.includes(f.role) ? f.role : '' }))}>{categories.filter(c => !['privato','osa','assistente-familiare','badante'].includes(c.value) || modificaForm.modalitaAbilitata !== 'convenzione').map(category => <option key={category.value} value={category.value}>{category.label}</option>)}</select></label>
             <label>Ruolo *<select required value={modificaForm.role} onChange={e => setModificaForm(f => ({ ...f, role: e.target.value }))}><option value="">Seleziona ruolo</option>{rolesByCategory[modificaForm.category].map(role => <option key={role} value={role}>{role}</option>)}</select></label>
           </div>
@@ -1022,35 +994,28 @@ function Staff() {
               return next;
             })}><option value="entrambi">Entrambi</option><option value="privato">Solo privati</option><option value="convenzione">Solo SIAT</option></select></label>
           <label>Note<textarea value={modificaForm.note} onChange={e => setModificaForm(f => ({ ...f, note: e.target.value }))} rows={3} /></label>
-          <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>La modifica dell’email aggiorna anche l’account di accesso dell’operatore.</p>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}><Button type="button" variant="secondary" onClick={() => setStaffInModifica(null)}>Annulla</Button><Button type="submit" disabled={salvataggioModifica}>{salvataggioModifica ? 'Salvataggio...' : 'Salva modifiche'}</Button></div>
+          <p className="tw-m-0 tw-text-slate-500 tw-text-[0.85rem]">La modifica dell’email aggiorna anche l’account di accesso dell’operatore.</p>
+          <div className="tw-flex tw-justify-end tw-gap-2.5"><Button type="button" variant="secondary" onClick={() => setStaffInModifica(null)}>Annulla</Button><Button type="submit" disabled={salvataggioModifica}>{salvataggioModifica ? 'Salvataggio...' : 'Salva modifiche'}</Button></div>
         </form>}
       </Modal>
 
       {/* Documents Modal */}
       {showDocumentsModal && selectedStaff && (
         <div className="modal-overlay" onClick={closeDocumentsModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div className="modal-content tw-max-w-[800px]" onClick={(e) => e.stopPropagation()}>
+            <div className="tw-flex tw-justify-between tw-items-center tw-mb-5">
               <div>
-                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h3 className="tw-m-0 tw-flex tw-items-center tw-gap-2.5">
                   <FileText size={24} />
                   Documenti Staff
                 </h3>
-                <p style={{ margin: '4px 0 0', color: 'var(--gray-500)', fontSize: '0.92rem' }}>
+                <p className="tw-mt-1 tw-mb-0 tw-text-slate-500 tw-text-[0.92rem]">
                   {selectedStaff.firstName} {selectedStaff.lastName} - {selectedStaff.role}
                 </p>
               </div>
               <button
                 onClick={closeDocumentsModal}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '8px',
-                  borderRadius: 'var(--radius-md)',
-                  color: 'var(--gray-500)',
-                }}
+                className="tw-bg-transparent tw-border-0 tw-cursor-pointer tw-p-2 tw-rounded-md tw-text-slate-500"
               >
                 <X size={24} />
               </button>
@@ -1058,19 +1023,13 @@ function Staff() {
 
             {/* Upload Section */}
             {canEdit && (
-              <div style={{
-                marginBottom: '24px',
-                padding: '20px',
-                border: '2px dashed var(--gray-300)',
-                borderRadius: 'var(--radius-lg)',
-                backgroundColor: 'var(--gray-50)',
-              }}>
-                <h4 style={{ margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="tw-mb-6 tw-p-5 tw-border-2 tw-border-dashed tw-border-slate-300 tw-rounded-lg tw-bg-slate-50">
+                <h4 className="tw-m-0 tw-mb-4 tw-flex tw-items-center tw-gap-2">
                   <Upload size={18} />
                   Carica Nuovo Documento
                 </h4>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div className="tw-grid tw-grid-cols-2 tw-gap-4 tw-mb-4">
                   <label>
                     Tipo documento *
                     <select
@@ -1094,7 +1053,7 @@ function Staff() {
                   </label>
                 </div>
 
-                <label style={{ marginBottom: '16px', display: 'block' }}>
+                <label className="tw-block tw-mb-4">
                   Descrizione (opzionale)
                   <textarea
                     value={uploadForm.description}
@@ -1104,22 +1063,22 @@ function Staff() {
                   />
                 </label>
 
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div className="tw-flex tw-gap-3 tw-items-center">
                   <input
                     ref={fileInputRef}
                     type="file"
-                    style={{ display: 'none' }}
+                    className="tw-hidden"
                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                   />
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    style={{ background: 'var(--gray-500)' }}
+                    className="!tw-bg-slate-500 tw-text-white"
                   >
                     Scegli file...
                   </button>
                   {fileInputRef.current?.files?.[0] && (
-                    <span style={{ color: 'var(--gray-600)', fontSize: '0.92rem' }}>
+                    <span className="tw-text-slate-600 tw-text-[0.92rem]">
                       {fileInputRef.current.files[0].name}
                     </span>
                   )}
@@ -1127,11 +1086,7 @@ function Staff() {
                     type="button"
                     onClick={handleUpload}
                     disabled={uploading || !fileInputRef.current?.files?.[0]}
-                    style={{
-                      background: 'var(--success)',
-                      marginLeft: 'auto',
-                      opacity: uploading || !fileInputRef.current?.files?.[0] ? 0.6 : 1,
-                    }}
+                    className="!tw-bg-green-600 tw-text-white tw-ml-auto tw-opacity-100 disabled:tw-opacity-60"
                   >
                     {uploading ? (
                       <>
@@ -1151,67 +1106,42 @@ function Staff() {
 
             {/* Documents List */}
             {documents.length === 0 ? (
-              <p style={{ textAlign: 'center', padding: '32px', color: 'var(--gray-500)' }}>
+              <p className="tw-text-center tw-py-8 tw-text-slate-500">
                 Nessun documento presente.
               </p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="tw-flex tw-flex-col tw-gap-3">
                 {documents.map((doc) => (
                   <div
                     key={doc._id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '16px',
-                      padding: '16px',
-                      border: '1px solid var(--gray-200)',
-                      borderRadius: 'var(--radius-lg)',
-                      backgroundColor: 'white',
-                    }}
+                    className="tw-flex tw-items-center tw-gap-4 tw-p-4 tw-border tw-border-slate-200 tw-rounded-lg tw-bg-white"
                   >
-                    <div style={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: 'var(--info-bg)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}>
+                    <div className="tw-w-12 tw-h-12 tw-rounded-md tw-bg-sky-50 tw-flex tw-items-center tw-justify-center tw-flex-shrink-0">
                       <FileText size={24} color="var(--info)" />
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <span style={{
-                          fontSize: '0.75rem',
-                          padding: '2px 8px',
-                          backgroundColor: 'var(--info-bg)',
-                          color: 'var(--info)',
-                          borderRadius: 'var(--radius-full)',
-                          fontWeight: 600,
-                          whiteSpace: 'nowrap',
-                        }}>
+                    <div className="tw-flex-1 tw-min-w-0">
+                      <div className="tw-flex tw-items-center tw-gap-2 tw-mb-1">
+                        <span className="tw-text-[0.75rem] tw-px-2 tw-py-0.5 tw-bg-sky-50 tw-text-sky-600 tw-rounded-full tw-font-semibold tw-whitespace-nowrap">
                           {documentTypes.find(dt => dt.value === doc.documentType)?.label || doc.documentType}
                         </span>
-                        <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <strong className="tw-truncate">
                           {doc.title}
                         </strong>
                       </div>
                       {doc.description && (
-                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--gray-500)', marginBottom: '4px' }}>
+                        <p className="tw-m-0 tw-mb-1 tw-text-[0.85rem] tw-text-slate-500">
                           {doc.description}
                         </p>
                       )}
-                      <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--gray-400)' }}>
+                      <p className="tw-m-0 tw-text-[0.8rem] tw-text-slate-400">
                         {formatDate(doc.createdAt)}
                       </p>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                    <div className="tw-flex tw-gap-2 tw-flex-shrink-0">
                       <button
                         type="button"
                         onClick={() => downloadDocument(doc._id, doc.fileName)}
-                        style={{ background: 'var(--success)', padding: '8px 12px' }}
+                        className="!tw-bg-green-600 tw-text-white tw-px-3 tw-py-2"
                       >
                         <Download size={16} />
                         Scarica
@@ -1219,7 +1149,7 @@ function Staff() {
                       <button
                         type="button"
                         onClick={() => previewDocument(doc._id)}
-                        style={{ background: 'var(--secondary)', padding: '8px 12px' }}
+                        className="!tw-bg-cyan-600 tw-text-white tw-px-3 tw-py-2"
                       >
                         <Eye size={16} />
                         Anteprima
@@ -1228,7 +1158,7 @@ function Staff() {
                         <button
                           type="button"
                           onClick={() => deleteDocument(doc._id)}
-                          style={{ background: 'var(--danger)', padding: '8px 12px' }}
+                          className="!tw-bg-red-600 tw-text-white tw-px-3 tw-py-2"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -1245,64 +1175,57 @@ function Staff() {
       {/* Dimissioni Modal */}
       {showDimissioniModal && dimissioniStaff && (
         <div className="modal-overlay" onClick={closeDimissioniModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="modal-content tw-max-w-[500px]" onClick={(e) => e.stopPropagation()}>
+            <div className="tw-flex tw-justify-between tw-items-center tw-mb-5">
+              <h3 className="tw-m-0 tw-flex tw-items-center tw-gap-2.5">
                 <LogOut size={24} />
                 Registra Dimissione
               </h3>
               <button
                 onClick={closeDimissioniModal}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '8px',
-                  borderRadius: 'var(--radius-md)',
-                  color: 'var(--gray-500)',
-                }}
+                className="tw-bg-transparent tw-border-0 tw-cursor-pointer tw-p-2 tw-rounded-md tw-text-slate-500"
               >
                 <X size={24} />
               </button>
             </div>
 
-            <p style={{ marginBottom: '20px', color: 'var(--gray-600)' }}>
+            <p className="tw-mb-5 tw-text-slate-600">
               Stai registrando la dimissione di <strong>{dimissioniStaff.firstName} {dimissioniStaff.lastName}</strong>
             </p>
 
-            <label style={{ display: 'block', marginBottom: '16px' }}>
+            <label className="tw-block tw-mb-4">
               Data fine collaborazione *
               <input
                 type="date"
                 value={dimissioniForm.dataFine}
                 onChange={(e) => setDimissioniForm({ ...dimissioniForm, dataFine: e.target.value })}
-                style={{ width: '100%' }}
+                className="tw-w-full"
               />
             </label>
 
-            <label style={{ display: 'block', marginBottom: '20px' }}>
+            <label className="tw-block tw-mb-5">
               Motivazione (opzionale)
               <textarea
                 value={dimissioniForm.motivazione}
                 onChange={(e) => setDimissioniForm({ ...dimissioniForm, motivazione: e.target.value })}
                 placeholder="Es. Dimissioni volontarie, fine contratto..."
                 rows={3}
-                style={{ width: '100%' }}
+                className="tw-w-full"
               />
             </label>
 
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <div className="tw-flex tw-justify-end tw-gap-3">
               <button
                 type="button"
                 onClick={closeDimissioniModal}
-                style={{ background: 'var(--gray-500)' }}
+                className="!tw-bg-slate-500 tw-text-white"
               >
                 Annulla
               </button>
               <button
                 type="button"
                 onClick={confermaDimissioni}
-                style={{ background: 'var(--warning)' }}
+                className="!tw-bg-amber-600 tw-text-white"
               >
                 Conferma Dimissione
               </button>
