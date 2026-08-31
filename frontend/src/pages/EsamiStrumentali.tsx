@@ -29,6 +29,7 @@ import { Alert } from '../components/ui/Alert';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { DictationMicButton } from '../components/DictationMicButton';
+import FirmaCanvas from '../components/FirmaCanvas';
 
 // ─── Tipi esame disponibili ───────────────────────────────────────────────────
 const TIPI_ESAME = [
@@ -56,6 +57,7 @@ interface DiariaVoce {
   testo: string;
   firmato?: boolean;
   dataFirma?: string;
+  firma?: string;
 }
 
 interface Referto {
@@ -64,6 +66,7 @@ interface Referto {
   dataReferto?: string;
   firmato?: boolean;
   dataFirma?: string;
+  firma?: string;
   nomeFile?: string;
   urlCloudinary?: string;
 }
@@ -100,6 +103,8 @@ interface EsameItem {
   dataEsecuzione?: string;
   eseguitoDa?: string;
   firmaEsecuzione?: string;
+  medicoEsecuzione?: string;
+  firmaMedicoEsecuzione?: string;
 }
 
 // ─── Colori status ────────────────────────────────────────────────────────────
@@ -156,6 +161,8 @@ export default function EsamiStrumentali() {
   const [dataDiaria, setDataDiaria] = useState('');
   const [savingDiaria, setSavingDiaria] = useState(false);
   const [generatingAiDiaria, setGeneratingAiDiaria] = useState(false);
+  const [firmaDiariaTemp, setFirmaDiariaTemp] = useState('');
+  const [mostraFirmaDiaria, setMostraFirmaDiaria] = useState<string | null>(null);
 
   // Referto
   const [testoReferto, setTestoReferto] = useState('');
@@ -164,14 +171,22 @@ export default function EsamiStrumentali() {
   const [generatingAiReferto, setGeneratingAiReferto] = useState(false);
   const refertoFileRef = useRef<HTMLInputElement>(null);
   const [uploadingRefertoFile, setUploadingRefertoFile] = useState(false);
+  const [mostraFirmaReferto, setMostraFirmaReferto] = useState(false);
+  const [firmaRefertoTemp, setFirmaRefertoTemp] = useState('');
+  const [salvandoFirmaReferto, setSalvandoFirmaReferto] = useState(false);
 
   // Allegati
   const allegatoFileRef = useRef<HTMLInputElement>(null);
   const [descrizioneAllegato, setDescrizioneAllegato] = useState('');
   const [uploadingAllegato, setUploadingAllegato] = useState(false);
 
-  // Segna eseguito
+  // Segna eseguito (con firma operatore + eventuale medico)
   const [segnandoEseguito, setSegnandoEseguito] = useState(false);
+  const [mostraFirmaEsecuzione, setMostraFirmaEsecuzione] = useState(false);
+  const [firmaEsecOperatore, setFirmaEsecOperatore] = useState('');
+  const [medicoPresente, setMedicoPresente] = useState(false);
+  const [nomeMedicoEsec, setNomeMedicoEsec] = useState('');
+  const [firmaEsecMedico, setFirmaEsecMedico] = useState('');
 
   // PDF
   const [loadingPdf, setLoadingPdf] = useState(false);
@@ -254,8 +269,17 @@ export default function EsamiStrumentali() {
     setShowAllegati(true);
     setNuovaDiaria('');
     setDataDiaria('');
+    setFirmaDiariaTemp('');
+    setMostraFirmaDiaria(null);
     setTestoReferto(esame.referto?.testoReferto || '');
     setEditingReferto(false);
+    setMostraFirmaReferto(false);
+    setFirmaRefertoTemp('');
+    setMostraFirmaEsecuzione(false);
+    setFirmaEsecOperatore('');
+    setMedicoPresente(false);
+    setNomeMedicoEsec('');
+    setFirmaEsecMedico('');
     // Ricarica dati freschi
     try {
       const res = await api.get(`/esami-strumentali/${esame._id}`);
@@ -288,9 +312,12 @@ export default function EsamiStrumentali() {
       await api.post(`/esami-strumentali/${selectedEsame._id}/diaria`, {
         testo: nuovaDiaria.trim(),
         data: dataDiaria || undefined,
+        firma: firmaDiariaTemp || undefined,
       });
       setNuovaDiaria('');
       setDataDiaria('');
+      setFirmaDiariaTemp('');
+      setMostraFirmaDiaria(null);
       await refreshEsame();
       setSuccess('✅ Voce di diaria aggiunta!');
       setTimeout(() => setSuccess(''), 2000);
@@ -302,11 +329,15 @@ export default function EsamiStrumentali() {
     }
   };
 
-  // ─── Firma voce diaria ──────────────────────────────────────────────────────
-  const firmaDiaria = async (diariaId: string) => {
+  // ─── Firma voce diaria esistente (con FirmaCanvas) ───────────────────────────
+  const firmaDiaria = async (diariaId: string, firma?: string) => {
     if (!selectedEsame) return;
     try {
-      await api.patch(`/esami-strumentali/${selectedEsame._id}/diaria/${diariaId}/firma`);
+      await api.patch(`/esami-strumentali/${selectedEsame._id}/diaria/${diariaId}/firma`, {
+        firma: firma || undefined,
+      });
+      setMostraFirmaDiaria(null);
+      setFirmaDiariaTemp('');
       await refreshEsame();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Errore nella firma.');
@@ -384,15 +415,24 @@ export default function EsamiStrumentali() {
 
   // ─── Firma referto ──────────────────────────────────────────────────────────
   const firmaReferto = async () => {
-    if (!selectedEsame || !confirm('Firmare il referto? L\'operazione non è reversibile.')) return;
+    if (!selectedEsame || !firmaRefertoTemp) {
+      setError('Disegna la firma del medico prima di confermare.');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+    setSalvandoFirmaReferto(true);
     try {
-      await api.patch(`/esami-strumentali/${selectedEsame._id}/referto/firma`);
+      await api.patch(`/esami-strumentali/${selectedEsame._id}/referto/firma`, { firma: firmaRefertoTemp });
+      setMostraFirmaReferto(false);
+      setFirmaRefertoTemp('');
       await refreshEsame();
       setSuccess('✅ Referto firmato!');
       setTimeout(() => setSuccess(''), 2000);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Errore nella firma del referto.');
       setTimeout(() => setError(''), 3000);
+    } finally {
+      setSalvandoFirmaReferto(false);
     }
   };
 
@@ -457,10 +497,23 @@ export default function EsamiStrumentali() {
   // ─── Segna eseguito / Firma esecuzione ─────────────────────────────────────
   const segnaEseguito = async () => {
     if (!selectedEsame) return;
-    if (!confirm('Confermare e firmare l\'esame come ESEGUITO? L\'operazione registrerà data, ora e operatore.')) return;
+    if (!firmaEsecOperatore) {
+      setError('È obbligatorio disegnare la firma dell\'operatore prima di confermare.');
+      setTimeout(() => setError(''), 4000);
+      return;
+    }
     setSegnandoEseguito(true);
     try {
-      await api.patch(`/esami-strumentali/${selectedEsame._id}/segna-eseguito`);
+      await api.patch(`/esami-strumentali/${selectedEsame._id}/segna-eseguito`, {
+        firmaOperatore: firmaEsecOperatore,
+        firmaMedico: medicoPresente ? firmaEsecMedico : undefined,
+        nomeMedico: medicoPresente ? nomeMedicoEsec : undefined,
+      });
+      setMostraFirmaEsecuzione(false);
+      setFirmaEsecOperatore('');
+      setFirmaEsecMedico('');
+      setNomeMedicoEsec('');
+      setMedicoPresente(false);
       await refreshEsame();
       await loadData();
       setSuccess('✅ Esame segnato come eseguito e firmato!');
@@ -1003,26 +1056,66 @@ export default function EsamiStrumentali() {
                 </div>
               )}
 
-              {/* ── PULSANTE SEGNA ESEGUITO ── */}
+              {/* ── PANEL FIRMA ESECUZIONE ── */}
               {!selectedEsame.archiviato && selectedEsame.status === 'pianificato' && (
-                <div style={{ background: 'rgba(5,150,105,0.06)', border: '2px solid #059669', borderRadius: '10px', padding: '16px 20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                  <div>
-                    <div style={{ fontWeight: '700', color: '#065f46', fontSize: '1rem', marginBottom: '4px' }}>
-                      ✅ Conferma esecuzione esame
-                    </div>
-                    <div style={{ fontSize: '0.85rem', color: '#374151' }}>
-                      Clicca per segnare l'esame come <strong>ESEGUITO</strong> e firmare digitalmente con data e ora.
-                    </div>
+                <div style={{ background: 'rgba(5,150,105,0.06)', border: '2px solid #059669', borderRadius: '10px', padding: '16px 20px', marginBottom: '20px' }}>
+                  <div style={{ fontWeight: '700', color: '#065f46', fontSize: '1rem', marginBottom: '10px' }}>
+                    ✅ Conferma esecuzione esame
                   </div>
-                  <button
-                    type="button"
-                    onClick={segnaEseguito}
-                    disabled={segnandoEseguito}
-                    style={{ background: '#059669', padding: '12px 24px', fontSize: '1rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: '8px', whiteSpace: 'nowrap', minWidth: '200px', justifyContent: 'center' }}
-                  >
-                    <CheckCircle size={20} />
-                    {segnandoEseguito ? '⏳ Registrazione...' : '✅ Segna Eseguito / Firma'}
-                  </button>
+                  <div style={{ fontSize: '0.85rem', color: '#374151', marginBottom: '12px' }}>
+                    Disegna la firma con dito o penna per segnare l'esame come <strong>ESEGUITO</strong>.
+                  </div>
+                  {!mostraFirmaEsecuzione ? (
+                    <button
+                      type="button"
+                      onClick={() => setMostraFirmaEsecuzione(true)}
+                      style={{ background: '#059669', color: 'white', padding: '10px 18px', fontSize: '0.9rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}
+                    >
+                      <CheckCircle size={18} /> Procedi con le firme
+                    </button>
+                  ) : (
+                    <div>
+                      <FirmaCanvas
+                        label="✍️ Firma operatore"
+                        sublabel="Firma di chi esegue l'esame"
+                        onFirmaCompleta={setFirmaEsecOperatore}
+                        onCancella={() => setFirmaEsecOperatore('')}
+                        altezza={150}
+                      />
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 0', fontSize: '0.9rem', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={medicoPresente} onChange={e => setMedicoPresente(e.target.checked)} />
+                        È presente anche un medico che deve controfirmare?
+                      </label>
+                      {medicoPresente && (
+                        <>
+                          <label style={{ display: 'block', marginBottom: '10px' }}>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Nome e cognome medico</span>
+                            <input value={nomeMedicoEsec} onChange={e => setNomeMedicoEsec(e.target.value)} placeholder="Dr. ..." style={{ display: 'block', width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px', marginTop: '4px' }} />
+                          </label>
+                          <FirmaCanvas
+                            label="✍️ Firma medico"
+                            sublabel="Controfirma del medico in sede di esecuzione"
+                            onFirmaCompleta={setFirmaEsecMedico}
+                            onCancella={() => setFirmaEsecMedico('')}
+                            altezza={150}
+                          />
+                        </>
+                      )}
+                      <div style={{ display: 'flex', gap: '10px', marginTop: '14px' }}>
+                        <button type="button" onClick={() => { setMostraFirmaEsecuzione(false); setFirmaEsecOperatore(''); setFirmaEsecMedico(''); setMedicoPresente(false); }} style={{ background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '8px', padding: '10px 16px', cursor: 'pointer' }}>
+                          Annulla
+                        </button>
+                        <button
+                          type="button"
+                          onClick={segnaEseguito}
+                          disabled={!firmaEsecOperatore || segnandoEseguito}
+                          style={{ background: !firmaEsecOperatore ? '#d1fae5' : '#059669', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 24px', cursor: !firmaEsecOperatore ? 'not-allowed' : 'pointer', fontWeight: 700 }}
+                        >
+                          {segnandoEseguito ? '...' : <><CheckCircle size={18} /> Conferma Eseguito</>}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1084,24 +1177,53 @@ export default function EsamiStrumentali() {
                           style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.88rem', resize: 'vertical', fontFamily: 'inherit' }}
                         />
                         <DictationMicButton onTranscribed={t => setNuovaDiaria(prev => (prev.trim() ? `${prev.trim()} ${t}` : t))} />
-                        <button
-                          type="button"
-                          onClick={generaAiDiaria}
-                          disabled={generatingAiDiaria || !nuovaDiaria.trim()}
-                          style={{ marginTop: '8px', background: '#0d9488', color: 'white', padding: '8px 16px', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '6px', border: 'none', borderRadius: '6px', cursor: 'pointer', opacity: !nuovaDiaria.trim() ? 0.5 : 1 }}
-                        >
-                          <Wand2 size={15} />
-                          {generatingAiDiaria ? 'Generazione...' : 'Riformula con AI'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={aggiungiDiaria}
-                          disabled={savingDiaria || !nuovaDiaria.trim()}
-                          style={{ marginTop: '8px', background: '#1e4d8c', padding: '8px 16px', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '6px', opacity: !nuovaDiaria.trim() ? 0.5 : 1 }}
-                        >
-                          <Plus size={15} />
-                          {savingDiaria ? 'Salvataggio...' : 'Aggiungi voce'}
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={generaAiDiaria}
+                            disabled={generatingAiDiaria || !nuovaDiaria.trim()}
+                            style={{ background: '#0d9488', color: 'white', padding: '8px 16px', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '6px', border: 'none', borderRadius: '6px', cursor: 'pointer', opacity: !nuovaDiaria.trim() ? 0.5 : 1 }}
+                          >
+                            <Wand2 size={15} />
+                            {generatingAiDiaria ? 'Generazione...' : 'Riformula con AI'}
+                          </button>
+                          {mostraFirmaDiaria !== 'nuova' ? (
+                            <button
+                              type="button"
+                              onClick={() => { setMostraFirmaDiaria('nuova'); setFirmaDiariaTemp(''); }}
+                              style={{ background: '#f0fdf4', border: '1px solid #059669', color: '#065f46', padding: '8px 14px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '6px', cursor: 'pointer' }}
+                            >
+                              <PenLine size={15} /> Firma voce
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setMostraFirmaDiaria(null)}
+                              style={{ background: '#fee2e2', border: '1px solid #ef4444', color: '#991b1b', padding: '8px 14px', fontSize: '0.85rem', borderRadius: '6px', cursor: 'pointer' }}
+                            >
+                              Annulla firma
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={aggiungiDiaria}
+                            disabled={savingDiaria || !nuovaDiaria.trim()}
+                            style={{ background: '#1e4d8c', color: 'white', padding: '8px 16px', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '6px', border: 'none', borderRadius: '6px', opacity: !nuovaDiaria.trim() ? 0.5 : 1 }}
+                          >
+                            <Plus size={15} />
+                            {savingDiaria ? 'Salvataggio...' : 'Aggiungi voce'}
+                          </button>
+                        </div>
+                        {mostraFirmaDiaria === 'nuova' && (
+                          <div style={{ marginTop: '12px' }}>
+                            <FirmaCanvas
+                              label="✍️ Firma autore voce diaria"
+                              onFirmaCompleta={setFirmaDiariaTemp}
+                              onCancella={() => setFirmaDiariaTemp('')}
+                              altezza={130}
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -1151,6 +1273,29 @@ export default function EsamiStrumentali() {
                               </div>
                             </div>
                             <p style={{ margin: 0, fontSize: '0.88rem', color: '#374151', whiteSpace: 'pre-wrap' }}>{voce.testo}</p>
+                            {mostraFirmaDiaria === voce._id && (
+                              <div style={{ marginTop: '12px', padding: '12px', background: 'white', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                                <FirmaCanvas
+                                  label="✍️ Firma voce diaria"
+                                  onFirmaCompleta={setFirmaDiariaTemp}
+                                  onCancella={() => setFirmaDiariaTemp('')}
+                                  altezza={130}
+                                />
+                                <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                                  <button type="button" onClick={() => { setMostraFirmaDiaria(null); setFirmaDiariaTemp(''); }} style={{ background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '6px', padding: '8px 14px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                    Annulla
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => firmaDiaria(voce._id, firmaDiariaTemp)}
+                                    disabled={!firmaDiariaTemp}
+                                    style={{ background: firmaDiariaTemp ? '#059669' : '#d1fae5', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 16px', cursor: firmaDiariaTemp ? 'pointer' : 'not-allowed', fontSize: '0.85rem', fontWeight: 600 }}
+                                  >
+                                    <CheckCircle size={14} /> Conferma firma
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -1280,13 +1425,23 @@ export default function EsamiStrumentali() {
                               </span>
                             ) : (
                               puoRefertare && (
-                                <button
-                                  type="button"
-                                  onClick={firmaReferto}
-                                  style={{ background: '#059669', padding: '5px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                >
-                                  <CheckCircle size={13} /> Firma referto
-                                </button>
+                                mostraFirmaReferto ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => { setMostraFirmaReferto(false); setFirmaRefertoTemp(''); }}
+                                    style={{ background: '#fee2e2', border: '1px solid #ef4444', color: '#991b1b', padding: '5px 12px', fontSize: '0.8rem', borderRadius: '6px' }}
+                                  >
+                                    Annulla
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => setMostraFirmaReferto(true)}
+                                    style={{ background: '#059669', padding: '5px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                  >
+                                    <CheckCircle size={13} /> Firma referto
+                                  </button>
+                                )
                               )
                             )}
                           </div>
@@ -1294,6 +1449,39 @@ export default function EsamiStrumentali() {
                         <p style={{ margin: 0, fontSize: '0.9rem', color: '#1e3a5f', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
                           {selectedEsame.referto.testoReferto}
                         </p>
+                        {mostraFirmaReferto && puoRefertare && (
+                          <div style={{ marginTop: '14px', padding: '12px', background: 'white', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                            <FirmaCanvas
+                              label="✍️ Firma medico refertante"
+                              onFirmaCompleta={setFirmaRefertoTemp}
+                              onCancella={() => setFirmaRefertoTemp('')}
+                              altezza={150}
+                            />
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                              <button
+                                type="button"
+                                onClick={() => { setMostraFirmaReferto(false); setFirmaRefertoTemp(''); }}
+                                style={{ background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer', fontSize: '0.88rem' }}
+                              >
+                                Annulla
+                              </button>
+                              <button
+                                type="button"
+                                onClick={firmaReferto}
+                                disabled={!firmaRefertoTemp || salvandoFirmaReferto}
+                                style={{ background: firmaRefertoTemp ? '#059669' : '#d1fae5', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 18px', cursor: firmaRefertoTemp ? 'pointer' : 'not-allowed', fontWeight: 600 }}
+                              >
+                                {salvandoFirmaReferto ? '...' : <><CheckCircle size={15} /> Conferma firma</>}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {selectedEsame.referto.firma && !mostraFirmaReferto && (
+                          <div style={{ marginTop: '12px', padding: '12px', background: '#f0fdf4', border: '1px solid #059669', borderRadius: '6px' }}>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#065f46', marginBottom: '6px' }}>✍️ Firma del medico</div>
+                            <img src={selectedEsame.referto.firma} alt="Firma referto" style={{ maxHeight: '120px', border: '1px solid #d1d5db', borderRadius: '4px', background: 'white' }} />
+                          </div>
+                        )}
                         {/* File referto allegato */}
                         {selectedEsame.referto.nomeFile && (
                           <div style={{ marginTop: '12px', padding: '8px 12px', backgroundColor: '#dbeafe', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

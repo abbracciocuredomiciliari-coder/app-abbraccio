@@ -10,6 +10,7 @@ export interface IDiariaEsame {
   testo: string;           // descrizione di quanto eseguito
   firmato?: boolean;
   dataFirma?: Date;
+  firma?: string;          // firma grafometrica (immagine base64)
 }
 
 // ─── Referto medico ──────────────────────────────────────────────────────────
@@ -20,6 +21,7 @@ export interface IRefertoEsame {
   dataReferto?: Date;
   firmato?: boolean;
   dataFirma?: Date;
+  firma?: string;               // firma grafometrica del medico (immagine base64)
   // File allegato del referto
   nomeFile?: string;
   nomeFileServer?: string;
@@ -69,6 +71,10 @@ export interface IEsameStrumentale extends Document {
   dataEsecuzione?: Date;
   eseguitoDa?: string;
   eseguitoDaId?: Types.ObjectId;
+  firmaEsecuzione?: string;        // firma grafometrica dell'operatore
+  medicoEsecuzione?: string;       // nome medico presente in fase di esecuzione (opzionale)
+  medicoEsecuzioneId?: Types.ObjectId;
+  firmaMedicoEsecuzione?: string;  // firma grafometrica del medico presente in fase di esecuzione
 
   // Archiviazione
   archiviato?: boolean;
@@ -86,6 +92,7 @@ const diariaSchema = new Schema<IDiariaEsame>(
     testo: { type: String, required: true, trim: true },
     firmato: { type: Boolean, default: false },
     dataFirma: { type: Date },
+    firma: { type: String },
   },
   { _id: true }
 );
@@ -98,6 +105,7 @@ const refertoSchema = new Schema<IRefertoEsame>(
     dataReferto: { type: Date },
     firmato: { type: Boolean, default: false },
     dataFirma: { type: Date },
+    firma: { type: String },
     nomeFile: { type: String },
     nomeFileServer: { type: String },
     mimeType: { type: String },
@@ -144,6 +152,10 @@ const esameStrumentaleSchema = new Schema<IEsameStrumentale>(
     dataEsecuzione: { type: Date },
     eseguitoDa: { type: String },
     eseguitoDaId: { type: Schema.Types.ObjectId },
+    firmaEsecuzione: { type: String },
+    medicoEsecuzione: { type: String },
+    medicoEsecuzioneId: { type: Schema.Types.ObjectId },
+    firmaMedicoEsecuzione: { type: String },
     archiviato: { type: Boolean, default: false },
     dataArchiviazione: { type: Date },
     archiviatoDa: { type: String },

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { DictationMicButton } from '../components/DictationMicButton';
+import FirmaCanvas from '../components/FirmaCanvas';
 
 // ─── Interfacce ───────────────────────────────────────────────────────────────
 interface Paziente {
@@ -34,6 +35,7 @@ interface DiariaEntry {
   data: string;
   firmato: boolean;
   dataFirma?: string;
+  firma?: string;
 }
 
 interface Prelievo {
@@ -112,6 +114,16 @@ export default function PianificazionePrelievi() {
   const [salvandoDiaria, setSalvandoDiaria] = useState(false);
   const [generatingAiDiaria, setGeneratingAiDiaria] = useState(false);
   const [diariaEspansa, setDiariaEspansa] = useState(false);
+
+  // Firme touch
+  const [firmaDiariaTemp, setFirmaDiariaTemp] = useState('');
+  const [mostraFirmaDiaria, setMostraFirmaDiaria] = useState<string | null>(null);
+  const [mostraFirmaEsecuzione, setMostraFirmaEsecuzione] = useState(false);
+  const [firmaOperatoreTemp, setFirmaOperatoreTemp] = useState('');
+  const [firmaPazienteTemp, setFirmaPazienteTemp] = useState('');
+  const [nomeFirmatario, setNomeFirmatario] = useState('');
+  const [ruoloFirmatario, setRuoloFirmatario] = useState<'paziente' | 'caregiver'>('paziente');
+  const [registrandoEsecuzione, setRegistrandoEsecuzione] = useState(false);
 
   // ─── Caricamento dati ──────────────────────────────────────────────────────
   const caricaPrelievi = async () => {
@@ -197,13 +209,61 @@ export default function PianificazionePrelievi() {
     if (!prelievoAperto || !testoDiaria.trim()) return;
     setSalvandoDiaria(true);
     try {
-      await api.post(`/prelievi/${prelievoAperto._id}/diaria`, { testo: testoDiaria });
+      await api.post(`/prelievi/${prelievoAperto._id}/diaria`, {
+        testo: testoDiaria,
+        firma: firmaDiariaTemp || undefined,
+      });
       setTestoDiaria('');
+      setFirmaDiariaTemp('');
+      setMostraFirmaDiaria(null);
       const res = await api.get(`/prelievi/${prelievoAperto._id}`);
       setPrelievoAperto(res.data);
       await caricaPrelievi();
     } catch { /* noop */ }
     setSalvandoDiaria(false);
+  };
+
+  // ─── Registra esecuzione prelievo con firme ──────────────────────────────────
+  const registraEsecuzione = async () => {
+    if (!prelievoAperto) return;
+    if (!firmaOperatoreTemp) {
+      alert('Disegna la firma dell\'operatore prima di confermare.');
+      return;
+    }
+    setRegistrandoEsecuzione(true);
+    try {
+      await api.post(`/prelievi/${prelievoAperto._id}/esegui`, {
+        firmaOperatore: firmaOperatoreTemp,
+        firmaPaziente: firmaPazienteTemp || undefined,
+        nomeFirmatarioPaziente: nomeFirmatario || undefined,
+        ruoloFirmatario,
+      });
+      const res = await api.get(`/prelievi/${prelievoAperto._id}`);
+      setPrelievoAperto(res.data);
+      setMostraFirmaEsecuzione(false);
+      setFirmaOperatoreTemp('');
+      setFirmaPazienteTemp('');
+      setNomeFirmatario('');
+      setRuoloFirmatario('paziente');
+      await caricaPrelievi();
+    } catch {
+      alert('Errore nella registrazione dell\'esecuzione.');
+    } finally {
+      setRegistrandoEsecuzione(false);
+    }
+  };
+
+  // ─── Firma voce diaria esistente ────────────────────────────────────────────
+  const firmaVoceDiaria = async (diariaId: string, firma?: string) => {
+    if (!prelievoAperto) return;
+    try {
+      await api.post(`/prelievi/${prelievoAperto._id}/diaria/${diariaId}/firma`, { firma: firma || undefined });
+      setMostraFirmaDiaria(null);
+      setFirmaDiariaTemp('');
+      const res = await api.get(`/prelievi/${prelievoAperto._id}`);
+      setPrelievoAperto(res.data);
+      await caricaPrelievi();
+    } catch { /* noop */ }
   };
 
   const generaAiDiaria = async () => {
@@ -559,7 +619,16 @@ export default function PianificazionePrelievi() {
                   overflow: 'hidden',
                 }}>
                   <div
-                    onClick={() => setPrelievoAperto(prelievoAperto?._id === p._id ? null : p)}
+                    onClick={() => {
+                      setPrelievoAperto(prelievoAperto?._id === p._id ? null : p);
+                      setMostraFirmaDiaria(null);
+                      setFirmaDiariaTemp('');
+                      setMostraFirmaEsecuzione(false);
+                      setFirmaOperatoreTemp('');
+                      setFirmaPazienteTemp('');
+                      setNomeFirmatario('');
+                      setRuoloFirmatario('paziente');
+                    }}
                     style={{ padding: '14px 16px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}
                   >
                     <div style={{ flex: 1 }}>
@@ -602,6 +671,79 @@ export default function PianificazionePrelievi() {
                           {p.noteEsecuzione && <div style={{ marginTop: '4px', color: '#374151' }}>{p.noteEsecuzione}</div>}
                         </div>
                       )}
+
+                      {/* Registrazione esecuzione con firme */}
+                      {p.status === 'pianificato' && (
+                        <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '12px', marginBottom: '12px' }}>
+                          {!mostraFirmaEsecuzione ? (
+                            <button
+                              type="button"
+                              onClick={() => setMostraFirmaEsecuzione(true)}
+                              style={{ background: '#059669', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 16px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                            >
+                              <CheckCircle size={16} /> Registra esecuzione
+                            </button>
+                          ) : (
+                            <div>
+                              <div style={{ fontWeight: 700, color: '#065f46', fontSize: '0.95rem', marginBottom: '10px' }}>✅ Firma esecuzione prelievo</div>
+                              <FirmaCanvas
+                                label="✍️ Firma operatore"
+                                sublabel="Dichiara di aver eseguito il prelievo"
+                                onFirmaCompleta={setFirmaOperatoreTemp}
+                                onCancella={() => setFirmaOperatoreTemp('')}
+                                altezza={130}
+                              />
+                              <div style={{ margin: '14px 0', padding: '10px', background: 'white', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
+                                  Nome e cognome firmatario (paziente/caregiver)
+                                  <input
+                                    type="text"
+                                    value={nomeFirmatario}
+                                    onChange={e => setNomeFirmatario(e.target.value)}
+                                    placeholder="es. Mario Rossi"
+                                    style={{ display: 'block', width: '100%', marginTop: '4px', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                                  />
+                                </label>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '8px' }}>
+                                  Ruolo
+                                  <select
+                                    value={ruoloFirmatario}
+                                    onChange={e => setRuoloFirmatario(e.target.value as 'paziente' | 'caregiver')}
+                                    style={{ display: 'block', width: '100%', marginTop: '4px', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                                  >
+                                    <option value="paziente">Paziente</option>
+                                    <option value="caregiver">Caregiver / Familiare</option>
+                                  </select>
+                                </label>
+                                <FirmaCanvas
+                                  label="👤 Controfirma paziente/caregiver (opzionale)"
+                                  sublabel="Lascia vuoto se non richiesta"
+                                  onFirmaCompleta={setFirmaPazienteTemp}
+                                  onCancella={() => setFirmaPazienteTemp('')}
+                                  altezza={130}
+                                />
+                              </div>
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => { setMostraFirmaEsecuzione(false); setFirmaOperatoreTemp(''); setFirmaPazienteTemp(''); setNomeFirmatario(''); setRuoloFirmatario('paziente'); }}
+                                  style={{ background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '6px', padding: '8px 14px', cursor: 'pointer' }}
+                                >
+                                  Annulla
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={registraEsecuzione}
+                                  disabled={!firmaOperatoreTemp || registrandoEsecuzione}
+                                  style={{ background: firmaOperatoreTemp ? '#059669' : '#d1fae5', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 18px', cursor: firmaOperatoreTemp ? 'pointer' : 'not-allowed', fontWeight: 600 }}
+                                >
+                                  {registrandoEsecuzione ? '...' : <><CheckCircle size={16} /> Conferma esecuzione</>}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       {/* Firme salvate */}
                       {(p.firmaOperatore || p.firmaPaziente) && (
                         <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
@@ -632,8 +774,59 @@ export default function PianificazionePrelievi() {
                             {p.diaria.length === 0 && <p style={{ fontSize: '0.83rem', color: '#94a3b8' }}>Nessuna voce</p>}
                             {p.diaria.map(d => (
                               <div key={d._id} style={{ background: '#f8fafc', borderRadius: '6px', padding: '8px 10px', marginBottom: '6px', fontSize: '0.83rem' }}>
-                                <div style={{ fontWeight: 600, color: '#374151' }}>{d.autore} · {new Date(d.data).toLocaleString('it-IT')}</div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                  <div style={{ fontWeight: 600, color: '#374151' }}>{d.autore} · {new Date(d.data).toLocaleString('it-IT')}</div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    {d.firmato && (
+                                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#065f46', background: '#d1fae5', padding: '1px 6px', borderRadius: '10px' }}>
+                                        ✅ Firmato
+                                      </span>
+                                    )}
+                                    {!d.firmato && (
+                                      mostraFirmaDiaria === d._id ? (
+                                        <button
+                                          onClick={() => { setMostraFirmaDiaria(null); setFirmaDiariaTemp(''); }}
+                                          style={{ fontSize: '0.72rem', color: '#991b1b', background: '#fee2e2', border: '1px solid #ef4444', borderRadius: '6px', padding: '2px 6px', cursor: 'pointer' }}
+                                        >
+                                          Annulla
+                                        </button>
+                                      ) : (
+                                        <button
+                                          onClick={() => { setMostraFirmaDiaria(d._id); setFirmaDiariaTemp(''); }}
+                                          style={{ fontSize: '0.72rem', color: '#065f46', background: '#f0fdf4', border: '1px solid #059669', borderRadius: '6px', padding: '2px 6px', cursor: 'pointer' }}
+                                        >
+                                          Firma
+                                        </button>
+                                      )
+                                    )}
+                                  </div>
+                                </div>
                                 <div style={{ color: '#475569', marginTop: '2px' }}>{d.testo}</div>
+                                {mostraFirmaDiaria === d._id && (
+                                  <div style={{ marginTop: '10px', padding: '10px', background: 'white', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                                    <FirmaCanvas
+                                      label="✍️ Firma voce diaria"
+                                      onFirmaCompleta={setFirmaDiariaTemp}
+                                      onCancella={() => setFirmaDiariaTemp('')}
+                                      altezza={120}
+                                    />
+                                    <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                                      <button
+                                        onClick={() => firmaVoceDiaria(d._id, firmaDiariaTemp)}
+                                        disabled={!firmaDiariaTemp}
+                                        style={{ background: firmaDiariaTemp ? '#059669' : '#d1fae5', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: firmaDiariaTemp ? 'pointer' : 'not-allowed', fontSize: '0.8rem', fontWeight: 600 }}
+                                      >
+                                        <CheckCircle size={12} /> Conferma
+                                      </button>
+                                      <button
+                                        onClick={() => { setMostraFirmaDiaria(null); setFirmaDiariaTemp(''); }}
+                                        style={{ background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '0.8rem' }}
+                                      >
+                                        Annulla
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             ))}
                             <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
@@ -654,6 +847,21 @@ export default function PianificazionePrelievi() {
                                 <Wand2 size={14} />
                                 {generatingAiDiaria ? '...' : 'AI'}
                               </button>
+                              {mostraFirmaDiaria !== 'nuova' ? (
+                                <button
+                                  onClick={() => { setMostraFirmaDiaria('nuova'); setFirmaDiariaTemp(''); }}
+                                  style={{ background: '#f0fdf4', border: '1px solid #059669', color: '#065f46', borderRadius: '6px', padding: '8px 14px', cursor: 'pointer', fontWeight: 600, alignSelf: 'flex-end', fontSize: '0.8rem' }}
+                                >
+                                  Firma
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => setMostraFirmaDiaria(null)}
+                                  style={{ background: '#fee2e2', border: '1px solid #ef4444', color: '#991b1b', borderRadius: '6px', padding: '8px 14px', cursor: 'pointer', fontWeight: 600, alignSelf: 'flex-end', fontSize: '0.8rem' }}
+                                >
+                                  Annulla firma
+                                </button>
+                              )}
                               <button
                                 onClick={aggiungiDiaria}
                                 disabled={salvandoDiaria || !testoDiaria.trim()}
@@ -662,6 +870,16 @@ export default function PianificazionePrelievi() {
                                 {salvandoDiaria ? '...' : 'Salva'}
                               </button>
                             </div>
+                            {mostraFirmaDiaria === 'nuova' && (
+                              <div style={{ marginTop: '10px', padding: '10px', background: 'white', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                                <FirmaCanvas
+                                  label="✍️ Firma autore voce diaria"
+                                  onFirmaCompleta={setFirmaDiariaTemp}
+                                  onCancella={() => setFirmaDiariaTemp('')}
+                                  altezza={120}
+                                />
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

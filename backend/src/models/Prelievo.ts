@@ -9,6 +9,7 @@ export interface IDiariaPrelievo {
   testo: string;
   firmato?: boolean;
   dataFirma?: Date;
+  firma?: string;
 }
 
 export interface IAllegatoPrelievo {
@@ -67,6 +68,7 @@ const diariaSchema = new Schema<IDiariaPrelievo>(
     testo: { type: String, required: true, trim: true },
     firmato: { type: Boolean, default: false },
     dataFirma: { type: Date },
+    firma: { type: String },
   },
   { _id: true }
 );

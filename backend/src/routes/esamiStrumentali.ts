@@ -278,7 +278,7 @@ router.post('/:id/diaria', authenticateToken, async (req: Request, res: Response
     const esame = await EsameStrumentale.findById(req.params.id);
     if (!esame) return res.status(404).json({ message: 'Esame non trovato' });
 
-    const { testo, data } = req.body;
+    const { testo, data, firma } = req.body;
     if (!testo?.trim()) return res.status(400).json({ message: 'Il testo della diaria è obbligatorio' });
 
     // Determina autore
@@ -293,7 +293,7 @@ router.post('/:id/diaria', authenticateToken, async (req: Request, res: Response
       ruoloAutore = staffMember.role;
     }
 
-    const voce = {
+    const voce: any = {
       data: data ? new Date(data) : new Date(),
       autore,
       autoreId,
@@ -301,6 +301,11 @@ router.post('/:id/diaria', authenticateToken, async (req: Request, res: Response
       testo: testo.trim(),
       firmato: false,
     };
+    if (firma) {
+      voce.firma = firma;
+      voce.firmato = true;
+      voce.dataFirma = new Date();
+    }
 
     esame.diaria.push(voce as any);
 
@@ -328,6 +333,8 @@ router.patch('/:id/diaria/:diariaId/firma', authenticateToken, async (req: Reque
     const voce = esame.diaria.find((d: any) => d._id.toString() === req.params.diariaId);
     if (!voce) return res.status(404).json({ message: 'Voce di diaria non trovata' });
 
+    const { firma } = req.body;
+    if (firma) voce.firma = firma;
     voce.firmato = true;
     voce.dataFirma = new Date();
     await esame.save();
@@ -417,6 +424,8 @@ router.patch('/:id/referto/firma', authenticateToken, async (req: Request, res: 
     if (!esame) return res.status(404).json({ message: 'Esame non trovato' });
     if (!esame.referto) return res.status(400).json({ message: 'Nessun referto da firmare' });
 
+    const { firma } = req.body;
+    if (firma) esame.referto.firma = firma;
     esame.referto.firmato = true;
     esame.referto.dataFirma = new Date();
     await esame.save();
@@ -666,10 +675,17 @@ router.patch('/:id/segna-eseguito', authenticateToken, async (req: Request, res:
     const nomeOperatore = user?.name || user?.email || 'Operatore';
     const now = new Date();
 
+    const { firmaOperatore, firmaMedico, nomeMedico } = req.body;
+
     esame.status = 'eseguito';
     esame.dataEsecuzione = now;
     esame.eseguitoDa = nomeOperatore;
     (esame as any).eseguitoDaId = user?.id || user?._id;
+    if (firmaOperatore) esame.firmaEsecuzione = firmaOperatore;
+    if (firmaMedico) {
+      esame.firmaMedicoEsecuzione = firmaMedico;
+      esame.medicoEsecuzione = nomeMedico?.trim() || 'Medico';
+    }
 
     await esame.save();
 

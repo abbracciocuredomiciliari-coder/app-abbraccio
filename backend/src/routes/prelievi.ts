@@ -375,10 +375,11 @@ router.post('/:id/diaria', authenticateToken, async (req: Request, res: Response
     const autoreId = staffMember?._id;
     const ruoloAutore = staffMember?.role || user.role;
 
-    const { testo } = req.body;
+    const { testo, firma } = req.body;
     if (!testo?.trim()) return res.status(400).json({ message: 'Testo obbligatorio' });
 
-    const entry = { data: new Date(), autore, autoreId, ruoloAutore, testo: testo.trim(), firmato: false };
+    const entry: any = { data: new Date(), autore, autoreId, ruoloAutore, testo: testo.trim(), firmato: false };
+    if (firma) { entry.firma = firma; entry.firmato = true; entry.dataFirma = new Date(); }
     prelievo.diaria.push(entry as any);
     await prelievo.save();
 
@@ -399,6 +400,8 @@ router.post('/:id/diaria/:diariaId/firma', authenticateToken, async (req: Reques
     const entry = prelievo.diaria.find(d => d._id?.toString() === req.params.diariaId);
     if (!entry) return res.status(404).json({ message: 'Voce diaria non trovata' });
 
+    const { firma } = req.body;
+    if (firma) entry.firma = firma;
     entry.firmato = true;
     entry.dataFirma = new Date();
     await prelievo.save();
