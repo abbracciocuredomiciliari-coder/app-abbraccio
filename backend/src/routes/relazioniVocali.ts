@@ -17,6 +17,17 @@ router.post('/professionale', authenticateToken, auditLog('relazioni_vocali', 'C
   } catch (error: any) { return res.status(500).json({ message: 'Errore nella trascrizione della relazione', error: error.message }); }
 });
 
+// Dettatura vocale generica: trascrive l'audio in testo grezzo (nessuna riformulazione).
+// Usata per il pulsante microfono su diaria, referti e altri campi testuali liberi.
+router.post('/trascrivi', authenticateToken, auditLog('relazioni_vocali', 'CREATE'), upload.single('audio'), async (req: Request, res: Response) => {
+  try {
+    if (!isVoiceAiAvailable()) return res.status(503).json({ message: 'Voice AI non configurata. Imposta GROQ_API_KEY.' });
+    if (!req.file) return res.status(400).json({ message: 'Nessun audio ricevuto' });
+    const trascrizione = await transcribeAudio(req.file.buffer, req.file.originalname, req.file.mimetype);
+    return res.json({ trascrizione });
+  } catch (error: any) { return res.status(500).json({ message: 'Errore nella trascrizione', error: error.message }); }
+});
+
 router.post('/diaria', authenticateToken, auditLog('relazioni_vocali', 'CREATE'), async (req: Request, res: Response) => {
   try {
     if (!isVoiceAiAvailable()) return res.status(503).json({ message: 'Voice AI non configurata. Imposta GROQ_API_KEY.' });

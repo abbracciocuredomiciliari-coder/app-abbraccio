@@ -7,6 +7,7 @@ import {
   Wand2
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { DictationMicButton } from '../components/DictationMicButton';
 
 // ─── Interfacce ───────────────────────────────────────────────────────────────
 interface Paziente {
@@ -643,6 +644,7 @@ export default function PianificazionePrelievi() {
                                 rows={2}
                                 style={{ flex: 1, borderRadius: '6px', border: '1px solid #d1d5db', padding: '8px', fontSize: '0.85rem', resize: 'vertical' }}
                               />
+                              <DictationMicButton compact onTranscribed={t => setTestoDiaria(prev => (prev.trim() ? `${prev.trim()} ${t}` : t))} />
                               <button
                                 type="button"
                                 onClick={generaAiDiaria}

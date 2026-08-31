@@ -28,6 +28,7 @@ import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
+import { DictationMicButton } from '../components/DictationMicButton';
 
 // ─── Tipi esame disponibili ───────────────────────────────────────────────────
 const TIPI_ESAME = [
@@ -160,6 +161,7 @@ export default function EsamiStrumentali() {
   const [testoReferto, setTestoReferto] = useState('');
   const [editingReferto, setEditingReferto] = useState(false);
   const [savingReferto, setSavingReferto] = useState(false);
+  const [generatingAiReferto, setGeneratingAiReferto] = useState(false);
   const refertoFileRef = useRef<HTMLInputElement>(null);
   const [uploadingRefertoFile, setUploadingRefertoFile] = useState(false);
 
@@ -340,6 +342,24 @@ export default function EsamiStrumentali() {
       setTimeout(() => setError(''), 4000);
     } finally {
       setGeneratingAiDiaria(false);
+    }
+  };
+
+  const generaAiReferto = async () => {
+    if (!selectedEsame || !testoReferto.trim()) return;
+    setGeneratingAiReferto(true);
+    try {
+      const contesto = `Referto medico — esame ${Array.isArray(selectedEsame.tipoEsame) ? selectedEsame.tipoEsame.join(', ') : selectedEsame.tipoEsame} — paziente ${selectedEsame.patient.firstName} ${selectedEsame.patient.lastName}`;
+      const res = await api.post('/relazioni-vocali/diaria', {
+        dettatura: testoReferto.trim(),
+        contesto,
+      });
+      setTestoReferto(res.data.relazione || '');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Errore nella generazione AI del referto.');
+      setTimeout(() => setError(''), 4000);
+    } finally {
+      setGeneratingAiReferto(false);
     }
   };
 
@@ -1063,6 +1083,7 @@ export default function EsamiStrumentali() {
                           rows={3}
                           style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.88rem', resize: 'vertical', fontFamily: 'inherit' }}
                         />
+                        <DictationMicButton onTranscribed={t => setNuovaDiaria(prev => (prev.trim() ? `${prev.trim()} ${t}` : t))} />
                         <button
                           type="button"
                           onClick={generaAiDiaria}
@@ -1180,7 +1201,17 @@ export default function EsamiStrumentali() {
                               rows={6}
                               style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.88rem', resize: 'vertical', fontFamily: 'inherit' }}
                             />
-                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+                              <DictationMicButton onTranscribed={t => setTestoReferto(prev => (prev.trim() ? `${prev.trim()} ${t}` : t))} />
+                              <button
+                                type="button"
+                                onClick={generaAiReferto}
+                                disabled={generatingAiReferto || !testoReferto.trim()}
+                                style={{ background: '#0d9488', color: 'white', padding: '8px 16px', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '6px', border: 'none', borderRadius: '6px', cursor: 'pointer', opacity: !testoReferto.trim() ? 0.5 : 1 }}
+                              >
+                                <Wand2 size={15} />
+                                {generatingAiReferto ? 'Generazione...' : 'Riformula con AI'}
+                              </button>
                               <button
                                 type="button"
                                 onClick={salvaReferto}
