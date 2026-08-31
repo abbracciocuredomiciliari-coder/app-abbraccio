@@ -3,7 +3,8 @@ import api from '../api/api';
 import { useModalita } from '../context/ModalitaContext';
 import {
   ChevronLeft, ChevronRight, Plus, X, Calendar, Clock, User, Syringe,
-  CheckCircle, Trash2, ChevronDown, ChevronUp, FileText, Building2, Printer
+  CheckCircle, Trash2, ChevronDown, ChevronUp, FileText, Building2, Printer,
+  Wand2
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
@@ -108,6 +109,7 @@ export default function PianificazionePrelievi() {
   const [prelievoAperto, setPrelievoAperto] = useState<Prelievo | null>(null);
   const [testoDiaria, setTestoDiaria] = useState('');
   const [salvandoDiaria, setSalvandoDiaria] = useState(false);
+  const [generatingAiDiaria, setGeneratingAiDiaria] = useState(false);
   const [diariaEspansa, setDiariaEspansa] = useState(false);
 
   // ─── Caricamento dati ──────────────────────────────────────────────────────
@@ -201,6 +203,26 @@ export default function PianificazionePrelievi() {
       await caricaPrelievi();
     } catch { /* noop */ }
     setSalvandoDiaria(false);
+  };
+
+  const generaAiDiaria = async () => {
+    if (!prelievoAperto || !testoDiaria.trim()) return;
+    setGeneratingAiDiaria(true);
+    try {
+      const tipo = Array.isArray(prelievoAperto.tipoPrelievo) ? prelievoAperto.tipoPrelievo.join(', ') : prelievoAperto.tipoPrelievo;
+      const dataStr = new Date(prelievoAperto.dataPrelievo + (prelievoAperto.dataPrelievo.includes('T') ? '' : 'T12:00:00')).toLocaleDateString('it-IT');
+      const contesto = `Diaria clinica — prelievo ${tipo} — paziente ${prelievoAperto.patient.firstName} ${prelievoAperto.patient.lastName} — data ${dataStr}`;
+      const res = await api.post('/relazioni-vocali/diaria', {
+        dettatura: testoDiaria.trim(),
+        contesto,
+      });
+      setTestoDiaria(res.data.relazione || '');
+    } catch (err: any) {
+      console.error('[AI Diaria] errore:', err);
+      alert(err.response?.data?.message || 'Errore nella generazione AI della diaria.');
+    } finally {
+      setGeneratingAiDiaria(false);
+    }
   };
 
   // ─── PDF singolo prelievo con firme ──────────────────────────────────────────
@@ -621,6 +643,15 @@ export default function PianificazionePrelievi() {
                                 rows={2}
                                 style={{ flex: 1, borderRadius: '6px', border: '1px solid #d1d5db', padding: '8px', fontSize: '0.85rem', resize: 'vertical' }}
                               />
+                              <button
+                                type="button"
+                                onClick={generaAiDiaria}
+                                disabled={generatingAiDiaria || !testoDiaria.trim()}
+                                style={{ background: '#0d9488', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 14px', cursor: 'pointer', fontWeight: 600, alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: '4px', opacity: !testoDiaria.trim() ? 0.5 : 1 }}
+                              >
+                                <Wand2 size={14} />
+                                {generatingAiDiaria ? '...' : 'AI'}
+                              </button>
                               <button
                                 onClick={aggiungiDiaria}
                                 disabled={salvandoDiaria || !testoDiaria.trim()}

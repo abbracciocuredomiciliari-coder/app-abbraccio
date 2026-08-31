@@ -17,4 +17,15 @@ router.post('/professionale', authenticateToken, auditLog('relazioni_vocali', 'C
   } catch (error: any) { return res.status(500).json({ message: 'Errore nella trascrizione della relazione', error: error.message }); }
 });
 
+router.post('/diaria', authenticateToken, auditLog('relazioni_vocali', 'CREATE'), async (req: Request, res: Response) => {
+  try {
+    if (!isVoiceAiAvailable()) return res.status(503).json({ message: 'Voice AI non configurata. Imposta GROQ_API_KEY.' });
+    const dettatura = typeof req.body.dettatura === 'string' ? req.body.dettatura.trim() : '';
+    if (!dettatura) return res.status(400).json({ message: 'Nessuna dettatura fornita' });
+    const contesto = typeof req.body.contesto === 'string' ? req.body.contesto.trim() : 'Diaria clinica';
+    const relazione = await generateProfessionalRelation(dettatura, contesto);
+    return res.json({ relazione });
+  } catch (error: any) { return res.status(500).json({ message: 'Errore nella generazione della diaria', error: error.message }); }
+});
+
 export default router;

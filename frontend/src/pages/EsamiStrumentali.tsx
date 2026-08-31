@@ -22,6 +22,7 @@ import {
   Clock,
   User,
   Calendar,
+  Wand2,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
@@ -153,6 +154,7 @@ export default function EsamiStrumentali() {
   const [nuovaDiaria, setNuovaDiaria] = useState('');
   const [dataDiaria, setDataDiaria] = useState('');
   const [savingDiaria, setSavingDiaria] = useState(false);
+  const [generatingAiDiaria, setGeneratingAiDiaria] = useState(false);
 
   // Referto
   const [testoReferto, setTestoReferto] = useState('');
@@ -323,6 +325,24 @@ export default function EsamiStrumentali() {
   };
 
   // ─── Salva referto testuale ─────────────────────────────────────────────────
+  const generaAiDiaria = async () => {
+    if (!selectedEsame || !nuovaDiaria.trim()) return;
+    setGeneratingAiDiaria(true);
+    try {
+      const contesto = `Diaria clinica — esame ${Array.isArray(selectedEsame.tipoEsame) ? selectedEsame.tipoEsame.join(', ') : selectedEsame.tipoEsame} — paziente ${selectedEsame.patient.firstName} ${selectedEsame.patient.lastName}`;
+      const res = await api.post('/relazioni-vocali/diaria', {
+        dettatura: nuovaDiaria.trim(),
+        contesto,
+      });
+      setNuovaDiaria(res.data.relazione || '');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Errore nella generazione AI della diaria.');
+      setTimeout(() => setError(''), 4000);
+    } finally {
+      setGeneratingAiDiaria(false);
+    }
+  };
+
   const salvaReferto = async () => {
     if (!selectedEsame) return;
     setSavingReferto(true);
@@ -1043,6 +1063,15 @@ export default function EsamiStrumentali() {
                           rows={3}
                           style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.88rem', resize: 'vertical', fontFamily: 'inherit' }}
                         />
+                        <button
+                          type="button"
+                          onClick={generaAiDiaria}
+                          disabled={generatingAiDiaria || !nuovaDiaria.trim()}
+                          style={{ marginTop: '8px', background: '#0d9488', color: 'white', padding: '8px 16px', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '6px', border: 'none', borderRadius: '6px', cursor: 'pointer', opacity: !nuovaDiaria.trim() ? 0.5 : 1 }}
+                        >
+                          <Wand2 size={15} />
+                          {generatingAiDiaria ? 'Generazione...' : 'Riformula con AI'}
+                        </button>
                         <button
                           type="button"
                           onClick={aggiungiDiaria}
