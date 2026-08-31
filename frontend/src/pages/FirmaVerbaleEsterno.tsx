@@ -36,22 +36,22 @@ export default function FirmaVerbaleEsterno() {
     } catch (error: any) { setMessaggio(error.response?.data?.message || 'Firma non riuscita.'); }
   };
 
-  const card: React.CSSProperties = { maxWidth: 760, margin: '32px auto', padding: 28, borderRadius: 14, background: '#fff', boxShadow: '0 8px 28px rgba(15, 118, 110, .12)' };
-  if (stato === 'loading') return <main style={card}>Caricamento del verbale...</main>;
-  if (stato === 'error') return <main style={card}><h1 style={{ color: '#b91c1c' }}>Link non disponibile</h1><p>{messaggio}</p></main>;
-  if (stato === 'success') return <main style={card}><h1 style={{ color: '#047857' }}>Verbale firmato</h1><p>Grazie. La firma è stata acquisita correttamente.</p></main>;
+  const cardClass = "tw-max-w-[760px] tw-my-8 tw-mx-auto tw-p-7 tw-rounded-[14px] tw-bg-white tw-shadow-[0_8px_28px_rgba(15,118,110,0.12)]";
+  if (stato === 'loading') return <main className={cardClass}>Caricamento del verbale...</main>;
+  if (stato === 'error') return <main className={cardClass}><h1 className="tw-text-red-700">Link non disponibile</h1><p>{messaggio}</p></main>;
+  if (stato === 'success') return <main className={cardClass}><h1 className="tw-text-green-700">Verbale firmato</h1><p>Grazie. La firma è stata acquisita correttamente.</p></main>;
   if (!verbale) return null;
 
-  return <main style={card}>
-    <p style={{ margin: 0, color: '#0f766e', fontWeight: 700 }}>PORTALE FIRMA DIGITALE</p>
-    <h1 style={{ color: '#134e4a' }}>Firma verbale riunione</h1>
+  return <main className={cardClass}>
+    <p className="tw-m-0 tw-text-teal-700 tw-font-bold">PORTALE FIRMA DIGITALE</p>
+    <h1 className="tw-text-teal-800">Firma verbale riunione</h1>
     <p>Ciao <strong>{verbale.partecipante.nome}</strong>, leggi il verbale e firma nello spazio sottostante.</p>
-    <section style={{ padding: 16, background: '#f0fdfa', borderRadius: 9, margin: '20px 0' }}>
+    <section className="tw-p-4 tw-bg-teal-50 tw-rounded-lg tw-my-5">
       <strong>{verbale.titolo}</strong><br />
       <small>{new Date(verbale.dataRiunione).toLocaleString('it-IT')} · {verbale.ordineDelGiorno}</small>
     </section>
     {verbale.allegato && <p><a href={`${api.defaults.baseURL}/verbali-equipe/firma-esterna/${token}/allegato`} target="_blank" rel="noreferrer">📎 Apri allegato: {verbale.allegato.nome}</a></p>}
-    <div style={{ whiteSpace: 'pre-wrap', border: '1px solid #d1d5db', borderRadius: 9, padding: 16, maxHeight: 360, overflowY: 'auto', background: '#fff' }}>{verbale.verbale || 'Il contenuto è disponibile nell’allegato.'}</div>
-    {verbale.partecipante.firma ? <p style={{ color: '#047857', fontWeight: 700 }}>Questo verbale risulta già firmato.</p> : <section style={{ marginTop: 22 }}><FirmaCanvas label="La tua firma" sublabel="Firma con dito o penna" onFirmaCompleta={setFirma} onCancella={() => setFirma('')} altezza={140} /><button onClick={firmaVerbale} disabled={!firma} style={{ padding: '11px 18px', border: 0, borderRadius: 7, background: firma ? '#0f766e' : '#94a3b8', color: '#fff', fontWeight: 700, cursor: firma ? 'pointer' : 'not-allowed' }}>✍️ Firma il verbale</button>{messaggio && <p style={{ color: '#b91c1c' }}>{messaggio}</p>}</section>}
+    <div className="tw-whitespace-pre-wrap tw-border tw-border-slate-300 tw-rounded-lg tw-p-4 tw-max-h-[360px] tw-overflow-y-auto tw-bg-white">{verbale.verbale || 'Il contenuto è disponibile nell’allegato.'}</div>
+    {verbale.partecipante.firma ? <p className="tw-text-green-700 tw-font-bold">Questo verbale risulta già firmato.</p> : <section className="tw-mt-5"><FirmaCanvas label="La tua firma" sublabel="Firma con dito o penna" onFirmaCompleta={setFirma} onCancella={() => setFirma('')} altezza={140} /><button onClick={firmaVerbale} disabled={!firma} className="tw-py-2.5 tw-px-4.5 tw-border-0 tw-rounded-md tw-text-white tw-font-bold disabled:tw-cursor-not-allowed" style={{ backgroundColor: firma ? '#0f766e' : '#94a3b8' }}>✍️ Firma il verbale</button>{messaggio && <p className="tw-text-red-700">{messaggio}</p>}</section>}
   </main>;
 }

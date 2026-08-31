@@ -668,45 +668,45 @@ export default function WorkPlanAccessPage() {
 
 
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', gap: '16px' }}><div style={{ fontSize: '2rem' }}>⏳</div><p style={{ color: '#666' }}>Caricamento...</p></div>;
+  if (loading) return <div className="tw-flex tw-justify-center tw-items-center tw-h-screen tw-flex-col tw-gap-4"><div className="tw-text-2xl">⏳</div><p className="tw-text-slate-500">Caricamento...</p></div>;
 
-  if (!workPlan) return <div style={{ padding: '32px', textAlign: 'center' }}><AlertCircle size={48} color="#dc2626" /><p style={{ color: '#dc2626', marginTop: '16px' }}>Piano di lavoro non trovato.</p></div>;
+  if (!workPlan) return <div className="tw-p-8 tw-text-center"><AlertCircle size={48} color="#dc2626" /><p className="tw-text-red-600 tw-mt-4">Piano di lavoro non trovato.</p></div>;
 
 
 
   return (
 
-    <div style={{ maxWidth: '680px', margin: '0 auto', padding: '20px 16px', fontFamily: 'system-ui, sans-serif' }}>
+    <div className="tw-max-w-[680px] tw-mx-auto tw-px-4 tw-py-5 tw-font-sans">
 
 
 
       {/* Header */}
 
-      <div style={{ backgroundColor: '#1e40af', color: 'white', borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
+      <div className="tw-bg-blue-800 tw-text-white tw-rounded-xl tw-p-5 tw-mb-4">
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div className="tw-flex tw-justify-between tw-items-start">
 
           <div>
 
-            <div style={{ fontSize: '0.8rem', opacity: 0.8, marginBottom: '4px' }}>Piano di lavoro</div>
+            <div className="tw-text-[0.8rem] tw-opacity-80 tw-mb-1">Piano di lavoro</div>
 
-            <h2 style={{ margin: '0 0 4px', fontSize: '1.2rem' }}>{workPlan.task}</h2>
+            <h2 className="tw-m-0 tw-mb-1 tw-text-[1.2rem]">{workPlan.task}</h2>
 
-            <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>👤 {workPlan.patient.firstName} {workPlan.patient.lastName}</div>
+            <div className="tw-text-[0.9rem] tw-opacity-90">👤 {workPlan.patient.firstName} {workPlan.patient.lastName}</div>
 
-            <div style={{ fontSize: '0.82rem', opacity: 0.75, marginTop: '2px' }}>🏥 {workPlan.staff.firstName} {workPlan.staff.lastName} — {workPlan.staff.role}</div>
+            <div className="tw-text-[0.82rem] tw-opacity-75 tw-mt-0.5">🏥 {workPlan.staff.firstName} {workPlan.staff.lastName} — {workPlan.staff.role}</div>
 
-            {workPlan.patient.allergie && <div style={{ marginTop: '6px', background: 'rgba(239,68,68,0.2)', borderRadius: '6px', padding: '4px 10px', fontSize: '0.78rem', fontWeight: '700', color: '#fecaca' }}>⚠️ ALLERGIE: {workPlan.patient.allergie}</div>}
+            {workPlan.patient.allergie && <div className="tw-mt-1.5 tw-bg-red-500/20 tw-rounded-md tw-px-2.5 tw-py-1 tw-text-[0.78rem] tw-font-bold tw-text-red-200">⚠️ ALLERGIE: {workPlan.patient.allergie}</div>}
 
-            {workPlan.patient.caregiverRiferimento && <div style={{ marginTop: '4px', fontSize: '0.78rem', opacity: 0.8 }}>👤 Caregiver: {workPlan.patient.caregiverRiferimento}{workPlan.patient.caregiverTelefono ? ` — 📞 ${workPlan.patient.caregiverTelefono}` : ''}</div>}
+            {workPlan.patient.caregiverRiferimento && <div className="tw-mt-1 tw-text-[0.78rem] tw-opacity-80">👤 Caregiver: {workPlan.patient.caregiverRiferimento}{workPlan.patient.caregiverTelefono ? ` — 📞 ${workPlan.patient.caregiverTelefono}` : ''}</div>}
 
           </div>
 
-          <div style={{ textAlign: 'right' }}>
+          <div className="tw-text-right">
 
-            <div style={{ fontSize: '1.6rem', fontWeight: '700', fontVariantNumeric: 'tabular-nums' }}>{now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+            <div className="tw-text-[1.6rem] tw-font-bold tw-tabular-nums">{now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
 
-            <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>{now.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' })}</div>
+            <div className="tw-text-[0.8rem] tw-opacity-80">{now.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' })}</div>
 
           </div>
 
@@ -715,15 +715,15 @@ export default function WorkPlanAccessPage() {
       </div>
 
       {/* Azioni rapide */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+      <div className="tw-grid tw-grid-cols-2 tw-gap-2.5 tw-mb-4">
         <button
           onClick={() => setShowChat(true)}
-          style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', color: '#1e40af', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+          className="tw-bg-slate-50 tw-border tw-border-slate-200 tw-rounded-[10px] tw-p-3 tw-cursor-pointer tw-font-semibold tw-text-[0.9rem] tw-text-blue-800 tw-flex tw-items-center tw-justify-center tw-gap-1.5"
         >
           <MessageCircle size={18} /> Chat coord./ufficio
         </button>
         {workPlan.patient._id && (
-          <div style={{ display: 'contents' }}>
+          <div className="tw-contents">
             <ReportGenerator patientId={workPlan.patient._id} patientName={`${workPlan.patient.firstName} ${workPlan.patient.lastName}`} />
           </div>
         )}
@@ -733,12 +733,12 @@ export default function WorkPlanAccessPage() {
       {!consensoFirmato ? (
         <button
           onClick={() => setShowConsenso(true)}
-          style={{ width: '100%', marginBottom: '16px', background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', borderRadius: '10px', padding: '12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+          className="tw-w-full tw-mb-4 tw-bg-red-50 tw-text-red-800 tw-border tw-border-red-200 tw-rounded-[10px] tw-p-3 tw-cursor-pointer tw-font-semibold tw-text-[0.9rem] tw-flex tw-items-center tw-justify-center tw-gap-1.5"
         >
           <Shield size={18} /> Firma consenso GDPR
         </button>
       ) : (
-        <div style={{ marginBottom: '16px', background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '12px', fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+        <div className="tw-mb-4 tw-bg-green-50 tw-text-green-700 tw-border tw-border-green-200 tw-rounded-[10px] tw-p-3 tw-font-semibold tw-text-[0.9rem] tw-flex tw-items-center tw-justify-center tw-gap-1.5">
           <CheckCircle size={18} /> Consenso GDPR firmato
         </div>
       )}
@@ -747,22 +747,22 @@ export default function WorkPlanAccessPage() {
       {!consensoPrestazioneFirmato ? (
         <button
           onClick={() => setShowConsensoPrestazione(true)}
-          style={{ width: '100%', marginBottom: '16px', background: '#fff7ed', color: '#9a3412', border: '1px solid #fdba74', borderRadius: '10px', padding: '12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+          className="tw-w-full tw-mb-4 tw-bg-orange-50 tw-text-orange-800 tw-border tw-border-orange-300 tw-rounded-[10px] tw-p-3 tw-cursor-pointer tw-font-semibold tw-text-[0.9rem] tw-flex tw-items-center tw-justify-center tw-gap-1.5"
         >
           <FileText size={18} /> Firma consenso prestazione e rischi
         </button>
       ) : (
-        <div style={{ marginBottom: '16px', background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '12px', fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle size={18} /> Consenso prestazione firmato</span>
-          <button onClick={esportaConsensoPrestazionePDF} style={{ background: '#166534', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', fontWeight: 600 }}>Esporta PDF</button>
+        <div className="tw-mb-4 tw-bg-green-50 tw-text-green-700 tw-border tw-border-green-200 tw-rounded-[10px] tw-p-3 tw-font-semibold tw-text-[0.9rem] tw-flex tw-items-center tw-justify-between tw-gap-2">
+          <span className="tw-flex tw-items-center tw-gap-1.5"><CheckCircle size={18} /> Consenso prestazione firmato</span>
+          <button onClick={esportaConsensoPrestazionePDF} className="tw-bg-green-700 tw-text-white tw-border-0 tw-rounded-md tw-px-2.5 tw-py-1.5 tw-cursor-pointer tw-font-semibold">Esporta PDF</button>
         </div>
       )}
 
       {/* Messaggi */}
 
-      {success && <div style={{ padding: '12px 16px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', color: '#16a34a', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}><CheckCircle size={18} /> {success}</div>}
+      {success && <div className="tw-px-4 tw-py-3 tw-bg-green-50 tw-border tw-border-green-200 tw-rounded-lg tw-text-green-600 tw-mb-3 tw-flex tw-items-center tw-gap-2"><CheckCircle size={18} /> {success}</div>}
 
-      {error && <div style={{ padding: '12px 16px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#dc2626', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}><AlertCircle size={18} /> {error}<button type="button" onClick={() => setError('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626' }}>✕</button></div>}
+      {error && <div className="tw-px-4 tw-py-3 tw-bg-red-50 tw-border tw-border-red-200 tw-rounded-lg tw-text-red-600 tw-mb-3 tw-flex tw-items-center tw-gap-2"><AlertCircle size={18} /> {error}<button type="button" onClick={() => setError('')} className="tw-ml-auto tw-bg-transparent tw-border-0 tw-cursor-pointer tw-text-red-600">✕</button></div>}
 
 
 
@@ -770,15 +770,15 @@ export default function WorkPlanAccessPage() {
 
       {accessoCorrente && (
 
-        <div style={{ padding: '14px 16px', backgroundColor: '#f0fdf4', border: '2px solid #86efac', borderRadius: '10px', marginBottom: '16px' }}>
+        <div className="tw-px-4 tw-py-3.5 tw-bg-green-50 tw-border-2 tw-border-green-300 tw-rounded-[10px] tw-mb-4">
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#16a34a', fontWeight: '600', marginBottom: '4px' }}>
+          <div className="tw-flex tw-items-center tw-gap-2 tw-text-green-600 tw-font-semibold tw-mb-1">
 
-            <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#16a34a' }} /> Accesso in corso
+            <div className="tw-w-2.5 tw-h-2.5 tw-rounded-full tw-bg-green-600" /> Accesso in corso
 
           </div>
 
-          <div style={{ fontSize: '0.88rem', color: '#555' }}>Entrata: <strong>{formatOra(accessoCorrente.oraEntrata)}</strong> — Durata: <strong>{calcolaDurata(accessoCorrente.oraEntrata)}</strong></div>
+          <div className="tw-text-[0.88rem] tw-text-slate-600">Entrata: <strong>{formatOra(accessoCorrente.oraEntrata)}</strong> — Durata: <strong>{calcolaDurata(accessoCorrente.oraEntrata)}</strong></div>
 
         </div>
 
@@ -788,15 +788,15 @@ export default function WorkPlanAccessPage() {
 
       {/* Pulsanti entrata/uscita */}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+      <div className="tw-grid tw-grid-cols-2 tw-gap-3 tw-mb-5">
 
-        <button type="button" onClick={registraEntrata} disabled={!!accessoCorrente} style={{ padding: '16px', borderRadius: '10px', border: 'none', cursor: accessoCorrente ? 'not-allowed' : 'pointer', backgroundColor: accessoCorrente ? '#d1fae5' : '#16a34a', color: 'white', fontWeight: '700', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: accessoCorrente ? 0.6 : 1 }}>
+        <button type="button" onClick={registraEntrata} disabled={!!accessoCorrente} className={`tw-p-4 tw-rounded-[10px] tw-border-0 tw-text-white tw-font-bold tw-text-base tw-flex tw-items-center tw-justify-center tw-gap-2 ${accessoCorrente ? 'tw-bg-green-100 tw-cursor-not-allowed tw-opacity-60' : 'tw-bg-green-600 tw-cursor-pointer'}`}>
 
           <LogIn size={20} /> ENTRATA
 
         </button>
 
-        <button type="button" onClick={registraUscita} disabled={!accessoCorrente} style={{ padding: '16px', borderRadius: '10px', border: 'none', cursor: !accessoCorrente ? 'not-allowed' : 'pointer', backgroundColor: !accessoCorrente ? '#fee2e2' : '#dc2626', color: 'white', fontWeight: '700', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: !accessoCorrente ? 0.6 : 1 }}>
+        <button type="button" onClick={registraUscita} disabled={!accessoCorrente} className={`tw-p-4 tw-rounded-[10px] tw-border-0 tw-text-white tw-font-bold tw-text-base tw-flex tw-items-center tw-justify-center tw-gap-2 ${!accessoCorrente ? 'tw-bg-red-100 tw-cursor-not-allowed tw-opacity-60' : 'tw-bg-red-600 tw-cursor-pointer'}`}>
 
           <LogOut size={20} /> USCITA
 
@@ -808,17 +808,17 @@ export default function WorkPlanAccessPage() {
 
       {/* ===== OBIETTIVI ===== */}
 
-      <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', marginBottom: '16px', overflow: 'hidden' }}>
+      <div className="tw-border tw-border-slate-200 tw-rounded-[10px] tw-mb-4 tw-overflow-hidden">
 
-        <button type="button" onClick={() => setShowObiettivi(!showObiettivi)} style={{ width: '100%', padding: '14px 16px', background: '#fdf4ff', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '600', color: '#7c3aed', fontSize: '0.95rem' }}>
+        <button type="button" onClick={() => setShowObiettivi(!showObiettivi)} className="tw-w-full tw-px-4 tw-py-3.5 tw-bg-fuchsia-50 tw-border-0 tw-cursor-pointer tw-flex tw-justify-between tw-items-center tw-font-semibold tw-text-fuchsia-700 tw-text-[0.95rem]">
 
-          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className="tw-flex tw-items-center tw-gap-2">
 
             <Target size={18} /> Obiettivi ({obiettivi.length})
 
             {obiettivi.filter(o => o.dataRivalutazione && new Date(o.dataRivalutazione) <= new Date() && o.stato === 'attivo').length > 0 && (
 
-              <span style={{ backgroundColor: '#dc2626', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem' }}>
+              <span className="tw-bg-red-600 tw-text-white tw-rounded-full tw-w-5 tw-h-5 tw-flex tw-items-center tw-justify-center tw-text-[0.75rem]">
 
                 {obiettivi.filter(o => o.dataRivalutazione && new Date(o.dataRivalutazione) <= new Date() && o.stato === 'attivo').length}
 
@@ -834,29 +834,29 @@ export default function WorkPlanAccessPage() {
 
         {showObiettivi && (
 
-          <div style={{ padding: '16px' }}>
+          <div className="tw-p-4">
 
             {isAdminOrCoord && (
 
-              <div style={{ marginBottom: '16px' }}>
+              <div className="tw-mb-4">
 
                 {!showNuovoObiettivo ? (
 
-                  <button type="button" onClick={() => setShowNuovoObiettivo(true)} style={{ background: '#7c3aed', padding: '8px 14px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '6px', border: 'none', color: 'white', cursor: 'pointer' }}><Plus size={15} /> Nuovo obiettivo</button>
+                  <button type="button" onClick={() => setShowNuovoObiettivo(true)} className="tw-bg-fuchsia-600 tw-px-3.5 tw-py-2 tw-text-[0.85rem] tw-flex tw-items-center tw-gap-1.5 tw-rounded-md tw-border-0 tw-text-white tw-cursor-pointer"><Plus size={15} /> Nuovo obiettivo</button>
 
                 ) : (
 
-                  <div style={{ padding: '12px', backgroundColor: '#fdf4ff', borderRadius: '8px', border: '1px solid #e9d5ff' }}>
+                  <div className="tw-p-3 tw-bg-fuchsia-50 tw-rounded-lg tw-border tw-border-fuchsia-200">
 
-                    <textarea value={nuovoObiettivo} onChange={e => setNuovoObiettivo(e.target.value)} placeholder="Descrivi l'obiettivo..." rows={2} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.9rem', resize: 'vertical', boxSizing: 'border-box' }} />
+                    <textarea value={nuovoObiettivo} onChange={e => setNuovoObiettivo(e.target.value)} placeholder="Descrivi l'obiettivo..." rows={2} className="tw-w-full tw-p-2 tw-rounded-md tw-border tw-border-slate-300 tw-text-[0.9rem] tw-resize-y tw-box-border" />
 
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div className="tw-flex tw-gap-2 tw-mt-2 tw-items-center tw-flex-wrap">
 
-                      <label style={{ fontSize: '0.82rem', color: '#666', display: 'flex', alignItems: 'center', gap: '4px' }}>Data rivalutazione: <input type="date" value={nuovaDataRivalutazione} onChange={e => setNuovaDataRivalutazione(e.target.value)} style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.82rem' }} /></label>
+                      <label className="tw-text-[0.82rem] tw-text-slate-500 tw-flex tw-items-center tw-gap-1">Data rivalutazione: <input type="date" value={nuovaDataRivalutazione} onChange={e => setNuovaDataRivalutazione(e.target.value)} className="tw-px-2 tw-py-1 tw-rounded tw-border tw-border-slate-300 tw-text-[0.82rem]" /></label>
 
-                      <button type="button" onClick={aggiungiObiettivo} style={{ background: '#7c3aed', padding: '6px 14px', fontSize: '0.85rem', borderRadius: '6px', border: 'none', color: 'white', cursor: 'pointer' }}>Salva</button>
+                      <button type="button" onClick={aggiungiObiettivo} className="tw-bg-fuchsia-600 tw-px-3.5 tw-py-1.5 tw-text-[0.85rem] tw-rounded-md tw-border-0 tw-text-white tw-cursor-pointer">Salva</button>
 
-                      <button type="button" onClick={() => setShowNuovoObiettivo(false)} style={{ background: '#6c757d', padding: '6px 14px', fontSize: '0.85rem', borderRadius: '6px', border: 'none', color: 'white', cursor: 'pointer' }}>Annulla</button>
+                      <button type="button" onClick={() => setShowNuovoObiettivo(false)} className="tw-bg-slate-500 tw-px-3.5 tw-py-1.5 tw-text-[0.85rem] tw-rounded-md tw-border-0 tw-text-white tw-cursor-pointer">Annulla</button>
 
                     </div>
 
@@ -868,9 +868,9 @@ export default function WorkPlanAccessPage() {
 
             )}
 
-            {obiettivi.length === 0 ? <p style={{ color: '#888', fontStyle: 'italic', textAlign: 'center', padding: '16px' }}>Nessun obiettivo definito.</p> : (
+            {obiettivi.length === 0 ? <p className="tw-text-slate-500 tw-italic tw-text-center tw-p-4">Nessun obiettivo definito.</p> : (
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div className="tw-flex tw-flex-col tw-gap-2.5">
 
                 {obiettivi.map(ob => {
 
@@ -882,37 +882,37 @@ export default function WorkPlanAccessPage() {
 
                     <div key={ob._id} style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${scaduto ? '#fca5a5' : '#e5e7eb'}`, backgroundColor: scaduto ? '#fff5f5' : '#fafafa' }}>
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                      <div className="tw-flex tw-justify-between tw-items-start tw-gap-2">
 
-                        <div style={{ flex: 1 }}>
+                        <div className="tw-flex-1">
 
-                          <p style={{ margin: '0 0 6px', fontWeight: '600', fontSize: '0.9rem' }}>{ob.descrizione}</p>
+                          <p className="tw-m-0 tw-mb-1.5 tw-font-semibold tw-text-[0.9rem]">{ob.descrizione}</p>
 
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <div className="tw-flex tw-gap-2 tw-flex-wrap tw-items-center">
 
-                            <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '12px', backgroundColor: cfg.bg, color: cfg.color, fontWeight: '600' }}>{cfg.label}</span>
+                            <span className="tw-text-[0.75rem] tw-px-2 tw-py-0.5 tw-rounded-xl tw-font-semibold" style={{ backgroundColor: cfg.bg, color: cfg.color }}>{cfg.label}</span>
 
-                            {ob.dataRivalutazione && <span style={{ fontSize: '0.75rem', color: scaduto ? '#dc2626' : '#666' }}>🗓️ {new Date(ob.dataRivalutazione).toLocaleDateString('it-IT')}{scaduto && ' ⚠️'}</span>}
+                            {ob.dataRivalutazione && <span className="tw-text-[0.75rem]" style={{ color: scaduto ? '#dc2626' : '#666' }}>🗓️ {new Date(ob.dataRivalutazione).toLocaleDateString('it-IT')}{scaduto && ' ⚠️'}</span>}
 
-                            <span style={{ fontSize: '0.72rem', color: '#999' }}>da {ob.createdBy}</span>
+                            <span className="tw-text-[0.72rem] tw-text-slate-400">da {ob.createdBy}</span>
 
                           </div>
 
                         </div>
 
-                        <button type="button" onClick={() => setValutazioneObiettivo({ id: ob._id, stato: ob.stato, note: '', dataRivalutazione: '' })} style={{ background: '#7c3aed', padding: '6px 10px', fontSize: '0.78rem', borderRadius: '6px', border: 'none', color: 'white', cursor: 'pointer', whiteSpace: 'nowrap' }}>Valuta</button>
+                        <button type="button" onClick={() => setValutazioneObiettivo({ id: ob._id, stato: ob.stato, note: '', dataRivalutazione: '' })} className="tw-bg-fuchsia-600 tw-px-2.5 tw-py-1.5 tw-text-[0.78rem] tw-rounded-md tw-border-0 tw-text-white tw-cursor-pointer tw-whitespace-nowrap">Valuta</button>
 
                       </div>
 
                       {valutazioneObiettivo?.id === ob._id && (
 
-                        <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#f5f3ff', borderRadius: '6px', border: '1px solid #ddd6fe' }}>
+                        <div className="tw-mt-2.5 tw-p-2.5 tw-bg-fuchsia-100/60 tw-rounded-md tw-border tw-border-fuchsia-200">
 
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                          <div className="tw-grid tw-grid-cols-2 tw-gap-2 tw-mb-2">
 
-                            <label style={{ fontSize: '0.82rem', display: 'flex', flexDirection: 'column', gap: '3px' }}>Stato
+                            <label className="tw-text-[0.82rem] tw-flex tw-flex-col tw-gap-0.5">Stato
 
-                              <select value={valutazioneObiettivo.stato} onChange={e => setValutazioneObiettivo({ ...valutazioneObiettivo, stato: e.target.value })} style={{ padding: '6px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.82rem' }}>
+                              <select value={valutazioneObiettivo.stato} onChange={e => setValutazioneObiettivo({ ...valutazioneObiettivo, stato: e.target.value })} className="tw-p-1.5 tw-rounded tw-border tw-border-slate-300 tw-text-[0.82rem]">
 
                                 <option value="attivo">Attivo</option><option value="raggiunto">Raggiunto</option><option value="parziale">Parzialmente raggiunto</option><option value="non_raggiunto">Non raggiunto</option><option value="rivalutato">Rivalutato</option>
 
@@ -920,17 +920,17 @@ export default function WorkPlanAccessPage() {
 
                             </label>
 
-                            {valutazioneObiettivo.stato === 'rivalutato' && <label style={{ fontSize: '0.82rem', display: 'flex', flexDirection: 'column', gap: '3px' }}>Nuova data<input type="date" value={valutazioneObiettivo.dataRivalutazione} onChange={e => setValutazioneObiettivo({ ...valutazioneObiettivo, dataRivalutazione: e.target.value })} style={{ padding: '6px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.82rem' }} /></label>}
+                            {valutazioneObiettivo.stato === 'rivalutato' && <label className="tw-text-[0.82rem] tw-flex tw-flex-col tw-gap-0.5">Nuova data<input type="date" value={valutazioneObiettivo.dataRivalutazione} onChange={e => setValutazioneObiettivo({ ...valutazioneObiettivo, dataRivalutazione: e.target.value })} className="tw-p-1.5 tw-rounded tw-border tw-border-slate-300 tw-text-[0.82rem]" /></label>}
 
                           </div>
 
-                          <textarea value={valutazioneObiettivo.note} onChange={e => setValutazioneObiettivo({ ...valutazioneObiettivo, note: e.target.value })} placeholder="Note..." rows={2} style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.82rem', resize: 'vertical', boxSizing: 'border-box', marginBottom: '8px' }} />
+                          <textarea value={valutazioneObiettivo.note} onChange={e => setValutazioneObiettivo({ ...valutazioneObiettivo, note: e.target.value })} placeholder="Note..." rows={2} className="tw-w-full tw-p-1.5 tw-rounded tw-border tw-border-slate-300 tw-text-[0.82rem] tw-resize-y tw-box-border tw-mb-2" />
 
-                          <div style={{ display: 'flex', gap: '6px' }}>
+                          <div className="tw-flex tw-gap-1.5">
 
-                            <button type="button" onClick={valutaObiettivo} style={{ background: '#7c3aed', padding: '6px 12px', fontSize: '0.82rem', borderRadius: '4px', border: 'none', color: 'white', cursor: 'pointer' }}>Conferma</button>
+                            <button type="button" onClick={valutaObiettivo} className="tw-bg-fuchsia-600 tw-px-3 tw-py-1.5 tw-text-[0.82rem] tw-rounded tw-border-0 tw-text-white tw-cursor-pointer">Conferma</button>
 
-                            <button type="button" onClick={() => setValutazioneObiettivo(null)} style={{ background: '#6c757d', padding: '6px 12px', fontSize: '0.82rem', borderRadius: '4px', border: 'none', color: 'white', cursor: 'pointer' }}>Annulla</button>
+                            <button type="button" onClick={() => setValutazioneObiettivo(null)} className="tw-bg-slate-500 tw-px-3 tw-py-1.5 tw-text-[0.82rem] tw-rounded tw-border-0 tw-text-white tw-cursor-pointer">Annulla</button>
 
                           </div>
 
@@ -940,17 +940,17 @@ export default function WorkPlanAccessPage() {
 
                       {ob.valutazioni.length > 0 && (
 
-                        <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #e5e7eb' }}>
+                        <div className="tw-mt-2 tw-pt-2 tw-border-t tw-border-slate-200">
 
-                          <div style={{ fontSize: '0.75rem', color: '#888', marginBottom: '4px' }}>Storico:</div>
+                          <div className="tw-text-[0.75rem] tw-text-slate-500 tw-mb-1">Storico:</div>
 
                           {ob.valutazioni.slice(-3).map(v => (
 
-                            <div key={v._id} style={{ fontSize: '0.78rem', color: '#555', padding: '2px 0' }}>
+                            <div key={v._id} className="tw-text-[0.78rem] tw-text-slate-600 tw-py-0.5">
 
-                              <span style={{ color: statoObiettivoConfig[v.stato]?.color || '#666', fontWeight: '600' }}>{statoObiettivoConfig[v.stato]?.label || v.stato}</span>
+                              <span className="tw-font-semibold" style={{ color: statoObiettivoConfig[v.stato]?.color || '#666' }}>{statoObiettivoConfig[v.stato]?.label || v.stato}</span>
 
-                              {' — '}{new Date(v.data).toLocaleDateString('it-IT')} da {v.valutatoDa}{v.note && <span style={{ fontStyle: 'italic' }}> — {v.note}</span>}
+                              {' — '}{new Date(v.data).toLocaleDateString('it-IT')} da {v.valutatoDa}{v.note && <span className="tw-italic"> — {v.note}</span>}
 
                             </div>
 
@@ -980,11 +980,11 @@ export default function WorkPlanAccessPage() {
 
       {/* ===== DIARIO CLINICO ===== */}
 
-      <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', marginBottom: '16px', overflow: 'hidden' }}>
+      <div className="tw-border tw-border-slate-200 tw-rounded-[10px] tw-mb-4 tw-overflow-hidden">
 
-        <button type="button" onClick={() => setShowDiario(!showDiario)} style={{ width: '100%', padding: '14px 16px', background: '#f0f9ff', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '600', color: '#0284c7', fontSize: '0.95rem' }}>
+        <button type="button" onClick={() => setShowDiario(!showDiario)} className="tw-w-full tw-px-4 tw-py-3.5 tw-bg-sky-50 tw-border-0 tw-cursor-pointer tw-flex tw-justify-between tw-items-center tw-font-semibold tw-text-sky-600 tw-text-[0.95rem]">
 
-          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><BookOpen size={18} /> Diario Clinico ({diario.length})</span>
+          <span className="tw-flex tw-items-center tw-gap-2"><BookOpen size={18} /> Diario Clinico ({diario.length})</span>
 
           {showDiario ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
 
@@ -992,9 +992,9 @@ export default function WorkPlanAccessPage() {
 
         {showDiario && (
 
-          <div style={{ padding: '16px' }}>
+          <div className="tw-p-4">
 
-            <div style={{ marginBottom: '16px', padding: '14px', backgroundColor: '#f0f9ff', borderRadius: '8px', border: '1px solid #bae6fd' }}>
+            <div className="tw-mb-4 tw-p-3.5 tw-bg-sky-50 tw-rounded-lg tw-border tw-border-sky-200">
 
               <VoiceRecorder
                 workPlanId={workPlanId!}
@@ -1031,23 +1031,23 @@ export default function WorkPlanAccessPage() {
                 }}
               />
 
-              <textarea value={testoDiario} onChange={e => setTestoDiario(e.target.value)} placeholder="Descrivi l'intervento, le osservazioni cliniche..." rows={4} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #bae6fd', fontSize: '0.9rem', resize: 'vertical', boxSizing: 'border-box', marginBottom: '10px', marginTop: '10px' }} />
+              <textarea value={testoDiario} onChange={e => setTestoDiario(e.target.value)} placeholder="Descrivi l'intervento, le osservazioni cliniche..." rows={4} className="tw-w-full tw-p-2.5 tw-rounded-md tw-border tw-border-sky-200 tw-text-[0.9rem] tw-resize-y tw-box-border tw-my-2.5" />
 
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+              <div className="tw-flex tw-gap-2 tw-flex-wrap tw-mb-2">
 
-                <button type="button" onClick={() => setShowParametri(!showParametri)} style={{ background: 'none', border: '1px solid #0284c7', color: '#0284c7', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button type="button" onClick={() => setShowParametri(!showParametri)} className="tw-bg-transparent tw-border tw-border-sky-600 tw-text-sky-600 tw-px-3 tw-py-1.5 tw-rounded-md tw-cursor-pointer tw-text-[0.82rem] tw-flex tw-items-center tw-gap-1.5">
 
                   <Activity size={14} /> {showParametri ? 'Nascondi parametri' : '📊 Parametri vitali'}
 
                 </button>
 
-                <button type="button" onClick={() => setShowScale(!showScale)} style={{ background: 'none', border: '1px solid #7c3aed', color: '#7c3aed', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button type="button" onClick={() => setShowScale(!showScale)} className="tw-bg-transparent tw-border tw-border-fuchsia-600 tw-text-fuchsia-600 tw-px-3 tw-py-1.5 tw-rounded-md tw-cursor-pointer tw-text-[0.82rem] tw-flex tw-items-center tw-gap-1.5">
 
                   🧮 {showScale ? 'Nascondi scale' : 'Scale valutazione'}
 
                 </button>
 
-                <button type="button" onClick={() => { setShowTerapia(!showTerapia); if (!showTerapia && terapia.length === 0) setTerapia([{ farmaco: '', dosaggio: '', mattina: false, pomeriggio: false, sera: false, notte: false }]); }} style={{ background: 'none', border: '1px solid #059669', color: '#059669', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button type="button" onClick={() => { setShowTerapia(!showTerapia); if (!showTerapia && terapia.length === 0) setTerapia([{ farmaco: '', dosaggio: '', mattina: false, pomeriggio: false, sera: false, notte: false }]); }} className="tw-bg-transparent tw-border tw-border-emerald-600 tw-text-emerald-600 tw-px-3 tw-py-1.5 tw-rounded-md tw-cursor-pointer tw-text-[0.82rem] tw-flex tw-items-center tw-gap-1.5">
 
                   💊 {showTerapia ? 'Nascondi terapia' : 'Terapia farmacologica'}
 
@@ -1057,17 +1057,17 @@ export default function WorkPlanAccessPage() {
 
               {showParametri && (
 
-                <div style={{ marginTop: '8px', padding: '12px', background: '#f0f9ff', borderRadius: '8px', border: '1px solid #bae6fd', marginBottom: '8px' }}>
+                <div className="tw-mt-2 tw-p-3 tw-bg-sky-50 tw-rounded-lg tw-border tw-border-sky-200 tw-mb-2">
 
-                  <div style={{ fontWeight: '600', fontSize: '0.8rem', color: '#0284c7', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}><Activity size={13} /> Parametri Vitali</div>
+                  <div className="tw-font-semibold tw-text-[0.8rem] tw-text-sky-600 tw-mb-2 tw-flex tw-items-center tw-gap-1"><Activity size={13} /> Parametri Vitali</div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                  <div className="tw-grid tw-grid-cols-2 tw-gap-2 tw-mb-2">
 
                     {[['pressioneSistolica','P. Sistolica (mmHg)','120'],['pressioneDiastolica','P. Diastolica (mmHg)','80'],['frequenzaCardiaca','Freq. Cardiaca (bpm)','72'],['frequenzaRespiratoria','Freq. Resp. (/min)','16'],['temperatura','Temp. (°C)','36.5'],['saturazione','SpO₂ (%)','98'],['glicemia','Glicemia (mg/dL)','95'],['peso','Peso (kg)','70']].map(([key, label, ph]) => (
 
-                      <label key={key} style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.8rem', color: '#555' }}>{label}
+                      <label key={key} className="tw-flex tw-flex-col tw-gap-0.5 tw-text-[0.8rem] tw-text-slate-600">{label}
 
-                        <input type="number" step="0.1" value={parametri[key as keyof typeof parametri]} onChange={e => setParametri(prev => ({ ...prev, [key]: e.target.value }))} placeholder={`es. ${ph}`} style={{ padding: '6px 8px', borderRadius: '4px', border: '1px solid #bae6fd', fontSize: '0.85rem' }} />
+                        <input type="number" step="0.1" value={parametri[key as keyof typeof parametri]} onChange={e => setParametri(prev => ({ ...prev, [key]: e.target.value }))} placeholder={`es. ${ph}`} className="tw-px-2 tw-py-1.5 tw-rounded tw-border tw-border-sky-200 tw-text-[0.85rem]" />
 
                       </label>
 
@@ -1075,11 +1075,11 @@ export default function WorkPlanAccessPage() {
 
                   </div>
 
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.8rem', color: '#555' }}>Dolore NRS (0-10)
+                  <label className="tw-flex tw-flex-col tw-gap-0.5 tw-text-[0.8rem] tw-text-slate-600">Dolore NRS (0-10)
 
-                    <input type="range" min="0" max="10" value={parametri.dolore || '0'} onChange={e => setParametri(prev => ({ ...prev, dolore: e.target.value }))} style={{ width: '100%' }} />
+                    <input type="range" min="0" max="10" value={parametri.dolore || '0'} onChange={e => setParametri(prev => ({ ...prev, dolore: e.target.value }))} className="tw-w-full" />
 
-                    <span style={{ textAlign: 'center', fontWeight: '600', color: parseInt(parametri.dolore || '0') >= 7 ? '#dc2626' : parseInt(parametri.dolore || '0') >= 4 ? '#d97706' : '#16a34a' }}>{parametri.dolore || '0'}/10 — {parseInt(parametri.dolore||'0')===0?'Assente':parseInt(parametri.dolore||'0')<=3?'Lieve':parseInt(parametri.dolore||'0')<=6?'Moderato':'Severo'}</span>
+                    <span className="tw-text-center tw-font-semibold" style={{ color: parseInt(parametri.dolore || '0') >= 7 ? '#dc2626' : parseInt(parametri.dolore || '0') >= 4 ? '#d97706' : '#16a34a' }}>{parametri.dolore || '0'}/10 — {parseInt(parametri.dolore||'0')===0?'Assente':parseInt(parametri.dolore||'0')<=3?'Lieve':parseInt(parametri.dolore||'0')<=6?'Moderato':'Severo'}</span>
 
                   </label>
 
@@ -1089,19 +1089,19 @@ export default function WorkPlanAccessPage() {
 
               {showScale && (
 
-                <div style={{ marginTop: '8px', padding: '12px', background: '#fdf4ff', borderRadius: '8px', border: '1px solid #e9d5ff', marginBottom: '8px' }}>
+                <div className="tw-mt-2 tw-p-3 tw-bg-fuchsia-50 tw-rounded-lg tw-border tw-border-fuchsia-200 tw-mb-2">
 
-                  <div style={{ fontWeight: '600', fontSize: '0.8rem', color: '#7c3aed', marginBottom: '10px' }}>🧮 Scale di Valutazione Multidimensionale</div>
+                  <div className="tw-font-semibold tw-text-[0.8rem] tw-text-fuchsia-700 tw-mb-2.5">🧮 Scale di Valutazione Multidimensionale</div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
+                  <div className="tw-grid tw-grid-cols-1 tw-gap-2.5">
 
-                    <div style={{ background: 'white', padding: '10px', borderRadius: '6px', border: '1px solid #e9d5ff' }}>
+                    <div className="tw-bg-white tw-p-2.5 tw-rounded-md tw-border tw-border-fuchsia-200">
 
-                      <div style={{ fontWeight: '600', fontSize: '0.78rem', color: '#374151', marginBottom: '6px' }}>BRADEN — Rischio lesioni da pressione (6-23, &lt;18 = rischio)</div>
+                      <div className="tw-font-semibold tw-text-[0.78rem] tw-text-slate-700 tw-mb-1.5">BRADEN — Rischio lesioni da pressione (6-23, &lt;18 = rischio)</div>
 
-                      <input type="number" min="6" max="23" value={scale.braden} onChange={e => setScale(prev => ({ ...prev, braden: e.target.value }))} placeholder="es. 16" style={{ width: '100%', padding: '7px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+                      <input type="number" min="6" max="23" value={scale.braden} onChange={e => setScale(prev => ({ ...prev, braden: e.target.value }))} placeholder="es. 16" className="tw-w-full tw-p-1.5 tw-rounded tw-border tw-border-slate-300 tw-text-[0.9rem] tw-box-border" />
 
-                      {scale.braden && <div style={{ fontSize: '0.75rem', marginTop: '4px', color: parseInt(scale.braden)<=12?'#dc2626':parseInt(scale.braden)<=18?'#d97706':'#16a34a', fontWeight:'600' }}>
+                      {scale.braden && <div className="tw-text-[0.75rem] tw-mt-1 tw-font-semibold" style={{ color: parseInt(scale.braden)<=12?'#dc2626':parseInt(scale.braden)<=18?'#d97706':'#16a34a' }}>
 
                         → {parseInt(scale.braden)<=9?'⚠️ Rischio molto alto':parseInt(scale.braden)<=12?'⚠️ Rischio alto':parseInt(scale.braden)<=14?'🟡 Rischio moderato':parseInt(scale.braden)<=18?'🟢 Rischio basso':'✅ Nessun rischio'}
 
@@ -1109,13 +1109,13 @@ export default function WorkPlanAccessPage() {
 
                     </div>
 
-                    <div style={{ background: 'white', padding: '10px', borderRadius: '6px', border: '1px solid #e9d5ff' }}>
+                    <div className="tw-bg-white tw-p-2.5 tw-rounded-md tw-border tw-border-fuchsia-200">
 
-                      <div style={{ fontWeight: '600', fontSize: '0.78rem', color: '#374151', marginBottom: '6px' }}>BARTHEL — Autonomia ADL (0-100)</div>
+                      <div className="tw-font-semibold tw-text-[0.78rem] tw-text-slate-700 tw-mb-1.5">BARTHEL — Autonomia ADL (0-100)</div>
 
-                      <input type="number" min="0" max="100" step="5" value={scale.barthel} onChange={e => setScale(prev => ({ ...prev, barthel: e.target.value }))} placeholder="es. 75" style={{ width: '100%', padding: '7px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+                      <input type="number" min="0" max="100" step="5" value={scale.barthel} onChange={e => setScale(prev => ({ ...prev, barthel: e.target.value }))} placeholder="es. 75" className="tw-w-full tw-p-1.5 tw-rounded tw-border tw-border-slate-300 tw-text-[0.9rem] tw-box-border" />
 
-                      {scale.barthel && <div style={{ fontSize: '0.75rem', marginTop: '4px', color: parseInt(scale.barthel)<=25?'#dc2626':parseInt(scale.barthel)<=50?'#d97706':parseInt(scale.barthel)<=75?'#ca8a04':'#16a34a', fontWeight:'600' }}>
+                      {scale.barthel && <div className="tw-text-[0.75rem] tw-mt-1 tw-font-semibold" style={{ color: parseInt(scale.barthel)<=25?'#dc2626':parseInt(scale.barthel)<=50?'#d97706':parseInt(scale.barthel)<=75?'#ca8a04':'#16a34a' }}>
 
                         → {parseInt(scale.barthel)===100?'✅ Indipendente':parseInt(scale.barthel)>=75?'🟢 Dipendenza minima':parseInt(scale.barthel)>=50?'🟡 Dipendenza moderata':parseInt(scale.barthel)>=25?'🟠 Dipendenza severa':'⚠️ Totalmente dipendente'}
 
@@ -1123,13 +1123,13 @@ export default function WorkPlanAccessPage() {
 
                     </div>
 
-                    <div style={{ background: 'white', padding: '10px', borderRadius: '6px', border: '1px solid #e9d5ff' }}>
+                    <div className="tw-bg-white tw-p-2.5 tw-rounded-md tw-border tw-border-fuchsia-200">
 
-                      <div style={{ fontWeight: '600', fontSize: '0.78rem', color: '#374151', marginBottom: '6px' }}>CONLEY — Rischio cadute (0-8, ≥2 = rischio)</div>
+                      <div className="tw-font-semibold tw-text-[0.78rem] tw-text-slate-700 tw-mb-1.5">CONLEY — Rischio cadute (0-8, ≥2 = rischio)</div>
 
-                      <input type="number" min="0" max="8" value={scale.conley} onChange={e => setScale(prev => ({ ...prev, conley: e.target.value }))} placeholder="es. 1" style={{ width: '100%', padding: '7px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+                      <input type="number" min="0" max="8" value={scale.conley} onChange={e => setScale(prev => ({ ...prev, conley: e.target.value }))} placeholder="es. 1" className="tw-w-full tw-p-1.5 tw-rounded tw-border tw-border-slate-300 tw-text-[0.9rem] tw-box-border" />
 
-                      {scale.conley && <div style={{ fontSize: '0.75rem', marginTop: '4px', color: parseInt(scale.conley)>=2?'#dc2626':'#16a34a', fontWeight:'600' }}>
+                      {scale.conley && <div className="tw-text-[0.75rem] tw-mt-1 tw-font-semibold" style={{ color: parseInt(scale.conley)>=2?'#dc2626':'#16a34a' }}>
 
                         → {parseInt(scale.conley)>=2?'⚠️ Rischio cadute':'✅ Basso rischio'}
 
@@ -1145,33 +1145,33 @@ export default function WorkPlanAccessPage() {
 
               {showTerapia && (
 
-                <div style={{ marginTop: '8px', padding: '12px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #86efac', marginBottom: '8px' }}>
+                <div className="tw-mt-2 tw-p-3 tw-bg-green-50 tw-rounded-lg tw-border tw-border-green-300 tw-mb-2">
 
-                  <div style={{ fontWeight: '600', fontSize: '0.8rem', color: '#059669', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="tw-font-semibold tw-text-[0.8rem] tw-text-green-600 tw-mb-2.5 tw-flex tw-justify-between tw-items-center">
 
                     💊 Terapia Farmacologica
 
-                    <button type="button" onClick={() => setTerapia(prev => [...prev, { farmaco: '', dosaggio: '', mattina: false, pomeriggio: false, sera: false, notte: false }])} style={{ background: '#059669', color: 'white', border: 'none', borderRadius: '4px', padding: '3px 8px', cursor: 'pointer', fontSize: '0.75rem' }}>+ Farmaco</button>
+                    <button type="button" onClick={() => setTerapia(prev => [...prev, { farmaco: '', dosaggio: '', mattina: false, pomeriggio: false, sera: false, notte: false }])} className="tw-bg-green-600 tw-text-white tw-border-0 tw-rounded tw-px-2 tw-py-1 tw-cursor-pointer tw-text-[0.75rem]">+ Farmaco</button>
 
                   </div>
 
                   {terapia.map((f, i) => (
 
-                    <div key={i} style={{ background: 'white', padding: '10px', borderRadius: '6px', border: '1px solid #86efac', marginBottom: '8px' }}>
+                    <div key={i} className="tw-bg-white tw-p-2.5 tw-rounded-md tw-border tw-border-green-300 tw-mb-2">
 
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '6px' }}>
+                      <div className="tw-grid tw-grid-cols-2 tw-gap-2 tw-mb-1.5">
 
-                        <input type="text" placeholder="Farmaco" value={f.farmaco} onChange={e => setTerapia(prev => prev.map((x,j)=>j===i?{...x,farmaco:e.target.value}:x))} style={{ padding: '6px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.85rem' }} />
+                        <input type="text" placeholder="Farmaco" value={f.farmaco} onChange={e => setTerapia(prev => prev.map((x,j)=>j===i?{...x,farmaco:e.target.value}:x))} className="tw-p-1.5 tw-rounded tw-border tw-border-slate-300 tw-text-[0.85rem]" />
 
-                        <input type="text" placeholder="Dosaggio (es. 10mg)" value={f.dosaggio} onChange={e => setTerapia(prev => prev.map((x,j)=>j===i?{...x,dosaggio:e.target.value}:x))} style={{ padding: '6px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.85rem' }} />
+                        <input type="text" placeholder="Dosaggio (es. 10mg)" value={f.dosaggio} onChange={e => setTerapia(prev => prev.map((x,j)=>j===i?{...x,dosaggio:e.target.value}:x))} className="tw-p-1.5 tw-rounded tw-border tw-border-slate-300 tw-text-[0.85rem]" />
 
                       </div>
 
-                      <div style={{ display: 'flex', gap: '12px', fontSize: '0.8rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <div className="tw-flex tw-gap-3 tw-text-[0.8rem] tw-items-center tw-flex-wrap">
 
                         {(['mattina','pomeriggio','sera','notte'] as const).map(t => (
 
-                          <label key={t} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                          <label key={t} className="tw-flex tw-items-center tw-gap-1 tw-cursor-pointer">
 
                             <input type="checkbox" checked={f[t]} onChange={e => setTerapia(prev => prev.map((x,j)=>j===i?{...x,[t]:e.target.checked}:x))} />
 
@@ -1181,7 +1181,7 @@ export default function WorkPlanAccessPage() {
 
                         ))}
 
-                        <button type="button" onClick={() => setTerapia(prev => prev.filter((_,j)=>j!==i))} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '0.78rem' }}>✕ Rimuovi</button>
+                        <button type="button" onClick={() => setTerapia(prev => prev.filter((_,j)=>j!==i))} className="tw-ml-auto tw-bg-transparent tw-border-0 tw-text-red-600 tw-cursor-pointer tw-text-[0.78rem]">✕ Rimuovi</button>
 
                       </div>
 
@@ -1193,63 +1193,63 @@ export default function WorkPlanAccessPage() {
 
               )}
 
-              <button type="button" onClick={salvaDiario} disabled={!testoDiario.trim()} style={{ marginTop: '12px', width: '100%', padding: '12px', backgroundColor: testoDiario.trim() ? '#0284c7' : '#93c5fd', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: testoDiario.trim() ? 'pointer' : 'not-allowed', fontSize: '0.95rem' }}>💾 Salva nel diario clinico</button>
+              <button type="button" onClick={salvaDiario} disabled={!testoDiario.trim()} className={`tw-mt-3 tw-w-full tw-p-3 tw-text-white tw-border-0 tw-rounded-lg tw-font-semibold tw-text-[0.95rem] ${testoDiario.trim() ? 'tw-bg-sky-600 tw-cursor-pointer' : 'tw-bg-sky-300 tw-cursor-not-allowed'}`}>💾 Salva nel diario clinico</button>
 
             </div>
 
-            {diario.length === 0 ? <p style={{ color: '#888', fontStyle: 'italic', textAlign: 'center', padding: '16px' }}>Nessuna voce nel diario.</p> : (
+            {diario.length === 0 ? <p className="tw-text-slate-500 tw-italic tw-text-center tw-p-4">Nessuna voce nel diario.</p> : (
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div className="tw-flex tw-flex-col tw-gap-2.5">
 
                 {diario.map(entry => (
 
                   <div key={entry._id} style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${entry.firmato ? '#86efac' : '#e5e7eb'}`, backgroundColor: entry.firmato ? '#f0fdf4' : '#fafafa' }}>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                    <div className="tw-flex tw-justify-between tw-items-start tw-mb-1.5">
 
-                      <div style={{ fontSize: '0.78rem', color: '#888', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <div className="tw-text-[0.78rem] tw-text-slate-500 tw-flex tw-items-center tw-gap-1.5 tw-flex-wrap">
 
                         📅 {formatDataOra(entry.dataRegistrazione)} — ✍️ {entry.staffName}
 
-                        {entry.firmato && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', backgroundColor: '#dcfce7', color: '#16a34a', padding: '1px 6px', borderRadius: '10px', fontSize: '0.72rem', fontWeight: '600' }}><Lock size={10} /> Firmato {entry.dataFirma ? new Date(entry.dataFirma).toLocaleDateString('it-IT') : ''}</span>}
+                        {entry.firmato && <span className="tw-inline-flex tw-items-center tw-gap-1 tw-bg-green-100 tw-text-green-600 tw-px-1.5 tw-py-px tw-rounded-[10px] tw-text-[0.72rem] tw-font-semibold"><Lock size={10} /> Firmato {entry.dataFirma ? new Date(entry.dataFirma).toLocaleDateString('it-IT') : ''}</span>}
 
                       </div>
 
-                      <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                      <div className="tw-flex tw-gap-1 tw-flex-shrink-0">
 
-                        {!entry.firmato && <button type="button" onClick={() => setDiarioDaFirmare(entry._id)} style={{ background: 'none', border: '1px solid #16a34a', cursor: 'pointer', color: '#16a34a', padding: '2px 6px', borderRadius: '4px', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '3px' }}><PenLine size={12} /> Firma con dito/penna</button>}
+                        {!entry.firmato && <button type="button" onClick={() => setDiarioDaFirmare(entry._id)} className="tw-bg-transparent tw-border tw-border-green-600 tw-cursor-pointer tw-text-green-600 tw-px-1.5 tw-py-0.5 tw-rounded tw-text-[0.72rem] tw-flex tw-items-center tw-gap-1"><PenLine size={12} /> Firma con dito/penna</button>}
 
-                        {!entry.firmato && <button type="button" onClick={() => eliminaDiario(entry._id)} title="Elimina voce non firmata" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', padding: '2px', fontWeight: 700 }}>✕</button>}
+                        {!entry.firmato && <button type="button" onClick={() => eliminaDiario(entry._id)} title="Elimina voce non firmata" className="tw-bg-transparent tw-border-0 tw-cursor-pointer tw-text-red-600 tw-p-0.5 tw-font-bold">✕</button>}
 
                       </div>
 
                     </div>
 
-                    <p style={{ margin: '0 0 8px', fontSize: '0.9rem', color: '#333', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{entry.testo}</p>
+                    <p className="tw-m-0 tw-mb-2 tw-text-[0.9rem] tw-text-slate-700 tw-leading-normal tw-whitespace-pre-wrap">{entry.testo}</p>
 
                     {entry.parametriVitali && Object.values(entry.parametriVitali).some(v => v !== undefined && v !== null) && (
 
-                      <div style={{ padding: '8px', backgroundColor: '#f0f9ff', borderRadius: '6px', border: '1px solid #bae6fd', marginBottom: '6px' }}>
+                      <div className="tw-p-2 tw-bg-sky-50 tw-rounded-md tw-border tw-border-sky-200 tw-mb-1.5">
 
-                        <div style={{ fontSize: '0.75rem', color: '#0284c7', fontWeight: '600', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><Activity size={12} /> Parametri vitali</div>
+                        <div className="tw-text-[0.75rem] tw-text-sky-600 tw-font-semibold tw-mb-1 tw-flex tw-items-center tw-gap-1"><Activity size={12} /> Parametri vitali</div>
 
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        <div className="tw-flex tw-flex-wrap tw-gap-1.5">
 
-                          {entry.parametriVitali.pressioneSistolica && entry.parametriVitali.pressioneDiastolica && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>🩺 {entry.parametriVitali.pressioneSistolica}/{entry.parametriVitali.pressioneDiastolica} mmHg</span>}
+                          {entry.parametriVitali.pressioneSistolica && entry.parametriVitali.pressioneDiastolica && <span className="tw-text-[0.78rem] tw-bg-white tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-sky-200">🩺 {entry.parametriVitali.pressioneSistolica}/{entry.parametriVitali.pressioneDiastolica} mmHg</span>}
 
-                          {entry.parametriVitali.frequenzaCardiaca && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>❤️ {entry.parametriVitali.frequenzaCardiaca} bpm</span>}
+                          {entry.parametriVitali.frequenzaCardiaca && <span className="tw-text-[0.78rem] tw-bg-white tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-sky-200">❤️ {entry.parametriVitali.frequenzaCardiaca} bpm</span>}
 
-                          {entry.parametriVitali.frequenzaRespiratoria && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>🫁 {entry.parametriVitali.frequenzaRespiratoria} /min</span>}
+                          {entry.parametriVitali.frequenzaRespiratoria && <span className="tw-text-[0.78rem] tw-bg-white tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-sky-200">🫁 {entry.parametriVitali.frequenzaRespiratoria} /min</span>}
 
-                          {entry.parametriVitali.temperatura && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>🌡️ {entry.parametriVitali.temperatura}°C</span>}
+                          {entry.parametriVitali.temperatura && <span className="tw-text-[0.78rem] tw-bg-white tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-sky-200">🌡️ {entry.parametriVitali.temperatura}°C</span>}
 
-                          {entry.parametriVitali.saturazione && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>💨 SpO₂ {entry.parametriVitali.saturazione}%</span>}
+                          {entry.parametriVitali.saturazione && <span className="tw-text-[0.78rem] tw-bg-white tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-sky-200">💨 SpO₂ {entry.parametriVitali.saturazione}%</span>}
 
-                          {entry.parametriVitali.glicemia && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>🩸 {entry.parametriVitali.glicemia} mg/dL</span>}
+                          {entry.parametriVitali.glicemia && <span className="tw-text-[0.78rem] tw-bg-white tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-sky-200">🩸 {entry.parametriVitali.glicemia} mg/dL</span>}
 
-                          {entry.parametriVitali.peso && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd' }}>⚖️ {entry.parametriVitali.peso} kg</span>}
+                          {entry.parametriVitali.peso && <span className="tw-text-[0.78rem] tw-bg-white tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-sky-200">⚖️ {entry.parametriVitali.peso} kg</span>}
 
-                          {entry.parametriVitali.dolore !== undefined && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bae6fd', color: entry.parametriVitali.dolore >= 7 ? '#dc2626' : entry.parametriVitali.dolore >= 4 ? '#d97706' : '#16a34a' }}>😣 Dolore: {entry.parametriVitali.dolore}/10</span>}
+                          {entry.parametriVitali.dolore !== undefined && <span className="tw-text-[0.78rem] tw-bg-white tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-sky-200" style={{ color: entry.parametriVitali.dolore >= 7 ? '#dc2626' : entry.parametriVitali.dolore >= 4 ? '#d97706' : '#16a34a' }}>😣 Dolore: {entry.parametriVitali.dolore}/10</span>}
 
                         </div>
 
@@ -1259,17 +1259,17 @@ export default function WorkPlanAccessPage() {
 
                     {entry.scaleValutazione && (entry.scaleValutazione.braden !== undefined || entry.scaleValutazione.barthel !== undefined || entry.scaleValutazione.conley !== undefined) && (
 
-                      <div style={{ padding: '8px', backgroundColor: '#fdf4ff', borderRadius: '6px', border: '1px solid #e9d5ff', marginBottom: '6px' }}>
+                      <div className="tw-p-2 tw-bg-fuchsia-50 tw-rounded-md tw-border tw-border-fuchsia-200 tw-mb-1.5">
 
-                        <div style={{ fontSize: '0.75rem', color: '#7c3aed', fontWeight: '600', marginBottom: '4px' }}>🧮 Scale di Valutazione</div>
+                        <div className="tw-text-[0.75rem] tw-text-fuchsia-700 tw-font-semibold tw-mb-1">🧮 Scale di Valutazione</div>
 
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        <div className="tw-flex tw-flex-wrap tw-gap-1.5">
 
-                          {entry.scaleValutazione.braden !== undefined && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #e9d5ff' }}>BRADEN: {entry.scaleValutazione.braden} {entry.scaleValutazione.bradenLivello && `— ${entry.scaleValutazione.bradenLivello}`}</span>}
+                          {entry.scaleValutazione.braden !== undefined && <span className="tw-text-[0.78rem] tw-bg-white tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-fuchsia-200">BRADEN: {entry.scaleValutazione.braden} {entry.scaleValutazione.bradenLivello && `— ${entry.scaleValutazione.bradenLivello}`}</span>}
 
-                          {entry.scaleValutazione.barthel !== undefined && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #e9d5ff' }}>BARTHEL: {entry.scaleValutazione.barthel} {entry.scaleValutazione.barthelLivello && `— ${entry.scaleValutazione.barthelLivello}`}</span>}
+                          {entry.scaleValutazione.barthel !== undefined && <span className="tw-text-[0.78rem] tw-bg-white tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-fuchsia-200">BARTHEL: {entry.scaleValutazione.barthel} {entry.scaleValutazione.barthelLivello && `— ${entry.scaleValutazione.barthelLivello}`}</span>}
 
-                          {entry.scaleValutazione.conley !== undefined && <span style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #e9d5ff', color: entry.scaleValutazione.conley >= 2 ? '#dc2626' : '#374151' }}>CONLEY: {entry.scaleValutazione.conley} {entry.scaleValutazione.conleyLivello && `— ${entry.scaleValutazione.conleyLivello}`}</span>}
+                          {entry.scaleValutazione.conley !== undefined && <span className="tw-text-[0.78rem] tw-bg-white tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-fuchsia-200" style={{ color: entry.scaleValutazione.conley >= 2 ? '#dc2626' : '#374151' }}>CONLEY: {entry.scaleValutazione.conley} {entry.scaleValutazione.conleyLivello && `— ${entry.scaleValutazione.conleyLivello}`}</span>}
 
                         </div>
 
@@ -1279,19 +1279,19 @@ export default function WorkPlanAccessPage() {
 
                     {entry.terapiaFarmacologica && entry.terapiaFarmacologica.length > 0 && (
 
-                      <div style={{ padding: '8px', backgroundColor: '#f0fdf4', borderRadius: '6px', border: '1px solid #86efac' }}>
+                      <div className="tw-p-2 tw-bg-green-50 tw-rounded-md tw-border tw-border-green-300">
 
-                        <div style={{ fontSize: '0.75rem', color: '#059669', fontWeight: '600', marginBottom: '4px' }}>💊 Terapia Farmacologica</div>
+                        <div className="tw-text-[0.75rem] tw-text-green-600 tw-font-semibold tw-mb-1">💊 Terapia Farmacologica</div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div className="tw-flex tw-flex-col tw-gap-1">
 
                           {entry.terapiaFarmacologica.map((f, i) => (
 
-                            <div key={i} style={{ fontSize: '0.78rem', backgroundColor: 'white', padding: '4px 8px', borderRadius: '4px', border: '1px solid #86efac', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                            <div key={i} className="tw-text-[0.78rem] tw-bg-white tw-px-2 tw-py-1 tw-rounded tw-border tw-border-green-300 tw-flex tw-justify-between tw-items-center tw-flex-wrap tw-gap-1">
 
                               <span><strong>{f.farmaco}</strong> — {f.dosaggio}</span>
 
-                              <span style={{ color: '#6b7280', fontSize: '0.74rem' }}>{[f.mattina&&'M',f.pomeriggio&&'P',f.sera&&'S',f.notte&&'N'].filter(Boolean).join('-') || '—'}</span>
+                              <span className="tw-text-slate-500 tw-text-[0.74rem]">{[f.mattina&&'M',f.pomeriggio&&'P',f.sera&&'S',f.notte&&'N'].filter(Boolean).join('-') || '—'}</span>
 
                             </div>
 
@@ -1321,17 +1321,17 @@ export default function WorkPlanAccessPage() {
 
       {/* ===== ALLEGATI — sempre visibili, integrati nel flusso ===== */}
 
-      <div style={{ border: '2px solid #fed7aa', borderRadius: '10px', marginBottom: '16px', overflow: 'hidden', backgroundColor: '#fffbf7' }}>
+      <div className="tw-border-2 tw-border-orange-200 tw-rounded-[10px] tw-mb-4 tw-overflow-hidden tw-bg-orange-50">
 
-        <div style={{ padding: '12px 16px', backgroundColor: '#fff7ed', borderBottom: '1px solid #fed7aa', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="tw-px-4 tw-py-3 tw-bg-orange-50 tw-border-b tw-border-orange-200 tw-flex tw-items-center tw-justify-between">
 
-          <span style={{ fontWeight: '700', color: '#c2410c', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className="tw-font-bold tw-text-orange-700 tw-text-[0.95rem] tw-flex tw-items-center tw-gap-2">
 
             <Paperclip size={18} /> Allegati cartella ({allegati.length})
 
           </span>
 
-          <button type="button" onClick={() => setShowAllegati(!showAllegati)} style={{ background: 'none', border: '1px solid #fed7aa', borderRadius: '6px', cursor: 'pointer', color: '#c2410c', padding: '4px 10px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <button type="button" onClick={() => setShowAllegati(!showAllegati)} className="tw-bg-transparent tw-border tw-border-orange-200 tw-rounded-md tw-cursor-pointer tw-text-orange-700 tw-px-2.5 tw-py-1 tw-text-[0.8rem] tw-flex tw-items-center tw-gap-1">
 
             {showAllegati ? <><ChevronUp size={14} /> Nascondi</> : <><ChevronDown size={14} /> Mostra</>}
 
@@ -1343,21 +1343,21 @@ export default function WorkPlanAccessPage() {
 
         {/* Form upload — sempre visibile */}
 
-        <div style={{ padding: '12px 16px', borderBottom: allegati.length > 0 ? '1px solid #fed7aa' : 'none' }}>
+        <div className="tw-px-4 tw-py-3" style={{ borderBottom: allegati.length > 0 ? '1px solid #fed7aa' : 'none' }}>
 
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div className="tw-flex tw-gap-2 tw-items-start tw-flex-wrap">
 
-            <div style={{ flex: 1, minWidth: '200px' }}>
+            <div className="tw-flex-1 tw-min-w-[200px]">
 
-              <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" onChange={e => setUploadFile(e.target.files?.[0] || null)} style={{ width: '100%', fontSize: '0.85rem', marginBottom: '6px' }} />
+              <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" onChange={e => setUploadFile(e.target.files?.[0] || null)} className="tw-w-full tw-text-[0.85rem] tw-mb-1.5" />
 
-              {uploadFile && <div style={{ fontSize: '0.78rem', color: '#c2410c', marginBottom: '4px' }}>📄 {uploadFile.name} ({formatDimensione(uploadFile.size)})</div>}
+              {uploadFile && <div className="tw-text-[0.78rem] tw-text-orange-700 tw-mb-1">📄 {uploadFile.name} ({formatDimensione(uploadFile.size)})</div>}
 
-              <input type="text" value={uploadDescrizione} onChange={e => setUploadDescrizione(e.target.value)} placeholder="Descrizione allegato (opzionale)..." style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #fed7aa', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+              <input type="text" value={uploadDescrizione} onChange={e => setUploadDescrizione(e.target.value)} placeholder="Descrizione allegato (opzionale)..." className="tw-w-full tw-px-2 tw-py-1.5 tw-rounded-md tw-border tw-border-orange-200 tw-text-[0.85rem] tw-box-border" />
 
             </div>
 
-            <button type="button" onClick={caricaFile} disabled={!uploadFile || uploadLoading} style={{ padding: '10px 16px', backgroundColor: uploadFile && !uploadLoading ? '#c2410c' : '#fdba74', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: uploadFile && !uploadLoading ? 'pointer' : 'not-allowed', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', alignSelf: 'flex-end' }}>
+            <button type="button" onClick={caricaFile} disabled={!uploadFile || uploadLoading} className={`tw-px-4 tw-py-2.5 tw-text-white tw-border-0 tw-rounded-lg tw-font-semibold tw-text-[0.88rem] tw-flex tw-items-center tw-gap-1.5 tw-whitespace-nowrap tw-self-end ${uploadFile && !uploadLoading ? 'tw-bg-orange-700 tw-cursor-pointer' : 'tw-bg-orange-300 tw-cursor-not-allowed'}`}>
 
               {uploadLoading ? '⏳' : <><Paperclip size={15} /> Allega</>}
 
@@ -1365,7 +1365,7 @@ export default function WorkPlanAccessPage() {
 
           </div>
 
-          <div style={{ fontSize: '0.72rem', color: '#999', marginTop: '4px' }}>Immagini, PDF, Word, Excel, testo — max 20 MB</div>
+          <div className="tw-text-[0.72rem] tw-text-slate-400 tw-mt-1">Immagini, PDF, Word, Excel, testo — max 20 MB</div>
 
         </div>
 
@@ -1375,19 +1375,19 @@ export default function WorkPlanAccessPage() {
 
         {allegati.length > 0 && showAllegati && (
 
-          <div style={{ padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div className="tw-px-4 tw-py-2.5 tw-flex tw-flex-col tw-gap-1.5">
 
             {allegati.map(all => (
 
-              <div key={all._id} style={{ padding: '8px 10px', borderRadius: '6px', border: '1px solid #fed7aa', backgroundColor: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div key={all._id} className="tw-px-2.5 tw-py-2 tw-rounded-md tw-border tw-border-orange-200 tw-bg-white tw-flex tw-items-center tw-gap-2">
 
-                <div style={{ flexShrink: 0 }}>{getFileIcon(all.mimeType)}</div>
+                <div className="tw-flex-shrink-0">{getFileIcon(all.mimeType)}</div>
 
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="tw-flex-1 tw-min-w-0">
 
-                  <div style={{ fontWeight: '600', fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{all.nomeFile}</div>
+                  <div className="tw-font-semibold tw-text-[0.85rem] tw-overflow-hidden tw-text-ellipsis tw-whitespace-nowrap">{all.nomeFile}</div>
 
-                  <div style={{ fontSize: '0.72rem', color: '#888', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <div className="tw-text-[0.72rem] tw-text-slate-500 tw-flex tw-gap-1.5 tw-flex-wrap">
 
                     <span>{formatDimensione(all.dimensione)}</span>
 
@@ -1395,21 +1395,21 @@ export default function WorkPlanAccessPage() {
 
                     <span>👤 {all.caricatoDa}</span>
 
-                    {all.descrizione && <span style={{ fontStyle: 'italic' }}>{all.descrizione}</span>}
+                    {all.descrizione && <span className="tw-italic">{all.descrizione}</span>}
 
                   </div>
 
                 </div>
 
-                <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                <div className="tw-flex tw-gap-1 tw-flex-shrink-0">
 
-                  <button type="button" onClick={() => apriAllegato(all)} style={{ background: '#0284c7', border: 'none', cursor: 'pointer', color: 'white', padding: '5px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.72rem' }}>
+                  <button type="button" onClick={() => apriAllegato(all)} className="tw-bg-sky-600 tw-border-0 tw-cursor-pointer tw-text-white tw-px-2 tw-py-1 tw-rounded tw-flex tw-items-center tw-gap-1 tw-text-[0.72rem]">
 
                     <ExternalLink size={12} /> Apri
 
                   </button>
 
-                  {canDeleteAllegato && <button type="button" onClick={() => eliminaAllegato(all._id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', padding: '5px' }}><Trash2 size={13} /></button>}
+                  {canDeleteAllegato && <button type="button" onClick={() => eliminaAllegato(all._id)} className="tw-bg-transparent tw-border-0 tw-cursor-pointer tw-text-red-600 tw-p-1.5"><Trash2 size={13} /></button>}
 
                 </div>
 
@@ -1423,7 +1423,7 @@ export default function WorkPlanAccessPage() {
 
         {allegati.length > 0 && !showAllegati && (
 
-          <div style={{ padding: '8px 16px', fontSize: '0.8rem', color: '#c2410c' }}>
+          <div className="tw-px-4 tw-py-2 tw-text-[0.8rem] tw-text-orange-700">
 
             {allegati.length} allegato{allegati.length > 1 ? 'i' : ''} presente{allegati.length > 1 ? 'i' : ''} — clicca "Mostra" per visualizzarli
 
@@ -1439,7 +1439,7 @@ export default function WorkPlanAccessPage() {
 
       {workPlan.notes && (
 
-        <div style={{ padding: '12px 16px', backgroundColor: '#fefce8', border: '1px solid #fde68a', borderRadius: '8px', fontSize: '0.88rem', color: '#92400e' }}>
+        <div className="tw-px-4 tw-py-3 tw-bg-amber-50 tw-border tw-border-amber-200 tw-rounded-lg tw-text-[0.88rem] tw-text-amber-800">
 
           📋 <strong>Note:</strong> {workPlan.notes}
 
@@ -1449,13 +1449,13 @@ export default function WorkPlanAccessPage() {
 
       {/* Modale Chat */}
       {showChat && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }} onClick={() => setShowChat(false)}>
-          <div style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem' }}>Chat con coordinatore / ufficio</h3>
-              <button onClick={() => setShowChat(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
+        <div className="tw-fixed tw-inset-0 tw-bg-black/50 tw-z-[100] tw-flex tw-items-center tw-justify-center tw-p-3" onClick={() => setShowChat(false)}>
+          <div className="tw-bg-white tw-rounded-2xl tw-w-full tw-max-w-[600px] tw-max-h-[90vh] tw-overflow-hidden tw-flex tw-flex-col" onClick={e => e.stopPropagation()}>
+            <div className="tw-px-4 tw-py-3 tw-border-b tw-border-slate-200 tw-flex tw-justify-between tw-items-center">
+              <h3 className="tw-m-0 tw-text-base">Chat con coordinatore / ufficio</h3>
+              <button onClick={() => setShowChat(false)} className="tw-bg-transparent tw-border-0 tw-cursor-pointer">✕</button>
             </div>
-            <div style={{ flex: 1, overflow: 'hidden' }}>
+            <div className="tw-flex-1 tw-overflow-hidden">
               <ChatWidget scope="general" title="Coordinatore / Ufficio" height="100%" />
             </div>
           </div>
@@ -1463,14 +1463,14 @@ export default function WorkPlanAccessPage() {
       )}
 
       {diarioDaFirmare && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }} onClick={() => { setDiarioDaFirmare(null); setFirmaDiarioGrafometrica(''); }}>
-          <div style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '560px', padding: '20px' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 8px', color: '#065f46' }}>Firma voce del diario</h3>
-            <p style={{ color: '#475569', fontSize: '0.86rem' }}>Firma con il dito o la penna. Alla conferma la voce sarà bloccata definitivamente.</p>
+        <div className="tw-fixed tw-inset-0 tw-bg-black/50 tw-z-[100] tw-flex tw-items-center tw-justify-center tw-p-3" onClick={() => { setDiarioDaFirmare(null); setFirmaDiarioGrafometrica(''); }}>
+          <div className="tw-bg-white tw-rounded-2xl tw-w-full tw-max-w-[560px] tw-p-5" onClick={e => e.stopPropagation()}>
+            <h3 className="tw-m-0 tw-mb-2 tw-text-green-800">Firma voce del diario</h3>
+            <p className="tw-text-slate-600 tw-text-[0.86rem]">Firma con il dito o la penna. Alla conferma la voce sarà bloccata definitivamente.</p>
             <FirmaCanvas label="Firma grafometrica dell’operatore" sublabel="Disegna la firma nel riquadro" onFirmaCompleta={setFirmaDiarioGrafometrica} onCancella={() => setFirmaDiarioGrafometrica('')} altezza={160} />
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button type="button" onClick={() => { setDiarioDaFirmare(null); setFirmaDiarioGrafometrica(''); }} style={{ flex: 1, padding: '11px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '7px', cursor: 'pointer' }}>Annulla</button>
-              <button type="button" onClick={firmaDiario} disabled={!firmaDiarioGrafometrica} style={{ flex: 2, padding: '11px', background: firmaDiarioGrafometrica ? '#16a34a' : '#bbf7d0', color: 'white', border: 'none', borderRadius: '7px', fontWeight: 700, cursor: firmaDiarioGrafometrica ? 'pointer' : 'not-allowed' }}>Firma e blocca voce</button>
+            <div className="tw-flex tw-gap-2.5">
+              <button type="button" onClick={() => { setDiarioDaFirmare(null); setFirmaDiarioGrafometrica(''); }} className="tw-flex-1 tw-p-2.5 tw-bg-slate-100 tw-border tw-border-slate-300 tw-rounded-md tw-cursor-pointer">Annulla</button>
+              <button type="button" onClick={firmaDiario} disabled={!firmaDiarioGrafometrica} className={`tw-flex-[2] tw-p-2.5 tw-text-white tw-border-0 tw-rounded-md tw-font-bold ${firmaDiarioGrafometrica ? 'tw-bg-green-600 tw-cursor-pointer' : 'tw-bg-green-200 tw-cursor-not-allowed'}`}>Firma e blocca voce</button>
             </div>
           </div>
         </div>
@@ -1478,20 +1478,20 @@ export default function WorkPlanAccessPage() {
 
       {/* Modale Consenso GDPR */}
       {showConsenso && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }} onClick={() => setShowConsenso(false)}>
-          <div style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto', padding: '20px' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 8px', color: '#1e3a5f' }}>Consenso GDPR</h3>
-            <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '16px' }}>
+        <div className="tw-fixed tw-inset-0 tw-bg-black/50 tw-z-[100] tw-flex tw-items-center tw-justify-center tw-p-3" onClick={() => setShowConsenso(false)}>
+          <div className="tw-bg-white tw-rounded-2xl tw-w-full tw-max-w-[520px] tw-max-h-[90vh] tw-overflow-y-auto tw-p-5" onClick={e => e.stopPropagation()}>
+            <h3 className="tw-m-0 tw-mb-2 tw-text-slate-800">Consenso GDPR</h3>
+            <p className="tw-text-[0.85rem] tw-text-slate-500 tw-mb-4">
               Il paziente / caregiver firma il consenso al trattamento dei dati per prestazioni sanitarie, fatturazione e finalità interne.
             </p>
 
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '4px' }}>Nome firmatario</label>
-              <input type="text" value={nomeConsenso} onChange={e => setNomeConsenso(e.target.value)} placeholder="Nome" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+            <div className="tw-mb-3">
+              <label className="tw-block tw-text-[0.85rem] tw-font-semibold tw-mb-1">Nome firmatario</label>
+              <input type="text" value={nomeConsenso} onChange={e => setNomeConsenso(e.target.value)} placeholder="Nome" className="tw-w-full tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300" />
             </div>
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '4px' }}>Cognome firmatario</label>
-              <input type="text" value={cognomeConsenso} onChange={e => setCognomeConsenso(e.target.value)} placeholder="Cognome" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+            <div className="tw-mb-4">
+              <label className="tw-block tw-text-[0.85rem] tw-font-semibold tw-mb-1">Cognome firmatario</label>
+              <input type="text" value={cognomeConsenso} onChange={e => setCognomeConsenso(e.target.value)} placeholder="Cognome" className="tw-w-full tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300" />
             </div>
 
             <FirmaCanvas
@@ -1502,9 +1502,9 @@ export default function WorkPlanAccessPage() {
               altezza={160}
             />
 
-            <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-              <button onClick={() => setShowConsenso(false)} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f3f4f6', cursor: 'pointer' }}>Annulla</button>
-              <button onClick={salvaConsensoGDPR} disabled={savingConsenso} style={{ flex: 2, padding: '12px', borderRadius: '8px', border: 'none', background: '#16a34a', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
+            <div className="tw-flex tw-gap-2.5 tw-mt-4">
+              <button onClick={() => setShowConsenso(false)} className="tw-flex-1 tw-p-3 tw-rounded-lg tw-border tw-border-slate-300 tw-bg-slate-100 tw-cursor-pointer">Annulla</button>
+              <button onClick={salvaConsensoGDPR} disabled={savingConsenso} className="tw-flex-[2] tw-p-3 tw-rounded-lg tw-border-0 tw-bg-green-600 tw-text-white tw-font-semibold tw-cursor-pointer">
                 {savingConsenso ? 'Salvataggio...' : 'Salva consenso'}
               </button>
             </div>
@@ -1513,42 +1513,42 @@ export default function WorkPlanAccessPage() {
       )}
 
       {showConsensoPrestazione && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 110, padding: '12px', overflowY: 'auto' }} onClick={() => setShowConsensoPrestazione(false)}>
-          <div style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '620px', margin: 'auto', padding: '20px', minHeight: 'min-content' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 8px', color: '#9a3412' }}>Consenso alla prestazione sanitaria e rischi</h3>
-            <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.55, marginBottom: '14px' }}>
+        <div className="tw-fixed tw-inset-0 tw-bg-black/55 tw-z-[110] tw-p-3 tw-overflow-y-auto" onClick={() => setShowConsensoPrestazione(false)}>
+          <div className="tw-bg-white tw-rounded-2xl tw-w-full tw-max-w-[620px] tw-mx-auto tw-p-5" onClick={e => e.stopPropagation()}>
+            <h3 className="tw-m-0 tw-mb-2 tw-text-orange-800">Consenso alla prestazione sanitaria e rischi</h3>
+            <p className="tw-text-[0.85rem] tw-text-slate-600 tw-leading-relaxed tw-mb-3.5">
               Il firmatario dichiara di aver ricevuto informazioni sulle prestazioni sanitarie e assistenziali svolte da Abbraccio Cure Domiciliari e dai suoi operatori incaricati.
             </p>
-            <div style={{ padding: '12px', borderRadius: '8px', background: '#fff7ed', border: '1px solid #fed7aa', fontSize: '0.83rem', color: '#7c2d12', lineHeight: 1.5, marginBottom: '16px' }}>
+            <div className="tw-p-3 tw-rounded-lg tw-bg-orange-50 tw-border tw-border-orange-200 tw-text-[0.83rem] tw-text-orange-900 tw-leading-normal tw-mb-4">
               Le prestazioni sono effettuate secondo le procedure aziendali e le condizioni cliniche rilevate. Possono sussistere rischi prevedibili connessi allo stato di salute, alla risposta individuale al trattamento e alle attività svolte al domicilio. In caso di necessità l'operatore attiva il medico o i servizi di emergenza.
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
-              <input type="text" value={nomeConsensoPrestazione} onChange={e => setNomeConsensoPrestazione(e.target.value)} placeholder="Nome firmatario" style={{ padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
-              <input type="text" value={cognomeConsensoPrestazione} onChange={e => setCognomeConsensoPrestazione(e.target.value)} placeholder="Cognome firmatario" style={{ padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+            <div className="tw-grid tw-grid-cols-2 tw-gap-2.5 tw-mb-3">
+              <input type="text" value={nomeConsensoPrestazione} onChange={e => setNomeConsensoPrestazione(e.target.value)} placeholder="Nome firmatario" className="tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300" />
+              <input type="text" value={cognomeConsensoPrestazione} onChange={e => setCognomeConsensoPrestazione(e.target.value)} placeholder="Cognome firmatario" className="tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300" />
             </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '5px' }}>Il firmatario è</label>
-              <select value={ruoloConsensoPrestazione} onChange={e => setRuoloConsensoPrestazione(e.target.value as typeof ruoloConsensoPrestazione)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}>
+            <div className="tw-mb-3.5">
+              <label className="tw-block tw-text-[0.85rem] tw-font-semibold tw-mb-1.5">Il firmatario è</label>
+              <select value={ruoloConsensoPrestazione} onChange={e => setRuoloConsensoPrestazione(e.target.value as typeof ruoloConsensoPrestazione)} className="tw-w-full tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300">
                 <option value="paziente">Paziente</option>
                 <option value="caregiver">Caregiver</option>
                 <option value="tutore">Tutore</option>
                 <option value="rappresentanteLegale">Rappresentante legale</option>
               </select>
             </div>
-            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.85rem', marginBottom: '10px', cursor: 'pointer' }}>
-              <input type="checkbox" checked={accettaPrestazione} onChange={e => setAccettaPrestazione(e.target.checked)} style={{ marginTop: '3px' }} />
+            <label className="tw-flex tw-items-start tw-gap-2 tw-text-[0.85rem] tw-mb-2.5 tw-cursor-pointer">
+              <input type="checkbox" checked={accettaPrestazione} onChange={e => setAccettaPrestazione(e.target.checked)} className="tw-mt-1" />
               Confermo di aver ricevuto informazioni sulla prestazione sanitaria e di acconsentire alla sua esecuzione.
             </label>
-            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.85rem', marginBottom: '16px', cursor: 'pointer' }}>
-              <input type="checkbox" checked={accettaRischi} onChange={e => setAccettaRischi(e.target.checked)} style={{ marginTop: '3px' }} />
+            <label className="tw-flex tw-items-start tw-gap-2 tw-text-[0.85rem] tw-mb-4 tw-cursor-pointer">
+              <input type="checkbox" checked={accettaRischi} onChange={e => setAccettaRischi(e.target.checked)} className="tw-mt-1" />
               Dichiaro di aver letto e compreso i rischi e le limitazioni del trattamento descritti sopra.
             </label>
 
             <FirmaCanvas label="Firma del paziente / firmatario" sublabel="Firmare con il dito sullo schermo" onFirmaCompleta={setFirmaConsensoPrestazione} onCancella={() => setFirmaConsensoPrestazione('')} altezza={160} />
-            <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-              <button onClick={() => setShowConsensoPrestazione(false)} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f3f4f6', cursor: 'pointer' }}>Annulla</button>
-              <button onClick={salvaConsensoPrestazione} disabled={savingConsensoPrestazione} style={{ flex: 2, padding: '12px', borderRadius: '8px', border: 'none', background: '#c2410c', color: 'white', fontWeight: 700, cursor: 'pointer' }}>{savingConsensoPrestazione ? 'Salvataggio...' : 'Firma e archivia consenso'}</button>
+            <div className="tw-flex tw-gap-2.5 tw-mt-4">
+              <button onClick={() => setShowConsensoPrestazione(false)} className="tw-flex-1 tw-p-3 tw-rounded-lg tw-border tw-border-slate-300 tw-bg-slate-100 tw-cursor-pointer">Annulla</button>
+              <button onClick={salvaConsensoPrestazione} disabled={savingConsensoPrestazione} className="tw-flex-[2] tw-p-3 tw-rounded-lg tw-border-0 tw-bg-orange-700 tw-text-white tw-font-bold tw-cursor-pointer">{savingConsensoPrestazione ? 'Salvataggio...' : 'Firma e archivia consenso'}</button>
             </div>
           </div>
         </div>

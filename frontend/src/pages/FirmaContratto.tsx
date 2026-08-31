@@ -58,34 +58,34 @@ export default function FirmaContratto() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div style={{ background: 'white', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.10)', padding: '36px 32px', maxWidth: '560px', width: '100%' }}>
+    <div className="tw-min-h-screen tw-bg-slate-50 tw-flex tw-items-center tw-justify-center tw-p-5">
+      <div className="tw-bg-white tw-rounded-2xl tw-p-9 tw-px-8 tw-max-w-[560px] tw-w-full" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <h1 style={{ margin: 0, fontSize: '1.3rem', color: '#0f766e', fontWeight: 700 }}>Portale Firma Digitale</h1>
-          <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: '0.9rem' }}>Firma digitale contratto</p>
+        <div className="tw-text-center tw-mb-6">
+          <h1 className="tw-m-0 tw-text-[1.3rem] tw-text-teal-700 tw-font-bold">Portale Firma Digitale</h1>
+          <p className="tw-mt-1 tw-mb-0 tw-text-slate-500 tw-text-[0.9rem]">Firma digitale contratto</p>
         </div>
 
         {stato === 'caricamento' && (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: '#6b7280' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '12px' }}>⏳</div>
+          <div className="tw-text-center tw-py-10 tw-text-slate-500">
+            <div className="tw-text-[2rem] tw-mb-3">⏳</div>
             <p>Verifica link in corso...</p>
           </div>
         )}
 
         {stato === 'errore' && (
-          <div style={{ textAlign: 'center', padding: '20px', background: '#fef2f2', borderRadius: '12px', border: '1px solid #fecaca' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>❌</div>
-            <h3 style={{ color: '#dc2626', margin: '0 0 8px' }}>Link non valido</h3>
-            <p style={{ color: '#7f1d1d', margin: 0, fontSize: '0.9rem' }}>{errMsg}</p>
+          <div className="tw-text-center tw-p-5 tw-bg-red-50 tw-rounded-xl tw-border tw-border-red-200">
+            <div className="tw-text-[2.5rem] tw-mb-3">❌</div>
+            <h3 className="tw-text-red-600 tw-mt-0 tw-mb-2">Link non valido</h3>
+            <p className="tw-text-red-900 tw-m-0 tw-text-[0.9rem]">{errMsg}</p>
           </div>
         )}
 
         {stato === 'firmato' && (
-          <div style={{ textAlign: 'center', padding: '20px', background: '#f0fdf4', borderRadius: '12px', border: '1px solid #86efac' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>✅</div>
-            <h3 style={{ color: '#059669', margin: '0 0 8px' }}>Contratto già firmato</h3>
-            <p style={{ color: '#065f46', margin: 0, fontSize: '0.9rem' }}>
+          <div className="tw-text-center tw-p-5 tw-bg-green-50 tw-rounded-xl tw-border tw-border-green-300">
+            <div className="tw-text-[2.5rem] tw-mb-3">✅</div>
+            <h3 className="tw-text-green-600 tw-mt-0 tw-mb-2">Contratto già firmato</h3>
+            <p className="tw-text-green-800 tw-m-0 tw-text-[0.9rem]">
               {nomeUtente}, hai già firmato il contratto digitalmente. Puoi chiudere questa pagina.
             </p>
           </div>
@@ -93,42 +93,42 @@ export default function FirmaContratto() {
 
         {stato === 'pronto' && (
           <div>
-            <div style={{ background: '#eff6ff', borderRadius: '10px', padding: '14px 16px', marginBottom: '20px', border: '1px solid #bfdbfe' }}>
-              <p style={{ margin: 0, color: '#1e40af', fontSize: '0.9rem' }}>
+            <div className="tw-bg-blue-50 tw-rounded-lg tw-py-3.5 tw-px-4 tw-mb-5 tw-border tw-border-blue-200">
+              <p className="tw-m-0 tw-text-blue-800 tw-text-[0.9rem]">
                 Ciao <strong>{nomeUtente}</strong>, firma il contratto di collaborazione qui sotto.
               </p>
             </div>
 
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', maxHeight: '420px', overflowY: 'auto', fontSize: '0.78rem', color: '#374151', lineHeight: 1.5, marginBottom: '20px', whiteSpace: 'pre-wrap' }}>
-              <strong style={{ display: 'block', textAlign: 'center', marginBottom: '8px', fontSize: '0.85rem', color: '#1e4d8c' }}>TESTO INTEGRALE DEL CONTRATTO</strong>
+            <div className="tw-bg-slate-50 tw-border tw-border-slate-200 tw-rounded-lg tw-p-3.5 tw-max-h-[420px] tw-overflow-y-auto tw-text-[0.78rem] tw-text-slate-700 tw-leading-normal tw-mb-5 tw-whitespace-pre-wrap">
+              <strong className="tw-block tw-text-center tw-mb-2 tw-text-[0.85rem] tw-text-brand">TESTO INTEGRALE DEL CONTRATTO</strong>
               {testoContratto ? testoContratto.replace(/Il Dr\. ___________________________________/, `Il Dr. ${nomeUtente}`) : 'Caricamento del contratto completo...'}
             </div>
 
             {/* Data e luogo */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+            <div className="tw-grid tw-grid-cols-2 tw-gap-2.5 tw-mb-4" style={{ gridTemplateColumns: '1fr 1fr' }}>
               <div>
-                <label style={{ fontSize: '0.82rem', color: '#6b7280', display: 'block', marginBottom: '4px' }}>Data firma</label>
+                <label className="tw-text-[0.82rem] tw-text-slate-500 tw-block tw-mb-1">Data firma</label>
                 <input
                   type="text"
                   value={new Date(dataFirma).toLocaleDateString('it-IT')}
                   readOnly
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb', fontSize: '0.9rem', boxSizing: 'border-box' }}
+                  className="tw-w-full tw-py-2 tw-px-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-bg-slate-50 tw-text-[0.9rem]"
                 />
               </div>
               <div>
-                <label style={{ fontSize: '0.82rem', color: '#6b7280', display: 'block', marginBottom: '4px' }}>Luogo firma *</label>
+                <label className="tw-text-[0.82rem] tw-text-slate-500 tw-block tw-mb-1">Luogo firma *</label>
                 <input
                   type="text"
                   value={luogoFirma}
                   onChange={e => setLuogoFirma(e.target.value)}
                   placeholder="Es. Roma"
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.9rem', boxSizing: 'border-box' }}
+                  className="tw-w-full tw-py-2 tw-px-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]"
                 />
               </div>
             </div>
 
             {/* Firma canvas */}
-            <div style={{ border: '2px dashed #1e4d8c', borderRadius: '10px', padding: '10px', marginBottom: '16px' }}>
+            <div className="tw-border-2 tw-border-dashed tw-border-brand tw-rounded-lg tw-p-2.5 tw-mb-4">
               <FirmaCanvas
                 label="Firma digitale"
                 sublabel={`${nomeUtente} — ${new Date().toLocaleDateString('it-IT')}`}
@@ -139,7 +139,7 @@ export default function FirmaContratto() {
             </div>
 
             {errMsg && (
-              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', color: '#dc2626', fontSize: '0.85rem' }}>
+              <div className="tw-bg-red-50 tw-border tw-border-red-200 tw-rounded-lg tw-py-2.5 tw-px-3.5 tw-mb-3.5 tw-text-red-600 tw-text-[0.85rem]">
                 {errMsg}
               </div>
             )}
@@ -147,17 +147,13 @@ export default function FirmaContratto() {
             <button
               onClick={handleInviaFirma}
               disabled={!firma || loading}
-              style={{
-                width: '100%', padding: '14px', background: firma && !loading ? '#1e4d8c' : '#93c5fd',
-                color: 'white', border: 'none', borderRadius: '10px', fontSize: '1rem',
-                fontWeight: 700, cursor: firma && !loading ? 'pointer' : 'not-allowed',
-                transition: 'background 0.2s'
-              }}
+              className="tw-w-full tw-p-3.5 tw-border-0 tw-rounded-lg tw-text-white tw-text-base tw-font-bold disabled:tw-cursor-not-allowed tw-transition-colors"
+              style={{ backgroundColor: firma && !loading ? '#1e4d8c' : '#93c5fd' }}
             >
               {loading ? '⏳ Salvataggio...' : '✅ Firma e invia contratto'}
             </button>
 
-            <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af', marginTop: '12px' }}>
+            <p className="tw-text-center tw-text-[0.75rem] tw-text-slate-400 tw-mt-3">
               La firma digitale ha valore legale. Firmando accetti i termini del contratto di collaborazione.
             </p>
           </div>

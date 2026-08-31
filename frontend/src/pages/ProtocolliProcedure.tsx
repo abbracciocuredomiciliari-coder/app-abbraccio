@@ -11,7 +11,7 @@ export default function ProtocolliProcedure() {
   return (
     <div>
       {/* Tab in alto */}
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '24px', borderBottom: '2px solid #e2e8f0' }}>
+      <div className="tw-flex tw-flex-wrap tw-gap-1.5 tw-mb-6 tw-border-b-2 tw-border-slate-200">
         {([
           { key: 'protocolli' as const, label: '📋 Protocolli Sanitari' },
           { key: 'procedure' as const, label: '📄 Procedure Sanitarie' },
@@ -21,16 +21,10 @@ export default function ProtocolliProcedure() {
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
+            className="tw-rounded-t-lg tw-py-2.5 tw-px-4.5 tw-text-[0.95rem] tw-font-semibold tw-cursor-pointer tw-border-none tw--mb-0.5"
             style={{
-              background: activeTab === tab.key ? '#1e4d8c' : 'transparent',
+              backgroundColor: activeTab === tab.key ? '#1e4d8c' : 'transparent',
               color: activeTab === tab.key ? '#fff' : '#1e4d8c',
-              border: 'none',
-              borderRadius: '8px 8px 0 0',
-              padding: '10px 18px',
-              fontSize: '0.95rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              marginBottom: '-2px',
             }}
           >
             {tab.label}

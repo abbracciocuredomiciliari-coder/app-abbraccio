@@ -36,8 +36,8 @@ export default function ChatPage() {
 
   if (patientId) {
     return (
-      <div style={{ padding: '16px', maxWidth: '900px', margin: '0 auto' }}>
-        <button onClick={() => navigate('/chat')} style={{ border: 'none', background: 'transparent', padding: '0 0 12px', color: '#1e4d8c', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+      <div className="tw-p-4 tw-max-w-[900px] tw-mx-auto">
+        <button onClick={() => navigate('/chat')} className="tw-border-0 tw-bg-transparent tw-p-0 tw-pb-3 tw-text-brand tw-cursor-pointer tw-inline-flex tw-items-center tw-gap-1.5 tw-font-semibold">
           <ArrowLeft size={18} /> Tutte le chat
         </button>
         <ChatWidget scope="patient" patientId={patientId} title={`Chat paziente: ${patientName}`} height={620} />
@@ -46,28 +46,28 @@ export default function ChatPage() {
   }
 
   return (
-    <div style={{ padding: '16px', maxWidth: '900px', margin: '0 auto' }}>
-      <h2 style={{ margin: '0 0 8px', color: '#1e4d8c' }}>💬 Comunicazioni operative</h2>
-      <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '16px' }}>
+    <div className="tw-p-4 tw-max-w-[900px] tw-mx-auto">
+      <h2 className="tw-m-0 tw-mb-2 tw-text-brand">💬 Comunicazioni operative</h2>
+      <p className="tw-text-slate-500 tw-text-[0.9rem] tw-mb-4">
         Chat interna per comunicare con coordinatore, ufficio e admin.
       </p>
 
       {!loadingUnread && unreadChats.length > 0 && (
-        <div style={{ marginBottom: '16px', border: '1px solid #fecaca', background: '#fff7f7', borderRadius: '10px', padding: '12px' }}>
-          <div style={{ color: '#991b1b', fontWeight: 700, fontSize: '0.9rem', marginBottom: '8px' }}>Messaggi non letti dai pazienti</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="tw-mb-4 tw-border tw-border-red-200 tw-bg-red-50 tw-rounded-[10px] tw-p-3">
+          <div className="tw-text-red-800 tw-font-bold tw-text-[0.9rem] tw-mb-2">Messaggi non letti dai pazienti</div>
+          <div className="tw-flex tw-flex-col tw-gap-2">
             {unreadChats.map(chat => (
               <button
                 key={chat.patientId}
                 onClick={() => navigate(`/chat?patientId=${encodeURIComponent(chat.patientId)}&patientName=${encodeURIComponent(chat.patientName)}`)}
-                style={{ textAlign: 'left', background: '#fff', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px', cursor: 'pointer', display: 'flex', gap: '10px', alignItems: 'center' }}
+                className="tw-text-left tw-bg-white tw-border tw-border-red-200 tw-rounded-lg tw-p-2.5 tw-cursor-pointer tw-flex tw-gap-2.5 tw-items-center"
               >
                 <User size={20} color="#0d9488" />
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: 'block', fontWeight: 700, color: '#1f2937' }}>{chat.patientName}</span>
-                  <span style={{ display: 'block', color: '#64748b', fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{chat.senderName}: {chat.lastMessage}</span>
+                <span className="tw-flex-1 tw-min-w-0">
+                  <span className="tw-block tw-font-bold tw-text-slate-800">{chat.patientName}</span>
+                  <span className="tw-block tw-text-slate-500 tw-text-[0.8rem] tw-overflow-hidden tw-text-ellipsis tw-whitespace-nowrap">{chat.senderName}: {chat.lastMessage}</span>
                 </span>
-                <span style={{ background: '#ef4444', color: '#fff', borderRadius: '999px', padding: '2px 8px', fontSize: '0.75rem', fontWeight: 700 }}>{chat.unreadCount}</span>
+                <span className="tw-bg-red-500 tw-text-white tw-rounded-full tw-px-2 tw-py-0.5 tw-text-[0.75rem] tw-font-bold">{chat.unreadCount}</span>
               </button>
             ))}
           </div>

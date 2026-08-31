@@ -8,10 +8,8 @@ export default {
   prefix: 'tw-',
   content: [
     './index.html',
-    './src/pages/Dashboard.tsx',
-    './src/pages/PortaleOperatore.tsx',
-    './src/pages/Patients.tsx',
-    './src/pages/Staff.tsx',
+    './src/pages/*.tsx',
+    './src/components/**/*.tsx',
   ],
   theme: {
     extend: {

@@ -225,24 +225,24 @@ function Dashboard() {
     return (
       <section className="tw-max-w-none">
         <h2><Activity size={28} />Dashboard</h2>
-        <div className="tw-grid tw-gap-4 tw-mb-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+        <div className="tw-grid tw-grid-cols-[repeat(auto-fit,minmax(200px,1fr))] tw-gap-4 tw-mb-6">
           {[1, 2, 3, 4].map(i => (
             <Card key={i} padding="md">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                <div style={{ flex: 1 }}>
-                  <div className="skeleton skeleton-text" style={{ width: '70%', marginBottom: '6px' }} />
-                  <div className="skeleton skeleton-text" style={{ width: '45%', height: '0.75rem' }} />
+              <div className="tw-flex tw-justify-between tw-items-start tw-mb-4">
+                <div className="tw-flex-1">
+                  <div className="skeleton skeleton-text tw-w-[70%] tw-mb-1.5" />
+                  <div className="skeleton skeleton-text tw-w-[45%] tw-h-3" />
                 </div>
-                <div className="skeleton" style={{ width: '40px', height: '40px', borderRadius: '8px', flexShrink: 0 }} />
+                <div className="skeleton tw-w-10 tw-h-10 tw-rounded-lg tw-flex-shrink-0" />
               </div>
-              <div className="skeleton" style={{ width: '50%', height: '2.2rem', borderRadius: '6px' }} />
+              <div className="skeleton tw-w-1/2 tw-h-[2.2rem] tw-rounded-md" />
             </Card>
           ))}
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="tw-flex tw-flex-col tw-gap-3">
           {[1, 2].map(i => (
             <Card key={i}>
-              <div className="skeleton" style={{ height: '40px', borderRadius: '6px' }} />
+              <div className="skeleton tw-h-10 tw-rounded-md" />
             </Card>
           ))}
         </div>
@@ -276,7 +276,7 @@ function Dashboard() {
         </div>
       )}
 
-      <div className="tw-grid tw-gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+      <div className="tw-grid tw-grid-cols-[repeat(auto-fit,minmax(200px,1fr))] tw-gap-4">
         {dashboardCards.map((card) => (
           <button
             key={card.title}

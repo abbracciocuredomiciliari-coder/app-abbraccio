@@ -28,42 +28,31 @@ export default function ForgotPassword() {
 
   return (
     <section>
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <div style={{
-          width: '64px', height: '64px', margin: '0 auto 16px',
-          background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-          borderRadius: '16px', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', boxShadow: '0 12px 24px rgba(79,70,229,0.3)',
-        }}>
+      <div className="tw-text-center tw-mb-8">
+        <div className="tw-w-16 tw-h-16 tw-mx-auto tw-mb-4 tw-rounded-2xl tw-flex tw-items-center tw-justify-center"
+          style={{
+            background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+            boxShadow: '0 12px 24px rgba(79,70,229,0.3)',
+          }}>
           <Heart size={32} color="white" />
         </div>
-        <h2 style={{ margin: 0, fontSize: '1.75rem' }}>Password dimenticata?</h2>
-        <p style={{ color: 'var(--gray-500)', marginTop: '8px' }}>
+        <h2 className="tw-m-0 tw-text-[1.75rem]">Password dimenticata?</h2>
+        <p className="tw-text-slate-500 tw-mt-2">
           Inserisci la tua email e ti invieremo un link per reimpostarla.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="login-form" style={{ maxWidth: '440px', margin: '0 auto' }}>
+      <form onSubmit={handleSubmit} className="login-form tw-max-w-md tw-mx-auto">
         {success && (
-          <div style={{
-            display: 'flex', alignItems: 'flex-start', gap: '10px',
-            padding: '14px 16px', backgroundColor: 'rgba(5,150,105,0.08)',
-            border: '1px solid #6ee7b7', borderRadius: 'var(--radius-md)',
-            color: '#065f46', fontSize: '0.92rem',
-          }}>
-            <CheckCircle size={20} style={{ flexShrink: 0, marginTop: '1px' }} />
+          <div className="tw-flex tw-items-start tw-gap-2.5 tw-px-4 tw-py-3.5 tw-bg-green-600/[0.08] tw-border tw-border-green-300 tw-rounded-md tw-text-green-700 tw-text-[0.92rem]">
+            <CheckCircle size={20} className="tw-flex-shrink-0 tw-mt-px" />
             <span>{success}</span>
           </div>
         )}
 
         {error && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '12px 16px', backgroundColor: 'var(--danger-bg)',
-            border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--radius-md)',
-            color: 'var(--danger)', fontSize: '0.92rem',
-          }}>
-            <AlertCircle size={18} style={{ flexShrink: 0 }} />
+          <div className="tw-flex tw-items-center tw-gap-2 tw-px-4 tw-py-3 tw-bg-red-600/[0.08] tw-border tw-border-red-600/20 tw-rounded-md tw-text-red-600 tw-text-[0.92rem]">
+            <AlertCircle size={18} className="tw-flex-shrink-0" />
             {error}
           </div>
         )}
@@ -71,7 +60,7 @@ export default function ForgotPassword() {
         {!success && (
           <>
             <label>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="tw-inline-flex tw-items-center tw-gap-1.5">
                 <Mail size={16} /> Email
               </span>
               <input
@@ -83,15 +72,10 @@ export default function ForgotPassword() {
               />
             </label>
 
-            <button type="submit" disabled={loading} style={{ width: '100%' }}>
+            <button type="submit" disabled={loading} className="tw-w-full">
               {loading ? (
                 <>
-                  <span style={{
-                    width: '18px', height: '18px',
-                    border: '2px solid rgba(255,255,255,0.3)',
-                    borderTopColor: 'white', borderRadius: '50%',
-                    animation: 'spin 0.8s linear infinite',
-                  }} />
+                  <span className="tw-w-[18px] tw-h-[18px] tw-border-2 tw-border-white/30 tw-border-t-white tw-rounded-full tw-animate-spin" />
                   Invio in corso...
                 </>
               ) : (
@@ -104,8 +88,8 @@ export default function ForgotPassword() {
           </>
         )}
 
-        <p style={{ textAlign: 'center', fontSize: '0.88rem', color: 'var(--gray-500)', margin: 0 }}>
-          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--primary)', textDecoration: 'none', fontWeight: 500 }}>
+        <p className="tw-text-center tw-text-[0.88rem] tw-text-slate-500 tw-m-0">
+          <Link to="/" className="tw-inline-flex tw-items-center tw-gap-1 tw-text-brand tw-no-underline tw-font-medium">
             <ArrowLeft size={14} /> Torna al login
           </Link>
         </p>

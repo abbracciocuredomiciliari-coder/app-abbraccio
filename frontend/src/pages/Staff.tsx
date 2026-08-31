@@ -778,10 +778,7 @@ function Staff() {
         ) : (
           <ul>
             {filteredStaff.map((staff) => (
-              <li key={staff._id} style={{
-                borderLeft: `4px solid ${getCategoryColor(staff.category)}`,
-                opacity: !staff.active ? 0.6 : 1,
-              }}>
+              <li key={staff._id} className={`tw-border-l-4 ${!staff.active ? 'tw-opacity-60' : ''}`} style={{ borderLeftColor: getCategoryColor(staff.category) }}>
                 <div className="tw-flex tw-justify-between tw-items-start tw-gap-4">
                   <div className="tw-flex-1">
                     <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-3 tw-mb-2">
@@ -860,7 +857,7 @@ function Staff() {
                             className="tw-flex-1 tw-py-1.5 tw-px-2.5 tw-rounded-md tw-border tw-border-slate-300 tw-text-[0.85rem]"
                           />
                           <button type="button" onClick={geocodificaZona} disabled={zonaGeoLoading || !zonaForm.domicilioPartenza.trim()}
-                            className="tw-bg-brand tw-text-white tw-border-0 tw-rounded-md tw-py-1.5 tw-px-3 tw-cursor-pointer tw-text-[0.82rem] tw-font-bold disabled:tw-opacity-70" style={{ opacity: zonaGeoLoading ? 0.7 : 1 }}>
+                            className="tw-bg-brand tw-text-white tw-border-0 tw-rounded-md tw-py-1.5 tw-px-3 tw-cursor-pointer tw-text-[0.82rem] tw-font-bold disabled:tw-opacity-70">
                             {zonaGeoLoading ? '...' : '📍'}
                           </button>
                         </div>
@@ -878,7 +875,7 @@ function Staff() {
                             Annulla
                           </button>
                           <button type="button" onClick={() => salvaZona(staff._id)} disabled={zonaSalvando}
-                            className="tw-flex-[2] tw-text-white tw-border-0 tw-rounded-md tw-py-1.5 tw-font-bold tw-text-[0.82rem] tw-cursor-pointer disabled:tw-cursor-not-allowed" style={{ backgroundColor: zonaSalvando ? '#d1d5db' : '#059669' }}>
+                            className={`tw-flex-[2] tw-text-white tw-border-0 tw-rounded-md tw-py-1.5 tw-font-bold tw-text-[0.82rem] tw-cursor-pointer disabled:tw-cursor-not-allowed ${zonaSalvando ? 'tw-bg-slate-300' : 'tw-bg-emerald-600'}`}>
                             {zonaSalvando ? '...' : '✅ Salva zona'}
                           </button>
                         </div>

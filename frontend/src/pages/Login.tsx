@@ -84,50 +84,44 @@ function Login() {
 
   return (
     <section>
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+      <div className="tw-text-center tw-mb-8">
         <div
+          className="tw-w-16 tw-h-16 tw-mx-auto tw-mb-4 tw-rounded-2xl tw-flex tw-items-center tw-justify-center"
           style={{
-            width: '64px',
-            height: '64px',
-            margin: '0 auto 16px',
             background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-            borderRadius: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             boxShadow: '0 12px 24px rgba(79, 70, 229, 0.3)',
           }}
         >
           <Heart size={32} color="white" />
         </div>
-        <h2 style={{ margin: 0, fontSize: '1.75rem' }}>Benvenuto su App Abbraccio</h2>
-        <p style={{ color: 'var(--gray-500)', marginTop: '8px' }}>
+        <h2 className="tw-m-0 tw-text-[1.75rem]">Benvenuto su App Abbraccio</h2>
+        <p className="tw-text-slate-500 tw-mt-2">
           Accedi per gestire la tua struttura sanitaria
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="login-form" style={{ maxWidth: '440px', margin: '0 auto' }}>
+      <form onSubmit={handleSubmit} className="login-form tw-max-w-md tw-mx-auto">
         {sessionExpiredMsg && (
-          <Alert type="warning" onClose={() => setSessionExpiredMsg('')} style={{ marginBottom: '16px' }}>
+          <Alert type="warning" onClose={() => setSessionExpiredMsg('')} className="tw-mb-4">
             {sessionExpiredMsg}
           </Alert>
         )}
 
         {error && (
-          <Alert type="error" onClose={() => setError('')} style={{ marginBottom: '16px' }}>
+          <Alert type="error" onClose={() => setError('')} className="tw-mb-4">
             {error}
           </Alert>
         )}
 
         {isWakingUp && !error && (
-          <Alert type="warning" style={{ marginBottom: '16px' }}>
+          <Alert type="warning" className="tw-mb-4">
             Il server si sta avviando, attendi qualche secondo…
           </Alert>
         )}
 
         <Input
           label={
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="tw-inline-flex tw-items-center tw-gap-1.5">
               <Mail size={16} />
               Email
             </span>
@@ -141,12 +135,12 @@ function Login() {
 
         <Input
           label={
-            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="tw-flex tw-items-center tw-justify-between">
+              <span className="tw-inline-flex tw-items-center tw-gap-1.5">
                 <Lock size={16} />
                 Password
               </span>
-              <Link to="/forgot-password" style={{ fontSize: '0.82rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: 500 }}>
+              <Link to="/forgot-password" className="tw-text-[0.82rem] tw-text-brand tw-no-underline tw-font-medium">
                 Password dimenticata?
               </Link>
             </span>
@@ -163,14 +157,14 @@ function Login() {
           variant="primary"
           loading={loading}
           icon={<LogIn size={18} />}
-          style={{ width: '100%' }}
+          className="tw-w-full"
         >
           {isWakingUp ? 'Avvio server in corso…' : 'Accedi'}
         </Button>
 
-        <p style={{ textAlign: 'center', fontSize: '0.88rem', color: 'var(--gray-500)', margin: '0 0 10px' }}>
+        <p className="tw-text-center tw-text-[0.88rem] tw-text-slate-500 tw-my-0 tw-mb-2.5">
           Operatore?{' '}
-          <a href="/register" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 500 }}>
+          <a href="/register" className="tw-text-brand tw-no-underline tw-font-medium">
             Registrati
           </a>
         </p>

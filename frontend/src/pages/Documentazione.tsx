@@ -287,18 +287,18 @@ function Documentazione() {
             ref={procedureInputRef}
             type="file"
             accept="*/*"
-            style={{ display: 'none' }}
+            className="tw-hidden"
             onChange={handleProcedureFileChange}
           />
           {procedureFile && (
-            <div className="selected-file-actions" style={{ border: '1px solid #0078d4', padding: '12px', borderRadius: '8px', backgroundColor: '#eef6ff' }}>
+            <div className="selected-file-actions tw-border tw-border-blue-600 tw-p-3 tw-rounded-lg tw-bg-blue-50">
               <p>
                 <strong>File selezionato:</strong> {procedureFile.name}
               </p>
               <button type="button" onClick={() => previewLocalFile(procedureFile)}>
                 Anteprima file selezionato
               </button>
-              <p className="info-text" style={{ marginTop: '8px' }}>
+              <p className="info-text tw-mt-2">
                 Usa <strong>Anteprima file selezionato</strong> per verificare il contenuto prima del caricamento.
                 Dopo il salvataggio, usa <strong>Visualizza</strong>, <strong>Stampa</strong> o <strong>Scarica</strong> nella lista documenti.
               </p>
@@ -345,18 +345,18 @@ function Documentazione() {
             ref={protocolInputRef}
             type="file"
             accept="*/*"
-            style={{ display: 'none' }}
+            className="tw-hidden"
             onChange={handleProtocolFileChange}
           />
           {protocolFile && (
-            <div className="selected-file-actions" style={{ border: '1px solid #0078d4', padding: '12px', borderRadius: '8px', backgroundColor: '#eef6ff' }}>
+            <div className="selected-file-actions tw-border tw-border-blue-600 tw-p-3 tw-rounded-lg tw-bg-blue-50">
               <p>
                 <strong>File selezionato:</strong> {protocolFile.name}
               </p>
               <button type="button" onClick={() => previewLocalFile(protocolFile)}>
                 Anteprima file selezionato
               </button>
-              <p className="info-text" style={{ marginTop: '8px' }}>
+              <p className="info-text tw-mt-2">
                 Usa <strong>Anteprima file selezionato</strong> per verificare il contenuto prima del caricamento.
                 Dopo il salvataggio, usa <strong>Visualizza</strong>, <strong>Stampa</strong> o <strong>Scarica</strong> nella lista documenti.
               </p>

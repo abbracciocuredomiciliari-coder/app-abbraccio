@@ -553,7 +553,7 @@ function Patients() {
       </h2>
 
       {success && (
-        <Alert type="success" onClose={() => setSuccess('')} style={{ marginBottom: '16px' }}>
+        <Alert type="success" onClose={() => setSuccess('')} className="tw-mb-4">
           {success}
         </Alert>
       )}
@@ -682,7 +682,7 @@ function Patients() {
           Elenco Pazienti ({filteredPatients.length})
         </h3>
         {loading ? (
-          <div style={{ padding: '8px 0' }}><SkeletonList rows={6} showHeader={false} /></div>
+          <div className="tw-py-2"><SkeletonList rows={6} showHeader={false} /></div>
         ) : filteredPatients.length === 0 ? (
           <p className="tw-text-center tw-py-8 tw-text-slate-500">
             {searchTerm ? 'Nessun paziente trovato.' : 'Nessun paziente presente.'}
@@ -720,21 +720,15 @@ function Patients() {
                 <div className="tw-flex tw-gap-2 tw-flex-shrink-0 tw-items-center">
                   <button
                     onClick={() => openDocumentsModal(patient)}
-                    style={{
-                      background: 'var(--info)',
-                      whiteSpace: 'nowrap',
-                    }}
+                    className="tw-whitespace-nowrap"
+                    style={{ background: 'var(--info)' }}
                   >
                     <FolderOpen size={16} />
                     Documenti
                   </button>
                   <button
                     onClick={() => setChatPatient(patient)}
-                    style={{
-                      background: '#0d9488',
-                      color: 'white',
-                      whiteSpace: 'nowrap',
-                    }}
+                    className="tw-bg-teal-600 tw-text-white tw-whitespace-nowrap"
                   >
                     <MessageCircle size={16} />
                     Chat

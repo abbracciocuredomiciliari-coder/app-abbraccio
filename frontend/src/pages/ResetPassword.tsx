@@ -36,13 +36,13 @@ export default function ResetPassword() {
   if (!token) {
     return (
       <section>
-        <div style={{ maxWidth: '440px', margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid #fca5a5', borderRadius: '10px', padding: '20px', color: '#7f1d1d' }}>
-            <AlertCircle size={24} style={{ marginBottom: '8px' }} />
-            <p style={{ margin: 0, fontWeight: 600 }}>Link non valido.</p>
-            <p style={{ margin: '8px 0 0', fontSize: '0.88rem' }}>Richiedi un nuovo link dalla pagina di login.</p>
+        <div className="tw-max-w-md tw-mx-auto tw-text-center">
+          <div className="tw-bg-red-600/[0.07] tw-border tw-border-red-300 tw-rounded-[10px] tw-p-5 tw-text-red-900">
+            <AlertCircle size={24} className="tw-mb-2" />
+            <p className="tw-m-0 tw-font-semibold">Link non valido.</p>
+            <p className="tw-mt-2 tw-mb-0 tw-text-[0.88rem]">Richiedi un nuovo link dalla pagina di login.</p>
           </div>
-          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '16px', color: 'var(--primary)', textDecoration: 'none', fontWeight: 500 }}>
+          <Link to="/" className="tw-inline-flex tw-items-center tw-gap-1 tw-mt-4 tw-text-brand tw-no-underline tw-font-medium">
             <ArrowLeft size={14} /> Torna al login
           </Link>
         </div>
@@ -52,45 +52,34 @@ export default function ResetPassword() {
 
   return (
     <section>
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <div style={{
-          width: '64px', height: '64px', margin: '0 auto 16px',
-          background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-          borderRadius: '16px', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', boxShadow: '0 12px 24px rgba(79,70,229,0.3)',
-        }}>
+      <div className="tw-text-center tw-mb-8">
+        <div className="tw-w-16 tw-h-16 tw-mx-auto tw-mb-4 tw-rounded-2xl tw-flex tw-items-center tw-justify-center"
+          style={{
+            background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+            boxShadow: '0 12px 24px rgba(79,70,229,0.3)',
+          }}>
           <Heart size={32} color="white" />
         </div>
-        <h2 style={{ margin: 0, fontSize: '1.75rem' }}>Nuova password</h2>
-        <p style={{ color: 'var(--gray-500)', marginTop: '8px' }}>
+        <h2 className="tw-m-0 tw-text-[1.75rem]">Nuova password</h2>
+        <p className="tw-text-slate-500 tw-mt-2">
           Scegli una nuova password sicura per il tuo account.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="login-form" style={{ maxWidth: '440px', margin: '0 auto' }}>
+      <form onSubmit={handleSubmit} className="login-form tw-max-w-md tw-mx-auto">
         {success && (
-          <div style={{
-            display: 'flex', alignItems: 'flex-start', gap: '10px',
-            padding: '14px 16px', backgroundColor: 'rgba(5,150,105,0.08)',
-            border: '1px solid #6ee7b7', borderRadius: 'var(--radius-md)',
-            color: '#065f46', fontSize: '0.92rem',
-          }}>
-            <CheckCircle size={20} style={{ flexShrink: 0, marginTop: '1px' }} />
+          <div className="tw-flex tw-items-start tw-gap-2.5 tw-px-4 tw-py-3.5 tw-bg-green-600/[0.08] tw-border tw-border-green-300 tw-rounded-md tw-text-green-700 tw-text-[0.92rem]">
+            <CheckCircle size={20} className="tw-flex-shrink-0 tw-mt-px" />
             <div>
-              <div style={{ fontWeight: 700, marginBottom: '4px' }}>{success}</div>
-              <Link to="/" style={{ color: '#059669', fontWeight: 600, textDecoration: 'underline' }}>Vai al login →</Link>
+              <div className="tw-font-bold tw-mb-1">{success}</div>
+              <Link to="/" className="tw-text-green-600 tw-font-semibold tw-underline">Vai al login →</Link>
             </div>
           </div>
         )}
 
         {error && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '12px 16px', backgroundColor: 'var(--danger-bg)',
-            border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--radius-md)',
-            color: 'var(--danger)', fontSize: '0.92rem',
-          }}>
-            <AlertCircle size={18} style={{ flexShrink: 0 }} />
+          <div className="tw-flex tw-items-center tw-gap-2 tw-px-4 tw-py-3 tw-bg-red-600/[0.08] tw-border tw-border-red-600/20 tw-rounded-md tw-text-red-600 tw-text-[0.92rem]">
+            <AlertCircle size={18} className="tw-flex-shrink-0" />
             {error}
           </div>
         )}
@@ -98,52 +87,52 @@ export default function ResetPassword() {
         {!success && (
           <>
             <label>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="tw-inline-flex tw-items-center tw-gap-1.5">
                 <Lock size={16} /> Nuova password
               </span>
-              <div style={{ position: 'relative' }}>
+              <div className="tw-relative">
                 <input
                   type={showNew ? 'text' : 'password'}
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
                   placeholder="Min. 8 caratteri, 1 lettera, 1 numero"
                   required
-                  style={{ paddingRight: '40px', width: '100%', boxSizing: 'border-box' }}
+                  className="tw-pr-10 tw-w-full"
                 />
                 <button type="button" onClick={() => setShowNew(v => !v)}
-                  style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-400)', padding: '2px' }}>
+                  className="tw-absolute tw-right-2.5 tw-top-1/2 tw--translate-y-1/2 tw-bg-transparent tw-border-0 tw-cursor-pointer tw-text-slate-400 tw-p-0.5">
                   {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </label>
 
             <label>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="tw-inline-flex tw-items-center tw-gap-1.5">
                 <Lock size={16} /> Conferma password
               </span>
-              <div style={{ position: 'relative' }}>
+              <div className="tw-relative">
                 <input
                   type={showConfirm ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
                   placeholder="Ripeti la nuova password"
                   required
-                  style={{ paddingRight: '40px', width: '100%', boxSizing: 'border-box' }}
+                  className="tw-pr-10 tw-w-full"
                 />
                 <button type="button" onClick={() => setShowConfirm(v => !v)}
-                  style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-400)', padding: '2px' }}>
+                  className="tw-absolute tw-right-2.5 tw-top-1/2 tw--translate-y-1/2 tw-bg-transparent tw-border-0 tw-cursor-pointer tw-text-slate-400 tw-p-0.5">
                   {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               {confirmPassword && newPassword !== confirmPassword && (
-                <span style={{ color: '#dc2626', fontSize: '0.78rem', marginTop: '4px', display: 'block' }}>Le password non coincidono</span>
+                <span className="tw-text-red-600 tw-text-[0.78rem] tw-mt-1 tw-block">Le password non coincidono</span>
               )}
             </label>
 
-            <button type="submit" disabled={loading || (!!confirmPassword && newPassword !== confirmPassword)} style={{ width: '100%' }}>
+            <button type="submit" disabled={loading || (!!confirmPassword && newPassword !== confirmPassword)} className="tw-w-full">
               {loading ? (
                 <>
-                  <span style={{ width: '18px', height: '18px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                  <span className="tw-w-[18px] tw-h-[18px] tw-border-2 tw-border-white/30 tw-border-t-white tw-rounded-full tw-animate-spin" />
                   Salvataggio...
                 </>
               ) : (
@@ -156,8 +145,8 @@ export default function ResetPassword() {
           </>
         )}
 
-        <p style={{ textAlign: 'center', fontSize: '0.88rem', color: 'var(--gray-500)', margin: 0 }}>
-          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--primary)', textDecoration: 'none', fontWeight: 500 }}>
+        <p className="tw-text-center tw-text-[0.88rem] tw-text-slate-500 tw-m-0">
+          <Link to="/" className="tw-inline-flex tw-items-center tw-gap-1 tw-text-brand tw-no-underline tw-font-medium">
             <ArrowLeft size={14} /> Torna al login
           </Link>
         </p>

@@ -31,35 +31,18 @@ export default function CheckListHub() {
     <div>
       {/* Tab navigation */}
       <div
-        style={{
-          display: 'flex',
-          gap: '4px',
-          marginBottom: '24px',
-          borderBottom: '2px solid var(--gray-200)',
-          paddingBottom: '0',
-          flexWrap: 'wrap',
-        }}
+        className="tw-flex tw-flex-wrap tw-gap-1 tw-mb-6 tw-border-b-2 tw-border-slate-200 tw-pb-0"
       >
         {tabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
+            className="tw-flex tw-items-center tw-gap-2 tw-py-3 tw-px-5 tw-bg-transparent tw-border-0 tw-border-b-2 tw-cursor-pointer tw-text-[0.92rem] tw-whitespace-nowrap tw-transition-colors tw--mb-0.5"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 20px',
-              background: 'none',
-              border: 'none',
-              borderBottom: activeTab === tab.key ? '2px solid var(--primary)' : '2px solid transparent',
-              marginBottom: '-2px',
-              cursor: 'pointer',
-              fontSize: '0.92rem',
-              fontWeight: activeTab === tab.key ? '700' : '400',
+              borderBottomColor: activeTab === tab.key ? 'var(--primary)' : 'transparent',
+              fontWeight: activeTab === tab.key ? 700 : 400,
               color: activeTab === tab.key ? 'var(--primary)' : 'var(--gray-500)',
-              whiteSpace: 'nowrap',
-              transition: 'color 0.15s',
             }}
           >
             {tab.icon}
