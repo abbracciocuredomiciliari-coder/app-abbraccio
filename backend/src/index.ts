@@ -45,6 +45,8 @@ import formazioneSanitariaRouter from './routes/formazioneSanitaria';
 import verbaliEquipeRouter from './routes/verbaliEquipe';
 import relazioniVocaliRouter from './routes/relazioniVocali';
 import telemedicinaRouter from './routes/telemedicina';
+import tariffarioRouter, { seedTariffarioSeVuoto } from './routes/tariffario';
+import fatturazioneDocumentiRouter from './routes/fatturazioneDocumenti';
 
 if (!process.env.JWT_SECRET) {
   console.error('ERRORE: JWT_SECRET non è impostato. Configurare la variabile d\'ambiente nel file .env prima di avviare il server.');
@@ -134,6 +136,7 @@ const proteggiUploads = (req: Request, res: Response, next: NextFunction) => {
 };
 
 connectDB();
+seedTariffarioSeVuoto();
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'App Abbraccio API in esecuzione' });
@@ -176,6 +179,8 @@ app.use('/api/formazione-sanitaria', formazioneSanitariaRouter);
 app.use('/api/verbali-equipe', verbaliEquipeRouter);
 app.use('/api/relazioni-vocali', relazioniVocaliRouter);
 app.use('/api/telemedicina', telemedicinaRouter);
+app.use('/api/tariffario', tariffarioRouter);
+app.use('/api/fatturazione-documenti', fatturazioneDocumentiRouter);
 // Alias senza prefisso /api per compatibilità con URL diretti degli allegati
 app.use('/allegati', allegatiRouter);
 

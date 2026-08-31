@@ -42,6 +42,18 @@ interface RiepilogoPaziente {
   numeroPrestazioni: number;
 }
 
+interface DocumentoFatturazione {
+  _id: string;
+  numero: string;
+  tipo: 'preventivo' | 'fattura';
+  patient: Patient;
+  prestazioni: { descrizione: string; quantita: number; prezzoUnitario: number; importo: number }[];
+  totale: number;
+  data: string;
+  stato: 'emesso' | 'annullato';
+  note?: string;
+}
+
 export default function GestioneFatturazione() {
   const { user } = useAuth();
   const { isConvenzione } = useModalita();
@@ -53,8 +65,10 @@ export default function GestioneFatturazione() {
   const [pazienteEspanso, setPazienteEspanso] = useState<string | null>(null);
   const [aslEspansa, setAslEspansa] = useState<string | null>(null);
   const [showFiltri, setShowFiltri] = useState(true);
+  const [documenti, setDocumenti] = useState<DocumentoFatturazione[]>([]);
+  const [showDocumenti, setShowDocumenti] = useState(true);
 
-  useEffect(() => { caricaDati(); }, []);
+  useEffect(() => { caricaDati(); caricaDocumenti(); }, []);
 
   const caricaDati = async () => {
     setLoading(true);
@@ -66,6 +80,48 @@ export default function GestioneFatturazione() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const caricaDocumenti = async () => {
+    try {
+      const res = await api.get('/fatturazione-documenti');
+      setDocumenti(res.data);
+    } catch (err) {
+      console.error('Errore caricamento documenti:', err);
+    }
+  };
+
+  const convertiInFattura = async (doc: DocumentoFatturazione) => {
+    if (!confirm(`Confermi la generazione della fattura a partire dal preventivo ${doc.numero}?`)) return;
+    try {
+      await api.post(`/fatturazione-documenti/${doc._id}/converti-in-fattura`);
+      await caricaDocumenti();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nella conversione in fattura');
+    }
+  };
+
+  const annullaDocumento = async (doc: DocumentoFatturazione) => {
+    if (!confirm(`Annullare il documento ${doc.numero}?`)) return;
+    try {
+      await api.patch(`/fatturazione-documenti/${doc._id}/annulla`);
+      await caricaDocumenti();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || "Errore nell'annullamento");
+    }
+  };
+
+  const stampaDocumentoFiscale = (doc: DocumentoFatturazione) => {
+    const dataStr = new Date(doc.data).toLocaleDateString('it-IT');
+    const righe = doc.prestazioni.map(p => `<tr><td style="padding:8px;border-bottom:1px solid #e2e8f0">${p.descrizione}</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:center">${p.quantita}</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right">€${p.prezzoUnitario.toFixed(2)}</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:700">€${p.importo.toFixed(2)}</td></tr>`).join('');
+    const titolo = doc.tipo === 'preventivo' ? 'PREVENTIVO' : 'FATTURA';
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${titolo} ${doc.numero}</title><style>body{font-family:Arial;margin:32px;color:#1e293b}h1{color:#1e4d8c;font-size:22px;margin-bottom:4px}table{width:100%;border-collapse:collapse;margin-top:20px}th{background:#1e4d8c;color:white;padding:8px;text-align:left}.header{border-bottom:3px solid #1e4d8c;padding-bottom:14px;margin-bottom:20px;display:flex;justify-content:space-between}.totale{margin-top:20px;text-align:right;font-size:1.3rem;font-weight:800;color:#166534}</style></head><body><div class="header"><div><h1>🏥 Abbraccio Cure Domiciliari</h1><div>${titolo} n. ${doc.numero}</div><div style="color:#666">Data: ${dataStr}</div></div><div style="text-align:right"><strong>Paziente:</strong><br/>${doc.patient?.firstName || ''} ${doc.patient?.lastName || ''}<br/>${doc.patient?.codiceFiscale ? 'CF: ' + doc.patient.codiceFiscale : ''}</div></div><table><thead><tr><th>Prestazione</th><th style="text-align:center">Qtà</th><th style="text-align:right">Prezzo unit.</th><th style="text-align:right">Importo</th></tr></thead><tbody>${righe}</tbody></table><div class="totale">TOTALE: €${doc.totale.toFixed(2)}</div>${doc.note ? `<div style="margin-top:16px;color:#666">${doc.note}</div>` : ''}</body></html>`;
+    const win = window.open('', '_blank');
+    if (!win) { alert('Impossibile aprire la finestra di stampa.'); return; }
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 400);
   };
 
   const workplansFiltratiPerData = useMemo(() => {
@@ -375,6 +431,67 @@ export default function GestioneFatturazione() {
             <div style={{ fontSize: '2rem', fontWeight: 800 }}>{totaliGenerali.numeroPazienti}</div>
             <div style={{ fontSize: '0.875rem', opacity: 0.9, marginTop: '4px' }}>🧑‍⚕️ Pazienti</div>
           </div>
+        </div>
+      )}
+
+      {/* ══════════════════════ DOCUMENTI FISCALI (Preventivi/Fatture) ══════════ */}
+      {!isConvenzione && (
+        <div style={{ background: 'white', borderRadius: '12px', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' }}>
+          <div onClick={() => setShowDocumenti(!showDocumenti)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#374151' }}>
+              <FileText size={20} />Documenti Fiscali — Preventivi e Fatture
+              <span style={{ background: '#dbeafe', color: '#1d4ed8', borderRadius: '20px', padding: '2px 10px', fontSize: '0.8rem' }}>{documenti.length}</span>
+            </h3>
+            {showDocumenti ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </div>
+          {showDocumenti && (
+            documenti.length === 0 ? (
+              <p style={{ color: '#9ca3af', marginTop: '14px', marginBottom: 0 }}>Nessun documento generato. Verranno creati dal Centro Prenotazioni quando un prezzo viene accettato dal paziente.</p>
+            ) : (
+              <div style={{ overflowX: 'auto', marginTop: '14px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
+                      <th style={{ textAlign: 'left', padding: '8px' }}>N.</th>
+                      <th style={{ textAlign: 'left', padding: '8px' }}>Tipo</th>
+                      <th style={{ textAlign: 'left', padding: '8px' }}>Paziente</th>
+                      <th style={{ textAlign: 'left', padding: '8px' }}>Data</th>
+                      <th style={{ textAlign: 'right', padding: '8px' }}>Totale</th>
+                      <th style={{ textAlign: 'center', padding: '8px' }}>Stato</th>
+                      <th style={{ padding: '8px' }} />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {documenti.map(doc => (
+                      <tr key={doc._id} style={{ borderBottom: '1px solid #f1f5f9', opacity: doc.stato === 'annullato' ? 0.5 : 1 }}>
+                        <td style={{ padding: '8px', fontWeight: 600 }}>{doc.numero}</td>
+                        <td style={{ padding: '8px' }}>
+                          <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700, background: doc.tipo === 'preventivo' ? '#fef3c7' : '#dcfce7', color: doc.tipo === 'preventivo' ? '#92400e' : '#166534' }}>
+                            {doc.tipo === 'preventivo' ? '📄 Preventivo' : '🧾 Fattura'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px' }}>{doc.patient?.firstName} {doc.patient?.lastName}</td>
+                        <td style={{ padding: '8px' }}>{formatData(doc.data)}</td>
+                        <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#166534' }}>{formatEuro(doc.totale)}</td>
+                        <td style={{ padding: '8px', textAlign: 'center' }}>{doc.stato === 'annullato' ? '❌ Annullato' : '✅ Emesso'}</td>
+                        <td style={{ padding: '8px' }}>
+                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                            <button onClick={() => stampaDocumentoFiscale(doc)} title="Scarica / Stampa" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Printer size={14} /></button>
+                            {doc.tipo === 'preventivo' && doc.stato === 'emesso' && (
+                              <button onClick={() => convertiInFattura(doc)} title="Genera fattura da questo preventivo" style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', color: '#166534', fontSize: '0.78rem', fontWeight: 600 }}>→ Fattura</button>
+                            )}
+                            {doc.stato === 'emesso' && (
+                              <button onClick={() => annullaDocumento(doc)} title="Annulla" style={{ background: '#fef2f2', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#dc2626' }}>✕</button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          )}
         </div>
       )}
 

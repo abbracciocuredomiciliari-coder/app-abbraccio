@@ -44,6 +44,7 @@ const RichiestePresidiPage = lazy(() => import('./pages/RichiestePresidiPage'));
 const ProtocolliProcedure = lazy(() => import('./pages/ProtocolliProcedure'));
 const ReportConsegne = lazy(() => import('./pages/ReportConsegne'));
 const GestioneFatturazione = lazy(() => import('./pages/GestioneFatturazione'));
+const Tariffario = lazy(() => import('./pages/Tariffario'));
 const GestioneConsensiGDPR = lazy(() => import('./pages/GestioneConsensiGDPR'));
 const EsportazioneSIAT = lazy(() => import('./pages/EsportazioneSIAT'));
 const RegistrazioneAccesso = lazy(() => import('./pages/RegistrazioneAccesso'));
@@ -87,6 +88,7 @@ import {
   Menu,
   X,
   Package,
+  Tag,
   Building2,
   ArrowLeftRight,
   Syringe,
@@ -409,6 +411,10 @@ function AppShell() {
                 <Receipt size={18} />
                 Fatturazione
               </Link>
+              <Link to="/tariffario" className={isActive('/tariffario') ? 'active' : ''}>
+                <Tag size={18} />
+                Tariffario
+              </Link>
 
               {/* — Sistema (solo admin) — */}
               {user.role === 'admin' && (
@@ -524,6 +530,7 @@ function AppShell() {
           <Route path="/compenso-incarichi" element={<ProtectedRoute><CompensoIncarichi /></ProtectedRoute>} />
           <Route path="/report-consegne" element={<ProtectedRoute><ReportConsegne /></ProtectedRoute>} />
           <Route path="/gestione-fatturazione" element={<ProtectedRoute><GestioneFatturazione /></ProtectedRoute>} />
+          <Route path="/tariffario" element={<ProtectedRoute><Tariffario /></ProtectedRoute>} />
           {/* GDPR Compliance - Gestione Consensi */}
           <Route path="/gestione-consensi-gdpr" element={<ProtectedRoute><GestioneConsensiGDPR /></ProtectedRoute>} />
           {/* Esportazione SIAT */}

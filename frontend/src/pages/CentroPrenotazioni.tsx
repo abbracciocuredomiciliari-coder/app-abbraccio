@@ -97,6 +97,8 @@ interface Staff { _id: string; firstName: string; lastName: string; role: string
 interface Prelievo { _id: string; patient: Paz; staff: any; dataPrelievo: string; orario?: string; tipoPrelievo: string; note?: string; status: string; noteEsecuzione?: string; diaria: any[]; allegati: any[]; }
 interface Esame { _id: string; tipoEsame: string | string[]; patient: Paz; staff: any; dataEsame: string; orario?: string; note?: string; status: string; diaria: any[]; allegati: any[]; }
 interface Piano { _id: string; type: 'prestazionale' | 'assistenziale'; categories?: string[]; patient: { _id: string; firstName: string; lastName: string }; staff: any; date: string; dataFine?: string; time?: string; duration?: number; task: string; notes?: string; status: string; tipoCompenso?: string; tariffa?: number; compensoTotale?: number; costoPrestazione?: number; giorniSettimana?: any[]; }
+interface VoceTariffario { _id: string; categoria: string; nome: string; prezzo: number; unitaMisura?: string; note?: string; attivo: boolean; }
+const CATEGORIE_TARIFFARIO_LABEL: Record<string, string> = { prestazioni_infermieristiche: '💉 Infermieristiche', assistenza_trasporto: '🚑 Assistenza/Trasporto', radiologia: '🩻 Radiologia', ecografia: '🔊 Ecografie' };
 
 // ─── Mini-Calendario ──────────────────────────────────────────────────────────
 function Cal({ anno, mese, sel, onDay, onPrev, onNext, dots }: { anno: number; mese: number; sel: string; onDay: (d: string) => void; onPrev: () => void; onNext: () => void; dots: Map<string, number>; }) {
@@ -243,9 +245,16 @@ export default function CentroPrenotazioni() {
   const [fpTariffa, setFpTariffa] = useState(0);
   const [fpCosto, setFpCosto] = useState(0);
   const [fpGiorni, setFpGiorni] = useState(GIORNI_DEFAULT.map(g => ({ ...g })));
+  const [tariffario, setTariffario] = useState<VoceTariffario[]>([]);
+  const [fpTariffarioSel, setFpTariffarioSel] = useState('');
+  const [pendingDoc, setPendingDoc] = useState<{ patientId: string; patientNome: string; task: string; costo: number; planId: string } | null>(null);
+  const [docTipo, setDocTipo] = useState<'preventivo' | 'fattura'>('preventivo');
+  const [docSaving, setDocSaving] = useState(false);
+  const [docCreato, setDocCreato] = useState<any>(null);
 
+  const loadTariffario = async () => { try { const r = await api.get('/tariffario', { params: { soloAttivi: 'true' } }); setTariffario(r.data); } catch {/***/} };
   const loadPiani = async () => { try { const r = await api.get('/workplan'); setPiani(r.data); } catch {/***/} };
-  const resetFPiano = () => { setFpTipo('prestazionale'); setFpTask(''); setFpDate(''); setFpFine(''); setFpTime(''); setFpDur(60); setFpPaz(''); setFpStaff(''); setFpCats([]); setFpNotes(''); setFpCompenso('nessuno'); setFpTariffa(0); setFpCosto(0); setFpGiorni(GIORNI_DEFAULT.map(g => ({ ...g }))); setFpMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false }); setFpFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] }); setFpStaffPerCat({ infermieristico: '', riabilitativo: '', medico_specialistiche: '' }); };
+  const resetFPiano = () => { setFpTipo('prestazionale'); setFpTask(''); setFpDate(''); setFpFine(''); setFpTime(''); setFpDur(60); setFpPaz(''); setFpStaff(''); setFpCats([]); setFpNotes(''); setFpCompenso('nessuno'); setFpTariffa(0); setFpCosto(0); setFpTariffarioSel(''); setFpGiorni(GIORNI_DEFAULT.map(g => ({ ...g }))); setFpMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false }); setFpFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] }); setFpStaffPerCat({ infermieristico: '', riabilitativo: '', medico_specialistiche: '' }); };
   const creaPiano = async (ev: FormEvent) => {
     ev.preventDefault(); setErrPiano(''); setOkPiano('');
     if (fpTipo === 'prestazionale') {
@@ -258,7 +267,7 @@ export default function CentroPrenotazioni() {
         const giorniAttivi = fpGiorni.filter(g => g.attivo).map(g => ({ giorno: g.giorno, accessiAlGiorno: g.accessiAlGiorno, minutiPerAccesso: g.minutiPerAccesso }));
         const allFabbisogniLabels: string[] = [];
         macroSel.forEach(cat => { const labels = fpFabbisogni[cat].map(f => { const opt = FABBISOGNI_OPTIONS[cat].find(o => o.value === f); return opt ? `${MACRO_CATEGORIE_LABELS[cat].label.split(' ')[1]}: ${opt.label}` : f; }); allFabbisogniLabels.push(...labels); });
-        await api.post('/workplan', {
+        const res = await api.post('/workplan', {
           type: fpTipo,
           macroCategorie: macroSel,
           fabbisogni: { infermieristico: fpFabbisogni.infermieristico, riabilitativo: fpFabbisogni.riabilitativo, medico_specialistiche: fpFabbisogni.medico_specialistiche },
@@ -268,6 +277,8 @@ export default function CentroPrenotazioni() {
           notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined,
           tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0,
         });
+        const pazSel = pazienti.find(p => p._id === fpPaz);
+        if (fpCosto > 0 && pazSel) setPendingDoc({ patientId: fpPaz, patientNome: `${pazSel.firstName} ${pazSel.lastName}`, task: fpTask, costo: fpCosto, planId: res.data._id });
         await loadPiani(); resetFPiano(); setShowFPiano(false);
         setOkPiano('✅ Incarico creato!'); setTimeout(() => setOkPiano(''), 3000);
       } catch (err: any) { setErrPiano(err.response?.data?.message || 'Errore'); }
@@ -277,12 +288,44 @@ export default function CentroPrenotazioni() {
       setSavingPiano(true);
       try {
         const giorniAttivi = fpGiorni.filter(g => g.attivo).map(g => ({ giorno: g.giorno, accessiAlGiorno: g.accessiAlGiorno, minutiPerAccesso: g.minutiPerAccesso }));
-        await api.post('/workplan', { type: fpTipo, categories: fpCats, patient: fpPaz, staff: fpStaff, task: fpTask, date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpDur, notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined, tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0 });
+        const res = await api.post('/workplan', { type: fpTipo, categories: fpCats, patient: fpPaz, staff: fpStaff, task: fpTask, date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpDur, notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined, tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0 });
+        const pazSel = pazienti.find(p => p._id === fpPaz);
+        if (fpCosto > 0 && pazSel) setPendingDoc({ patientId: fpPaz, patientNome: `${pazSel.firstName} ${pazSel.lastName}`, task: fpTask, costo: fpCosto, planId: res.data._id });
         await loadPiani(); resetFPiano(); setShowFPiano(false);
         setOkPiano('✅ Incarico creato!'); setTimeout(() => setOkPiano(''), 3000);
       } catch (err: any) { setErrPiano(err.response?.data?.message || 'Errore'); }
       setSavingPiano(false);
     }
+  };
+
+  // ── Generazione preventivo/fattura al termine della prenotazione ───────────
+  const generaDocumentoFatturazione = async () => {
+    if (!pendingDoc) return;
+    setDocSaving(true);
+    try {
+      const res = await api.post('/fatturazione-documenti', {
+        tipo: docTipo,
+        patient: pendingDoc.patientId,
+        riferimentoTipo: 'workplan',
+        riferimentoId: pendingDoc.planId,
+        prestazioni: [{ descrizione: pendingDoc.task, quantita: 1, prezzoUnitario: pendingDoc.costo }],
+      });
+      setDocCreato(res.data);
+    } catch (err: any) { alert(err.response?.data?.message || 'Errore nella generazione del documento'); }
+    setDocSaving(false);
+  };
+
+  const stampaDocumento = (doc: any) => {
+    const dataStr = new Date(doc.data).toLocaleDateString('it-IT');
+    const righe = doc.prestazioni.map((p: any) => `<tr><td style="padding:8px;border-bottom:1px solid #e2e8f0">${p.descrizione}</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:center">${p.quantita}</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right">€${p.prezzoUnitario.toFixed(2)}</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:700">€${p.importo.toFixed(2)}</td></tr>`).join('');
+    const titolo = doc.tipo === 'preventivo' ? 'PREVENTIVO' : 'FATTURA';
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${titolo} ${doc.numero}</title><style>body{font-family:Arial;margin:32px;color:#1e293b}h1{color:#1e4d8c;font-size:22px;margin-bottom:4px}table{width:100%;border-collapse:collapse;margin-top:20px}th{background:#1e4d8c;color:white;padding:8px;text-align:left}.header{border-bottom:3px solid #1e4d8c;padding-bottom:14px;margin-bottom:20px;display:flex;justify-content:space-between}.totale{margin-top:20px;text-align:right;font-size:1.3rem;font-weight:800;color:#166534}</style></head><body><div class="header"><div><h1>🏥 Abbraccio Cure Domiciliari</h1><div>${titolo} n. ${doc.numero}</div><div style="color:#666">Data: ${dataStr}</div></div><div style="text-align:right"><strong>Paziente:</strong><br/>${doc.patient?.firstName || ''} ${doc.patient?.lastName || ''}<br/>${doc.patient?.codiceFiscale ? 'CF: ' + doc.patient.codiceFiscale : ''}<br/>${doc.patient?.address || ''}</div></div><table><thead><tr><th>Prestazione</th><th style="text-align:center">Qtà</th><th style="text-align:right">Prezzo unit.</th><th style="text-align:right">Importo</th></tr></thead><tbody>${righe}</tbody></table><div class="totale">TOTALE: €${doc.totale.toFixed(2)}</div>${doc.note ? `<div style="margin-top:16px;color:#666">${doc.note}</div>` : ''}</body></html>`;
+    const win = window.open('', '_blank');
+    if (!win) { alert('Impossibile aprire la finestra di stampa.'); return; }
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 400);
   };
   const eliminaPiano = async (id: string) => { if (!confirm('Eliminare?')) return; try { await api.delete(`/workplan/${id}`); await loadPiani(); } catch {/***/} };
   const copiaLink = async (id: string) => {
@@ -321,7 +364,7 @@ export default function CentroPrenotazioni() {
           }
         }
       } catch {/***/}
-      await Promise.all([loadPrelievi(), loadEsami(), loadPiani()]);
+      await Promise.all([loadPrelievi(), loadEsami(), loadPiani(), loadTariffario()]);
       setLoading(false);
     })();
   }, []);
@@ -708,7 +751,33 @@ export default function CentroPrenotazioni() {
                 )}
                 <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Paziente *<select value={fpPaz} onChange={e => setFpPaz(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}><option value="">Seleziona...</option>{pazienti.map(p => <option key={p._id} value={p._id}>{p.firstName} {p.lastName}</option>)}</select></label>
                 <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Operatore {fpTipo === 'assistenziale' ? '*' : ''}<select value={fpStaff} onChange={e => setFpStaff(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}><option value="">Seleziona...</option>{staff.map(s => <option key={s._id} value={s._id}>{s.firstName} {s.lastName} — {s.role}</option>)}</select></label>
+                <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Prestazione dal tariffario
+                  <select
+                    value={fpTariffarioSel}
+                    onChange={e => {
+                      const id = e.target.value; setFpTariffarioSel(id);
+                      const voce = tariffario.find(v => v._id === id);
+                      if (voce) { setFpTask(voce.nome); setFpCosto(voce.prezzo); }
+                    }}
+                    style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                  >
+                    <option value="">— Seleziona dal listino (opzionale) —</option>
+                    {(['prestazioni_infermieristiche', 'assistenza_trasporto', 'radiologia', 'ecografia'] as const).map(cat => {
+                      const voci = tariffario.filter(v => v.categoria === cat);
+                      if (voci.length === 0) return null;
+                      return (
+                        <optgroup key={cat} label={CATEGORIE_TARIFFARIO_LABEL[cat]}>
+                          {voci.map(v => <option key={v._id} value={v._id}>{v.nome} — €{v.prezzo.toFixed(2)}{v.unitaMisura ? ` (${v.unitaMisura})` : ''}</option>)}
+                        </optgroup>
+                      );
+                    })}
+                  </select>
+                </label>
                 <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Attività *<input value={fpTask} onChange={e => setFpTask(e.target.value)} placeholder="Es. Assistenza domiciliare..." style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} /></label>
+                <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Costo prestazione al paziente (€)
+                  <input type="number" min={0} step={0.5} value={fpCosto} onChange={e => setFpCosto(Number(e.target.value))} placeholder="0.00" style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 400 }}>Precompilato dal tariffario, modificabile liberamente</span>
+                </label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                   <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Data inizio *<input type="date" value={fpDate} onChange={e => setFpDate(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} /></label>
                   <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Data fine<input type="date" value={fpFine} onChange={e => setFpFine(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} /></label>
@@ -735,6 +804,47 @@ export default function CentroPrenotazioni() {
                 <button type="submit" disabled={savingPiano} style={{ padding: '10px 20px', borderRadius: '8px', background: '#059669', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>{savingPiano ? '...' : <><CheckCircle size={16} />Crea Incarico</>}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ══ MODAL GENERAZIONE PREVENTIVO/FATTURA ═══════════════════════════════ */}
+      {pendingDoc && (
+        <div className="modal-overlay" onClick={() => { setPendingDoc(null); setDocCreato(null); }} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '16px' }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '24px' }}>
+            {!docCreato ? (
+              <>
+                <h3 style={{ margin: '0 0 6px', color: '#166534' }}>💶 Prezzo accettato dal paziente</h3>
+                <p style={{ margin: '0 0 16px', color: '#64748b', fontSize: '0.88rem' }}>
+                  Genera un documento per <strong>{pendingDoc.patientNome}</strong>: {pendingDoc.task} — <strong>€{pendingDoc.costo.toFixed(2)}</strong>
+                </p>
+                <div style={{ display: 'flex', gap: '4px', background: '#f1f5f9', borderRadius: '8px', padding: '4px', marginBottom: '18px' }}>
+                  {(['preventivo', 'fattura'] as const).map(t => (
+                    <button key={t} type="button" onClick={() => setDocTipo(t)} style={{ flex: 1, padding: '10px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem', background: docTipo === t ? '#166534' : 'transparent', color: docTipo === t ? 'white' : '#475569' }}>
+                      {t === 'preventivo' ? '📄 Preventivo' : '🧾 Fattura'}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button onClick={() => setPendingDoc(null)} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer' }}>Non ora</button>
+                  <button onClick={generaDocumentoFatturazione} disabled={docSaving} style={{ padding: '10px 18px', borderRadius: '8px', background: '#166534', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
+                    {docSaving ? '...' : `Genera ${docTipo}`}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 style={{ margin: '0 0 6px', color: '#166534' }}>✅ Documento generato</h3>
+                <p style={{ margin: '0 0 16px', color: '#64748b', fontSize: '0.88rem' }}>
+                  {docCreato.tipo === 'preventivo' ? 'Preventivo' : 'Fattura'} n. <strong>{docCreato.numero}</strong> — Totale €{docCreato.totale.toFixed(2)}<br />
+                  Il documento è archiviato in <strong>Fatturazione</strong> ed è pronto per essere scaricato e consegnato al paziente.
+                </p>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button onClick={() => { setPendingDoc(null); setDocCreato(null); }} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer' }}>Chiudi</button>
+                  <button onClick={() => stampaDocumento(docCreato)} style={{ padding: '10px 18px', borderRadius: '8px', background: '#166534', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700 }}>🖨️ Scarica / Stampa</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
