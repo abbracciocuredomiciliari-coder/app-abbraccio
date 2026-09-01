@@ -233,6 +233,7 @@ export default function CentroPrenotazioni() {
   const [fpFine, setFpFine] = useState('');
   const [fpTime, setFpTime] = useState('');
   const [fpDur, setFpDur] = useState(60);
+  const [fpOre, setFpOre] = useState(1);
   const [fpPaz, setFpPaz] = useState('');
   const [fpStaff, setFpStaff] = useState('');
   const [fpCats, setFpCats] = useState<string[]>([]);
@@ -254,7 +255,7 @@ export default function CentroPrenotazioni() {
 
   const loadTariffario = async () => { try { const r = await api.get('/tariffario', { params: { soloAttivi: 'true' } }); setTariffario(r.data); } catch {/***/} };
   const loadPiani = async () => { try { const r = await api.get('/workplan'); setPiani(r.data); } catch {/***/} };
-  const resetFPiano = () => { setFpTipo('prestazionale'); setFpTask(''); setFpDate(''); setFpFine(''); setFpTime(''); setFpDur(60); setFpPaz(''); setFpStaff(''); setFpCats([]); setFpNotes(''); setFpCompenso('nessuno'); setFpTariffa(0); setFpCosto(0); setFpTariffarioSel(''); setFpGiorni(GIORNI_DEFAULT.map(g => ({ ...g }))); setFpMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false }); setFpFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] }); setFpStaffPerCat({ infermieristico: '', riabilitativo: '', medico_specialistiche: '' }); };
+  const resetFPiano = () => { setFpTipo('prestazionale'); setFpTask(''); setFpDate(''); setFpFine(''); setFpTime(''); setFpDur(60); setFpOre(1); setFpPaz(''); setFpStaff(''); setFpCats([]); setFpNotes(''); setFpCompenso('nessuno'); setFpTariffa(0); setFpCosto(0); setFpTariffarioSel(''); setFpGiorni(GIORNI_DEFAULT.map(g => ({ ...g }))); setFpMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false }); setFpFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] }); setFpStaffPerCat({ infermieristico: '', riabilitativo: '', medico_specialistiche: '' }); };
   const creaPiano = async (ev: FormEvent) => {
     ev.preventDefault(); setErrPiano(''); setOkPiano('');
     if (fpTipo === 'prestazionale') {
@@ -299,7 +300,7 @@ export default function CentroPrenotazioni() {
       setSavingPiano(true);
       try {
         const giorniAttivi = fpGiorni.filter(g => g.attivo).map(g => ({ giorno: g.giorno, accessiAlGiorno: g.accessiAlGiorno, minutiPerAccesso: g.minutiPerAccesso }));
-        const res = await api.post('/workplan', { type: fpTipo, categories: fpCats, patient: fpPaz, staff: fpStaff, task: fpTask, date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpDur, notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined, tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0 });
+        const res = await api.post('/workplan', { type: fpTipo, categories: fpCats, patient: fpPaz, staff: fpStaff, task: fpTask, date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpOre * 60, notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined, tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0 });
         const pazSel = pazienti.find(p => p._id === fpPaz);
         if (fpCosto > 0 && pazSel) setPendingDoc({ patientId: fpPaz, patientNome: `${pazSel.firstName} ${pazSel.lastName}`, task: fpTask, costo: fpCosto, planId: res.data._id });
         await loadPiani(); resetFPiano(); setShowFPiano(false);
@@ -631,7 +632,7 @@ export default function CentroPrenotazioni() {
       {/* ══ MODAL NUOVO PRELIEVO ══════════════════════════════════════════════ */}
       {showFP && puoGestire && (
         <div className="modal-overlay" onClick={() => setShowFP(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, padding: '40px 16px', overflowY: 'auto' }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto' }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto', boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0, color: '#0369a1', display: 'flex', alignItems: 'center', gap: '8px' }}><Syringe size={20} />Nuovo Prelievo</h3>
               <button onClick={() => setShowFP(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
@@ -657,7 +658,7 @@ export default function CentroPrenotazioni() {
       {/* ══ MODAL NUOVO ESAME ════════════════════════════════════════════════ */}
       {showFE && puoGestire && (
         <div className="modal-overlay" onClick={() => setShowFE(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, padding: '40px 16px', overflowY: 'auto' }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto' }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto', boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0, color: '#7c3aed', display: 'flex', alignItems: 'center', gap: '8px' }}><HeartPulse size={20} />Nuovo Esame Strumentale</h3>
               <button onClick={() => setShowFE(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
@@ -683,7 +684,7 @@ export default function CentroPrenotazioni() {
       {/* ══ MODAL NUOVO INCARICO ══════════════════════════════════════════════ */}
       {showFPiano && puoGestire && (
         <div className="modal-overlay" onClick={() => setShowFPiano(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, padding: '40px 16px', overflowY: 'auto' }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '620px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto' }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '620px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto', boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0, color: '#059669', display: 'flex', alignItems: 'center', gap: '8px' }}><ClipboardList size={20} />Nuovo Incarico</h3>
               <button onClick={() => setShowFPiano(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
@@ -809,10 +810,11 @@ export default function CentroPrenotazioni() {
                   <input type="number" min={0} step={0.5} value={fpCosto} onChange={e => setFpCosto(Number(e.target.value))} placeholder="0.00" style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 400 }}>Precompilato dal tariffario, modificabile liberamente</span>
                 </label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: fpTipo === 'assistenziale' ? '1fr 1fr 1fr 1fr' : '1fr 1fr 1fr', gap: '12px' }}>
                   <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Data inizio *<input type="date" value={fpDate} onChange={e => setFpDate(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} /></label>
                   <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Data fine<input type="date" value={fpFine} onChange={e => setFpFine(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} /></label>
                   <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Orario<input type="time" value={fpTime} onChange={e => setFpTime(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} /></label>
+                  {fpTipo === 'assistenziale' && <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>N. ore *<input type="number" min={0.5} step={0.5} value={fpOre} onChange={e => setFpOre(Math.max(0.5, Number(e.target.value)))} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} /></label>}
                 </div>
                 {/* Giorni settimana */}
                 <div>
@@ -842,7 +844,7 @@ export default function CentroPrenotazioni() {
       {/* ══ MODAL GENERAZIONE PREVENTIVO/FATTURA ═══════════════════════════════ */}
       {pendingDoc && (
         <div className="modal-overlay" onClick={() => { setPendingDoc(null); setDocCreato(null); }} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1100, padding: '40px 16px', overflowY: 'auto' }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto' }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto', boxSizing: 'border-box' }}>
             {!docCreato ? (
               <>
                 <h3 style={{ margin: '0 0 6px', color: '#166534' }}>💶 Prezzo accettato dal paziente</h3>
