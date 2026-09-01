@@ -583,8 +583,8 @@ export default function CentroPrenotazioni() {
           {errPiano && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px 16px', marginBottom: '12px', color: '#dc2626' }}>{errPiano}</div>}
           <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', gap: '2px', background: '#f1f5f9', borderRadius: '8px', padding: '2px' }}>
-              {(['tutti', 'prestazionale', 'assistenziale'] as const).map(([val, lbl]) => (
-                <button key={val} onClick={() => setPianoTipo(val as any)} style={{ padding: '5px 9px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.7rem', background: pianoTipo === val ? '#059669' : 'transparent', color: pianoTipo === val ? 'white' : '#475569' }}>
+              {(['tutti', 'prestazionale', 'assistenziale'] as const).map(val => (
+                <button key={val} onClick={() => setPianoTipo(val)} style={{ padding: '5px 9px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.7rem', background: pianoTipo === val ? '#059669' : 'transparent', color: pianoTipo === val ? 'white' : '#475569' }}>
                   {val === 'tutti' ? 'Tutti' : val === 'prestazionale' ? 'Prestazionali' : 'Assistenziali'}
                 </button>
               ))}
