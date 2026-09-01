@@ -260,8 +260,18 @@ export default function CentroPrenotazioni() {
     if (fpTipo === 'prestazionale') {
       if (!fpPaz || !fpDate || !fpTask) { setErrPiano('Compila paziente, data e attività.'); return; }
       const macroSel = (Object.keys(fpMacroCats) as (keyof typeof fpMacroCats)[]).filter(c => fpMacroCats[c]);
-      if (macroSel.length === 0) { setErrPiano('Seleziona almeno una categoria assistenziale.'); return; }
+      if (macroSel.length === 0) { setErrPiano('Seleziona almeno una categoria prestazionale.'); return; }
       for (const cat of macroSel) { if (fpFabbisogni[cat].length === 0) { setErrPiano(`Seleziona almeno un fabbisogno per ${MACRO_CATEGORIE_LABELS[cat].label}`); return; } }
+      const catMap: Record<MacroCategoria, 'infermieristica' | 'riabilitativa' | 'medica'> = { infermieristico: 'infermieristica', riabilitativo: 'riabilitativa', medico_specialistiche: 'medica' };
+      const prestazioni: any[] = [];
+      for (const cat of macroSel) {
+        const staffId = fpStaffPerCat[cat] || fpStaff;
+        if (!staffId) { setErrPiano(`Seleziona un operatore per ${MACRO_CATEGORIE_LABELS[cat].label}`); return; }
+        fpFabbisogni[cat].forEach(f => {
+          const opt = FABBISOGNI_OPTIONS[cat].find(o => o.value === f);
+          prestazioni.push({ tipoPrestazione: opt ? opt.label : f, staff: staffId, categoria: catMap[cat] });
+        });
+      }
       setSavingPiano(true);
       try {
         const giorniAttivi = fpGiorni.filter(g => g.attivo).map(g => ({ giorno: g.giorno, accessiAlGiorno: g.accessiAlGiorno, minutiPerAccesso: g.minutiPerAccesso }));
@@ -272,7 +282,8 @@ export default function CentroPrenotazioni() {
           macroCategorie: macroSel,
           fabbisogni: { infermieristico: fpFabbisogni.infermieristico, riabilitativo: fpFabbisogni.riabilitativo, medico_specialistiche: fpFabbisogni.medico_specialistiche },
           categories: allFabbisogniLabels,
-          patient: fpPaz, staff: fpStaff || undefined, task: fpTask,
+          prestazioni,
+          patient: fpPaz, staff: fpStaff || prestazioni[0].staff, task: fpTask,
           date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpDur,
           notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined,
           tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0,
@@ -572,9 +583,9 @@ export default function CentroPrenotazioni() {
           {errPiano && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px 16px', marginBottom: '12px', color: '#dc2626' }}>{errPiano}</div>}
           <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', gap: '2px', background: '#f1f5f9', borderRadius: '8px', padding: '2px' }}>
-              {([['tutti', 'Tutti'], ['prestazionale', '🩺 Prest.'], ['assistenziale', '🤝 Ass.']] as const).map(([val, lbl]) => (
+              {(['tutti', 'prestazionale', 'assistenziale'] as const).map(([val, lbl]) => (
                 <button key={val} onClick={() => setPianoTipo(val as any)} style={{ padding: '5px 9px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.7rem', background: pianoTipo === val ? '#059669' : 'transparent', color: pianoTipo === val ? 'white' : '#475569' }}>
-                  {lbl}
+                  {val === 'tutti' ? 'Tutti' : val === 'prestazionale' ? 'Prestazionali' : 'Assistenziali'}
                 </button>
               ))}
             </div>
@@ -619,8 +630,8 @@ export default function CentroPrenotazioni() {
 
       {/* ══ MODAL NUOVO PRELIEVO ══════════════════════════════════════════════ */}
       {showFP && puoGestire && (
-        <div className="modal-overlay" onClick={() => setShowFP(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div className="modal-overlay" onClick={() => setShowFP(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, padding: '40px 16px', overflowY: 'auto' }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0, color: '#0369a1', display: 'flex', alignItems: 'center', gap: '8px' }}><Syringe size={20} />Nuovo Prelievo</h3>
               <button onClick={() => setShowFP(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
@@ -645,8 +656,8 @@ export default function CentroPrenotazioni() {
 
       {/* ══ MODAL NUOVO ESAME ════════════════════════════════════════════════ */}
       {showFE && puoGestire && (
-        <div className="modal-overlay" onClick={() => setShowFE(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div className="modal-overlay" onClick={() => setShowFE(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, padding: '40px 16px', overflowY: 'auto' }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0, color: '#7c3aed', display: 'flex', alignItems: 'center', gap: '8px' }}><HeartPulse size={20} />Nuovo Esame Strumentale</h3>
               <button onClick={() => setShowFE(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
@@ -671,8 +682,8 @@ export default function CentroPrenotazioni() {
 
       {/* ══ MODAL NUOVO INCARICO ══════════════════════════════════════════════ */}
       {showFPiano && puoGestire && (
-        <div className="modal-overlay" onClick={() => setShowFPiano(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '620px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div className="modal-overlay" onClick={() => setShowFPiano(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, padding: '40px 16px', overflowY: 'auto' }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '620px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0, color: '#059669', display: 'flex', alignItems: 'center', gap: '8px' }}><ClipboardList size={20} />Nuovo Incarico</h3>
               <button onClick={() => setShowFPiano(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
@@ -735,6 +746,24 @@ export default function CentroPrenotazioni() {
                         </ul>
                       </div>
                     )}
+                    {(Object.keys(fpMacroCats) as (keyof typeof fpMacroCats)[]).filter(c => fpMacroCats[c]).length > 0 && (
+                      <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '12px', marginTop: '12px' }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e4d8c', marginBottom: '8px' }}>👤 Operatori per categoria</div>
+                        {(Object.keys(fpMacroCats) as (keyof typeof fpMacroCats)[]).filter(c => fpMacroCats[c]).map(cat => {
+                          const info = MACRO_CATEGORIE_LABELS[cat];
+                          return (
+                            <div key={cat} style={{ marginBottom: '10px' }}>
+                              <label style={{ fontWeight: 600, fontSize: '0.8rem', color: info.color }}>{info.label} — Operatore
+                                <select value={fpStaffPerCat[cat]} onChange={e => setFpStaffPerCat(prev => ({ ...prev, [cat]: e.target.value }))} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}>
+                                  <option value="">{fpStaff ? '— Usa operatore principale —' : '— Seleziona —'}</option>
+                                  {staff.map(s => <option key={s._id} value={s._id}>{s.firstName} {s.lastName} — {s.role}</option>)}
+                                </select>
+                              </label>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
                 {/* Categorie — solo per Assistenziale */}
@@ -751,28 +780,30 @@ export default function CentroPrenotazioni() {
                 )}
                 <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Paziente *<select value={fpPaz} onChange={e => setFpPaz(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}><option value="">Seleziona...</option>{pazienti.map(p => <option key={p._id} value={p._id}>{p.firstName} {p.lastName}</option>)}</select></label>
                 <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Operatore {fpTipo === 'assistenziale' ? '*' : ''}<select value={fpStaff} onChange={e => setFpStaff(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}><option value="">Seleziona...</option>{staff.map(s => <option key={s._id} value={s._id}>{s.firstName} {s.lastName} — {s.role}</option>)}</select></label>
-                <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Prestazione dal tariffario
-                  <select
-                    value={fpTariffarioSel}
-                    onChange={e => {
-                      const id = e.target.value; setFpTariffarioSel(id);
-                      const voce = tariffario.find(v => v._id === id);
-                      if (voce) { setFpTask(voce.nome); setFpCosto(voce.prezzo); }
-                    }}
-                    style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
-                  >
-                    <option value="">— Seleziona dal listino (opzionale) —</option>
-                    {(['prestazioni_infermieristiche', 'assistenza_trasporto', 'radiologia', 'ecografia'] as const).map(cat => {
-                      const voci = tariffario.filter(v => v.categoria === cat);
-                      if (voci.length === 0) return null;
-                      return (
-                        <optgroup key={cat} label={CATEGORIE_TARIFFARIO_LABEL[cat]}>
-                          {voci.map(v => <option key={v._id} value={v._id}>{v.nome} — €{v.prezzo.toFixed(2)}{v.unitaMisura ? ` (${v.unitaMisura})` : ''}</option>)}
-                        </optgroup>
-                      );
-                    })}
-                  </select>
-                </label>
+                {fpTipo === 'prestazionale' && (
+                  <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Prestazione dal tariffario
+                    <select
+                      value={fpTariffarioSel}
+                      onChange={e => {
+                        const id = e.target.value; setFpTariffarioSel(id);
+                        const voce = tariffario.find(v => v._id === id);
+                        if (voce) { setFpTask(voce.nome); setFpCosto(voce.prezzo); }
+                      }}
+                      style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                    >
+                      <option value="">— Seleziona dal listino (opzionale) —</option>
+                      {(['prestazioni_infermieristiche', 'assistenza_trasporto', 'radiologia', 'ecografia'] as const).map(cat => {
+                        const voci = tariffario.filter(v => v.categoria === cat);
+                        if (voci.length === 0) return null;
+                        return (
+                          <optgroup key={cat} label={CATEGORIE_TARIFFARIO_LABEL[cat]}>
+                            {voci.map(v => <option key={v._id} value={v._id}>{v.nome} — €{v.prezzo.toFixed(2)}{v.unitaMisura ? ` (${v.unitaMisura})` : ''}</option>)}
+                          </optgroup>
+                        );
+                      })}
+                    </select>
+                  </label>
+                )}
                 <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Attività *<input value={fpTask} onChange={e => setFpTask(e.target.value)} placeholder="Es. Assistenza domiciliare..." style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} /></label>
                 <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Costo prestazione al paziente (€)
                   <input type="number" min={0} step={0.5} value={fpCosto} onChange={e => setFpCosto(Number(e.target.value))} placeholder="0.00" style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
@@ -810,8 +841,8 @@ export default function CentroPrenotazioni() {
 
       {/* ══ MODAL GENERAZIONE PREVENTIVO/FATTURA ═══════════════════════════════ */}
       {pendingDoc && (
-        <div className="modal-overlay" onClick={() => { setPendingDoc(null); setDocCreato(null); }} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '16px' }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '24px' }}>
+        <div className="modal-overlay" onClick={() => { setPendingDoc(null); setDocCreato(null); }} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1100, padding: '40px 16px', overflowY: 'auto' }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto' }}>
             {!docCreato ? (
               <>
                 <h3 style={{ margin: '0 0 6px', color: '#166534' }}>💶 Prezzo accettato dal paziente</h3>
