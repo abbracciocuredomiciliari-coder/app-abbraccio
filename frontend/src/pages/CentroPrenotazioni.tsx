@@ -683,8 +683,8 @@ export default function CentroPrenotazioni() {
 
       {/* ══ MODAL NUOVO INCARICO ══════════════════════════════════════════════ */}
       {showFPiano && puoGestire && (
-        <div className="modal-overlay" onClick={() => setShowFPiano(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, padding: '40px 16px', overflowY: 'auto' }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '620px', width: '100%', backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto', boxSizing: 'border-box' }}>
+        <div className="piano-fullscreen" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'white', zIndex: 1000, overflowY: 'auto' }}>
+          <div className="piano-fullscreen-inner" style={{ maxWidth: '1200px', width: '100%', margin: '0 auto', padding: '24px', minHeight: '100vh', boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0, color: '#059669', display: 'flex', alignItems: 'center', gap: '8px' }}><ClipboardList size={20} />Nuovo Incarico</h3>
               <button onClick={() => setShowFPiano(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
