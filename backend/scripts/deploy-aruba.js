@@ -117,7 +117,7 @@ async function main() {
   console.log('Caricamento frontend/dist per Nginx...');
   const frontendDist = `${remoteDir}/frontend/dist`;
   await mkdir(sftp, frontendDist);
-  await uploadDir(sftp, path.join(localBase, 'public'), frontendDist);
+  await uploadDir(sftp, path.resolve(localBase, '..', 'frontend', 'dist'), frontendDist);
 
   console.log('Caricamento package.json e package-lock.json...');
   await fastPut(sftp, path.join(localBase, 'package.json'), `${deployDir}/package.json`);
