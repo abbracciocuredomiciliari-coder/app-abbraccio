@@ -21,6 +21,8 @@ import {
   Eye,
   Printer,
   MessageCircle,
+  Pencil,
+  MapPin,
 } from 'lucide-react';
 import FirmaCanvas from '../components/FirmaCanvas';
 import { ChatWidget } from '../components/ChatWidget';
@@ -33,6 +35,7 @@ import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { Loading } from '../components/ui/Loading';
 import { Dropdown } from '../components/ui/Dropdown';
+import MappaZona from '../components/MappaZona';
 
 // Assicura che API_BASE_URL termini sempre con /api
 const _rawBasePatients = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
@@ -123,6 +126,12 @@ function Patients() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Modifica paziente e verifica indirizzo
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [suggerimentiIndirizzo, setSuggerimentiIndirizzo] = useState<any[]>([]);
+  const [cercandoIndirizzo, setCercandoIndirizzo] = useState(false);
+  const [indirizzoCoords, setIndirizzoCoords] = useState<{ lat: number; lng: number } | null>(null);
+
   // Document management state
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [documents, setDocuments] = useState<PatientDocument[]>([]);
@@ -195,7 +204,13 @@ function Patients() {
     setSuccess('');
 
     try {
-      await api.post('/patients', formData);
+      if (editingPatient) {
+        await api.patch(`/patients/${editingPatient._id}`, formData);
+        setSuccess('Paziente aggiornato con successo!');
+      } else {
+        await api.post('/patients', formData);
+        setSuccess('Paziente salvato con successo!');
+      }
       setFormData({
         firstName: '',
         lastName: '',
@@ -205,13 +220,69 @@ function Patients() {
         contactPhone: '',
         email: ''
       });
+      setEditingPatient(null);
+      setIndirizzoCoords(null);
+      setSuggerimentiIndirizzo([]);
       setShowForm(false);
       loadPatients();
-      setSuccess('Paziente salvato con successo!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Impossibile salvare il paziente. Riprova.');
     }
+  };
+
+  const apriCreazionePaziente = () => {
+    if (showForm) {
+      setShowForm(false);
+    } else {
+      setFormData({ firstName: '', lastName: '', birthDate: '', address: '', assistanceNeeds: '', contactPhone: '', email: '' });
+      setEditingPatient(null);
+      setSuggerimentiIndirizzo([]);
+      setIndirizzoCoords(null);
+      setShowForm(true);
+    }
+  };
+
+  const apriModificaPaziente = (patient: Patient) => {
+    setFormData({
+      firstName: patient.firstName,
+      lastName: patient.lastName,
+      birthDate: patient.birthDate ? patient.birthDate.split('T')[0] : '',
+      address: patient.address,
+      assistanceNeeds: patient.assistanceNeeds,
+      contactPhone: patient.contactPhone || '',
+      email: patient.email || '',
+    });
+    setEditingPatient(patient);
+    setSuggerimentiIndirizzo([]);
+    setIndirizzoCoords(null);
+    setShowForm(true);
+  };
+
+  const cercaIndirizzo = async () => {
+    const q = formData.address.trim();
+    if (!q) return;
+    setCercandoIndirizzo(true);
+    setSuggerimentiIndirizzo([]);
+    setIndirizzoCoords(null);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&q=${encodeURIComponent(q)}&accept-language=it`, {
+        headers: { 'Accept-Language': 'it' },
+      });
+      const data = await res.json();
+      setSuggerimentiIndirizzo(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Errore ricerca indirizzo', err);
+      setSuggerimentiIndirizzo([]);
+    } finally {
+      setCercandoIndirizzo(false);
+    }
+  };
+
+  const selezionaIndirizzo = (item: any) => {
+    setFormData(prev => ({ ...prev, address: item.display_name }));
+    setIndirizzoCoords({ lat: parseFloat(item.lat), lng: parseFloat(item.lon) });
+    setSuggerimentiIndirizzo([]);
   };
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -571,7 +642,7 @@ function Patients() {
         {canEdit && (
           <Button
             variant={showForm ? 'secondary' : 'primary'}
-            onClick={() => setShowForm(!showForm)}
+            onClick={apriCreazionePaziente}
             icon={<UserPlus size={18} />}
           >
             {showForm ? 'Annulla' : 'Nuovo Paziente'}
@@ -590,8 +661,8 @@ function Patients() {
       {showForm && canEdit && (
         <form onSubmit={handleSubmit} className="user-form">
           <h4>
-            <UserPlus size={18} />
-            Nuovo Paziente
+            {editingPatient ? <Pencil size={18} /> : <UserPlus size={18} />}
+            {editingPatient ? 'Modifica Paziente' : 'Nuovo Paziente'}
           </h4>
           <div className="tw-grid sm:tw-grid-cols-2 tw-gap-4">
             <label>
@@ -625,16 +696,46 @@ function Patients() {
               required
             />
           </label>
-          <label>
-            Indirizzo *
-            <input
-              name="address"
-              value={formData.address}
-              onChange={handleInputChange}
-              required
-              placeholder="Via Roma 1, Milano"
-            />
-          </label>
+          <div>
+            <label>
+              Indirizzo *
+              <input
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                required
+                placeholder="Via Roma 1, Milano"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={cercaIndirizzo}
+              disabled={!formData.address.trim() || cercandoIndirizzo}
+              className="tw-flex tw-items-center tw-gap-1.5 tw-mt-2 tw-bg-sky-600 tw-text-white tw-border-0 tw-rounded-lg tw-px-3 tw-py-1.5 tw-text-[0.85rem] tw-cursor-pointer hover:tw-bg-sky-700 disabled:tw-bg-slate-300"
+            >
+              <MapPin size={16} />
+              {cercandoIndirizzo ? 'Ricerca...' : 'Verifica su mappa'}
+            </button>
+            {suggerimentiIndirizzo.length > 0 && (
+              <div className="tw-mt-2 tw-border tw-border-slate-200 tw-rounded-lg tw-overflow-hidden tw-bg-white">
+                {suggerimentiIndirizzo.map((item: any) => (
+                  <button
+                    key={item.place_id}
+                    type="button"
+                    onClick={() => selezionaIndirizzo(item)}
+                    className="tw-w-full tw-text-left tw-px-3 tw-py-2 tw-text-[0.85rem] tw-border-b tw-border-slate-100 last:tw-border-b-0 hover:tw-bg-slate-50 tw-text-slate-700"
+                  >
+                    {item.display_name}
+                  </button>
+                ))}
+              </div>
+            )}
+            {indirizzoCoords && (
+              <div className="tw-mt-3" style={{ borderRadius: '10px', overflow: 'hidden' }}>
+                <MappaZona center={indirizzoCoords} altezza={220} readonly={true} />
+              </div>
+            )}
+          </div>
           <label>
             Telefono di contatto
             <input
@@ -671,7 +772,9 @@ function Patients() {
               {error}
             </div>
           )}
-          <button type="submit">Salva Paziente</button>
+          <button type="submit">
+            {editingPatient ? 'Aggiorna Paziente' : 'Salva Paziente'}
+          </button>
         </form>
       )}
 
@@ -769,9 +872,14 @@ function Patients() {
                             },
                           },
                           {
-                            label: loading ? 'Generazione relazione...' : 'Relazione LLM',
+                            label: 'Relazione LLM',
                             icon: <FileText size={16} />,
                             onClick,
+                          },
+                          {
+                            label: 'Modifica paziente',
+                            icon: <Pencil size={16} />,
+                            onClick: () => apriModificaPaziente(patient),
                           },
                           {
                             label: 'Elimina paziente',

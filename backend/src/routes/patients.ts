@@ -54,6 +54,7 @@ router.post('/', authorizeRole('admin', 'coordinator'), auditLog('patients', 'CR
       address: address.trim(),
       assistanceNeeds: assistanceNeeds.trim(),
       contactPhone: req.body.contactPhone?.trim(),
+      email: req.body.email?.trim(),
       codiceFiscale: codiceFiscale?.trim(),
       tipoGestione: tipoGestione || 'privato',
       siat: siat || undefined,
@@ -201,6 +202,35 @@ router.get('/scadenze-pai', authorizeRole('admin', 'coordinator', 'direttore'), 
     return res.json(daAlertare);
   } catch (error) {
     return res.status(500).json({ message: 'Errore recupero scadenze PAI', error });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PATCH /api/patients/:id - Modifica dati anagrafici/indirizzo/contatti paziente
+// ─────────────────────────────────────────────────────────────────────────────
+router.patch('/:id', authorizeRole('admin', 'coordinator'), auditLog('patients', 'UPDATE', req => req.params.id), async (req: Request, res: Response) => {
+  try {
+    const patient = await Patient.findById(req.params.id);
+    if (!patient) return res.status(404).json({ message: 'Paziente non trovato' });
+
+    const {
+      firstName, lastName, birthDate, address, assistanceNeeds,
+      contactPhone, email, codiceFiscale,
+    } = req.body;
+
+    if (firstName !== undefined) patient.firstName = firstName.trim();
+    if (lastName !== undefined) patient.lastName = lastName.trim();
+    if (birthDate !== undefined) patient.birthDate = new Date(birthDate);
+    if (address !== undefined) patient.address = address.trim();
+    if (assistanceNeeds !== undefined) patient.assistanceNeeds = assistanceNeeds.trim();
+    if (contactPhone !== undefined) patient.contactPhone = contactPhone?.trim() || undefined;
+    if (email !== undefined) patient.email = email?.trim() || undefined;
+    if (codiceFiscale !== undefined) patient.codiceFiscale = codiceFiscale?.trim() || undefined;
+
+    await patient.save();
+    return res.json(patient);
+  } catch (error) {
+    return res.status(400).json({ message: "Errore nell'aggiornamento del paziente", error });
   }
 });
 
