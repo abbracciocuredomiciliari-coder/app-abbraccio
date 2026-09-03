@@ -10,6 +10,7 @@ import WorkPlan from '../models/WorkPlan';
 import Patient from '../models/Patient';
 import Staff from '../models/Staff';
 import User from '../models/User';
+import { inviaEmail } from '../utils/email';
 import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
@@ -298,6 +299,44 @@ router.post(
         attachments,
         readBy: [{ userId: new mongoose.Types.ObjectId(user.userId || user.id), at: new Date() }],
       });
+
+      // Notifica via email al destinatario diretto o ai coordinatori
+      if (scope === 'general') {
+        const frontendUrl = process.env.FRONTEND_URL || 'https://app.abbracciocuredomiciliari.it';
+        const chatUrl = `${frontendUrl}/chat`;
+        const preview = text
+          ? (text.length > 200 ? text.slice(0, 200) + '...' : text)
+          : (attachments.length ? 'Allegato' : 'Nuovo messaggio');
+        const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+          <h2 style="color:#1e4d8c;margin-top:0;">Hai ricevuto un nuovo messaggio in chat</h2>
+          <p><strong>Da:</strong> ${user.name || 'Utente'}</p>
+          <p><strong>Messaggio:</strong></p>
+          <div style="background:#f8fafc;padding:12px;border-radius:6px;margin:16px 0;white-space:pre-wrap;">${preview}</div>
+          <a href="${chatUrl}" style="display:inline-block;background:#1e4d8c;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">Apri la chat →</a>
+        </div>`;
+
+        if (recipientObjectId) {
+          const dest = await User.findById(recipientObjectId).select('email').lean();
+          if (dest?.email) {
+            inviaEmail({
+              to: dest.email,
+              subject: `Nuovo messaggio in chat da ${user.name || 'Utente'}`,
+              html,
+            }).catch((err: any) => console.warn('[Messages POST] Errore invio email:', err?.message || err));
+          }
+        } else if (msgChannel === 'coordinators') {
+          const coordinatori = await User.find({ role: 'coordinator', status: 'approved' }).select('email').lean();
+          for (const c of coordinatori) {
+            if (c.email) {
+              inviaEmail({
+                to: c.email,
+                subject: `Nuovo messaggio nel canale Coordinatori`,
+                html,
+              }).catch((err: any) => console.warn('[Messages POST] Errore invio email a coordinatore:', err?.message || err));
+            }
+          }
+        }
+      }
 
       return res.status(201).json({ message: serializeMessage(message) });
     } catch (error: any) {
