@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import WorkPlan from '../models/WorkPlan';
 import WorkPlanAccess from '../models/WorkPlanAccess';
+import ConsensoGDPR from '../models/ConsensoGDPR';
+import ConsensoPrestazioneSanitaria from '../models/ConsensoPrestazioneSanitaria';
 import { authenticateToken } from '../middleware/auth';
 import { getStaffByUser } from '../utils/staffHelper';
 
@@ -96,6 +98,23 @@ router.post('/:workPlanId/entrata', authenticateToken, async (req: Request, res:
         message: 'Hai già registrato un\'entrata per questo piano. Registra prima l\'uscita.',
         accessoAperto
       });
+    }
+
+    // Primo/unico accesso: richiede consensi firmati
+    const accessiCount = await WorkPlanAccess.countDocuments({ workPlan: workPlanId });
+    if (accessiCount === 0) {
+      const pazienteId = (workPlan.patient as any)?._id?.toString();
+      if (pazienteId) {
+        const [consensoGdpr, consensoPrestazione] = await Promise.all([
+          ConsensoGDPR.findOne({ patientId: pazienteId, revocato: { $ne: true } }),
+          ConsensoPrestazioneSanitaria.findOne({ patientId: pazienteId, revocato: { $ne: true } }),
+        ]);
+        if (!consensoGdpr || !consensoPrestazione) {
+          return res.status(403).json({
+            message: 'Prima di registrare l\'entrata devi far firmare il consenso GDPR e il consenso al trattamento.'
+          });
+        }
+      }
     }
 
     const ipAddress = req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || '';

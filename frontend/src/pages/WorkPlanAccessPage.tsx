@@ -103,6 +103,8 @@ export default function WorkPlanAccessPage() {
 
   const [workPlan, setWorkPlan] = useState<WorkPlanInfo | null>(null);
 
+  const [primoAccesso, setPrimoAccesso] = useState(false);
+
   const [accessoCorrente, setAccessoCorrente] = useState<AccessoInfo | null>(null);
 
   const [loading, setLoading] = useState(true);
@@ -218,6 +220,8 @@ export default function WorkPlanAccessPage() {
 
       setWorkPlan(wpRes.data.workPlan);
 
+      setPrimoAccesso((wpRes.data.accessi || []).length === 0);
+
       setAccessoCorrente(wpRes.data.accessoApertoUtente || null);
 
       const patientId = wpRes.data.workPlan?.patient?._id;
@@ -263,6 +267,13 @@ export default function WorkPlanAccessPage() {
 
 
   const registraEntrata = async () => {
+
+    if (primoAccesso && (!consensoFirmato || !consensoPrestazioneFirmato)) {
+      const msg = 'Prima di registrare l\'entrata devi far firmare il consenso GDPR e il consenso alla prestazione sanitaria.';
+      window.alert(msg);
+      setError(msg);
+      return;
+    }
 
     try {
 

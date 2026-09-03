@@ -40,6 +40,9 @@ export default function RegistrazioneAccesso() {
   const [accessoAperto, setAccessoAperto] = useState<AccessoInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [consensoGDPRFirmato, setConsensoGDPRFirmato] = useState(false);
+  const [consensoPrestazioneFirmato, setConsensoPrestazioneFirmato] = useState(false);
+  const [primoAccesso, setPrimoAccesso] = useState(false);
 
   const [firmaOperatore, setFirmaOperatore] = useState('');
   const [firmaPaziente, setFirmaPaziente] = useState('');
@@ -64,6 +67,17 @@ export default function RegistrazioneAccesso() {
       setWorkPlan(res.data.workPlan);
       setAccessoAperto(res.data.accessoApertoUtente || null);
       setStep(res.data.accessoApertoUtente ? 'accesso-attivo' : 'selezione');
+      const accessi = res.data.accessi || [];
+      setPrimoAccesso(accessi.length === 0);
+      const patientId = res.data.workPlan?.patient?._id;
+      if (patientId) {
+        const [consensoRes, consensoPrestazioneRes] = await Promise.allSettled([
+          api.get(`/gdpr/consenso/${patientId}`),
+          api.get(`/gdpr/consenso-prestazione/${patientId}`),
+        ]);
+        setConsensoGDPRFirmato(consensoRes.status === 'fulfilled' && !!consensoRes.value.data?.consensoAttivo);
+        setConsensoPrestazioneFirmato(consensoPrestazioneRes.status === 'fulfilled' && !!consensoPrestazioneRes.value.data?.consensoAttivo);
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Errore caricamento dati');
     } finally {
@@ -72,6 +86,12 @@ export default function RegistrazioneAccesso() {
   };
 
   const registraEntrata = async () => {
+    if (primoAccesso && (!consensoGDPRFirmato || !consensoPrestazioneFirmato)) {
+      const msg = 'Prima di registrare l\'entrata devi far firmare al paziente il consenso GDPR e il consenso al trattamento.';
+      window.alert(msg);
+      setError(msg);
+      return;
+    }
     try {
       setLoading(true);
       const res = await api.post(`/workplan-access/${workPlanId}/entrata`, {
@@ -244,6 +264,23 @@ export default function RegistrazioneAccesso() {
             <p style={{ color: '#93c5fd', textAlign: 'center', marginBottom: '32px', fontSize: '0.95rem' }}>
               {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
+
+            {primoAccesso && (!consensoGDPRFirmato || !consensoPrestazioneFirmato) && (
+              <Alert type="warning" title="Consensi richiesti" style={{ marginBottom: '20px' }}>
+                <div>Prima di registrare l&apos;entrata devi far firmare al paziente:</div>
+                <ul style={{ margin: '8px 0', paddingLeft: '18px' }}>
+                  <li>Consenso GDPR</li>
+                  <li>Consenso al trattamento / prestazione sanitaria</li>
+                </ul>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/workplan-access/${workPlanId}`)}
+                  style={{ marginTop: '8px', background: '#d97706', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 16px', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  Vai al piano di lavoro per firmare i consensi
+                </button>
+              </Alert>
+            )}
 
             <button
               onClick={registraEntrata}
