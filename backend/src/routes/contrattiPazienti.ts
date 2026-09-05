@@ -1,0 +1,321 @@
+import { Router, Request, Response } from 'express';
+import crypto from 'crypto';
+import ContrattoPaziente from '../models/ContrattoPaziente';
+import Patient from '../models/Patient';
+import PatientDocument from '../models/PatientDocument';
+import { authenticateToken, AuthRequest } from '../middleware/auth';
+import { authorizeRole } from '../middleware/roles';
+import { auditLog } from '../middleware/audit';
+import { inviaEmail } from '../utils/email';
+import { decrypt } from '../utils/encryption';
+
+const router = Router();
+const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
+
+const AZIENDA = {
+  nome: process.env.AZIENDA_NOME || 'ABBRACCIO CURE DOMICILIARI S.R.L.S.',
+  indirizzo: process.env.AZIENDA_INDIRIZZO || 'ROMA (RM) VIA DI S MARIA AUSILIATRICE 4B',
+  capCitta: process.env.AZIENDA_CAP_CITTA || 'CAP 00181',
+  pec: process.env.AZIENDA_PEC || 'abbracciocuredomiciliari@facilepec.com',
+  rea: process.env.AZIENDA_REA || 'RM - 1777027',
+  cf: process.env.AZIENDA_CF || '18316251000',
+  piva: process.env.AZIENDA_PIVA || 'P.IVA da configurare',
+};
+
+function formatData(d: any) {
+  if (!d) return '___';
+  try {
+    return new Date(d).toLocaleDateString('it-IT');
+  } catch {
+    return String(d);
+  }
+}
+
+function normalizzaPaziente(raw: any) {
+  const p = raw && raw.toJSON ? raw.toJSON() : { ...raw };
+  p.address = decrypt(p.address);
+  p.contactPhone = decrypt(p.contactPhone);
+  p.codiceFiscale = decrypt(p.codiceFiscale);
+  p.email = p.email || '';
+  return p;
+}
+
+function generaHtmlContratto(contratto: any, paziente: any, includeFirma = false, firmaImg?: string) {
+  const profilo = contratto.profilo === 'Infermiere' ? 'Infermiere Professionale' : 'Operatore Socio-Sanitario (O.S.S.)';
+  const checkOss = contratto.profilo === 'OSS' ? '☑' : '☐';
+  const checkInf = contratto.profilo === 'Infermiere' ? '☑' : '☐';
+  const importo = Number(contratto.importo || 150).toFixed(2).replace('.', ',');
+  const luogo = contratto.luogoFirma || 'Roma';
+  const data = contratto.dataFirma ? new Date(contratto.dataFirma).toLocaleDateString('it-IT') : formatData(new Date());
+
+  const indirizzoParts = (paziente.address || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+  const citta = indirizzoParts.length > 1 ? indirizzoParts[indirizzoParts.length - 1] : '';
+  const indirizzo = indirizzoParts.length > 1 ? indirizzoParts.slice(0, -1).join(', ') : paziente.address || '';
+
+  const firmaHtml = includeFirma && firmaImg
+    ? `<div style="margin-top:24px;border-top:2px solid #1e4d8c;padding-top:20px;">
+        <h3 style="color:#1e4d8c;font-size:13px;margin:0 0 12px;">CONFERMA DI FIRMA</h3>
+        <p style="font-size:12px;margin:4px 0;"><strong>Luogo e data:</strong> ${luogo}, ${data}</p>
+        <p style="font-size:12px;margin:4px 0;"><strong>Firmatario:</strong> ${contratto.nome || `${paziente.firstName} ${paziente.lastName}`}</p>
+        <img src="${firmaImg}" alt="Firma" style="max-width:220px;max-height:80px;border:1px solid #d1d5db;margin-top:8px;" />
+      </div>`
+    : '';
+
+  return `<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Contratto d'incarico - ${paziente.firstName} ${paziente.lastName}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 12px; color: #111; margin: 30px; max-width: 900px; line-height: 1.45; }
+    .header { background: #1e4d8c; color: #fff; padding: 22px 30px; border-radius: 10px 10px 0 0; }
+    .header h1 { margin: 0; font-size: 22px; }
+    .header h2 { margin: 6px 0 0; font-size: 14px; font-weight: 400; }
+    .header-dati { font-size: 10px; margin-top: 8px; line-height: 1.5; opacity: .95; }
+    .sub-header { color: #1e4d8c; font-size: 14px; font-weight: 700; text-align: center; margin: 16px 0; }
+    .section { background: #eef3f7; padding: 8px 14px; margin: 14px 0 8px; border-left: 4px solid #1e4d8c; }
+    .section-title { font-weight: 700; color: #1e4d8c; font-size: 13px; margin: 0; }
+    p { margin: 6px 0; }
+    .field-row { display: flex; gap: 20px; margin: 8px 0; }
+    .field { flex: 1; border-bottom: 1px solid #94a3b8; padding: 2px 0; }
+    .field-full { border-bottom: 1px solid #94a3b8; padding: 2px 0; margin: 8px 0; }
+    .field-label { font-weight: 700; font-size: 10px; color: #475569; display: block; margin-bottom: 2px; }
+    .checkbox { font-size: 14px; margin-right: 6px; }
+    .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin: 12px 0; }
+    .price { color: #059669; font-weight: 700; font-size: 14px; }
+    .warning { background: #fef2f2; border-left: 4px solid #dc2626; padding: 10px 14px; color: #7f1d1d; }
+    .footer { text-align: center; font-size: 9px; color: #64748b; margin-top: 30px; padding-top: 12px; border-top: 1px solid #cbd5e1; }
+    @media print { .no-print { display: none; } button { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>ABBRACCIO CURE DOMICILIARI S.R.L.S.</h1>
+    <h2>CONTRATTO D'INCARICO E IMPEGNO DI RECLUTAMENTO</h2>
+    <h2 style="font-size:12px;font-weight:400;">ASSISTENZA DOMICILIARE SANITARIA E SOCIO-SANITARIA (OSS / INFERMIERE)</h2>
+    <div class="header-dati">
+      Sede Legale: ${AZIENDA.indirizzo} — ${AZIENDA.capCitta}<br/>
+      C.F. / P.IVA: ${AZIENDA.cf} | N. REA: ${AZIENDA.rea}<br/>
+      PEC: ${AZIENDA.pec} | Legale Rappresentante: SCHEMBRI SIMONA
+    </div>
+  </div>
+
+  <div class="sub-header">CONTRATTO TRA AGENZIA E COMMITTENTE</div>
+
+  <div class="section"><p class="section-title">1. PARTI CONTRAENTI</p></div>
+  <p>Tra la Società <strong>ABBRACCIO CURE DOMICILIARI S.R.L.S.</strong> (di seguito "Agenzia") e il sottoscritto Committente:</p>
+
+  <div class="field-row">
+    <div class="field" style="flex:1.5"><span class="field-label">Nome e Cognome</span>${paziente.firstName} ${paziente.lastName}</div>
+  </div>
+  <div class="field-row">
+    <div class="field" style="flex:1.2"><span class="field-label">Codice Fiscale</span>${paziente.codiceFiscale || ''}</div>
+    <div class="field" style="flex:1"><span class="field-label">Data di Nascita</span>${formatData(paziente.birthDate)}</div>
+  </div>
+  <div class="field-row">
+    <div class="field" style="flex:2"><span class="field-label">Indirizzo di Residenza</span>${indirizzo}</div>
+    <div class="field" style="flex:1"><span class="field-label">Città</span>${citta}</div>
+  </div>
+  <div class="field-row">
+    <div class="field" style="flex:0.8"><span class="field-label">CAP</span></div>
+    <div class="field" style="flex:0.8"><span class="field-label">Prov</span></div>
+    <div class="field" style="flex:1.2"><span class="field-label">Telefono / Cellulare</span>${paziente.contactPhone || ''}</div>
+    <div class="field" style="flex:1.5"><span class="field-label">Email</span>${paziente.email || ''}</div>
+  </div>
+
+  <div class="section"><p class="section-title">2. OGGETTO DELL'INCARICO SPECIALISTICO</p></div>
+  <p>Il Committente conferisce all'Agenzia l'incarico professionale finalizzato all'avvio immediato delle attività di reclutamento, screening dei curricula, verifica dei titoli abilitanti e selezione del seguente profilo professionale sanitario/socio-sanitario per assistenza domiciliare:</p>
+  <div class="box" style="display:flex;gap:40px;">
+    <span><span class="checkbox">${checkOss}</span> Operatore Socio-Sanitario (O.S.S.)</span>
+    <span><span class="checkbox">${checkInf}</span> Infermiere Professionale</span>
+  </div>
+
+  <div class="section"><p class="section-title">3. CORRISPETTIVO D'AVVIO, CONDIZIONI E SCAVALCO COSTI</p></div>
+  <div class="box">
+    <p class="price">Diritti di Avvio Ricerca e Reclutamento: € ${importo} (oltre IVA)</p>
+    <p>Importo versato contestualmente alla firma del presente contratto a copertura dei costi operativi di ricerca, valutazione dei titoli professionali e colloquio selettivo del personale proposto.</p>
+  </div>
+  <p><strong>COMPENSAZIONE E SCALAVECCHIA / SCALAVECCHIO DEL CORRISPETTIVO:</strong><br/>
+  In caso di accettazione del profilo proposto e di effettivo avvio dell'assistenza domiciliare, l'importo di € ${importo},00 già versato verrà interamente scalato/scomputato dal costo totale del servizio di assistenza o dal saldo finale dovuto all'Agenzia per il collocamento.</p>
+
+  <div class="warning">
+    <strong>CLAUSOLA DI RINUNCIA (TRATTENUTA):</strong><br/>
+    Qualora il Committente decida di rinunciare all'incarico o recedere dal contratto dopo che l'Agenzia ha svolto la ricerca ed individuato un lavoratore (O.S.S. o Infermiere) idoneo e rispondente ai requisiti, l'importo di € ${importo},00 <strong>non verrà restituito</strong> e sarà trattenuto a titolo di compenso per le attività istruttorie e lavorative svolte.
+  </div>
+
+  <div class="section"><p class="section-title">4. DURATA E RECESSO</p></div>
+  <p>Il presente contratto ha durata dalla data di sottoscrizione sino all'effettivo avvio del servizio di assistenza domiciliare, comunque non oltre 12 mesi. Ciascuna parte potrà recedere con preavviso scritto di 30 giorni, salvo quanto previsto dalla clausola di rinuncia.</p>
+
+  <div class="section"><p class="section-title">5. TRATTAMENTO DATI</p></div>
+  <p>I dati personali saranno trattati nel rispetto del Regolamento UE 2016/679 e delle norme nazionali vigenti, esclusivamente per le finalità di reclutamento e gestione del servizio richiesto.</p>
+
+  <p style="margin-top:24px;"><strong>Letto, confermato e sottoscritto in ${luogo} il ${data}.</strong></p>
+  <div class="field-row" style="margin-top:30px;">
+    <div class="field" style="flex:1;height:60px;"><span class="field-label">Timbro e firma Agenzia</span></div>
+    <div class="field" style="flex:1;height:60px;"><span class="field-label">Firma del Committente</span></div>
+  </div>
+
+  ${firmaHtml}
+
+  <div class="no-print" style="text-align:center;margin-top:24px;">
+    <button onclick="window.print()" style="background:#1e4d8c;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:14px;cursor:pointer;font-weight:700;">;font-weight:700;">🖨️ Stampa / Salva PDF</button>
+  </div>
+
+  <div class="footer">Documento generato elettronicamente da Abbraccio Cure Domiciliari S.R.L.S. — ${new Date().toLocaleString('it-IT')}</div>
+</body>
+</html>`;
+}
+
+// POST /api/contratti-pazienti — crea un nuovo contratto d'incarico
+router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('contratti_pazienti', 'CREATE'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { patient, profilo, importo, email } = req.body;
+    if (!patient || !profilo) return res.status(400).json({ message: 'Paziente e profilo obbligatori' });
+    if (!['OSS', 'Infermiere'].includes(profilo)) return res.status(400).json({ message: 'Profilo non valido' });
+
+    const paziente = await Patient.findById(patient);
+    if (!paziente) return res.status(404).json({ message: 'Paziente non trovato' });
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const contratto = await ContrattoPaziente.create({
+      patient,
+      profilo,
+      importo: Number(importo) || 150,
+      token,
+      email: email || paziente.email,
+      nome: `${paziente.firstName} ${paziente.lastName}`,
+      stato: 'emesso',
+    });
+
+    return res.status(201).json(contratto);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore nella creazione del contratto', error: error.message });
+  }
+});
+
+// GET /api/contratti-pazienti — lista per paziente
+router.get('/', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { patient } = req.query;
+    const query: any = {};
+    if (patient) query.patient = patient;
+    const contratti = await ContrattoPaziente.find(query).sort({ data: -1 }).populate('patient', 'firstName lastName');
+    return res.json(contratti);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore nel caricamento contratti', error: error.message });
+  }
+});
+
+// GET /api/contratti-pazienti/:id/pdf — stampa/visualizza HTML
+router.get('/:id/pdf', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const contratto = await ContrattoPaziente.findById(req.params.id).populate('patient', 'firstName lastName birthDate address contactPhone codiceFiscale email');
+    if (!contratto) return res.status(404).json({ message: 'Contratto non trovato' });
+    const paziente = normalizzaPaziente(contratto.patient);
+    const html = generaHtmlContratto(contratto, paziente, contratto.stato === 'firmato', contratto.firmaImg);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.send(html);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore generazione PDF', error: error.message });
+  }
+});
+
+// GET /api/contratti-pazienti/firma/:token — verifica link firma (pubblico)
+router.get('/firma/:token', async (req: Request, res: Response) => {
+  try {
+    const contratto = await ContrattoPaziente.findOne({ token: req.params.token })
+      .populate('patient', 'firstName lastName birthDate address contactPhone codiceFiscale email');
+    if (!contratto) return res.status(404).json({ message: 'Link non valido' });
+    if (contratto.stato === 'firmato') return res.status(400).json({ message: 'Contratto già firmato', giaFirmato: true });
+    return res.json({
+      patient: contratto.patient,
+      profilo: contratto.profilo,
+      importo: contratto.importo,
+      nome: contratto.nome,
+    });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore verifica link', error: error.message });
+  }
+});
+
+// POST /api/contratti-pazienti/:id/invia-email — invia link firma al paziente/caregiver
+router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('contratti_pazienti', 'UPDATE'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email obbligatoria' });
+
+    const contratto = await ContrattoPaziente.findById(req.params.id)
+      .populate('patient', 'firstName lastName');
+    if (!contratto) return res.status(404).json({ message: 'Contratto non trovato' });
+    if (!contratto.token) contratto.token = crypto.randomBytes(32).toString('hex');
+    contratto.email = email;
+    await contratto.save();
+
+    const frontendUrl = process.env.FRONTEND_URL || 'https://app.abbracciocuredomiciliari.it';
+    const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+      <h2 style="color:#1e4d8c;margin-top:0;">Contratto d'incarico</h2>
+      <p>Gentile <strong>${(contratto.patient as any)?.firstName || ''} ${(contratto.patient as any)?.lastName || ''}</strong>,</p>
+      <p>in allegato trovi il contratto d'incarico per l'attività di reclutamento del profilo <strong>${contratto.profilo}</strong>.</p>
+      <p style="margin:16px 0;padding:16px;background:#eff6ff;border-left:4px solid #1e4d8c;border-radius:6px;">
+        Per firmare il contratto <strong>online con dito o penna</strong> clicca qui:<br/>
+        <a href="${frontendUrl}/firma-contratto-paziente?token=${contratto.token}" style="display:inline-block;margin-top:8px;background:#1e4d8c;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Firma contratto</a>
+      </p>
+      <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari S.R.L.S.</p>
+    </div>`;
+
+    await inviaEmail({
+      to: email,
+      subject: `Contratto d'incarico — Abbraccio Cure Domiciliari`,
+      html,
+    });
+
+    return res.json({ message: 'Email inviata con successo' });
+  } catch (error: any) {
+    console.error('[Contratti pazienti invia-email] Errore:', error);
+    return res.status(500).json({ message: "Errore nell'invio dell'email", error: error.message });
+  }
+});
+
+// POST /api/contratti-pazienti/firma/:token — salva firma
+router.post('/firma/:token', async (req: Request, res: Response) => {
+  try {
+    const { firmaImg, nome, luogoFirma } = req.body;
+    if (!firmaImg) return res.status(400).json({ message: 'Firma obbligatoria' });
+
+    const contratto = await ContrattoPaziente.findOne({ token: req.params.token });
+    if (!contratto) return res.status(404).json({ message: 'Link non valido' });
+    if (contratto.stato === 'firmato') return res.status(400).json({ message: 'Contratto già firmato' });
+
+    const paziente = await Patient.findById(contratto.patient);
+    if (!paziente) return res.status(404).json({ message: 'Paziente non trovato' });
+
+    contratto.firmaImg = firmaImg;
+    contratto.nome = nome || `${paziente.firstName} ${paziente.lastName}`;
+    contratto.luogoFirma = luogoFirma || 'Roma';
+    contratto.dataFirma = new Date();
+    contratto.stato = 'firmato';
+    await contratto.save();
+
+    const pazienteNorm = normalizzaPaziente(paziente);
+    const htmlFirmato = generaHtmlContratto(contratto, pazienteNorm, true, firmaImg);
+
+    await PatientDocument.create({
+      patient: paziente._id,
+      category: 'contratto_incarico',
+      title: `Contratto d'incarico ${contratto.profilo} — firmato`,
+      description: `Contratto d'incarico per reclutamento ${contratto.profilo}. Firmato il ${new Date().toLocaleDateString('it-IT')}.`,
+      fileName: `contratto-incarico-${contratto.profilo.toLowerCase()}-${new Date().toISOString().split('T')[0]}.html`,
+      contentType: 'text/html',
+      data: Buffer.from(htmlFirmato, 'utf-8'),
+      uploadedByNome: contratto.nome || 'Paziente',
+    });
+
+    return res.json({ message: 'Contratto firmato e archiviato correttamente' });
+  } catch (error: any) {
+    console.error('[Contratti pazienti firma] Errore:', error);
+    return res.status(500).json({ message: 'Errore salvataggio firma', error: error.message });
+  }
+});
+
+export default router;

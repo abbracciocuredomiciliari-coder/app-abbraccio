@@ -20,6 +20,7 @@ import {
   CheckCircle,
   Eye,
   Printer,
+  Mail,
   MessageCircle,
   Pencil,
   MapPin,
@@ -168,6 +169,13 @@ function Patients() {
   const [showAnagraficaModal, setShowAnagraficaModal] = useState(false);
   const [selectedAnagrafica, setSelectedAnagrafica] = useState<Patient | null>(null);
 
+  // Stato modal contratto d'incarico
+  const [showContrattoModal, setShowContrattoModal] = useState(false);
+  const [contrattoPatient, setContrattoPatient] = useState<Patient | null>(null);
+  const [contrattoProfilo, setContrattoProfilo] = useState<'OSS' | 'Infermiere'>('OSS');
+  const [contrattoEmail, setContrattoEmail] = useState('');
+  const [contrattoLoading, setContrattoLoading] = useState(false);
+
   // Stato modal consenso GDPR
   const [showConsensoModal, setShowConsensoModal] = useState(false);
   const [consensoPaziente, setConsensoPaziente] = useState<Patient | null>(null);
@@ -279,6 +287,69 @@ function Patients() {
     setSuggerimentiIndirizzo([]);
     setIndirizzoCoords(null);
     setShowForm(true);
+  };
+
+  const apriContrattoModal = (patient: Patient) => {
+    setContrattoPatient(patient);
+    setContrattoProfilo('OSS');
+    setContrattoEmail(patient.email || '');
+    setContrattoLoading(false);
+    setShowContrattoModal(true);
+  };
+
+  const chiudiContrattoModal = () => {
+    setShowContrattoModal(false);
+    setContrattoPatient(null);
+    setContrattoLoading(false);
+  };
+
+  const creaContratto = async () => {
+    if (!contrattoPatient) return;
+    setContrattoLoading(true);
+    try {
+      const res = await api.post('/contratti-pazienti', {
+        patient: contrattoPatient._id,
+        profilo: contrattoProfilo,
+        email: contrattoEmail,
+        importo: 150,
+      });
+      return res.data._id as string;
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nella creazione del contratto');
+      return null;
+    } finally {
+      setContrattoLoading(false);
+    }
+  };
+
+  const stampaContratto = async () => {
+    const id = await creaContratto();
+    if (id) {
+      const res = await api.get(`/contratti-pazienti/${id}/pdf`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    }
+  };
+
+  const inviaContrattoEmail = async () => {
+    if (!contrattoEmail) {
+      alert('Inserisci un indirizzo email');
+      return;
+    }
+    const id = await creaContratto();
+    if (id) {
+      try {
+        setContrattoLoading(true);
+        await api.post(`/contratti-pazienti/${id}/invia-email`, { email: contrattoEmail });
+        alert('Email di firma inviata');
+        chiudiContrattoModal();
+      } catch (err: any) {
+        alert(err?.response?.data?.message || "Errore nell'invio dell'email");
+      } finally {
+        setContrattoLoading(false);
+      }
+    }
   };
 
   const cercaIndirizzo = async () => {
@@ -858,6 +929,13 @@ function Patients() {
                   >
                     <User size={16} />
                     Anagrafica
+                  </button>
+                  <button
+                    onClick={() => apriContrattoModal(patient)}
+                    className="tw-bg-slate-700 tw-text-white tw-whitespace-nowrap"
+                  >
+                    <FileText size={16} />
+                    Contratto
                   </button>
                   <button
                     onClick={() => openDocumentsModal(patient)}
@@ -1518,6 +1596,75 @@ function Patients() {
                   Modifica
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ MODAL CONTRATTO D'INCARICO ═══ */}
+      {showContrattoModal && contrattoPatient && (
+        <div className="tw-fixed tw-inset-0 tw-z-50 tw-bg-black/60 tw-flex tw-items-start tw-justify-center tw-p-4 tw-overflow-y-auto" onClick={chiudiContrattoModal}>
+          <div className="tw-bg-white tw-rounded-2xl tw-shadow-2xl tw-w-full tw-max-w-[480px] tw-my-10 tw-p-6" onClick={e => e.stopPropagation()}>
+            <div className="tw-flex tw-justify-between tw-items-center tw-mb-4 tw-flex-wrap tw-gap-2">
+              <h3 className="tw-m-0 tw-text-brand tw-text-lg">
+                <FileText size={22} className="tw-inline tw-mr-2" />
+                Contratto d'incarico
+              </h3>
+              <button onClick={chiudiContrattoModal} className="tw-bg-slate-100 tw-border tw-border-slate-200 tw-rounded-md tw-px-2.5 tw-py-1.5 tw-cursor-pointer hover:tw-bg-slate-200">
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="tw-text-sm tw-text-slate-600 tw-mb-4">
+              Genera il contratto per <strong>{contrattoPatient.firstName} {contrattoPatient.lastName}</strong>.
+            </p>
+
+            <div className="tw-mb-4">
+              <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Profilo da reclutare</label>
+              <select
+                value={contrattoProfilo}
+                onChange={(e) => setContrattoProfilo(e.target.value as 'OSS' | 'Infermiere')}
+                className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]"
+              >
+                <option value="OSS">Operatore Socio-Sanitario (O.S.S.)</option>
+                <option value="Infermiere">Infermiere Professionale</option>
+              </select>
+            </div>
+
+            <div className="tw-mb-6">
+              <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Email destinatario (per firma)</label>
+              <input
+                type="email"
+                value={contrattoEmail}
+                onChange={(e) => setContrattoEmail(e.target.value)}
+                placeholder="paziente@email.com"
+                className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]"
+              />
+            </div>
+
+            <div className="tw-flex tw-justify-end tw-gap-3">
+              <button
+                onClick={chiudiContrattoModal}
+                className="tw-px-4 tw-py-2 tw-rounded-lg tw-border tw-border-slate-200 tw-bg-white tw-text-slate-700 tw-font-semibold hover:tw-bg-slate-50"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={stampaContratto}
+                disabled={contrattoLoading}
+                className="tw-px-4 tw-py-2 tw-rounded-lg tw-bg-brand tw-text-white tw-font-semibold hover:tw-bg-brand-dark tw-flex tw-items-center tw-gap-2"
+              >
+                <Printer size={16} />
+                {contrattoLoading ? 'Creazione...' : 'Stampa / PDF'}
+              </button>
+              <button
+                onClick={inviaContrattoEmail}
+                disabled={contrattoLoading}
+                className="tw-px-4 tw-py-2 tw-rounded-lg tw-bg-emerald-600 tw-text-white tw-font-semibold hover:tw-bg-emerald-700 tw-flex tw-items-center tw-gap-2"
+              >
+                <Mail size={16} />
+                {contrattoLoading ? 'Invio...' : 'Invia firma'}
+              </button>
             </div>
           </div>
         </div>

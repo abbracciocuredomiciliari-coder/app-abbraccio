@@ -16,6 +16,7 @@ import Dashboard from './pages/Dashboard';
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const FirmaContratto = lazy(() => import('./pages/FirmaContratto'));
+const FirmaContrattoPaziente = lazy(() => import('./pages/FirmaContrattoPaziente'));
 const FirmaVerbaleEsterno = lazy(() => import('./pages/FirmaVerbaleEsterno'));
 const FirmaDocumento = lazy(() => import('./pages/FirmaDocumento'));
 
@@ -469,6 +470,7 @@ function AppShell() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/firma-contratto" element={<FirmaContratto />} />
+          <Route path="/firma-contratto-paziente" element={<FirmaContrattoPaziente />} />
           <Route path="/firma-verbale" element={<FirmaVerbaleEsterno />} />
           <Route path="/firma-documento" element={<FirmaDocumento />} />
 

@@ -20,7 +20,7 @@ router.get('/patients/:patientId/documents', authenticateToken, async (req: Requ
     }
 
     const query: any = { patient: patientId };
-    if (category && ['cartella_clinica', 'esame', 'risultato_analisi', 'consulenza'].includes(category as string)) {
+    if (category && ['cartella_clinica', 'esame', 'risultato_analisi', 'consulenza', 'contratto_incarico'].includes(category as string)) {
       query.category = category;
     }
 
@@ -59,7 +59,7 @@ router.post('/patients/:patientId/documents', authenticateToken, authorizeRole('
       return res.status(400).json({ message: 'File non valido o mancante' });
     }
 
-    const validCategories: DocumentCategory[] = ['cartella_clinica', 'esame', 'risultato_analisi', 'consulenza'];
+    const validCategories: DocumentCategory[] = ['cartella_clinica', 'esame', 'risultato_analisi', 'consulenza', 'contratto_incarico'];
     if (!validCategories.includes(category as DocumentCategory)) {
       return res.status(400).json({ message: 'Categoria non valida. Usare: cartella_clinica, esame, risultato_analisi, consulenza' });
     }
