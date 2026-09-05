@@ -149,7 +149,7 @@ export default function FirmaDocumento() {
                     className="tw-mt-1"
                   />
                   <span className="tw-text-sm tw-text-amber-900">
-                    <strong>Rifiuto esplicito</strong>: non desidero la comunicazione dei dati della prestazione al Registro Sanitario.
+                    <strong>Rifiuto esplicito</strong>: non desidero la comunicazione dei dati della prestazione al Sistema TS.
                   </span>
                 </label>
               </div>
@@ -169,7 +169,7 @@ export default function FirmaDocumento() {
             <FirmaCanvas
               label="Firma con dito o penna"
               sublabel={doc.tipo === 'fattura'
-                ? (rifiutoRegistro ? 'Firma per dichiarare il rifiuto del Registro Sanitario' : 'Firma per accettazione del documento')
+                ? (rifiutoRegistro ? 'Firma per dichiarare il rifiuto del Sistema TS' : 'Firma per accettazione del documento')
                 : 'Firma per accettazione del preventivo'
               }
               onFirmaCompleta={setFirma}

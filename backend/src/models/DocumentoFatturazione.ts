@@ -28,7 +28,7 @@ export interface IDocumentoFatturazione extends Document {
     nome?: string;
     email?: string;
     firmaImg?: string; // firma in base64 PNG
-    rifiutoRegistro?: boolean; // per fatture: rifiuto comunicazione Registro Sanitario
+    rifiutoRegistro?: boolean; // per fatture: rifiuto comunicazione Sistema TS (spese sanitarie)
   };
 }
 

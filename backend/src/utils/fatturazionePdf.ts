@@ -187,7 +187,7 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
         noteY += noteH + 25;
       }
 
-      // ─── Firma / Rifiuto Registro Sanitario
+      // ─── Firma / Rifiuto Sistema TS
       let signatureY = noteY + 40;
       if (signatureY > 650) {
         pdf.addPage();
@@ -204,9 +204,9 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
         sy += 16;
         if (doc.tipo === 'fattura') {
           if (doc.firma.rifiutoRegistro) {
-            pdf.text('Il paziente/caregiver ha esplicitamente RIFIUTATO la comunicazione dei dati al Registro Sanitario.', 60, sy);
+            pdf.text('Il paziente/caregiver ha esplicitamente RIFIUTATO la comunicazione dei dati al Sistema TS (spese sanitarie).', 60, sy);
           } else {
-            pdf.text('Il paziente/caregiver ha ACCONSENTITO alla comunicazione dei dati al Registro Sanitario.', 60, sy);
+            pdf.text('Il paziente/caregiver ha ACCONSENTITO alla comunicazione dei dati al Sistema TS (spese sanitarie).', 60, sy);
           }
           sy += 20;
         } else {
@@ -223,11 +223,11 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
         }
       } else {
         pdf.rect(50, signatureY, 500, 110).fillAndStroke('#ffffff', '#e2e8f0');
-        pdf.font('Helvetica-Bold').fontSize(10).fillColor('#1e4d8c').text('FIRMA PER ACCETTAZIONE / RIFIUTO COMUNICAZIONE REGISTRO SANITARIO', 60, signatureY + 10);
+        pdf.font('Helvetica-Bold').fontSize(10).fillColor('#1e4d8c').text('FIRMA PER ACCETTAZIONE / RIFIUTO COMUNICAZIONE SISTEMA TS', 60, signatureY + 10);
         pdf.font('Helvetica').fontSize(9).fillColor('#000000');
         pdf.text('Il paziente/caregiver, preso atto del documento, dichiara:', 60, signatureY + 28);
-        pdf.text('☐ ACCONSENTE alla comunicazione dei dati al Registro Sanitario', 60, signatureY + 46);
-        pdf.text('☐ RIFIUTA la comunicazione dei dati al Registro Sanitario', 60, signatureY + 62);
+        pdf.text('☐ ACCONSENTE alla comunicazione dei dati al Sistema TS (spese sanitarie)', 60, signatureY + 46);
+        pdf.text('☐ RIFIUTA la comunicazione dei dati al Sistema TS (spese sanitarie)', 60, signatureY + 62);
         pdf.text('Firma: ____________________________________________    Data: _______________', 60, signatureY + 88);
       }
 
