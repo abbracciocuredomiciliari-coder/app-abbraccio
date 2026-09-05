@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, FormEvent } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
-import { Receipt, Calendar, FileText, Printer, User, Filter, ChevronDown, ChevronUp, Building2, Download, Mail, Eye, Pencil } from 'lucide-react';
+import { Receipt, Calendar, FileText, Printer, User, Filter, ChevronDown, ChevronUp, Building2, Download, Mail, Eye, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 interface Patient {
@@ -59,6 +59,8 @@ interface DocumentoFatturazione {
     firmato: boolean;
     firmatoIl?: string;
     nome?: string;
+    email?: string;
+    token?: string;
     rifiutoRegistro?: boolean;
   };
 }
@@ -124,6 +126,16 @@ export default function GestioneFatturazione() {
       await caricaDocumenti();
     } catch (err: any) {
       alert(err?.response?.data?.message || "Errore nell'annullamento");
+    }
+  };
+
+  const eliminaDocumento = async (doc: DocumentoFatturazione) => {
+    if (!confirm(`Eliminare definitivamente il documento annullato ${doc.numero}?\n\nQuesta azione non può essere annullata.`)) return;
+    try {
+      await api.delete(`/fatturazione-documenti/${doc._id}`);
+      await caricaDocumenti();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nella eliminazione');
     }
   };
 
@@ -596,11 +608,14 @@ export default function GestioneFatturazione() {
                             )}
                             <button onClick={() => apriInvioEmail(doc)} title="Invia via email" style={{ background: '#f0fdf4', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#16a34a' }}><Mail size={14} /></button>
                             <button onClick={() => apriModificaNumero(doc)} title="Modifica numero" style={{ background: '#fefce8', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#ca8a04' }}><Pencil size={14} /></button>
-                            {doc.tipo === 'preventivo' && doc.stato === 'emesso' && (
+                            {doc.tipo === 'preventivo' && doc.stato === 'emesso' && !doc.firma?.email && !doc.firma?.token && (
                               <button onClick={() => convertiInFattura(doc)} title="Genera fattura da questo preventivo" style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', color: '#166534', fontSize: '0.78rem', fontWeight: 600 }}>→ Fattura</button>
                             )}
-                            {doc.stato !== 'annullato' && doc.stato !== 'firmato' && (
+                            {doc.stato === 'emesso' && !doc.firma?.email && !doc.firma?.token && (
                               <button onClick={() => annullaDocumento(doc)} title="Annulla" style={{ background: '#fef2f2', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#dc2626' }}>✕</button>
+                            )}
+                            {doc.stato === 'annullato' && !doc.firma?.email && !doc.firma?.token && user?.role === 'admin' && (
+                              <button onClick={() => eliminaDocumento(doc)} title="Elimina definitivamente" style={{ background: '#fee2e2', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#b91c1c' }}><Trash2 size={14} /></button>
                             )}
                           </div>
                         </td>

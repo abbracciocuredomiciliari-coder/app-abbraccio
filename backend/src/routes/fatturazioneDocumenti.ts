@@ -329,11 +329,37 @@ router.patch('/:id/numero', authenticateToken, authorizeRole(...RUOLI_GESTIONE),
 // PATCH /api/fatturazione-documenti/:id/annulla — annulla un documento (solo gestione)
 router.patch('/:id/annulla', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('fatturazione_documenti', 'UPDATE'), async (req: Request, res: Response) => {
   try {
-    const doc = await DocumentoFatturazione.findByIdAndUpdate(req.params.id, { stato: 'annullato' }, { new: true });
+    const doc = await DocumentoFatturazione.findById(req.params.id);
     if (!doc) return res.status(404).json({ message: 'Documento non trovato' });
+    if (doc.stato !== 'emesso') {
+      return res.status(400).json({ message: 'Documento non annullabile: stato non valido' });
+    }
+    if (doc.firma?.email || doc.firma?.token) {
+      return res.status(400).json({ message: 'Documento non annullabile: già inviato al paziente' });
+    }
+    doc.stato = 'annullato';
+    await doc.save();
     return res.json(doc);
   } catch (error: any) {
     return res.status(500).json({ message: "Errore nell'annullamento del documento", error: error.message });
+  }
+});
+
+// DELETE /api/fatturazione-documenti/:id — elimina fisicamente un documento annullato non inviato (solo admin)
+router.delete('/:id', authenticateToken, authorizeRole('admin'), auditLog('fatturazione_documenti', 'DELETE'), async (req: Request, res: Response) => {
+  try {
+    const doc = await DocumentoFatturazione.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: 'Documento non trovato' });
+    if (doc.stato !== 'annullato') {
+      return res.status(400).json({ message: 'Solo i documenti annullati possono essere eliminati' });
+    }
+    if (doc.firma?.email || doc.firma?.token) {
+      return res.status(400).json({ message: 'Impossibile eliminare: documento già inviato, deve rimanere archiviato' });
+    }
+    await DocumentoFatturazione.findByIdAndDelete(req.params.id);
+    return res.json({ message: 'Documento eliminato definitivamente' });
+  } catch (error: any) {
+    return res.status(500).json({ message: "Errore nell'eliminazione del documento", error: error.message });
   }
 });
 
