@@ -1,8 +1,8 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, FormEvent } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
-import { Receipt, Calendar, FileText, Printer, User, Filter, ChevronDown, ChevronUp, Building2, Download, Mail } from 'lucide-react';
+import { Receipt, Calendar, FileText, Printer, User, Filter, ChevronDown, ChevronUp, Building2, Download, Mail, Eye, Pencil } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 interface Patient {
@@ -80,6 +80,9 @@ export default function GestioneFatturazione() {
   const [emailDestinatario, setEmailDestinatario] = useState('');
   const [emailNome, setEmailNome] = useState('');
   const [emailSending, setEmailSending] = useState(false);
+  const [numeroModalDoc, setNumeroModalDoc] = useState<DocumentoFatturazione | null>(null);
+  const [numeroNuovo, setNumeroNuovo] = useState('');
+  const [numeroLoading, setNumeroLoading] = useState(false);
 
   useEffect(() => { caricaDati(); caricaDocumenti(); }, []);
 
@@ -188,6 +191,45 @@ export default function GestioneFatturazione() {
       URL.revokeObjectURL(url);
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore nel download del PDF firmato');
+    }
+  };
+
+  const anteprimaDocumento = async (doc: DocumentoFatturazione) => {
+    try {
+      const res = await api.get(`/fatturazione-documenti/${doc._id}/pdf`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nella generazione anteprima');
+    }
+  };
+
+  const apriModificaNumero = (doc: DocumentoFatturazione) => {
+    setNumeroModalDoc(doc);
+    setNumeroNuovo(doc.numero);
+  };
+
+  const chiudiModificaNumero = () => {
+    setNumeroModalDoc(null);
+    setNumeroNuovo('');
+    setNumeroLoading(false);
+  };
+
+  const salvaNumero = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!numeroModalDoc || !numeroNuovo.trim()) return;
+    setNumeroLoading(true);
+    try {
+      await api.patch(`/fatturazione-documenti/${numeroModalDoc._id}/numero`, { numero: numeroNuovo.trim() });
+      alert('Numero aggiornato');
+      chiudiModificaNumero();
+      await caricaDocumenti();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore aggiornamento numero');
+    } finally {
+      setNumeroLoading(false);
     }
   };
 
@@ -547,11 +589,13 @@ export default function GestioneFatturazione() {
                         </td>
                         <td style={{ padding: '8px' }}>
                           <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                            <button onClick={() => anteprimaDocumento(doc)} title="Anteprima PDF" style={{ background: '#f0f9ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0ea5e9' }}><Eye size={14} /></button>
                             <button onClick={() => scaricaDocumentoPDF(doc)} title="Scarica PDF" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Download size={14} /></button>
                             {doc.firma?.firmato && (
                               <button onClick={() => scaricaDocumentoFirmato(doc)} title="Scarica PDF firmato" style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#166534' }}><Download size={14} /></button>
                             )}
                             <button onClick={() => apriInvioEmail(doc)} title="Invia via email" style={{ background: '#f0fdf4', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#16a34a' }}><Mail size={14} /></button>
+                            <button onClick={() => apriModificaNumero(doc)} title="Modifica numero" style={{ background: '#fefce8', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#ca8a04' }}><Pencil size={14} /></button>
                             {doc.tipo === 'preventivo' && doc.stato === 'emesso' && (
                               <button onClick={() => convertiInFattura(doc)} title="Genera fattura da questo preventivo" style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', color: '#166534', fontSize: '0.78rem', fontWeight: 600 }}>→ Fattura</button>
                             )}
@@ -684,6 +728,7 @@ export default function GestioneFatturazione() {
                 />
               </div>
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={() => emailModalDoc && anteprimaDocumento(emailModalDoc)} style={{ padding: '10px 16px', borderRadius: '8px', border: 'none', background: '#0ea5e9', color: 'white', cursor: 'pointer', fontWeight: 700 }}>Anteprima</button>
                 <button type="button" onClick={chiudiInvioEmail} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', fontWeight: 600 }}>Annulla</button>
                 <button type="submit" disabled={emailSending} style={{ padding: '10px 18px', borderRadius: '8px', border: 'none', background: '#16a34a', color: 'white', cursor: 'pointer', fontWeight: 700 }}>{emailSending ? 'Invio...' : 'Invia'}</button>
               </div>
@@ -691,6 +736,35 @@ export default function GestioneFatturazione() {
           </div>
         </div>
       )}
+      {/* Modal modifica numero */}
+      {numeroModalDoc && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', zIndex: 1200 }} onClick={chiudiModificaNumero}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 16px', color: '#1e4d8c', fontSize: '1.1rem', fontWeight: 700 }}>
+              Modifica numero
+            </h3>
+            <form onSubmit={salvaNumero}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>Numero {numeroModalDoc.tipo === 'fattura' ? 'fattura' : 'preventivo'}</label>
+                <input
+                  type="text"
+                  required
+                  value={numeroNuovo}
+                  onChange={(e) => setNumeroNuovo(e.target.value)}
+                  placeholder="Es. FATT-2026-12345"
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', boxSizing: 'border-box' }}
+                />
+                <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '6px' }}>Puoi usare il numero interno o quello della tua contabilità esterna.</p>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={chiudiModificaNumero} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', fontWeight: 600 }}>Annulla</button>
+                <button type="submit" disabled={numeroLoading} style={{ padding: '10px 18px', borderRadius: '8px', border: 'none', background: '#ca8a04', color: 'white', cursor: 'pointer', fontWeight: 700 }}>{numeroLoading ? 'Salvataggio...' : 'Salva'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </section>
   );
 }

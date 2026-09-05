@@ -54,7 +54,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
 // POST /api/fatturazione-documenti — crea un preventivo o una fattura (solo gestione)
 router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('fatturazione_documenti', 'CREATE'), async (req: AuthRequest, res: Response) => {
   try {
-    const { tipo, patient, prestazioni, riferimentoTipo, riferimentoId, dataPrestazione, note } = req.body;
+    const { tipo, patient, prestazioni, riferimentoTipo, riferimentoId, dataPrestazione, note, numero: numeroManuale } = req.body;
 
     if (!tipo || !['preventivo', 'fattura'].includes(tipo)) {
       return res.status(400).json({ message: "Il campo 'tipo' deve essere 'preventivo' o 'fattura'" });
@@ -83,8 +83,8 @@ router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('
     }
 
     const totale = Math.round(prestazioniNormalizzate.reduce((acc: number, p: any) => acc + p.importo, 0) * 100) / 100;
-    const numero = await generaNumero(tipo);
     const user = req.user as { name?: string; email?: string } | undefined;
+    const numero = numeroManuale && numeroManuale.trim() ? String(numeroManuale).trim().toUpperCase() : await generaNumero(tipo);
 
     const doc = await DocumentoFatturazione.create({
       numero,
@@ -97,7 +97,7 @@ router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('
       data: new Date(),
       dataPrestazione: dataPrestazione ? new Date(dataPrestazione) : undefined,
       stato: 'emesso',
-      note,
+      nota: note,
       creatoDa: user?.name || user?.email || 'Sistema',
     });
 
@@ -303,6 +303,26 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
   } catch (error: any) {
     console.error('[Fatturazione invia-email] Errore:', error);
     return res.status(500).json({ message: "Errore nell'invio dell'email", error: error.message });
+  }
+});
+
+// PATCH /api/fatturazione-documenti/:id/numero — modifica il numero progressivo
+router.patch('/:id/numero', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('fatturazione_documenti', 'UPDATE'), async (req: Request, res: Response) => {
+  try {
+    const { numero } = req.body;
+    if (!numero || !String(numero).trim()) {
+      return res.status(400).json({ message: 'Numero obbligatorio' });
+    }
+    const nuovoNumero = String(numero).trim().toUpperCase();
+    const esiste = await DocumentoFatturazione.findOne({ numero: nuovoNumero, _id: { $ne: req.params.id } });
+    if (esiste) {
+      return res.status(409).json({ message: 'Numero già in uso' });
+    }
+    const doc = await DocumentoFatturazione.findByIdAndUpdate(req.params.id, { numero: nuovoNumero }, { new: true });
+    if (!doc) return res.status(404).json({ message: 'Documento non trovato' });
+    return res.json(doc);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore nella modifica del numero', error: error.message });
   }
 });
 

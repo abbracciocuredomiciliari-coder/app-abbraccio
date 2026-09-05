@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit';
+import { decrypt } from './encryption';
 
 const AZIENDA = {
   nome: process.env.AZIENDA_NOME || 'ABBRACCIO CURE DOMICILIARI S.R.L.S.',
@@ -67,7 +68,12 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
       }
 
       // ─── Box dati cliente
-      const patient = doc.patient || {};
+      const rawPatient = doc.patient || {};
+      const patient = rawPatient.toJSON ? rawPatient.toJSON() : { ...rawPatient };
+      patient.address = decrypt(patient.address);
+      patient.codiceFiscale = decrypt(patient.codiceFiscale);
+      patient.contactPhone = decrypt(patient.contactPhone);
+      patient.email = decrypt(patient.email);
       const nomePaziente = `${patient.firstName || ''} ${patient.lastName || ''}`.trim() || 'Nominativo non disponibile';
       const cf = patient.codiceFiscale || '—';
       const address = patient.address || '—';
