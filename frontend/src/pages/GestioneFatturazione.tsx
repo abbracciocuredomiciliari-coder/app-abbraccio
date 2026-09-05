@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
-import { Receipt, Calendar, FileText, Printer, User, Filter, ChevronDown, ChevronUp, Building2 } from 'lucide-react';
+import { Receipt, Calendar, FileText, Printer, User, Filter, ChevronDown, ChevronUp, Building2, Download, Mail } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 interface Patient {
@@ -10,6 +10,8 @@ interface Patient {
   firstName: string;
   lastName: string;
   codiceFiscale?: string;
+  address?: string;
+  email?: string;
 }
 
 interface WorkPlanItem {
@@ -50,8 +52,15 @@ interface DocumentoFatturazione {
   prestazioni: { descrizione: string; quantita: number; prezzoUnitario: number; importo: number }[];
   totale: number;
   data: string;
-  stato: 'emesso' | 'annullato';
+  dataPrestazione?: string;
+  stato: 'emesso' | 'firmato' | 'annullato';
   note?: string;
+  firma?: {
+    firmato: boolean;
+    firmatoIl?: string;
+    nome?: string;
+    rifiutoRegistro?: boolean;
+  };
 }
 
 export default function GestioneFatturazione() {
@@ -67,6 +76,10 @@ export default function GestioneFatturazione() {
   const [showFiltri, setShowFiltri] = useState(true);
   const [documenti, setDocumenti] = useState<DocumentoFatturazione[]>([]);
   const [showDocumenti, setShowDocumenti] = useState(true);
+  const [emailModalDoc, setEmailModalDoc] = useState<DocumentoFatturazione | null>(null);
+  const [emailDestinatario, setEmailDestinatario] = useState('');
+  const [emailNome, setEmailNome] = useState('');
+  const [emailSending, setEmailSending] = useState(false);
 
   useEffect(() => { caricaDati(); caricaDocumenti(); }, []);
 
@@ -111,17 +124,71 @@ export default function GestioneFatturazione() {
     }
   };
 
-  const stampaDocumentoFiscale = (doc: DocumentoFatturazione) => {
-    const dataStr = new Date(doc.data).toLocaleDateString('it-IT');
-    const righe = doc.prestazioni.map(p => `<tr><td style="padding:8px;border-bottom:1px solid #e2e8f0">${p.descrizione}</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:center">${p.quantita}</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right">€${p.prezzoUnitario.toFixed(2)}</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:700">€${p.importo.toFixed(2)}</td></tr>`).join('');
-    const titolo = doc.tipo === 'preventivo' ? 'PREVENTIVO' : 'FATTURA';
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${titolo} ${doc.numero}</title><style>body{font-family:Arial;margin:32px;color:#1e293b}h1{color:#1e4d8c;font-size:22px;margin-bottom:4px}table{width:100%;border-collapse:collapse;margin-top:20px}th{background:#1e4d8c;color:white;padding:8px;text-align:left}.header{border-bottom:3px solid #1e4d8c;padding-bottom:14px;margin-bottom:20px;display:flex;justify-content:space-between}.totale{margin-top:20px;text-align:right;font-size:1.3rem;font-weight:800;color:#166534}</style></head><body><div class="header"><div><h1>🏥 Abbraccio Cure Domiciliari</h1><div>${titolo} n. ${doc.numero}</div><div style="color:#666">Data: ${dataStr}</div></div><div style="text-align:right"><strong>Paziente:</strong><br/>${doc.patient?.firstName || ''} ${doc.patient?.lastName || ''}<br/>${doc.patient?.codiceFiscale ? 'CF: ' + doc.patient.codiceFiscale : ''}</div></div><table><thead><tr><th>Prestazione</th><th style="text-align:center">Qtà</th><th style="text-align:right">Prezzo unit.</th><th style="text-align:right">Importo</th></tr></thead><tbody>${righe}</tbody></table><div class="totale">TOTALE: €${doc.totale.toFixed(2)}</div>${doc.note ? `<div style="margin-top:16px;color:#666">${doc.note}</div>` : ''}</body></html>`;
-    const win = window.open('', '_blank');
-    if (!win) { alert('Impossibile aprire la finestra di stampa.'); return; }
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-    setTimeout(() => win.print(), 400);
+  const scaricaDocumentoPDF = async (doc: DocumentoFatturazione) => {
+    try {
+      const res = await api.get(`/fatturazione-documenti/${doc._id}/pdf`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${doc.tipo === 'fattura' ? 'FATTURA' : 'PREVENTIVO'}-${doc.numero}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nel download del PDF');
+    }
+  };
+
+  const apriInvioEmail = (doc: DocumentoFatturazione) => {
+    setEmailModalDoc(doc);
+    setEmailDestinatario(doc.patient?.email || '');
+    setEmailNome(`${doc.patient?.firstName || ''} ${doc.patient?.lastName || ''}`.trim());
+    setEmailSending(false);
+  };
+
+  const chiudiInvioEmail = () => {
+    setEmailModalDoc(null);
+    setEmailDestinatario('');
+    setEmailNome('');
+    setEmailSending(false);
+  };
+
+  const inviaDocumentoEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailModalDoc || !emailDestinatario) return;
+    setEmailSending(true);
+    try {
+      await api.post(`/fatturazione-documenti/${emailModalDoc._id}/invia-email`, {
+        email: emailDestinatario,
+        nome: emailNome,
+      });
+      alert('Documento inviato con successo');
+      chiudiInvioEmail();
+      await caricaDocumenti();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nell\'invio dell\'email');
+    } finally {
+      setEmailSending(false);
+    }
+  };
+
+  const scaricaDocumentoFirmato = async (doc: DocumentoFatturazione) => {
+    try {
+      const res = await api.get(`/fatturazione-documenti/${doc._id}/firmato`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${doc.tipo === 'fattura' ? 'FATTURA' : 'PREVENTIVO'}-${doc.numero}-firmato.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nel download del PDF firmato');
+    }
   };
 
   const workplansFiltratiPerData = useMemo(() => {
@@ -455,7 +522,8 @@ export default function GestioneFatturazione() {
                       <th style={{ textAlign: 'left', padding: '8px' }}>N.</th>
                       <th style={{ textAlign: 'left', padding: '8px' }}>Tipo</th>
                       <th style={{ textAlign: 'left', padding: '8px' }}>Paziente</th>
-                      <th style={{ textAlign: 'left', padding: '8px' }}>Data</th>
+                      <th style={{ textAlign: 'left', padding: '8px' }}>Data doc.</th>
+                      <th style={{ textAlign: 'left', padding: '8px' }}>Data prest.</th>
                       <th style={{ textAlign: 'right', padding: '8px' }}>Totale</th>
                       <th style={{ textAlign: 'center', padding: '8px' }}>Stato</th>
                       <th style={{ padding: '8px' }} />
@@ -472,15 +540,22 @@ export default function GestioneFatturazione() {
                         </td>
                         <td style={{ padding: '8px' }}>{doc.patient?.firstName} {doc.patient?.lastName}</td>
                         <td style={{ padding: '8px' }}>{formatData(doc.data)}</td>
+                        <td style={{ padding: '8px' }}>{doc.dataPrestazione ? formatData(doc.dataPrestazione) : '-'}</td>
                         <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#166534' }}>{formatEuro(doc.totale)}</td>
-                        <td style={{ padding: '8px', textAlign: 'center' }}>{doc.stato === 'annullato' ? '❌ Annullato' : '✅ Emesso'}</td>
+                        <td style={{ padding: '8px', textAlign: 'center' }}>
+                          {doc.stato === 'annullato' ? '❌ Annullato' : doc.stato === 'firmato' ? `✍️ Firmato${doc.firma?.rifiutoRegistro ? ' (rifiuto)' : ''}` : '✅ Emesso'}
+                        </td>
                         <td style={{ padding: '8px' }}>
                           <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                            <button onClick={() => stampaDocumentoFiscale(doc)} title="Scarica / Stampa" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Printer size={14} /></button>
+                            <button onClick={() => scaricaDocumentoPDF(doc)} title="Scarica PDF" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Download size={14} /></button>
+                            {doc.firma?.firmato && (
+                              <button onClick={() => scaricaDocumentoFirmato(doc)} title="Scarica PDF firmato" style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#166534' }}><Download size={14} /></button>
+                            )}
+                            <button onClick={() => apriInvioEmail(doc)} title="Invia via email" style={{ background: '#f0fdf4', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#16a34a' }}><Mail size={14} /></button>
                             {doc.tipo === 'preventivo' && doc.stato === 'emesso' && (
                               <button onClick={() => convertiInFattura(doc)} title="Genera fattura da questo preventivo" style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', color: '#166534', fontSize: '0.78rem', fontWeight: 600 }}>→ Fattura</button>
                             )}
-                            {doc.stato === 'emesso' && (
+                            {doc.stato !== 'annullato' && doc.stato !== 'firmato' && (
                               <button onClick={() => annullaDocumento(doc)} title="Annulla" style={{ background: '#fef2f2', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#dc2626' }}>✕</button>
                             )}
                           </div>
@@ -579,6 +654,43 @@ export default function GestioneFatturazione() {
           })}
         </div>
       ))}
+
+      {/* Modal invio email documento */}
+      {emailModalDoc && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', zIndex: 1200 }} onClick={chiudiInvioEmail}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 16px', color: '#1e4d8c', fontSize: '1.1rem', fontWeight: 700 }}>
+              Invia {emailModalDoc.tipo === 'fattura' ? 'Fattura' : 'Preventivo'} via email
+            </h3>
+            <form onSubmit={inviaDocumentoEmail}>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>Email destinatario</label>
+                <input
+                  type="email"
+                  required
+                  value={emailDestinatario}
+                  onChange={(e) => setEmailDestinatario(e.target.value)}
+                  placeholder="paziente o caregiver"
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>Nome destinatario (opzionale)</label>
+                <input
+                  type="text"
+                  value={emailNome}
+                  onChange={(e) => setEmailNome(e.target.value)}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={chiudiInvioEmail} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', fontWeight: 600 }}>Annulla</button>
+                <button type="submit" disabled={emailSending} style={{ padding: '10px 18px', borderRadius: '8px', border: 'none', background: '#16a34a', color: 'white', cursor: 'pointer', fontWeight: 700 }}>{emailSending ? 'Invio...' : 'Invia'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

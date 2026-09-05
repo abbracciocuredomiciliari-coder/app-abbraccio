@@ -16,7 +16,8 @@ import Dashboard from './pages/Dashboard';
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const FirmaContratto = lazy(() => import('./pages/FirmaContratto'));
-const FirmaVerbaleEsterno = lazy(() => import('./pages/FirmaVerbaleEsterno')); 
+const FirmaVerbaleEsterno = lazy(() => import('./pages/FirmaVerbaleEsterno'));
+const FirmaDocumento = lazy(() => import('./pages/FirmaDocumento'));
 
 // Lazy load per pagine pesanti
 const Patients = lazy(() => import('./pages/Patients'));
@@ -469,6 +470,7 @@ function AppShell() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/firma-contratto" element={<FirmaContratto />} />
           <Route path="/firma-verbale" element={<FirmaVerbaleEsterno />} />
+          <Route path="/firma-documento" element={<FirmaDocumento />} />
 
           {/* Route privilegiati */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

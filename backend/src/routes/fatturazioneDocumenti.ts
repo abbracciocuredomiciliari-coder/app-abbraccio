@@ -4,6 +4,9 @@ import Patient from '../models/Patient';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { auditLog } from '../middleware/audit';
+import { generaDocumentoPDF } from '../utils/fatturazionePdf';
+import { inviaEmail } from '../utils/email';
+import crypto from 'crypto';
 
 const router = Router();
 
@@ -29,7 +32,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
     if (patient) filtro.patient = patient;
     if (tipo) filtro.tipo = tipo;
     const documenti = await DocumentoFatturazione.find(filtro)
-      .populate('patient', 'firstName lastName codiceFiscale address')
+      .populate('patient', 'firstName lastName codiceFiscale address email')
       .sort({ data: -1 });
     return res.json(documenti);
   } catch (error: any) {
@@ -40,7 +43,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
 // GET /api/fatturazione-documenti/:id — dettaglio singolo documento
 router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const doc = await DocumentoFatturazione.findById(req.params.id).populate('patient', 'firstName lastName codiceFiscale address');
+    const doc = await DocumentoFatturazione.findById(req.params.id).populate('patient', 'firstName lastName codiceFiscale address email');
     if (!doc) return res.status(404).json({ message: 'Documento non trovato' });
     return res.json(doc);
   } catch (error: any) {
@@ -51,7 +54,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
 // POST /api/fatturazione-documenti — crea un preventivo o una fattura (solo gestione)
 router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('fatturazione_documenti', 'CREATE'), async (req: AuthRequest, res: Response) => {
   try {
-    const { tipo, patient, prestazioni, riferimentoTipo, riferimentoId, note } = req.body;
+    const { tipo, patient, prestazioni, riferimentoTipo, riferimentoId, dataPrestazione, note } = req.body;
 
     if (!tipo || !['preventivo', 'fattura'].includes(tipo)) {
       return res.status(400).json({ message: "Il campo 'tipo' deve essere 'preventivo' o 'fattura'" });
@@ -92,12 +95,13 @@ router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('
       prestazioni: prestazioniNormalizzate,
       totale,
       data: new Date(),
+      dataPrestazione: dataPrestazione ? new Date(dataPrestazione) : undefined,
       stato: 'emesso',
       note,
       creatoDa: user?.name || user?.email || 'Sistema',
     });
 
-    const docPopolato = await DocumentoFatturazione.findById(doc._id).populate('patient', 'firstName lastName codiceFiscale address');
+    const docPopolato = await DocumentoFatturazione.findById(doc._id).populate('patient', 'firstName lastName codiceFiscale address email');
     return res.status(201).json(docPopolato);
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore nella creazione del documento', error: error.message });
@@ -123,16 +127,182 @@ router.post('/:id/converti-in-fattura', authenticateToken, authorizeRole(...RUOL
       prestazioni: preventivo.prestazioni,
       totale: preventivo.totale,
       data: new Date(),
+      dataPrestazione: preventivo.dataPrestazione,
       stato: 'emesso',
       note: preventivo.note,
       creatoDa: user?.name || user?.email || 'Sistema',
       documentoOrigineId: preventivo._id,
     });
 
-    const fatturaPopolata = await DocumentoFatturazione.findById(fattura._id).populate('patient', 'firstName lastName codiceFiscale address');
+    const fatturaPopolata = await DocumentoFatturazione.findById(fattura._id).populate('patient', 'firstName lastName codiceFiscale address email');
     return res.status(201).json(fatturaPopolata);
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore nella conversione in fattura', error: error.message });
+  }
+});
+
+// GET /api/fatturazione-documenti/firma/:token — verifica link firma
+router.get('/firma/:token', async (req: Request, res: Response) => {
+  try {
+    const doc = await DocumentoFatturazione.findOne({ 'firma.token': req.params.token })
+      .populate('patient', 'firstName lastName codiceFiscale address email')
+      .lean();
+    if (!doc) return res.status(404).json({ message: 'Link non valido o scaduto' });
+    if (doc.firma?.firmato) return res.status(400).json({ message: 'Documento già firmato', giaFirmato: true });
+    return res.json({
+      tipo: doc.tipo,
+      numero: doc.numero,
+      totale: doc.totale,
+      data: doc.data,
+      dataPrestazione: doc.dataPrestazione,
+      patient: doc.patient,
+      note: doc.note,
+    });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore verifica link', error: error.message });
+  }
+});
+
+// GET /api/fatturazione-documenti/firma/:token/pdf — scarica PDF del link firma (pubblico con token)
+router.get('/firma/:token/pdf', async (req: Request, res: Response) => {
+  try {
+    const doc = await DocumentoFatturazione.findOne({ 'firma.token': req.params.token })
+      .populate('patient', 'firstName lastName codiceFiscale address email')
+      .lean();
+    if (!doc) {
+      res.setHeader('Content-Type', 'text/plain');
+      return res.status(404).end('Documento non trovato');
+    }
+
+    const buffer = await generaDocumentoPDF(doc);
+    const filename = `${doc.tipo === 'fattura' ? 'FATTURA' : 'PREVENTIVO'}-${doc.numero}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    return res.send(buffer);
+  } catch (error: any) {
+    console.error('[Fatturazione firma PDF] Errore:', error);
+    res.setHeader('Content-Type', 'text/plain');
+    return res.status(500).end('Errore nella generazione del PDF');
+  }
+});
+
+// POST /api/fatturazione-documenti/firma/:token — salva firma e rifiuto
+router.post('/firma/:token', async (req: Request, res: Response) => {
+  try {
+    const { firmaImg, rifiutoRegistro, nome } = req.body;
+    if (!firmaImg) return res.status(400).json({ message: 'Firma obbligatoria' });
+
+    const doc = await DocumentoFatturazione.findOne({ 'firma.token': req.params.token });
+    if (!doc) return res.status(404).json({ message: 'Link non valido o scaduto' });
+    if (doc.firma?.firmato) return res.status(400).json({ message: 'Documento già firmato' });
+
+    doc.firma = {
+      ...((doc.firma as any) || {}),
+      firmato: true,
+      firmatoIl: new Date(),
+      firmaImg,
+      rifiutoRegistro: !!rifiutoRegistro,
+      nome: nome || doc.firma?.nome,
+    };
+    doc.stato = 'firmato';
+    await doc.save();
+
+    return res.json({ message: 'Documento firmato con successo' });
+  } catch (error: any) {
+    console.error('[Fatturazione firma] Errore:', error);
+    return res.status(500).json({ message: 'Errore salvataggio firma', error: error.message });
+  }
+});
+
+// GET /api/fatturazione-documenti/:id/pdf — scarica il PDF
+router.get('/:id/pdf', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const doc = await DocumentoFatturazione.findById(req.params.id)
+      .populate('patient', 'firstName lastName codiceFiscale address email')
+      .lean();
+    if (!doc) return res.status(404).json({ message: 'Documento non trovato' });
+
+    const buffer = await generaDocumentoPDF(doc);
+    const filename = `${doc.tipo === 'fattura' ? 'FATTURA' : 'PREVENTIVO'}-${doc.numero}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.send(buffer);
+  } catch (error: any) {
+    console.error('[Fatturazione PDF] Errore:', error);
+    return res.status(500).json({ message: 'Errore nella generazione del PDF', error: error.message });
+  }
+});
+
+// GET /api/fatturazione-documenti/:id/firmato — scarica il PDF firmato
+router.get('/:id/firmato', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const doc = await DocumentoFatturazione.findById(req.params.id)
+      .populate('patient', 'firstName lastName codiceFiscale address email')
+      .lean();
+    if (!doc) return res.status(404).json({ message: 'Documento non trovato' });
+    if (!doc.firma?.firmato) return res.status(400).json({ message: 'Documento non ancora firmato' });
+
+    const buffer = await generaDocumentoPDF(doc);
+    const filename = `${doc.tipo === 'fattura' ? 'FATTURA' : 'PREVENTIVO'}-${doc.numero}-firmato.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.send(buffer);
+  } catch (error: any) {
+    console.error('[Fatturazione firmato] Errore:', error);
+    return res.status(500).json({ message: 'Errore nella generazione del PDF firmato', error: error.message });
+  }
+});
+
+// POST /api/fatturazione-documenti/:id/invia-email — invia PDF a paziente/caregiver
+router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('fatturazione_documenti', 'UPDATE'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { email, nome } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email obbligatoria' });
+
+    const docMongoose = await DocumentoFatturazione.findById(req.params.id)
+      .populate('patient', 'firstName lastName codiceFiscale address email');
+    if (!docMongoose) return res.status(404).json({ message: 'Documento non trovato' });
+
+    const token = crypto.randomBytes(32).toString('hex');
+    docMongoose.firma = {
+      ...(docMongoose.firma || {}),
+      token,
+      firmato: false,
+      email,
+      nome: nome || `${(docMongoose.patient as any)?.firstName || ''} ${(docMongoose.patient as any)?.lastName || ''}`.trim() || 'Cliente',
+    };
+    await docMongoose.save();
+
+    const doc: any = docMongoose.toJSON();
+    const buffer = await generaDocumentoPDF(doc);
+    const filename = `${doc.tipo === 'fattura' ? 'FATTURA' : 'PREVENTIVO'}-${doc.numero}.pdf`;
+    const label = doc.tipo === 'fattura' ? 'Fattura' : 'Preventivo';
+    const nomeDestinatario = doc.firma?.nome || 'Cliente';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://app.abbracciocuredomiciliari.it';
+    const aziendaPec = process.env.AZIENDA_PEC || 'abbracciocuredomiciliari@facilepec.com';
+    const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+      <h2 style="color:#1e4d8c;margin-top:0;">${label} ${doc.numero}</h2>
+      <p>Gentile <strong>${nomeDestinatario}</strong>,</p>
+      <p>in allegato trovi la copia del <strong>${label.toLowerCase()}</strong> emesso il ${new Date(doc.data).toLocaleDateString('it-IT')}.</p>
+      <p style="margin:16px 0;padding:16px;background:#eff6ff;border-left:4px solid #1e4d8c;border-radius:6px;">
+        Per firmare il documento <strong>online con dito o penna</strong> clicca qui:<br/>
+        <a href="${frontendUrl}/firma-documento?token=${token}" style="display:inline-block;margin-top:8px;background:#1e4d8c;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Firma ${label}</a>
+      </p>
+      <p>Per qualsiasi informazione puoi contattarci all'indirizzo PEC ${aziendaPec}.</p>
+      <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari S.R.L.S.</p>
+    </div>`;
+
+    await inviaEmail({
+      to: email,
+      subject: `${label} ${doc.numero} — Abbraccio Cure Domiciliari`,
+      html,
+      attachments: [{ filename, content: buffer, contentType: 'application/pdf' }],
+    });
+
+    return res.json({ message: `${label} inviata con successo a ${email}` });
+  } catch (error: any) {
+    console.error('[Fatturazione invia-email] Errore:', error);
+    return res.status(500).json({ message: "Errore nell'invio dell'email", error: error.message });
   }
 });
 

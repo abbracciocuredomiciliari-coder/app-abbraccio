@@ -16,10 +16,20 @@ export interface IDocumentoFatturazione extends Document {
   prestazioni: IVocePrestazione[];
   totale: number;
   data: Date;
-  stato: 'emesso' | 'annullato';
+  dataPrestazione?: Date; // data della prestazione/visita effettuata
+  stato: 'emesso' | 'firmato' | 'annullato';
   note?: string;
   creatoDa: string;
   documentoOrigineId?: Types.ObjectId; // se una fattura nasce dalla conferma di un preventivo
+  firma?: {
+    token: string;
+    firmato: boolean;
+    firmatoIl?: Date;
+    nome?: string;
+    email?: string;
+    firmaImg?: string; // firma in base64 PNG
+    rifiutoRegistro?: boolean; // per fatture: rifiuto comunicazione Registro Sanitario
+  };
 }
 
 const vocePrestazioneSchema = new Schema<IVocePrestazione>(
@@ -42,10 +52,20 @@ const documentoFatturazioneSchema = new Schema<IDocumentoFatturazione>(
     prestazioni: { type: [vocePrestazioneSchema], required: true },
     totale: { type: Number, required: true, default: 0 },
     data: { type: Date, required: true, default: Date.now },
-    stato: { type: String, enum: ['emesso', 'annullato'], default: 'emesso' },
+    dataPrestazione: { type: Date },
+    stato: { type: String, enum: ['emesso', 'firmato', 'annullato'], default: 'emesso' },
     note: { type: String, trim: true },
     creatoDa: { type: String, required: true },
     documentoOrigineId: { type: Schema.Types.ObjectId, ref: 'DocumentoFatturazione' },
+    firma: {
+      token: { type: String, unique: true, sparse: true },
+      firmato: { type: Boolean, default: false },
+      firmatoIl: { type: Date },
+      nome: { type: String, trim: true },
+      email: { type: String, trim: true },
+      firmaImg: { type: String },
+      rifiutoRegistro: { type: Boolean, default: false },
+    },
   },
   { timestamps: true }
 );

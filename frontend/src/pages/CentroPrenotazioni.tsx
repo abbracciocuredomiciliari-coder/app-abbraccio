@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { Syringe, HeartPulse, ClipboardList, Plus, X, ChevronLeft, ChevronRight, Calendar, Clock, User, CheckCircle, Trash2, ChevronDown, ChevronUp, UserCheck, Eye, TestTube2, Bandage, Activity, CalendarDays, Users, Copy, Search, } from 'lucide-react';
+import { Syringe, HeartPulse, ClipboardList, Plus, X, ChevronLeft, ChevronRight, Calendar, Clock, User, CheckCircle, Trash2, ChevronDown, ChevronUp, UserCheck, Eye, TestTube2, Bandage, Activity, CalendarDays, Users, Copy, Search, Download, Mail } from 'lucide-react';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function getDaysInMonth(y: number, m: number) { return new Date(y, m + 1, 0).getDate(); }
 function getFirstDayOfMonth(y: number, m: number) { const d = new Date(y, m, 1).getDay(); return d === 0 ? 6 : d - 1; }
@@ -401,10 +401,15 @@ export default function CentroPrenotazioni() {
         task: string;
         costo: number;
         planId: string;
+        dataPrestazione?: string;
     } | null>(null);
     const [docTipo, setDocTipo] = useState<'preventivo' | 'fattura'>('preventivo');
     const [docSaving, setDocSaving] = useState(false);
     const [docCreato, setDocCreato] = useState<any>(null);
+    const [emailDoc, setEmailDoc] = useState<any>(null);
+    const [emailDestinatario, setEmailDestinatario] = useState('');
+    const [emailNome, setEmailNome] = useState('');
+    const [emailSending, setEmailSending] = useState(false);
     const loadTariffario = async () => { try {
         const r = await api.get('/tariffario', { params: { soloAttivi: 'true' } });
         setTariffario(r.data);
@@ -467,7 +472,7 @@ export default function CentroPrenotazioni() {
                 });
                 const pazSel = pazienti.find(p => p._id === fpPaz);
                 if (fpCosto > 0 && pazSel)
-                    setPendingDoc({ patientId: fpPaz, patientNome: `${pazSel.firstName} ${pazSel.lastName}`, task: fpTask, costo: fpCosto, planId: res.data._id });
+                    setPendingDoc({ patientId: fpPaz, patientNome: `${pazSel.firstName} ${pazSel.lastName}`, task: fpTask, costo: fpCosto, planId: res.data._id, dataPrestazione: fpDate });
                 await loadPiani();
                 resetFPiano();
                 setShowFPiano(false);
@@ -490,7 +495,7 @@ export default function CentroPrenotazioni() {
                 const res = await api.post('/workplan', { type: fpTipo, categories: fpCats, patient: fpPaz, staff: fpStaff, task: fpTask, date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpOre * 60, notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined, tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0 });
                 const pazSel = pazienti.find(p => p._id === fpPaz);
                 if (fpCosto > 0 && pazSel)
-                    setPendingDoc({ patientId: fpPaz, patientNome: `${pazSel.firstName} ${pazSel.lastName}`, task: fpTask, costo: fpCosto, planId: res.data._id });
+                    setPendingDoc({ patientId: fpPaz, patientNome: `${pazSel.firstName} ${pazSel.lastName}`, task: fpTask, costo: fpCosto, planId: res.data._id, dataPrestazione: fpDate });
                 await loadPiani();
                 resetFPiano();
                 setShowFPiano(false);
@@ -514,6 +519,7 @@ export default function CentroPrenotazioni() {
                 patient: pendingDoc.patientId,
                 riferimentoTipo: 'workplan',
                 riferimentoId: pendingDoc.planId,
+                dataPrestazione: pendingDoc.dataPrestazione,
                 prestazioni: [{ descrizione: pendingDoc.task, quantita: 1, prezzoUnitario: pendingDoc.costo }],
             });
             setDocCreato(res.data);
@@ -523,20 +529,53 @@ export default function CentroPrenotazioni() {
         }
         setDocSaving(false);
     };
-    const stampaDocumento = (doc: any) => {
-        const dataStr = new Date(doc.data).toLocaleDateString('it-IT');
-        const righe = doc.prestazioni.map((p: any) => `<tr><td style="padding:8px;border-bottom:1px solid #e2e8f0">${p.descrizione}</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:center">${p.quantita}</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right">€${p.prezzoUnitario.toFixed(2)}</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:700">€${p.importo.toFixed(2)}</td></tr>`).join('');
-        const titolo = doc.tipo === 'preventivo' ? 'PREVENTIVO' : 'FATTURA';
-        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${titolo} ${doc.numero}</title><style>body{font-family:Arial;margin:32px;color:#1e293b}h1{color:#1e4d8c;font-size:22px;margin-bottom:4px}table{width:100%;border-collapse:collapse;margin-top:20px}th{background:#1e4d8c;color:white;padding:8px;text-align:left}.header{border-bottom:3px solid #1e4d8c;padding-bottom:14px;margin-bottom:20px;display:flex;justify-content:space-between}.totale{margin-top:20px;text-align:right;font-size:1.3rem;font-weight:800;color:#166534}</style></head><body><div class="header"><div><h1>🏥 Abbraccio Cure Domiciliari</h1><div>${titolo} n. ${doc.numero}</div><div style="color:#666">Data: ${dataStr}</div></div><div style="text-align:right"><strong>Paziente:</strong><br/>${doc.patient?.firstName || ''} ${doc.patient?.lastName || ''}<br/>${doc.patient?.codiceFiscale ? 'CF: ' + doc.patient.codiceFiscale : ''}<br/>${doc.patient?.address || ''}</div></div><table><thead><tr><th>Prestazione</th><th style="text-align:center">Qtà</th><th style="text-align:right">Prezzo unit.</th><th style="text-align:right">Importo</th></tr></thead><tbody>${righe}</tbody></table><div class="totale">TOTALE: €${doc.totale.toFixed(2)}</div>${doc.note ? `<div style="margin-top:16px;color:#666">${doc.note}</div>` : ''}</body></html>`;
-        const win = window.open('', '_blank');
-        if (!win) {
-            alert('Impossibile aprire la finestra di stampa.');
-            return;
+    const scaricaDocumentoPDF = async (doc: any) => {
+        try {
+            const res = await api.get(`/fatturazione-documenti/${doc._id}/pdf`, { responseType: 'blob' });
+            const blob = new Blob([res.data], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${doc.tipo === 'fattura' ? 'FATTURA' : 'PREVENTIVO'}-${doc.numero}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (err: any) {
+            alert(err?.response?.data?.message || 'Errore nel download del PDF');
         }
-        win.document.write(html);
-        win.document.close();
-        win.focus();
-        setTimeout(() => win.print(), 400);
+    };
+
+    const apriInvioEmail = (doc: any) => {
+        setEmailDoc(doc);
+        setEmailDestinatario(doc.patient?.email || '');
+        setEmailNome(`${doc.patient?.firstName || ''} ${doc.patient?.lastName || ''}`.trim());
+        setEmailSending(false);
+    };
+
+    const chiudiInvioEmail = () => {
+        setEmailDoc(null);
+        setEmailDestinatario('');
+        setEmailNome('');
+        setEmailSending(false);
+    };
+
+    const inviaDocumentoEmail = async (e: FormEvent) => {
+        e.preventDefault();
+        if (!emailDoc || !emailDestinatario) return;
+        setEmailSending(true);
+        try {
+            await api.post(`/fatturazione-documenti/${emailDoc._id}/invia-email`, {
+                email: emailDestinatario,
+                nome: emailNome,
+            });
+            alert('Documento inviato con successo');
+            chiudiInvioEmail();
+        } catch (err: any) {
+            alert(err?.response?.data?.message || 'Errore nell\'invio dell\'email');
+        } finally {
+            setEmailSending(false);
+        }
     };
     const eliminaPiano = async (id: string) => { if (!confirm('Eliminare?'))
         return; try {
@@ -1058,13 +1097,37 @@ export default function CentroPrenotazioni() {
                   {docCreato.tipo === 'preventivo' ? 'Preventivo' : 'Fattura'} n. <strong>{docCreato.numero}</strong> — Totale €{docCreato.totale.toFixed(2)}<br />
                   Il documento è archiviato in <strong>Fatturazione</strong> ed è pronto per essere scaricato e consegnato al paziente.
                 </p>
-                <div className="tw-flex tw-gap-2.5 tw-justify-end">
+                <div className="tw-flex tw-gap-2.5 tw-justify-end tw-flex-wrap">
                   <button className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border tw-border-slate-200 tw-bg-white tw-cursor-pointer tw-text-slate-700 tw-font-semibold hover:tw-bg-slate-50 tw-transition-colors" onClick={() => { setPendingDoc(null); setDocCreato(null); }}>Chiudi</button>
-                  <button className="tw-py-2.5 tw-px-5 tw-rounded-lg tw-bg-green-800 hover:tw-bg-green-900 tw-text-white tw-border-0 tw-cursor-pointer tw-font-bold tw-shadow-sm tw-transition-colors" onClick={() => stampaDocumento(docCreato)}>🖨️ Scarica / Stampa</button>
+                  <button className="tw-py-2.5 tw-px-5 tw-rounded-lg tw-bg-blue-600 hover:tw-bg-blue-700 tw-text-white tw-border-0 tw-cursor-pointer tw-font-bold tw-shadow-sm tw-transition-colors tw-flex tw-items-center tw-gap-2" onClick={() => scaricaDocumentoPDF(docCreato)}><Download size={16} /> Scarica PDF</button>
+                  <button className="tw-py-2.5 tw-px-5 tw-rounded-lg tw-bg-emerald-600 hover:tw-bg-emerald-700 tw-text-white tw-border-0 tw-cursor-pointer tw-font-bold tw-shadow-sm tw-transition-colors tw-flex tw-items-center tw-gap-2" onClick={() => apriInvioEmail(docCreato)}><Mail size={16} /> Invia via email</button>
                 </div>
               </>)}
           </div>
         </div>)}
+
+      {/* Modal invio email documento */}
+      {emailDoc && (
+        <div className="tw-fixed tw-inset-0 tw-bg-black/50 tw-backdrop-blur-sm tw-flex tw-items-start tw-justify-center tw-z-[1200] tw-py-10 tw-px-4" onClick={chiudiInvioEmail}>
+          <div className="tw-bg-white tw-rounded-2xl tw-shadow-2xl tw-p-6 tw-w-full tw-max-w-[420px]" onClick={e => e.stopPropagation()}>
+            <h3 className="tw-mt-0 tw-mx-0 tw-mb-4 tw-text-green-800 tw-font-bold tw-text-lg">Invia {emailDoc.tipo === 'fattura' ? 'Fattura' : 'Preventivo'} via email</h3>
+            <form onSubmit={inviaDocumentoEmail}>
+              <div className="tw-mb-4">
+                <label className="tw-block tw-text-sm tw-font-semibold tw-mb-1">Email destinatario</label>
+                <input type="email" required value={emailDestinatario} onChange={e => setEmailDestinatario(e.target.value)} placeholder="paziente o caregiver" className="tw-w-full tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm" />
+              </div>
+              <div className="tw-mb-5">
+                <label className="tw-block tw-text-sm tw-font-semibold tw-mb-1">Nome destinatario (opzionale)</label>
+                <input type="text" value={emailNome} onChange={e => setEmailNome(e.target.value)} className="tw-w-full tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm" />
+              </div>
+              <div className="tw-flex tw-gap-2.5 tw-justify-end">
+                <button type="button" className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border tw-border-slate-200 tw-bg-white tw-cursor-pointer tw-text-slate-700 tw-font-semibold hover:tw-bg-slate-50" onClick={chiudiInvioEmail}>Annulla</button>
+                <button type="submit" disabled={emailSending} className="tw-py-2.5 tw-px-5 tw-rounded-lg tw-bg-emerald-600 hover:tw-bg-emerald-700 tw-text-white tw-border-0 tw-cursor-pointer tw-font-bold">{emailSending ? 'Invio...' : 'Invia'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       </div>
     </section>);
 }
