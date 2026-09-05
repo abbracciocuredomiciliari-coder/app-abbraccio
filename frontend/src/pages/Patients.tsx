@@ -23,6 +23,7 @@ import {
   MessageCircle,
   Pencil,
   MapPin,
+  User,
 } from 'lucide-react';
 import FirmaCanvas from '../components/FirmaCanvas';
 import { ChatWidget } from '../components/ChatWidget';
@@ -56,6 +57,20 @@ interface Patient {
   allergie?: string;
   caregiverRiferimento?: string;
   caregiverTelefono?: string;
+  tipoGestione?: 'privato' | 'convenzione';
+  siat?: {
+    npi?: string;
+    codiceAutorizzazione?: string;
+    codicePrestazione?: string;
+    tipologiaCura?: string;
+    dataAutorizzazione?: string;
+    dataScadenzaAutorizzazione?: string;
+    distretto?: string;
+    asl?: string;
+    uvm?: string;
+    medicoReferente?: string;
+    note?: string;
+  };
 }
 
 interface PatientDocument {
@@ -121,7 +136,8 @@ function Patients() {
     address: '',
     assistanceNeeds: '',
     contactPhone: '',
-    email: ''
+    email: '',
+    codiceFiscale: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -147,6 +163,10 @@ function Patients() {
   const [datiCliniciPaziente, setDatiCliniciPaziente] = useState<Patient | null>(null);
   const [datiCliniciForm, setDatiCliniciForm] = useState({ codiceFiscale: '', diagnosiAmmissione: '', comorbilita: '', allergie: '', caregiverRiferimento: '', caregiverTelefono: '' });
   const [salvandoDatiCliniciADI, setSalvandoDatiCliniciADI] = useState(false);
+
+  // Stato modal visualizzazione anagrafica
+  const [showAnagraficaModal, setShowAnagraficaModal] = useState(false);
+  const [selectedAnagrafica, setSelectedAnagrafica] = useState<Patient | null>(null);
 
   // Stato modal consenso GDPR
   const [showConsensoModal, setShowConsensoModal] = useState(false);
@@ -218,7 +238,8 @@ function Patients() {
         address: '',
         assistanceNeeds: '',
         contactPhone: '',
-        email: ''
+        email: '',
+        codiceFiscale: ''
       });
       setEditingPatient(null);
       setIndirizzoCoords(null);
@@ -235,7 +256,7 @@ function Patients() {
     if (showForm) {
       setShowForm(false);
     } else {
-      setFormData({ firstName: '', lastName: '', birthDate: '', address: '', assistanceNeeds: '', contactPhone: '', email: '' });
+      setFormData({ firstName: '', lastName: '', birthDate: '', address: '', assistanceNeeds: '', contactPhone: '', email: '', codiceFiscale: '' });
       setEditingPatient(null);
       setSuggerimentiIndirizzo([]);
       setIndirizzoCoords(null);
@@ -252,6 +273,7 @@ function Patients() {
       assistanceNeeds: patient.assistanceNeeds,
       contactPhone: patient.contactPhone || '',
       email: patient.email || '',
+      codiceFiscale: patient.codiceFiscale || '',
     });
     setEditingPatient(patient);
     setSuggerimentiIndirizzo([]);
@@ -756,6 +778,15 @@ function Patients() {
             />
           </label>
           <label>
+            Codice Fiscale
+            <input
+              name="codiceFiscale"
+              value={formData.codiceFiscale}
+              onChange={handleInputChange}
+              placeholder="RSSMRA70A01H501Z"
+            />
+          </label>
+          <label>
             Fabbisogni assistenziali *
             <textarea
               name="assistanceNeeds"
@@ -821,6 +852,13 @@ function Patients() {
                   )}
                 </div>
                 <div className="tw-flex tw-gap-2 tw-flex-shrink-0 tw-items-center">
+                  <button
+                    onClick={() => { setSelectedAnagrafica(patient); setShowAnagraficaModal(true); }}
+                    className="tw-bg-indigo-600 tw-text-white tw-whitespace-nowrap"
+                  >
+                    <User size={16} />
+                    Anagrafica
+                  </button>
                   <button
                     onClick={() => openDocumentsModal(patient)}
                     className="tw-whitespace-nowrap"
@@ -1371,6 +1409,116 @@ function Patients() {
               title=""
               height={520}
             />
+          </div>
+        </div>
+      )}
+
+      {/* ═══ MODAL ANAGRAFICA COMPLETA ═══ */}
+      {showAnagraficaModal && selectedAnagrafica && (
+        <div className="tw-fixed tw-inset-0 tw-z-50 tw-bg-black/60 tw-flex tw-items-start tw-justify-center tw-p-4 tw-overflow-y-auto" onClick={() => setShowAnagraficaModal(false)}>
+          <div className="tw-bg-white tw-rounded-2xl tw-shadow-2xl tw-w-full tw-max-w-[700px] tw-my-10 tw-p-6" onClick={e => e.stopPropagation()}>
+            <div className="tw-flex tw-justify-between tw-items-center tw-mb-4 tw-flex-wrap tw-gap-2">
+              <h3 className="tw-m-0 tw-text-brand tw-text-lg">
+                <User size={22} className="tw-inline tw-mr-2" />
+                Anagrafica completa — {selectedAnagrafica.firstName} {selectedAnagrafica.lastName}
+              </h3>
+              <button onClick={() => setShowAnagraficaModal(false)} className="tw-bg-slate-100 tw-border tw-border-slate-200 tw-rounded-md tw-px-2.5 tw-py-1.5 tw-cursor-pointer hover:tw-bg-slate-200">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-4 tw-text-sm">
+              <div className="tw-bg-slate-50 tw-rounded-lg tw-p-3">
+                <div className="tw-text-slate-500 tw-text-xs tw-mb-1">Nome</div>
+                <div className="tw-font-semibold tw-text-slate-800">{selectedAnagrafica.firstName}</div>
+              </div>
+              <div className="tw-bg-slate-50 tw-rounded-lg tw-p-3">
+                <div className="tw-text-slate-500 tw-text-xs tw-mb-1">Cognome</div>
+                <div className="tw-font-semibold tw-text-slate-800">{selectedAnagrafica.lastName}</div>
+              </div>
+              <div className="tw-bg-slate-50 tw-rounded-lg tw-p-3">
+                <div className="tw-text-slate-500 tw-text-xs tw-mb-1">Data di nascita</div>
+                <div className="tw-font-semibold tw-text-slate-800">{formatDate(selectedAnagrafica.birthDate)}</div>
+              </div>
+              <div className="tw-bg-slate-50 tw-rounded-lg tw-p-3">
+                <div className="tw-text-slate-500 tw-text-xs tw-mb-1">Codice Fiscale</div>
+                <div className="tw-font-semibold tw-text-slate-800">{selectedAnagrafica.codiceFiscale || '—'}</div>
+              </div>
+              <div className="tw-bg-slate-50 tw-rounded-lg tw-p-3 sm:tw-col-span-2">
+                <div className="tw-text-slate-500 tw-text-xs tw-mb-1">Indirizzo</div>
+                <div className="tw-font-semibold tw-text-slate-800">{selectedAnagrafica.address || '—'}</div>
+              </div>
+              <div className="tw-bg-slate-50 tw-rounded-lg tw-p-3">
+                <div className="tw-text-slate-500 tw-text-xs tw-mb-1">Telefono</div>
+                <div className="tw-font-semibold tw-text-slate-800">{selectedAnagrafica.contactPhone || '—'}</div>
+              </div>
+              <div className="tw-bg-slate-50 tw-rounded-lg tw-p-3">
+                <div className="tw-text-slate-500 tw-text-xs tw-mb-1">Email</div>
+                <div className="tw-font-semibold tw-text-slate-800">{selectedAnagrafica.email || '—'}</div>
+              </div>
+              <div className="tw-bg-slate-50 tw-rounded-lg tw-p-3 sm:tw-col-span-2">
+                <div className="tw-text-slate-500 tw-text-xs tw-mb-1">Fabbisogni assistenziali</div>
+                <div className="tw-font-semibold tw-text-slate-800">{selectedAnagrafica.assistanceNeeds || '—'}</div>
+              </div>
+              {selectedAnagrafica.diagnosiAmmissione && (
+                <div className="tw-bg-slate-50 tw-rounded-lg tw-p-3 sm:tw-col-span-2">
+                  <div className="tw-text-slate-500 tw-text-xs tw-mb-1">Diagnosi di ammissione</div>
+                  <div className="tw-font-semibold tw-text-slate-800">{selectedAnagrafica.diagnosiAmmissione}</div>
+                </div>
+              )}
+              {selectedAnagrafica.comorbilita && (
+                <div className="tw-bg-slate-50 tw-rounded-lg tw-p-3 sm:tw-col-span-2">
+                  <div className="tw-text-slate-500 tw-text-xs tw-mb-1">Comorbilità</div>
+                  <div className="tw-font-semibold tw-text-slate-800">{selectedAnagrafica.comorbilita}</div>
+                </div>
+              )}
+              {selectedAnagrafica.allergie && (
+                <div className="tw-bg-slate-50 tw-rounded-lg tw-p-3 sm:tw-col-span-2">
+                  <div className="tw-text-slate-500 tw-text-xs tw-mb-1">Allergie</div>
+                  <div className="tw-font-semibold tw-text-slate-800">{selectedAnagrafica.allergie}</div>
+                </div>
+              )}
+              {selectedAnagrafica.caregiverRiferimento && (
+                <div className="tw-bg-slate-50 tw-rounded-lg tw-p-3">
+                  <div className="tw-text-slate-500 tw-text-xs tw-mb-1">Caregiver di riferimento</div>
+                  <div className="tw-font-semibold tw-text-slate-800">{selectedAnagrafica.caregiverRiferimento}</div>
+                </div>
+              )}
+              {selectedAnagrafica.caregiverTelefono && (
+                <div className="tw-bg-slate-50 tw-rounded-lg tw-p-3">
+                  <div className="tw-text-slate-500 tw-text-xs tw-mb-1">Telefono caregiver</div>
+                  <div className="tw-font-semibold tw-text-slate-800">{selectedAnagrafica.caregiverTelefono}</div>
+                </div>
+              )}
+              {selectedAnagrafica.tipoGestione === 'convenzione' && selectedAnagrafica.siat && (
+                <div className="tw-bg-slate-50 tw-rounded-lg tw-p-3 sm:tw-col-span-2">
+                  <div className="tw-text-slate-500 tw-text-xs tw-mb-1">Dati SIAT / Convenzione</div>
+                  <div className="tw-font-semibold tw-text-slate-800">
+                    NPI: {selectedAnagrafica.siat.npi || '—'} — Auth: {selectedAnagrafica.siat.codiceAutorizzazione || '—'}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="tw-flex tw-justify-end tw-gap-3 tw-mt-6">
+              <button
+                type="button"
+                onClick={() => setShowAnagraficaModal(false)}
+                className="tw-px-4 tw-py-2 tw-rounded-lg tw-border tw-border-slate-200 tw-bg-white tw-text-slate-700 tw-font-semibold hover:tw-bg-slate-50"
+              >
+                Chiudi
+              </button>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => { setShowAnagraficaModal(false); apriModificaPaziente(selectedAnagrafica); }}
+                  className="tw-px-4 tw-py-2 tw-rounded-lg tw-bg-brand tw-text-white tw-font-semibold hover:tw-bg-brand-dark tw-flex tw-items-center tw-gap-2"
+                >
+                  <Pencil size={16} />
+                  Modifica
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
