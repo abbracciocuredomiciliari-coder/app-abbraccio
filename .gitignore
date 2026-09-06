@@ -21,6 +21,9 @@ backend/.env.deploy
 backend/uploads/
 uploads/
 
+# File temporanei generati in fase di preview/export
+backend/temp/
+
 # Logs
 npm-debug.log*
 yarn-debug.log*
