@@ -44,9 +44,11 @@ function generaHtmlContratto(contratto: any, paziente: any, includeFirma = false
   if (contratto.profilo === 'Assistente familiare') {
     return generaHtmlContrattoBadante(contratto, paziente, includeFirma, firmaImg);
   }
-  const profilo = contratto.profilo === 'Infermiere' ? 'Infermiere Professionale' : 'Operatore Socio-Sanitario (O.S.S.)';
+  const profilo = contratto.profilo === 'Infermiere' ? 'Infermiere Professionale' : contratto.profilo === 'Assistente familiare' ? 'Assistente familiare' : contratto.profilo === 'Badante/colf' ? 'Badante/colf' : 'Operatore Socio-Sanitario (O.S.S.)';
   const checkOss = contratto.profilo === 'OSS' ? '☑' : '☐';
   const checkInf = contratto.profilo === 'Infermiere' ? '☑' : '☐';
+  const checkAss = contratto.profilo === 'Assistente familiare' ? '☑' : '☐';
+  const checkBad = contratto.profilo === 'Badante/colf' ? '☑' : '☐';
   const importo = Number(contratto.importo || 150).toFixed(2).replace('.', ',');
   const luogo = contratto.luogoFirma || 'Roma';
   const data = contratto.dataFirma ? new Date(contratto.dataFirma).toLocaleDateString('it-IT') : formatData(new Date());
@@ -96,7 +98,7 @@ function generaHtmlContratto(contratto: any, paziente: any, includeFirma = false
   <div class="header">
     <h1>ABBRACCIO CURE DOMICILIARI S.R.L.S.</h1>
     <h2>CONTRATTO D'INCARICO E IMPEGNO DI RECLUTAMENTO</h2>
-    <h2 style="font-size:12px;font-weight:400;">ASSISTENZA DOMICILIARE SANITARIA E SOCIO-SANITARIA (OSS / INFERMIERE)</h2>
+    <h2 style="font-size:12px;font-weight:400;">ASSISTENZA DOMICILIARE SANITARIA, SOCIO-SANITARIA E FAMILIARE (OSS / INFERMIERE / ASSISTENTE FAMILIARE / BADANTE/COLF)</h2>
     <div class="header-dati">
       Sede Legale: ${AZIENDA.indirizzo} — ${AZIENDA.capCitta}<br/>
       C.F. / P.IVA: ${AZIENDA.cf} | N. REA: ${AZIENDA.rea}<br/>
@@ -129,9 +131,11 @@ function generaHtmlContratto(contratto: any, paziente: any, includeFirma = false
 
   <div class="section"><p class="section-title">2. OGGETTO DELL'INCARICO SPECIALISTICO</p></div>
   <p>Il Committente conferisce all'Agenzia l'incarico professionale finalizzato all'avvio immediato delle attività di reclutamento, screening dei curricula, verifica dei titoli abilitanti e selezione del seguente profilo professionale sanitario/socio-sanitario per assistenza domiciliare:</p>
-  <div class="box" style="display:flex;gap:40px;">
+  <div class="box" style="display:flex;gap:40px;flex-wrap:wrap;">
     <span><span class="checkbox">${checkOss}</span> Operatore Socio-Sanitario (O.S.S.)</span>
     <span><span class="checkbox">${checkInf}</span> Infermiere Professionale</span>
+    <span><span class="checkbox">${checkAss}</span> Assistente familiare</span>
+    <span><span class="checkbox">${checkBad}</span> Badante/colf</span>
   </div>
 
   <div class="section"><p class="section-title">3. CORRISPETTIVO D'AVVIO, CONDIZIONI E SCAVALCO COSTI</p></div>
@@ -144,7 +148,7 @@ function generaHtmlContratto(contratto: any, paziente: any, includeFirma = false
 
   <div class="warning">
     <strong>CLAUSOLA DI RINUNCIA (TRATTENUTA):</strong><br/>
-    Qualora il Committente decida di rinunciare all'incarico o recedere dal contratto dopo che l'Agenzia ha svolto la ricerca ed individuato un lavoratore (O.S.S. o Infermiere) idoneo e rispondente ai requisiti, l'importo di € ${importo},00 <strong>non verrà restituito</strong> e sarà trattenuto a titolo di compenso per le attività istruttorie e lavorative svolte.
+    Qualora il Committente decida di rinunciare all'incarico o recedere dal contratto dopo che l'Agenzia ha svolto la ricerca ed individuato un lavoratore (O.S.S., Infermiere, Assistente familiare o Badante/colf) idoneo e rispondente ai requisiti, l'importo di € ${importo},00 <strong>non verrà restituito</strong> e sarà trattenuto a titolo di compenso per le attività istruttorie e lavorative svolte.
   </div>
 
   <div class="section"><p class="section-title">4. DURATA E RECESSO</p></div>
@@ -356,6 +360,27 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/contratti-pazienti/anteprima/:token — anteprima pubblica del contratto (lettura prima della firma)
+router.get('/anteprima/:token', async (req: Request, res: Response) => {
+  try {
+    const contratto = await ContrattoPaziente.findOne({ token: req.params.token })
+      .populate('patient', 'firstName lastName birthDate address contactPhone codiceFiscale email');
+    if (!contratto) return res.status(404).json({ message: 'Link non valido' });
+
+    if (contratto.stato === 'firmato' && contratto.htmlFirmato) {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      return res.send(contratto.htmlFirmato);
+    }
+
+    const paziente = normalizzaPaziente(contratto.patient);
+    const html = generaHtmlContratto(contratto, paziente, false, undefined);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.send(html);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore generazione anteprima contratto', error: error.message });
+  }
+});
+
 // GET /api/contratti-pazienti/:id/pdf — stampa/visualizza HTML
 router.get('/:id/pdf', authenticateToken, async (req: Request, res: Response) => {
   try {
@@ -412,13 +437,22 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
     const htmlContratto = generaHtmlContratto(contratto, pazienteNorm, false);
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://app.abbracciocuredomiciliari.it';
+    const apiProtocol = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'https';
+    const apiHost = req.get('host') || 'api.abbracciocuredomiciliari.it';
+    const anteprimaUrl = `${apiProtocol}://${apiHost}/api/contratti-pazienti/anteprima/${contratto.token}`;
+    const firmaUrl = `${frontendUrl}/firma-contratto-paziente?token=${contratto.token}`;
+
     const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
       <h2 style="color:#1e4d8c;margin-top:0;">Contratto d'incarico</h2>
       <p>Gentile <strong>${pazienteNorm.firstName || ''} ${pazienteNorm.lastName || ''}</strong>,</p>
       <p>in allegato trovi il contratto d'incarico completo per l'attività di reclutamento del profilo <strong>${contratto.profilo}</strong>.</p>
+      <p style="margin:16px 0;padding:16px;background:#f0fdf4;border-left:4px solid #16a34a;border-radius:6px;">
+        <strong>Leggi il contratto per intero</strong> prima di firmare:<br/>
+        <a href="${anteprimaUrl}" style="display:inline-block;margin-top:8px;background:#16a34a;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Visualizza contratto</a>
+      </p>
       <p style="margin:16px 0;padding:16px;background:#eff6ff;border-left:4px solid #1e4d8c;border-radius:6px;">
-        <strong>Leggi il contratto in allegato</strong>, poi per firmarlo <strong>online con dito o penna</strong> clicca qui:<br/>
-        <a href="${frontendUrl}/firma-contratto-paziente?token=${contratto.token}" style="display:inline-block;margin-top:8px;background:#1e4d8c;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Firma contratto</a>
+        Dopo averlo letto, firma il contratto <strong>online con dito o penna</strong>:<br/>
+        <a href="${firmaUrl}" style="display:inline-block;margin-top:8px;background:#1e4d8c;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Firma contratto</a>
       </p>
       <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari S.R.L.S.</p>
     </div>`;
