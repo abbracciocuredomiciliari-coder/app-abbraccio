@@ -66,6 +66,7 @@ interface DocumentoFatturazione {
   dataPrestazione?: string;
   stato: 'emesso' | 'firmato' | 'annullato';
   note?: string;
+  documentoOrigineId?: string;
   firma?: {
     firmato: boolean;
     firmatoIl?: string;
@@ -89,6 +90,7 @@ export default function GestioneFatturazione() {
   const [showFiltri, setShowFiltri] = useState(true);
   const [documenti, setDocumenti] = useState<DocumentoFatturazione[]>([]);
   const [showDocumenti, setShowDocumenti] = useState(true);
+  const [showArchivio, setShowArchivio] = useState(true);
   const [emailModalDoc, setEmailModalDoc] = useState<DocumentoFatturazione | null>(null);
   const [emailDestinatario, setEmailDestinatario] = useState('');
   const [emailNome, setEmailNome] = useState('');
@@ -414,6 +416,20 @@ export default function GestioneFatturazione() {
     }), { totaleFatturato: 0, totaleCompenso: 0, totaleUtile: 0, numeroPazienti: 0, numeroPrestazioni: 0 });
   }, [riepiloghiPerPaziente]);
 
+  const archivioIds = useMemo(() => {
+    const ids = new Set<string>();
+    documenti.forEach(d => {
+      if (d.tipo === 'fattura' && d.stato === 'firmato') {
+        ids.add(d._id);
+        if (d.documentoOrigineId) ids.add(d.documentoOrigineId);
+      }
+    });
+    return ids;
+  }, [documenti]);
+
+  const documentiAttivi = useMemo(() => documenti.filter(d => !archivioIds.has(d._id)), [documenti, archivioIds]);
+  const archivioFatture = useMemo(() => documenti.filter(d => d.tipo === 'fattura' && d.stato === 'firmato'), [documenti]);
+
   const formatData = (d: string) => new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
   const formatEuro = (n: number) => `€${n.toFixed(2)}`;
 
@@ -721,13 +737,13 @@ export default function GestioneFatturazione() {
           <div onClick={() => setShowDocumenti(!showDocumenti)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
             <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#374151' }}>
               <FileText size={20} />Documenti Fiscali — Preventivi e Fatture
-              <span style={{ background: '#dbeafe', color: '#1d4ed8', borderRadius: '20px', padding: '2px 10px', fontSize: '0.8rem' }}>{documenti.length}</span>
+              <span style={{ background: '#dbeafe', color: '#1d4ed8', borderRadius: '20px', padding: '2px 10px', fontSize: '0.8rem' }}>{documentiAttivi.length}</span>
             </h3>
             {showDocumenti ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
           </div>
           {showDocumenti && (
-            documenti.length === 0 ? (
-              <p style={{ color: '#9ca3af', marginTop: '14px', marginBottom: 0 }}>Nessun documento generato. Verranno creati dal Centro Prenotazioni quando un prezzo viene accettato dal paziente.</p>
+            documentiAttivi.length === 0 ? (
+              <p style={{ color: '#9ca3af', marginTop: '14px', marginBottom: 0 }}>Nessun documento attivo. Verranno creati dal Centro Prenotazioni.</p>
             ) : (
               <div style={{ overflowX: 'auto', marginTop: '14px' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -744,7 +760,7 @@ export default function GestioneFatturazione() {
                     </tr>
                   </thead>
                   <tbody>
-                    {documenti.map(doc => (
+                    {documentiAttivi.map(doc => (
                       <tr key={doc._id} style={{ borderBottom: '1px solid #f1f5f9', opacity: doc.stato === 'annullato' ? 0.5 : 1 }}>
                         <td style={{ padding: '8px', fontWeight: 600 }}>{doc.numero}</td>
                         <td style={{ padding: '8px' }}>
@@ -771,13 +787,13 @@ export default function GestioneFatturazione() {
                               <button onClick={() => apriModificaVoci(doc)} title="Modifica voci" style={{ background: '#e0f2fe', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0284c7' }}><Pencil size={14} /></button>
                             )}
                             <button onClick={() => apriModificaNumero(doc)} title="Modifica numero" style={{ background: '#fefce8', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#ca8a04' }}><Pencil size={14} /></button>
-                            {doc.tipo === 'preventivo' && doc.stato === 'emesso' && !doc.firma?.email && !doc.firma?.token && (
+                            {doc.tipo === 'preventivo' && (doc.stato === 'emesso' || doc.stato === 'firmato') && (
                               <button onClick={() => convertiInFattura(doc)} title="Genera fattura da questo preventivo" style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', color: '#166534', fontSize: '0.78rem', fontWeight: 600 }}>→ Fattura</button>
                             )}
-                            {doc.stato === 'emesso' && !doc.firma?.email && !doc.firma?.token && (
+                            {(doc.stato === 'emesso' || doc.stato === 'firmato') && (
                               <button onClick={() => annullaDocumento(doc)} title="Annulla" style={{ background: '#fef2f2', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#dc2626' }}>✕</button>
                             )}
-                            {doc.stato === 'annullato' && !doc.firma?.email && !doc.firma?.token && user?.role === 'admin' && (
+                            {doc.stato === 'annullato' && user?.role === 'admin' && (
                               <button onClick={() => eliminaDocumento(doc)} title="Elimina definitivamente" style={{ background: '#fee2e2', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#b91c1c' }}><Trash2 size={14} /></button>
                             )}
                           </div>
@@ -788,6 +804,67 @@ export default function GestioneFatturazione() {
                 </table>
               </div>
             )
+          )}
+        </div>
+      )}
+
+      {/* ══════════════════════ ARCHIVIO FATTURE FIRMATE ══════════ */}
+      {!isConvenzione && archivioFatture.length > 0 && (
+        <div style={{ background: 'white', borderRadius: '12px', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' }}>
+          <div onClick={() => setShowArchivio(!showArchivio)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#374151' }}>
+              <FileText size={20} />Archivio Fatture Firmate
+              <span style={{ background: '#f3e8ff', color: '#7e22ce', borderRadius: '20px', padding: '2px 10px', fontSize: '0.8rem' }}>{archivioFatture.length}</span>
+            </h3>
+            {showArchivio ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </div>
+          {showArchivio && (
+            <div style={{ overflowX: 'auto', marginTop: '14px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Fattura</th>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Preventivo collegato</th>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Paziente</th>
+                    <th style={{ textAlign: 'right', padding: '8px' }}>Totale</th>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Data</th>
+                    <th style={{ padding: '8px' }} />
+                  </tr>
+                </thead>
+                <tbody>
+                  {archivioFatture.map(fattura => {
+                    const preventivo = documenti.find(d => d._id === fattura.documentoOrigineId);
+                    return (
+                      <tr key={fattura._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '8px', fontWeight: 600 }}>{fattura.numero}</td>
+                        <td style={{ padding: '8px' }}>{preventivo ? preventivo.numero : '-'}</td>
+                        <td style={{ padding: '8px' }}>{fattura.patient?.firstName} {fattura.patient?.lastName}</td>
+                        <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#166534' }}>{formatEuro(fattura.totale)}</td>
+                        <td style={{ padding: '8px' }}>{formatData(fattura.data)}</td>
+                        <td style={{ padding: '8px' }}>
+                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                            <button onClick={() => anteprimaDocumento(fattura)} title="Anteprima fattura" style={{ background: '#f0f9ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0ea5e9' }}><Eye size={14} /></button>
+                            <button onClick={() => scaricaDocumentoPDF(fattura)} title="Scarica fattura" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Download size={14} /></button>
+                            {fattura.firma?.firmato && (
+                              <button onClick={() => scaricaDocumentoFirmato(fattura)} title="Scarica fattura firmata" style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#166534' }}><Download size={14} /></button>
+                            )}
+                            {preventivo && (
+                              <>
+                                <button onClick={() => anteprimaDocumento(preventivo)} title="Anteprima preventivo" style={{ background: '#fefce8', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#ca8a04' }}><Eye size={14} /></button>
+                                <button onClick={() => scaricaDocumentoPDF(preventivo)} title="Scarica preventivo" style={{ background: '#fef3c7', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#92400e' }}><Download size={14} /></button>
+                              </>
+                            )}
+                            {user?.role === 'admin' && (
+                              <button onClick={() => annullaDocumento(fattura)} title="Annulla" style={{ background: '#fef2f2', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#dc2626' }}>✕</button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}

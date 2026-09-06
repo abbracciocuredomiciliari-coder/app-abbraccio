@@ -374,17 +374,14 @@ router.patch('/:id/annulla', authenticateToken, authorizeRole(...RUOLI_GESTIONE)
   try {
     const doc = await DocumentoFatturazione.findById(req.params.id);
     if (!doc) return res.status(404).json({ message: 'Documento non trovato' });
-    if (doc.stato !== 'emesso') {
+    if (doc.stato !== 'emesso' && doc.stato !== 'firmato') {
       return res.status(400).json({ message: 'Documento non annullabile: stato non valido' });
-    }
-    if (doc.firma?.email || doc.firma?.token) {
-      return res.status(400).json({ message: 'Documento non annullabile: già inviato al paziente' });
     }
     doc.stato = 'annullato';
     await doc.save();
     return res.json(doc);
   } catch (error: any) {
-    return res.status(500).json({ message: "Errore nell'annullamento del documento", error: error.message });
+    return res.status(500).json({ message: "Errore nell'annnullamento del documento", error: error.message });
   }
 });
 
