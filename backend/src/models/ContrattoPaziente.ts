@@ -2,7 +2,7 @@ import { Document, Schema, model, Types } from 'mongoose';
 
 export interface IContrattoPaziente extends Document {
   patient: Types.ObjectId;
-  profilo: 'OSS' | 'Infermiere' | 'Assistente familiare';
+  profilo: 'OSS' | 'Infermiere' | 'Assistente familiare' | 'Operatore generale';
   importo: number;
   data: Date;
   stato: 'emesso' | 'firmato';
@@ -18,7 +18,7 @@ export interface IContrattoPaziente extends Document {
 const contrattoPazienteSchema = new Schema<IContrattoPaziente>(
   {
     patient: { type: Schema.Types.ObjectId, ref: 'Patient', required: true },
-    profilo: { type: String, enum: ['OSS', 'Infermiere', 'Assistente familiare'], required: true },
+    profilo: { type: String, enum: ['OSS', 'Infermiere', 'Assistente familiare', 'Operatore generale'], required: true },
     importo: { type: Number, required: true, default: 150 },
     data: { type: Date, default: Date.now },
     stato: { type: String, enum: ['emesso', 'firmato'], default: 'emesso' },

@@ -44,11 +44,6 @@ function generaHtmlContratto(contratto: any, paziente: any, includeFirma = false
   if (contratto.profilo === 'Assistente familiare') {
     return generaHtmlContrattoBadante(contratto, paziente, includeFirma, firmaImg);
   }
-  const profilo = contratto.profilo === 'Infermiere' ? 'Infermiere Professionale' : contratto.profilo === 'Assistente familiare' ? 'Assistente familiare' : contratto.profilo === 'Badante/colf' ? 'Badante/colf' : 'Operatore Socio-Sanitario (O.S.S.)';
-  const checkOss = contratto.profilo === 'OSS' ? '☑' : '☐';
-  const checkInf = contratto.profilo === 'Infermiere' ? '☑' : '☐';
-  const checkAss = contratto.profilo === 'Assistente familiare' ? '☑' : '☐';
-  const checkBad = contratto.profilo === 'Badante/colf' ? '☑' : '☐';
   const importo = Number(contratto.importo || 150).toFixed(2).replace('.', ',');
   const luogo = contratto.luogoFirma || 'Roma';
   const data = contratto.dataFirma ? new Date(contratto.dataFirma).toLocaleDateString('it-IT') : formatData(new Date());
@@ -132,10 +127,10 @@ function generaHtmlContratto(contratto: any, paziente: any, includeFirma = false
   <div class="section"><p class="section-title">2. OGGETTO DELL'INCARICO SPECIALISTICO</p></div>
   <p>Il Committente conferisce all'Agenzia l'incarico professionale finalizzato all'avvio immediato delle attività di reclutamento, screening dei curricula, verifica dei titoli abilitanti e selezione del seguente profilo professionale sanitario/socio-sanitario per assistenza domiciliare:</p>
   <div class="box" style="display:flex;gap:40px;flex-wrap:wrap;">
-    <span><span class="checkbox">${checkOss}</span> Operatore Socio-Sanitario (O.S.S.)</span>
-    <span><span class="checkbox">${checkInf}</span> Infermiere Professionale</span>
-    <span><span class="checkbox">${checkAss}</span> Assistente familiare</span>
-    <span><span class="checkbox">${checkBad}</span> Badante/colf</span>
+    <span>Operatore Socio-Sanitario (O.S.S.)</span>
+    <span>Infermiere Professionale</span>
+    <span>Assistente familiare</span>
+    <span>Badante/colf</span>
   </div>
 
   <div class="section"><p class="section-title">3. CORRISPETTIVO D'AVVIO, CONDIZIONI E SCAVALCO COSTI</p></div>
@@ -325,7 +320,7 @@ router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('
   try {
     const { patient, profilo, importo, email } = req.body;
     if (!patient || !profilo) return res.status(400).json({ message: 'Paziente e profilo obbligatori' });
-    if (!['OSS', 'Infermiere', 'Assistente familiare'].includes(profilo)) return res.status(400).json({ message: 'Profilo non valido' });
+    if (!['OSS', 'Infermiere', 'Assistente familiare', 'Operatore generale'].includes(profilo)) return res.status(400).json({ message: 'Profilo non valido' });
 
     const paziente = await Patient.findById(patient);
     if (!paziente) return res.status(404).json({ message: 'Paziente non trovato' });
