@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, FormEvent } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
-import { Receipt, Calendar, FileText, Printer, User, Filter, ChevronDown, ChevronUp, Building2, Download, Mail, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Receipt, Calendar, FileText, Printer, User, Filter, ChevronDown, ChevronUp, Building2, Download, Mail, Eye, Pencil, Trash2, Archive } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 interface Patient {
@@ -77,7 +77,11 @@ interface DocumentoFatturazione {
   };
 }
 
-export default function GestioneFatturazione() {
+interface GestioneFatturazioneProps {
+  archivioOnly?: boolean;
+}
+
+export default function GestioneFatturazione({ archivioOnly = false }: GestioneFatturazioneProps) {
   const { user } = useAuth();
   const { isConvenzione } = useModalita();
   const [workplans, setWorkplans] = useState<WorkPlanItem[]>([]);
@@ -156,7 +160,7 @@ export default function GestioneFatturazione() {
   };
 
   const eliminaDocumento = async (doc: DocumentoFatturazione) => {
-    if (!confirm(`Eliminare definitivamente il documento annullato ${doc.numero}?\n\nQuesta azione non può essere annullata.`)) return;
+    if (!confirm(`Eliminare definitivamente il documento ${doc.numero}?\n\nQuesta azione non può essere annullata.`)) return;
     try {
       await api.delete(`/fatturazione-documenti/${doc._id}`);
       await caricaDocumenti();
@@ -566,25 +570,27 @@ export default function GestioneFatturazione() {
     <section className="fade-in section-wide">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px', color: isConvenzione ? '#0369a1' : '#1e4d8c' }}>
-          {isConvenzione ? <Building2 size={28} /> : <Receipt size={28} />}
-          {isConvenzione ? 'Tariffa da Fatturare all\u2019ASL' : 'Fatturazione Pazienti Privati'}
+          {archivioOnly ? <Archive size={28} /> : (isConvenzione ? <Building2 size={28} /> : <Receipt size={28} />)}
+          {archivioOnly ? 'Archivio Fatture' : (isConvenzione ? 'Tariffa da Fatturare all\u2019ASL' : 'Fatturazione Pazienti Privati')}
         </h1>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          {isConvenzione ? (
-            <Button variant="primary" onClick={stampaRiepilogoAsl} icon={<Printer size={18} />}>
-              Stampa Report ASL
-            </Button>
-          ) : (
-            <>
-              <Button variant="primary" onClick={() => visualizzaPDF()} icon={<FileText size={18} />}>
-                Visualizza Report
+        {!archivioOnly && (
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {isConvenzione ? (
+              <Button variant="primary" onClick={stampaRiepilogoAsl} icon={<Printer size={18} />}>
+                Stampa Report ASL
               </Button>
-              <Button variant="secondary" onClick={() => stampaPDF()} icon={<Printer size={18} />}>
-                Stampa Report
-              </Button>
-            </>
-          )}
-        </div>
+            ) : (
+              <>
+                <Button variant="primary" onClick={() => visualizzaPDF()} icon={<FileText size={18} />}>
+                  Visualizza Report
+                </Button>
+                <Button variant="secondary" onClick={() => stampaPDF()} icon={<Printer size={18} />}>
+                  Stampa Report
+                </Button>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Filtri */}
@@ -793,7 +799,7 @@ export default function GestioneFatturazione() {
                             {(doc.stato === 'emesso' || doc.stato === 'firmato') && (
                               <button onClick={() => annullaDocumento(doc)} title="Annulla" style={{ background: '#fef2f2', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#dc2626' }}>✕</button>
                             )}
-                            {doc.stato === 'annullato' && user?.role === 'admin' && (
+                            {user?.role === 'admin' && (
                               <button onClick={() => eliminaDocumento(doc)} title="Elimina definitivamente" style={{ background: '#fee2e2', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#b91c1c' }}><Trash2 size={14} /></button>
                             )}
                           </div>

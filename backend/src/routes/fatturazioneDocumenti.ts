@@ -390,17 +390,11 @@ router.patch('/:id/annulla', authenticateToken, authorizeRole(...RUOLI_GESTIONE)
   }
 });
 
-// DELETE /api/fatturazione-documenti/:id — elimina fisicamente un documento annullato non inviato (solo admin)
+// DELETE /api/fatturazione-documenti/:id — elimina fisicamente un documento (solo admin)
 router.delete('/:id', authenticateToken, authorizeRole('admin'), auditLog('fatturazione_documenti', 'DELETE'), async (req: Request, res: Response) => {
   try {
     const doc = await DocumentoFatturazione.findById(req.params.id);
     if (!doc) return res.status(404).json({ message: 'Documento non trovato' });
-    if (doc.stato !== 'annullato') {
-      return res.status(400).json({ message: 'Solo i documenti annullati possono essere eliminati' });
-    }
-    if (doc.firma?.email || doc.firma?.token) {
-      return res.status(400).json({ message: 'Impossibile eliminare: documento già inviato, deve rimanere archiviato' });
-    }
     await DocumentoFatturazione.findByIdAndDelete(req.params.id);
     return res.json({ message: 'Documento eliminato definitivamente' });
   } catch (error: any) {
