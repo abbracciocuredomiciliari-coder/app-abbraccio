@@ -16,12 +16,17 @@ const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
 async function generaNumero(tipo: 'preventivo' | 'fattura'): Promise<string> {
   const anno = new Date().getFullYear();
   const prefisso = tipo === 'preventivo' ? 'PREV' : 'FATT';
+  const base = `${prefisso}-${anno}-`;
   const count = await DocumentoFatturazione.countDocuments({
-    tipo,
-    numero: { $regex: `^${prefisso}-${anno}-` },
+    numero: { $regex: `^${base}` },
   });
-  const progressivo = String(count + 1).padStart(5, '0');
-  return `${prefisso}-${anno}-${progressivo}`;
+  let progressivo = count + 1;
+  let numero = `${base}${String(progressivo).padStart(5, '0')}`;
+  while (await DocumentoFatturazione.exists({ numero })) {
+    progressivo++;
+    numero = `${base}${String(progressivo).padStart(5, '0')}`;
+  }
+  return numero;
 }
 
 // GET /api/fatturazione-documenti — lista (filtro per paziente opzionale)
