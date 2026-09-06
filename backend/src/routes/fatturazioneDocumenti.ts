@@ -138,6 +138,9 @@ router.post('/:id/converti-in-fattura', authenticateToken, authorizeRole(...RUOL
       note: preventivo.note,
       creatoDa: user?.name || user?.email || 'Sistema',
       documentoOrigineId: preventivo._id,
+      firma: {
+        rifiutoRegistro: preventivo.firma?.rifiutoRegistro ?? false,
+      },
     });
 
     const fatturaPopolata = await DocumentoFatturazione.findById(fattura._id).populate('patient', 'firstName lastName codiceFiscale address email');
@@ -163,6 +166,8 @@ router.get('/firma/:token', async (req: Request, res: Response) => {
       dataPrestazione: doc.dataPrestazione,
       patient: doc.patient,
       note: doc.note,
+      giaFirmato: false,
+      rifiutoRegistro: doc.firma?.rifiutoRegistro ?? null,
     });
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore verifica link', error: error.message });
@@ -207,7 +212,7 @@ router.post('/firma/:token', async (req: Request, res: Response) => {
       firmato: true,
       firmatoIl: new Date(),
       firmaImg,
-      rifiutoRegistro: !!rifiutoRegistro,
+      rifiutoRegistro: rifiutoRegistro !== undefined ? !!rifiutoRegistro : (doc.firma?.rifiutoRegistro ?? false),
       nome: nome || doc.firma?.nome,
     };
     doc.stato = 'firmato';

@@ -202,7 +202,7 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
         const nomeFirmatario = doc.firma.nome || 'Sottoscrittore';
         pdf.text(`Firmato da: ${nomeFirmatario} il ${formatData(doc.firma.firmatoIl)}`, 60, sy);
         sy += 16;
-        if (doc.tipo === 'fattura') {
+        if (doc.tipo === 'preventivo') {
           if (doc.firma.rifiutoRegistro) {
             pdf.text('Il paziente/caregiver ha esplicitamente RIFIUTATO la comunicazione dei dati al Sistema TS (spese sanitarie).', 60, sy);
           } else {
@@ -223,12 +223,19 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
         }
       } else {
         pdf.rect(50, signatureY, 500, 110).fillAndStroke('#ffffff', '#e2e8f0');
-        pdf.font('Helvetica-Bold').fontSize(10).fillColor('#1e4d8c').text('FIRMA PER ACCETTAZIONE / RIFIUTO COMUNICAZIONE SISTEMA TS', 60, signatureY + 10);
-        pdf.font('Helvetica').fontSize(9).fillColor('#000000');
-        pdf.text('Il paziente/caregiver, preso atto del documento, dichiara:', 60, signatureY + 28);
-        pdf.text('☐ ACCONSENTE alla comunicazione dei dati al Sistema TS (spese sanitarie)', 60, signatureY + 46);
-        pdf.text('☐ RIFIUTA la comunicazione dei dati al Sistema TS (spese sanitarie)', 60, signatureY + 62);
-        pdf.text('Firma: ____________________________________________    Data: _______________', 60, signatureY + 88);
+        if (doc.tipo === 'fattura') {
+          pdf.font('Helvetica-Bold').fontSize(10).fillColor('#1e4d8c').text('FIRMA PER ACCETTAZIONE', 60, signatureY + 10);
+          pdf.font('Helvetica').fontSize(9).fillColor('#000000');
+          pdf.text('Il paziente/caregiver, preso atto del documento, dichiara di accettare quanto indicato.', 60, signatureY + 28);
+          pdf.text('Firma: ____________________________________________    Data: _______________', 60, signatureY + 52);
+        } else {
+          pdf.font('Helvetica-Bold').fontSize(10).fillColor('#1e4d8c').text('FIRMA PER ACCETTAZIONE / RIFIUTO COMUNICAZIONE SISTEMA TS', 60, signatureY + 10);
+          pdf.font('Helvetica').fontSize(9).fillColor('#000000');
+          pdf.text('Il paziente/caregiver, preso atto del documento, dichiara:', 60, signatureY + 28);
+          pdf.text('☐ ACCONSENTE alla comunicazione dei dati al Sistema TS (spese sanitarie)', 60, signatureY + 46);
+          pdf.text('☐ RIFIUTA la comunicazione dei dati al Sistema TS (spese sanitarie)', 60, signatureY + 62);
+          pdf.text('Firma: ____________________________________________    Data: _______________', 60, signatureY + 88);
+        }
       }
 
       // ─── Footer

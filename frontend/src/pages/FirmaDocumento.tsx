@@ -13,6 +13,7 @@ export default function FirmaDocumento() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [firma, setFirma] = useState<string | null>(null);
   const [rifiutoRegistro, setRifiutoRegistro] = useState(false);
+  const [consensoRegistro, setConsensoRegistro] = useState(false);
   const [nome, setNome] = useState('');
   const [sending, setSending] = useState(false);
 
@@ -39,6 +40,10 @@ export default function FirmaDocumento() {
 
         setDoc(infoRes.data);
         setNome(infoRes.data.patient?.firstName || '');
+        setRifiutoRegistro(infoRes.data.rifiutoRegistro ?? false);
+        if (infoRes.data.tipo === 'preventivo') {
+          setConsensoRegistro(infoRes.data.giaFirmato ? !(infoRes.data.rifiutoRegistro ?? true) : false);
+        }
         const blob = new Blob([pdfRes.data], { type: 'application/pdf' });
         objectUrl = URL.createObjectURL(blob);
         setPdfUrl(objectUrl);
@@ -63,7 +68,7 @@ export default function FirmaDocumento() {
     try {
       await api.post(`/fatturazione-documenti/firma/${token}`, {
         firmaImg: firma,
-        rifiutoRegistro,
+        rifiutoRegistro: doc?.tipo === 'preventivo' ? !consensoRegistro : rifiutoRegistro,
         nome,
       });
       setStato('firmato');
@@ -139,17 +144,17 @@ export default function FirmaDocumento() {
               </div>
             )}
 
-            {doc.tipo === 'fattura' && (
+            {doc.tipo === 'preventivo' && (
               <div className="tw-bg-amber-50 tw-rounded-lg tw-p-4 tw-mb-5 tw-border tw-border-amber-200">
                 <label className="tw-flex tw-items-start tw-gap-3 tw-cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={rifiutoRegistro}
-                    onChange={(e) => setRifiutoRegistro(e.target.checked)}
+                    checked={consensoRegistro}
+                    onChange={(e) => setConsensoRegistro(e.target.checked)}
                     className="tw-mt-1"
                   />
                   <span className="tw-text-sm tw-text-amber-900">
-                    <strong>Rifiuto esplicito</strong>: non desidero la comunicazione dei dati della prestazione al Sistema TS.
+                    <strong>Acconsento</strong> alla comunicazione dei dati al Sistema TS (spese sanitarie).
                   </span>
                 </label>
               </div>
@@ -169,7 +174,7 @@ export default function FirmaDocumento() {
             <FirmaCanvas
               label="Firma con dito o penna"
               sublabel={doc.tipo === 'fattura'
-                ? (rifiutoRegistro ? 'Firma per dichiarare il rifiuto del Sistema TS' : 'Firma per accettazione del documento')
+                ? 'Firma per accettazione della fattura'
                 : 'Firma per accettazione del preventivo'
               }
               onFirmaCompleta={setFirma}
