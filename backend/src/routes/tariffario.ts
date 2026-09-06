@@ -59,6 +59,37 @@ export async function migraEsamiStrumentaliTariffario() {
   }
 }
 
+const NOMI_ASSISTENZA_TRASPORTO = ['Bagno a letto', 'Assistenza OSS', 'Assistenza notturna (notte h21–h07)', 'Assistenza infermieristica', 'Assistenza infermieristica notturna (h21–h07)'];
+const VOCI_ASSISTENZA_SEED = TARIFFARIO_SEED.filter(v => v.categoria === 'assistenza_trasporto' && NOMI_ASSISTENZA_TRASPORTO.includes(v.nome));
+
+export async function migraVociAssistenzaTariffario() {
+  try {
+    const res = await Tariffario.updateMany(
+      {
+        categoria: 'prestazioni_infermieristiche',
+        nome: { $in: NOMI_ASSISTENZA_TRASPORTO },
+      },
+      { $set: { categoria: 'assistenza_trasporto', isEsameStrumentale: false } }
+    );
+    if (res.modifiedCount > 0) {
+      console.log(`✅ Tariffario: spostate ${res.modifiedCount} voci assistenza in Assistenza e Trasporto.`);
+    }
+
+    // Carica eventuali voci mancanti
+    const esistenti = await Tariffario.find({ nome: { $in: NOMI_ASSISTENZA_TRASPORTO } }).select('nome').lean();
+    const esistentiNomi = new Set(esistenti.map((d: any) => d.nome));
+    const mancanti = VOCI_ASSISTENZA_SEED
+      .filter(v => !esistentiNomi.has(v.nome))
+      .map(v => ({ ...v, attivo: true, isEsameStrumentale: false }));
+    if (mancanti.length > 0) {
+      await Tariffario.insertMany(mancanti);
+      console.log(`✅ Tariffario: caricate ${mancanti.length} voci assistenza.`);
+    }
+  } catch (err) {
+    console.error('Errore migrazione voci assistenza tariffario:', err);
+  }
+}
+
 // GET /api/tariffario — lista completa (tutti gli utenti autenticati)
 router.get('/', authenticateToken, async (req: Request, res: Response) => {
   try {
