@@ -1,4 +1,4 @@
-﻿import { FormEvent, useEffect, useRef, useState } from 'react';
+﻿import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -31,23 +31,20 @@ import { Badge } from '../components/ui/Badge';
 import { DictationMicButton } from '../components/DictationMicButton';
 import FirmaCanvas from '../components/FirmaCanvas';
 
-// ─── Tipi esame disponibili ───────────────────────────────────────────────────
-const TIPI_ESAME = [
-  { value: 'ECG', label: 'ECG' },
-  { value: 'Holter ECG', label: 'Holter ECG' },
-  { value: 'Holter pressorio', label: 'Holter pressorio' },
-  { value: 'Glicemia', label: 'Glicemia' },
-  { value: 'EGA', label: 'EGA (Emogasanalisi)' },
-  { value: 'Polisonnografia', label: 'Polisonnografia' },
-  { value: 'Titolazione CPAP', label: 'Titolazione CPAP' },
-  { value: 'Spirometria', label: 'Spirometria' },
-  { value: 'Ecocardiogramma', label: 'Ecocardiogramma' },
-  { value: 'Altro', label: 'Altro' },
-];
-
 // ─── Interfacce ───────────────────────────────────────────────────────────────
 interface PatientOption { _id: string; firstName: string; lastName: string; }
 interface StaffMember { _id: string; firstName: string; lastName: string; role: string; active: boolean; }
+interface VoceTariffario {
+  _id: string;
+  categoria: string;
+  nome: string;
+  prezzo: number;
+  unitaMisura?: string;
+  note?: string;
+  attivo: boolean;
+  ordine: number;
+  isEsameStrumentale?: boolean;
+}
 
 interface DiariaVoce {
   _id: string;
@@ -130,6 +127,7 @@ const fmtSize = (bytes: number) => bytes < 1024 * 1024 ? `${Math.round(bytes / 1
 export default function EsamiStrumentali() {
   const { user } = useAuth();
   const [esami, setEsami] = useState<EsameItem[]>([]);
+  const [tariffario, setTariffario] = useState<VoceTariffario[]>([]);
   const [patients, setPatients] = useState<PatientOption[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -204,12 +202,14 @@ export default function EsamiStrumentali() {
     try {
       const params: any = {};
       if (mostraArchiviati) params.archiviati = 'true';
-      const [esamiRes, patRes, staffRes] = await Promise.all([
+      const [esamiRes, tariffarioRes, patRes, staffRes] = await Promise.all([
         api.get('/esami-strumentali', { params }),
+        api.get('/tariffario', { params: { soloAttivi: 'true' } }),
         isPrivilegiato ? api.get('/patients') : Promise.resolve({ data: [] }),
         isPrivilegiato ? api.get('/staff') : Promise.resolve({ data: [] }),
       ]);
       setEsami(esamiRes.data);
+      setTariffario(tariffarioRes.data);
       setPatients(patRes.data);
       setStaffMembers(staffRes.data);
     } catch (err) {
@@ -218,6 +218,27 @@ export default function EsamiStrumentali() {
       setLoading(false);
     }
   };
+
+  // ─── Tariffario esami strumentali ───────────────────────────────────────────
+  const tariffeEsami = useMemo(() => tariffario
+    .filter(v => v.isEsameStrumentale)
+    .sort((a, b) => (a.ordine ?? 0) - (b.ordine ?? 0) || a.nome.localeCompare(b.nome)),
+  [tariffario]);
+
+  const tariffePerCategoria = useMemo(() => {
+    const map = new Map<string, VoceTariffario[]>();
+    const labels: Record<string, string> = {
+      prestazioni_infermieristiche: 'Cardiologia / Fisiologia',
+      radiologia: 'Radiologia (RX)',
+      ecografia: 'Ecografie / Ecocolordoppler',
+    };
+    tariffeEsami.forEach(v => {
+      const cat = v.categoria;
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(v);
+    });
+    return { map, labels };
+  }, [tariffeEsami]);
 
   // ─── Filtro lista ───────────────────────────────────────────────────────────
   const esamiFiltrati = esami.filter(e => {
@@ -795,19 +816,20 @@ export default function EsamiStrumentali() {
               <label>
                 Tipi esame *
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px', maxHeight: '150px', overflowY: 'auto' }}>
-                  {TIPI_ESAME.map(tipo => {
-                    const selected = formTipiEsame.includes(tipo.value);
+                  {tariffeEsami.map(v => {
+                    const selected = formTipiEsame.includes(v.nome);
                     return (
                       <button
-                        key={tipo.value}
+                        key={v._id}
                         type="button"
                         onClick={() => {
                           if (selected) {
-                            setFormTipiEsame(prev => prev.filter(t => t !== tipo.value));
+                            setFormTipiEsame(prev => prev.filter(t => t !== v.nome));
                           } else {
-                            setFormTipiEsame(prev => [...prev, tipo.value]);
+                            setFormTipiEsame(prev => [...prev, v.nome]);
                           }
                         }}
+                        title={v.unitaMisura ? `€${v.prezzo.toFixed(2)} — ${v.unitaMisura}` : `€${v.prezzo.toFixed(2)}`}
                         style={{
                           padding: '6px 10px',
                           borderRadius: '6px',
@@ -819,7 +841,7 @@ export default function EsamiStrumentali() {
                           fontWeight: selected ? 600 : 400,
                         }}
                       >
-                        {selected && '✓ '}{tipo.label}
+                        {selected && '✓ '}{v.nome} <span style={{ opacity: 0.7, fontSize: '0.7rem' }}>€{v.prezzo.toFixed(2)}</span>
                       </button>
                     );
                   })}
@@ -847,6 +869,39 @@ export default function EsamiStrumentali() {
                 Crea Esame
               </button>
             </form>
+          </div>
+        )}
+
+        {/* ── TARIFFARIO ESAMI STRUMENTALI ── */}
+        {tariffeEsami.length > 0 && (
+          <div className="dashboard-folder">
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: 0 }}>
+              <FileText size={20} color="#e11d48" />
+              Tariffario Esami Strumentali
+            </h3>
+            {Array.from(tariffePerCategoria.map.entries()).map(([cat, voci]) => (
+              <div key={cat} style={{ marginBottom: '16px' }}>
+                <h4 style={{ color: '#374151', margin: '0 0 8px', fontSize: '0.95rem' }}>{tariffePerCategoria.labels[cat] || cat}</h4>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                      <th style={{ padding: '6px 8px' }}>Prestazione</th>
+                      <th style={{ padding: '6px 8px' }}>Unità</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Prezzo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {voci.map(v => (
+                      <tr key={v._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '6px 8px' }}>{v.nome}</td>
+                        <td style={{ padding: '6px 8px', color: '#6b7280' }}>{v.unitaMisura || '—'}</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#e11d48' }}>€{v.prezzo.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))}
           </div>
         )}
 

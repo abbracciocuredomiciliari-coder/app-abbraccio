@@ -5,6 +5,7 @@ export interface VoceTariffarioSeed {
   unitaMisura?: string;
   note?: string;
   ordine: number;
+  isEsameStrumentale?: boolean;
 }
 
 // Listino prezzi di default — importato dal tariffario cartaceo fornito.

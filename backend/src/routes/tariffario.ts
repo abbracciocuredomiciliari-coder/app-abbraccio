@@ -9,6 +9,14 @@ const router = Router();
 
 const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
 
+const NOMI_ESAMI_STRUMENTALI = ['ECG', 'Holter cardiaco', 'Holter pressorio', 'Spirometria', 'Polisonnigrafo', 'Polisonnografia'];
+
+function calcolaIsEsameStrumentale(categoria: string, nome: string): boolean {
+  return categoria === 'radiologia' ||
+    categoria === 'ecografia' ||
+    NOMI_ESAMI_STRUMENTALI.includes(nome.trim());
+}
+
 // ─── Auto-seed idempotente: se il listino è vuoto, popola con i valori di default ───
 export async function seedTariffarioSeVuoto() {
   try {
@@ -19,6 +27,35 @@ export async function seedTariffarioSeVuoto() {
     }
   } catch (err) {
     console.error('Errore seed tariffario:', err);
+  }
+}
+
+export async function migraEsamiStrumentaliTariffario() {
+  try {
+    const res = await Tariffario.updateMany(
+      {
+        $and: [
+          {
+            $or: [
+              { categoria: { $in: ['radiologia', 'ecografia'] } },
+              { categoria: 'prestazioni_infermieristiche', nome: { $in: NOMI_ESAMI_STRUMENTALI } },
+            ],
+          },
+          {
+            $or: [
+              { isEsameStrumentale: { $exists: false } },
+              { isEsameStrumentale: false },
+            ],
+          },
+        ],
+      },
+      { $set: { isEsameStrumentale: true } }
+    );
+    if (res.modifiedCount > 0) {
+      console.log(`✅ Tariffario: marcati ${res.modifiedCount} esami strumentali.`);
+    }
+  } catch (err) {
+    console.error('Errore migrazione esami strumentali tariffario:', err);
   }
 }
 
@@ -47,6 +84,7 @@ router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('
       categoria, nome, prezzo, unitaMisura, note,
       ordine: ordine || 0,
       aggiornatoDa: user?.email,
+      isEsameStrumentale: calcolaIsEsameStrumentale(categoria, nome),
     });
     return res.status(201).json(voce);
   } catch (error: any) {
@@ -58,9 +96,10 @@ router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('
 router.put('/:id', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('tariffario', 'UPDATE'), async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user as { email?: string } | undefined;
+    const isEsame = calcolaIsEsameStrumentale(req.body.categoria || '', req.body.nome || '');
     const voce = await Tariffario.findByIdAndUpdate(
       req.params.id,
-      { ...req.body, aggiornatoDa: user?.email },
+      { ...req.body, aggiornatoDa: user?.email, isEsameStrumentale: isEsame },
       { new: true, runValidators: true }
     );
     if (!voce) return res.status(404).json({ message: 'Voce non trovata' });

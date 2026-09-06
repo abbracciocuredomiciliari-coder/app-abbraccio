@@ -13,6 +13,7 @@ interface VoceTariffario {
   note?: string;
   attivo: boolean;
   ordine: number;
+  isEsameStrumentale?: boolean;
 }
 
 const CATEGORIE: { value: VoceTariffario['categoria']; label: string; color: string }[] = [
@@ -47,7 +48,7 @@ export default function Tariffario() {
   useEffect(() => { carica(); }, []);
 
   const vociFiltrate = useMemo(() => {
-    let list = voci;
+    let list = voci.filter(v => !v.isEsameStrumentale);
     if (catFiltro !== 'tutte') list = list.filter(v => v.categoria === catFiltro);
     const t = search.toLowerCase().trim();
     if (t) list = list.filter(v => v.nome.toLowerCase().includes(t));

@@ -9,6 +9,7 @@ export interface ITariffario extends Document {
   attivo: boolean;
   ordine: number;
   aggiornatoDa?: string;
+  isEsameStrumentale?: boolean;
 }
 
 const tariffarioSchema = new Schema<ITariffario>(
@@ -25,6 +26,7 @@ const tariffarioSchema = new Schema<ITariffario>(
     attivo: { type: Boolean, default: true },
     ordine: { type: Number, default: 0 },
     aggiornatoDa: { type: String, trim: true },
+    isEsameStrumentale: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

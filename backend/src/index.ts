@@ -46,7 +46,7 @@ import formazioneSanitariaRouter from './routes/formazioneSanitaria';
 import verbaliEquipeRouter from './routes/verbaliEquipe';
 import relazioniVocaliRouter from './routes/relazioniVocali';
 import telemedicinaRouter from './routes/telemedicina';
-import tariffarioRouter, { seedTariffarioSeVuoto } from './routes/tariffario';
+import tariffarioRouter, { seedTariffarioSeVuoto, migraEsamiStrumentaliTariffario } from './routes/tariffario';
 import fatturazioneDocumentiRouter from './routes/fatturazioneDocumenti';
 
 if (!process.env.JWT_SECRET) {
@@ -138,6 +138,7 @@ const proteggiUploads = (req: Request, res: Response, next: NextFunction) => {
 
 connectDB();
 seedTariffarioSeVuoto();
+migraEsamiStrumentaliTariffario();
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'App Abbraccio API in esecuzione' });
