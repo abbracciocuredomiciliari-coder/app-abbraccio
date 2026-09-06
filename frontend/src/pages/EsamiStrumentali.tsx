@@ -245,11 +245,11 @@ export default function EsamiStrumentali() {
     const term = searchTerm.toLowerCase();
     const tipoEsameStr = Array.isArray(e.tipoEsame) ? e.tipoEsame.join(' ') : e.tipoEsame;
     const matchSearch = !term ||
-      e.patient.firstName.toLowerCase().includes(term) ||
-      e.patient.lastName.toLowerCase().includes(term) ||
+      (e.patient?.firstName || '').toLowerCase().includes(term) ||
+      (e.patient?.lastName || '').toLowerCase().includes(term) ||
       tipoEsameStr.toLowerCase().includes(term) ||
-      e.staff.firstName.toLowerCase().includes(term) ||
-      e.staff.lastName.toLowerCase().includes(term);
+      (e.staff?.firstName || '').toLowerCase().includes(term) ||
+      (e.staff?.lastName || '').toLowerCase().includes(term);
     const matchStato = !filtroStato || e.status === filtroStato;
     return matchSearch && matchStato;
   });
@@ -383,7 +383,7 @@ export default function EsamiStrumentali() {
     if (!selectedEsame || !nuovaDiaria.trim()) return;
     setGeneratingAiDiaria(true);
     try {
-      const contesto = `Diaria clinica — esame ${Array.isArray(selectedEsame.tipoEsame) ? selectedEsame.tipoEsame.join(', ') : selectedEsame.tipoEsame} — paziente ${selectedEsame.patient.firstName} ${selectedEsame.patient.lastName}`;
+      const contesto = `Diaria clinica — esame ${Array.isArray(selectedEsame.tipoEsame) ? selectedEsame.tipoEsame.join(', ') : selectedEsame.tipoEsame} — paziente ${selectedEsame.patient?.firstName || ''} ${selectedEsame.patient?.lastName || ''}`;
       const res = await api.post('/relazioni-vocali/diaria', {
         dettatura: nuovaDiaria.trim(),
         contesto,
@@ -401,7 +401,7 @@ export default function EsamiStrumentali() {
     if (!selectedEsame || !testoReferto.trim()) return;
     setGeneratingAiReferto(true);
     try {
-      const contesto = `Referto medico — esame ${Array.isArray(selectedEsame.tipoEsame) ? selectedEsame.tipoEsame.join(', ') : selectedEsame.tipoEsame} — paziente ${selectedEsame.patient.firstName} ${selectedEsame.patient.lastName}`;
+      const contesto = `Referto medico — esame ${Array.isArray(selectedEsame.tipoEsame) ? selectedEsame.tipoEsame.join(', ') : selectedEsame.tipoEsame} — paziente ${selectedEsame.patient?.firstName || ''} ${selectedEsame.patient?.lastName || ''}`;
       const res = await api.post('/relazioni-vocali/diaria', {
         dettatura: testoReferto.trim(),
         contesto,
@@ -549,7 +549,7 @@ export default function EsamiStrumentali() {
 
   // ─── Archivia esame ─────────────────────────────────────────────────────────
   const archiviaEsame = async (esame: EsameItem) => {
-    if (!confirm(`Archiviare definitivamente l'esame ${esame.tipoEsame} di ${esame.patient.firstName} ${esame.patient.lastName}?`)) return;
+    if (!confirm(`Archiviare definitivamente l'esame ${esame.tipoEsame} di ${esame.patient?.firstName || ''} ${esame.patient?.lastName || ''}?`)) return;
     try {
       await api.post(`/esami-strumentali/${esame._id}/archivia`);
       await loadData();
@@ -975,7 +975,7 @@ export default function EsamiStrumentali() {
                     {/* Info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                        <strong style={{ fontSize: '0.95rem' }}>{esame.patient.firstName} {esame.patient.lastName}</strong>
+                        <strong style={{ fontSize: '0.95rem' }}>{esame.patient?.firstName || '—'} {esame.patient?.lastName || ''}</strong>
                         <span style={{ fontSize: '0.78rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', backgroundColor: '#fff1f2', color: '#e11d48' }}>
                           {esame.tipoEsame}
                         </span>
@@ -985,7 +985,7 @@ export default function EsamiStrumentali() {
                       </div>
                       <p style={{ margin: '0 0 3px', fontSize: '0.82rem', color: 'var(--gray-500)', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                         <span><Calendar size={12} style={{ verticalAlign: 'middle' }} /> {fmtDate(esame.dataEsame)}{esame.orario ? ` alle ${esame.orario}` : ''}</span>
-                        <span><User size={12} style={{ verticalAlign: 'middle' }} /> {esame.staff.firstName} {esame.staff.lastName}</span>
+                        <span><User size={12} style={{ verticalAlign: 'middle' }} /> {esame.staff?.firstName || '—'} {esame.staff?.lastName || ''}</span>
                       </p>
                       <div style={{ display: 'flex', gap: '8px', marginTop: '4px', fontSize: '0.75rem', color: 'var(--gray-500)' }}>
                         <span>📓 {esame.diaria.length} diaria</span>
@@ -1070,12 +1070,12 @@ export default function EsamiStrumentali() {
                   </span>
                 </div>
                 <p style={{ margin: 0, color: '#555', fontSize: '0.9rem' }}>
-                  <strong>{selectedEsame.patient.firstName} {selectedEsame.patient.lastName}</strong>
+                  <strong>{selectedEsame.patient?.firstName || '—'} {selectedEsame.patient?.lastName || ''}</strong>
                   {' — '}
                   {fmtDate(selectedEsame.dataEsame)}{selectedEsame.orario ? ` alle ${selectedEsame.orario}` : ''}
                 </p>
                 <p style={{ margin: '2px 0 0', color: '#888', fontSize: '0.82rem' }}>
-                  Operatore: {selectedEsame.staff.firstName} {selectedEsame.staff.lastName} ({selectedEsame.staff.role})
+                  Operatore: {selectedEsame.staff?.firstName || '—'} {selectedEsame.staff?.lastName || ''} ({selectedEsame.staff?.role || ''})
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
