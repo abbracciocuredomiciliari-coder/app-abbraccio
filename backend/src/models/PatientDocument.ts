@@ -1,6 +1,6 @@
 import { Document, Schema, model, Types } from 'mongoose';
 
-export type DocumentCategory = 'cartella_clinica' | 'esame' | 'risultato_analisi' | 'consulenza' | 'contratto_incarico';
+export type DocumentCategory = 'cartella_clinica' | 'esame' | 'risultato_analisi' | 'consulenza' | 'contratto_incarico' | 'consenso_gdpr';
 
 export interface IPatientDocument extends Document {
   patient: Types.ObjectId;
@@ -23,7 +23,7 @@ const patientDocumentSchema = new Schema<IPatientDocument>(
     category: { 
       type: String, 
       required: true, 
-      enum: ['cartella_clinica', 'esame', 'risultato_analisi', 'consulenza', 'contratto_incarico'] 
+      enum: ['cartella_clinica', 'esame', 'risultato_analisi', 'consulenza', 'contratto_incarico', 'consenso_gdpr'] 
     },
     title: { type: String, required: true, trim: true },
     description: { type: String, trim: true },

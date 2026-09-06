@@ -59,9 +59,11 @@ export default function FirmaContrattoPaziente() {
     setLoading(true);
     try {
       await api.post(`/contratti-pazienti/firma/${token}`, { firmaImg: firma, nome, luogoFirma, gdprAccettato });
+      setErrMsg('');
       setStato('firmato');
     } catch (err: any) {
       setErrMsg(err?.response?.data?.message || 'Errore nel salvataggio della firma. Riprova.');
+      setStato('errore');
     } finally {
       setLoading(false);
     }
