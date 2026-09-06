@@ -476,9 +476,16 @@ export default function CentroPrenotazioni() {
                     notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined,
                     tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0,
                 });
-                const pazSel = pazienti.find(p => p._id === fpPaz);
-                if (fpCosto > 0 && pazSel)
-                    setPendingDoc({ patientId: fpPaz, patientNome: `${pazSel.firstName} ${pazSel.lastName}`, task: fpTask, costo: fpCosto, planId: res.data._id, dataPrestazione: fpDate });
+                try {
+                    await api.post('/fatturazione-documenti', {
+                        tipo: 'preventivo',
+                        patient: fpPaz,
+                        riferimentoTipo: 'workplan',
+                        riferimentoId: res.data._id,
+                        dataPrestazione: fpDate,
+                        prestazioni: [{ descrizione: fpTask, quantita: 1, prezzoUnitario: fpCosto }],
+                    });
+                } catch (e: any) { /* preventivo non bloccante */ }
                 await loadPiani();
                 resetFPiano();
                 setShowFPiano(false);
@@ -499,9 +506,16 @@ export default function CentroPrenotazioni() {
             try {
                 const giorniAttivi = fpGiorni.filter(g => g.attivo).map(g => ({ giorno: g.giorno, accessiAlGiorno: g.accessiAlGiorno, minutiPerAccesso: g.minutiPerAccesso }));
                 const res = await api.post('/workplan', { type: fpTipo, categories: fpCats, patient: fpPaz, staff: fpStaff || undefined, task: fpTask, date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpOre * 60, notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined, tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0 });
-                const pazSel = pazienti.find(p => p._id === fpPaz);
-                if (fpCosto > 0 && pazSel)
-                    setPendingDoc({ patientId: fpPaz, patientNome: `${pazSel.firstName} ${pazSel.lastName}`, task: fpTask, costo: fpCosto, planId: res.data._id, dataPrestazione: fpDate });
+                try {
+                    await api.post('/fatturazione-documenti', {
+                        tipo: 'preventivo',
+                        patient: fpPaz,
+                        riferimentoTipo: 'workplan',
+                        riferimentoId: res.data._id,
+                        dataPrestazione: fpDate,
+                        prestazioni: [{ descrizione: fpTask, quantita: 1, prezzoUnitario: fpCosto }],
+                    });
+                } catch (e: any) { /* preventivo non bloccante */ }
                 await loadPiani();
                 resetFPiano();
                 setShowFPiano(false);

@@ -332,6 +332,43 @@ router.patch('/:id/numero', authenticateToken, authorizeRole(...RUOLI_GESTIONE),
   }
 });
 
+// PUT /api/fatturazione-documenti/:id — modifica voci e totale (solo gestione, documento emesso)
+router.put('/:id', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('fatturazione_documenti', 'UPDATE'), async (req: Request, res: Response) => {
+  try {
+    const { prestazioni, note } = req.body;
+    const doc = await DocumentoFatturazione.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: 'Documento non trovato' });
+    if (doc.stato !== 'emesso') {
+      return res.status(400).json({ message: 'Solo i documenti emessi possono essere modificati' });
+    }
+    if (!Array.isArray(prestazioni) || prestazioni.length === 0) {
+      return res.status(400).json({ message: 'Specificare almeno una prestazione' });
+    }
+    const prestazioniNormalizzate = prestazioni.map((p: any) => {
+      const quantita = Number(p.quantita) > 0 ? Number(p.quantita) : 1;
+      const prezzoUnitario = Number(p.prezzoUnitario) || 0;
+      return {
+        descrizione: String(p.descrizione || '').trim(),
+        quantita,
+        prezzoUnitario,
+        importo: Math.round(quantita * prezzoUnitario * 100) / 100,
+      };
+    }).filter((p: any) => p.descrizione);
+    if (prestazioniNormalizzate.length === 0) {
+      return res.status(400).json({ message: 'Le prestazioni indicate non sono valide' });
+    }
+    const totale = Math.round(prestazioniNormalizzate.reduce((acc: number, p: any) => acc + p.importo, 0) * 100) / 100;
+    doc.prestazioni = prestazioniNormalizzate;
+    doc.totale = totale;
+    if (note !== undefined) doc.note = note;
+    await doc.save();
+    const docPopolato = await DocumentoFatturazione.findById(doc._id).populate('patient', 'firstName lastName codiceFiscale address email');
+    return res.json(docPopolato);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore nella modifica del documento', error: error.message });
+  }
+});
+
 // PATCH /api/fatturazione-documenti/:id/annulla — annulla un documento (solo gestione)
 router.patch('/:id/annulla', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('fatturazione_documenti', 'UPDATE'), async (req: Request, res: Response) => {
   try {

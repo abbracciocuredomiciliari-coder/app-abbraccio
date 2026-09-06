@@ -97,6 +97,11 @@ export default function GestioneFatturazione() {
   const [numeroNuovo, setNumeroNuovo] = useState('');
   const [numeroLoading, setNumeroLoading] = useState(false);
 
+  const [editModalDoc, setEditModalDoc] = useState<DocumentoFatturazione | null>(null);
+  const [editPrestazioni, setEditPrestazioni] = useState<{ descrizione: string; quantita: number; prezzoUnitario: number }[]>([]);
+  const [editNote, setEditNote] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
+
   const [preventivoModalWp, setPreventivoModalWp] = useState<WorkPlanItem | null>(null);
   const [preventivoData, setPreventivoData] = useState('');
   const [preventivoTipo, setPreventivoTipo] = useState<'giornaliero' | 'orario' | 'fisso'>('fisso');
@@ -261,6 +266,58 @@ export default function GestioneFatturazione() {
       alert(err?.response?.data?.message || 'Errore aggiornamento numero');
     } finally {
       setNumeroLoading(false);
+    }
+  };
+
+  const apriModificaVoci = (doc: DocumentoFatturazione) => {
+    setEditModalDoc(doc);
+    setEditPrestazioni(doc.prestazioni.map(p => ({ descrizione: p.descrizione, quantita: p.quantita, prezzoUnitario: p.prezzoUnitario })));
+    setEditNote(doc.note || '');
+  };
+
+  const chiudiModificaVoci = () => {
+    setEditModalDoc(null);
+    setEditPrestazioni([]);
+    setEditNote('');
+    setEditLoading(false);
+  };
+
+  const aggiornaVoce = (i: number, field: 'descrizione' | 'quantita' | 'prezzoUnitario', value: string | number) => {
+    setEditPrestazioni(prev => prev.map((p, j) => j === i ? { ...p, [field]: value } : p));
+  };
+
+  const aggiungiVoce = () => {
+    setEditPrestazioni(prev => [...prev, { descrizione: '', quantita: 1, prezzoUnitario: 0 }]);
+  };
+
+  const rimuoviVoce = (i: number) => {
+    setEditPrestazioni(prev => prev.filter((_, j) => j !== i));
+  };
+
+  const totaleEdit = useMemo(() => {
+    return Math.round(editPrestazioni.reduce((acc, p) => acc + ((Number(p.quantita) || 0) * (Number(p.prezzoUnitario) || 0)), 0) * 100) / 100;
+  }, [editPrestazioni]);
+
+  const salvaVoci = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!editModalDoc) return;
+    if (editPrestazioni.length === 0 || editPrestazioni.some(p => !p.descrizione.trim())) {
+      alert('Ogni voce deve avere una descrizione');
+      return;
+    }
+    setEditLoading(true);
+    try {
+      await api.put(`/fatturazione-documenti/${editModalDoc._id}`, {
+        prestazioni: editPrestazioni.map(p => ({ descrizione: p.descrizione.trim(), quantita: Number(p.quantita), prezzoUnitario: Number(p.prezzoUnitario) })),
+        note: editNote,
+      });
+      alert('Documento aggiornato');
+      chiudiModificaVoci();
+      await caricaDocumenti();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore aggiornamento voci');
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -710,6 +767,9 @@ export default function GestioneFatturazione() {
                               <button onClick={() => scaricaDocumentoFirmato(doc)} title="Scarica PDF firmato" style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#166534' }}><Download size={14} /></button>
                             )}
                             <button onClick={() => apriInvioEmail(doc)} title="Invia via email" style={{ background: '#f0fdf4', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#16a34a' }}><Mail size={14} /></button>
+                            {doc.stato === 'emesso' && !doc.firma?.email && !doc.firma?.token && (
+                              <button onClick={() => apriModificaVoci(doc)} title="Modifica voci" style={{ background: '#e0f2fe', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0284c7' }}><Pencil size={14} /></button>
+                            )}
                             <button onClick={() => apriModificaNumero(doc)} title="Modifica numero" style={{ background: '#fefce8', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#ca8a04' }}><Pencil size={14} /></button>
                             {doc.tipo === 'preventivo' && doc.stato === 'emesso' && !doc.firma?.email && !doc.firma?.token && (
                               <button onClick={() => convertiInFattura(doc)} title="Genera fattura da questo preventivo" style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', color: '#166534', fontSize: '0.78rem', fontWeight: 600 }}>→ Fattura</button>
@@ -930,6 +990,41 @@ export default function GestioneFatturazione() {
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 <button type="button" onClick={chiudiPreventivoModal} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', fontWeight: 600 }}>Annulla</button>
                 <button type="submit" disabled={preventivoLoading} style={{ padding: '10px 18px', borderRadius: '8px', border: 'none', background: '#1e4d8c', color: 'white', cursor: 'pointer', fontWeight: 700 }}>{preventivoLoading ? 'Generazione...' : 'Genera preventivo'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal modifica voci */}
+      {editModalDoc && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', zIndex: 1200 }} onClick={chiudiModificaVoci}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '640px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 16px', color: '#1e4d8c', fontSize: '1.1rem', fontWeight: 700 }}>
+              Modifica voci — {editModalDoc.numero}
+            </h3>
+            <form onSubmit={salvaVoci}>
+              <div style={{ marginBottom: '16px' }}>
+                {editPrestazioni.map((p, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '10px', alignItems: 'flex-end' }}>
+                    <input type="text" required value={p.descrizione} onChange={e => aggiornaVoce(i, 'descrizione', e.target.value)} placeholder="Descrizione" style={{ flex: 2, padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }} />
+                    <input type="number" min={0.01} step={0.01} required value={p.quantita} onChange={e => aggiornaVoce(i, 'quantita', Number(e.target.value))} style={{ width: '80px', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }} />
+                    <input type="number" min={0} step={0.01} required value={p.prezzoUnitario} onChange={e => aggiornaVoce(i, 'prezzoUnitario', Number(e.target.value))} style={{ width: '100px', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }} />
+                    <button type="button" onClick={() => rimuoviVoce(i)} style={{ padding: '8px 10px', borderRadius: '6px', border: 'none', background: '#fee2e2', color: '#b91c1c', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+                  </div>
+                ))}
+                <button type="button" onClick={aggiungiVoce} style={{ padding: '8px 14px', borderRadius: '6px', border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', fontWeight: 600 }}>+ Aggiungi voce</button>
+              </div>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>Note</label>
+                <textarea value={editNote} onChange={e => setEditNote(e.target.value)} rows={2} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#166534' }}>Totale: {formatEuro(totaleEdit)}</div>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={chiudiModificaVoci} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', fontWeight: 600 }}>Annulla</button>
+                <button type="submit" disabled={editLoading} style={{ padding: '10px 18px', borderRadius: '8px', border: 'none', background: '#1e4d8c', color: 'white', cursor: 'pointer', fontWeight: 700 }}>{editLoading ? 'Salvataggio...' : 'Salva'}</button>
               </div>
             </form>
           </div>
