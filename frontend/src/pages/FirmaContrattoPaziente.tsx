@@ -13,7 +13,7 @@ interface ContrattoData {
     contactPhone?: string;
     email?: string;
   };
-  profilo: 'OSS' | 'Infermiere';
+  profilo: 'OSS' | 'Infermiere' | 'Assistente familiare';
   importo: number;
   nome?: string;
 }
@@ -103,7 +103,7 @@ export default function FirmaContrattoPaziente() {
           <div>
             <div className="tw-bg-blue-50 tw-rounded-lg tw-py-3.5 tw-px-4 tw-mb-5 tw-border tw-border-blue-200">
               <p className="tw-m-0 tw-text-blue-800 tw-text-[0.9rem]">
-                Ciao <strong>{contratto.patient?.firstName} {contratto.patient?.lastName}</strong>, firma qui sotto il contratto d'incarico per il reclutamento di un <strong>{contratto.profilo === 'OSS' ? 'O.S.S.' : 'Infermiere Professionale'}</strong>.
+                Ciao <strong>{contratto.patient?.firstName} {contratto.patient?.lastName}</strong>, firma qui sotto il contratto d'incarico per il reclutamento di un <strong>{contratto.profilo === 'OSS' ? 'O.S.S.' : contratto.profilo === 'Infermiere' ? 'Infermiere Professionale' : 'Assistente familiare (badante/colf)'}</strong>.
               </p>
             </div>
 

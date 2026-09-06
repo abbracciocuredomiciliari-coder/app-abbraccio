@@ -402,19 +402,22 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
     if (!email) return res.status(400).json({ message: 'Email obbligatoria' });
 
     const contratto = await ContrattoPaziente.findById(req.params.id)
-      .populate('patient', 'firstName lastName');
+      .populate('patient', 'firstName lastName birthDate address contactPhone codiceFiscale email');
     if (!contratto) return res.status(404).json({ message: 'Contratto non trovato' });
     if (!contratto.token) contratto.token = crypto.randomBytes(32).toString('hex');
     contratto.email = email;
     await contratto.save();
 
+    const pazienteNorm = normalizzaPaziente(contratto.patient);
+    const htmlContratto = generaHtmlContratto(contratto, pazienteNorm, false);
+
     const frontendUrl = process.env.FRONTEND_URL || 'https://app.abbracciocuredomiciliari.it';
     const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
       <h2 style="color:#1e4d8c;margin-top:0;">Contratto d'incarico</h2>
-      <p>Gentile <strong>${(contratto.patient as any)?.firstName || ''} ${(contratto.patient as any)?.lastName || ''}</strong>,</p>
-      <p>in allegato trovi il contratto d'incarico per l'attività di reclutamento del profilo <strong>${contratto.profilo}</strong>.</p>
+      <p>Gentile <strong>${pazienteNorm.firstName || ''} ${pazienteNorm.lastName || ''}</strong>,</p>
+      <p>in allegato trovi il contratto d'incarico completo per l'attività di reclutamento del profilo <strong>${contratto.profilo}</strong>.</p>
       <p style="margin:16px 0;padding:16px;background:#eff6ff;border-left:4px solid #1e4d8c;border-radius:6px;">
-        Per firmare il contratto <strong>online con dito o penna</strong> clicca qui:<br/>
+        <strong>Leggi il contratto in allegato</strong>, poi per firmarlo <strong>online con dito o penna</strong> clicca qui:<br/>
         <a href="${frontendUrl}/firma-contratto-paziente?token=${contratto.token}" style="display:inline-block;margin-top:8px;background:#1e4d8c;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Firma contratto</a>
       </p>
       <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari S.R.L.S.</p>
@@ -422,8 +425,13 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
 
     await inviaEmail({
       to: email,
-      subject: `Contratto d'incarico — Abbraccio Cure Domiciliari`,
+      subject: `Contratto d'incarico ${contratto.profilo} — Abbraccio Cure Domiciliari`,
       html,
+      attachments: [{
+        filename: `contratto-incarico-${contratto.profilo.toLowerCase().replace(/\s+/g, '-')}.html`,
+        content: Buffer.from(htmlContratto, 'utf-8'),
+        contentType: 'text/html',
+      }],
     });
 
     return res.json({ message: 'Email inviata con successo' });
