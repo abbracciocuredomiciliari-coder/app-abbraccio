@@ -133,12 +133,12 @@ export default function AssegnazionePAI() {
 
   // ─── Crea piano/PAI ────────────────────────────────────────────────────────
   const creaPiano = async () => {
-    if (!pazienteSelezionato || !operatoreSelezionato) return;
+    if (!pazienteSelezionato) return;
     setSalvandoPiano(true);
     try {
       const body: any = {
         patient: pazienteSelezionato._id,
-        staff: operatoreSelezionato._id,
+        staff: operatoreSelezionato?._id || undefined,
         task: formPiano.task,
         date: formPiano.date,
         duration: formPiano.duration,
@@ -149,10 +149,13 @@ export default function AssegnazionePAI() {
         status: 'pending',
       };
       await api.post('/workplan', body);
-      setPianoCreatoMsg(`✅ ${isConvenzione ? 'PAI' : 'Piano di lavoro'} creato per ${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName} → ${operatoreSelezionato.firstName} ${operatoreSelezionato.lastName}`);
+      const opNome = operatoreSelezionato ? `${operatoreSelezionato.firstName} ${operatoreSelezionato.lastName}` : 'nessun operatore';
+      setPianoCreatoMsg(`✅ ${isConvenzione ? 'PAI' : 'Piano di lavoro'} creato per ${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName} → ${opNome}`);
       setShowFormPiano(false);
       setOperatoreSelezionato(null);
-    } catch { /* noop */ }
+    } catch (err: any) {
+      setPianoCreatoMsg(`❌ Errore: ${err?.response?.data?.message || err.message || 'salvataggio fallito'}`);
+    }
     setSalvandoPiano(false);
   };
 
@@ -321,6 +324,15 @@ export default function AssegnazionePAI() {
                   </button>
                 ))}
               </div>
+              <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => { setOperatoreSelezionato(null); setShowFormPiano(true); setPianoCreatoMsg(''); }}
+                  style={{ background: '#f8fafc', border: '1px solid #d1d5db', borderRadius: '8px', padding: '10px 14px', cursor: 'pointer', fontSize: '0.85rem', color: '#475569', fontWeight: 600 }}
+                >
+                  Procedi senza operatore
+                </button>
+              </div>
             </div>
           )}
 
@@ -363,7 +375,7 @@ export default function AssegnazionePAI() {
           </div>
 
           {/* Form crea piano/PAI */}
-          {showFormPiano && operatoreSelezionato && pazienteSelezionato && (
+          {showFormPiano && pazienteSelezionato && (
             <div style={{ background: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', border: `2px solid ${colore}40` }}>
               <h3 style={{ margin: '0 0 4px', color: colore, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <ClipboardList size={18} />
@@ -372,8 +384,12 @@ export default function AssegnazionePAI() {
               <p style={{ margin: '0 0 16px', fontSize: '0.83rem', color: '#64748b' }}>
                 {pazienteSelezionato.firstName} {pazienteSelezionato.lastName}
                 {' → '}
-                <strong>{operatoreSelezionato.firstName} {operatoreSelezionato.lastName}</strong>
-                {' ('}📍 {operatoreSelezionato.distanzaKm} km{')'}
+                <strong>{operatoreSelezionato ? `${operatoreSelezionato.firstName} ${operatoreSelezionato.lastName}` : 'Nessun operatore assegnato'}</strong>
+                {operatoreSelezionato && ` (📍 ${operatoreSelezionato.distanzaKm} km)`}
+                {' '}
+                {operatoreSelezionato && (
+                  <button type="button" onClick={() => setOperatoreSelezionato(null)} style={{ fontSize: '0.75rem', background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer', textDecoration: 'underline' }}>Rimuovi operatore</button>
+                )}
               </p>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>

@@ -421,6 +421,13 @@ export default function CentroPrenotazioni() {
     }
     catch { /***/ } };
     const resetFPiano = () => { setFpTipo('prestazionale'); setFpTask(''); setFpDate(''); setFpFine(''); setFpTime(''); setFpDur(60); setFpOre(1); setFpPaz(''); setFpStaff(''); setFpCats([]); setFpNotes(''); setFpCompenso('nessuno'); setFpTariffa(0); setFpCosto(0); setFpTariffarioSel(''); setFpGiorni(GIORNI_DEFAULT.map(g => ({ ...g }))); setFpMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false }); setFpFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] }); setFpStaffPerCat({ infermieristico: '', riabilitativo: '', medico_specialistiche: '' }); };
+
+    useEffect(() => {
+        if (fpTipo === 'assistenziale' && fpCompenso === 'orario') {
+            setFpCosto(Math.round(fpOre * fpTariffa * 100) / 100);
+        }
+    }, [fpTipo, fpCompenso, fpOre, fpTariffa]);
+
     const creaPiano = async (ev: FormEvent) => {
         ev.preventDefault();
         setErrPiano('');
@@ -1041,8 +1048,10 @@ export default function CentroPrenotazioni() {
                   </label>)}
                 <label className="tw-font-semibold tw-text-sm">Attività *<input className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" value={fpTask} onChange={e => setFpTask(e.target.value)} placeholder="Es. Assistenza domiciliare..."/></label>
                 <label className="tw-font-semibold tw-text-sm">Costo prestazione al paziente (€)
-                  <input className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" type="number" min={0} step={0.5} value={fpCosto} onChange={e => setFpCosto(Number(e.target.value))} placeholder="0.00"/>
-                  <span className="tw-text-xs tw-text-slate-400 tw-font-normal">Precompilato dal tariffario, modificabile liberamente</span>
+                  <input className={`tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-text-sm tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500 ${fpTipo === 'assistenziale' && fpCompenso === 'orario' ? 'tw-bg-slate-100 tw-border-slate-200' : 'tw-bg-white tw-border-slate-200'}`} type="number" min={0} step={0.5} value={fpCosto} onChange={e => setFpCosto(Number(e.target.value))} readOnly={fpTipo === 'assistenziale' && fpCompenso === 'orario'} placeholder="0.00"/>
+                  <span className="tw-text-xs tw-text-slate-400 tw-font-normal">
+                    {fpTipo === 'assistenziale' && fpCompenso === 'orario' ? 'Calcolato automaticamente: ore × tariffa oraria' : 'Precompilato dal tariffario, modificabile liberamente'}
+                  </span>
                 </label>
                 <div className={`tw-grid tw-gap-3 ${fpTipo === 'assistenziale' ? 'tw-grid-cols-4' : 'tw-grid-cols-3'}`}>
                   <label className="tw-font-semibold tw-text-sm">Data inizio *<input className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" type="date" value={fpDate} onChange={e => setFpDate(e.target.value)}/></label>
