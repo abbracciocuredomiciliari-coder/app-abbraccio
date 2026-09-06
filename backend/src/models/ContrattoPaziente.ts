@@ -12,6 +12,7 @@ export interface IContrattoPaziente extends Document {
   luogoFirma?: string;
   dataFirma?: Date;
   firmaImg?: string;
+  htmlFirmato?: string;
 }
 
 const contrattoPazienteSchema = new Schema<IContrattoPaziente>(
@@ -27,6 +28,7 @@ const contrattoPazienteSchema = new Schema<IContrattoPaziente>(
     luogoFirma: { type: String, trim: true },
     dataFirma: { type: Date },
     firmaImg: { type: String },
+    htmlFirmato: { type: String },
   },
   { timestamps: true }
 );

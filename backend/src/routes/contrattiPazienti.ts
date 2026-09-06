@@ -212,8 +212,15 @@ router.get('/:id/pdf', authenticateToken, async (req: Request, res: Response) =>
   try {
     const contratto = await ContrattoPaziente.findById(req.params.id).populate('patient', 'firstName lastName birthDate address contactPhone codiceFiscale email');
     if (!contratto) return res.status(404).json({ message: 'Contratto non trovato' });
+
+    // Se il contratto è già firmato, restituiamo l'HTML esatto archiviato con la firma
+    if (contratto.stato === 'firmato' && contratto.htmlFirmato) {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      return res.send(contratto.htmlFirmato);
+    }
+
     const paziente = normalizzaPaziente(contratto.patient);
-    const html = generaHtmlContratto(contratto, paziente, contratto.stato === 'firmato', contratto.firmaImg);
+    const html = generaHtmlContratto(contratto, paziente, false, undefined);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     return res.send(html);
   } catch (error: any) {
@@ -295,10 +302,12 @@ router.post('/firma/:token', async (req: Request, res: Response) => {
     contratto.luogoFirma = luogoFirma || 'Roma';
     contratto.dataFirma = new Date();
     contratto.stato = 'firmato';
-    await contratto.save();
 
     const pazienteNorm = normalizzaPaziente(paziente);
     const htmlFirmato = generaHtmlContratto(contratto, pazienteNorm, true, firmaImg);
+
+    contratto.htmlFirmato = htmlFirmato;
+    await contratto.save();
 
     await PatientDocument.create({
       patient: paziente._id,
