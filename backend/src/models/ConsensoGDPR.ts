@@ -47,6 +47,9 @@ export interface IConsensoGDPR extends Document {
   
   // Versione informativa accettata
   versioneInformativa: string;
+
+  // HTML/PDF firmato (per firma da contratto)
+  htmlFirmato?: string;
   
   // Revoca (diritto all'oblio)
   revocato: boolean;
@@ -107,6 +110,7 @@ const consensoSchema = new Schema<IConsensoGDPR>(
     luogoFirma: { type: String },
     
     versioneInformativa: { type: String, required: true }, // es. "v2024.1"
+    htmlFirmato: { type: String },
     
     revocato: { type: Boolean, default: false },
     dataRevoca: { type: Date },

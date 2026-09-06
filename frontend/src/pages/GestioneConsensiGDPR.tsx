@@ -12,6 +12,7 @@ interface Consenso {
   firmatoDa: 'paziente' | 'tutore' | 'rappresentanteLegale';
   nomeFirmatario: string; cognomeFirmatario: string; dataFirma: string;
   versioneInformativa: string; revocato: boolean; dataRevoca?: string; operatoreEmail: string;
+  htmlFirmato?: string;
 }
 
 interface Patient { _id: string; firstName: string; lastName: string; birthDate?: string; }
@@ -58,6 +59,12 @@ export default function GestioneConsensiGDPR() {
   const stampaConsenso = (c: Consenso, p: Patient) => {
     const win = window.open('', '_blank');
     if (!win) return;
+    if (c.htmlFirmato) {
+      win.document.write(c.htmlFirmato);
+      win.document.close();
+      win.focus();
+      return;
+    }
     const dataFirmaFmt = formatDate(c.dataFirma);
     const nascitaFmt = p.birthDate ? new Date(p.birthDate).toLocaleDateString('it-IT') : '_______________';
     win.document.write(`<!DOCTYPE html>

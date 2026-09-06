@@ -13,6 +13,9 @@ export interface IContrattoPaziente extends Document {
   dataFirma?: Date;
   firmaImg?: string;
   htmlFirmato?: string;
+  gdprAccettato?: boolean;
+  gdprHtmlFirmato?: string;
+  consensoGdprId?: string;
 }
 
 const contrattoPazienteSchema = new Schema<IContrattoPaziente>(
@@ -29,6 +32,9 @@ const contrattoPazienteSchema = new Schema<IContrattoPaziente>(
     dataFirma: { type: Date },
     firmaImg: { type: String },
     htmlFirmato: { type: String },
+    gdprAccettato: { type: Boolean, default: false },
+    gdprHtmlFirmato: { type: String },
+    consensoGdprId: { type: String },
   },
   { timestamps: true }
 );

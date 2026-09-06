@@ -27,6 +27,7 @@ export default function FirmaContrattoPaziente() {
   const [firma, setFirma] = useState<string | null>(null);
   const [nome, setNome] = useState('');
   const [luogoFirma, setLuogoFirma] = useState('Roma');
+  const [gdprAccettato, setGdprAccettato] = useState(false);
   const [loading, setLoading] = useState(false);
   const [contratto, setContratto] = useState<ContrattoData | null>(null);
 
@@ -54,10 +55,10 @@ export default function FirmaContrattoPaziente() {
   }, [token]);
 
   const handleInviaFirma = async () => {
-    if (!firma) return;
+    if (!firma || !gdprAccettato) return;
     setLoading(true);
     try {
-      await api.post(`/contratti-pazienti/firma/${token}`, { firmaImg: firma, nome, luogoFirma });
+      await api.post(`/contratti-pazienti/firma/${token}`, { firmaImg: firma, nome, luogoFirma, gdprAccettato });
       setStato('firmato');
     } catch (err: any) {
       setErrMsg(err?.response?.data?.message || 'Errore nel salvataggio della firma. Riprova.');
@@ -70,8 +71,8 @@ export default function FirmaContrattoPaziente() {
     <div className="tw-min-h-screen tw-bg-slate-50 tw-flex tw-items-center tw-justify-center tw-p-5">
       <div className="tw-bg-white tw-rounded-2xl tw-p-8 tw-px-6 tw-max-w-[560px] tw-w-full" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
         <div className="tw-text-center tw-mb-6">
-          <h1 className="tw-m-0 tw-text-[1.3rem] tw-text-brand tw-font-bold">Portale Firma Contratto</h1>
-          <p className="tw-mt-1 tw-mb-0 tw-text-slate-500 tw-text-[0.9rem]">Firma digitale contratto d'incarico</p>
+          <h1 className="tw-m-0 tw-text-[1.3rem] tw-text-brand tw-font-bold">Portale Firma Contratto e Consenso</h1>
+          <p className="tw-mt-1 tw-mb-0 tw-text-slate-500 tw-text-[0.9rem]">Firma digitale contratto d'incarico e informativa GDPR</p>
         </div>
 
         {stato === 'caricamento' && (
@@ -99,50 +100,76 @@ export default function FirmaContrattoPaziente() {
           </div>
         )}
 
-        {stato === 'pronto' && contratto && (
-          <div>
-            <div className="tw-bg-blue-50 tw-rounded-lg tw-py-3.5 tw-px-4 tw-mb-5 tw-border tw-border-blue-200">
-              <p className="tw-m-0 tw-text-blue-800 tw-text-[0.9rem]">
-                Ciao <strong>{contratto.patient?.firstName} {contratto.patient?.lastName}</strong>, firma qui sotto il contratto d'incarico per il reclutamento di un <strong>{contratto.profilo === 'Assistente familiare' ? 'Assistente familiare (badante/colf)' : 'Operatore generale'}</strong>.
-              </p>
-            </div>
+        {stato === 'pronto' && contratto && (() => {
+          const apiBase = (api.defaults.baseURL || '/api').replace(/\/$/, '');
+          const anteprimaUrl = `${apiBase}/contratti-pazienti/anteprima/${token}`;
+          const gdprUrl = `${apiBase}/contratti-pazienti/gdpr/${token}`;
+          return (
+            <div>
+              <div className="tw-bg-blue-50 tw-rounded-lg tw-py-3.5 tw-px-4 tw-mb-5 tw-border tw-border-blue-200">
+                <p className="tw-m-0 tw-text-blue-800 tw-text-[0.9rem]">
+                  Ciao <strong>{contratto.patient?.firstName} {contratto.patient?.lastName}</strong>, per proseguire <strong>leggi i documenti</strong> sottostanti, acconsenti al trattamento dei dati e firma con dito o penna.
+                </p>
+              </div>
 
-            <div className="tw-mb-4">
-              <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Nome e cognome del firmatario</label>
-              <input
-                type="text"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                className="tw-w-full tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm"
-                placeholder="es. Mario Rossi"
+              <div className="tw-flex tw-gap-3 tw-mb-5">
+                <a href={anteprimaUrl} target="_blank" rel="noreferrer" className="tw-flex-1 tw-text-center tw-py-2 tw-px-3 tw-rounded-lg tw-bg-blue-100 tw-text-blue-800 tw-text-sm tw-font-semibold hover:tw-bg-blue-200 tw-transition-colors">
+                  📄 Leggi contratto
+                </a>
+                <a href={gdprUrl} target="_blank" rel="noreferrer" className="tw-flex-1 tw-text-center tw-py-2 tw-px-3 tw-rounded-lg tw-bg-blue-100 tw-text-blue-800 tw-text-sm tw-font-semibold hover:tw-bg-blue-200 tw-transition-colors">
+                  📋 Leggi informativa GDPR
+                </a>
+              </div>
+
+              <div className="tw-mb-4">
+                <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Nome e cognome del firmatario</label>
+                <input
+                  type="text"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  className="tw-w-full tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm"
+                  placeholder="es. Mario Rossi"
+                />
+              </div>
+
+              <div className="tw-mb-4">
+                <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Luogo firma</label>
+                <input
+                  type="text"
+                  value={luogoFirma}
+                  onChange={(e) => setLuogoFirma(e.target.value)}
+                  className="tw-w-full tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm"
+                />
+              </div>
+
+              <label className="tw-flex tw-items-start tw-gap-3 tw-mb-5 tw-cursor-pointer tw-bg-amber-50 tw-p-3 tw-rounded-lg tw-border tw-border-amber-200">
+                <input
+                  type="checkbox"
+                  checked={gdprAccettato}
+                  onChange={(e) => setGdprAccettato(e.target.checked)}
+                  className="tw-mt-1"
+                />
+                <span className="tw-text-sm tw-text-slate-700">
+                  Ho letto il contratto d'incarico e l'informativa GDPR, comprendo il trattamento dei miei dati personali e <strong>dichiaro di accettare entrambi</strong>.
+                </span>
+              </label>
+
+              <FirmaCanvas
+                label="Firma con dito o penna"
+                sublabel="La firma vale per il contratto d'incarico e per il consenso GDPR"
+                onFirmaCompleta={setFirma}
               />
+
+              <button
+                onClick={handleInviaFirma}
+                disabled={!firma || !gdprAccettato || loading}
+                className="tw-w-full tw-mt-5 tw-py-3 tw-rounded-lg tw-bg-emerald-600 hover:tw-bg-emerald-700 disabled:tw-bg-slate-300 tw-text-white tw-font-bold tw-border-0 tw-cursor-pointer tw-transition-colors"
+              >
+                {loading ? 'Salvataggio...' : 'Conferma e firma contratto e consenso GDPR'}
+              </button>
             </div>
-
-            <div className="tw-mb-4">
-              <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Luogo firma</label>
-              <input
-                type="text"
-                value={luogoFirma}
-                onChange={(e) => setLuogoFirma(e.target.value)}
-                className="tw-w-full tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm"
-              />
-            </div>
-
-            <FirmaCanvas
-              label="Firma con dito o penna"
-              sublabel="Firma per accettazione del contratto d'incarico"
-              onFirmaCompleta={setFirma}
-            />
-
-            <button
-              onClick={handleInviaFirma}
-              disabled={!firma || loading}
-              className="tw-w-full tw-mt-5 tw-py-3 tw-rounded-lg tw-bg-emerald-600 hover:tw-bg-emerald-700 disabled:tw-bg-slate-300 tw-text-white tw-font-bold tw-border-0 tw-cursor-pointer tw-transition-colors"
-            >
-              {loading ? 'Salvataggio...' : 'Conferma e firma contratto'}
-            </button>
-          </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );
