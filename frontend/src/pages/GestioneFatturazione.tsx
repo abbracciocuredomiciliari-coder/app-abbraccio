@@ -14,16 +14,27 @@ interface Patient {
   email?: string;
 }
 
+interface GiornoSettimana {
+  giorno: number;
+  accessiAlGiorno: number;
+  minutiPerAccesso: number;
+}
+
 interface WorkPlanItem {
   _id: string;
   type: string;
   task: string;
   date: string;
+  dataFine?: string;
+  duration?: number;
   compensoTotale?: number;
   costoPrestazione?: number;
   tariffaAsl?: number;
+  tipoCompenso?: 'orario' | 'fisso' | 'nessuno';
+  tariffa?: number;
   patient: Patient & { tipoGestione?: string; siat?: { asl?: string; npi?: string; codiceAutorizzazione?: string } };
   staff: { firstName: string; lastName: string; role: string };
+  giorniSettimana?: GiornoSettimana[];
 }
 
 interface RiepilogoAsl {
@@ -85,6 +96,14 @@ export default function GestioneFatturazione() {
   const [numeroModalDoc, setNumeroModalDoc] = useState<DocumentoFatturazione | null>(null);
   const [numeroNuovo, setNumeroNuovo] = useState('');
   const [numeroLoading, setNumeroLoading] = useState(false);
+
+  const [preventivoModalWp, setPreventivoModalWp] = useState<WorkPlanItem | null>(null);
+  const [preventivoData, setPreventivoData] = useState('');
+  const [preventivoTipo, setPreventivoTipo] = useState<'giornaliero' | 'orario' | 'fisso'>('fisso');
+  const [preventivoLoading, setPreventivoLoading] = useState(false);
+  const [preventivoError, setPreventivoError] = useState('');
+
+  const GIORNI_LABEL = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
 
   useEffect(() => { caricaDati(); caricaDocumenti(); }, []);
 
@@ -340,6 +359,90 @@ export default function GestioneFatturazione() {
 
   const formatData = (d: string) => new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
   const formatEuro = (n: number) => `€${n.toFixed(2)}`;
+
+  const oreGiorno = (g: GiornoSettimana) => Math.round((g.accessiAlGiorno || 0) * ((g.minutiPerAccesso || 60) / 60) * 2) / 2;
+  const oreTotaliSettimana = (wp: WorkPlanItem) => (wp.giorniSettimana || []).reduce((acc, g) => acc + oreGiorno(g), 0);
+
+  const calcolaTariffaOraria = (wp: WorkPlanItem) => {
+    if ((wp.tipoCompenso === 'orario' || wp.tipoCompenso === 'nessuno') && (wp.tariffa || 0) > 0) return wp.tariffa!;
+    const durataOre = (wp.duration || 60) / 60;
+    if (durataOre > 0 && (wp.costoPrestazione || 0) > 0) return Math.round((wp.costoPrestazione! / durataOre) * 100) / 100;
+    return 0;
+  };
+
+  const apriPreventivoModal = (wp: WorkPlanItem) => {
+    setPreventivoModalWp(wp);
+    setPreventivoData(wp.date ? new Date(wp.date).toISOString().split('T')[0] : '');
+    setPreventivoTipo('fisso');
+    setPreventivoError('');
+  };
+
+  const chiudiPreventivoModal = () => {
+    setPreventivoModalWp(null);
+    setPreventivoData('');
+    setPreventivoError('');
+  };
+
+  const generaPreventivo = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!preventivoModalWp) return;
+    setPreventivoError('');
+    setPreventivoLoading(true);
+    try {
+      const wp = preventivoModalWp;
+      let prestazioni: { descrizione: string; quantita: number; prezzoUnitario: number }[] = [];
+      const tariffaOraria = calcolaTariffaOraria(wp);
+
+      if (preventivoTipo === 'fisso' || tariffaOraria <= 0) {
+        prestazioni = [{
+          descrizione: `${wp.task}`,
+          quantita: 1,
+          prezzoUnitario: wp.costoPrestazione || 0,
+        }];
+      } else if (preventivoTipo === 'giornaliero') {
+        const giorni = (wp.giorniSettimana || []).filter(g => (g.accessiAlGiorno || 0) > 0);
+        if (giorni.length === 0) {
+          setPreventivoError('Nessun giorno con accessi configurato.');
+          setPreventivoLoading(false);
+          return;
+        }
+        prestazioni = giorni.map(g => ({
+          descrizione: `${wp.task} — ${GIORNI_LABEL[g.giorno] || ''} ${oreGiorno(g)}h`,
+          quantita: oreGiorno(g),
+          prezzoUnitario: tariffaOraria,
+        }));
+      } else {
+        // compenso orario singolo con totale ore
+        const totale = oreTotaliSettimana(wp);
+        if (totale <= 0) {
+          setPreventivoError('Nessuna ora settimanale configurata.');
+          setPreventivoLoading(false);
+          return;
+        }
+        prestazioni = [{
+          descrizione: `${wp.task} — compenso orario`,
+          quantita: totale,
+          prezzoUnitario: tariffaOraria,
+        }];
+      }
+
+      await api.post('/fatturazione-documenti', {
+        tipo: 'preventivo',
+        patient: wp.patient._id,
+        riferimentoTipo: 'workplan',
+        riferimentoId: wp._id,
+        dataPrestazione: preventivoData || undefined,
+        prestazioni,
+      });
+      alert('Preventivo generato con successo');
+      chiudiPreventivoModal();
+      await caricaDati();
+      await caricaDocumenti();
+    } catch (err: any) {
+      setPreventivoError(err?.response?.data?.message || 'Errore nella generazione del preventivo');
+    }
+    setPreventivoLoading(false);
+  };
 
   const generaHTML = (singolo?: RiepilogoPaziente): string => {
     const periodo = dataInizio && dataFine ? `${formatData(dataInizio)} - ${formatData(dataFine)}` : 'Tutto il periodo';
@@ -678,6 +781,7 @@ export default function GestioneFatturazione() {
                           <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '0.875rem' }}>Compenso Op.</th>
                           <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '0.875rem' }}>Fatturato</th>
                           <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '0.875rem' }}>Utile</th>
+                          <th style={{ textAlign: 'center', padding: '10px 8px', fontSize: '0.875rem' }}>Azioni</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -693,6 +797,16 @@ export default function GestioneFatturazione() {
                               <td style={{ padding: '10px 8px', textAlign: 'right', color: '#7c3aed' }}>{formatEuro(compenso)}</td>
                               <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 600, color: '#166534' }}>{formatEuro(costo)}</td>
                               <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 700, color: utile >= 0 ? '#059669' : '#dc2626' }}>{formatEuro(utile)}</td>
+                              <td style={{ padding: '10px 8px', textAlign: 'center' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => apriPreventivoModal(wp)}
+                                  title="Genera preventivo"
+                                  style={{ background: '#fef3c7', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', color: '#92400e', fontSize: '0.75rem', fontWeight: 700 }}
+                                >
+                                  📄 Preventivo
+                                </button>
+                              </td>
                             </tr>
                           );
                         })}
@@ -774,6 +888,48 @@ export default function GestioneFatturazione() {
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 <button type="button" onClick={chiudiModificaNumero} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', fontWeight: 600 }}>Annulla</button>
                 <button type="submit" disabled={numeroLoading} style={{ padding: '10px 18px', borderRadius: '8px', border: 'none', background: '#ca8a04', color: 'white', cursor: 'pointer', fontWeight: 700 }}>{numeroLoading ? 'Salvataggio...' : 'Salva'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal rigenerazione preventivo */}
+      {preventivoModalWp && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', zIndex: 1200 }} onClick={chiudiPreventivoModal}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '460px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 16px', color: '#1e4d8c', fontSize: '1.1rem', fontWeight: 700 }}>
+              📄 Rigenera preventivo
+            </h3>
+            <p style={{ margin: '0 0 16px', fontSize: '0.875rem', color: '#6b7280' }}>
+              {preventivoModalWp.patient.firstName} {preventivoModalWp.patient.lastName} — {preventivoModalWp.task}
+            </p>
+            <form onSubmit={generaPreventivo}>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>Data prestazione</label>
+                <input type="date" value={preventivoData} onChange={e => setPreventivoData(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>Modalità di fatturazione</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', borderRadius: '8px', border: `1px solid ${preventivoTipo === 'fisso' ? '#1e4d8c' : '#e2e8f0'}`, cursor: 'pointer' }}>
+                    <input type="radio" name="preventivoTipo" value="fisso" checked={preventivoTipo === 'fisso'} onChange={() => setPreventivoTipo('fisso')} />
+                    <span style={{ fontSize: '0.875rem' }}>Importo fisso: {formatEuro(preventivoModalWp.costoPrestazione || 0)}</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', borderRadius: '8px', border: `1px solid ${preventivoTipo === 'orario' ? '#1e4d8c' : '#e2e8f0'}`, cursor: 'pointer' }}>
+                    <input type="radio" name="preventivoTipo" value="orario" checked={preventivoTipo === 'orario'} onChange={() => setPreventivoTipo('orario')} />
+                    <span style={{ fontSize: '0.875rem' }}>Compenso orario: {oreTotaliSettimana(preventivoModalWp)}h × {formatEuro(calcolaTariffaOraria(preventivoModalWp))}/h = {formatEuro(oreTotaliSettimana(preventivoModalWp) * calcolaTariffaOraria(preventivoModalWp))}</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', borderRadius: '8px', border: `1px solid ${preventivoTipo === 'giornaliero' ? '#1e4d8c' : '#e2e8f0'}`, cursor: 'pointer' }}>
+                    <input type="radio" name="preventivoTipo" value="giornaliero" checked={preventivoTipo === 'giornaliero'} onChange={() => setPreventivoTipo('giornaliero')} />
+                    <span style={{ fontSize: '0.875rem' }}>Ore giornaliere</span>
+                  </label>
+                </div>
+              </div>
+              {preventivoError && <div style={{ color: '#dc2626', fontSize: '0.875rem', marginBottom: '14px' }}>{preventivoError}</div>}
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={chiudiPreventivoModal} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', fontWeight: 600 }}>Annulla</button>
+                <button type="submit" disabled={preventivoLoading} style={{ padding: '10px 18px', borderRadius: '8px', border: 'none', background: '#1e4d8c', color: 'white', cursor: 'pointer', fontWeight: 700 }}>{preventivoLoading ? 'Generazione...' : 'Genera preventivo'}</button>
               </div>
             </form>
           </div>
