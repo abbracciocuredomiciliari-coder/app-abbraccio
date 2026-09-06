@@ -97,14 +97,15 @@ router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('
       data: new Date(),
       dataPrestazione: dataPrestazione ? new Date(dataPrestazione) : undefined,
       stato: 'emesso',
-      nota: note,
+      note: note,
       creatoDa: user?.name || user?.email || 'Sistema',
     });
 
     const docPopolato = await DocumentoFatturazione.findById(doc._id).populate('patient', 'firstName lastName codiceFiscale address email');
     return res.status(201).json(docPopolato);
   } catch (error: any) {
-    return res.status(500).json({ message: 'Errore nella creazione del documento', error: error.message });
+    console.error('[Fatturazione POST] Errore creazione documento:', error);
+    return res.status(500).json({ message: `Errore nella creazione del documento: ${error?.message || 'sconosciuto'}`, error: error.message });
   }
 });
 
