@@ -391,6 +391,7 @@ export default function CentroPrenotazioni() {
     const [fpNotes, setFpNotes] = useState('');
     const [fpCompenso, setFpCompenso] = useState<'orario' | 'fisso' | 'nessuno'>('nessuno');
     const [fpTariffa, setFpTariffa] = useState(0);
+    const [fpCostoOrario, setFpCostoOrario] = useState(0);
     const [fpCosto, setFpCosto] = useState(0);
     const [fpGiorni, setFpGiorni] = useState(GIORNI_DEFAULT.map(g => ({ ...g })));
     const [tariffario, setTariffario] = useState<VoceTariffario[]>([]);
@@ -420,13 +421,15 @@ export default function CentroPrenotazioni() {
         setPiani(r.data);
     }
     catch { /***/ } };
-    const resetFPiano = () => { setFpTipo('prestazionale'); setFpTask(''); setFpDate(''); setFpFine(''); setFpTime(''); setFpDur(60); setFpOre(1); setFpPaz(''); setFpStaff(''); setFpCats([]); setFpNotes(''); setFpCompenso('nessuno'); setFpTariffa(0); setFpCosto(0); setFpTariffarioSel(''); setFpGiorni(GIORNI_DEFAULT.map(g => ({ ...g }))); setFpMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false }); setFpFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] }); setFpStaffPerCat({ infermieristico: '', riabilitativo: '', medico_specialistiche: '' }); };
+    const resetFPiano = () => { setFpTipo('prestazionale'); setFpTask(''); setFpDate(''); setFpFine(''); setFpTime(''); setFpDur(60); setFpOre(1); setFpPaz(''); setFpStaff(''); setFpCats([]); setFpNotes(''); setFpCompenso('nessuno'); setFpTariffa(0); setFpCostoOrario(0); setFpCosto(0); setFpTariffarioSel(''); setFpGiorni(GIORNI_DEFAULT.map(g => ({ ...g }))); setFpMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false }); setFpFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] }); setFpStaffPerCat({ infermieristico: '', riabilitativo: '', medico_specialistiche: '' }); };
 
     useEffect(() => {
         if (fpTipo === 'assistenziale' && fpCompenso === 'orario') {
-            setFpCosto(Math.round(fpOre * fpTariffa * 100) / 100);
+            const giorniAttivi = fpGiorni.filter(g => g.attivo).length;
+            const oreTotali = fpOre * giorniAttivi;
+            setFpCosto(Math.round(oreTotali * fpCostoOrario * 100) / 100);
         }
-    }, [fpTipo, fpCompenso, fpOre, fpTariffa]);
+    }, [fpTipo, fpCompenso, fpOre, fpGiorni, fpCostoOrario]);
 
     const creaPiano = async (ev: FormEvent) => {
         ev.preventDefault();
@@ -452,13 +455,9 @@ export default function CentroPrenotazioni() {
             const prestazioni: any[] = [];
             for (const cat of macroSel) {
                 const staffId = fpStaffPerCat[cat] || fpStaff;
-                if (!staffId) {
-                    setErrPiano(`Seleziona un operatore per ${MACRO_CATEGORIE_LABELS[cat].label}`);
-                    return;
-                }
                 fpFabbisogni[cat].forEach(f => {
                     const opt = FABBISOGNI_OPTIONS[cat].find(o => o.value === f);
-                    prestazioni.push({ tipoPrestazione: opt ? opt.label : f, staff: staffId, categoria: catMap[cat] });
+                    prestazioni.push({ tipoPrestazione: opt ? opt.label : f, staff: staffId || undefined, categoria: catMap[cat] });
                 });
             }
             setSavingPiano(true);
@@ -472,7 +471,7 @@ export default function CentroPrenotazioni() {
                     fabbisogni: { infermieristico: fpFabbisogni.infermieristico, riabilitativo: fpFabbisogni.riabilitativo, medico_specialistiche: fpFabbisogni.medico_specialistiche },
                     categories: allFabbisogniLabels,
                     prestazioni,
-                    patient: fpPaz, staff: fpStaff || prestazioni[0].staff, task: fpTask,
+                    patient: fpPaz, staff: fpStaff || prestazioni[0]?.staff, task: fpTask,
                     date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpDur,
                     notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined,
                     tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0,
@@ -492,14 +491,14 @@ export default function CentroPrenotazioni() {
             setSavingPiano(false);
         }
         else {
-            if (!fpPaz || !fpStaff || !fpDate || !fpTask || fpCats.length === 0) {
+            if (!fpPaz || !fpDate || !fpTask || fpCats.length === 0) {
                 setErrPiano('Compila tutti i campi obbligatori.');
                 return;
             }
             setSavingPiano(true);
             try {
                 const giorniAttivi = fpGiorni.filter(g => g.attivo).map(g => ({ giorno: g.giorno, accessiAlGiorno: g.accessiAlGiorno, minutiPerAccesso: g.minutiPerAccesso }));
-                const res = await api.post('/workplan', { type: fpTipo, categories: fpCats, patient: fpPaz, staff: fpStaff, task: fpTask, date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpOre * 60, notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined, tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0 });
+                const res = await api.post('/workplan', { type: fpTipo, categories: fpCats, patient: fpPaz, staff: fpStaff || undefined, task: fpTask, date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpOre * 60, notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined, tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0 });
                 const pazSel = pazienti.find(p => p._id === fpPaz);
                 if (fpCosto > 0 && pazSel)
                     setPendingDoc({ patientId: fpPaz, patientNome: `${pazSel.firstName} ${pazSel.lastName}`, task: fpTask, costo: fpCosto, planId: res.data._id, dataPrestazione: fpDate });
@@ -1024,7 +1023,7 @@ export default function CentroPrenotazioni() {
                     </div>
                   </div>)}
                 <label className="tw-font-semibold tw-text-sm">Paziente *<select className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" value={fpPaz} onChange={e => setFpPaz(e.target.value)}><option value="">Seleziona...</option>{pazienti.map(p => <option key={p._id} value={p._id}>{p.firstName} {p.lastName}</option>)}</select></label>
-                <label className="tw-font-semibold tw-text-sm">Operatore {fpTipo === 'assistenziale' ? '*' : ''}<select className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" value={fpStaff} onChange={e => setFpStaff(e.target.value)}><option value="">Seleziona...</option>{staff.map(s => <option key={s._id} value={s._id}>{s.firstName} {s.lastName} — {s.role}</option>)}</select></label>
+                <label className="tw-font-semibold tw-text-sm">Operatore (opzionale)<select className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" value={fpStaff} onChange={e => setFpStaff(e.target.value)}><option value="">Seleziona...</option>{staff.map(s => <option key={s._id} value={s._id}>{s.firstName} {s.lastName} — {s.role}</option>)}</select></label>
                 {fpTipo === 'prestazionale' && (<label className="tw-font-semibold tw-text-sm">Prestazione dal tariffario
                     <select className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" value={fpTariffarioSel} onChange={e => {
                     const id = e.target.value;
@@ -1047,12 +1046,22 @@ export default function CentroPrenotazioni() {
                     </select>
                   </label>)}
                 <label className="tw-font-semibold tw-text-sm">Attività *<input className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" value={fpTask} onChange={e => setFpTask(e.target.value)} placeholder="Es. Assistenza domiciliare..."/></label>
-                <label className="tw-font-semibold tw-text-sm">Costo prestazione al paziente (€)
-                  <input className={`tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-text-sm tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500 ${fpTipo === 'assistenziale' && fpCompenso === 'orario' ? 'tw-bg-slate-100 tw-border-slate-200' : 'tw-bg-white tw-border-slate-200'}`} type="number" min={0} step={0.5} value={fpCosto} onChange={e => setFpCosto(Number(e.target.value))} readOnly={fpTipo === 'assistenziale' && fpCompenso === 'orario'} placeholder="0.00"/>
-                  <span className="tw-text-xs tw-text-slate-400 tw-font-normal">
-                    {fpTipo === 'assistenziale' && fpCompenso === 'orario' ? 'Calcolato automaticamente: ore × tariffa oraria' : 'Precompilato dal tariffario, modificabile liberamente'}
-                  </span>
-                </label>
+                {fpTipo === 'assistenziale' && fpCompenso === 'orario' ? (
+                  <div className="tw-grid tw-grid-cols-2 tw-gap-3">
+                    <label className="tw-font-semibold tw-text-sm">Costo paziente (€/ora)
+                      <input className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" type="number" min={0} step={0.5} value={fpCostoOrario} onChange={e => setFpCostoOrario(Number(e.target.value))} placeholder="0.00"/>
+                    </label>
+                    <label className="tw-font-semibold tw-text-sm">Totale costo paziente (€)
+                      <input className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-slate-100 tw-shadow-sm" type="number" min={0} step={0.01} value={fpCosto} readOnly placeholder="0.00"/>
+                      <span className="tw-text-xs tw-text-slate-400 tw-font-normal">{fpOre}h × {fpGiorni.filter(g => g.attivo).length} giorni × €{fpCostoOrario.toFixed(2)}/h</span>
+                    </label>
+                  </div>
+                ) : (
+                  <label className="tw-font-semibold tw-text-sm">Costo prestazione al paziente (€)
+                    <input className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" type="number" min={0} step={0.5} value={fpCosto} onChange={e => setFpCosto(Number(e.target.value))} placeholder="0.00"/>
+                    <span className="tw-text-xs tw-text-slate-400 tw-font-normal">Precompilato dal tariffario, modificabile liberamente</span>
+                  </label>
+                )}
                 <div className={`tw-grid tw-gap-3 ${fpTipo === 'assistenziale' ? 'tw-grid-cols-4' : 'tw-grid-cols-3'}`}>
                   <label className="tw-font-semibold tw-text-sm">Data inizio *<input className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" type="date" value={fpDate} onChange={e => setFpDate(e.target.value)}/></label>
                   <label className="tw-font-semibold tw-text-sm">Data fine<input className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" type="date" value={fpFine} onChange={e => setFpFine(e.target.value)}/></label>
@@ -1069,7 +1078,7 @@ export default function CentroPrenotazioni() {
                 {/* Compenso */}
                 <div className="tw-grid tw-grid-cols-2 tw-gap-3">
                   <label className="tw-font-semibold tw-text-sm">Tipo compenso<select className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" value={fpCompenso} onChange={e => setFpCompenso(e.target.value as any)}><option value="nessuno">Nessuno</option><option value="orario">Orario (€/h)</option><option value="fisso">Fisso (€/accesso)</option></select></label>
-                  {fpCompenso !== 'nessuno' && <label className="tw-font-semibold tw-text-sm">Tariffa (€)<input className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" type="number" value={fpTariffa} onChange={e => setFpTariffa(Number(e.target.value))} min={0} step={0.5}/></label>}
+                  {fpCompenso !== 'nessuno' && <label className="tw-font-semibold tw-text-sm">{fpCompenso === 'orario' ? 'Tariffa operatore (€/h)' : 'Tariffa (€)'}<input className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" type="number" value={fpTariffa} onChange={e => setFpTariffa(Number(e.target.value))} min={0} step={0.5}/></label>}
                 </div>
                 <label className="tw-font-semibold tw-text-sm">Note<textarea className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm tw-resize-y focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" value={fpNotes} onChange={e => setFpNotes(e.target.value)} rows={2}/></label>
               </div>
