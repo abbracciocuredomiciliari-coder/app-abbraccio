@@ -41,6 +41,9 @@ function normalizzaPaziente(raw: any) {
 }
 
 function generaHtmlContratto(contratto: any, paziente: any, includeFirma = false, firmaImg?: string) {
+  if (contratto.profilo === 'Assistente familiare') {
+    return generaHtmlContrattoBadante(contratto, paziente, includeFirma, firmaImg);
+  }
   const profilo = contratto.profilo === 'Infermiere' ? 'Infermiere Professionale' : 'Operatore Socio-Sanitario (O.S.S.)';
   const checkOss = contratto.profilo === 'OSS' ? '☑' : '☐';
   const checkInf = contratto.profilo === 'Infermiere' ? '☑' : '☐';
@@ -167,12 +170,158 @@ function generaHtmlContratto(contratto: any, paziente: any, includeFirma = false
 </html>`;
 }
 
+function generaHtmlContrattoBadante(contratto: any, paziente: any, includeFirma = false, firmaImg?: string) {
+  const importo1 = Number(contratto.importo || 150).toFixed(2).replace('.', ',');
+  const importo2 = '350,00';
+  const luogo = contratto.luogoFirma || 'Roma';
+  const data = contratto.dataFirma ? new Date(contratto.dataFirma).toLocaleDateString('it-IT') : formatData(new Date());
+
+  const indirizzoParts = (paziente.address || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+  const citta = indirizzoParts.length > 1 ? indirizzoParts[indirizzoParts.length - 1] : '';
+  const indirizzo = indirizzoParts.length > 1 ? indirizzoParts.slice(0, -1).join(', ') : paziente.address || '';
+
+  const firmaHtml = includeFirma && firmaImg
+    ? `<div style="margin-top:24px;border-top:2px solid #1e4d8c;padding-top:20px;">
+        <h3 style="color:#1e4d8c;font-size:13px;margin:0 0 12px;">CONFERMA DI FIRMA</h3>
+        <p style="font-size:12px;margin:4px 0;"><strong>Luogo e data:</strong> ${luogo}, ${data}</p>
+        <p style="font-size:12px;margin:4px 0;"><strong>Firmatario:</strong> ${contratto.nome || `${paziente.firstName} ${paziente.lastName}`}</p>
+        <img src="${firmaImg}" alt="Firma" style="max-width:220px;max-height:80px;border:1px solid #d1d5db;margin-top:8px;" />
+      </div>`
+    : '';
+
+  return `<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mandato ricerca e selezione badante - ${paziente.firstName} ${paziente.lastName}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 12px; color: #111; margin: 30px; max-width: 900px; line-height: 1.45; }
+    .header { background: #1e4d8c; color: #fff; padding: 22px 30px; border-radius: 10px 10px 0 0; }
+    .header h1 { margin: 0; font-size: 22px; }
+    .header h2 { margin: 6px 0 0; font-size: 14px; font-weight: 400; }
+    .header-dati { font-size: 10px; margin-top: 8px; line-height: 1.5; opacity: .95; }
+    .sub-header { color: #1e4d8c; font-size: 16px; font-weight: 700; text-align: center; margin: 20px 0 6px; text-transform: uppercase; }
+    .section { background: #eef3f7; padding: 8px 14px; margin: 14px 0 8px; border-left: 4px solid #1e4d8c; }
+    .section-title { font-weight: 700; color: #1e4d8c; font-size: 13px; margin: 0; }
+    p { margin: 6px 0; }
+    .field-row { display: flex; gap: 20px; margin: 8px 0; }
+    .field { flex: 1; border-bottom: 1px solid #94a3b8; padding: 2px 0; }
+    .field-label { font-weight: 700; font-size: 10px; color: #475569; display: block; margin-bottom: 2px; }
+    .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin: 12px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; vertical-align: top; }
+    th { background: #1e4d8c; color: #fff; font-size: 11px; }
+    .price { text-align: right; font-weight: 700; white-space: nowrap; }
+    .note { background: #f0fdf4; border-left: 4px solid #16a34a; padding: 10px 14px; color: #166534; font-size: 11px; }
+    .sign-row { display: flex; gap: 20px; margin: 30px 0 10px; }
+    .sign-cell { flex: 1; border-top: 1px solid #94a3b8; padding-top: 6px; font-size: 11px; text-align: center; }
+    .footer { text-align: center; font-size: 9px; color: #64748b; margin-top: 30px; padding-top: 12px; border-top: 1px solid #cbd5e1; }
+    @media print { .no-print { display: none; } button { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>ABBRACCIO CURE DOMICILIARI S.R.L.S.</h1>
+    <h2>MANDATO DI RICERCA, SELEZIONE E INTERMEDIAZIONE PERSONALE</h2>
+    <div class="header-dati">
+      Sede Legale: ${AZIENDA.indirizzo} — ${AZIENDA.capCitta}<br/>
+      C.F. / P.IVA: ${AZIENDA.cf} | N. REA: ${AZIENDA.rea}<br/>
+      PEC: ${AZIENDA.pec} | Legale Rappresentante: SCHEMBRI SIMONA
+    </div>
+  </div>
+
+  <div class="section"><p class="section-title">1. PARTI CONTRAENTI</p></div>
+  <p>Tra la Società <strong>ABBRACCIO CURE DOMICILIARI S.R.L.S.</strong> (di seguito "Agenzia"), con i dati sociali in epigrafe, e il sottoscritto Committente (Famiglia / Datore di lavoro):</p>
+
+  <div class="field-row">
+    <div class="field" style="flex:2"><span class="field-label">Nome e Cognome</span>${paziente.firstName} ${paziente.lastName}</div>
+  </div>
+  <div class="field-row">
+    <div class="field" style="flex:1.2"><span class="field-label">Codice Fiscale</span>${paziente.codiceFiscale || ''}</div>
+    <div class="field" style="flex:1"><span class="field-label">Data di Nascita</span>${formatData(paziente.birthDate)}</div>
+  </div>
+  <div class="field-row">
+    <div class="field" style="flex:1.4"><span class="field-label">Luogo di Nascita</span></div>
+    <div class="field" style="flex:0.4"><span class="field-label">Prov</span></div>
+    <div class="field" style="flex:1"><span class="field-label">Nazionalità</span></div>
+  </div>
+  <div class="field-row">
+    <div class="field" style="flex:2.2"><span class="field-label">Indirizzo Residenza</span>${indirizzo}</div>
+    <div class="field" style="flex:0.8"><span class="field-label">Città</span>${citta}</div>
+  </div>
+  <div class="field-row">
+    <div class="field" style="flex:0.8"><span class="field-label">CAP</span></div>
+    <div class="field" style="flex:0.8"><span class="field-label">Prov</span></div>
+    <div class="field" style="flex:1.2"><span class="field-label">Telefono / Cellulare</span>${paziente.contactPhone || ''}</div>
+    <div class="field" style="flex:1.5"><span class="field-label">Email</span>${paziente.email || ''}</div>
+  </div>
+
+  <div class="section"><p class="section-title">2. OGGETTO DELL'INCARICO E MODALITÀ DI ESECUZIONE</p></div>
+  <p>Il Committente conferisce all'Agenzia l'incarico professionale finalizzato alla ricerca, screening, valutazione e selezione di un assistente familiare (badante / colf / assistente domiciliare) rispondente alle esigenze assistenziali della famiglia. L'Agenzia si impegna a sottoporre al Committente i profili idonei e coordinare i colloqui conoscitivi.</p>
+
+  <div class="section"><p class="section-title">3. CORRISPETTIVO ECONOMICO E MODALITÀ DI PAGAMENTO</p></div>
+  <p>A fronte delle prestazioni svolte, il Committente si obbliga a corrispondere all'Agenzia le seguenti competenze:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28%">Fase del Servizio</th>
+        <th>Descrizione Prestazione</th>
+        <th style="width:24%;text-align:right;">Importo (Oltre IVA)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1. Reclutamento &amp; Selezione</strong></td>
+        <td>Attivazione ricerca, pubblicazione annunci, screening curricula e colloquio di selezione. Dovuto alla firma del presente contratto.</td>
+        <td class="price">€ ${importo1}</td>
+      </tr>
+      <tr>
+        <td><strong>2. Collocamento con Successo</strong></td>
+        <td>Sottoscrizione del contratto di lavoro o effettivo inserimento lavorativo della badante selezionata presso la famiglia.</td>
+        <td class="price">€ ${importo2}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>Tutela Normativa (Art. 11 D.Lgs. 276/2003):</strong> In conformità alla legge italiana, il servizio erogato nei confronti del lavoratore domestico/badante è a titolo completamente gratuito. Nessuna quota o trattenuta viene richiesta all'assistente familiare. Tutti i corrispettivi per le attività di intermediazione gravano esclusivamente sul Committente.
+  </div>
+
+  <div class="section"><p class="section-title">4. GARANZIA DI SOSTITUZIONE</p></div>
+  <p>Qualora il rapporto lavorativo con la badante si interrompa entro 30 giorni dall'assunzione per dimissioni o mancato superamento del periodo di prova, l'Agenzia effettuerà una seconda selezione senza l'addebito di ulteriori costi di avvio o esito positivo.</p>
+
+  <p style="margin-top:18px;"><strong>Luogo e Data:</strong> ${luogo}, lì ${data}</p>
+
+  <div class="sign-row">
+    <div class="sign-cell">Firma del Committente (Famiglia)</div>
+    <div class="sign-cell">Per <strong>ABBRACCIO CURE DOMICILIARI S.R.L.S.</strong><br/>(Legale Rappresentante: SCHEMBRI SIMONA)</div>
+  </div>
+
+  ${firmaHtml}
+
+  <div class="box" style="margin-top:22px;">
+    <p style="margin:0 0 10px 0;"><strong>APPROVAZIONE SPECIFICA CLAUSOLE</strong></p>
+    <p style="font-size:11px;margin:0 0 20px 0;">Ai sensi e per gli effetti degli art. 1341 e 1342 c.c., il Committente dichiara di approvare specificamente le clausole di cui all'art. 3 (Corrispettivo Economico), art. 3-bis (Gratuità per il Lavoratore ex D.Lgs. 276/2003) e art. 4 (Garanzia di Sostituzione).</p>
+    <div class="field" style="width:60%;margin-top:16px;"><span class="field-label">Firma del Committente per specifica approvazione</span></div>
+  </div>
+
+  <div class="no-print" style="text-align:center;margin-top:24px;">
+    <button onclick="window.print()" style="background:#1e4d8c;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:14px;cursor:pointer;font-weight:700;">🖨️ Stampa / Salva PDF</button>
+  </div>
+
+  <div class="footer">Documento generato elettronicamente da Abbraccio Cure Domiciliari S.R.L.S. — ${new Date().toLocaleString('it-IT')}</div>
+</body>
+</html>`;
+}
+
 // POST /api/contratti-pazienti — crea un nuovo contratto d'incarico
 router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('contratti_pazienti', 'CREATE'), async (req: AuthRequest, res: Response) => {
   try {
     const { patient, profilo, importo, email } = req.body;
     if (!patient || !profilo) return res.status(400).json({ message: 'Paziente e profilo obbligatori' });
-    if (!['OSS', 'Infermiere'].includes(profilo)) return res.status(400).json({ message: 'Profilo non valido' });
+    if (!['OSS', 'Infermiere', 'Assistente familiare'].includes(profilo)) return res.status(400).json({ message: 'Profilo non valido' });
 
     const paziente = await Patient.findById(patient);
     if (!paziente) return res.status(404).json({ message: 'Paziente non trovato' });

@@ -172,7 +172,7 @@ function Patients() {
   // Stato modal contratto d'incarico
   const [showContrattoModal, setShowContrattoModal] = useState(false);
   const [contrattoPatient, setContrattoPatient] = useState<Patient | null>(null);
-  const [contrattoProfilo, setContrattoProfilo] = useState<'OSS' | 'Infermiere'>('OSS');
+  const [contrattoProfilo, setContrattoProfilo] = useState<'OSS' | 'Infermiere' | 'Assistente familiare'>('OSS');
   const [contrattoEmail, setContrattoEmail] = useState('');
   const [contrattoLoading, setContrattoLoading] = useState(false);
 
@@ -1623,11 +1623,12 @@ function Patients() {
               <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Profilo da reclutare</label>
               <select
                 value={contrattoProfilo}
-                onChange={(e) => setContrattoProfilo(e.target.value as 'OSS' | 'Infermiere')}
+                onChange={(e) => setContrattoProfilo(e.target.value as 'OSS' | 'Infermiere' | 'Assistente familiare')}
                 className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]"
               >
                 <option value="OSS">Operatore Socio-Sanitario (O.S.S.)</option>
                 <option value="Infermiere">Infermiere Professionale</option>
+                <option value="Assistente familiare">Assistente familiare (badante/colf)</option>
               </select>
             </div>
 
