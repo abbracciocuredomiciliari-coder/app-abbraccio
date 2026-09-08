@@ -316,21 +316,25 @@ router.post('/firma/:token', async (req: Request, res: Response) => {
       contenuto: signedBuffer,
     });
 
-    // Invia copia firmata al professionista
+    // Invia copie firmata e non firmata al professionista
     if (doc.firma?.email || doc.datiProfessionista?.email) {
       const toEmail = doc.firma?.email || doc.datiProfessionista?.email;
       const nomeProf = `${doc.datiProfessionista.firstName || ''} ${doc.datiProfessionista.lastName || ''}`.trim();
+      const unsignedBuffer = await generaRitenutaPDF(doc, false);
       const htmlCopia = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
         <h2 style="color:#16a34a;margin-top:0;">Ritenuta d'acconto firmata</h2>
         <p>Spett.le <strong>${nomeProf}</strong>,</p>
-        <p>in allegato trovi la copia firmata della ritenuta d'acconto n. <strong>${doc.numero}</strong>.</p>
+        <p>in allegato trovi la copia firmata e la copia non firmata della ritenuta d'acconto n. <strong>${doc.numero}</strong>.</p>
         <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari S.R.L.S.</p>
       </div>`;
       await inviaEmail({
         to: toEmail,
-        subject: `Copia firmata — Ritenuta n. ${doc.numero}`,
+        subject: `Copie ritenuta n. ${doc.numero}`,
         html: htmlCopia,
-        attachments: [{ filename: `RITENUTA-${baseNum}-firmata.pdf`, content: signedBuffer, contentType: 'application/pdf' }],
+        attachments: [
+          { filename: `RITENUTA-${baseNum}.pdf`, content: unsignedBuffer, contentType: 'application/pdf' },
+          { filename: `RITENUTA-${baseNum}-firmata.pdf`, content: signedBuffer, contentType: 'application/pdf' },
+        ],
       });
     }
 

@@ -203,20 +203,44 @@ router.post('/firma/:token', async (req: Request, res: Response) => {
     const { firmaImg, rifiutoRegistro, nome } = req.body;
     if (!firmaImg) return res.status(400).json({ message: 'Firma obbligatoria' });
 
-    const doc = await DocumentoFatturazione.findOne({ 'firma.token': req.params.token });
-    if (!doc) return res.status(404).json({ message: 'Link non valido o scaduto' });
-    if (doc.firma?.firmato) return res.status(400).json({ message: 'Documento già firmato' });
+    const docMongoose = await DocumentoFatturazione.findOne({ 'firma.token': req.params.token })
+      .populate('patient', 'firstName lastName codiceFiscale address email');
+    if (!docMongoose) return res.status(404).json({ message: 'Link non valido o scaduto' });
+    if (docMongoose.firma?.firmato) return res.status(400).json({ message: 'Documento già firmato' });
 
-    doc.firma = {
-      ...((doc.firma as any) || {}),
+    docMongoose.firma = {
+      ...((docMongoose.firma as any) || {}),
       firmato: true,
       firmatoIl: new Date(),
       firmaImg,
-      rifiutoRegistro: rifiutoRegistro !== undefined ? !!rifiutoRegistro : (doc.firma?.rifiutoRegistro ?? false),
-      nome: nome || doc.firma?.nome,
+      rifiutoRegistro: rifiutoRegistro !== undefined ? !!rifiutoRegistro : (docMongoose.firma?.rifiutoRegistro ?? false),
+      nome: nome || docMongoose.firma?.nome,
     };
-    doc.stato = 'firmato';
-    await doc.save();
+    docMongoose.stato = 'firmato';
+    await docMongoose.save();
+
+    const doc: any = docMongoose.toJSON();
+    const unsignedDoc = { ...doc, firma: { ...doc.firma, firmato: false, firmaImg: undefined } };
+    const unsignedBuffer = await generaDocumentoPDF(unsignedDoc);
+    const label = doc.tipo === 'fattura' ? 'Fattura' : 'Preventivo';
+    const filename = `${label.toUpperCase()}-${doc.numero}.pdf`;
+    const nomeDestinatario = doc.firma?.nome || 'Cliente';
+
+    if (doc.firma?.email) {
+      const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+        <h2 style="color:#1e4d8c;margin-top:0;">${label} ${doc.numero}</h2>
+        <p>Gentile <strong>${nomeDestinatario}</strong>,</p>
+        <p>in allegato trovi la copia del <strong>${label.toLowerCase()}</strong> n. ${doc.numero} del ${new Date(doc.data).toLocaleDateString('it-IT')}.</p>
+        <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari S.R.L.S.</p>
+      </div>`;
+
+      await inviaEmail({
+        to: doc.firma.email,
+        subject: `Copia ${label} ${doc.numero} — Abbraccio Cure Domiciliari`,
+        html,
+        attachments: [{ filename, content: unsignedBuffer, contentType: 'application/pdf' }],
+      });
+    }
 
     return res.json({ message: 'Documento firmato con successo' });
   } catch (error: any) {
@@ -313,6 +337,45 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
     return res.json({ message: `${label} inviata con successo a ${email}` });
   } catch (error: any) {
     console.error('[Fatturazione invia-email] Errore:', error);
+    return res.status(500).json({ message: "Errore nell'invio dell'email", error: error.message });
+  }
+});
+
+// POST /api/fatturazione-documenti/:id/rinvia-email — rispedisce la copia senza firma
+router.post('/:id/rinvia-email', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('fatturazione_documenti', 'UPDATE'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { email } = req.body;
+    const docMongoose = await DocumentoFatturazione.findById(req.params.id)
+      .populate('patient', 'firstName lastName codiceFiscale address email');
+    if (!docMongoose) return res.status(404).json({ message: 'Documento non trovato' });
+
+    const toEmail = email || docMongoose.firma?.email;
+    if (!toEmail) return res.status(400).json({ message: 'Email destinatario obbligatoria' });
+
+    const doc: any = docMongoose.toJSON();
+    const unsignedDoc = { ...doc, firma: { ...doc.firma, firmato: false, firmaImg: undefined } };
+    const buffer = await generaDocumentoPDF(unsignedDoc);
+    const label = doc.tipo === 'fattura' ? 'Fattura' : 'Preventivo';
+    const filename = `${label.toUpperCase()}-${doc.numero}.pdf`;
+    const nomeDestinatario = doc.firma?.nome || 'Cliente';
+
+    const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+      <h2 style="color:#1e4d8c;margin-top:0;">${label} ${doc.numero}</h2>
+      <p>Gentile <strong>${nomeDestinatario}</strong>,</p>
+      <p>in allegato trovi la copia del <strong>${label.toLowerCase()}</strong> n. ${doc.numero} del ${new Date(doc.data).toLocaleDateString('it-IT')}.</p>
+      <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari S.R.L.S.</p>
+    </div>`;
+
+    await inviaEmail({
+      to: toEmail,
+      subject: `Copia ${label} ${doc.numero} — Abbraccio Cure Domiciliari`,
+      html,
+      attachments: [{ filename, content: buffer, contentType: 'application/pdf' }],
+    });
+
+    return res.json({ message: `${label} rispedita con successo a ${toEmail}` });
+  } catch (error: any) {
+    console.error('[Fatturazione rinvia-email] Errore:', error);
     return res.status(500).json({ message: "Errore nell'invio dell'email", error: error.message });
   }
 });

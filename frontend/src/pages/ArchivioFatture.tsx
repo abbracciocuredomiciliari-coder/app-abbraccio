@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
 import api from '../api/api';
-import { Archive, ChevronUp, ChevronDown, Eye, Download, Trash2, FileText } from 'lucide-react';
+import { Archive, ChevronUp, ChevronDown, Eye, Download, Trash2, FileText, Mail } from 'lucide-react';
 
 interface Patient {
   _id: string;
@@ -128,6 +128,17 @@ export default function ArchivioFatture() {
     }
   };
 
+  const rinviaDocumento = async (doc: DocumentoFatturazione) => {
+    const email = doc.firma?.email || window.prompt('Email del destinatario');
+    if (!email) return;
+    try {
+      await api.post(`/fatturazione-documenti/${doc._id}/rinvia-email`, { email });
+      alert(`Fattura ${doc.numero} rispedita a ${email}`);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || "Errore nell'invio");
+    }
+  };
+
   const eliminaDocumento = async (doc: DocumentoFatturazione) => {
     if (!confirm(`Eliminare definitivamente il documento ${doc.numero}?\n\nQuesta azione non può essere annullata.`)) return;
     try {
@@ -199,6 +210,7 @@ export default function ArchivioFatture() {
                               {fattura.firma?.firmato && (
                                 <button onClick={() => scaricaDocumentoFirmato(fattura)} title="Scarica fattura firmata" style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#166534' }}><Download size={14} /></button>
                               )}
+                              <button onClick={() => rinviaDocumento(fattura)} title="Rinvia per email" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Mail size={14} /></button>
                               {preventivo && (
                                 <>
                                   <button onClick={() => anteprimaDocumento(preventivo)} title="Anteprima preventivo" style={{ background: '#fefce8', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#ca8a04' }}><Eye size={14} /></button>
