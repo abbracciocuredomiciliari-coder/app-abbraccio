@@ -19,6 +19,8 @@ const FirmaContratto = lazy(() => import('./pages/FirmaContratto'));
 const FirmaContrattoPaziente = lazy(() => import('./pages/FirmaContrattoPaziente'));
 const FirmaVerbaleEsterno = lazy(() => import('./pages/FirmaVerbaleEsterno'));
 const FirmaDocumento = lazy(() => import('./pages/FirmaDocumento'));
+const FirmaRitenuta = lazy(() => import('./pages/FirmaRitenuta'));
+const GestioneRitenute = lazy(() => import('./pages/GestioneRitenute'));
 
 // Lazy load per pagine pesanti
 const Patients = lazy(() => import('./pages/Patients'));
@@ -414,6 +416,10 @@ function AppShell() {
                 <Receipt size={18} />
                 Fatturazione
               </Link>
+              <Link to="/gestione-ritenute" className={isActive('/gestione-ritenute') ? 'active' : ''}>
+                <Euro size={18} />
+                Ritenute professionisti
+              </Link>
               <Link to="/archivio-fatture" className={isActive('/archivio-fatture') ? 'active' : ''}>
                 <Archive size={18} />
                 Archivio Fatture
@@ -478,6 +484,7 @@ function AppShell() {
           <Route path="/firma-contratto-paziente" element={<FirmaContrattoPaziente />} />
           <Route path="/firma-verbale" element={<FirmaVerbaleEsterno />} />
           <Route path="/firma-documento" element={<FirmaDocumento />} />
+          <Route path="/firma-ritenuta" element={<FirmaRitenuta />} />
 
           {/* Route privilegiati */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -539,6 +546,7 @@ function AppShell() {
           <Route path="/compenso-incarichi" element={<ProtectedRoute><CompensoIncarichi /></ProtectedRoute>} />
           <Route path="/report-consegne" element={<ProtectedRoute><ReportConsegne /></ProtectedRoute>} />
           <Route path="/gestione-fatturazione" element={<ProtectedRoute><GestioneFatturazione /></ProtectedRoute>} />
+          <Route path="/gestione-ritenute" element={<ProtectedRoute><GestioneRitenute /></ProtectedRoute>} />
           <Route path="/archivio-fatture" element={<ProtectedRoute><ArchivioFatture /></ProtectedRoute>} />
           <Route path="/tariffario" element={<ProtectedRoute><Tariffario /></ProtectedRoute>} />
           {/* GDPR Compliance - Gestione Consensi */}

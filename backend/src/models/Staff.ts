@@ -11,6 +11,11 @@ export interface IStaff extends Document {
   role: string;
   category: StaffCategory;
   phone?: string;
+  codiceFiscale?: string;
+  partitaIva?: string;
+  indirizzoResidenza?: string;
+  cittaResidenza?: string;
+  professionista?: boolean;
   active: boolean;
   dataInizioCollaborazione?: Date;
   dataFineCollaborazione?: Date;
@@ -37,6 +42,11 @@ const staffSchema = new Schema<IStaff>(
       default: 'infermieristico'
     },
     phone: { type: String, trim: true },
+    codiceFiscale: { type: String, trim: true },
+    partitaIva: { type: String, trim: true },
+    indirizzoResidenza: { type: String, trim: true },
+    cittaResidenza: { type: String, trim: true },
+    professionista: { type: Boolean, default: false },
     active: { type: Boolean, default: true },
     dataInizioCollaborazione: { type: Date },
     dataFineCollaborazione: { type: Date },

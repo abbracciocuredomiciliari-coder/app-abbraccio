@@ -48,6 +48,7 @@ import relazioniVocaliRouter from './routes/relazioniVocali';
 import telemedicinaRouter from './routes/telemedicina';
 import tariffarioRouter, { seedTariffarioSeVuoto, migraEsamiStrumentaliTariffario, migraVociAssistenzaTariffario } from './routes/tariffario';
 import fatturazioneDocumentiRouter from './routes/fatturazioneDocumenti';
+import ritenuteAccontoRouter from './routes/ritenuteAcconto';
 
 if (!process.env.JWT_SECRET) {
   console.error('ERRORE: JWT_SECRET non è impostato. Configurare la variabile d\'ambiente nel file .env prima di avviare il server.');
@@ -185,6 +186,7 @@ app.use('/api/relazioni-vocali', relazioniVocaliRouter);
 app.use('/api/telemedicina', telemedicinaRouter);
 app.use('/api/tariffario', tariffarioRouter);
 app.use('/api/fatturazione-documenti', fatturazioneDocumentiRouter);
+app.use('/api/ritenute-acconto', ritenuteAccontoRouter);
 // Alias senza prefisso /api per compatibilità con URL diretti degli allegati
 app.use('/allegati', allegatiRouter);
 
