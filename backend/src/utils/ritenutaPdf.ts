@@ -57,11 +57,15 @@ export function generaRitenutaPDF(ritenuta: any, isFirmato = false): Promise<Buf
       }
 
       // Tipo documento (destra)
-      pdf.font('Helvetica-Bold').fontSize(20).fillColor('#1e4d8c').text("RITENUTA D'ACCONTO", 340, 50, { width: 210, align: 'right' });
+      const titleRight = "RITENUTA D'ACCONTO";
+      pdf.font('Helvetica-Bold').fontSize(20).fillColor('#1e4d8c').text(titleRight, 340, 50, { width: 210, align: 'right' });
+      const titleRightH = pdf.fontSize(20).heightOfString(titleRight, { width: 210, align: 'right' });
+      let rightY = 50 + titleRightH + 10;
       pdf.font('Helvetica-Bold').fontSize(10).fillColor('#333333');
-      pdf.text(`Numero ritenuta: ${ritenuta.numero || '-'}`, 340, 76, { width: 210, align: 'right' });
+      pdf.text(`Numero ritenuta: ${ritenuta.numero || '-'}`, 340, rightY, { width: 210, align: 'right' });
+      rightY += 16;
       pdf.font('Helvetica').fontSize(10).fillColor('#333333');
-      pdf.text(`Data ritenuta: ${formatData(ritenuta.data)}`, 340, 92, { width: 210, align: 'right' });
+      pdf.text(`Data ritenuta: ${formatData(ritenuta.data)}`, 340, rightY, { width: 210, align: 'right' });
 
       // Box professionista
       const prof = ritenuta.datiProfessionista || {};
