@@ -6,13 +6,12 @@ import rateLimit from 'express-rate-limit';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
-import PDFDocument from 'pdfkit';
 import User from '../models/User';
 import Staff from '../models/Staff';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { inviaEmail, inviaEmailNotificaAdmin, inviaEmailResetPassword } from '../utils/email';
-import { compilaTestoContratto } from './contratto';
+import { compilaTestoContratto, generaPdfContratto } from './contratto';
 
 const router = Router();
 const jwtSecret = process.env.JWT_SECRET as string;
@@ -27,8 +26,6 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-const dataItaliana = (value?: Date | string) => value ? new Date(value).toLocaleDateString('it-IT') : '_____________';
-
 export async function archiviaPdfContratto(user: any, directory?: string) {
   const archiveDirectory = directory || path.join(uploadsDir, `contratto_${user._id}`);
   if (!fs.existsSync(archiveDirectory)) fs.mkdirSync(archiveDirectory, { recursive: true });
@@ -38,31 +35,6 @@ export async function archiviaPdfContratto(user: any, directory?: string) {
   user.contrattoPdfUrl = path.join('documenti-registrazione', path.basename(archiveDirectory), fileName).replace(/\\/g, '/');
   await user.save();
   return filePath;
-}
-
-function generaPdfContratto(user: any, outputPath: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const pdf = new PDFDocument({ margin: 45, size: 'A4', bufferPages: true });
-    const output = fs.createWriteStream(outputPath);
-    output.on('finish', resolve);
-    output.on('error', reject);
-    pdf.pipe(output);
-    pdf.fontSize(15).font('Helvetica-Bold').fillColor('#1e4d8c').text('CONTRATTO PROFESSIONISTI', { align: 'center' });
-    pdf.moveDown(0.3).fontSize(9).font('Helvetica').fillColor('#111111').text('Contratto di prestazione d’opera intellettuale ai sensi degli artt. 2229 e ss. C.C.', { align: 'center' });
-    pdf.moveDown(1).fontSize(9).text(compilaTestoContratto(user), { align: 'justify', lineGap: 2 });
-    pdf.moveDown(2).fontSize(11).font('Helvetica-Bold').fillColor('#1e4d8c').text('SOTTOSCRIZIONE DIGITALE');
-    pdf.moveDown(0.5).fontSize(9).font('Helvetica').fillColor('#111111').text(`Professionista: ${user.name}\nLuogo: ${user.luogoFirmaContratto || 'Roma'}\nData: ${dataItaliana(user.dataFirmaContratto)}`);
-    if (user.firmaContratto) {
-      const image = Buffer.from(user.firmaContratto.replace(/^data:image\/png;base64,/, ''), 'base64');
-      pdf.moveDown(0.5).image(image, { fit: [220, 80] });
-    }
-    const pages = pdf.bufferedPageRange();
-    for (let page = 0; page < pages.count; page += 1) {
-      pdf.switchToPage(page);
-      pdf.fontSize(7).fillColor('#6b7280').text(`Contratto firmato digitalmente — ${user.name} — Pagina ${page + 1}/${pages.count}`, 45, 800, { align: 'center', width: 505 });
-    }
-    pdf.end();
-  });
 }
 
 // Rate limiting: max 10 tentativi di login ogni 15 minuti per IP

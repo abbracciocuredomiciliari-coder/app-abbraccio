@@ -49,6 +49,7 @@ const ProtocolliProcedure = lazy(() => import('./pages/ProtocolliProcedure'));
 const ReportConsegne = lazy(() => import('./pages/ReportConsegne'));
 const GestioneFatturazione = lazy(() => import('./pages/GestioneFatturazione'));
 const ArchivioFatture = lazy(() => import('./pages/ArchivioFatture'));
+const GestioneContratti = lazy(() => import('./pages/GestioneContratti'));
 const Tariffario = lazy(() => import('./pages/Tariffario'));
 const GestioneConsensiGDPR = lazy(() => import('./pages/GestioneConsensiGDPR'));
 const EsportazioneSIAT = lazy(() => import('./pages/EsportazioneSIAT'));
@@ -428,6 +429,10 @@ function AppShell() {
                 <Tag size={18} />
                 Tariffario
               </Link>
+              <Link to="/gestione-contratti" className={isActive('/gestione-contratti') ? 'active' : ''}>
+                <FileText size={18} />
+                Contratti operatori
+              </Link>
 
               {/* — Sistema (solo admin) — */}
               {user.role === 'admin' && (
@@ -549,6 +554,7 @@ function AppShell() {
           <Route path="/gestione-ritenute" element={<ProtectedRoute><GestioneRitenute /></ProtectedRoute>} />
           <Route path="/archivio-fatture" element={<ProtectedRoute><ArchivioFatture /></ProtectedRoute>} />
           <Route path="/tariffario" element={<ProtectedRoute><Tariffario /></ProtectedRoute>} />
+          <Route path="/gestione-contratti" element={<ProtectedRoute><GestioneContratti /></ProtectedRoute>} />
           {/* GDPR Compliance - Gestione Consensi */}
           <Route path="/gestione-consensi-gdpr" element={<ProtectedRoute><GestioneConsensiGDPR /></ProtectedRoute>} />
           {/* Esportazione SIAT */}

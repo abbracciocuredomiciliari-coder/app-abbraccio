@@ -1,7 +1,11 @@
 import { Router, Response, Request } from 'express';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
+import PDFDocument from 'pdfkit';
 import User from '../models/User';
+import { inviaEmail } from '../utils/email';
 import { TESTO_CONTRATTO_RITENUTA } from './contrattoRitenuta';
 
 const router = Router();
@@ -114,11 +118,18 @@ function dataItaliana(value?: Date | string) {
   return value ? new Date(value).toLocaleDateString('it-IT') : '_____________';
 }
 
-export function compilaTestoContratto(user: any): string {
+export type TipoContrattoPdf = 'piva' | 'ritenuta';
+
+function useRitenuta(user: any, tipo?: TipoContrattoPdf): boolean {
+  if (tipo === 'ritenuta') return true;
+  if (tipo === 'piva') return false;
+  return user.regimeFiscale === 'prestazione-occasionale' || user.tipoCollaborazione === 'prestazione-occasionale';
+}
+
+export function compilaTestoContratto(user: any, tipo?: TipoContrattoPdf): string {
   const dataScadenza = new Date(user.dataFirmaContratto || Date.now());
   dataScadenza.setFullYear(dataScadenza.getFullYear() + 1);
-  const useRitenuta = user.regimeFiscale === 'prestazione-occasionale' || user.tipoCollaborazione === 'prestazione-occasionale';
-  const base = useRitenuta ? TESTO_CONTRATTO_RITENUTA : TESTO_CONTRATTO;
+  const base = useRitenuta(user, tipo) ? TESTO_CONTRATTO_RITENUTA : TESTO_CONTRATTO;
   return base
     .replace(/Il Dr\. ___________________________________nato a _____________ il ______________, codice fiscale ___________________-e partita Iva  n° ________________________residente a ______________\. PEC Professionale ___________________________________\./, `Il Dr. ${user.name} nato a ${user.luogoNascita || '_____________'} il ${dataItaliana(user.dataNascita)}, codice fiscale ${user.codiceFiscale || '_________________'}-e partita Iva n° ${user.partitaIva || '______________________'} residente a ${user.indirizzoResidenza || '______________'}. PEC Professionale ${user.pec || '_________________________________'}.`)
     .replace(/di ____________________  ed è iscritto all'albo professionale dell'Ordine di ______________ numero tessera iscrizione ____________________________\;/, `di ${user.professione || '____________________'} ed è iscritto all'albo professionale dell'Ordine di ${user.ordineAlbo || '______________'} numero tessera iscrizione ${user.numeroAlbo || '____________________________'};`)
@@ -131,26 +142,153 @@ export function compilaTestoContratto(user: any): string {
     .replace(/Sottoscritto in _______________ il __________________\./g, `Sottoscritto in ${user.luogoFirmaContratto || '_____________'} il ${dataItaliana(user.dataFirmaContratto)}.`);
 }
 
-// GET /api/contratto/testo - Restituisce il testo base del contratto (pubblico, per anteprima)
+export function generaPdfContratto(user: any, outputPath: string, tipo?: TipoContrattoPdf, firmaBase64?: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const pdf = new PDFDocument({ margin: 45, size: 'A4', bufferPages: true });
+    const output = fs.createWriteStream(outputPath);
+    output.on('finish', resolve);
+    output.on('error', reject);
+    pdf.pipe(output);
+
+    const ritenuta = useRitenuta(user, tipo);
+    const title = ritenuta ? "CONTRATTO DI COLLABORAZIONE OCCASIONALE" : 'CONTRATTO PROFESSIONISTI';
+    const subtitle = ritenuta ? "Contratto di prestazione d’opera occasionale con ritenuta d’acconto" : "Contratto di prestazione d’opera intellettuale ai sensi degli artt. 2229 e ss. C.C.";
+
+    pdf.fontSize(15).font('Helvetica-Bold').fillColor('#1e4d8c').text(title, { align: 'center' });
+    pdf.moveDown(0.3).fontSize(9).font('Helvetica').fillColor('#111111').text(subtitle, { align: 'center' });
+    pdf.moveDown(1).fontSize(9).text(compilaTestoContratto(user, tipo), { align: 'justify', lineGap: 2 });
+
+    pdf.moveDown(2).fontSize(11).font('Helvetica-Bold').fillColor('#1e4d8c').text('SOTTOSCRIZIONE DIGITALE');
+    pdf.moveDown(0.5).fontSize(9).font('Helvetica').fillColor('#111111').text(`Professionista: ${user.name || ''}\nLuogo: ${user.luogoFirmaContratto || 'Roma'}\nData: ${dataItaliana(user.dataFirmaContratto)}`);
+
+    if (firmaBase64) {
+      const clean = firmaBase64.replace(/^data:image\/png;base64,/, '');
+      if (clean.length > 20) {
+        try {
+          const image = Buffer.from(clean, 'base64');
+          pdf.moveDown(0.5).image(image, { fit: [220, 80] });
+        } catch (e) {
+          console.warn('[contratto] Errore inserimento firma nel PDF:', e);
+        }
+      }
+    }
+
+    const pages = pdf.bufferedPageRange();
+    for (let page = 0; page < pages.count; page += 1) {
+      pdf.switchToPage(page);
+      pdf.fontSize(7).fillColor('#6b7280').text(`Contratto firmato digitalmente — ${user.name || ''} — Pagina ${page + 1}/${pages.count}`, 45, 800, { align: 'center', width: 505 });
+    }
+
+    pdf.end();
+  });
+}
+
+const jwtSecret = process.env.JWT_SECRET as string;
+const frontendUrl = (process.env.FRONTEND_URL || 'https://app.abbracciocuredomiciliari.it').replace(/\/$/, '');
+
+const contrattiDir = path.join(__dirname, '../../uploads/contratti');
+if (!fs.existsSync(contrattiDir)) fs.mkdirSync(contrattiDir, { recursive: true });
+
+function directoryUtente(userId: string) {
+  const dir = path.join(contrattiDir, String(userId));
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+function parseTipoContratto(tipo: any): TipoContrattoPdf | undefined {
+  if (tipo === 'ritenuta' || tipo === 'prestazione-occasionale') return 'ritenuta';
+  if (tipo === 'piva') return 'piva';
+  return undefined;
+}
+
+// GET /api/contratto/testo - Testo base (pubblico, per anteprima generica)
 router.get('/testo', (req: Request, res: Response) => {
   const tipo = req.query.tipo as string;
-  const testo = tipo === 'prestazione-occasionale' ? TESTO_CONTRATTO_RITENUTA : TESTO_CONTRATTO;
+  const testo = tipo === 'prestazione-occasionale' || tipo === 'ritenuta' ? TESTO_CONTRATTO_RITENUTA : TESTO_CONTRATTO;
   return res.json({ testo });
 });
 
-// GET /api/contratto/pdf/:userId - Genera PDF del contratto firmato per un operatore (admin/coordinator)
+// GET /api/contratto/anteprima/:userId — testo compilato per admin (tipo piva/ritenuta)
+router.get('/anteprima/:userId', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const requester = req.user as { userId: string; role: string };
+    if (!requester || (requester.role !== 'admin' && requester.role !== 'coordinator')) {
+      return res.status(403).json({ message: 'Non autorizzato' });
+    }
+    const user = await User.findById(req.params.userId).select('-password');
+    if (!user) return res.status(404).json({ message: 'Utente non trovato' });
+    const tipo = parseTipoContratto(req.query.tipo);
+    return res.json({
+      nome: user.name,
+      tipo: tipo || (useRitenuta(user) ? 'ritenuta' : 'piva'),
+      titolo: useRitenuta(user, tipo) ? 'Contratto di collaborazione occasionale' : 'Contratto professionisti',
+      contratto: compilaTestoContratto(user, tipo),
+    });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore anteprima contratto', error: err?.message });
+  }
+});
+
+// GET /api/contratto/download/:userId — PDF binario compilato (admin, anche non firmato)
+router.get('/download/:userId', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const requester = req.user as { userId: string; role: string };
+    if (!requester || (requester.role !== 'admin' && requester.role !== 'coordinator')) {
+      return res.status(403).json({ message: 'Non autorizzato' });
+    }
+    const user = await User.findById(req.params.userId).select('-password');
+    if (!user) return res.status(404).json({ message: 'Utente non trovato' });
+    const tipo = parseTipoContratto(req.query.tipo);
+    const label = tipo === 'ritenuta' ? 'prestazione-occasionale' : 'professionisti';
+    const filePath = path.join(directoryUtente(String(user._id)), `contratto_${label}_non_firmato.pdf`);
+    await generaPdfContratto(user, filePath, tipo);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="contratto_${label}_${user.name?.replace(/\\s+/g, '_') || user._id}.pdf"`);
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.on('error', (err) => { console.error('[contratto] stream error:', err); if (!res.headersSent) res.status(500).end(); });
+    return fileStream.pipe(res);
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore generazione PDF', error: err?.message });
+  }
+});
+
+// GET /api/contratto/firmato/:userId — PDF binario firmato se presente
+router.get('/firmato/:userId', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const requester = req.user as { userId: string; role: string };
+    if (!requester || (requester.role !== 'admin' && requester.role !== 'coordinator')) {
+      return res.status(403).json({ message: 'Non autorizzato' });
+    }
+    const user = await User.findById(req.params.userId).select('-password');
+    if (!user) return res.status(404).json({ message: 'Utente non trovato' });
+    if (!user.firmaContratto) return res.status(404).json({ message: 'Contratto non firmato' });
+    const tipo = parseTipoContratto(req.query.tipo);
+    const label = tipo === 'ritenuta' ? 'prestazione-occasionale' : 'professionisti';
+    const filePath = path.join(directoryUtente(String(user._id)), `contratto_${label}_firmato.pdf`);
+    await generaPdfContratto(user, filePath, tipo, user.firmaContratto);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="contratto_${label}_firmato_${user.name?.replace(/\\s+/g, '_') || user._id}.pdf"`);
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.on('error', (err) => { console.error('[contratto] stream error:', err); if (!res.headersSent) res.status(500).end(); });
+    return fileStream.pipe(res);
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore generazione PDF firmato', error: err?.message });
+  }
+});
+
+// GET /api/contratto/pdf/:userId - HTML del contratto firmato (admin/coordinator, retrocompatibile)
 router.get('/pdf/:userId', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const requester = req.user as { userId: string; role: string };
     if (!requester || (requester.role !== 'admin' && requester.role !== 'coordinator')) {
       return res.status(403).json({ message: 'Non autorizzato' });
     }
-
     const user = await User.findById(req.params.userId).select('-password');
     if (!user || !user.firmaContratto) {
       return res.status(404).json({ message: 'Contratto non trovato o non firmato' });
     }
-
+    const tipo = parseTipoContratto(req.query.tipo);
+    const ritenuta = useRitenuta(user, tipo);
     const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Contratto Professionale - ${user.name}</title>
     <style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:12px;color:#111;margin:25px;max-width:850px;line-height:1.4}
     h1{font-size:18px;color:#1e4d8c;margin-bottom:4px;text-align:center}
@@ -164,8 +302,8 @@ router.get('/pdf/:userId', authenticateToken, async (req: AuthRequest, res: Resp
     .footer{margin-top:30px;font-size:9px;color:#9ca3af;border-top:1px solid #e2e8f0;padding-top:10px;text-align:center}
     @media print{body{margin:15px} .no-print{display:none}}</style></head><body>
     <h1>CONTRATTO PROFESSIONISTI</h1>
-    <h2>${user.regimeFiscale === 'prestazione-occasionale' || user.tipoCollaborazione === 'prestazione-occasionale' ? "Contratto di collaborazione occasionale con ritenuta d'acconto" : "Contratto di prestazione d'opera intellettuale ai sensi degli artt. 2229 e ss. C.C."}</h2>
-    <div class="pre">${compilaTestoContratto(user)}</div>
+    <h2>${ritenuta ? "Contratto di collaborazione occasionale con ritenuta d'acconto" : "Contratto di prestazione d'opera intellettuale ai sensi degli artt. 2229 e ss. C.C."}</h2>
+    <div class="pre">${compilaTestoContratto(user, tipo)}</div>
     <div class="firma-section">
       <div class="firma-box">
         <div class="field"><label>Società:</label> ABBRACCIO CURE DOMICILIARI S.r.l.</div>
@@ -182,7 +320,6 @@ router.get('/pdf/:userId', authenticateToken, async (req: AuthRequest, res: Resp
     <div class="footer">Documento generato — App Abbraccio Cure Domiciliari — ${new Date().toLocaleString('it-IT')}</div>
     <div class="no-print" style="margin-top:24px;text-align:center"><button onclick="window.print()" style="background:#1e4d8c;color:white;border:none;border-radius:8px;padding:12px 28px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Stampa / Salva PDF</button></div>
     </body></html>`;
-    
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     return res.send(html);
   } catch (err: any) {
@@ -190,18 +327,15 @@ router.get('/pdf/:userId', authenticateToken, async (req: AuthRequest, res: Resp
   }
 });
 
-// GET /api/contratto/mio — Contratto compilato dell'operatore loggato
+// GET /api/contratto/mio — HTML del contratto firmato per l'operatore loggato
 router.get('/mio', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const requester = req.user as { userId: string };
-    if (!requester?.userId) {
-      return res.status(401).json({ message: 'Non autenticato' });
-    }
+    if (!requester?.userId) return res.status(401).json({ message: 'Non autenticato' });
     const user = await User.findById(requester.userId).select('-password');
-    if (!user || !user.firmaContratto) {
-      return res.status(404).json({ message: 'Contratto non trovato o non firmato' });
-    }
-
+    if (!user || !user.firmaContratto) return res.status(404).json({ message: 'Contratto non trovato o non firmato' });
+    const tipo = parseTipoContratto(req.query.tipo);
+    const ritenuta = useRitenuta(user, tipo);
     const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Contratto Professionale - ${user.name}</title>
     <style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:12px;color:#111;margin:25px;max-width:850px;line-height:1.4}
     h1{font-size:18px;color:#1e4d8c;margin-bottom:4px;text-align:center}
@@ -215,8 +349,8 @@ router.get('/mio', authenticateToken, async (req: AuthRequest, res: Response) =>
     .footer{margin-top:30px;font-size:9px;color:#9ca3af;border-top:1px solid #e2e8f0;padding-top:10px;text-align:center}
     @media print{body{margin:15px} .no-print{display:none}}</style></head><body>
     <h1>CONTRATTO PROFESSIONISTI</h1>
-    <h2>${user.regimeFiscale === 'prestazione-occasionale' || user.tipoCollaborazione === 'prestazione-occasionale' ? "Contratto di collaborazione occasionale con ritenuta d'acconto" : "Contratto di prestazione d'opera intellettuale ai sensi degli artt. 2229 e ss. C.C."}</h2>
-    <div class="pre">${compilaTestoContratto(user)}</div>
+    <h2>${ritenuta ? "Contratto di collaborazione occasionale con ritenuta d'acconto" : "Contratto di prestazione d'opera intellettuale ai sensi degli artt. 2229 e ss. C.C."}</h2>
+    <div class="pre">${compilaTestoContratto(user, tipo)}</div>
     <div class="firma-section">
       <div class="firma-box">
         <div class="field"><label>Società:</label> ABBRACCIO CURE DOMICILIARI S.r.l.</div>
@@ -233,7 +367,6 @@ router.get('/mio', authenticateToken, async (req: AuthRequest, res: Response) =>
     <div class="footer">Documento generato — App Abbraccio Cure Domiciliari — ${new Date().toLocaleString('it-IT')}</div>
     <div class="no-print" style="margin-top:24px;text-align:center"><button onclick="window.print()" style="background:#1e4d8c;color:white;border:none;border-radius:8px;padding:12px 28px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Stampa / Salva PDF</button></div>
     </body></html>`;
-
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     return res.send(html);
   } catch (err: any) {
@@ -241,7 +374,28 @@ router.get('/mio', authenticateToken, async (req: AuthRequest, res: Response) =>
   }
 });
 
-// GET /api/contratto/mio/stato — verifica se l'operatore loggato ha già firmato il contratto
+// GET /api/contratto/mio/pdf — PDF firmato per l'operatore loggato
+router.get('/mio/pdf', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const requester = req.user as { userId: string };
+    if (!requester?.userId) return res.status(401).json({ message: 'Non autenticato' });
+    const user = await User.findById(requester.userId).select('-password');
+    if (!user || !user.firmaContratto) return res.status(404).json({ message: 'Contratto non trovato o non firmato' });
+    const tipo = parseTipoContratto(req.query.tipo);
+    const label = tipo === 'ritenuta' ? 'prestazione-occasionale' : 'professionisti';
+    const filePath = path.join(directoryUtente(String(user._id)), `contratto_${label}_firmato.pdf`);
+    await generaPdfContratto(user, filePath, tipo, user.firmaContratto);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="contratto_${label}_firmato_${user.name?.replace(/\\s+/g, '_') || user._id}.pdf"`);
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.on('error', (err) => { console.error('[contratto] stream error:', err); if (!res.headersSent) res.status(500).end(); });
+    return fileStream.pipe(res);
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore generazione PDF', error: err?.message });
+  }
+});
+
+// GET /api/contratto/mio/stato — stato firma operatore
 router.get('/mio/stato', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const requester = req.user as { userId: string };
@@ -255,93 +409,152 @@ router.get('/mio/stato', authenticateToken, async (req: AuthRequest, res: Respon
   }
 });
 
-// GET /api/contratto/mio/link-firma — genera link firma per l'operatore loggato
+// GET /api/contratto/mio/link-firma — link firma per operatore loggato (usa tipo del profilo)
 router.get('/mio/link-firma', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const requester = req.user as { userId: string };
     if (!requester?.userId) return res.status(401).json({ message: 'Non autenticato' });
-    const user = await User.findById(requester.userId).select('name email');
+    const user = await User.findById(requester.userId).select('name email regimeFiscale tipoCollaborazione');
     if (!user) return res.status(404).json({ message: 'Utente non trovato' });
-
-    const jwtSecret = process.env.JWT_SECRET as string;
-    const token = jwt.sign({ userId: user._id, scope: 'firma-contratto' }, jwtSecret, { expiresIn: '7d' });
-    const frontendUrl = (process.env.FRONTEND_URL || 'https://app.abbracciocuredomiciliari.it').replace(/\/$/, '');
-    const link = `${frontendUrl}/firma-contratto?token=${token}`;
+    const tipo = useRitenuta(user) ? 'ritenuta' : 'piva';
+    const token = jwt.sign({ userId: user._id, scope: 'firma-contratto', tipo }, jwtSecret, { expiresIn: '7d' });
+    const link = `${frontendUrl}/firma-contratto?token=${token}&tipo=${tipo}`;
     return res.json({ link, nome: user.name, email: user.email });
   } catch (err: any) {
     return res.status(500).json({ message: 'Errore generazione link', error: err?.message });
   }
 });
 
-// POST /api/contratto/genera-link-firma/:userId — genera token firma per un operatore (solo admin)
+// POST /api/contratto/genera-link-firma/:userId — admin genera link firma per tipo contratto
 router.post('/genera-link-firma/:userId', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const requester = req.user as { userId: string; role: string };
-    if (!requester || requester.role !== 'admin') {
-      return res.status(403).json({ message: 'Non autorizzato' });
-    }
+    if (!requester || requester.role !== 'admin') return res.status(403).json({ message: 'Non autorizzato' });
     const user = await User.findById(req.params.userId).select('name email');
     if (!user) return res.status(404).json({ message: 'Utente non trovato' });
-
-    const jwtSecret = process.env.JWT_SECRET as string;
-    const token = jwt.sign({ userId: user._id, scope: 'firma-contratto' }, jwtSecret, { expiresIn: '7d' });
-    const frontendUrl = (process.env.FRONTEND_URL || 'https://app-abbraccio-frontend.onrender.com').replace(/\/$/, '');
-    const link = `${frontendUrl}/firma-contratto?token=${token}`;
-    return res.json({ link, nome: user.name, email: user.email });
+    const tipo = parseTipoContratto(req.body?.tipo) || 'piva';
+    const token = jwt.sign({ userId: user._id, scope: 'firma-contratto', tipo }, jwtSecret, { expiresIn: '7d' });
+    const link = `${frontendUrl}/firma-contratto?token=${token}&tipo=${tipo}`;
+    return res.json({ link, nome: user.name, email: user.email, tipo });
   } catch (err: any) {
     return res.status(500).json({ message: 'Errore generazione link', error: err?.message });
   }
 });
 
-// POST /api/contratto/firma-da-token — salva firma tramite token (pubblico, no auth)
+// POST /api/contratto/invia-firma/:userId — admin invia email con link firma
+router.post('/invia-firma/:userId', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const requester = req.user as { userId: string; role: string };
+    if (!requester || requester.role !== 'admin') return res.status(403).json({ message: 'Non autorizzato' });
+    const user = await User.findById(req.params.userId).select('name email');
+    if (!user || !user.email) return res.status(404).json({ message: 'Utente non trovato' });
+    const tipo = parseTipoContratto(req.body?.tipo) || 'piva';
+    const token = jwt.sign({ userId: user._id, scope: 'firma-contratto', tipo }, jwtSecret, { expiresIn: '7d' });
+    const link = `${frontendUrl}/firma-contratto?token=${token}&tipo=${tipo}`;
+    const nomeContratto = tipo === 'ritenuta'
+      ? 'Contratto di collaborazione occasionale con ritenuta d\'acconto'
+      : 'Contratto di prestazione d\'opera intellettuale (professionisti)';
+    const inviata = await inviaEmail({
+      to: user.email,
+      subject: `📄 ${nomeContratto} da firmare — Abbraccio Cure Domiciliari`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+        <h2 style="color:#1e4d8c;margin-top:0;">📄 ${nomeContratto}</h2>
+        <p>Ciao <strong>${user.name}</strong>,</p>
+        <p>Ti è stato inviato il contratto da firmare digitalmente su <strong>Abbraccio Cure Domiciliari</strong>.</p>
+        <p>Clicca il pulsante qui sotto per leggere il contratto e apporre la tua firma digitale con dito o penna. Il link è valido per <strong>7 giorni</strong>.</p>
+        <div style="text-align:center;margin:28px 0;">
+          <a href="${link}" style="display:inline-block;background:#1e4d8c;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:1rem;">Firma il contratto →</a>
+        </div>
+        <p style="font-size:0.85rem;color:#888;">Se il pulsante non funziona, copia questo link nel browser:<br/><a href="${link}" style="color:#1e4d8c;">${link}</a></p>
+        <p style="font-size:0.85rem;color:#888;">Una volta firmato riceverai una copia del contratto per email.</p>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0;"/>
+        <p style="margin:0;font-size:12px;color:#888;">Abbraccio Cure Domiciliari</p>
+      </div>`,
+    });
+    return res.json({ inviata, link, message: inviata ? 'Email inviata correttamente' : 'Email non inviata (SMTP non configurato?)' });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore invio email', error: err?.message });
+  }
+});
+
+// POST /api/contratto/firma-da-token — salva firma tramite token (pubblico)
 router.post('/firma-da-token', async (req: Request, res: Response) => {
   try {
     const { token, firmaContratto, dataFirma, luogoFirma } = req.body;
     if (!token || !firmaContratto || firmaContratto === 'null' || firmaContratto.length < 10) {
       return res.status(400).json({ message: 'Token e firma obbligatori' });
     }
-    const jwtSecret = process.env.JWT_SECRET as string;
     let decoded: any;
     try {
       decoded = jwt.verify(token, jwtSecret);
     } catch {
       return res.status(401).json({ message: 'Link non valido o scaduto' });
     }
-    if (decoded.scope !== 'firma-contratto') {
-      return res.status(401).json({ message: 'Token non valido per questa operazione' });
-    }
+    if (decoded.scope !== 'firma-contratto') return res.status(401).json({ message: 'Token non valido per questa operazione' });
     const user = await User.findById(decoded.userId);
     if (!user) return res.status(404).json({ message: 'Utente non trovato' });
 
+    const tipo = parseTipoContratto(decoded.tipo);
+    if (tipo === 'ritenuta') {
+      user.tipoCollaborazione = 'libero-professionista';
+      user.regimeFiscale = 'prestazione-occasionale';
+    } else if (tipo === 'piva' && !user.regimeFiscale) {
+      user.regimeFiscale = 'forfettario';
+    }
     user.firmaContratto = firmaContratto;
     user.dataFirmaContratto = dataFirma ? new Date(dataFirma) : new Date();
     user.luogoFirmaContratto = luogoFirma?.trim() || 'Roma';
+
+    const label = tipo === 'ritenuta' ? 'prestazione-occasionale' : 'professionisti';
+    const dir = directoryUtente(String(user._id));
+    const filePath = path.join(dir, `contratto_${label}_firmato.pdf`);
+    await generaPdfContratto(user, filePath, tipo, firmaContratto);
+    user.contrattoPdfUrl = path.join('uploads/contratti', String(user._id), `contratto_${label}_firmato.pdf`).replace(/\\/g, '/');
     await user.save();
+
+    if (user.email) {
+      inviaEmail({
+        to: user.email,
+        subject: '📄 Copia del contratto firmato — Abbraccio Cure Domiciliari',
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+          <h2 style="color:#1e4d8c;margin-top:0;">📄 Contratto firmato</h2>
+          <p>Ciao <strong>${user.name}</strong>,</p>
+          <p>in allegato trovi la copia completa del contratto firmato digitalmente e archiviato nei nostri sistemi.</p>
+          <p>Conserva questo documento.</p>
+          <p style="font-size:12px;color:#888;margin-top:24px;">Abbraccio Cure Domiciliari</p>
+        </div>`,
+        attachments: [{ filename: `contratto_${label}_firmato.pdf`, path: filePath, contentType: 'application/pdf' }],
+      }).catch(err => console.warn('⚠️ Errore invio copia contratto:', err));
+    }
+
     return res.json({ message: 'Contratto firmato con successo!' });
   } catch (err: any) {
     return res.status(500).json({ message: 'Errore salvataggio firma', error: err?.message });
   }
 });
 
-// GET /api/contratto/verifica-token — verifica token e restituisce nome utente (pubblico)
+// GET /api/contratto/verifica-token — verifica token e restituisce contratto compilato (pubblico)
 router.get('/verifica-token', async (req: Request, res: Response) => {
   try {
     const { token } = req.query as { token: string };
     if (!token) return res.status(400).json({ message: 'Token mancante' });
-    const jwtSecret = process.env.JWT_SECRET as string;
     let decoded: any;
     try {
       decoded = jwt.verify(token, jwtSecret);
     } catch {
       return res.status(401).json({ message: 'Link non valido o scaduto' });
     }
-    if (decoded.scope !== 'firma-contratto') {
-      return res.status(401).json({ message: 'Token non valido' });
-    }
+    if (decoded.scope !== 'firma-contratto') return res.status(401).json({ message: 'Token non valido' });
     const user = await User.findById(decoded.userId).select('-password');
     if (!user) return res.status(404).json({ message: 'Utente non trovato' });
+    const tipo = parseTipoContratto(decoded.tipo);
     const giàFirmato = !!(user.firmaContratto && user.firmaContratto !== 'null' && user.firmaContratto.length > 10);
-    return res.json({ nome: user.name, giàFirmato, tipoCollaborazione: user.tipoCollaborazione, contratto: compilaTestoContratto(user) });
+    return res.json({
+      nome: user.name,
+      giàFirmato,
+      tipo,
+      contratto: compilaTestoContratto(user, tipo),
+    });
   } catch (err: any) {
     return res.status(500).json({ message: 'Errore verifica token', error: err?.message });
   }
