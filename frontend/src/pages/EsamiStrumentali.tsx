@@ -204,7 +204,7 @@ export default function EsamiStrumentali() {
       if (mostraArchiviati) params.archiviati = 'true';
       const [esamiRes, tariffarioRes, patRes, staffRes] = await Promise.all([
         api.get('/esami-strumentali', { params }),
-        api.get('/tariffario', { params: { soloAttivi: 'true' } }),
+        isPrivilegiato ? api.get('/tariffario', { params: { soloAttivi: 'true' } }) : Promise.resolve({ data: [] }),
         isPrivilegiato ? api.get('/patients') : Promise.resolve({ data: [] }),
         isPrivilegiato ? api.get('/staff') : Promise.resolve({ data: [] }),
       ]);
@@ -872,8 +872,8 @@ export default function EsamiStrumentali() {
           </div>
         )}
 
-        {/* ── TARIFFARIO ESAMI STRUMENTALI ── */}
-        {tariffeEsami.length > 0 && (
+        {/* ── TARIFFARIO ESAMI STRUMENTALI (solo admin/coordinator/direttore) ── */}
+        {isPrivilegiato && tariffeEsami.length > 0 && (
           <div className="dashboard-folder">
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: 0 }}>
               <FileText size={20} color="#e11d48" />
