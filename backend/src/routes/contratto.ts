@@ -2,6 +2,7 @@ import { Router, Response, Request } from 'express';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
+import { TESTO_CONTRATTO_RITENUTA } from './contrattoRitenuta';
 
 const router = Router();
 
@@ -109,9 +110,31 @@ Sottoscritto in _____________________ il _______________________.
 
                                                                                                                Il Professionista`;
 
-// GET /api/contratto/testo - Restituisce il testo completo del contratto (pubblico)
+function dataItaliana(value?: Date | string) {
+  return value ? new Date(value).toLocaleDateString('it-IT') : '_____________';
+}
+
+export function compilaTestoContratto(user: any): string {
+  const dataScadenza = new Date(user.dataFirmaContratto || Date.now());
+  dataScadenza.setFullYear(dataScadenza.getFullYear() + 1);
+  const base = user.tipoCollaborazione === 'prestazione-occasionale' ? TESTO_CONTRATTO_RITENUTA : TESTO_CONTRATTO;
+  return base
+    .replace(/Il Dr\. ___________________________________nato a _____________ il ______________, codice fiscale ___________________-e partita Iva  n° ________________________residente a ______________\. PEC Professionale ___________________________________\./, `Il Dr. ${user.name} nato a ${user.luogoNascita || '_____________'} il ${dataItaliana(user.dataNascita)}, codice fiscale ${user.codiceFiscale || '_________________'}-e partita Iva n° ${user.partitaIva || '______________________'} residente a ${user.indirizzoResidenza || '______________'}. PEC Professionale ${user.pec || '_________________________________'}.`)
+    .replace(/di ____________________  ed è iscritto all'albo professionale dell'Ordine di ______________ numero tessera iscrizione ____________________________\;/, `di ${user.professione || '____________________'} ed è iscritto all'albo professionale dell'Ordine di ${user.ordineAlbo || '______________'} numero tessera iscrizione ${user.numeroAlbo || '____________________________'};`)
+    .replace(/____________________ DOMICILIARE/, `${user.professione || '____________________'} DOMICILIARE`)
+    .replace(/dal __________________ al ________________/, `dal ${dataItaliana(user.dataFirmaContratto)} al ${dataItaliana(dataScadenza)}`)
+    .replace(/Letto, confermato e sottoscritto in __________________ il ______________\./, `Letto, confermato e sottoscritto in ${user.luogoFirmaContratto || '_____________'} il ${dataItaliana(user.dataFirmaContratto)}.`)
+    .replace(/Il\/La sottoscritto\/a _________________________ nato\/a a _________________ residente a ____________________ in _____________________________\./, `Il/La sottoscritto/a ${user.name || '_________________________'} nato/a a ${user.luogoNascita || '_______________'} residente a ${user.indirizzoResidenza || '__________________'} in ${user.indirizzoResidenza || '_________________________'}.`)
+    .replace(/Il\/La sottoscritto\/a \[OMISSIS\] nato\/a \[OMISSIS\] il residente in \[OMISSIS\] in/, `Il/La sottoscritto/a ${user.name || '_________________________'} nato/a a ${user.luogoNascita || '[OMISSIS]'} il ${dataItaliana(user.dataNascita)} residente in ${user.indirizzoResidenza || '[OMISSIS]'} in`)
+    .replace(/- Casella di posta elettronica certificata professionale privata\n- Telefono mobile per reperibilità nr: \n- Autoveicoli:/, `- Casella di posta elettronica certificata professionale privata: ${user.pec || '_________________________'}\n- Telefono mobile per reperibilità nr: ${user.telefono || '_________________________'}\n- Autoveicoli: ${user.autoveicoli || '_________________________'}`)
+    .replace(/Sottoscritto in _______________ il __________________\./g, `Sottoscritto in ${user.luogoFirmaContratto || '_____________'} il ${dataItaliana(user.dataFirmaContratto)}.`);
+}
+
+// GET /api/contratto/testo - Restituisce il testo base del contratto (pubblico, per anteprima)
 router.get('/testo', (req: Request, res: Response) => {
-  return res.json({ testo: TESTO_CONTRATTO });
+  const tipo = req.query.tipo as string;
+  const testo = tipo === 'prestazione-occasionale' ? TESTO_CONTRATTO_RITENUTA : TESTO_CONTRATTO;
+  return res.json({ testo });
 });
 
 // GET /api/contratto/pdf/:userId - Genera PDF del contratto firmato per un operatore (admin/coordinator)
@@ -140,22 +163,8 @@ router.get('/pdf/:userId', authenticateToken, async (req: AuthRequest, res: Resp
     .footer{margin-top:30px;font-size:9px;color:#9ca3af;border-top:1px solid #e2e8f0;padding-top:10px;text-align:center}
     @media print{body{margin:15px} .no-print{display:none}}</style></head><body>
     <h1>CONTRATTO PROFESSIONISTI</h1>
-    <h2>Contratto di prestazione d'opera intellettuale ai sensi degli artt. 2229 e ss. C.C.</h2>
-    <div class="pre">${TESTO_CONTRATTO
-      .replace(/Il Dr\. ___________________________________nato a _____________ il ______________, codice fiscale ___________________-e partita Iva  n° ________________________residente a ______________\. PEC Professionale ___________________________________\./, 
-        `Il Dr. ${user.name || '_________________'} nato a ${user.luogoNascita || '___________'} il ${user.dataNascita || '____________'}, codice fiscale ${user.codiceFiscale || '_________________'}-e partita Iva  n° ${user.partitaIva || '______________________'}residente a ${user.indirizzoResidenza || '____________'}. PEC Professionale ${user.pec || '_________________________________'}.`)
-      .replace(/di ____________________  ed è iscritto all'albo professionale dell'Ordine di ______________ numero tessera iscrizione ____________________________\;/, 
-        `di ${user.professione || '__________________'} ed è iscritto all'albo professionale dell'Ordine di ${user.ordineAlbo || '____________'} numero tessera iscrizione ${user.numeroAlbo || '__________________________'};`)
-      .replace(/____________________ DOMICILIARE/, `${user.professione || '____________________'} DOMICILIARE`)
-      .replace(/dal __________________ al ________________/, `dal ${new Date().toLocaleDateString('it-IT')} al ${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString('it-IT')}`)
-      .replace(/Letto, confermato e sottoscritto in __________________ il ______________\./, `Letto, confermato e sottoscritto in ${user.luogoFirmaContratto || '________________'} il ${new Date(user.dataFirmaContratto || Date.now()).toLocaleDateString('it-IT')}.`)
-      .replace(/Il\/La sottoscritto\/a _________________________ nato\/a a _________________ residente a ____________________ in _____________________________\./, 
-        `Il/La sottoscritto/a ${user.name || '_________________________'} nato/a a ${user.luogoNascita || '_______________'} residente a ${user.indirizzoResidenza || '__________________'} in ${user.indirizzoResidenza || '_________________________'}.`)
-      .replace(/Il\/La sottoscritto\/a \[OMISSIS\] nato\/a \[OMISSIS\] il residente in \[OMISSIS\] in/, `Il/La sottoscritto/a ${user.name || '_________________________'} nato/a a ${user.luogoNascita || '[OMISSIS]'} il ${user.dataNascita || '[OMISSIS]'} residente in ${user.indirizzoResidenza || '[OMISSIS]'} in`)
-      .replace(/- Casella di posta elettronica certificata professionale privata\n- Telefono mobile per reperibilità nr: \n- Autoveicoli:/, 
-        `- Casella di posta elettronica certificata professionale privata: ${user.pec || '_________________________'}\n- Telefono mobile per reperibilità nr: ${user.telefono || '_________________________'}\n- Autoveicoli: ${user.autoveicoli || '_________________________'}`)
-      .replace(/Sottoscritto in _______________ il __________________\./g, `Sottoscritto in ${user.luogoFirmaContratto || '_____________'} il ${new Date(user.dataFirmaContratto || Date.now()).toLocaleDateString('it-IT')}.`)
-    }</div>
+    <h2>${user.tipoCollaborazione === 'prestazione-occasionale' ? "Contratto di collaborazione occasionale con ritenuta d'acconto" : "Contratto di prestazione d'opera intellettuale ai sensi degli artt. 2229 e ss. C.C."}</h2>
+    <div class="pre">${compilaTestoContratto(user)}</div>
     <div class="firma-section">
       <div class="firma-box">
         <div class="field"><label>Società:</label> ABBRACCIO CURE DOMICILIARI S.r.l.</div>
@@ -205,22 +214,8 @@ router.get('/mio', authenticateToken, async (req: AuthRequest, res: Response) =>
     .footer{margin-top:30px;font-size:9px;color:#9ca3af;border-top:1px solid #e2e8f0;padding-top:10px;text-align:center}
     @media print{body{margin:15px} .no-print{display:none}}</style></head><body>
     <h1>CONTRATTO PROFESSIONISTI</h1>
-    <h2>Contratto di prestazione d'opera intellettuale ai sensi degli artt. 2229 e ss. C.C.</h2>
-    <div class="pre">${TESTO_CONTRATTO
-      .replace(/Il Dr\. ___________________________________nato a _____________ il ______________, codice fiscale ___________________-e partita Iva  n° ________________________residente a ______________\. PEC Professionale ___________________________________\./,
-        `Il Dr. ${user.name || '_________________'} nato a ${user.luogoNascita || '___________'} il ${user.dataNascita || '____________'}, codice fiscale ${user.codiceFiscale || '_________________'}-e partita Iva  n° ${user.partitaIva || '______________________'}residente a ${user.indirizzoResidenza || '____________'}. PEC Professionale ${user.pec || '_________________________________'}.`)
-      .replace(/di ____________________  ed è iscritto all'albo professionale dell'Ordine di ______________ numero tessera iscrizione ____________________________\;/,
-        `di ${user.professione || '__________________'} ed è iscritto all'albo professionale dell'Ordine di ${user.ordineAlbo || '____________'} numero tessera iscrizione ${user.numeroAlbo || '__________________________'};`)
-      .replace(/____________________ DOMICILIARE/, `${user.professione || '____________________'} DOMICILIARE`)
-      .replace(/dal __________________ al ________________/, `dal ${new Date().toLocaleDateString('it-IT')} al ${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString('it-IT')}`)
-      .replace(/Letto, confermato e sottoscritto in __________________ il ______________\./, `Letto, confermato e sottoscritto in ${user.luogoFirmaContratto || '________________'} il ${new Date(user.dataFirmaContratto || Date.now()).toLocaleDateString('it-IT')}.`)
-      .replace(/Il\/La sottoscritto\/a _________________________ nato\/a a _________________ residente a ____________________ in _____________________________\./,
-        `Il/La sottoscritto/a ${user.name || '_________________________'} nato/a a ${user.luogoNascita || '_______________'} residente a ${user.indirizzoResidenza || '__________________'} in ${user.indirizzoResidenza || '_________________________'}.`)
-      .replace(/Il\/La sottoscritto\/a \[OMISSIS\] nato\/a \[OMISSIS\] il residente in \[OMISSIS\] in/, `Il/La sottoscritto/a ${user.name || '_________________________'} nato/a a ${user.luogoNascita || '[OMISSIS]'} il ${user.dataNascita || '[OMISSIS]'} residente in ${user.indirizzoResidenza || '[OMISSIS]'} in`)
-      .replace(/- Casella di posta elettronica certificata professionale privata\n- Telefono mobile per reperibilità nr: \n- Autoveicoli:/,
-        `- Casella di posta elettronica certificata professionale privata: ${user.pec || '_________________________'}\n- Telefono mobile per reperibilità nr: ${user.telefono || '_________________________'}\n- Autoveicoli: ${user.autoveicoli || '_________________________'}`)
-      .replace(/Sottoscritto in _______________ il __________________\./g, `Sottoscritto in ${user.luogoFirmaContratto || '_____________'} il ${new Date(user.dataFirmaContratto || Date.now()).toLocaleDateString('it-IT')}.`)
-    }</div>
+    <h2>${user.tipoCollaborazione === 'prestazione-occasionale' ? "Contratto di collaborazione occasionale con ritenuta d'acconto" : "Contratto di prestazione d'opera intellettuale ai sensi degli artt. 2229 e ss. C.C."}</h2>
+    <div class="pre">${compilaTestoContratto(user)}</div>
     <div class="firma-section">
       <div class="firma-box">
         <div class="field"><label>Società:</label> ABBRACCIO CURE DOMICILIARI S.r.l.</div>
@@ -342,10 +337,10 @@ router.get('/verifica-token', async (req: Request, res: Response) => {
     if (decoded.scope !== 'firma-contratto') {
       return res.status(401).json({ message: 'Token non valido' });
     }
-    const user = await User.findById(decoded.userId).select('name firmaContratto');
+    const user = await User.findById(decoded.userId).select('-password');
     if (!user) return res.status(404).json({ message: 'Utente non trovato' });
     const giàFirmato = !!(user.firmaContratto && user.firmaContratto !== 'null' && user.firmaContratto.length > 10);
-    return res.json({ nome: user.name, giàFirmato });
+    return res.json({ nome: user.name, giàFirmato, tipoCollaborazione: user.tipoCollaborazione, contratto: compilaTestoContratto(user) });
   } catch (err: any) {
     return res.status(500).json({ message: 'Errore verifica token', error: err?.message });
   }

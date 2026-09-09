@@ -26,7 +26,7 @@ export interface IUser extends Document {
   indirizzoResidenza?: string;
   pec?: string;
   // Tipo collaborazione
-  tipoCollaborazione?: 'libero-professionista' | 'dipendente';
+  tipoCollaborazione?: 'libero-professionista' | 'dipendente' | 'prestazione-occasionale';
   partitaIva?: string;
   regimeFiscale?: 'forfettario' | 'ordinario';
   // Dati albo
@@ -85,7 +85,7 @@ const userSchema = new Schema<IUser>(
     indirizzoResidenza: { type: String, trim: true },
     pec: { type: String, trim: true, lowercase: true },
     // Tipo collaborazione
-    tipoCollaborazione: { type: String, enum: ['libero-professionista', 'dipendente'] },
+    tipoCollaborazione: { type: String, enum: ['libero-professionista', 'dipendente', 'prestazione-occasionale'] },
     partitaIva: { type: String, trim: true },
     regimeFiscale: { type: String, enum: ['forfettario', 'ordinario'] },
     // Dati albo

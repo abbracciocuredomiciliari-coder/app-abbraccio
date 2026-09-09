@@ -23,19 +23,16 @@ export default function FirmaContratto() {
       return;
     }
     const apiUrl = (import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api').replace(/\/api$/, '');
-    fetch(`${apiUrl}/api/contratto/testo`).then(r => r.json()).then(data => setTestoContratto(data.testo || '')).catch(() => setTestoContratto(''));
     fetch(`${apiUrl}/api/contratto/verifica-token?token=${encodeURIComponent(token)}`)
       .then(r => r.json())
       .then(data => {
         if (data.message) {
           setErrMsg(data.message);
           setStato('errore');
-        } else if (data.giàFirmato) {
-          setNomeUtente(data.nome);
-          setStato('firmato');
         } else {
-          setNomeUtente(data.nome);
-          setStato('pronto');
+          setNomeUtente(data.nome || '');
+          setTestoContratto(data.contratto || '');
+          setStato(data.giàFirmato ? 'firmato' : 'pronto');
         }
       })
       .catch(() => {
@@ -101,7 +98,7 @@ export default function FirmaContratto() {
 
             <div className="tw-bg-slate-50 tw-border tw-border-slate-200 tw-rounded-lg tw-p-3.5 tw-max-h-[420px] tw-overflow-y-auto tw-text-[0.78rem] tw-text-slate-700 tw-leading-normal tw-mb-5 tw-whitespace-pre-wrap">
               <strong className="tw-block tw-text-center tw-mb-2 tw-text-[0.85rem] tw-text-brand">TESTO INTEGRALE DEL CONTRATTO</strong>
-              {testoContratto ? testoContratto.replace(/Il Dr\. ___________________________________/, `Il Dr. ${nomeUtente}`) : 'Caricamento del contratto completo...'}
+              {testoContratto || 'Caricamento del contratto completo...'}
             </div>
 
             {/* Data e luogo */}

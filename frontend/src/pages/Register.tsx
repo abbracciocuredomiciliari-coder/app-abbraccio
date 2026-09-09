@@ -81,7 +81,7 @@ function Register() {
   const [geocodingError, setGeocodingError] = useState('');
 
   // ─── Tipo collaborazione ────────────────────────────────
-  const [tipoCollaborazione, setTipoCollaborazione] = useState<'libero-professionista' | 'dipendente' | ''>('');
+  const [tipoCollaborazione, setTipoCollaborazione] = useState<'libero-professionista' | 'dipendente' | 'prestazione-occasionale' | ''>('');
   const [partitaIva, setPartitaIva] = useState('');
   const [regimeFiscale, setRegimeFiscale] = useState<'forfettario' | 'ordinario' | ''>('');
 
@@ -159,6 +159,10 @@ function Register() {
         }
         if (tipoCollaborazione === 'libero-professionista' && !partitaIva.trim()) {
           setError('Inserisci la partita IVA');
+          return false;
+        }
+        if (tipoCollaborazione === 'prestazione-occasionale' && (!ordineAlbo.trim() || !numeroAlbo.trim())) {
+          setError('Inserisci ordine e numero di iscrizione albo');
           return false;
         }
         return true;
@@ -361,6 +365,10 @@ function Register() {
                 <strong>Libero Professionista</strong>
                 <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#6b7280' }}>Con Partita IVA e iscrizione albo</p>
               </button>
+              <button type="button" onClick={() => setTipoCollaborazione('prestazione-occasionale')} style={{ flex: 1, padding: '16px', borderRadius: '10px', border: `2px solid ${tipoCollaborazione === 'prestazione-occasionale' ? '#1e4d8c' : '#e5e7eb'}`, background: tipoCollaborazione === 'prestazione-occasionale' ? '#eff6ff' : 'white' }}>
+                <strong>Prestazione occasionale</strong>
+                <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#6b7280' }}>Con ritenuta d'acconto</p>
+              </button>
               <button type="button" onClick={() => setTipoCollaborazione('dipendente')} style={{ flex: 1, padding: '16px', borderRadius: '10px', border: `2px solid ${tipoCollaborazione === 'dipendente' ? '#1e4d8c' : '#e5e7eb'}`, background: tipoCollaborazione === 'dipendente' ? '#eff6ff' : 'white' }}>
                 <strong>Senza Partita IVA</strong>
                 <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#6b7280' }}>Dipendente o altro rapporto</p>
@@ -376,6 +384,16 @@ function Register() {
                 </select>
                 <input value={ordineAlbo} onChange={e => setOrdineAlbo(e.target.value)} placeholder="Ordine/Albo professionale (es. Ordine dei Medici di Roma)" />
                 <input value={numeroAlbo} onChange={e => setNumeroAlbo(e.target.value)} placeholder="Numero iscrizione albo" />
+              </div>
+            )}
+            {tipoCollaborazione === 'prestazione-occasionale' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px', background: '#f8fafc', borderRadius: '8px' }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>
+                  Hai scelto la collaborazione a titolo di <strong>prestazione occasionale con ritenuta d'acconto</strong>.
+                  Non è richiesta la Partita IVA; sul compenso verrà applicata la ritenuta d'acconto a titolo d'imposta.
+                </p>
+                <input value={ordineAlbo} onChange={e => setOrdineAlbo(e.target.value)} placeholder="Ordine/Albo professionale *" />
+                <input value={numeroAlbo} onChange={e => setNumeroAlbo(e.target.value)} placeholder="Numero iscrizione albo *" />
               </div>
             )}
           </div>
@@ -459,7 +477,7 @@ function Register() {
               <p><strong>Nome:</strong> {name}</p>
               <p><strong>Email:</strong> {email}</p>
               <p><strong>Prof:</strong> {professione}</p>
-              <p><strong>Tipo:</strong> {tipoCollaborazione === 'libero-professionista' ? 'Libero Prof.' : 'Dipendente'}{tipoCollaborazione === 'libero-professionista' && ` (P.IVA: ${partitaIva})`}</p>
+              <p><strong>Tipo:</strong> {tipoCollaborazione === 'libero-professionista' ? 'Libero Prof.' : tipoCollaborazione === 'prestazione-occasionale' ? 'Prestazione occasionale' : 'Dipendente'}{tipoCollaborazione === 'libero-professionista' && ` (P.IVA: ${partitaIva})`}{tipoCollaborazione === 'prestazione-occasionale' && ' (ritenuta d\'acconto)'}</p>
               <p><strong>Documenti:</strong> {
                 [assicurazioneFile, documentoIdentitaFile, attestazioneQualificaFile].filter(Boolean).length > 0
                   ? `✓ ${[assicurazioneFile, documentoIdentitaFile, attestazioneQualificaFile].filter(Boolean).length} allegati`

@@ -12,7 +12,7 @@ import Staff from '../models/Staff';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { inviaEmail, inviaEmailNotificaAdmin, inviaEmailResetPassword } from '../utils/email';
-import { TESTO_CONTRATTO } from './contratto';
+import { compilaTestoContratto } from './contratto';
 
 const router = Router();
 const jwtSecret = process.env.JWT_SECRET as string;
@@ -28,21 +28,6 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 const dataItaliana = (value?: Date | string) => value ? new Date(value).toLocaleDateString('it-IT') : '_____________';
-
-function compilaTestoContratto(user: any) {
-  const dataScadenza = new Date(user.dataFirmaContratto || Date.now());
-  dataScadenza.setFullYear(dataScadenza.getFullYear() + 1);
-  return TESTO_CONTRATTO
-    .replace(/Il Dr\. ___________________________________nato a _____________ il ______________, codice fiscale ___________________-e partita Iva  n° ________________________residente a ______________\. PEC Professionale ___________________________________\./, `Il Dr. ${user.name} nato a ${user.luogoNascita || '_____________'} il ${dataItaliana(user.dataNascita)}, codice fiscale ${user.codiceFiscale || '_________________'}-e partita Iva n° ${user.partitaIva || '______________________'} residente a ${user.indirizzoResidenza || '______________'}. PEC Professionale ${user.pec || '_________________________________'}.`)
-    .replace(/di ____________________  ed è iscritto all'albo professionale dell'Ordine di ______________ numero tessera iscrizione ____________________________;/, `di ${user.professione || '____________________'} ed è iscritto all'albo professionale dell'Ordine di ${user.ordineAlbo || '______________'} numero tessera iscrizione ${user.numeroAlbo || '____________________________'};`)
-    .replace(/____________________ DOMICILIARE/, `${user.professione || '____________________'} DOMICILIARE`)
-    .replace(/dal __________________ al ________________/, `dal ${dataItaliana(user.dataFirmaContratto)} al ${dataItaliana(dataScadenza)}`)
-    .replace(/Letto, confermato e sottoscritto in __________________ il ______________\./, `Letto, confermato e sottoscritto in ${user.luogoFirmaContratto || '_____________'} il ${dataItaliana(user.dataFirmaContratto)}.`)
-    .replace(/Il\/La sottoscritto\/a _________________________ nato\/a a _________________ residente a ____________________ in _____________________________\./, `Il/La sottoscritto/a ${user.name} nato/a a ${user.luogoNascita || '_______________'} residente a ${user.indirizzoResidenza || '__________________'} in ${user.indirizzoResidenza || '_________________________'}.`)
-    .replace(/Il\/La sottoscritto\/a \[OMISSIS\] nato\/a \[OMISSIS\] il residente in \[OMISSIS\] in/, `Il/La sottoscritto/a ${user.name} nato/a a ${user.luogoNascita || '[OMISSIS]'} il ${dataItaliana(user.dataNascita)} residente in ${user.indirizzoResidenza || '[OMISSIS]'} in`)
-    .replace(/- Casella di posta elettronica certificata professionale privata\n- Telefono mobile per reperibilità nr: \n- Autoveicoli:/, `- Casella di posta elettronica certificata professionale privata: ${user.pec || '_________________________'}\n- Telefono mobile per reperibilità nr: ${user.telefono || '_________________________'}\n- Autoveicoli:`)
-    .replace(/Sottoscritto in _______________ il __________________\./g, `Sottoscritto in ${user.luogoFirmaContratto || '_____________'} il ${dataItaliana(user.dataFirmaContratto)}.`);
-}
 
 export async function archiviaPdfContratto(user: any, directory?: string) {
   const archiveDirectory = directory || path.join(uploadsDir, `contratto_${user._id}`);
