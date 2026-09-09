@@ -117,7 +117,8 @@ function dataItaliana(value?: Date | string) {
 export function compilaTestoContratto(user: any): string {
   const dataScadenza = new Date(user.dataFirmaContratto || Date.now());
   dataScadenza.setFullYear(dataScadenza.getFullYear() + 1);
-  const base = user.tipoCollaborazione === 'prestazione-occasionale' ? TESTO_CONTRATTO_RITENUTA : TESTO_CONTRATTO;
+  const useRitenuta = user.regimeFiscale === 'prestazione-occasionale' || user.tipoCollaborazione === 'prestazione-occasionale';
+  const base = useRitenuta ? TESTO_CONTRATTO_RITENUTA : TESTO_CONTRATTO;
   return base
     .replace(/Il Dr\. ___________________________________nato a _____________ il ______________, codice fiscale ___________________-e partita Iva  n° ________________________residente a ______________\. PEC Professionale ___________________________________\./, `Il Dr. ${user.name} nato a ${user.luogoNascita || '_____________'} il ${dataItaliana(user.dataNascita)}, codice fiscale ${user.codiceFiscale || '_________________'}-e partita Iva n° ${user.partitaIva || '______________________'} residente a ${user.indirizzoResidenza || '______________'}. PEC Professionale ${user.pec || '_________________________________'}.`)
     .replace(/di ____________________  ed è iscritto all'albo professionale dell'Ordine di ______________ numero tessera iscrizione ____________________________\;/, `di ${user.professione || '____________________'} ed è iscritto all'albo professionale dell'Ordine di ${user.ordineAlbo || '______________'} numero tessera iscrizione ${user.numeroAlbo || '____________________________'};`)
@@ -163,7 +164,7 @@ router.get('/pdf/:userId', authenticateToken, async (req: AuthRequest, res: Resp
     .footer{margin-top:30px;font-size:9px;color:#9ca3af;border-top:1px solid #e2e8f0;padding-top:10px;text-align:center}
     @media print{body{margin:15px} .no-print{display:none}}</style></head><body>
     <h1>CONTRATTO PROFESSIONISTI</h1>
-    <h2>${user.tipoCollaborazione === 'prestazione-occasionale' ? "Contratto di collaborazione occasionale con ritenuta d'acconto" : "Contratto di prestazione d'opera intellettuale ai sensi degli artt. 2229 e ss. C.C."}</h2>
+    <h2>${user.regimeFiscale === 'prestazione-occasionale' || user.tipoCollaborazione === 'prestazione-occasionale' ? "Contratto di collaborazione occasionale con ritenuta d'acconto" : "Contratto di prestazione d'opera intellettuale ai sensi degli artt. 2229 e ss. C.C."}</h2>
     <div class="pre">${compilaTestoContratto(user)}</div>
     <div class="firma-section">
       <div class="firma-box">
@@ -214,7 +215,7 @@ router.get('/mio', authenticateToken, async (req: AuthRequest, res: Response) =>
     .footer{margin-top:30px;font-size:9px;color:#9ca3af;border-top:1px solid #e2e8f0;padding-top:10px;text-align:center}
     @media print{body{margin:15px} .no-print{display:none}}</style></head><body>
     <h1>CONTRATTO PROFESSIONISTI</h1>
-    <h2>${user.tipoCollaborazione === 'prestazione-occasionale' ? "Contratto di collaborazione occasionale con ritenuta d'acconto" : "Contratto di prestazione d'opera intellettuale ai sensi degli artt. 2229 e ss. C.C."}</h2>
+    <h2>${user.regimeFiscale === 'prestazione-occasionale' || user.tipoCollaborazione === 'prestazione-occasionale' ? "Contratto di collaborazione occasionale con ritenuta d'acconto" : "Contratto di prestazione d'opera intellettuale ai sensi degli artt. 2229 e ss. C.C."}</h2>
     <div class="pre">${compilaTestoContratto(user)}</div>
     <div class="firma-section">
       <div class="firma-box">
