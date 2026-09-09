@@ -58,6 +58,16 @@ export default function ProfiloPersonale() {
   const [contrattoFirmato, setContrattoFirmato] = useState<boolean | null>(null);
   const [firmaLoading, setFirmaLoading] = useState(false);
 
+  // ── Contratto (regime + anteprima + richiesta link) ──
+  const [contrattoDati, setContrattoDati] = useState<any>(null);
+  const [regimeFiscaleSelezionato, setRegimeFiscaleSelezionato] = useState('');
+  const [salvandoRegime, setSalvandoRegime] = useState(false);
+  const [regimeMessage, setRegimeMessage] = useState<{ text: string; tipo: 'ok' | 'err' } | null>(null);
+  const [anteprimaContratto, setAnteprimaContratto] = useState('');
+  const [caricandoAnteprima, setCaricandoAnteprima] = useState(false);
+  const [mostraAnteprima, setMostraAnteprima] = useState(false);
+  const [richiedendoLink, setRichiedendoLink] = useState(false);
+
   // ── Zona lavorativa ──
   const [editZona, setEditZona] = useState(false);
   const [zonaDomicilio, setZonaDomicilio] = useState('');
@@ -83,14 +93,14 @@ export default function ProfiloPersonale() {
   }, []);
 
   useEffect(() => {
-    verificaContratto();
+    caricaDatiContratto();
   }, []);
 
-  const apriContratto = async () => {
+  const apriContratto = async (tipo?: string) => {
     setContractError('');
     setContractLoading(true);
     try {
-      const res = await api.get('/contratto/mio');
+      const res = await api.get(`/contratto/mio${tipo ? `?tipo=${tipo}` : ''}`);
       const html = res.data;
       const blob = new Blob([html], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
@@ -103,12 +113,67 @@ export default function ProfiloPersonale() {
     }
   };
 
-  const verificaContratto = async () => {
+  const caricaDatiContratto = async () => {
     try {
-      const res = await api.get('/contratto/mio/stato');
+      const res = await api.get('/contratto/mio/dati');
+      setContrattoDati(res.data);
       setContrattoFirmato(res.data.giàFirmato === true);
+      setRegimeFiscaleSelezionato(res.data.regimeFiscale || '');
     } catch {
+      setContrattoDati(null);
       setContrattoFirmato(false);
+    }
+  };
+
+  const salvaRegime = async () => {
+    setRegimeMessage(null);
+    setSalvandoRegime(true);
+    try {
+      const res = await api.patch('/contratto/mio/regime', { regimeFiscale: regimeFiscaleSelezionato });
+      setRegimeMessage({ text: res.data.message || 'Regime aggiornato', tipo: 'ok' });
+      setContrattoDati((prev: any) => ({
+        ...prev,
+        regimeFiscale: res.data.regimeFiscale,
+        tipoCollaborazione: res.data.tipoCollaborazione,
+        tipo: res.data.tipo,
+      }));
+      setMostraAnteprima(false);
+      setAnteprimaContratto('');
+      setTimeout(() => setRegimeMessage(null), 3500);
+    } catch (err: any) {
+      setRegimeMessage({ text: err?.response?.data?.message || 'Errore salvataggio regime', tipo: 'err' });
+    } finally {
+      setSalvandoRegime(false);
+    }
+  };
+
+  const mostraAnteprimaContratto = async () => {
+    setMostraAnteprima(true);
+    setCaricandoAnteprima(true);
+    try {
+      const res = await api.get('/contratto/mio/anteprima');
+      setAnteprimaContratto(res.data.contratto || '');
+    } catch (err: any) {
+      setContractError(err?.response?.data?.message || 'Errore caricamento anteprima contratto.');
+    } finally {
+      setCaricandoAnteprima(false);
+    }
+  };
+
+  const richiediLinkFirma = async () => {
+    setContractError('');
+    setRichiedendoLink(true);
+    try {
+      const res = await api.post('/contratto/mio/richiedi-link');
+      if (res.data.inviata) {
+        setRegimeMessage({ text: 'Link di firma inviato per email', tipo: 'ok' });
+      } else {
+        setContractError(res.data.message || 'Email non inviata.');
+      }
+    } catch (err: any) {
+      setContractError(err?.response?.data?.message || 'Errore nella richiesta del link di firma.');
+    } finally {
+      setRichiedendoLink(false);
     }
   };
 
@@ -381,36 +446,133 @@ export default function ProfiloPersonale() {
             ❌ {contractError}
           </div>
         )}
-        {contrattoFirmato === null ? (
+        {regimeMessage && (
+          <div style={{ background: regimeMessage.tipo === 'ok' ? 'rgba(5,150,105,0.08)' : 'rgba(220,38,38,0.07)', border: `1px solid ${regimeMessage.tipo === 'ok' ? '#6ee7b7' : '#fca5a5'}`, borderRadius: '6px', padding: '10px 14px', color: regimeMessage.tipo === 'ok' ? '#065f46' : '#7f1d1d', fontSize: '0.88rem', marginBottom: '12px' }}>
+            {regimeMessage.tipo === 'ok' ? '✅' : '❌'} {regimeMessage.text}
+          </div>
+        )}
+
+        {contrattoFirmato === null || contrattoDati === null ? (
           <p style={{ color: '#6b7280', fontStyle: 'italic', margin: 0 }}>⏳ Verifica stato contratto...</p>
         ) : contrattoFirmato ? (
-          <button
-            type="button"
-            onClick={apriContratto}
-            disabled={contractLoading}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '7px',
-              padding: '9px 20px', cursor: contractLoading ? 'not-allowed' : 'pointer',
-              fontWeight: 700, fontSize: '0.88rem', opacity: contractLoading ? 0.7 : 1
-            }}
-          >
-            {contractLoading ? '⏳ Apertura...' : '📄 Visualizza / Stampa contratto'}
-          </button>
+          <div>
+            <p style={{ margin: '0 0 12px', color: '#065f46', fontWeight: 600 }}>
+              ✅ Contratto firmato{contrattoDati?.dataFirmaContratto ? ` il ${new Date(contrattoDati.dataFirmaContratto).toLocaleDateString('it-IT')}` : ''}
+            </p>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => apriContratto(contrattoDati?.tipo)}
+                disabled={contractLoading}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '7px',
+                  padding: '9px 20px', cursor: contractLoading ? 'not-allowed' : 'pointer',
+                  fontWeight: 700, fontSize: '0.88rem', opacity: contractLoading ? 0.7 : 1
+                }}
+              >
+                {contractLoading ? '⏳ Apertura...' : '📄 Visualizza / Stampa contratto'}
+              </button>
+            </div>
+          </div>
         ) : (
-          <button
-            type="button"
-            onClick={apriFirmaContratto}
-            disabled={firmaLoading}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              background: '#f59e0b', color: '#fff', border: 'none', borderRadius: '7px',
-              padding: '9px 20px', cursor: firmaLoading ? 'not-allowed' : 'pointer',
-              fontWeight: 700, fontSize: '0.88rem', opacity: firmaLoading ? 0.7 : 1
-            }}
-          >
-            {firmaLoading ? '⏳ Apertura...' : '✍️ Firma contratto'}
-          </button>
+          <div>
+            <p style={{ margin: '0 0 12px', color: '#92400e' }}>
+              ⚠️ Non hai ancora firmato il contratto. Scegli il regime fiscale/tipo di collaborazione per vedere l'anteprima e ricevere il link di firma.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '500px', marginBottom: '16px' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Regime fiscale / tipo collaborazione</span>
+                <select
+                  value={regimeFiscaleSelezionato}
+                  onChange={e => setRegimeFiscaleSelezionato(e.target.value)}
+                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.9rem', background: '#fff' }}
+                >
+                  <option value="">Seleziona...</option>
+                  <option value="forfettario">Libero professionista — Regime forfettario</option>
+                  <option value="ordinario">Libero professionista — Regime ordinario</option>
+                  <option value="prestazione-occasionale">Prestazione occasionale con ritenuta d'acconto</option>
+                </select>
+              </label>
+              <button
+                type="button"
+                onClick={salvaRegime}
+                disabled={salvandoRegime || !regimeFiscaleSelezionato}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px', alignSelf: 'flex-start',
+                  background: (!regimeFiscaleSelezionato || salvandoRegime) ? '#e5e7eb' : '#1e4d8c',
+                  color: (!regimeFiscaleSelezionato || salvandoRegime) ? '#9ca3af' : '#fff',
+                  border: 'none', borderRadius: '7px', padding: '8px 18px',
+                  cursor: (!regimeFiscaleSelezionato || salvandoRegime) ? 'not-allowed' : 'pointer',
+                  fontWeight: 700, fontSize: '0.88rem'
+                }}
+              >
+                <Save size={15} />
+                {salvandoRegime ? 'Salvataggio...' : 'Salva regime e vedi contratto'}
+              </button>
+            </div>
+
+            {contrattoDati?.regimeFiscale && (
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                <button
+                  type="button"
+                  onClick={mostraAnteprimaContratto}
+                  disabled={caricandoAnteprima}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    background: '#f8fafc', color: '#1e4d8c', border: '1px solid #1e4d8c', borderRadius: '7px',
+                    padding: '8px 18px', cursor: caricandoAnteprima ? 'not-allowed' : 'pointer',
+                    fontWeight: 700, fontSize: '0.88rem'
+                  }}
+                >
+                  {caricandoAnteprima ? '⏳ Caricamento...' : '👁️ Anteprima contratto'}
+                </button>
+                <button
+                  type="button"
+                  onClick={richiediLinkFirma}
+                  disabled={richiedendoLink}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    background: '#f59e0b', color: '#fff', border: 'none', borderRadius: '7px',
+                    padding: '8px 18px', cursor: richiedendoLink ? 'not-allowed' : 'pointer',
+                    fontWeight: 700, fontSize: '0.88rem', opacity: richiedendoLink ? 0.7 : 1
+                  }}
+                >
+                  {richiedendoLink ? '⏳ Invio...' : '📧 Richiedi link firma per email'}
+                </button>
+                <button
+                  type="button"
+                  onClick={apriFirmaContratto}
+                  disabled={firmaLoading}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '7px',
+                    padding: '8px 18px', cursor: firmaLoading ? 'not-allowed' : 'pointer',
+                    fontWeight: 700, fontSize: '0.88rem', opacity: firmaLoading ? 0.7 : 1
+                  }}
+                >
+                  {firmaLoading ? '⏳ Apertura...' : '✍️ Firma contratto'}
+                </button>
+              </div>
+            )}
+
+            {mostraAnteprima && (
+              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', maxHeight: '400px', overflowY: 'auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <strong style={{ color: '#1e4d8c', fontSize: '0.95rem' }}>Anteprima contratto</strong>
+                  <button type="button" onClick={() => setMostraAnteprima(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
+                    <X size={18} />
+                  </button>
+                </div>
+                {caricandoAnteprima ? (
+                  <p style={{ color: '#6b7280', fontStyle: 'italic', margin: 0 }}>⏳ Caricamento anteprima...</p>
+                ) : (
+                  <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'Arial, sans-serif', fontSize: '0.85rem', color: '#374151', margin: 0 }}>{anteprimaContratto}</pre>
+                )}
+              </div>
+            )}
+          </div>
         )}
       </div>
 

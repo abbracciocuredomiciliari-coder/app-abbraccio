@@ -409,6 +409,128 @@ router.get('/mio/stato', authenticateToken, async (req: AuthRequest, res: Respon
   }
 });
 
+// GET /api/contratto/mio/dati — dati contratto dell'operatore loggato
+router.get('/mio/dati', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const requester = req.user as { userId: string };
+    if (!requester?.userId) return res.status(401).json({ message: 'Non autenticato' });
+    const user = await User.findById(requester.userId).select('-password');
+    if (!user) return res.status(404).json({ message: 'Utente non trovato' });
+    const giàFirmato = !!(user.firmaContratto && user.firmaContratto !== 'null' && user.firmaContratto.length > 10);
+    const tipo = useRitenuta(user) ? 'ritenuta' : 'piva';
+    return res.json({
+      nome: user.name,
+      email: user.email,
+      regimeFiscale: user.regimeFiscale,
+      tipoCollaborazione: user.tipoCollaborazione,
+      firmaContratto: user.firmaContratto,
+      dataFirmaContratto: user.dataFirmaContratto,
+      contrattoPdfUrl: user.contrattoPdfUrl,
+      giàFirmato,
+      tipo,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore recupero dati contratto', error: err?.message });
+  }
+});
+
+// PATCH /api/contratto/mio/regime — aggiorna regime fiscale e tipo collaborazione operatore
+router.patch('/mio/regime', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const requester = req.user as { userId: string };
+    if (!requester?.userId) return res.status(401).json({ message: 'Non autenticato' });
+    const user = await User.findById(requester.userId);
+    if (!user) return res.status(404).json({ message: 'Utente non trovato' });
+
+    const regime = req.body.regimeFiscale;
+    if (regime !== 'forfettario' && regime !== 'ordinario' && regime !== 'prestazione-occasionale') {
+      return res.status(400).json({ message: 'Regime fiscale non valido' });
+    }
+
+    user.regimeFiscale = regime;
+    user.tipoCollaborazione = regime === 'prestazione-occasionale' ? 'prestazione-occasionale' : 'libero-professionista';
+    await user.save();
+
+    const tipo = useRitenuta(user) ? 'ritenuta' : 'piva';
+    return res.json({ message: 'Regime fiscale aggiornato', regimeFiscale: user.regimeFiscale, tipoCollaborazione: user.tipoCollaborazione, tipo });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore aggiornamento regime', error: err?.message });
+  }
+});
+
+// GET /api/contratto/mio/anteprima — testo compilato del contratto scelto dall'operatore
+router.get('/mio/anteprima', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const requester = req.user as { userId: string };
+    if (!requester?.userId) return res.status(401).json({ message: 'Non autenticato' });
+    const user = await User.findById(requester.userId).select('-password');
+    if (!user) return res.status(404).json({ message: 'Utente non trovato' });
+    if (!user.regimeFiscale) return res.status(400).json({ message: 'Seleziona un regime fiscale per vedere l\'anteprima' });
+    const tipo = useRitenuta(user) ? 'ritenuta' : 'piva';
+    return res.json({
+      nome: user.name,
+      tipo,
+      titolo: tipo === 'ritenuta' ? 'Contratto di collaborazione occasionale' : 'Contratto professionisti',
+      contratto: compilaTestoContratto(user, tipo),
+    });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore anteprima contratto', error: err?.message });
+  }
+});
+
+// POST /api/contratto/mio/richiedi-link — operatore richiede il link di firma (invio per email + notifica admin)
+router.post('/mio/richiedi-link', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const requester = req.user as { userId: string };
+    if (!requester?.userId) return res.status(401).json({ message: 'Non autenticato' });
+    const user = await User.findById(requester.userId);
+    if (!user || !user.email) return res.status(404).json({ message: 'Utente non trovato' });
+    if (!user.regimeFiscale) return res.status(400).json({ message: 'Seleziona un regime fiscale prima di richiedere il link' });
+
+    const tipo = useRitenuta(user) ? 'ritenuta' : 'piva';
+    const token = jwt.sign({ userId: user._id, scope: 'firma-contratto', tipo }, jwtSecret, { expiresIn: '7d' });
+    const link = `${frontendUrl}/firma-contratto?token=${token}&tipo=${tipo}`;
+    const nomeContratto = tipo === 'ritenuta'
+      ? 'Contratto di collaborazione occasionale con ritenuta d\'acconto'
+      : 'Contratto di prestazione d\'opera intellettuale (professionisti)';
+
+    const inviata = await inviaEmail({
+      to: user.email,
+      subject: `📄 ${nomeContratto} da firmare — Abbraccio Cure Domiciliari`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+        <h2 style="color:#1e4d8c;margin-top:0;">📄 ${nomeContratto}</h2>
+        <p>Ciao <strong>${user.name}</strong>,</p>
+        <p>hai richiesto il link per firmare digitalmente il tuo contratto su <strong>Abbraccio Cure Domiciliari</strong>.</p>
+        <p>Clicca il pulsante qui sotto per leggere il contratto e apporre la tua firma digitale con dito o penna. Il link è valido per <strong>7 giorni</strong>.</p>
+        <div style="text-align:center;margin:28px 0;">
+          <a href="${link}" style="display:inline-block;background:#1e4d8c;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:1rem;">Firma il contratto →</a>
+        </div>
+        <p style="font-size:0.85rem;color:#888;">Se il pulsante non funziona, copia questo link nel browser:<br/><a href="${link}" style="color:#1e4d8c;">${link}</a></p>
+        <p style="font-size:0.85rem;color:#888;">Una volta firmato riceverai una copia del contratto per email.</p>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0;"/>
+        <p style="margin:0;font-size:12px;color:#888;">Abbraccio Cure Domiciliari</p>
+      </div>`,
+    });
+
+    const adminEmail = process.env.ADMIN_EMAIL || user.email;
+    inviaEmail({
+      to: adminEmail,
+      subject: `📝 Richiesta link firma contratto — ${user.name}`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+        <h2 style="color:#1e4d8c;margin-top:0;">Richiesta link firma contratto</h2>
+        <p>L'operatore <strong>${user.name}</strong> (${user.email}) ha richiesto il link per firmare il contratto <strong>${nomeContratto}</strong>.</p>
+        <p>Puoi gestire i contratti dalla sezione "Contratti operatori" del gestionale.</p>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0;"/>
+        <p style="margin:0;font-size:12px;color:#888;">App Abbraccio Cure Domiciliari</p>
+      </div>`,
+    }).catch(err => console.warn('⚠️ Errore notifica admin richiesta link:', err));
+
+    return res.json({ inviata, link, message: inviata ? 'Link inviato per email' : 'Email non inviata' });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore invio link', error: err?.message });
+  }
+});
+
 // GET /api/contratto/mio/link-firma — link firma per operatore loggato (usa tipo del profilo)
 router.get('/mio/link-firma', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
