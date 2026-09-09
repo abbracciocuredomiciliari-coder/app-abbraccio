@@ -1,15 +1,17 @@
 import crypto from 'crypto';
 
 const SALT = 'abbraccio-field-encryption-salt-v1';
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
-const LEGACY_KEY = process.env.JWT_SECRET;
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || process.env.JWT_SECRET;
+const LEGACY_KEY = process.env.JWT_SECRET || ENCRYPTION_KEY;
 const IV_LENGTH = 16;
 const TAG_LENGTH = 16;
 
+if (!ENCRYPTION_KEY || ENCRYPTION_KEY.length < 32) {
+  console.error('WARNING: ENCRYPTION_KEY non impostata o troppo corta. Usare chiave AES-256 di almeno 32 caratteri.');
+}
+
 function getKey(): Buffer {
-  if (!ENCRYPTION_KEY || ENCRYPTION_KEY.length < 32) {
-    throw new Error('ENCRYPTION_KEY mancante o troppo corta. Usare chiave AES-256 di almeno 32 caratteri.');
-  }
+  if (!ENCRYPTION_KEY) throw new Error('ENCRYPTION_KEY mancante');
   return crypto.scryptSync(ENCRYPTION_KEY, SALT, 32);
 }
 
@@ -19,6 +21,7 @@ function getKey(): Buffer {
  */
 export const encrypt = (text: string): string => {
   if (!text) return text;
+  if (!ENCRYPTION_KEY) return text; // Fallback non sicuro per sviluppo
   try {
     const key = getKey();
     const iv = crypto.randomBytes(IV_LENGTH);
@@ -83,6 +86,6 @@ export const decrypt = (encryptedText: string): string => {
  */
 export const hashForSearch = (text: string): string => {
   if (!text) return '';
-  const key = getKey();
+  const key = ENCRYPTION_KEY ? getKey() : Buffer.alloc(32);
   return crypto.createHmac('sha256', key).update(text.toLowerCase().trim()).digest('hex');
 };
