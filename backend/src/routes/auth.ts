@@ -193,10 +193,6 @@ router.post('/register-completo', registerLimiter, upload.fields([
     if (body.password.length < 8 || !/[a-zA-Z]/.test(body.password) || !/[0-9]/.test(body.password)) {
       return res.status(400).json({ message: 'La password deve essere di almeno 8 caratteri e contenere almeno una lettera e un numero.' });
     }
-    if (!body.firmaContratto) {
-      return res.status(400).json({ message: 'La firma del contratto è obbligatoria' });
-    }
-
     const existingUser = await User.findOne({ 
       email: body.email.toLowerCase().trim(),
       status: { $ne: 'deleted' } // Escludi utenti marcati come cancellati
@@ -271,13 +267,15 @@ router.post('/register-completo', registerLimiter, upload.fields([
       documenti,
     });
 
-    const contrattoPdfPath = await archiviaPdfContratto(user, userDir);
-    inviaEmail({
-      to: user.email,
-      subject: '📄 Copia del contratto firmato — Abbraccio Cure Domiciliari',
-      html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px"><h2>Contratto firmato</h2><p>Ciao <strong>${user.name}</strong>,</p><p>in allegato trovi la copia completa del contratto firmato digitalmente e archiviato nei nostri sistemi.</p><p>Conserva questo documento.</p></div>`,
-      attachments: [{ filename: 'contratto_firmato.pdf', path: contrattoPdfPath, contentType: 'application/pdf' }],
-    }).catch(error => console.warn('⚠️ Errore invio copia contratto:', error));
+    if (body.firmaContratto) {
+      const contrattoPdfPath = await archiviaPdfContratto(user, userDir);
+      inviaEmail({
+        to: user.email,
+        subject: '📄 Copia del contratto firmato — Abbraccio Cure Domiciliari',
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px"><h2>Contratto firmato</h2><p>Ciao <strong>${user.name}</strong>,</p><p>in allegato trovi la copia completa del contratto firmato digitalmente e archiviato nei nostri sistemi.</p><p>Conserva questo documento.</p></div>`,
+        attachments: [{ filename: 'contratto_firmato.pdf', path: contrattoPdfPath, contentType: 'application/pdf' }],
+      }).catch(error => console.warn('⚠️ Errore invio copia contratto:', error));
+    }
 
     // Invia notifica email all'admin (fire-and-forget, non blocca la risposta)
     inviaEmailNotificaAdmin(user.name, user.email, user.professione || '').catch(emailErr => {
@@ -286,7 +284,7 @@ router.post('/register-completo', registerLimiter, upload.fields([
 
     return res.status(201).json({
       pending: true,
-      message: 'Registrazione inviata con successo! Il contratto è stato firmato e i documenti caricati. La tua richiesta è in attesa di approvazione.',
+      message: 'Registrazione inviata con successo! La tua richiesta è in attesa di approvazione.',
     });
   } catch (error: any) {
     console.error('Errore registrazione completa:', error);

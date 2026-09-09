@@ -1,9 +1,8 @@
-import { FormEvent, useState, useCallback, lazy, Suspense, useRef } from 'react';
+import { FormEvent, useState, useCallback, lazy, Suspense } from 'react';
 import api from '../api/api';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
-import FirmaCanvas from '../components/FirmaCanvas';
-import { Upload, FileText, CheckCircle, ArrowRight, ArrowLeft, User, MapPin, FileSignature, Paperclip } from 'lucide-react';
+import { Upload, FileText, CheckCircle, ArrowRight, ArrowLeft, User, MapPin, Paperclip } from 'lucide-react';
 
 const MappaZona = lazy(() => import('../components/MappaZona'));
 
@@ -55,7 +54,7 @@ const figurePerCategoria: Record<string, { label: string; ruoli: string[] }> = {
   },
 };
 
-type Step = 'anagrafica' | 'zona' | 'tipo-collab' | 'contratto' | 'documenti' | 'riepilogo';
+type Step = 'anagrafica' | 'zona' | 'tipo-collab' | 'documenti' | 'riepilogo';
 
 function Register() {
   // ─── Step wizard ─────────────────────────────────────────
@@ -86,10 +85,7 @@ function Register() {
   const [partitaIva, setPartitaIva] = useState('');
   const [regimeFiscale, setRegimeFiscale] = useState<'forfettario' | 'ordinario' | ''>('');
 
-  // ─── Contratto ──────────────────────────────────────────
-  const [firmaContratto, setFirmaContratto] = useState<string | null>(null);
-  const [dataFirma, setDataFirma] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [luogoFirma, setLuogoFirma] = useState('Roma');
+  // ─── Albo professionale ─────────────────────────────────
   const [numeroAlbo, setNumeroAlbo] = useState('');
   const [ordineAlbo, setOrdineAlbo] = useState('');
 
@@ -102,7 +98,6 @@ function Register() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const [testoContrattoCompleto, setTestoContrattoCompleto] = useState<string | null>(null);
 
   const geocodifica = useCallback(async () => {
     if (!domicilioPartenza.trim()) return;
@@ -167,16 +162,6 @@ function Register() {
           return false;
         }
         return true;
-      case 'contratto':
-        if (!firmaContratto) {
-          setError('Devi firmare il contratto per proseguire');
-          return false;
-        }
-        if (!dataFirma || !luogoFirma.trim()) {
-          setError('Compila data e luogo di firma');
-          return false;
-        }
-        return true;
       default:
         return true;
     }
@@ -184,13 +169,13 @@ function Register() {
 
   const nextStep = () => {
     if (!validaStep(step)) return;
-    const steps: Step[] = ['anagrafica', 'zona', 'tipo-collab', 'contratto', 'documenti', 'riepilogo'];
+    const steps: Step[] = ['anagrafica', 'zona', 'tipo-collab', 'documenti', 'riepilogo'];
     const idx = steps.indexOf(step);
     if (idx < steps.length - 1) setStep(steps[idx + 1]);
   };
 
   const prevStep = () => {
-    const steps: Step[] = ['anagrafica', 'zona', 'tipo-collab', 'contratto', 'documenti', 'riepilogo'];
+    const steps: Step[] = ['anagrafica', 'zona', 'tipo-collab', 'documenti', 'riepilogo'];
     const idx = steps.indexOf(step);
     if (idx > 0) setStep(steps[idx - 1]);
   };
@@ -225,10 +210,7 @@ function Register() {
       formData.append('tipoCollaborazione', tipoCollaborazione);
       formData.append('partitaIva', partitaIva.trim());
       formData.append('regimeFiscale', regimeFiscale);
-      // Contratto
-      formData.append('firmaContratto', firmaContratto!);
-      formData.append('dataFirma', dataFirma);
-      formData.append('luogoFirma', luogoFirma.trim());
+      // Albo professionale
       formData.append('numeroAlbo', numeroAlbo.trim());
       formData.append('ordineAlbo', ordineAlbo.trim());
       // Documenti
@@ -276,7 +258,6 @@ function Register() {
     { id: 'anagrafica', label: 'Anagrafica', icon: User },
     { id: 'zona', label: 'Zona lavoro', icon: MapPin },
     { id: 'tipo-collab', label: 'Tipo collab.', icon: FileText },
-    { id: 'contratto', label: 'Contratto', icon: FileSignature },
     { id: 'documenti', label: 'Documenti', icon: Paperclip },
     { id: 'riepilogo', label: 'Riepilogo', icon: CheckCircle },
   ];
@@ -285,7 +266,7 @@ function Register() {
     <section>
       <h2>Registrazione Operatore</h2>
       <p style={{ color: 'var(--gray-500)', marginBottom: '20px', fontSize: '0.95rem' }}>
-        Compila tutti gli step per richiedere l'accesso. Dovrai firmare il contratto; i documenti sono facoltativi ma consigliati.
+        Compila tutti gli step per richiedere l'accesso. I documenti sono facoltativi ma consigliati.
       </p>
 
       {/* Step indicator */}
@@ -400,77 +381,7 @@ function Register() {
           </div>
         )}
 
-        {/* STEP 4: Contratto - da completare */}
-        {step === 'contratto' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: '0', fontSize: '1.1rem', color: '#1e3a5f' }}>📝 Firma contratto</h3>
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api').replace(/\/api$/, '');
-                    const fullUrl = `${baseUrl}/api/contratto/testo`;
-                    console.log('Tentativo di caricamento contratto da:', fullUrl);
-                    
-                    const res = await fetch(fullUrl);
-                    console.log('Risposta status:', res.status, res.statusText);
-                    
-                    if (!res.ok) {
-                      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-                    }
-                    
-                    const data = await res.json();
-                    console.log('Dati ricevuti:', data);
-                    
-                    if (data.testo) {
-                      setTestoContrattoCompleto(data.testo);
-                    } else {
-                      throw new Error('Testo del contratto non presente nella risposta');
-                    }
-                  } catch (error) {
-                    console.error('Errore dettagliato caricamento contratto:', error);
-                    const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
-                    alert(`Errore nel caricamento del testo del contratto: ${errorMessage}`);
-                  }
-                }}
-                style={{ background: '#0369a1', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
-              >
-                <FileText size={14} /> Leggi testo completo
-              </button>
-            </div>
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', maxHeight: '300px', overflowY: 'auto', fontSize: '0.8rem' }}>
-              <h4 style={{ margin: '0 0 8px', textAlign: 'center' }}>CONTRATTO DI PRESTAZIONE D'OPERA</h4>
-              <p><strong>TRA</strong> ABBRACCIO CURE DOMICILIARI S.r.l. (P.IVA 18316251000)</p>
-              <p><strong>E</strong> {name || '_________________'}, C.F. {codiceFiscale || '_____________'}{tipoCollaborazione === 'libero-professionista' && `, P.IVA ${partitaIva || '_____________'}`}</p>
-              <hr style={{ margin: '8px 0' }} />
-              <p><strong>1. Oggetto:</strong> Prestazioni di {professione || '_________________'} in ambito domiciliare in autonomia.</p>
-              <p><strong>2. Durata:</strong> 1 anno dalla data di firma, con rinnovo tacito.</p>
-              <p><strong>3. Corrispettivo:</strong> Da concordare nel piano lavoro, pagamento 30gg fine mese.</p>
-              <p><strong>4. Requisiti:</strong> Iscrizione albo n° {numeroAlbo || '_____________'}, assicurazione RC, Codice Etico.</p>
-              <p><strong>5. Privacy:</strong> Impegno riservatezza dati pazienti (GDPR art.28).</p>
-              <p><strong>6. Recesso:</strong> 30 giorni preavviso. Risoluzione automatica per inadempimenti gravi.</p>
-              <p style={{ marginTop: '12px' }}>Letto e sottoscritto in data _______________ a _______________.</p>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <input type="date" value={dataFirma} onChange={e => setDataFirma(e.target.value)} placeholder="Data firma *" />
-              <input value={luogoFirma} onChange={e => setLuogoFirma(e.target.value)} placeholder="Luogo firma *" />
-            </div>
-            <div style={{ border: '2px dashed #1e4d8c', borderRadius: '8px', padding: '10px' }}>
-              <FirmaCanvas
-                label="Firma professionista"
-                sublabel={`${name || 'Nome Cognome'} - ${new Date().toLocaleDateString('it-IT')}`}
-                onFirmaCompleta={setFirmaContratto}
-                onCancella={() => setFirmaContratto(null)}
-                firmaEsistente={firmaContratto || undefined}
-                altezza={140}
-              />
-            </div>
-            {firmaContratto && <div style={{ color: '#059669', fontSize: '0.9rem' }}>✓ Contratto firmato digitalmente</div>}
-          </div>
-        )}
-
-        {/* STEP 5: Documenti */}
+        {/* STEP 4: Documenti */}
         {step === 'documenti' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', color: '#1e3a5f' }}>📎 Documenti allegati</h3>
@@ -549,7 +460,6 @@ function Register() {
               <p><strong>Email:</strong> {email}</p>
               <p><strong>Prof:</strong> {professione}</p>
               <p><strong>Tipo:</strong> {tipoCollaborazione === 'libero-professionista' ? 'Libero Prof.' : 'Dipendente'}{tipoCollaborazione === 'libero-professionista' && ` (P.IVA: ${partitaIva})`}</p>
-              <p><strong>Contratto:</strong> {firmaContratto ? '✓ Firmato' : '✗ Non firmato'}</p>
               <p><strong>Documenti:</strong> {
                 [assicurazioneFile, documentoIdentitaFile, attestazioneQualificaFile].filter(Boolean).length > 0
                   ? `✓ ${[assicurazioneFile, documentoIdentitaFile, attestazioneQualificaFile].filter(Boolean).length} allegati`
@@ -582,33 +492,6 @@ function Register() {
         </div>
       </form>
 
-      {/* Modale per testo completo contratto */}
-      {testoContrattoCompleto && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: 'white', borderRadius: '12px', maxWidth: '800px', width: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1e3a5f' }}>📄 Testo completo del contratto</h3>
-              <button
-                onClick={() => setTestoContrattoCompleto(null)}
-                style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#6b7280', padding: '0', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                ×
-              </button>
-            </div>
-            <div style={{ padding: '20px', overflowY: 'auto', flex: 1, fontSize: '0.85rem', lineHeight: '1.5', whiteSpace: 'pre-wrap', fontFamily: 'Arial, sans-serif' }}>
-              {testoContrattoCompleto}
-            </div>
-            <div style={{ padding: '12px 20px', borderTop: '1px solid #e5e7eb', textAlign: 'right' }}>
-              <button
-                onClick={() => setTestoContrattoCompleto(null)}
-                style={{ background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer', fontWeight: 600 }}
-              >
-                Chiudi
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
