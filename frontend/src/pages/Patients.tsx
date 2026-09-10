@@ -1009,6 +1009,14 @@ function Patients() {
                     Documenti
                   </button>
                   <button
+                    onClick={() => openDocumentsModal(patient)}
+                    className="tw-bg-indigo-700 tw-text-white tw-whitespace-nowrap"
+                    title="Carica documento scannerizzato"
+                  >
+                    <Upload size={16} />
+                    Carica documento
+                  </button>
+                  <button
                     onClick={() => setChatPatient(patient)}
                     className="tw-bg-teal-600 tw-text-white tw-whitespace-nowrap"
                   >

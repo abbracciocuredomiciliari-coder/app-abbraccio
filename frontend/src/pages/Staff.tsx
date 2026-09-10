@@ -989,6 +989,14 @@ function Staff() {
                       <FileText size={16} />
                       Documenti
                     </button>
+                    <button
+                      onClick={() => openDocumentsModal(staff)}
+                      className="!tw-bg-indigo-700 tw-text-white"
+                      title="Carica documenti scannerizzati"
+                    >
+                      <Upload size={16} />
+                      Carica
+                    </button>
                     {staff.active && canEdit && (
                       <button
                         onClick={() => openDimissioniModal(staff)}
