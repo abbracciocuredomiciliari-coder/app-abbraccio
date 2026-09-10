@@ -1,5 +1,5 @@
 ﻿import { FormEvent, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import EsamiStrumentali from './EsamiStrumentali';
@@ -33,6 +33,7 @@ interface PatientOption {
   _id: string;
   firstName: string;
   lastName: string;
+  tipoGestione?: 'privato' | 'convenzione';
 }
 
 interface StaffMember {
@@ -282,6 +283,9 @@ const TIPI_SERVIZIO = [
 
 function WorkPlan() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryTipo = searchParams.get('tipo') as 'privato' | 'convenzione' | null;
+  const queryPatientId = searchParams.get('patientId') || '';
   const { user } = useAuth();
   // Tab principale: piano di lavoro (prestazionale/assistenziale) oppure esami strumentali
   const [mainTab, setMainTab] = useState<'piano' | 'esami'>('piano');
@@ -331,7 +335,7 @@ function WorkPlan() {
   const [dataFine, setDataFine] = useState('');
   const [time, setTime] = useState('');
   const [duration, setDuration] = useState(60);
-  const [patient, setPatient] = useState('');
+  const [patient, setPatient] = useState(queryPatientId);
   const [staff, setStaff] = useState('');
   const [categories, setCategories] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
@@ -360,6 +364,9 @@ function WorkPlan() {
     medico_specialistiche: [],
   });
 
+  const selectedPatient = patients.find(p => p._id === patient);
+  const isSiat = selectedPatient?.tipoGestione === 'convenzione';
+
   // Giorni settimana: array di {giorno, attivo, accessiAlGiorno, minutiPerAccesso}
   const [giorniForm, setGiorniForm] = useState([
     { giorno: 1, label: 'Lun', attivo: false, accessiAlGiorno: 1, minutiPerAccesso: 60 },
@@ -381,9 +388,10 @@ function WorkPlan() {
 
   const loadData = async () => {
     try {
+      const tipoQuery = queryTipo ? `?tipo=${queryTipo}` : '';
       const [workplanRes, patientRes, staffRes] = await Promise.all([
-        api.get('/workplan'),
-        api.get('/patients'),
+        api.get(`/workplan${tipoQuery}`),
+        api.get(`/patients${tipoQuery}`),
         api.get('/staff')
       ]);
       setWorkplans(workplanRes.data);
@@ -483,7 +491,7 @@ function WorkPlan() {
         giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined,
         tipoCompenso,
         tariffa: tipoCompenso !== 'nessuno' ? tariffa : 0,
-        costoPrestazione: costoPrestazione > 0 ? costoPrestazione : 0,
+        costoPrestazione: isSiat ? 0 : (costoPrestazione > 0 ? costoPrestazione : 0),
       });
       await loadData();
       setTask(''); setDate(''); setDataFine(''); setTime(''); setDuration(60);
@@ -672,7 +680,7 @@ function WorkPlan() {
     setFormTipoCompenso(item.tipoCompenso || 'nessuno');
     setFormTariffa(item.tariffa || 0);
     setFormCompensoPagato(item.compensoPagato || false);
-    setFormCostoPrestazione(item.costoPrestazione || 0);
+    setFormCostoPrestazione(item.patient?.tipoGestione === 'convenzione' ? 0 : (item.costoPrestazione || 0));
     setEditCompenso(false);
     setLoadingAccessi(true);
     setShowAccessiModal(true);
@@ -786,13 +794,13 @@ function WorkPlan() {
         tipoCompenso: formTipoCompenso,
         tariffa: formTariffa,
         compensoPagato: formCompensoPagato,
-        costoPrestazione: formCostoPrestazione,
+        costoPrestazione: selectedWorkPlan?.patient?.tipoGestione === 'convenzione' ? 0 : formCostoPrestazione,
         ricalcola,
       });
       // Ricarica
       const res = await api.get(`/workplan/${selectedWorkPlan._id}/accessi`);
       setRiepilogo(res.data.riepilogo);
-      setSelectedWorkPlan({ ...selectedWorkPlan, tipoCompenso: formTipoCompenso, tariffa: formTariffa, compensoPagato: formCompensoPagato, compensoTotale: res.data.riepilogo.compensoSalvato, costoPrestazione: formCostoPrestazione });
+      setSelectedWorkPlan({ ...selectedWorkPlan, tipoCompenso: formTipoCompenso, tariffa: formTariffa, compensoPagato: formCompensoPagato, compensoTotale: res.data.riepilogo.compensoSalvato, costoPrestazione: selectedWorkPlan?.patient?.tipoGestione === 'convenzione' ? 0 : formCostoPrestazione });
       await loadData();
       setEditCompenso(false);
       setSuccess('Compenso aggiornato!');
@@ -1244,14 +1252,22 @@ function WorkPlan() {
                   <input type="number" min="0" step="0.5" value={tariffa} onChange={(e) => setTariffa(parseFloat(e.target.value) || 0)} placeholder="0.00" />
                 </label>
               )}
-              <label style={{ marginTop: '8px' }}>
-                💰 Costo prestazione al paziente (€) — ricavo admin
-                <input type="number" min="0" step="0.5" value={costoPrestazione} onChange={(e) => setCostoPrestazione(parseFloat(e.target.value) || 0)} placeholder="0.00" />
-              </label>
-              {costoPrestazione > 0 && tipoCompenso !== 'nessuno' && tariffa > 0 && (
-                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '8px 12px', fontSize: '0.82rem', color: '#166534' }}>
-                  📊 Utile stimato: <strong>€{(costoPrestazione - tariffa).toFixed(2)}</strong>
-                  <span style={{ color: '#888', marginLeft: '8px' }}>(costo {costoPrestazione}€ − compenso {tariffa}€)</span>
+              {!isSiat ? (
+                <>
+                  <label style={{ marginTop: '8px' }}>
+                    💰 Costo prestazione al paziente (€) — ricavo admin
+                    <input type="number" min="0" step="0.5" value={costoPrestazione} onChange={(e) => setCostoPrestazione(parseFloat(e.target.value) || 0)} placeholder="0.00" />
+                  </label>
+                  {costoPrestazione > 0 && tipoCompenso !== 'nessuno' && tariffa > 0 && (
+                    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '8px 12px', fontSize: '0.82rem', color: '#166534' }}>
+                      📊 Utile stimato: <strong>€{(costoPrestazione - tariffa).toFixed(2)}</strong>
+                      <span style={{ color: '#888', marginLeft: '8px' }}>(costo {costoPrestazione}€ − compenso {tariffa}€)</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div style={{ marginTop: '10px', background: '#eff6ff', border: '1px solid #bae6fd', borderRadius: '6px', padding: '8px 12px', fontSize: '0.82rem', color: '#1e40af' }}>
+                  🏥 Piano SIAT — il costo al paziente segue le tariffe regionali Lazio; non viene gestito qui.
                 </div>
               )}
             </div>
@@ -1520,7 +1536,7 @@ function WorkPlan() {
                         </div>
                       </div>
                       {/* Pannello finanziario admin */}
-                      {(selectedWorkPlan.costoPrestazione || 0) > 0 && (
+                      {(selectedWorkPlan.costoPrestazione || 0) > 0 && selectedWorkPlan.patient?.tipoGestione !== 'convenzione' && (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginTop: '8px', padding: '12px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
                           <div style={{ textAlign: 'center' }}>
                             <div style={{ fontSize: '0.72rem', color: '#166534', fontWeight: '700', textTransform: 'uppercase', marginBottom: '2px' }}>💰 Costo al paziente</div>
@@ -1557,13 +1573,21 @@ function WorkPlan() {
                           </label>
                         )}
                       </div>
-                      <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.88rem' }}>
-                        💰 Costo prestazione al paziente (€) — ricavo admin
-                        <input type="number" min="0" step="0.5" value={formCostoPrestazione} onChange={(e) => setFormCostoPrestazione(parseFloat(e.target.value) || 0)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }} placeholder="0.00" />
-                      </label>
-                      {formCostoPrestazione > 0 && formTipoCompenso !== 'nessuno' && formTariffa > 0 && (
-                        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '8px 12px', fontSize: '0.82rem', color: '#166534' }}>
-                          📊 Utile stimato: <strong>€{(formCostoPrestazione - formTariffa).toFixed(2)}</strong>
+                      {selectedWorkPlan?.patient?.tipoGestione !== 'convenzione' ? (
+                        <>
+                          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.88rem' }}>
+                            💰 Costo prestazione al paziente (€) — ricavo admin
+                            <input type="number" min="0" step="0.5" value={formCostoPrestazione} onChange={(e) => setFormCostoPrestazione(parseFloat(e.target.value) || 0)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }} placeholder="0.00" />
+                          </label>
+                          {formCostoPrestazione > 0 && formTipoCompenso !== 'nessuno' && formTariffa > 0 && (
+                            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '8px 12px', fontSize: '0.82rem', color: '#166534' }}>
+                              📊 Utile stimato: <strong>€{(formCostoPrestazione - formTariffa).toFixed(2)}</strong>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div style={{ background: '#eff6ff', border: '1px solid #bae6fd', borderRadius: '6px', padding: '8px 12px', fontSize: '0.82rem', color: '#1e40af' }}>
+                          🏥 Piano SIAT — il costo al paziente segue le tariffe regionali Lazio; non viene gestito qui.
                         </div>
                       )}
                       <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.88rem', cursor: 'pointer' }}>
