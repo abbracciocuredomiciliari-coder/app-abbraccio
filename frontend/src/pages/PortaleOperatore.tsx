@@ -12,7 +12,7 @@ import { SchedaDimissioneModal } from '../components/SchedaDimissioneModal';
 import { RiformulazionePAIModal } from '../components/RiformulazionePAIModal';
 import { DatiCliniciADIModal } from '../components/DatiCliniciADIModal';
 import { FormazioneSanitariaModal } from '../components/FormazioneSanitariaModal';
-import { Printer, Eye, CheckCircle, Plus, Calendar, User, Syringe, Clock, FileText, AlertTriangle, X, Video } from 'lucide-react';
+import { Printer, Eye, CheckCircle, Plus, Calendar, User, Syringe, Clock, FileText, AlertTriangle, X, Video, ArrowLeftRight } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
 import { Card } from '../components/ui/Card';
@@ -244,7 +244,7 @@ interface PortaleOperatoreProps {
 
 export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperatoreProps) {
   const { user } = useAuth();
-  const { modalita, isConvenzione } = useModalita();
+  const { modalita, isConvenzione, setModalita, canSwitch, modalitaAbilitata } = useModalita();
   const navigate = useNavigate();
 
   // Selezione paziente / piano
@@ -913,11 +913,41 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
     .filter(p => p.tipoCompenso && p.tipoCompenso !== 'nessuno' && p.compensoPagato)
     .reduce((sum, p) => sum + (p.compensoTotale || 0), 0);
 
+  const gestioneAttuale = isConvenzione ? 'Convenzione SIAT' : 'Gestione Privata';
+  const gestioneNuova = isConvenzione ? 'Gestione Privata' : 'Convenzione SIAT';
+
+  const cambiaGestione = () => {
+    if (!canSwitch) return;
+    const msg = `Stai per passare da ${gestioneAttuale} a ${gestioneNuova}.\n\nVuoi cambiare gestione?`;
+    if (window.confirm(msg)) setModalita(isConvenzione ? 'privato' : 'convenzione');
+  };
+
   return (
     <section className="tw-max-w-none">
-      <h2 className="tw-flex tw-items-center tw-gap-2">
-        {mode === 'piani' ? '📋 Piani Lavorativi' : (pazienteSelezionato || mostraTuttiPiani ? '🏥 Il mio Piano di Lavoro' : '📊 Dashboard')}
-      </h2>
+      <div className="tw-flex tw-flex-wrap tw-items-center tw-justify-between tw-gap-3 tw-mb-4">
+        <h2 className="tw-m-0 tw-flex tw-items-center tw-gap-2">
+          {mode === 'piani' ? '📋 Piani Lavorativi' : (pazienteSelezionato || mostraTuttiPiani ? '🏥 Il mio Piano di Lavoro' : '📊 Dashboard')}
+        </h2>
+        <button
+          type="button"
+          onClick={cambiaGestione}
+          disabled={!canSwitch}
+          title={
+            canSwitch
+              ? `Passa a ${gestioneNuova}`
+              : `Abilitazione: solo ${modalitaAbilitata === 'privato' ? 'pazienti privati' : 'pazienti in convenzione'}`
+          }
+          className={`tw-flex tw-items-center tw-gap-2 tw-px-3 tw-py-1.5 tw-rounded-lg tw-font-semibold tw-text-sm tw-border-0 tw-cursor-pointer ${
+            canSwitch
+              ? (isConvenzione ? 'tw-bg-sky-100 tw-text-sky-700 hover:tw-bg-sky-200' : 'tw-bg-emerald-100 tw-text-emerald-700 hover:tw-bg-emerald-200')
+              : 'tw-bg-slate-200 tw-text-slate-500 tw-cursor-not-allowed'
+          }`}
+        >
+          <ArrowLeftRight size={16} />
+          {gestioneAttuale}
+          {!canSwitch && <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>🔒</span>}
+        </button>
+      </div>
 
       {!pazienteSelezionato && !mostraTuttiPiani && pazientiDaAccettare.length > 0 && (
         <div className="tw-mb-5 tw-p-4 tw-rounded-xl tw-bg-blue-50 tw-border tw-border-blue-300">
