@@ -167,18 +167,6 @@ export default function PazientiConvenzione() {
     return new Date(data) < new Date();
   };
 
-  const passaAPrivato = async (p: PazienteSIAT) => {
-    if (!window.confirm(`Confermi di passare ${p.firstName} ${p.lastName} da SIAT a privato?\n\nVerrà spostato nella sezione Pazienti Privati.`)) return;
-    try {
-      await api.patch(`/patients/${p._id}`, { tipoGestione: 'privato' });
-      setSuccess(`✅ ${p.firstName} ${p.lastName} spostato in privati.`);
-      setTimeout(() => setSuccess(''), 3000);
-      await caricaPazienti();
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Errore nel passaggio a privato');
-    }
-  };
-
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '24px 16px' }}>
 
@@ -374,15 +362,6 @@ export default function PazientiConvenzione() {
                     >
                       Piano di lavoro →
                     </button>
-                    {isAdmin && (
-                      <button
-                        onClick={() => passaAPrivato(p)}
-                        style={{ background: '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600' }}
-                        title="Passa a privato"
-                      >
-                        🔄 Privato
-                      </button>
-                    )}
                     <button
                       onClick={() => setEspansoId(espanso ? null : p._id)}
                       style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', cursor: 'pointer', color: '#374151' }}
