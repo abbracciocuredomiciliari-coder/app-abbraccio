@@ -697,6 +697,16 @@ function Patients() {
     win.focus();
   };
 
+  const spostaCategoria = async (patientId: string, nuovaCategoria: string) => {
+    if (!confirm(`Spostare il paziente in ${nuovaCategoria}?`)) return;
+    try {
+      await api.patch(`/patients/${patientId}`, { categoriaPrivata: nuovaCategoria });
+      loadPatients();
+    } catch (error: any) {
+      alert('Errore nello spostamento: ' + (error?.response?.data?.message || 'Riprova.'));
+    }
+  };
+
   const deletePatient = async (patientId: string) => {
     if (!confirm('Sei sicuro di voler eliminare questo paziente?\n\nQuesta azione è irreversibile!')) return;
 
@@ -993,6 +1003,24 @@ function Patients() {
                     <MessageCircle size={16} />
                     Chat
                   </button>
+                  {user?.role === 'admin' || user?.role === 'coordinator' ? (
+                    <select
+                      value={patient.categoriaPrivata || ''}
+                      onChange={e => {
+                        if (e.target.value && e.target.value !== patient.categoriaPrivata) {
+                          spostaCategoria(patient._id, e.target.value);
+                        }
+                      }}
+                      className="tw-px-2 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-sm tw-bg-white tw-cursor-pointer"
+                      style={{ minWidth: '130px' }}
+                      title="Sposta categoria"
+                    >
+                      <option value="" disabled>Sposta in...</option>
+                      <option value="diagnostica">🩺 Diagnostica</option>
+                      <option value="assistenza_domiciliare">🏥 Assistenza domiciliare</option>
+                      <option value="intermediazione_badanti">🤝 Intermediazione badanti</option>
+                    </select>
+                  ) : null}
                   <ReportGenerator
                     patientId={patient._id}
                     patientName={`${patient.firstName} ${patient.lastName}`}
