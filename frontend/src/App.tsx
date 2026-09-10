@@ -175,7 +175,14 @@ function AppShell() {
           {user && (
             <button
               type="button"
-              onClick={() => canSwitch && setModalita(isConvenzione ? 'privato' : 'convenzione')}
+              onClick={() => {
+                if (!canSwitch) return;
+                const nuovaModalita = isConvenzione ? 'privato' : 'convenzione';
+                const nomeAttuale = isConvenzione ? 'Convenzione SIAT' : 'Gestione Privata';
+                const nomeNuovo = nuovaModalita === 'convenzione' ? 'Convenzione SIAT' : 'Gestione Privata';
+                const msg = `Stai per passare da ${nomeAttuale} a ${nomeNuovo}.\n\nVuoi cambiare gestione?`;
+                if (window.confirm(msg)) setModalita(nuovaModalita);
+              }}
               title={
                 !canSwitch
                   ? `Abilitazione: solo ${modalitaAbilitata === 'privato' ? 'pazienti privati' : 'pazienti in convenzione'}`
@@ -425,10 +432,12 @@ function AppShell() {
                 <Archive size={18} />
                 Archivio Fatture
               </Link>
-              <Link to="/tariffario" className={isActive('/tariffario') ? 'active' : ''}>
-                <Tag size={18} />
-                Tariffario
-              </Link>
+              {!isConvenzione && (
+                <Link to="/tariffario" className={isActive('/tariffario') ? 'active' : ''}>
+                  <Tag size={18} />
+                  Tariffario
+                </Link>
+              )}
               <Link to="/gestione-contratti" className={isActive('/gestione-contratti') ? 'active' : ''}>
                 <FileText size={18} />
                 Contratti operatori
