@@ -201,7 +201,7 @@ function Patients() {
 
   const loadPatients = async () => {
     try {
-      const response = await api.get('/patients');
+      const response = await api.get('/patients?tipo=privato');
       setPatients(response.data);
     } catch (error) {
       console.error('Errore caricamento pazienti', error);
@@ -707,6 +707,18 @@ function Patients() {
     }
   };
 
+  const passaASiat = async (patientId: string, patientName: string) => {
+    if (!confirm(`Confermi di passare il paziente ${patientName} da privato a SIAT?\n\nVerrà spostato nella sezione Pazienti Convenzione.`)) return;
+    try {
+      await api.patch(`/patients/${patientId}`, { tipoGestione: 'convenzione' });
+      loadPatients();
+      setSuccess('Paziente spostato in SIAT con successo.');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error: any) {
+      alert('Errore nel passaggio a SIAT: ' + (error?.response?.data?.message || 'Riprova.'));
+    }
+  };
+
   const deletePatient = async (patientId: string) => {
     if (!confirm('Sei sicuro di voler eliminare questo paziente?\n\nQuesta azione è irreversibile!')) return;
 
@@ -1003,7 +1015,7 @@ function Patients() {
                     <MessageCircle size={16} />
                     Chat
                   </button>
-                  {user?.role === 'admin' || user?.role === 'coordinator' ? (
+                  {user?.role === 'admin' || user?.role === 'coordinator' ? (<>
                     <select
                       value={patient.categoriaPrivata || ''}
                       onChange={e => {
@@ -1020,7 +1032,14 @@ function Patients() {
                       <option value="assistenza_domiciliare">🏥 Assistenza domiciliare</option>
                       <option value="intermediazione_badanti">🤝 Intermediazione badanti</option>
                     </select>
-                  ) : null}
+                    <button
+                      onClick={() => passaASiat(patient._id, `${patient.firstName} ${patient.lastName}`)}
+                      className="tw-px-2 tw-py-2 tw-rounded-lg tw-bg-amber-600 tw-text-white tw-text-sm tw-whitespace-nowrap"
+                      title="Passa a SIAT"
+                    >
+                      🔄 Passa a SIAT
+                    </button>
+                  </>) : null}
                   <ReportGenerator
                     patientId={patient._id}
                     patientName={`${patient.firstName} ${patient.lastName}`}

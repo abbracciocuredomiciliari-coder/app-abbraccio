@@ -217,7 +217,7 @@ router.patch('/:id', authorizeRole('admin', 'coordinator'), auditLog('patients',
 
     const {
       firstName, lastName, birthDate, address, assistanceNeeds,
-      contactPhone, email, codiceFiscale, categoriaPrivata,
+      contactPhone, email, codiceFiscale, categoriaPrivata, tipoGestione,
     } = req.body;
 
     if (firstName !== undefined) patient.firstName = firstName.trim();
@@ -229,6 +229,10 @@ router.patch('/:id', authorizeRole('admin', 'coordinator'), auditLog('patients',
     if (email !== undefined) patient.email = email?.trim() || undefined;
     if (codiceFiscale !== undefined) patient.codiceFiscale = codiceFiscale?.trim() || undefined;
     if (categoriaPrivata !== undefined) patient.categoriaPrivata = categoriaPrivata;
+    if (tipoGestione !== undefined && ['privato', 'convenzione'].includes(tipoGestione)) {
+      patient.tipoGestione = tipoGestione;
+      if (tipoGestione === 'convenzione') patient.categoriaPrivata = undefined;
+    }
 
     await patient.save();
     return res.json(patient);

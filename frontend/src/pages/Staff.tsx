@@ -105,6 +105,7 @@ function Staff() {
   const [loadingContratto, setLoadingContratto] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedModalita, setSelectedModalita] = useState<'tutte' | 'privato' | 'convenzione' | 'entrambi'>('tutte');
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     firstName: '',
@@ -192,7 +193,7 @@ function Staff() {
 
   useEffect(() => {
     filterStaff();
-  }, [searchTerm, selectedCategory, staffMembers]);
+  }, [searchTerm, selectedCategory, selectedModalita, staffMembers]);
 
   const loadStaff = async () => {
     try {
@@ -212,6 +213,10 @@ function Staff() {
       filtered = filtered.filter(s => s.category === selectedCategory);
     }
 
+    if (selectedModalita !== 'tutte') {
+      filtered = filtered.filter(s => s.modalitaAbilitata === selectedModalita || s.modalitaAbilitata === 'entrambi');
+    }
+
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(s =>
@@ -222,6 +227,16 @@ function Staff() {
     }
 
     setFilteredStaff(filtered);
+  };
+
+  const spostaCategoriaStaff = async (staffId: string, nuovaCategoria: string) => {
+    if (!window.confirm(`Spostare il professionista in ${getCategoryLabel(nuovaCategoria)}?`)) return;
+    try {
+      await api.put(`/staff/${staffId}`, { category: nuovaCategoria });
+      loadStaff();
+    } catch (error: any) {
+      alert('Errore nello spostamento: ' + (error?.response?.data?.message || 'Riprova.'));
+    }
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -613,16 +628,24 @@ function Staff() {
           />
         </div>
 
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="tw-py-3 tw-px-3.5 tw-border tw-border-slate-300 tw-rounded-md tw-text-[0.95rem] tw-min-w-[200px] tw-bg-white"
-        >
-          <option value="">Tutte le categorie</option>
+        <div className="tw-flex tw-flex-wrap tw-gap-2">
+          <button
+            onClick={() => setSelectedCategory('')}
+            className={`tw-px-3 tw-py-2 tw-rounded-lg tw-text-sm tw-font-semibold tw-transition-colors ${selectedCategory === '' ? 'tw-bg-slate-800 tw-text-white' : 'tw-bg-white tw-text-slate-600 tw-border tw-border-slate-300'}`}
+          >
+            Tutti
+          </button>
           {categories.map(cat => (
-            <option key={cat.value} value={cat.value}>{cat.label}</option>
+            <button
+              key={cat.value}
+              onClick={() => setSelectedCategory(cat.value)}
+              className={`tw-px-3 tw-py-2 tw-rounded-lg tw-text-sm tw-font-semibold tw-transition-colors tw-border ${selectedCategory === cat.value ? 'tw-text-white tw-border-transparent' : 'tw-bg-white tw-text-slate-600 tw-border-slate-300'}`}
+              style={selectedCategory === cat.value ? { backgroundColor: cat.color } : undefined}
+            >
+              {cat.label}
+            </button>
           ))}
-        </select>
+        </div>
 
         {canEdit && (
           <Button
@@ -633,6 +656,24 @@ function Staff() {
             {showForm ? 'Annulla' : 'Nuovo Staff'}
           </Button>
         )}
+      </div>
+
+      {/* Modalità (Privati / SIAT / Entrambi) */}
+      <div className="tw-flex tw-flex-wrap tw-gap-2 tw-mb-5">
+        {[
+          { value: 'tutte', label: 'Tutte le modalità' },
+          { value: 'privato', label: '👤 Solo Privati' },
+          { value: 'convenzione', label: '🏥 Solo SIAT' },
+          { value: 'entrambi', label: '🔀 Entrambi' },
+        ].map(mod => (
+          <button
+            key={mod.value}
+            onClick={() => setSelectedModalita(mod.value as any)}
+            className={`tw-px-3 tw-py-2 tw-rounded-lg tw-text-sm tw-font-semibold tw-transition-colors tw-border ${selectedModalita === mod.value ? 'tw-bg-brand tw-text-white tw-border-transparent' : 'tw-bg-white tw-text-slate-600 tw-border-slate-300'}`}
+          >
+            {mod.label}
+          </button>
+        ))}
       </div>
 
       {/* Search Results Info */}
@@ -900,6 +941,18 @@ function Staff() {
                         <option value="entrambi">🔓 Entrambi</option>
                         <option value="privato">👤 Solo Privati</option>
                         <option value="convenzione">🏥 Solo SIAT</option>
+                      </select>
+                    )}
+                    {canEdit && staff.active && (
+                      <select
+                        value={staff.category}
+                        onChange={async (e) => { if (e.target.value !== staff.category) await spostaCategoriaStaff(staff._id, e.target.value); }}
+                        className="tw-text-[0.78rem] tw-py-1 tw-px-2 tw-rounded-md tw-border tw-border-slate-300 tw-cursor-pointer tw-bg-white tw-text-slate-700"
+                        title="Sposta categoria"
+                      >
+                        {categories.map(cat => (
+                          <option key={cat.value} value={cat.value}>{cat.label}</option>
+                        ))}
                       </select>
                     )}
                     {canEdit && (
