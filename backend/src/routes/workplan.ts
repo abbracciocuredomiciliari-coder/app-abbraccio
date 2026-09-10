@@ -78,6 +78,7 @@ router.get('/miei-pazienti', authenticateToken, async (req: Request, res: Respon
   try {
     const user = (req as any).user;
     const isPrivileged = ['admin', 'coordinator', 'direttore'].includes(user.role);
+    const { tipo } = req.query;
 
     let filter: any = { status: { $ne: 'cancelled' } };
 
@@ -111,7 +112,12 @@ router.get('/miei-pazienti', authenticateToken, async (req: Request, res: Respon
       }
     }
 
-    return res.json(Array.from(pazientiMap.values()));
+    let pazienti = Array.from(pazientiMap.values());
+    if (tipo === 'privato' || tipo === 'convenzione') {
+      pazienti = pazienti.filter((p: any) => p.tipoGestione === tipo);
+    }
+
+    return res.json(pazienti);
   } catch (error) {
     return res.status(500).json({ message: 'Errore nel recupero dei pazienti assegnati', error });
   }
@@ -172,14 +178,19 @@ router.patch('/mio-profilo-staff', authenticateToken, async (req: Request, res: 
   }
 });
 
-router.get('/assignment-status', authenticateToken, authorizeRole('admin', 'coordinator', 'direttore'), async (_req: Request, res: Response) => {
+router.get('/assignment-status', authenticateToken, authorizeRole('admin', 'coordinator', 'direttore'), async (req: Request, res: Response) => {
   try {
-    const assignments = await WorkPlan.find({ status: 'pending' })
-      .populate('patient', 'firstName lastName')
+    const { tipo } = req.query;
+    const isTipo = tipo === 'privato' || tipo === 'convenzione';
+    const assignmentsRaw = await WorkPlan.find({ status: 'pending' })
+      .populate('patient', 'firstName lastName tipoGestione')
       .populate('staff', 'firstName lastName role email')
       .sort({ updatedAt: -1 })
       .limit(100)
       .lean();
+    const assignments = isTipo
+      ? (assignmentsRaw as any[]).filter((a: any) => (a.patient as any)?.tipoGestione === tipo)
+      : (assignmentsRaw as any[]);
     const counts = assignments.reduce((result: Record<string, number>, assignment: any) => {
       const status = assignment.statoAccettazione || 'in_attesa';
       result[status] = (result[status] || 0) + 1;

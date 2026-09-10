@@ -14,31 +14,19 @@ router.get('/', authenticateToken, authorizeRole('admin', 'coordinator', 'dirett
     const inizioOggi = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate());
     const fineOggi = new Date(inizioOggi.getTime() + 24 * 60 * 60 * 1000);
     const tra30giorni = new Date(oggi.getTime() + 30 * 24 * 60 * 60 * 1000);
-
     const tra7giorni = new Date(oggi.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    const { tipo } = req.query;
+    const isTipo = tipo === 'privato' || tipo === 'convenzione';
+    const patientFilter: any = isTipo ? { tipoGestione: tipo } : {};
 
     const [
       patientsCount,
       staffCount,
-      workplanCount,
-      activePatientsCount,
-      activeWorkplanCount,
-      prelieviOggiCount,
       operatoriSenzaZonaCount,
-      scadenzeImminentiCount,
-      paiInScadenza7gg,
     ] = await Promise.all([
-      Patient.countDocuments(),
+      Patient.countDocuments(patientFilter),
       Staff.countDocuments({ active: true }),
-      WorkPlan.countDocuments(),
-      WorkPlan.distinct('patient', { status: 'pending' }).then(ids => ids.length),
-      WorkPlan.countDocuments({ status: 'pending' }),
-      // Prelievi pianificati oggi
-      Prelievo.countDocuments({
-        dataPrelievo: { $gte: inizioOggi, $lt: fineOggi },
-        status: 'pianificato',
-      }),
-      // Operatori attivi senza zona impostata (non trovabili nell'assegnazione)
       Staff.countDocuments({
         active: true,
         $or: [
@@ -47,13 +35,42 @@ router.get('/', authenticateToken, authorizeRole('admin', 'coordinator', 'dirett
           { 'domicilioCoords.lat': { $exists: false } },
         ],
       }),
-      // Pazienti SIAT con autorizzazione in scadenza entro 30 giorni
-      Patient.countDocuments({
+    ]);
+
+    // Conteggio piani filtrati per gestione del paziente associato
+    const workplans = await WorkPlan.find({})
+      .populate('patient', 'tipoGestione')
+      .lean();
+
+    const workplansFiltrati = isTipo
+      ? (workplans as any[]).filter((wp: any) => (wp.patient as any)?.tipoGestione === tipo)
+      : (workplans as any[]);
+
+    const workplanCount = workplansFiltrati.length;
+    const activeWorkplans = workplansFiltrati.filter((wp: any) => wp.status === 'pending');
+    const activeWorkplanCount = activeWorkplans.length;
+    const activePatientIds = new Set(
+      activeWorkplans
+        .map((wp: any) => (wp.patient as any)?._id?.toString())
+        .filter(Boolean)
+    );
+    const activePatientsCount = activePatientIds.size;
+
+    const prelieviOggiCount = await Prelievo.countDocuments({
+      dataPrelievo: { $gte: inizioOggi, $lt: fineOggi },
+      status: 'pianificato',
+      ...(isTipo ? { tipoGestione: tipo } : {}),
+    });
+
+    // Scadenze SIAT: visibili solo in modalità convenzione o senza filtro
+    let scadenzeImminentiCount = 0;
+    let paiInScadenza7gg = 0;
+    if (!isTipo || tipo === 'convenzione') {
+      scadenzeImminentiCount = await Patient.countDocuments({
         tipoGestione: 'convenzione',
         'siat.dataScadenzaAutorizzazione': { $gte: oggi, $lte: tra30giorni },
-      }),
-      // PAI in scadenza entro 7gg (o già scaduti) con alert non ancora visto
-      Patient.find({
+      });
+      paiInScadenza7gg = await Patient.find({
         tipoGestione: 'convenzione',
         'siat.dataScadenzaAutorizzazione': { $lte: tra7giorni },
       }).select('siat.dataScadenzaAutorizzazione alertPaiVisto').then(pazienti =>
@@ -68,8 +85,8 @@ router.get('/', authenticateToken, authorizeRole('admin', 'coordinator', 'dirett
           }
           return true;
         }).length
-      ),
-    ]);
+      );
+    }
 
     return res.json({
       patientsCount,

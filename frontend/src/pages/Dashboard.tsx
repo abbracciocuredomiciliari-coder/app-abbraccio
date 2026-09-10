@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
+import { useModalita } from '../context/ModalitaContext';
 import { Users, Activity, CheckCircle, ClipboardList, MapPin, AlertTriangle, Bell, Eye, MessageCircle, Video } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Loading } from '../components/ui/Loading';
@@ -43,6 +44,7 @@ interface PazienteScadenza {
 function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isConvenzione } = useModalita();
   const isPrivilegiato = user && ['admin', 'coordinator', 'direttore'].includes(user.role);
 
   const [counts, setCounts] = useState<DashboardCounts>({
@@ -78,8 +80,9 @@ function Dashboard() {
   useEffect(() => {
     const loadDashboard = async () => {
       try {
+        const tipoQuery = isConvenzione ? '?tipo=convenzione' : '?tipo=privato';
         const [dashRes] = await Promise.all([
-          api.get('/dashboard'),
+          api.get(`/dashboard${tipoQuery}`),
           isPrivilegiato ? caricaScadenzePai() : Promise.resolve(),
         ]);
         setCounts(dashRes.data);
@@ -89,7 +92,8 @@ function Dashboard() {
         } catch { /* non bloccante */ }
         if (isPrivilegiato) {
           try {
-            const assignmentsRes = await api.get('/workplan/assignment-status');
+            const tipoQuery = isConvenzione ? '?tipo=convenzione' : '?tipo=privato';
+            const assignmentsRes = await api.get(`/workplan/assignment-status${tipoQuery}`);
             setAssignmentCounts(assignmentsRes.data.counts || { in_attesa: 0, accettato: 0, rifiutato: 0 });
           } catch { /* non bloccante */ }
         }
@@ -108,7 +112,7 @@ function Dashboard() {
     };
 
     loadDashboard();
-  }, []);
+  }, [isConvenzione]);
 
   const segnaVisto = async (pazienteId: string) => {
     setChiudendoId(pazienteId);

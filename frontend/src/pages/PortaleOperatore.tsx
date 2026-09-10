@@ -460,9 +460,10 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
 
   const caricaDati = async (silent = false) => {
     try {
+      const tipoQuery = isConvenzione ? '?tipo=convenzione' : '?tipo=privato';
       const [pazientiRes, pianiRes, esamiRes] = await Promise.all([
-        api.get('/workplan/miei-pazienti'),
-        api.get('/workplan'),
+        api.get(`/workplan/miei-pazienti${tipoQuery}`),
+        api.get(`/workplan${tipoQuery}`),
         api.get('/esami-strumentali').catch(() => ({ data: [] })),
       ]);
       const tuttiPiani: Piano[] = pianiRes.data || [];
@@ -530,7 +531,8 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
     setConsensoGDPRFirmato(false); setConsensoPrestazioneFirmato(false);
     caricaConsensiPaziente(paz._id);
     try {
-      const res = await api.get('/workplan');
+      const tipoQuery = isConvenzione ? '?tipo=convenzione' : '?tipo=privato';
+      const res = await api.get(`/workplan${tipoQuery}`);
       const pianiPaz = res.data.filter((p: Piano) => p.patient?._id === paz._id);
       setPiani(pianiPaz);
       const pianiAttivi = pianiPaz.filter((p: Piano) => p.status === 'pending');
@@ -630,7 +632,8 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
       setPazienteSelezionato(paz);
       setConsensoGDPRFirmato(false); setConsensoPrestazioneFirmato(false);
       caricaConsensiPaziente(paz._id);
-      const res = await api.get('/workplan');
+      const tipoQuery = isConvenzione ? '?tipo=convenzione' : '?tipo=privato';
+      const res = await api.get(`/workplan${tipoQuery}`);
       setPiani(res.data.filter((p: Piano) => p.patient?._id === paz._id));
     }
     selezionaPiano(piano);
