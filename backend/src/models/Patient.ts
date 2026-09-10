@@ -20,7 +20,10 @@ export interface IPatient extends Document {
   
   // === MODALITÀ GESTIONE ===
   tipoGestione: 'privato' | 'convenzione';  // default: privato
-  
+
+  // === CATEGORIA SERVIZIO PRIVATO ===
+  categoriaPrivata?: 'diagnostica' | 'assistenza_domiciliare' | 'intermediazione_badanti';
+
   // === ALERT PAI IN SCADENZA ===
   alertPaiVisto?: {
     vistoIl: Date;
@@ -63,6 +66,7 @@ const patientSchema = new Schema<IPatient>(
     caregiverRiferimento: { type: String, trim: true },
     caregiverTelefono: { type: String, trim: true },
     tipoGestione: { type: String, enum: ['privato', 'convenzione'], default: 'privato' },
+    categoriaPrivata: { type: String, enum: ['diagnostica', 'assistenza_domiciliare', 'intermediazione_badanti'] },
     alertPaiVisto: {
       vistoIl: { type: Date },
       vistoDa: { type: String },

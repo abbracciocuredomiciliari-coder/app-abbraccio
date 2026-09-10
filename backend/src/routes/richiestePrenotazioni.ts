@@ -1,9 +1,11 @@
 import { Router, Request, Response } from 'express';
+import crypto from 'crypto';
 import RichiestaPrenotazione from '../models/RichiestaPrenotazione';
 import Prelievo from '../models/Prelievo';
 import EsameStrumentale from '../models/EsameStrumentale';
 import WorkPlan from '../models/WorkPlan';
 import Patient from '../models/Patient';
+import ContrattoPaziente from '../models/ContrattoPaziente';
 import Staff from '../models/Staff';
 import { authenticateToken } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
@@ -35,6 +37,7 @@ router.post('/pubblica', async (req: Request, res: Response) => {
       pazienteTelefono,
       tipoServizio,
       tipoSpecifico,
+      categoriaPrivata,
       dataPreferita,
       orarioPreferito,
       dataAlternativa,
@@ -56,6 +59,7 @@ router.post('/pubblica', async (req: Request, res: Response) => {
       pazienteTelefono,
       tipoServizio,
       tipoSpecifico,
+      categoriaPrivata,
       dataPreferita: new Date(dataPreferita),
       orarioPreferito,
       dataAlternativa: dataAlternativa ? new Date(dataAlternativa) : undefined,
@@ -67,7 +71,7 @@ router.post('/pubblica', async (req: Request, res: Response) => {
         data: new Date(),
         autore: richiedenteNome,
         azione: 'Richiesta pubblica creata',
-        note: `Servizio: ${tipoServizio}${tipoSpecifico ? ` - ${tipoSpecifico}` : ''}`,
+        note: `Servizio: ${tipoServizio}${tipoSpecifico ? ` - ${tipoSpecifico}` : ''}${categoriaPrivata ? ` — ${categoriaPrivata}` : ''}`,
       }],
     });
 
@@ -103,6 +107,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
       pazienteTelefono,
       tipoServizio,
       tipoSpecifico,
+      categoriaPrivata,
       dataPreferita,
       orarioPreferito,
       dataAlternativa,
@@ -126,6 +131,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
       pazienteTelefono,
       tipoServizio,
       tipoSpecifico,
+      categoriaPrivata,
       dataPreferita: new Date(dataPreferita),
       orarioPreferito,
       dataAlternativa: dataAlternativa ? new Date(dataAlternativa) : undefined,
@@ -137,7 +143,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
         data: new Date(),
         autore: user.name,
         azione: 'Richiesta creata',
-        note: `Servizio: ${tipoServizio}${tipoSpecifico ? ` - ${tipoSpecifico}` : ''}`
+        note: `Servizio: ${tipoServizio}${tipoSpecifico ? ` - ${tipoSpecifico}` : ''}${categoriaPrivata ? ` — ${categoriaPrivata}` : ''}`
       }]
     });
 
@@ -281,7 +287,7 @@ router.patch('/:id/gestisci', authenticateToken, authorizeRole('admin', 'coordin
     if (creaAppuntamento && stato === 'confermata') {
       let pazienteId = richiesta.pazienteId;
 
-      // Se paziente non esiste, crealo
+      // Se paziente non esiste, crealo nella categoria privata scelta
       if (!pazienteId) {
         const nameParts = (richiesta.pazienteNome || '').trim().split(' ');
         const nuovoPaziente = await Patient.create({
@@ -291,10 +297,25 @@ router.patch('/:id/gestisci', authenticateToken, authorizeRole('admin', 'coordin
           address: richiesta.pazienteIndirizzo || 'N/A',
           contactPhone: richiesta.pazienteTelefono || richiesta.richiedenteTelefono || '',
           tipoGestione: 'privato',
+          categoriaPrivata: richiesta.categoriaPrivata,
           assistanceNeeds: `Richiesta ${richiesta.tipoServizio}: ${richiesta.tipoSpecifico || 'N/A'}`
         });
         pazienteId = nuovoPaziente._id;
         richiesta.pazienteId = pazienteId;
+
+        // Per intermediazione badanti, crea subito il contratto d'incarico 150/350
+        if (richiesta.categoriaPrivata === 'intermediazione_badanti') {
+          const token = crypto.randomBytes(32).toString('hex');
+          await ContrattoPaziente.create({
+            patient: pazienteId,
+            profilo: 'Assistente familiare',
+            importo: 150,
+            token,
+            email: richiesta.richiedenteEmail || '',
+            nome: richiesta.pazienteNome,
+            stato: 'emesso',
+          });
+        }
       }
 
       // Crea appuntamento in base al tipo

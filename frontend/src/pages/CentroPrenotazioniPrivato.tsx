@@ -5,6 +5,7 @@ import api from '../api/api';
 // Tipi
 // ═════════════════════════════════════════════════════════════════════════════
 type TipoServizio = 'prelievo' | 'esame_strumentale' | 'prestazione' | 'assistenza';
+type CategoriaPrivata = 'diagnostica' | 'assistenza_domiciliare' | 'intermediazione_badanti';
 type StatoRichiesta = 'in_attesa' | 'in_revisione' | 'confermata' | 'modificata' | 'rifiutata' | 'completata';
 
 interface Richiesta {
@@ -41,6 +42,7 @@ export default function CentroPrenotazioniPrivato() {
 
   // Form state
   const [formData, setFormData] = useState({
+    categoriaPrivata: 'diagnostica' as CategoriaPrivata,
     tipoServizio: 'prelievo' as TipoServizio,
     tipoSpecifico: '',
     pazienteNome: '',
@@ -94,6 +96,7 @@ export default function CentroPrenotazioniPrivato() {
 
   const resetForm = () => {
     setFormData({
+      categoriaPrivata: 'diagnostica',
       tipoServizio: 'prelievo',
       tipoSpecifico: '',
       pazienteNome: '',
@@ -294,6 +297,21 @@ export default function CentroPrenotazioniPrivato() {
             </div>
 
             <form onSubmit={handleSubmit}>
+              {/* Categoria privata */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>Categoria servizio *</label>
+                <select
+                  value={formData.categoriaPrivata}
+                  onChange={e => setFormData({ ...formData, categoriaPrivata: e.target.value as CategoriaPrivata })}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                  required
+                >
+                  <option value="diagnostica">🩺 Diagnostica (prelievi / esami)</option>
+                  <option value="assistenza_domiciliare">🏥 Assistenza sanitaria domiciliare</option>
+                  <option value="intermediazione_badanti">🤝 Intermediazione badanti</option>
+                </select>
+              </div>
+
               {/* Tipo servizio */}
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>Tipo di servizio *</label>

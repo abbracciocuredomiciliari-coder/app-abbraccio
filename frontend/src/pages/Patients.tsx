@@ -59,6 +59,7 @@ interface Patient {
   caregiverRiferimento?: string;
   caregiverTelefono?: string;
   tipoGestione?: 'privato' | 'convenzione';
+  categoriaPrivata?: 'diagnostica' | 'assistenza_domiciliare' | 'intermediazione_badanti';
   siat?: {
     npi?: string;
     codiceAutorizzazione?: string;
@@ -130,12 +131,14 @@ function Patients() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeCategoria, setActiveCategoria] = useState<'tutti' | 'diagnostica' | 'assistenza_domiciliare' | 'intermediazione_badanti'>('tutti');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     birthDate: '',
     address: '',
     assistanceNeeds: '',
+    categoriaPrivata: 'diagnostica' as string,
     contactPhone: '',
     email: '',
     codiceFiscale: ''
@@ -194,7 +197,7 @@ function Patients() {
 
   useEffect(() => {
     filterPatients();
-  }, [searchTerm, patients]);
+  }, [searchTerm, patients, activeCategoria]);
 
   const loadPatients = async () => {
     try {
@@ -208,21 +211,28 @@ function Patients() {
   };
 
   const filterPatients = () => {
-    if (!searchTerm.trim()) {
-      setFilteredPatients(patients);
-      return;
+    let filtered = patients;
+
+    if (activeCategoria !== 'tutti') {
+      filtered = filtered.filter(p =>
+        p.categoriaPrivata === activeCategoria ||
+        (p.tipoGestione === 'privato' && !p.categoriaPrivata && activeCategoria === 'diagnostica')
+      );
     }
 
-    const term = searchTerm.toLowerCase();
-    const filtered = patients.filter(patient => {
-      const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
-      return (
-        fullName.includes(term) ||
-        patient.firstName.toLowerCase().includes(term) ||
-        patient.lastName.toLowerCase().includes(term) ||
-        patient._id.toLowerCase().includes(term)
-      );
-    });
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(patient => {
+        const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
+        return (
+          fullName.includes(term) ||
+          patient.firstName.toLowerCase().includes(term) ||
+          patient.lastName.toLowerCase().includes(term) ||
+          patient._id.toLowerCase().includes(term)
+        );
+      });
+    }
+
     setFilteredPatients(filtered);
   };
 
@@ -245,6 +255,7 @@ function Patients() {
         birthDate: '',
         address: '',
         assistanceNeeds: '',
+        categoriaPrivata: 'diagnostica',
         contactPhone: '',
         email: '',
         codiceFiscale: ''
@@ -264,7 +275,7 @@ function Patients() {
     if (showForm) {
       setShowForm(false);
     } else {
-      setFormData({ firstName: '', lastName: '', birthDate: '', address: '', assistanceNeeds: '', contactPhone: '', email: '', codiceFiscale: '' });
+      setFormData({ firstName: '', lastName: '', birthDate: '', address: '', assistanceNeeds: '', categoriaPrivata: 'diagnostica', contactPhone: '', email: '', codiceFiscale: '' });
       setEditingPatient(null);
       setSuggerimentiIndirizzo([]);
       setIndirizzoCoords(null);
@@ -279,6 +290,7 @@ function Patients() {
       birthDate: patient.birthDate ? patient.birthDate.split('T')[0] : '',
       address: patient.address,
       assistanceNeeds: patient.assistanceNeeds,
+      categoriaPrivata: patient.categoriaPrivata || 'diagnostica',
       contactPhone: patient.contactPhone || '',
       email: patient.email || '',
       codiceFiscale: patient.codiceFiscale || '',
@@ -291,7 +303,7 @@ function Patients() {
 
   const apriContrattoModal = (patient: Patient) => {
     setContrattoPatient(patient);
-    setContrattoProfilo('Operatore generale');
+    setContrattoProfilo(patient.categoriaPrivata === 'intermediazione_badanti' ? 'Assistente familiare' : 'Operatore generale');
     setContrattoEmail(patient.email || '');
     setContrattoLoading(false);
     setShowContrattoModal(true);
@@ -858,6 +870,18 @@ function Patients() {
             />
           </label>
           <label>
+            Categoria servizio privato *
+            <select
+              value={formData.categoriaPrivata}
+              onChange={e => setFormData(prev => ({ ...prev, categoriaPrivata: e.target.value as any }))}
+              required
+            >
+              <option value="diagnostica">🩺 Diagnostica (prelievi / esami)</option>
+              <option value="assistenza_domiciliare">🏥 Assistenza sanitaria domiciliare</option>
+              <option value="intermediazione_badanti">🤝 Intermediazione badanti</option>
+            </select>
+          </label>
+          <label>
             Fabbisogni assistenziali *
             <textarea
               name="assistanceNeeds"
@@ -879,6 +903,23 @@ function Patients() {
           </button>
         </form>
       )}
+
+      {/* Tabs categoria */}
+      <div className="tw-flex tw-flex-wrap tw-gap-2 tw-mb-5">
+        {(['tutti', 'diagnostica', 'assistenza_domiciliare', 'intermediazione_badanti'] as const).map(cat => (
+          <button
+            key={cat}
+            onClick={() => setActiveCategoria(cat)}
+            className={`tw-px-4 tw-py-2 tw-rounded-xl tw-border-0 tw-font-semibold tw-text-sm tw-transition-colors ${
+              activeCategoria === cat
+                ? 'tw-bg-brand tw-text-white'
+                : 'tw-bg-white tw-text-slate-600 tw-border tw-border-slate-200 hover:tw-bg-slate-50'
+            }`}
+          >
+            {cat === 'tutti' ? 'Tutti' : cat === 'diagnostica' ? '🩺 Diagnostica' : cat === 'assistenza_domiciliare' ? '🏥 Assistenza domiciliare' : '🤝 Intermediazione badanti'}
+          </button>
+        ))}
+      </div>
 
       {/* Patients List */}
       <div className="tw-bg-white tw-border tw-border-slate-200 tw-rounded-2xl tw-shadow-sm tw-p-5">

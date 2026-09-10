@@ -16,6 +16,7 @@ router.get('/', auditLog('patients', 'READ'), async (req: Request, res: Response
     if (cf && typeof cf === 'string' && cf.trim()) filter.codiceFiscaleHash = hashForSearch(cf.trim().toUpperCase());
     if (tipo === 'privato') filter.tipoGestione = 'privato';
     else if (tipo === 'convenzione') filter.tipoGestione = 'convenzione';
+    if (req.query.categoriaPrivata) filter.categoriaPrivata = req.query.categoriaPrivata;
     // Ricerca per nome/cognome se passato
     if (search && typeof search === 'string' && search.trim()) {
       const regex = new RegExp(search.trim(), 'i');
@@ -40,7 +41,7 @@ router.get('/', auditLog('patients', 'READ'), async (req: Request, res: Response
 });
 
 router.post('/', authorizeRole('admin', 'coordinator'), auditLog('patients', 'CREATE'), async (req: Request, res: Response) => {
-  const { firstName, lastName, birthDate, address, assistanceNeeds, codiceFiscale, tipoGestione, siat } = req.body;
+  const { firstName, lastName, birthDate, address, assistanceNeeds, codiceFiscale, tipoGestione, categoriaPrivata, siat } = req.body;
 
   if (!firstName?.trim() || !lastName?.trim() || !birthDate || !address?.trim() || !assistanceNeeds?.trim()) {
     return res.status(400).json({ message: 'I campi firstName, lastName, birthDate, address e assistanceNeeds sono obbligatori' });
@@ -57,6 +58,7 @@ router.post('/', authorizeRole('admin', 'coordinator'), auditLog('patients', 'CR
       email: req.body.email?.trim(),
       codiceFiscale: codiceFiscale?.trim(),
       tipoGestione: tipoGestione || 'privato',
+      categoriaPrivata: categoriaPrivata || undefined,
       siat: siat || undefined,
     });
     return res.status(201).json(patient);
@@ -215,7 +217,7 @@ router.patch('/:id', authorizeRole('admin', 'coordinator'), auditLog('patients',
 
     const {
       firstName, lastName, birthDate, address, assistanceNeeds,
-      contactPhone, email, codiceFiscale,
+      contactPhone, email, codiceFiscale, categoriaPrivata,
     } = req.body;
 
     if (firstName !== undefined) patient.firstName = firstName.trim();
@@ -226,6 +228,7 @@ router.patch('/:id', authorizeRole('admin', 'coordinator'), auditLog('patients',
     if (contactPhone !== undefined) patient.contactPhone = contactPhone?.trim() || undefined;
     if (email !== undefined) patient.email = email?.trim() || undefined;
     if (codiceFiscale !== undefined) patient.codiceFiscale = codiceFiscale?.trim() || undefined;
+    if (categoriaPrivata !== undefined) patient.categoriaPrivata = categoriaPrivata;
 
     await patient.save();
     return res.json(patient);

@@ -19,6 +19,7 @@ export interface IRichiestaPrenotazione extends Document {
   // Tipo di servizio richiesto
   tipoServizio: TipoServizio;
   tipoSpecifico?: string; // es. "ECG", "Holter", "Prelievo emocromo", "Iniezione", etc.
+  categoriaPrivata?: 'diagnostica' | 'assistenza_domiciliare' | 'intermediazione_badanti';
 
   // Date e orari
   dataPreferita: Date;
@@ -75,6 +76,7 @@ const richiestaPrenotazioneSchema = new Schema<IRichiestaPrenotazione>(
       enum: ['prelievo', 'esame_strumentale', 'prestazione', 'assistenza', 'telemedicina']
     },
     tipoSpecifico: { type: String, trim: true },
+    categoriaPrivata: { type: String, enum: ['diagnostica', 'assistenza_domiciliare', 'intermediazione_badanti'] },
 
     dataPreferita: { type: Date, required: true },
     orarioPreferito: { type: String, trim: true },
