@@ -492,7 +492,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
     caricaDati();
     const interval = setInterval(() => caricaDati(true), 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [modalita]);
 
   // Rifiltra pazienti e resetta selezione quando cambia modalità
   useEffect(() => {

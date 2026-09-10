@@ -1,5 +1,6 @@
 import { ChangeEvent, FormEvent, useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useModalita } from '../context/ModalitaContext';
 import api from '../api/api';
 import SkeletonList from '../components/SkeletonList';
 import {
@@ -99,6 +100,7 @@ const documentTypes = [
 
 function Staff() {
   const { user } = useAuth();
+  const { isConvenzione } = useModalita();
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [filteredStaff, setFilteredStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -193,7 +195,7 @@ function Staff() {
 
   useEffect(() => {
     filterStaff();
-  }, [searchTerm, selectedCategory, selectedModalita, staffMembers]);
+  }, [searchTerm, selectedCategory, selectedModalita, staffMembers, isConvenzione]);
 
   const loadStaff = async () => {
     try {
@@ -206,8 +208,17 @@ function Staff() {
     }
   };
 
+  const categoriePrivate = ['privato', 'osa', 'assistente-familiare', 'badante'];
+
   const filterStaff = () => {
     let filtered = [...staffMembers];
+
+    if (isConvenzione) {
+      filtered = filtered.filter(s =>
+        s.modalitaAbilitata !== 'privato' &&
+        !categoriePrivate.includes(s.category)
+      );
+    }
 
     if (selectedCategory) {
       filtered = filtered.filter(s => s.category === selectedCategory);
@@ -635,16 +646,18 @@ function Staff() {
           >
             Tutti
           </button>
-          {categories.map(cat => (
-            <button
-              key={cat.value}
-              onClick={() => setSelectedCategory(cat.value)}
-              className={`tw-px-3 tw-py-2 tw-rounded-lg tw-text-sm tw-font-semibold tw-transition-colors tw-border ${selectedCategory === cat.value ? 'tw-text-white tw-border-transparent' : 'tw-bg-white tw-text-slate-600 tw-border-slate-300'}`}
-              style={selectedCategory === cat.value ? { backgroundColor: cat.color } : undefined}
-            >
-              {cat.label}
-            </button>
-          ))}
+          {categories
+            .filter(cat => !isConvenzione || !categoriePrivate.includes(cat.value))
+            .map(cat => (
+              <button
+                key={cat.value}
+                onClick={() => setSelectedCategory(cat.value)}
+                className={`tw-px-3 tw-py-2 tw-rounded-lg tw-text-sm tw-font-semibold tw-transition-colors tw-border ${selectedCategory === cat.value ? 'tw-text-white tw-border-transparent' : 'tw-bg-white tw-text-slate-600 tw-border-slate-300'}`}
+                style={selectedCategory === cat.value ? { backgroundColor: cat.color } : undefined}
+              >
+                {cat.label}
+              </button>
+            ))}
         </div>
 
         {canEdit && (
@@ -732,7 +745,7 @@ function Staff() {
                 onChange={handleInputChange}
               >
                 {categories
-                  .filter(cat => !['privato','osa','assistente-familiare','badante'].includes(cat.value) || formData.modalitaAbilitata !== 'convenzione')
+                  .filter(cat => !['privato','osa','assistente-familiare','badante'].includes(cat.value) || (!isConvenzione && formData.modalitaAbilitata !== 'convenzione'))
                   .map(cat => (
                     <option key={cat.value} value={cat.value}>{cat.label}</option>
                   ))}
@@ -1040,7 +1053,7 @@ function Staff() {
           <label>Email di accesso *<input type="email" required value={modificaForm.email} onChange={e => setModificaForm(f => ({ ...f, email: e.target.value }))} /></label>
           <label>Telefono<input type="tel" value={modificaForm.phone} onChange={e => setModificaForm(f => ({ ...f, phone: e.target.value }))} /></label>
           <div className="tw-grid tw-grid-cols-2 tw-gap-3">
-            <label>Categoria<select value={modificaForm.category} onChange={e => setModificaForm(f => ({ ...f, category: e.target.value as StaffMember['category'], role: rolesByCategory[e.target.value]?.includes(f.role) ? f.role : '' }))}>{categories.filter(c => !['privato','osa','assistente-familiare','badante'].includes(c.value) || modificaForm.modalitaAbilitata !== 'convenzione').map(category => <option key={category.value} value={category.value}>{category.label}</option>)}</select></label>
+            <label>Categoria<select value={modificaForm.category} onChange={e => setModificaForm(f => ({ ...f, category: e.target.value as StaffMember['category'], role: rolesByCategory[e.target.value]?.includes(f.role) ? f.role : '' }))}>{categories.filter(c => !['privato','osa','assistente-familiare','badante'].includes(c.value) || (!isConvenzione && modificaForm.modalitaAbilitata !== 'convenzione')).map(category => <option key={category.value} value={category.value}>{category.label}</option>)}</select></label>
             <label>Ruolo *<select required value={modificaForm.role} onChange={e => setModificaForm(f => ({ ...f, role: e.target.value }))}><option value="">Seleziona ruolo</option>{rolesByCategory[modificaForm.category].map(role => <option key={role} value={role}>{role}</option>)}</select></label>
           </div>
           <label>Modalità abilitata<select value={modificaForm.modalitaAbilitata} onChange={e => setModificaForm(f => {
