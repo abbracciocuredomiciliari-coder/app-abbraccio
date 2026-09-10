@@ -2,6 +2,7 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
+import { useModalita } from '../context/ModalitaContext';
 import EsamiStrumentali from './EsamiStrumentali';
 import {
   Calendar,
@@ -287,6 +288,7 @@ function WorkPlan() {
   const queryTipo = searchParams.get('tipo') as 'privato' | 'convenzione' | null;
   const queryPatientId = searchParams.get('patientId') || '';
   const { user } = useAuth();
+  const { isConvenzione } = useModalita();
   // Tab principale: piano di lavoro (prestazionale/assistenziale) oppure esami strumentali
   const [mainTab, setMainTab] = useState<'piano' | 'esami'>('piano');
   const [workplans, setWorkplans] = useState<WorkPlanItem[]>([]);
@@ -380,7 +382,7 @@ function WorkPlan() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [isConvenzione]);
 
   useEffect(() => {
     filterWorkplans();
@@ -388,7 +390,9 @@ function WorkPlan() {
 
   const loadData = async () => {
     try {
-      const tipoQuery = queryTipo ? `?tipo=${queryTipo}` : '';
+      const tipoQuery = queryTipo
+        ? `?tipo=${queryTipo}`
+        : `?tipo=${isConvenzione ? 'convenzione' : 'privato'}`;
       const [workplanRes, patientRes, staffRes] = await Promise.all([
         api.get(`/workplan${tipoQuery}`),
         api.get(`/patients${tipoQuery}`),

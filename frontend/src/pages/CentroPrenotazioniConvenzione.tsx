@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
+import { useModalita } from '../context/ModalitaContext';
 import {
   Syringe, HeartPulse, ClipboardList, Plus, X, ChevronLeft, ChevronRight,
   Calendar, Clock, User, CheckCircle, Trash2, ChevronDown, ChevronUp,
@@ -31,7 +32,7 @@ const GIORNI_DEFAULT = [
 ];
 const RUOLI_PRIVILEGIATI = ['admin', 'coordinator', 'direttore'];
 
-interface Paziente { _id: string; firstName: string; lastName: string; modalita?: string; convenzione?: string; }
+interface Paziente { _id: string; firstName: string; lastName: string; tipoGestione?: 'privato' | 'convenzione'; }
 interface StaffMember { _id: string; firstName: string; lastName: string; role: string; }
 interface Prelievo { _id: string; patient: { _id: string; firstName: string; lastName: string } | null; staff: { _id: string; firstName: string; lastName: string } | null; tipoPrelievo: string[]; dataPrelievo: string; orario?: string; note?: string; status: string; }
 interface EsameItem { _id: string; patient: { _id: string; firstName: string; lastName: string } | null; staff: { _id: string; firstName: string; lastName: string } | null; tipoEsame: string[]; dataEsame: string; orario?: string; note?: string; status: string; }
@@ -73,6 +74,7 @@ function CalendarioMese({ year, month, onPrev, onNext, selectedDate, onSelectDat
 
 export default function CentroPrenotazioniConvenzione() {
   const { user } = useAuth();
+  const { isConvenzione } = useModalita();
   const navigate = useNavigate();
   const canEdit = RUOLI_PRIVILEGIATI.includes(user?.role || '');
   const today = toISO(new Date());
@@ -137,22 +139,23 @@ export default function CentroPrenotazioniConvenzione() {
   const [operatoreAssEsame, setOperatoreAssEsame] = useState('');
   const [assEsameLoading, setAssEsameLoading] = useState(false);
 
-  useEffect(() => { loadPazientiStaff(); }, []);
-  useEffect(() => { if (mainTab === 'prelievi') loadPrelievi(); }, [mainTab, calYear, calMonth]);
-  useEffect(() => { if (mainTab === 'esami') loadEsami(); }, [mainTab, calYear, calMonth]);
-  useEffect(() => { if (mainTab === 'piani') loadPiani(); }, [mainTab]);
+  useEffect(() => { loadPazientiStaff(); }, [isConvenzione]);
+  useEffect(() => { if (mainTab === 'prelievi') loadPrelievi(); }, [mainTab, calYear, calMonth, isConvenzione]);
+  useEffect(() => { if (mainTab === 'esami') loadEsami(); }, [mainTab, calYear, calMonth, isConvenzione]);
+  useEffect(() => { if (mainTab === 'piani') loadPiani(); }, [mainTab, isConvenzione]);
 
   const loadPazientiStaff = async () => {
     try {
-      const [pRes, sRes] = await Promise.all([api.get('/patients'), api.get('/staff')]);
-      setPazienti(pRes.data.filter((p: Paziente) => p.modalita === 'convenzione' || p.convenzione));
+      const tipoQuery = isConvenzione ? '?tipo=convenzione' : '?tipo=privato';
+      const [pRes, sRes] = await Promise.all([api.get(`/patients${tipoQuery}`), api.get('/staff')]);
+      setPazienti(pRes.data);
       setStaff(sRes.data);
     } catch { /* silent */ }
   };
 
   const loadPrelievi = async () => {
     setPrelieviLoading(true);
-    try { const r = await api.get(`/prelievi?year=${calYear}&month=${calMonth + 1}`); setPrelievi(r.data); }
+    try { const r = await api.get(`/prelievi?year=${calYear}&month=${calMonth + 1}&tipoGestione=${isConvenzione ? 'convenzione' : 'privato'}`); setPrelievi(r.data); }
     catch { setPrelievi([]); } finally { setPrelieviLoading(false); }
   };
 
@@ -164,7 +167,10 @@ export default function CentroPrenotazioniConvenzione() {
 
   const loadPiani = async () => {
     setPianiLoading(true);
-    try { const r = await api.get('/workplan'); setPiani(r.data.filter((p: WorkPlanItem) => p.status !== 'archiviato')); }
+    try {
+      const r = await api.get(`/workplan?tipo=${isConvenzione ? 'convenzione' : 'privato'}`);
+      setPiani(r.data.filter((p: WorkPlanItem) => p.status !== 'archiviato'));
+    }
     catch { setPiani([]); } finally { setPianiLoading(false); }
   };
 
