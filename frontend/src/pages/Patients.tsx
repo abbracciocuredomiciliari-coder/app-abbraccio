@@ -141,7 +141,8 @@ function Patients() {
     categoriaPrivata: 'diagnostica' as string,
     contactPhone: '',
     email: '',
-    codiceFiscale: ''
+    codiceFiscale: '',
+    tipoGestione: 'privato' as 'privato' | 'convenzione'
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -243,10 +244,20 @@ function Patients() {
 
     try {
       if (editingPatient) {
-        await api.patch(`/patients/${editingPatient._id}`, formData);
+        const vecchiaGestione = editingPatient.tipoGestione || 'privato';
+        const nuovaGestione = formData.tipoGestione || 'privato';
+        if (vecchiaGestione !== nuovaGestione) {
+          const msg = `Vuoi cambiare gestione del paziente da ${vecchiaGestione === 'convenzione' ? 'SIAT' : 'Privato'} a ${nuovaGestione === 'convenzione' ? 'SIAT' : 'Privato'}?\n\nI dati del paziente verranno spostati nell'area ${nuovaGestione === 'convenzione' ? 'Pazienti Convenzione SIAT' : 'Pazienti Privati'}.`;
+          if (!confirm(msg)) return;
+        }
+        const payload = { ...formData } as any;
+        if (payload.tipoGestione === 'convenzione') payload.categoriaPrivata = undefined;
+        await api.patch(`/patients/${editingPatient._id}`, payload);
         setSuccess('Paziente aggiornato con successo!');
       } else {
-        await api.post('/patients', formData);
+        const payload = { ...formData } as any;
+        if (payload.tipoGestione === 'convenzione') payload.categoriaPrivata = undefined;
+        await api.post('/patients', payload);
         setSuccess('Paziente salvato con successo!');
       }
       setFormData({
@@ -258,7 +269,8 @@ function Patients() {
         categoriaPrivata: 'diagnostica',
         contactPhone: '',
         email: '',
-        codiceFiscale: ''
+        codiceFiscale: '',
+        tipoGestione: 'privato'
       });
       setEditingPatient(null);
       setIndirizzoCoords(null);
@@ -275,7 +287,7 @@ function Patients() {
     if (showForm) {
       setShowForm(false);
     } else {
-      setFormData({ firstName: '', lastName: '', birthDate: '', address: '', assistanceNeeds: '', categoriaPrivata: 'diagnostica', contactPhone: '', email: '', codiceFiscale: '' });
+      setFormData({ firstName: '', lastName: '', birthDate: '', address: '', assistanceNeeds: '', categoriaPrivata: 'diagnostica', contactPhone: '', email: '', codiceFiscale: '', tipoGestione: 'privato' });
       setEditingPatient(null);
       setSuggerimentiIndirizzo([]);
       setIndirizzoCoords(null);
@@ -294,6 +306,7 @@ function Patients() {
       contactPhone: patient.contactPhone || '',
       email: patient.email || '',
       codiceFiscale: patient.codiceFiscale || '',
+      tipoGestione: patient.tipoGestione || 'privato',
     });
     setEditingPatient(patient);
     setSuggerimentiIndirizzo([]);
@@ -880,17 +893,29 @@ function Patients() {
             />
           </label>
           <label>
-            Categoria servizio privato *
+            Gestione paziente
             <select
-              value={formData.categoriaPrivata}
-              onChange={e => setFormData(prev => ({ ...prev, categoriaPrivata: e.target.value as any }))}
-              required
+              value={formData.tipoGestione}
+              onChange={e => setFormData(prev => ({ ...prev, tipoGestione: e.target.value as 'privato' | 'convenzione' }))}
             >
-              <option value="diagnostica">🩺 Diagnostica (prelievi / esami)</option>
-              <option value="assistenza_domiciliare">🏥 Assistenza sanitaria domiciliare</option>
-              <option value="intermediazione_badanti">🤝 Intermediazione badanti</option>
+              <option value="privato">👤 Privato</option>
+              <option value="convenzione">🏥 SIAT — Convenzione</option>
             </select>
           </label>
+          {formData.tipoGestione === 'privato' && (
+            <label>
+              Categoria servizio privato *
+              <select
+                value={formData.categoriaPrivata}
+                onChange={e => setFormData(prev => ({ ...prev, categoriaPrivata: e.target.value as any }))}
+                required
+              >
+                <option value="diagnostica">🩺 Diagnostica (prelievi / esami)</option>
+                <option value="assistenza_domiciliare">🏥 Assistenza sanitaria domiciliare</option>
+                <option value="intermediazione_badanti">🤝 Intermediazione badanti</option>
+              </select>
+            </label>
+          )}
           <label>
             Fabbisogni assistenziali *
             <textarea
