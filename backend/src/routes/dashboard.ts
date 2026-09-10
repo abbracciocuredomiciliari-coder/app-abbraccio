@@ -17,15 +17,20 @@ router.get('/', authenticateToken, authorizeRole('admin', 'coordinator', 'dirett
     const tra7giorni = new Date(oggi.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     const { tipo } = req.query;
-    const isTipo = tipo === 'privato' || tipo === 'convenzione';
-    const patientFilter: any = isTipo ? { tipoGestione: tipo } : {};
+    const isConvenzione = tipo === 'convenzione';
+    const isPrivato = tipo === 'privato';
+    const isTipo = isConvenzione || isPrivato;
+
+    let patientFilter: any = {};
+    if (isConvenzione) patientFilter = { tipoGestione: 'convenzione' };
+    else if (isPrivato) patientFilter = { $or: [{ tipoGestione: 'privato' }, { tipoGestione: { $exists: false } }] };
 
     const [
       patientsCount,
       staffCount,
       operatoriSenzaZonaCount,
     ] = await Promise.all([
-      Patient.countDocuments(patientFilter),
+      Patient.countDocuments(isTipo ? patientFilter : {}),
       Staff.countDocuments({ active: true }),
       Staff.countDocuments({
         active: true,
@@ -37,24 +42,32 @@ router.get('/', authenticateToken, authorizeRole('admin', 'coordinator', 'dirett
       }),
     ]);
 
-    // Conteggio piani filtrati per gestione del paziente associato
-    const workplans = await WorkPlan.find({})
-      .populate('patient', 'tipoGestione')
-      .lean();
-
-    const workplansFiltrati = isTipo
-      ? (workplans as any[]).filter((wp: any) => (wp.patient as any)?.tipoGestione === tipo)
-      : (workplans as any[]);
-
-    const workplanCount = workplansFiltrati.length;
-    const activeWorkplans = workplansFiltrati.filter((wp: any) => wp.status === 'pending');
-    const activeWorkplanCount = activeWorkplans.length;
-    const activePatientIds = new Set(
-      activeWorkplans
-        .map((wp: any) => (wp.patient as any)?._id?.toString())
-        .filter(Boolean)
-    );
-    const activePatientsCount = activePatientIds.size;
+    // Conteggio piani e pazienti attivi per gestione
+    let workplanCount = 0;
+    let activeWorkplanCount = 0;
+    let activePatientsCount = 0;
+    if (isTipo) {
+      const pazientiIds = (await Patient.find(patientFilter).select('_id')).map(p => p._id);
+      [
+        workplanCount,
+        activeWorkplanCount,
+        activePatientsCount,
+      ] = await Promise.all([
+        WorkPlan.countDocuments({ patient: { $in: pazientiIds } }),
+        WorkPlan.countDocuments({ patient: { $in: pazientiIds }, status: 'pending' }),
+        WorkPlan.distinct('patient', { patient: { $in: pazientiIds }, status: 'pending' }).then(ids => ids.length),
+      ]);
+    } else {
+      [
+        workplanCount,
+        activeWorkplanCount,
+        activePatientsCount,
+      ] = await Promise.all([
+        WorkPlan.countDocuments(),
+        WorkPlan.countDocuments({ status: 'pending' }),
+        WorkPlan.distinct('patient', { status: 'pending' }).then(ids => ids.length),
+      ]);
+    }
 
     const prelieviOggiCount = await Prelievo.countDocuments({
       dataPrelievo: { $gte: inizioOggi, $lt: fineOggi },
@@ -65,7 +78,7 @@ router.get('/', authenticateToken, authorizeRole('admin', 'coordinator', 'dirett
     // Scadenze SIAT: visibili solo in modalità convenzione o senza filtro
     let scadenzeImminentiCount = 0;
     let paiInScadenza7gg = 0;
-    if (!isTipo || tipo === 'convenzione') {
+    if (!isTipo || isConvenzione) {
       scadenzeImminentiCount = await Patient.countDocuments({
         tipoGestione: 'convenzione',
         'siat.dataScadenzaAutorizzazione': { $gte: oggi, $lte: tra30giorni },
