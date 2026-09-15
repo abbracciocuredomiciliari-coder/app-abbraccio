@@ -106,11 +106,12 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
     const filtro: any = {};
     if (patient) filtro.patient = patient;
     const richieste = await BadanteIntermediazione.find(filtro)
-      .populate('patient', 'firstName lastName codiceFiscale email')
+      .populate('patient', 'firstName lastName codiceFiscale email tipoGestione')
       .populate('preventivoId', 'numero stato totale')
       .populate('fatturaId', 'numero stato totale')
       .sort({ createdAt: -1 });
-    return res.json(richieste);
+    const soloPrivate = richieste.filter((r: any) => r.patient?.tipoGestione === 'privato');
+    return res.json(soloPrivate);
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore nel caricamento delle richieste', error: error.message });
   }

@@ -211,180 +211,180 @@ export default function BadantiIntermediazione() {
     return `tw-inline-flex tw-px-2 tw-py-1 tw-rounded tw-text-xs tw-font-semibold ${map[stato] || 'tw-bg-slate-100 tw-text-slate-700'}`;
   };
 
-  if (loading) return <div className="tw-p-8 tw-text-slate-500">Caricamento...</div>;
+  if (loading) return (
+    <section className="tw-min-h-screen tw-flex tw-items-center tw-justify-center tw-bg-slate-50">
+      <div className="tw-bg-white tw-rounded-2xl tw-shadow-sm tw-border tw-border-slate-100 tw-p-10 tw-text-slate-500 tw-font-medium">⏳ Caricamento...</div>
+    </section>
+  );
 
   return (
-    <section className="tw-p-6">
-      <div className="tw-flex tw-items-center tw-justify-between tw-mb-6">
-        <h1 className="tw-text-2xl tw-font-bold tw-flex tw-items-center tw-gap-2">
-          <Users size={26} /> Intermediazione Badanti
-        </h1>
-        {isGestione && (
-          <Button onClick={() => setShowForm(s => !s)} className="tw-flex tw-items-center tw-gap-2">
-            {showForm ? <X size={18} /> : <Plus size={18} />} Nuova richiesta
-          </Button>
-        )}
-      </div>
+    <section className="fade-in tw-bg-slate-50 tw-min-h-screen tw-p-4 md:tw-p-6">
+      <div className="tw-max-w-7xl tw-mx-auto tw-space-y-6">
 
-      {showForm && (
-        <form onSubmit={salvaRichiesta} className="tw-bg-white tw-rounded-lg tw-p-6 tw-shadow-sm tw-mb-6 tw-space-y-4">
-          <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-2 tw-gap-4">
-            <label className="tw-flex tw-flex-col tw-gap-1">
-              <span className="tw-text-sm tw-font-medium">Paziente</span>
-              <select value={patient} onChange={e => setPatient(e.target.value)} className="tw-border tw-rounded tw-p-2" required>
-                <option value="">Seleziona...</option>
-                {pazienti.map(p => (
-                  <option key={p._id} value={p._id}>{p.firstName} {p.lastName} {p.codiceFiscale ? `(${p.codiceFiscale})` : ''}</option>
-                ))}
-              </select>
-            </label>
-            <label className="tw-flex tw-flex-col tw-gap-1">
-              <span className="tw-text-sm tw-font-medium">Tipo contratto</span>
-              <select value={contrattoTipo} onChange={e => setContrattoTipo(e.target.value as any)} className="tw-border tw-rounded tw-p-2">
-                <option value="orario_non_convivente">Ad orario non convivente</option>
-                <option value="convivente">Convivente</option>
-              </select>
-            </label>
-            <label className="tw-flex tw-flex-col tw-gap-1">
-              <span className="tw-text-sm tw-font-medium">Livello</span>
-              <select value={livello} onChange={e => setLivello(e.target.value)} className="tw-border tw-rounded tw-p-2">
-                {['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS'].map(l => <option key={l} value={l}>{l}</option>)}
-              </select>
-            </label>
-            <label className="tw-flex tw-flex-col tw-gap-1">
-              <span className="tw-text-sm tw-font-medium">Mesi contratto</span>
-              <input type="number" value={mesiContratto} onChange={e => setMesiContratto(e.target.value)} className="tw-border tw-rounded tw-p-2" />
-            </label>
-            {contrattoTipo === 'orario_non_convivente' && (
-              <label className="tw-flex tw-flex-col tw-gap-1">
-                <span className="tw-text-sm tw-font-medium">Ore settimanali</span>
-                <input type="number" value={oreSettimanali} onChange={e => setOreSettimanali(e.target.value)} className="tw-border tw-rounded tw-p-2" />
-              </label>
-            )}
-            <label className="tw-flex tw-flex-col tw-gap-1 md:tw-col-span-2">
-              <span className="tw-text-sm tw-font-medium">Note</span>
-              <textarea value={note} onChange={e => setNote(e.target.value)} rows={3} className="tw-border tw-rounded tw-p-2" />
-            </label>
+        <div className="tw-flex tw-justify-between tw-items-center tw-flex-wrap tw-gap-4 tw-bg-white tw-rounded-2xl tw-shadow-sm tw-border tw-border-slate-100 tw-p-5 md:tw-p-6">
+          <div className="tw-flex tw-items-center tw-gap-4">
+            <div className="tw-p-3 tw-rounded-xl tw-text-white tw-shadow-sm tw-bg-rose-600">
+              <Users size={24} />
+            </div>
+            <div>
+              <h1 className="tw-text-2xl tw-font-bold tw-text-slate-800">Intermediazione Badanti</h1>
+              <p className="tw-text-slate-500 tw-text-sm tw-m-0">Gestione richieste, preventivi e fatture — solo pazienti privati</p>
+            </div>
           </div>
-          <div className="tw-flex tw-justify-end">
-            <Button type="submit" disabled={saving} className="tw-flex tw-items-center tw-gap-2">
-              <Check size={18} /> {saving ? 'Salvataggio...' : 'Salva richiesta'}
+          {isGestione && (
+            <Button onClick={() => setShowForm(s => !s)} className="tw-flex tw-items-center tw-gap-2">
+              {showForm ? <X size={18} /> : <Plus size={18} />} Nuova richiesta
             </Button>
-          </div>
-        </form>
-      )}
+          )}
+        </div>
 
-      <div className="tw-overflow-x-auto tw-bg-white tw-rounded-lg tw-shadow-sm">
-        <table className="tw-w-full tw-text-sm">
-          <thead className="tw-bg-slate-50 tw-text-left">
-            <tr>
-              <th className="tw-p-3">Paziente</th>
-              <th className="tw-p-3">Contratto</th>
-              <th className="tw-p-3">Costo mensile</th>
-              <th className="tw-p-3">Stato</th>
-              <th className="tw-p-3">Preventivo</th>
-              <th className="tw-p-3">Fattura</th>
-              <th className="tw-p-3 tw-text-right">Azioni</th>
-            </tr>
-          </thead>
-          <tbody className="tw-divide-y">
-            {richieste.map(r => {
-              const preventivo = r.preventivoId && typeof r.preventivoId === 'object' ? r.preventivoId : undefined;
-              const fattura = r.fatturaId && typeof r.fatturaId === 'object' ? r.fatturaId : undefined;
-              const isOpen = selectedQuote === r._id;
-              return (
-                <tr key={r._id} className="tw-align-top">
-                  <td className="tw-p-3">
-                    <div className="tw-flex tw-items-center tw-gap-2">
-                      <User size={16} className="tw-text-slate-400" />
-                      {r.patient.firstName} {r.patient.lastName}
-                    </div>
-                    <div className="tw-text-xs tw-text-slate-500">{r.patient.codiceFiscale}</div>
-                  </td>
-                  <td className="tw-p-3">
-                    <div className="tw-flex tw-items-center tw-gap-2">
-                      <Briefcase size={16} className="tw-text-slate-400" />
-                      {r.contrattoTipo === 'orario_non_convivente' ? 'Orario non convivente' : 'Convivente'}
-                    </div>
-                    <div className="tw-text-xs tw-text-slate-500">Livello {r.livello}</div>
-                    {r.oreSettimanali ? <div className="tw-text-xs tw-text-slate-500">{r.oreSettimanali} h/sett</div> : null}
-                    {r.mesiContratto ? <div className="tw-text-xs tw-text-slate-500">{r.mesiContratto} mesi</div> : null}
-                  </td>
-                  <td className="tw-p-3 tw-text-right tw-font-medium">
-                    {r.costoMensile ? <><Euro size={12} className="tw-inline" /> {r.costoMensile.toFixed(2)}</> : '-'}
-                  </td>
-                  <td className="tw-p-3"><span className={statoBadge(r.stato)}>{r.stato.replace('_', ' ')}</span></td>
-                  <td className="tw-p-3">
-                    {preventivo ? (
-                      <div>
-                        <div className="tw-font-medium">{preventivo.numero}</div>
-                        <div className="tw-text-xs tw-text-slate-500"><Euro size={12} className="tw-inline" /> {preventivo.totale.toFixed(2)} — {preventivo.stato}</div>
+        {showForm && (
+          <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
+            <h2 className="tw-text-lg tw-font-semibold tw-mb-4 tw-text-slate-700">Nuova richiesta</h2>
+            <form onSubmit={salvaRichiesta} className="tw-space-y-4">
+              <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-2 tw-gap-4">
+                <label className="tw-flex tw-flex-col tw-gap-1">
+                  <span className="tw-text-sm tw-font-medium">Paziente</span>
+                  <select value={patient} onChange={e => setPatient(e.target.value)} className="tw-border tw-rounded tw-p-2" required>
+                    <option value="">Seleziona...</option>
+                    {pazienti.map(p => (
+                      <option key={p._id} value={p._id}>{p.firstName} {p.lastName} {p.codiceFiscale ? `(${p.codiceFiscale})` : ''}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="tw-flex tw-flex-col tw-gap-1">
+                  <span className="tw-text-sm tw-font-medium">Tipo contratto</span>
+                  <select value={contrattoTipo} onChange={e => setContrattoTipo(e.target.value as any)} className="tw-border tw-rounded tw-p-2">
+                    <option value="orario_non_convivente">Ad orario non convivente</option>
+                    <option value="convivente">Convivente</option>
+                  </select>
+                </label>
+                <label className="tw-flex tw-flex-col tw-gap-1">
+                  <span className="tw-text-sm tw-font-medium">Livello</span>
+                  <select value={livello} onChange={e => setLivello(e.target.value)} className="tw-border tw-rounded tw-p-2">
+                    {['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS'].map(l => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                </label>
+                <label className="tw-flex tw-flex-col tw-gap-1">
+                  <span className="tw-text-sm tw-font-medium">Mesi contratto</span>
+                  <input type="number" value={mesiContratto} onChange={e => setMesiContratto(e.target.value)} className="tw-border tw-rounded tw-p-2" />
+                </label>
+                {contrattoTipo === 'orario_non_convivente' && (
+                  <label className="tw-flex tw-flex-col tw-gap-1">
+                    <span className="tw-text-sm tw-font-medium">Ore settimanali</span>
+                    <input type="number" value={oreSettimanali} onChange={e => setOreSettimanali(e.target.value)} className="tw-border tw-rounded tw-p-2" />
+                  </label>
+                )}
+                <label className="tw-flex tw-flex-col tw-gap-1 md:tw-col-span-2">
+                  <span className="tw-text-sm tw-font-medium">Note</span>
+                  <textarea value={note} onChange={e => setNote(e.target.value)} rows={3} className="tw-border tw-rounded tw-p-2" />
+                </label>
+              </div>
+              <div className="tw-flex tw-justify-end">
+                <Button type="submit" disabled={saving} className="tw-flex tw-items-center tw-gap-2">
+                  <Check size={18} /> {saving ? 'Salvataggio...' : 'Salva richiesta'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
+          <h2 className="tw-text-lg tw-font-semibold tw-mb-4 tw-flex tw-items-center tw-gap-2 tw-text-slate-700">
+            <FileText size={20} /> Richieste ({richieste.length})
+          </h2>
+
+          {richieste.length === 0 ? (
+            <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-8 tw-text-center tw-text-slate-400">
+              Nessuna richiesta di intermediazione badante.
+            </div>
+          ) : (
+            <div className="tw-flex tw-flex-col tw-gap-3">
+              {richieste.map(r => {
+                const preventivo = r.preventivoId && typeof r.preventivoId === 'object' ? r.preventivoId : undefined;
+                const fattura = r.fatturaId && typeof r.fatturaId === 'object' ? r.fatturaId : undefined;
+                const isOpen = selectedQuote === r._id;
+                return (
+                  <div key={r._id} className="tw-bg-white tw-rounded-xl tw-overflow-hidden tw-border tw-border-rose-100 tw-shadow-sm hover:tw-shadow-md tw-transition-shadow tw-border-l-4 tw-border-l-rose-600">
+                    <div className="tw-p-4">
+                      <div className="tw-flex tw-flex-wrap tw-justify-between tw-items-start tw-gap-4">
+                        <div className="tw-flex-1 tw-min-w-[240px]">
+                          <div className="tw-flex tw-items-center tw-flex-wrap tw-gap-2 tw-mb-1">
+                            <User size={18} className="tw-text-rose-600" />
+                            <strong className="tw-text-[1.05rem] tw-text-slate-800">{r.patient.firstName} {r.patient.lastName}</strong>
+                            <span className="tw-text-xs tw-px-2 tw-py-0.5 tw-rounded-full tw-bg-slate-100 tw-text-slate-600 tw-font-medium">{r.patient.codiceFiscale || ''}</span>
+                            <span className={statoBadge(r.stato)}>{r.stato.replace('_', ' ')}</span>
+                          </div>
+                          <div className="tw-flex tw-flex-wrap tw-gap-3 tw-text-sm tw-text-slate-500 tw-mb-2">
+                            <span><Briefcase size={14} className="tw-inline" /> {r.contrattoTipo === 'orario_non_convivente' ? 'Orario non convivente' : 'Convivente'} — Livello {r.livello}</span>
+                            {r.oreSettimanali ? <span>{r.oreSettimanali} h/sett</span> : null}
+                            <span>{r.mesiContratto} mesi</span>
+                            {r.costoMensile ? <span className="tw-font-medium tw-text-slate-700"><Euro size={14} className="tw-inline" /> {r.costoMensile.toFixed(2)}/mese</span> : null}
+                          </div>
+                          {preventivo && (
+                            <div className="tw-text-sm tw-text-slate-600">
+                              <strong>Preventivo:</strong> {preventivo.numero} — <Euro size={14} className="tw-inline" /> {preventivo.totale.toFixed(2)} ({preventivo.stato})
+                            </div>
+                          )}
+                          {fattura && (
+                            <div className="tw-text-sm tw-text-slate-600 tw-mt-1">
+                              <strong>Fattura:</strong> {fattura.numero} — <Euro size={14} className="tw-inline" /> {fattura.totale.toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="tw-flex tw-gap-2 tw-flex-shrink-0 tw-flex-wrap tw-items-center">
+                          {isGestione && !preventivo && (
+                            <Button size="sm" onClick={() => setSelectedQuote(isOpen ? null : r._id)}>
+                              {isOpen ? 'Chiudi' : 'Genera preventivo'}
+                            </Button>
+                          )}
+                          {isGestione && preventivo && preventivo.stato === 'emesso' && (
+                            <>
+                              <Button size="sm" variant="secondary" onClick={() => scaricaPDF(preventivo)}>
+                                <Download size={14} className="tw-inline" /> PDF
+                              </Button>
+                              <Button size="sm" variant="secondary" onClick={() => inviaFirma(preventivo)}>
+                                <Mail size={14} className="tw-inline" /> Firma
+                              </Button>
+                            </>
+                          )}
+                          {isGestione && preventivo?.stato === 'firmato' && !fattura && (
+                            <Button size="sm" onClick={() => convertiInFattura(r._id)}>
+                              <Receipt size={14} className="tw-inline" /> Fattura
+                            </Button>
+                          )}
+                          {isGestione && fattura && (
+                            <>
+                              <Button size="sm" variant="secondary" onClick={() => scaricaPDF(fattura)}>
+                                <Download size={14} className="tw-inline" /> PDF
+                              </Button>
+                              <Button size="sm" variant="secondary" onClick={() => inviaFattura(fattura)}>
+                                <Mail size={14} className="tw-inline" /> Fattura
+                              </Button>
+                            </>
+                          )}
+                          {isGestione && (
+                            <button onClick={() => eliminaRichiesta(r._id)} className="tw-text-red-600 hover:tw-text-red-800 tw-p-2" title="Elimina">
+                              <Trash2 size={18} />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    ) : '-'}
-                  </td>
-                  <td className="tw-p-3">
-                    {fattura ? (
-                      <div>
-                        <div className="tw-font-medium">{fattura.numero}</div>
-                        <div className="tw-text-xs tw-text-slate-500"><Euro size={12} className="tw-inline" /> {fattura.totale.toFixed(2)}</div>
-                      </div>
-                    ) : '-'}
-                  </td>
-                  <td className="tw-p-3 tw-text-right tw-space-x-2">
-                    {isGestione && !preventivo && (
-                      <Button size="sm" onClick={() => setSelectedQuote(isOpen ? null : r._id)}>
-                        {isOpen ? 'Chiudi' : 'Genera preventivo'}
-                      </Button>
-                    )}
-                    {isGestione && preventivo && preventivo.stato === 'emesso' && (
-                      <>
-                        <Button size="sm" variant="secondary" onClick={() => scaricaPDF(preventivo)}>
-                          <Download size={14} className="tw-inline" /> Stampa PDF
-                        </Button>
-                        <Button size="sm" variant="secondary" onClick={() => inviaFirma(preventivo)}>
-                          <Mail size={14} className="tw-inline" /> Invia firma
-                        </Button>
-                      </>
-                    )}
-                    {isGestione && preventivo?.stato === 'firmato' && !fattura && (
-                      <Button size="sm" onClick={() => convertiInFattura(r._id)}>
-                        <Receipt size={14} className="tw-inline" /> Fattura
-                      </Button>
-                    )}
-                    {isGestione && fattura && (
-                      <>
-                        <Button size="sm" variant="secondary" onClick={() => scaricaPDF(fattura)}>
-                          <Download size={14} className="tw-inline" /> Stampa PDF
-                        </Button>
-                        <Button size="sm" variant="secondary" onClick={() => inviaFattura(fattura)}>
-                          <Mail size={14} className="tw-inline" /> Invia fattura
-                        </Button>
-                      </>
-                    )}
-                    {isGestione && (
-                      <button onClick={() => eliminaRichiesta(r._id)} className="tw-text-red-600 hover:tw-text-red-800" title="Elimina">
-                        <Trash2 size={18} />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-            {richieste.length === 0 && (
-              <tr>
-                <td colSpan={7} className="tw-p-6 tw-text-center tw-text-slate-500">Nessuna richiesta di intermediazione badante.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {selectedQuote && richiestaAperta && (
         <div className="tw-fixed tw-inset-0 tw-bg-black/40 tw-flex tw-items-center tw-justify-center tw-z-50 tw-p-4">
-          <div className="tw-bg-white tw-rounded-lg tw-p-6 tw-w-full tw-max-w-2xl tw-max-h-[90vh] tw-overflow-y-auto">
-            <h2 className="tw-text-lg tw-font-bold tw-mb-4 tw-flex tw-items-center tw-gap-2"><FileText size={20} /> Genera preventivo</h2>
+          <div className="tw-bg-white tw-rounded-2xl tw-p-6 tw-w-full tw-max-w-2xl tw-max-h-[90vh] tw-overflow-y-auto tw-shadow-xl">
+            <h2 className="tw-text-lg tw-font-bold tw-mb-4 tw-flex tw-items-center tw-gap-2 tw-text-slate-800"><FileText size={20} /> Genera preventivo</h2>
             <div className="tw-space-y-3 tw-mb-4">
-              <div className="tw-p-3 tw-bg-slate-50 tw-rounded">
+              <div className="tw-p-3 tw-bg-slate-50 tw-rounded-xl">
                 <div className="tw-text-sm"><span className="tw-font-semibold">Contratto:</span> {richiestaAperta.contrattoTipo === 'orario_non_convivente' ? 'Orario non convivente' : 'Convivente'}</div>
                 <div className="tw-text-sm"><span className="tw-font-semibold">Livello:</span> {richiestaAperta.livello}</div>
                 {richiestaAperta.oreSettimanali ? <div className="tw-text-sm"><span className="tw-font-semibold">Ore settimanali:</span> {richiestaAperta.oreSettimanali}</div> : null}
