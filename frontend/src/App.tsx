@@ -49,6 +49,7 @@ const ProtocolliProcedure = lazy(() => import('./pages/ProtocolliProcedure'));
 const ReportConsegne = lazy(() => import('./pages/ReportConsegne'));
 const GestioneFatturazione = lazy(() => import('./pages/GestioneFatturazione'));
 const ArchivioFatture = lazy(() => import('./pages/ArchivioFatture'));
+const BadantiIntermediazione = lazy(() => import('./pages/BadantiIntermediazione'));
 const GestioneContratti = lazy(() => import('./pages/GestioneContratti'));
 const Tariffario = lazy(() => import('./pages/Tariffario'));
 const GestioneConsensiGDPR = lazy(() => import('./pages/GestioneConsensiGDPR'));
@@ -432,6 +433,10 @@ function AppShell() {
                 <Archive size={18} />
                 Archivio Fatture
               </Link>
+              <Link to="/badanti-intermediazione" className={isActive('/badanti-intermediazione') ? 'active' : ''}>
+                <Users size={18} />
+                Intermediazione Badanti
+              </Link>
               {!isConvenzione && (
                 <Link to="/tariffario" className={isActive('/tariffario') ? 'active' : ''}>
                   <Tag size={18} />
@@ -562,6 +567,7 @@ function AppShell() {
           <Route path="/gestione-fatturazione" element={<ProtectedRoute><GestioneFatturazione /></ProtectedRoute>} />
           <Route path="/gestione-ritenute" element={<ProtectedRoute><GestioneRitenute /></ProtectedRoute>} />
           <Route path="/archivio-fatture" element={<ProtectedRoute><ArchivioFatture /></ProtectedRoute>} />
+          <Route path="/badanti-intermediazione" element={<ProtectedRoute><BadantiIntermediazione /></ProtectedRoute>} />
           <Route path="/tariffario" element={<ProtectedRoute><Tariffario /></ProtectedRoute>} />
           <Route path="/gestione-contratti" element={<ProtectedRoute><GestioneContratti /></ProtectedRoute>} />
           {/* GDPR Compliance - Gestione Consensi */}
