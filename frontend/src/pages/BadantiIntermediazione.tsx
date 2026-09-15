@@ -10,6 +10,7 @@ interface Patient {
   lastName: string;
   codiceFiscale?: string;
   email?: string;
+  categoriaPrivata?: 'diagnostica' | 'assistenza_domiciliare' | 'intermediazione_badanti';
 }
 
 interface Preventivo {
@@ -81,7 +82,9 @@ export default function BadantiIntermediazione() {
   async function caricaPazienti() {
     try {
       const res = await api.get('/patients');
-      setPazienti(res.data?.patients || res.data || []);
+      const tutti = res.data?.patients || res.data || [];
+      const badanti = (tutti as Patient[]).filter((p: Patient) => p.categoriaPrivata === 'intermediazione_badanti');
+      setPazienti(badanti);
     } catch (err: any) {
       console.error('Errore caricamento pazienti', err);
     }
