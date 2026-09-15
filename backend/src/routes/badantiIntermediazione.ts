@@ -122,6 +122,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
       .populate('patient', 'firstName lastName codiceFiscale email tipoGestione')
       .populate('preventivoId', 'numero stato totale')
       .populate('fatturaId', 'numero stato totale')
+      .populate('fattureGestione', 'numero stato totale data')
       .sort({ createdAt: -1 });
     const soloPrivate = richieste.filter((r: any) => r.patient?.tipoGestione === 'privato');
     return res.json(soloPrivate);
@@ -136,7 +137,8 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
     const richiesta = await BadanteIntermediazione.findById(req.params.id)
       .populate('patient', 'firstName lastName codiceFiscale email')
       .populate('preventivoId')
-      .populate('fatturaId');
+      .populate('fatturaId')
+      .populate('fattureGestione');
     if (!richiesta) return res.status(404).json({ message: 'Richiesta non trovata' });
     return res.json(richiesta);
   } catch (error: any) {
@@ -262,7 +264,7 @@ router.post('/:id/preventivo', authenticateToken, authorizeRole(...RUOLI_GESTION
   }
 });
 
-// POST /api/badanti-intermediazione/:id/fattura — converte preventivo accettato in fattura
+// POST /api/badanti-intermediazione/:id/fattura — converte preventivo accettato in fattura (solo spese una tantum)
 router.post('/:id/fattura', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('badanti_intermediazione', 'CREATE'), async (req: AuthRequest, res: Response) => {
   try {
     const richiesta = await BadanteIntermediazione.findById(req.params.id);
@@ -274,6 +276,8 @@ router.post('/:id/fattura', authenticateToken, authorizeRole(...RUOLI_GESTIONE),
     if (!preventivo) return res.status(404).json({ message: 'Preventivo non trovato' });
     if (preventivo.stato !== 'firmato') return res.status(400).json({ message: 'Il preventivo deve essere firmato prima di emettere fattura' });
 
+    const vociUnaTantum = (preventivo.prestazioni || []).filter((p: any) => String(p.descrizione).includes('una tantum'));
+    const totaleUnaTantum = Math.round(vociUnaTantum.reduce((acc: number, p: any) => acc + (Number(p.importo) || 0), 0) * 100) / 100;
     const numero = await generaNumero('fattura');
     const user = req.user as { name?: string; email?: string } | undefined;
 
@@ -283,16 +287,16 @@ router.post('/:id/fattura', authenticateToken, authorizeRole(...RUOLI_GESTIONE),
       patient: preventivo.patient,
       riferimentoTipo: preventivo.riferimentoTipo,
       riferimentoId: preventivo.riferimentoId,
-      prestazioni: preventivo.prestazioni,
-      totale: preventivo.totale,
+      prestazioni: vociUnaTantum,
+      totale: totaleUnaTantum,
       data: new Date(),
       dataPrestazione: preventivo.dataPrestazione,
       stato: 'emesso',
       note: preventivo.note,
       creatoDa: user?.name || user?.email || 'Sistema',
-      documentoOrigineId: preventivo._id,
       firma: {
-        rifiutoRegistro: preventivo.firma?.rifiutoRegistro ?? false,
+        token: '',
+        firmato: false,
       },
     });
 
@@ -304,6 +308,62 @@ router.post('/:id/fattura', authenticateToken, authorizeRole(...RUOLI_GESTIONE),
     return res.status(201).json({ fattura: popolata, richiesta });
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore nella generazione della fattura', error: error.message });
+  }
+});
+
+// POST /api/badanti-intermediazione/:id/fattura-gestione — fattura mensile gestione amministrativa
+router.post('/:id/fattura-gestione', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('badanti_intermediazione', 'CREATE'), async (req: AuthRequest, res: Response) => {
+  try {
+    const richiesta = await BadanteIntermediazione.findById(req.params.id);
+    if (!richiesta) return res.status(404).json({ message: 'Richiesta non trovata' });
+    if (!richiesta.fatturaId) return res.status(400).json({ message: 'Generare prima la fattura di intermediazione' });
+    if (!richiesta.gestioneAmministrativa || Number(richiesta.gestioneAmministrativa) <= 0) {
+      return res.status(400).json({ message: 'Nessuna gestione amministrativa configurata' });
+    }
+
+    const { meseRiferimento } = req.body;
+    if (!meseRiferimento) return res.status(400).json({ message: 'Mese di riferimento obbligatorio' });
+    const [y, m] = String(meseRiferimento).split('-');
+    if (!y || !m) return res.status(400).json({ message: 'Mese di riferimento non valido (YYYY-MM)' });
+    const label = `${m}/${y}`;
+    const dataRif = new Date(Number(y), Number(m) - 1, 1);
+
+    const ga = Number(richiesta.gestioneAmministrativa);
+    const gaLordaMensile = Math.round(ga * 1.22 * 100) / 100;
+    const numero = await generaNumero('fattura');
+    const user = req.user as { name?: string; email?: string } | undefined;
+
+    const fattura = await DocumentoFatturazione.create({
+      numero,
+      tipo: 'fattura',
+      patient: richiesta.patient,
+      riferimentoTipo: 'badante',
+      riferimentoId: richiesta._id,
+      prestazioni: [{
+        descrizione: `Gestione amministrativa + IVA 22% - Mese di riferimento: ${label}`,
+        quantita: 1,
+        prezzoUnitario: gaLordaMensile,
+        importo: gaLordaMensile,
+      }],
+      totale: gaLordaMensile,
+      data: new Date(),
+      dataPrestazione: dataRif,
+      stato: 'emesso',
+      creatoDa: user?.name || user?.email || 'Sistema',
+      firma: {
+        token: '',
+        firmato: false,
+      },
+    });
+
+    richiesta.fattureGestione = richiesta.fattureGestione || [];
+    richiesta.fattureGestione.push(fattura._id as any);
+    await richiesta.save();
+
+    const popolata = await DocumentoFatturazione.findById(fattura._id).populate('patient', 'firstName lastName codiceFiscale address email');
+    return res.status(201).json({ fattura: popolata, richiesta });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore nella generazione della fattura di gestione', error: error.message });
   }
 });
 

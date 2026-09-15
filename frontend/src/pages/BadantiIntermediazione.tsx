@@ -51,6 +51,7 @@ interface Badante {
   stato: string;
   preventivoId?: Preventivo | string;
   fatturaId?: Fattura | string;
+  fattureGestione?: Fattura[] | string[];
   createdAt: string;
 }
 
@@ -71,6 +72,7 @@ export default function BadantiIntermediazione() {
   const [gestioneAmministrativa, setGestioneAmministrativa] = useState('');
   const [includiGestione, setIncludiGestione] = useState(true);
   const [quoteNote, setQuoteNote] = useState('');
+  const [meseGestione, setMeseGestione] = useState('');
 
   const [selectedQuote, setSelectedQuote] = useState<string | null>(null);
 
@@ -192,6 +194,21 @@ export default function BadantiIntermediazione() {
       await caricaDati();
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore fattura');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function generaFatturaGestione(id: string) {
+    if (!meseGestione) return alert('Seleziona il mese di riferimento');
+    if (!confirm(`Confermi la generazione della fattura gestione per ${meseGestione}?`)) return;
+    try {
+      setSaving(true);
+      await api.post(`/badanti-intermediazione/${id}/fattura-gestione`, { meseRiferimento: meseGestione });
+      setMeseGestione('');
+      await caricaDati();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore fattura gestione');
     } finally {
       setSaving(false);
     }
@@ -355,6 +372,17 @@ export default function BadantiIntermediazione() {
                               <strong>Fattura:</strong> {fattura.numero} — <Euro size={14} className="tw-inline" /> {fattura.totale.toFixed(2)}
                             </div>
                           )}
+                          {Array.isArray(r.fattureGestione) && r.fattureGestione.length > 0 && (
+                            <div className="tw-text-xs tw-text-slate-500 tw-mt-1">
+                              <strong>Fatture gestione:</strong>{' '}
+                              {r.fattureGestione.map((fg: any, i: number) => (
+                                <span key={typeof fg === 'object' ? fg._id : fg}>
+                                  {i > 0 && ', '}
+                                  {typeof fg === 'object' ? `${fg.numero} — €${fg.totale?.toFixed(2)}` : fg}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <div className="tw-flex tw-gap-2 tw-flex-shrink-0 tw-flex-wrap tw-items-center">
                           {isGestione && !preventivo && (
@@ -385,6 +413,19 @@ export default function BadantiIntermediazione() {
                               <Button size="sm" variant="secondary" onClick={() => inviaFattura(fattura)}>
                                 <Mail size={14} className="tw-inline" /> Fattura
                               </Button>
+                              {Number(r.gestioneAmministrativa) > 0 && (
+                                <div className="tw-flex tw-items-center tw-gap-2 tw-w-full md:tw-w-auto">
+                                  <input
+                                    type="month"
+                                    value={meseGestione}
+                                    onChange={e => setMeseGestione(e.target.value)}
+                                    className="tw-border tw-rounded tw-p-1 tw-text-sm"
+                                  />
+                                  <Button size="sm" variant="secondary" onClick={() => generaFatturaGestione(r._id)} disabled={!meseGestione || saving}>
+                                    <Receipt size={14} className="tw-inline" /> Fattura mensile
+                                  </Button>
+                                </div>
+                              )}
                             </>
                           )}
                           {isGestione && (

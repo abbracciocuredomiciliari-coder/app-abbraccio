@@ -12,6 +12,7 @@ export interface IBadanteIntermediazione extends Document {
   stato: 'aperta' | 'preventivo_emesso' | 'accettata' | 'fatturata' | 'annullata';
   preventivoId?: Types.ObjectId;
   fatturaId?: Types.ObjectId;
+  fattureGestione?: Types.ObjectId[];
   creatoDa: string;
   createdAt: Date;
   updatedAt: Date;
@@ -30,6 +31,7 @@ const badanteIntermediazioneSchema = new Schema<IBadanteIntermediazione>(
     stato: { type: String, enum: ['aperta', 'preventivo_emesso', 'accettata', 'fatturata', 'annullata'], default: 'aperta' },
     preventivoId: { type: Schema.Types.ObjectId, ref: 'DocumentoFatturazione' },
     fatturaId: { type: Schema.Types.ObjectId, ref: 'DocumentoFatturazione' },
+    fattureGestione: [{ type: Schema.Types.ObjectId, ref: 'DocumentoFatturazione' }],
     creatoDa: { type: String, required: true },
   },
   { timestamps: true }
