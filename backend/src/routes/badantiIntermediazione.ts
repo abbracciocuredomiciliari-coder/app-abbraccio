@@ -30,21 +30,42 @@ function calcolaCostoMensile(richiesta: any) {
 
 function calcolaPrestazioni(richiesta: any, gestioneAmministrativa: number) {
   const mesi = Number(richiesta.mesiContratto) || 1;
-  const costoMensile = calcolaCostoMensile(richiesta);
-  const importoBadante = Math.round(costoMensile * mesi * 100) / 100;
-  let descrizione = `Costo badante - contratto ${richiesta.contrattoTipo === 'orario_non_convivente' ? 'ad orario non convivente' : 'convivente'}, livello ${richiesta.livello}`;
+  const costoBadante = calcolaCostoMensile(richiesta);
+  const ga = Number(gestioneAmministrativa) || 0;
+  const totaleMensile = Math.round((costoBadante + ga) * 100) / 100;
+  const totaleAnnuale = Math.round(totaleMensile * 12 * 100) / 100;
+  const importoContratto = Math.round(totaleMensile * mesi * 100) / 100;
+
+  let descrizione = `Intermediazione badante - contratto ${richiesta.contrattoTipo === 'orario_non_convivente' ? 'ad orario non convivente' : 'convivente'}, livello ${richiesta.livello}`;
   if (richiesta.contrattoTipo === 'orario_non_convivente' && richiesta.oreSettimanali) {
     descrizione += `, ${richiesta.oreSettimanali} ore settimanali`;
   }
-  const prestazioni = [{ descrizione, quantita: mesi, prezzoUnitario: costoMensile, importo: importoBadante }];
-  if (gestioneAmministrativa > 0) {
-    prestazioni.push({
-      descrizione: 'Gestione amministrativa',
-      quantita: 1,
-      prezzoUnitario: gestioneAmministrativa,
-      importo: gestioneAmministrativa,
-    });
-  }
+  descrizione += ` - Totale mensile €${totaleMensile.toFixed(2)} (badante €${costoBadante.toFixed(2)} + gestione amministrativa €${ga.toFixed(2)}); Totale annuale stimato €${totaleAnnuale.toFixed(2)}`;
+
+  const prestazioni = [{ descrizione, quantita: mesi, prezzoUnitario: totaleMensile, importo: importoContratto }];
+
+  prestazioni.push({
+    descrizione: 'Registrazione contratto (una tantum prima attivazione)',
+    quantita: 1,
+    prezzoUnitario: 120,
+    importo: 120,
+  });
+
+  const imponibileReclutamento = 500;
+  const ivaReclutamento = Math.round(imponibileReclutamento * 0.22 * 100) / 100; // IVA italiana 22%
+  prestazioni.push({
+    descrizione: 'Spese reclutamento e intermediazione (imponibile)',
+    quantita: 1,
+    prezzoUnitario: imponibileReclutamento,
+    importo: imponibileReclutamento,
+  });
+  prestazioni.push({
+    descrizione: 'IVA 22% spese reclutamento e intermediazione',
+    quantita: 1,
+    prezzoUnitario: ivaReclutamento,
+    importo: ivaReclutamento,
+  });
+
   return prestazioni;
 }
 

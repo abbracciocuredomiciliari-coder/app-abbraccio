@@ -387,9 +387,12 @@ export default function BadantiIntermediazione() {
                 {richiestaAperta.oreSettimanali ? <div className="tw-text-sm"><span className="tw-font-semibold">Ore settimanali:</span> {richiestaAperta.oreSettimanali}</div> : null}
                 <div className="tw-text-sm"><span className="tw-font-semibold">Mesi contratto:</span> {richiestaAperta.mesiContratto}</div>
                 <div className="tw-text-sm"><span className="tw-font-semibold">Costo badante mensile:</span> <Euro size={14} className="tw-inline" /> {richiestaAperta.costoMensile?.toFixed(2) || '0.00'}</div>
+                <div className="tw-text-sm"><span className="tw-font-semibold">Totale mensile (compreso gestione amministrativa):</span> <Euro size={14} className="tw-inline" /> {(Number(richiestaAperta.costoMensile || 0) + Number(gestioneAmministrativa || 0)).toFixed(2)}</div>
+                <div className="tw-text-sm"><span className="tw-font-semibold">Totale annuale stimato:</span> <Euro size={14} className="tw-inline" /> {((Number(richiestaAperta.costoMensile || 0) + Number(gestioneAmministrativa || 0)) * 12).toFixed(2)}</div>
+                <div className="tw-text-xs tw-text-slate-500 tw-mt-2">Voci una tantum incluse: registrazione contratto 120 € e spese reclutamento 500 € + IVA 22% (110 €).</div>
               </div>
               <label className="tw-flex tw-flex-col tw-gap-1">
-                <span className="tw-text-sm tw-font-medium">Compenso gestione amministrativa (importo)</span>
+                <span className="tw-text-sm tw-font-medium">Gestione amministrativa mensile</span>
                 <input type="number" step="0.01" value={gestioneAmministrativa} onChange={e => setGestioneAmministrativa(e.target.value)} className="tw-border tw-rounded tw-p-2" />
               </label>
               <label className="tw-block">
