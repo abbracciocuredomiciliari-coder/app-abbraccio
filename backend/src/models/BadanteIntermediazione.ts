@@ -2,11 +2,12 @@ import { Schema, model, Types, Document } from 'mongoose';
 
 export interface IBadanteIntermediazione extends Document {
   patient: Types.ObjectId;
-  tipoPiano: 'orario' | 'contratto_nazionale';
+  contrattoTipo: 'orario_non_convivente' | 'convivente';
+  livello: 'A' | 'AS' | 'B' | 'BS' | 'C' | 'CS' | 'D' | 'DS';
   oreSettimanali?: number;
   mesiContratto?: number;
   costoMensile?: number;
-  tariffaOraria?: number;
+  gestioneAmministrativa?: number;
   note?: string;
   stato: 'aperta' | 'preventivo_emesso' | 'accettata' | 'fatturata' | 'annullata';
   preventivoId?: Types.ObjectId;
@@ -19,11 +20,12 @@ export interface IBadanteIntermediazione extends Document {
 const badanteIntermediazioneSchema = new Schema<IBadanteIntermediazione>(
   {
     patient: { type: Schema.Types.ObjectId, ref: 'Patient', required: true },
-    tipoPiano: { type: String, enum: ['orario', 'contratto_nazionale'], required: true },
+    contrattoTipo: { type: String, enum: ['orario_non_convivente', 'convivente'], required: true },
+    livello: { type: String, enum: ['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS'], required: true },
     oreSettimanali: { type: Number, min: 0 },
     mesiContratto: { type: Number, min: 0 },
     costoMensile: { type: Number, min: 0 },
-    tariffaOraria: { type: Number, min: 0 },
+    gestioneAmministrativa: { type: Number, min: 0, default: 0 },
     note: { type: String, trim: true },
     stato: { type: String, enum: ['aperta', 'preventivo_emesso', 'accettata', 'fatturata', 'annullata'], default: 'aperta' },
     preventivoId: { type: Schema.Types.ObjectId, ref: 'DocumentoFatturazione' },

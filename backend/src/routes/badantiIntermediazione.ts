@@ -6,6 +6,48 @@ import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { auditLog } from '../middleware/audit';
 
+const TARIFFE_BADANTI = {
+  orario_non_convivente: {
+    A: 9.13, AS: 9.42, B: 9.71, BS: 10.22, C: 10.70, CS: 11.21, D: 12.86, DS: 13.32,
+  },
+  convivente: {
+    A: 1341.31, AS: 1400.01, B: 1428.65, BS: 1510.37, C: 1592.10, CS: 1673.79, D: 2160.59, DS: 2242.29,
+  },
+};
+
+const LIVELLI = ['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS'];
+const CONTRATTI = ['orario_non_convivente', 'convivente'];
+
+function calcolaCostoMensile(richiesta: any) {
+  if (!richiesta.contrattoTipo || !richiesta.livello) return 0;
+  const costo = (TARIFFE_BADANTI as any)[richiesta.contrattoTipo][richiesta.livello] || 0;
+  if (richiesta.contrattoTipo === 'orario_non_convivente') {
+    const ore = Number(richiesta.oreSettimanali) || 0;
+    return Math.round(ore * 52 / 12 * costo * 100) / 100;
+  }
+  return costo;
+}
+
+function calcolaPrestazioni(richiesta: any, gestioneAmministrativa: number) {
+  const mesi = Number(richiesta.mesiContratto) || 1;
+  const costoMensile = calcolaCostoMensile(richiesta);
+  const importoBadante = Math.round(costoMensile * mesi * 100) / 100;
+  let descrizione = `Costo badante - contratto ${richiesta.contrattoTipo === 'orario_non_convivente' ? 'ad orario non convivente' : 'convivente'}, livello ${richiesta.livello}`;
+  if (richiesta.contrattoTipo === 'orario_non_convivente' && richiesta.oreSettimanali) {
+    descrizione += `, ${richiesta.oreSettimanali} ore settimanali`;
+  }
+  const prestazioni = [{ descrizione, quantita: mesi, prezzoUnitario: costoMensile, importo: importoBadante }];
+  if (gestioneAmministrativa > 0) {
+    prestazioni.push({
+      descrizione: 'Gestione amministrativa',
+      quantita: 1,
+      prezzoUnitario: gestioneAmministrativa,
+      importo: gestioneAmministrativa,
+    });
+  }
+  return prestazioni;
+}
+
 const router = Router();
 
 const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
@@ -76,25 +118,33 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
 // POST /api/badanti-intermediazione — crea richiesta
 router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('badanti_intermediazione', 'CREATE'), async (req: AuthRequest, res: Response) => {
   try {
-    const { patient, tipoPiano, oreSettimanali, mesiContratto, costoMensile, tariffaOraria, note } = req.body;
+    const { patient, contrattoTipo, livello, oreSettimanali, mesiContratto, gestioneAmministrativa, note } = req.body;
     if (!patient) return res.status(400).json({ message: 'Paziente obbligatorio' });
-    if (!tipoPiano || !['orario', 'contratto_nazionale'].includes(tipoPiano)) {
-      return res.status(400).json({ message: "tipoPiano deve essere 'orario' o 'contratto_nazionale'" });
+    if (!contrattoTipo || !CONTRATTI.includes(contrattoTipo)) {
+      return res.status(400).json({ message: "contrattoTipo deve essere 'orario_non_convivente' o 'convivente'" });
+    }
+    if (!livello || !LIVELLI.includes(livello)) {
+      return res.status(400).json({ message: 'Livello non valido' });
+    }
+    if (contrattoTipo === 'orario_non_convivente' && !oreSettimanali) {
+      return res.status(400).json({ message: 'Ore settimanali obbligatorie per orario non convivente' });
     }
     const paziente = await Patient.findById(patient);
     if (!paziente) return res.status(404).json({ message: 'Paziente non trovato' });
 
     const user = req.user as { name?: string; email?: string } | undefined;
-    const richiesta = await BadanteIntermediazione.create({
+    const data: any = {
       patient,
-      tipoPiano,
+      contrattoTipo,
+      livello,
       oreSettimanali,
       mesiContratto,
-      costoMensile,
-      tariffaOraria,
+      gestioneAmministrativa: gestioneAmministrativa ? Number(gestioneAmministrativa) : 0,
       note,
       creatoDa: user?.name || user?.email || 'Sistema',
-    });
+    };
+    data.costoMensile = calcolaCostoMensile(data);
+    const richiesta = await BadanteIntermediazione.create(data);
     const popolata = await BadanteIntermediazione.findById(richiesta._id).populate('patient', 'firstName lastName codiceFiscale email');
     return res.status(201).json(popolata);
   } catch (error: any) {
@@ -107,13 +157,14 @@ router.put('/:id', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog
   try {
     const richiesta = await BadanteIntermediazione.findById(req.params.id);
     if (!richiesta) return res.status(404).json({ message: 'Richiesta non trovata' });
-    const { tipoPiano, oreSettimanali, mesiContratto, costoMensile, tariffaOraria, note } = req.body;
-    if (tipoPiano) richiesta.tipoPiano = tipoPiano;
+    const { contrattoTipo, livello, oreSettimanali, mesiContratto, gestioneAmministrativa, note } = req.body;
+    if (contrattoTipo) richiesta.contrattoTipo = contrattoTipo;
+    if (livello) richiesta.livello = livello;
     if (oreSettimanali !== undefined) richiesta.oreSettimanali = oreSettimanali;
     if (mesiContratto !== undefined) richiesta.mesiContratto = mesiContratto;
-    if (costoMensile !== undefined) richiesta.costoMensile = costoMensile;
-    if (tariffaOraria !== undefined) richiesta.tariffaOraria = tariffaOraria;
+    if (gestioneAmministrativa !== undefined) richiesta.gestioneAmministrativa = gestioneAmministrativa;
     if (note !== undefined) richiesta.note = note;
+    richiesta.costoMensile = calcolaCostoMensile(richiesta);
     await richiesta.save();
     const popolata = await BadanteIntermediazione.findById(richiesta._id).populate('patient', 'firstName lastName codiceFiscale email');
     return res.json(popolata);
@@ -144,16 +195,12 @@ router.post('/:id/preventivo', authenticateToken, authorizeRole(...RUOLI_GESTION
     const richiesta = await BadanteIntermediazione.findById(req.params.id);
     if (!richiesta) return res.status(404).json({ message: 'Richiesta non trovata' });
     if (richiesta.preventivoId) return res.status(400).json({ message: 'Preventivo già generato' });
+    if (!richiesta.mesiContratto) return res.status(400).json({ message: 'Mesi contratto obbligatori' });
 
-    const { prestazioni, dataPrestazione, note } = req.body;
-    if (!Array.isArray(prestazioni) || prestazioni.length === 0) {
-      return res.status(400).json({ message: 'Specificare almeno una voce del preventivo' });
-    }
-    const prestazioniNormalizzate = normalizzaPrestazioni(prestazioni);
-    if (prestazioniNormalizzate.length === 0) {
-      return res.status(400).json({ message: 'Le voci indicate non sono valide' });
-    }
-    const totale = Math.round(prestazioniNormalizzate.reduce((acc, p) => acc + p.importo, 0) * 100) / 100;
+    const { gestioneAmministrativa, dataPrestazione, note } = req.body;
+    const ga = Number(gestioneAmministrativa) >= 0 ? Number(gestioneAmministrativa) : (Number(richiesta.gestioneAmministrativa) || 0);
+    const prestazioni = calcolaPrestazioni(richiesta, ga);
+    const totale = Math.round(prestazioni.reduce((acc, p) => acc + p.importo, 0) * 100) / 100;
     const user = req.user as { name?: string; email?: string } | undefined;
     const numero = await generaNumero('preventivo');
 
@@ -163,7 +210,7 @@ router.post('/:id/preventivo', authenticateToken, authorizeRole(...RUOLI_GESTION
       patient: richiesta.patient,
       riferimentoTipo: 'badante',
       riferimentoId: richiesta._id,
-      prestazioni: prestazioniNormalizzate,
+      prestazioni,
       totale,
       data: new Date(),
       dataPrestazione: dataPrestazione ? new Date(dataPrestazione) : undefined,
@@ -174,6 +221,9 @@ router.post('/:id/preventivo', authenticateToken, authorizeRole(...RUOLI_GESTION
 
     richiesta.preventivoId = preventivo._id as any;
     richiesta.stato = 'preventivo_emesso';
+    if (ga !== Number(richiesta.gestioneAmministrativa)) {
+      richiesta.gestioneAmministrativa = ga;
+    }
     await richiesta.save();
 
     const popolato = await DocumentoFatturazione.findById(preventivo._id).populate('patient', 'firstName lastName codiceFiscale address email');

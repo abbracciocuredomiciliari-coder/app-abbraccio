@@ -29,22 +29,17 @@ interface Fattura {
 interface Badante {
   _id: string;
   patient: Patient;
-  tipoPiano: 'orario' | 'contratto_nazionale';
+  contrattoTipo: 'orario_non_convivente' | 'convivente';
+  livello: string;
   oreSettimanali?: number;
   mesiContratto?: number;
   costoMensile?: number;
-  tariffaOraria?: number;
+  gestioneAmministrativa?: number;
   note?: string;
   stato: string;
   preventivoId?: Preventivo | string;
   fatturaId?: Fattura | string;
   createdAt: string;
-}
-
-interface VocePreventivo {
-  descrizione: string;
-  quantita: number;
-  prezzoUnitario: number;
 }
 
 export default function BadantiIntermediazione() {
@@ -56,16 +51,15 @@ export default function BadantiIntermediazione() {
   const [showForm, setShowForm] = useState(false);
 
   const [patient, setPatient] = useState('');
-  const [tipoPiano, setTipoPiano] = useState<'orario' | 'contratto_nazionale'>('orario');
-  const [oreSettimanali, setOreSettimanali] = useState('');
-  const [mesiContratto, setMesiContratto] = useState('');
-  const [costoMensile, setCostoMensile] = useState('');
-  const [tariffaOraria, setTariffaOraria] = useState('');
+  const [contrattoTipo, setContrattoTipo] = useState<'orario_non_convivente' | 'convivente'>('orario_non_convivente');
+  const [livello, setLivello] = useState('A');
+  const [oreSettimanali, setOreSettimanali] = useState('24');
+  const [mesiContratto, setMesiContratto] = useState('12');
   const [note, setNote] = useState('');
+  const [gestioneAmministrativa, setGestioneAmministrativa] = useState('');
+  const [quoteNote, setQuoteNote] = useState('');
 
   const [selectedQuote, setSelectedQuote] = useState<string | null>(null);
-  const [voci, setVoci] = useState<VocePreventivo[]>([{ descrizione: '', quantita: 1, prezzoUnitario: 0 }]);
-  const [quoteNote, setQuoteNote] = useState('');
 
   const isGestione = user?.role === 'admin' || user?.role === 'coordinator' || user?.role === 'direttore';
 
@@ -100,19 +94,17 @@ export default function BadantiIntermediazione() {
       setSaving(true);
       await api.post('/badanti-intermediazione', {
         patient,
-        tipoPiano,
-        oreSettimanali: oreSettimanali ? Number(oreSettimanali) : undefined,
+        contrattoTipo,
+        livello,
+        oreSettimanali: contrattoTipo === 'orario_non_convivente' && oreSettimanali ? Number(oreSettimanali) : undefined,
         mesiContratto: mesiContratto ? Number(mesiContratto) : undefined,
-        costoMensile: costoMensile ? Number(costoMensile) : undefined,
-        tariffaOraria: tariffaOraria ? Number(tariffaOraria) : undefined,
         note,
       });
       setPatient('');
-      setTipoPiano('orario');
-      setOreSettimanali('');
-      setMesiContratto('');
-      setCostoMensile('');
-      setTariffaOraria('');
+      setContrattoTipo('orario_non_convivente');
+      setLivello('A');
+      setOreSettimanali('24');
+      setMesiContratto('12');
       setNote('');
       setShowForm(false);
       await caricaDati();
@@ -124,16 +116,14 @@ export default function BadantiIntermediazione() {
   }
 
   async function generaPreventivo(id: string) {
-    const vociValide = voci.filter(v => v.descrizione.trim());
-    if (vociValide.length === 0) return alert('Inserisci almeno una voce');
     try {
       setSaving(true);
       await api.post(`/badanti-intermediazione/${id}/preventivo`, {
-        prestazioni: vociValide,
+        gestioneAmministrativa: gestioneAmministrativa ? Number(gestioneAmministrativa) : 0,
         note: quoteNote,
       });
       setSelectedQuote(null);
-      setVoci([{ descrizione: '', quantita: 1, prezzoUnitario: 0 }]);
+      setGestioneAmministrativa('');
       setQuoteNote('');
       await caricaDati();
     } catch (err: any) {
@@ -193,17 +183,19 @@ export default function BadantiIntermediazione() {
     }
   }
 
-  function aggiornaVoce(index: number, campo: keyof VocePreventivo, valore: string | number) {
-    setVoci(prev => prev.map((v, i) => i === index ? { ...v, [campo]: valore } : v));
+  async function inviaFattura(fattura: Fattura) {
+    const email = window.prompt('Email del destinatario');
+    if (!email) return;
+    try {
+      await api.post(`/fatturazione-documenti/${fattura._id}/invia-email`, { email });
+      alert('Email inviata');
+      await caricaDati();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore invio');
+    }
   }
 
-  function aggiungiVoce() {
-    setVoci(prev => [...prev, { descrizione: '', quantita: 1, prezzoUnitario: 0 }]);
-  }
-
-  function rimuoviVoce(index: number) {
-    setVoci(prev => prev.filter((_, i) => i !== index));
-  }
+  const richiestaAperta = richieste.find(r => r._id === selectedQuote);
 
   const statoBadge = (stato: string) => {
     const map: Record<string, string> = {
@@ -244,28 +236,28 @@ export default function BadantiIntermediazione() {
               </select>
             </label>
             <label className="tw-flex tw-flex-col tw-gap-1">
-              <span className="tw-text-sm tw-font-medium">Tipo piano</span>
-              <select value={tipoPiano} onChange={e => setTipoPiano(e.target.value as any)} className="tw-border tw-rounded tw-p-2">
-                <option value="orario">Ad orario</option>
-                <option value="contratto_nazionale">Contratto nazionale badanti</option>
+              <span className="tw-text-sm tw-font-medium">Tipo contratto</span>
+              <select value={contrattoTipo} onChange={e => setContrattoTipo(e.target.value as any)} className="tw-border tw-rounded tw-p-2">
+                <option value="orario_non_convivente">Ad orario non convivente</option>
+                <option value="convivente">Convivente</option>
               </select>
             </label>
             <label className="tw-flex tw-flex-col tw-gap-1">
-              <span className="tw-text-sm tw-font-medium">Ore settimanali</span>
-              <input type="number" value={oreSettimanali} onChange={e => setOreSettimanali(e.target.value)} className="tw-border tw-rounded tw-p-2" />
+              <span className="tw-text-sm tw-font-medium">Livello</span>
+              <select value={livello} onChange={e => setLivello(e.target.value)} className="tw-border tw-rounded tw-p-2">
+                {['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS'].map(l => <option key={l} value={l}>{l}</option>)}
+              </select>
             </label>
             <label className="tw-flex tw-flex-col tw-gap-1">
               <span className="tw-text-sm tw-font-medium">Mesi contratto</span>
               <input type="number" value={mesiContratto} onChange={e => setMesiContratto(e.target.value)} className="tw-border tw-rounded tw-p-2" />
             </label>
-            <label className="tw-flex tw-flex-col tw-gap-1">
-              <span className="tw-text-sm tw-font-medium">Costo mensile</span>
-              <input type="number" step="0.01" value={costoMensile} onChange={e => setCostoMensile(e.target.value)} className="tw-border tw-rounded tw-p-2" />
-            </label>
-            <label className="tw-flex tw-flex-col tw-gap-1">
-              <span className="tw-text-sm tw-font-medium">Tariffa oraria</span>
-              <input type="number" step="0.01" value={tariffaOraria} onChange={e => setTariffaOraria(e.target.value)} className="tw-border tw-rounded tw-p-2" />
-            </label>
+            {contrattoTipo === 'orario_non_convivente' && (
+              <label className="tw-flex tw-flex-col tw-gap-1">
+                <span className="tw-text-sm tw-font-medium">Ore settimanali</span>
+                <input type="number" value={oreSettimanali} onChange={e => setOreSettimanali(e.target.value)} className="tw-border tw-rounded tw-p-2" />
+              </label>
+            )}
             <label className="tw-flex tw-flex-col tw-gap-1 md:tw-col-span-2">
               <span className="tw-text-sm tw-font-medium">Note</span>
               <textarea value={note} onChange={e => setNote(e.target.value)} rows={3} className="tw-border tw-rounded tw-p-2" />
@@ -284,7 +276,8 @@ export default function BadantiIntermediazione() {
           <thead className="tw-bg-slate-50 tw-text-left">
             <tr>
               <th className="tw-p-3">Paziente</th>
-              <th className="tw-p-3">Piano</th>
+              <th className="tw-p-3">Contratto</th>
+              <th className="tw-p-3">Costo mensile</th>
               <th className="tw-p-3">Stato</th>
               <th className="tw-p-3">Preventivo</th>
               <th className="tw-p-3">Fattura</th>
@@ -308,10 +301,14 @@ export default function BadantiIntermediazione() {
                   <td className="tw-p-3">
                     <div className="tw-flex tw-items-center tw-gap-2">
                       <Briefcase size={16} className="tw-text-slate-400" />
-                      {r.tipoPiano === 'orario' ? 'Ad orario' : 'Contratto nazionale'}
+                      {r.contrattoTipo === 'orario_non_convivente' ? 'Orario non convivente' : 'Convivente'}
                     </div>
+                    <div className="tw-text-xs tw-text-slate-500">Livello {r.livello}</div>
                     {r.oreSettimanali ? <div className="tw-text-xs tw-text-slate-500">{r.oreSettimanali} h/sett</div> : null}
                     {r.mesiContratto ? <div className="tw-text-xs tw-text-slate-500">{r.mesiContratto} mesi</div> : null}
+                  </td>
+                  <td className="tw-p-3 tw-text-right tw-font-medium">
+                    {r.costoMensile ? <><Euro size={12} className="tw-inline" /> {r.costoMensile.toFixed(2)}</> : '-'}
                   </td>
                   <td className="tw-p-3"><span className={statoBadge(r.stato)}>{r.stato.replace('_', ' ')}</span></td>
                   <td className="tw-p-3">
@@ -351,6 +348,16 @@ export default function BadantiIntermediazione() {
                         <Receipt size={14} className="tw-inline" /> Fattura
                       </Button>
                     )}
+                    {isGestione && fattura && (
+                      <>
+                        <Button size="sm" variant="secondary" onClick={() => scaricaPDF(fattura)}>
+                          <Download size={14} className="tw-inline" /> Stampa PDF
+                        </Button>
+                        <Button size="sm" variant="secondary" onClick={() => inviaFattura(fattura)}>
+                          <Mail size={14} className="tw-inline" /> Invia fattura
+                        </Button>
+                      </>
+                    )}
                     {isGestione && (
                       <button onClick={() => eliminaRichiesta(r._id)} className="tw-text-red-600 hover:tw-text-red-800" title="Elimina">
                         <Trash2 size={18} />
@@ -362,43 +369,34 @@ export default function BadantiIntermediazione() {
             })}
             {richieste.length === 0 && (
               <tr>
-                <td colSpan={6} className="tw-p-6 tw-text-center tw-text-slate-500">Nessuna richiesta di intermediazione badante.</td>
+                <td colSpan={7} className="tw-p-6 tw-text-center tw-text-slate-500">Nessuna richiesta di intermediazione badante.</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      {selectedQuote && (
+      {selectedQuote && richiestaAperta && (
         <div className="tw-fixed tw-inset-0 tw-bg-black/40 tw-flex tw-items-center tw-justify-center tw-z-50 tw-p-4">
           <div className="tw-bg-white tw-rounded-lg tw-p-6 tw-w-full tw-max-w-2xl tw-max-h-[90vh] tw-overflow-y-auto">
-            <h2 className="tw-text-lg tw-font-bold tw-mb-4 tw-flex tw-items-center tw-gap-2"><FileText size={20} /> Voci del preventivo</h2>
+            <h2 className="tw-text-lg tw-font-bold tw-mb-4 tw-flex tw-items-center tw-gap-2"><FileText size={20} /> Genera preventivo</h2>
             <div className="tw-space-y-3 tw-mb-4">
-              {voci.map((v, i) => (
-                <div key={i} className="tw-grid tw-grid-cols-12 tw-gap-2 tw-items-end">
-                  <div className="tw-col-span-5">
-                    <label className="tw-text-xs tw-font-medium">Descrizione</label>
-                    <input value={v.descrizione} onChange={e => aggiornaVoce(i, 'descrizione', e.target.value)} className="tw-w-full tw-border tw-rounded tw-p-2" />
-                  </div>
-                  <div className="tw-col-span-2">
-                    <label className="tw-text-xs tw-font-medium">Q.tà</label>
-                    <input type="number" value={v.quantita} onChange={e => aggiornaVoce(i, 'quantita', Number(e.target.value))} className="tw-w-full tw-border tw-rounded tw-p-2" />
-                  </div>
-                  <div className="tw-col-span-3">
-                    <label className="tw-text-xs tw-font-medium">Prezzo unitario</label>
-                    <input type="number" step="0.01" value={v.prezzoUnitario} onChange={e => aggiornaVoce(i, 'prezzoUnitario', Number(e.target.value))} className="tw-w-full tw-border tw-rounded tw-p-2" />
-                  </div>
-                  <div className="tw-col-span-2 tw-text-right">
-                    <button onClick={() => rimuoviVoce(i)} className="tw-text-red-600 hover:tw-text-red-800"><X size={18} /></button>
-                  </div>
-                </div>
-              ))}
-              <Button size="sm" variant="secondary" onClick={aggiungiVoce}>Aggiungi voce</Button>
+              <div className="tw-p-3 tw-bg-slate-50 tw-rounded">
+                <div className="tw-text-sm"><span className="tw-font-semibold">Contratto:</span> {richiestaAperta.contrattoTipo === 'orario_non_convivente' ? 'Orario non convivente' : 'Convivente'}</div>
+                <div className="tw-text-sm"><span className="tw-font-semibold">Livello:</span> {richiestaAperta.livello}</div>
+                {richiestaAperta.oreSettimanali ? <div className="tw-text-sm"><span className="tw-font-semibold">Ore settimanali:</span> {richiestaAperta.oreSettimanali}</div> : null}
+                <div className="tw-text-sm"><span className="tw-font-semibold">Mesi contratto:</span> {richiestaAperta.mesiContratto}</div>
+                <div className="tw-text-sm"><span className="tw-font-semibold">Costo badante mensile:</span> <Euro size={14} className="tw-inline" /> {richiestaAperta.costoMensile?.toFixed(2) || '0.00'}</div>
+              </div>
+              <label className="tw-flex tw-flex-col tw-gap-1">
+                <span className="tw-text-sm tw-font-medium">Compenso gestione amministrativa (importo)</span>
+                <input type="number" step="0.01" value={gestioneAmministrativa} onChange={e => setGestioneAmministrativa(e.target.value)} className="tw-border tw-rounded tw-p-2" />
+              </label>
+              <label className="tw-block">
+                <span className="tw-text-sm tw-font-medium">Note preventivo</span>
+                <textarea value={quoteNote} onChange={e => setQuoteNote(e.target.value)} rows={2} className="tw-w-full tw-border tw-rounded tw-p-2" />
+              </label>
             </div>
-            <label className="tw-block tw-mb-4">
-              <span className="tw-text-sm tw-font-medium">Note preventivo</span>
-              <textarea value={quoteNote} onChange={e => setQuoteNote(e.target.value)} rows={2} className="tw-w-full tw-border tw-rounded tw-p-2" />
-            </label>
             <div className="tw-flex tw-justify-end tw-gap-2">
               <Button size="sm" variant="secondary" onClick={() => setSelectedQuote(null)}>Annulla</Button>
               <Button size="sm" onClick={() => generaPreventivo(selectedQuote)} disabled={saving}>
