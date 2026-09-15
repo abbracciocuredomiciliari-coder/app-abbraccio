@@ -30,37 +30,50 @@ function calcolaCostoMensile(richiesta: any) {
 
 function calcolaPrestazioni(richiesta: any, gestioneAmministrativa: number) {
   const mesi = Number(richiesta.mesiContratto) || 12;
-  const costoBadante = calcolaCostoMensile(richiesta);
-  const ga = Number(gestioneAmministrativa) || 0;
-  const totaleMensile = Math.round((costoBadante + ga) * 100) / 100;
-  const totaleAnnuale = Math.round(totaleMensile * 12 * 100) / 100;
+  const costoBadanteMensile = calcolaCostoMensile(richiesta);
+  const costoAnnualeBadante = Math.round(costoBadanteMensile * mesi * 100) / 100;
+  const gaInput = Number(gestioneAmministrativa) || 0;
+  const gaLordoMensile = Math.round(gaInput * 1.22 * 100) / 100;
+  const gaLordoAnnuale = Math.round(gaLordoMensile * mesi * 100) / 100;
 
-  let descrizione = `Totale annuo contratto badante - ${richiesta.contrattoTipo === 'orario_non_convivente' ? 'orario non convivente' : 'convivente'}, livello ${richiesta.livello}`;
+  const prestazioni: any[] = [];
+
+  let descBadante = `Contratto badante - ${richiesta.contrattoTipo === 'orario_non_convivente' ? 'orario non convivente' : 'convivente'}, livello ${richiesta.livello}`;
   if (richiesta.contrattoTipo === 'orario_non_convivente' && richiesta.oreSettimanali) {
-    descrizione += `, ${richiesta.oreSettimanali} ore settimanali`;
+    descBadante += `, ${richiesta.oreSettimanali} ore settimanali`;
   }
-  descrizione += `, ${mesi} mesi - Badante €${costoBadante.toFixed(2)} + Gestione amministrativa €${ga.toFixed(2)} = €${totaleMensile.toFixed(2)}/mese, totale annuo €${totaleAnnuale.toFixed(2)}`;
+  descBadante += `, ${mesi} mesi - Totale mensile: €${costoBadanteMensile.toFixed(2)} - Totale annuale: €${costoAnnualeBadante.toFixed(2)}`;
+  prestazioni.push({ descrizione: descBadante, quantita: mesi, prezzoUnitario: costoBadanteMensile, importo: costoAnnualeBadante });
 
-  const prestazioni = [{ descrizione, quantita: 1, prezzoUnitario: totaleAnnuale, importo: totaleAnnuale }];
+  if (gaInput > 0) {
+    prestazioni.push({
+      descrizione: `Gestione amministrativa + IVA 22% - Totale mensile: €${gaLordoMensile.toFixed(2)} - Totale annuale: €${gaLordoAnnuale.toFixed(2)}`,
+      quantita: mesi,
+      prezzoUnitario: gaLordoMensile,
+      importo: gaLordoAnnuale,
+    });
+  }
 
+  const registrazione = 120;
   prestazioni.push({
     descrizione: 'Registrazione contratto (una tantum prima attivazione)',
     quantita: 1,
-    prezzoUnitario: 120,
-    importo: 120,
+    prezzoUnitario: registrazione,
+    importo: registrazione,
   });
 
   const imponibileIntermediazione = 500;
-  const ivaIntermediazione = Math.round(imponibileIntermediazione * 0.22 * 100) / 100; // IVA italiana 22%
+  const ivaIntermediazione = Math.round(imponibileIntermediazione * 0.22 * 100) / 100;
   const totaleIntermediazione = Math.round((imponibileIntermediazione + ivaIntermediazione) * 100) / 100;
   prestazioni.push({
-    descrizione: `Totale spese intermediazione e reclutamento (€${imponibileIntermediazione.toFixed(2)} imponibile + IVA 22% €${ivaIntermediazione.toFixed(2)})`,
+    descrizione: `Spese intermediazione e reclutamento (una tantum - €${imponibileIntermediazione.toFixed(2)} imponibile + IVA 22% €${ivaIntermediazione.toFixed(2)})`,
     quantita: 1,
     prezzoUnitario: totaleIntermediazione,
     importo: totaleIntermediazione,
   });
 
-  return prestazioni;
+  const totaleUnaTantum = Math.round((registrazione + totaleIntermediazione) * 100) / 100;
+  return { prestazioni, totaleUnaTantum };
 }
 
 const router = Router();
@@ -215,8 +228,7 @@ router.post('/:id/preventivo', authenticateToken, authorizeRole(...RUOLI_GESTION
 
     const { gestioneAmministrativa, dataPrestazione, note } = req.body;
     const ga = Number(gestioneAmministrativa) >= 0 ? Number(gestioneAmministrativa) : (Number(richiesta.gestioneAmministrativa) || 0);
-    const prestazioni = calcolaPrestazioni(richiesta, ga);
-    const totale = Math.round(prestazioni.reduce((acc, p) => acc + p.importo, 0) * 100) / 100;
+    const { prestazioni, totaleUnaTantum } = calcolaPrestazioni(richiesta, ga);
     const user = req.user as { name?: string; email?: string } | undefined;
     const numero = await generaNumero('preventivo');
 
@@ -227,7 +239,8 @@ router.post('/:id/preventivo', authenticateToken, authorizeRole(...RUOLI_GESTION
       riferimentoTipo: 'badante',
       riferimentoId: richiesta._id,
       prestazioni,
-      totale,
+      totale: totaleUnaTantum,
+      totaleLabel: 'TOTALE UNA TANTUM',
       data: new Date(),
       dataPrestazione: dataPrestazione ? new Date(dataPrestazione) : undefined,
       stato: 'emesso',

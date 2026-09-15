@@ -69,6 +69,7 @@ export default function BadantiIntermediazione() {
   const [mesiContratto, setMesiContratto] = useState('12');
   const [note, setNote] = useState('');
   const [gestioneAmministrativa, setGestioneAmministrativa] = useState('');
+  const [includiGestione, setIncludiGestione] = useState(true);
   const [quoteNote, setQuoteNote] = useState('');
 
   const [selectedQuote, setSelectedQuote] = useState<string | null>(null);
@@ -76,6 +77,14 @@ export default function BadantiIntermediazione() {
   const isGestione = user?.role === 'admin' || user?.role === 'coordinator' || user?.role === 'direttore';
 
   useEffect(() => { caricaDati(); caricaPazienti(); }, []);
+
+  useEffect(() => {
+    const r = richieste.find(x => x._id === selectedQuote);
+    if (r) {
+      setGestioneAmministrativa(r.gestioneAmministrativa ? String(r.gestioneAmministrativa) : '');
+      setIncludiGestione(!!r.gestioneAmministrativa && Number(r.gestioneAmministrativa) > 0);
+    }
+  }, [selectedQuote]);
 
   async function caricaDati() {
     try {
@@ -133,11 +142,12 @@ export default function BadantiIntermediazione() {
     try {
       setSaving(true);
       await api.post(`/badanti-intermediazione/${id}/preventivo`, {
-        gestioneAmministrativa: gestioneAmministrativa ? Number(gestioneAmministrativa) : 0,
+        gestioneAmministrativa: includiGestione ? Number(gestioneAmministrativa) : 0,
         note: quoteNote,
       });
       setSelectedQuote(null);
       setGestioneAmministrativa('');
+      setIncludiGestione(true);
       setQuoteNote('');
       await caricaDati();
     } catch (err: any) {
@@ -403,15 +413,43 @@ export default function BadantiIntermediazione() {
                 <div className="tw-text-sm"><span className="tw-font-semibold">Livello:</span> {richiestaAperta.livello} — {LIVELLI_DESCRIZIONI[richiestaAperta.livello]}</div>
                 {richiestaAperta.oreSettimanali ? <div className="tw-text-sm"><span className="tw-font-semibold">Ore settimanali:</span> {richiestaAperta.oreSettimanali}</div> : null}
                 <div className="tw-text-sm"><span className="tw-font-semibold">Mesi contratto:</span> {richiestaAperta.mesiContratto}</div>
-                <div className="tw-text-sm"><span className="tw-font-semibold">Costo badante mensile:</span> <Euro size={14} className="tw-inline" /> {richiestaAperta.costoMensile?.toFixed(2) || '0.00'}</div>
-                <div className="tw-text-sm"><span className="tw-font-semibold">Totale mensile (compreso gestione amministrativa):</span> <Euro size={14} className="tw-inline" /> {(Number(richiestaAperta.costoMensile || 0) + Number(gestioneAmministrativa || 0)).toFixed(2)}</div>
-                <div className="tw-text-sm"><span className="tw-font-semibold">Totale annuale stimato:</span> <Euro size={14} className="tw-inline" /> {((Number(richiestaAperta.costoMensile || 0) + Number(gestioneAmministrativa || 0)) * 12).toFixed(2)}</div>
-                <div className="tw-text-xs tw-text-slate-500 tw-mt-2">Voci una tantum incluse: registrazione contratto 120 € e spese reclutamento 500 € + IVA 22% (110 €).</div>
+                {(() => {
+                  const mesi = Number(richiestaAperta.mesiContratto) || 12;
+                  const costoBadante = Number(richiestaAperta.costoMensile || 0);
+                  const costoAnnuale = costoBadante * mesi;
+                  const gaNetta = Number(gestioneAmministrativa || 0);
+                  const gaLordaMensile = Math.round(gaNetta * 1.22 * 100) / 100;
+                  const gaLordaAnnuale = Math.round(gaLordaMensile * mesi * 100) / 100;
+                  const totMensile = costoBadante + (includiGestione ? gaLordaMensile : 0);
+                  const totAnnuale = costoAnnuale + (includiGestione ? gaLordaAnnuale : 0);
+                  return (
+                    <>
+                      <div className="tw-text-sm"><span className="tw-font-semibold">Costo badante mensile:</span> <Euro size={14} className="tw-inline" /> {costoBadante.toFixed(2)}</div>
+                      {includiGestione && (
+                        <div className="tw-text-sm"><span className="tw-font-semibold">Gestione amministrativa + IVA mensile:</span> <Euro size={14} className="tw-inline" /> {gaLordaMensile.toFixed(2)}</div>
+                      )}
+                      <div className="tw-text-sm"><span className="tw-font-semibold">Totale mensile:</span> <Euro size={14} className="tw-inline" /> {totMensile.toFixed(2)}</div>
+                      <div className="tw-text-sm"><span className="tw-font-semibold">Totale annuale:</span> <Euro size={14} className="tw-inline" /> {totAnnuale.toFixed(2)}</div>
+                      <div className="tw-text-sm tw-text-slate-500 tw-mt-1">Voci una tantum: registrazione contratto 120 € + spese intermediazione 610 € (IVA 22% inclusa).</div>
+                    </>
+                  );
+                })()}
               </div>
-              <label className="tw-flex tw-flex-col tw-gap-1">
-                <span className="tw-text-sm tw-font-medium">Gestione amministrativa mensile</span>
-                <input type="number" step="0.01" value={gestioneAmministrativa} onChange={e => setGestioneAmministrativa(e.target.value)} className="tw-border tw-rounded tw-p-2" />
+              <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includiGestione}
+                  onChange={e => setIncludiGestione(e.target.checked)}
+                  className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]"
+                />
+                <span className="tw-font-medium">Includi gestione amministrativa</span>
               </label>
+              {includiGestione && (
+                <label className="tw-flex tw-flex-col tw-gap-1">
+                  <span className="tw-text-sm tw-font-medium">Gestione amministrativa mensile (imponibile, IVA 22% aggiunta in automatico)</span>
+                  <input type="number" step="0.01" value={gestioneAmministrativa} onChange={e => setGestioneAmministrativa(e.target.value)} className="tw-border tw-rounded tw-p-2" />
+                </label>
+              )}
               <label className="tw-block">
                 <span className="tw-text-sm tw-font-medium">Note preventivo</span>
                 <textarea value={quoteNote} onChange={e => setQuoteNote(e.target.value)} rows={2} className="tw-w-full tw-border tw-rounded tw-p-2" />

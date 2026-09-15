@@ -20,6 +20,7 @@ export interface IDocumentoFatturazione extends Document {
   stato: 'emesso' | 'firmato' | 'annullato';
   note?: string;
   creatoDa: string;
+  totaleLabel?: string;
   documentoOrigineId?: Types.ObjectId; // se una fattura nasce dalla conferma di un preventivo
   firma?: {
     token: string;
@@ -56,6 +57,7 @@ const documentoFatturazioneSchema = new Schema<IDocumentoFatturazione>(
     stato: { type: String, enum: ['emesso', 'firmato', 'annullato'], default: 'emesso' },
     note: { type: String, trim: true },
     creatoDa: { type: String, required: true },
+    totaleLabel: { type: String, trim: true },
     documentoOrigineId: { type: Schema.Types.ObjectId, ref: 'DocumentoFatturazione' },
     firma: {
       token: { type: String, unique: true, sparse: true },

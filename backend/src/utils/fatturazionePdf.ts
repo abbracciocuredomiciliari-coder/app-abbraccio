@@ -160,8 +160,9 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
         pdf.addPage();
         totalY = 50;
       }
+      const totaleLabel = doc.totaleLabel || 'TOTALE';
       pdf.rect(360, totalY, 200, 45).fillAndStroke('#f0fdf4', '#16a34a');
-      pdf.font('Helvetica-Bold').fontSize(10).fillColor('#166534').text('TOTALE', 370, totalY + 8, { width: 90, align: 'left' });
+      pdf.font('Helvetica-Bold').fontSize(10).fillColor('#166534').text(totaleLabel, 370, totalY + 8, { width: 130, align: 'left' });
       pdf.font('Helvetica-Bold').fontSize(18).fillColor('#166534').text(formatEuro(Number(doc.totale) || 0), 370, totalY + 22, { width: 180, align: 'right' });
 
       // ─── Note e scadenze
