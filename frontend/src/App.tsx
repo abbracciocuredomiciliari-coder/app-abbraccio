@@ -20,6 +20,7 @@ const FirmaContrattoPaziente = lazy(() => import('./pages/FirmaContrattoPaziente
 const FirmaVerbaleEsterno = lazy(() => import('./pages/FirmaVerbaleEsterno'));
 const FirmaDocumento = lazy(() => import('./pages/FirmaDocumento'));
 const FirmaRitenuta = lazy(() => import('./pages/FirmaRitenuta'));
+const FirmaConsenso = lazy(() => import('./pages/FirmaConsenso'));
 const GestioneRitenute = lazy(() => import('./pages/GestioneRitenute'));
 
 // Lazy load per pagine pesanti
@@ -504,6 +505,7 @@ function AppShell() {
           <Route path="/firma-verbale" element={<FirmaVerbaleEsterno />} />
           <Route path="/firma-documento" element={<FirmaDocumento />} />
           <Route path="/firma-ritenuta" element={<FirmaRitenuta />} />
+          <Route path="/firma-consenso" element={<FirmaConsenso />} />
 
           {/* Route privilegiati */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

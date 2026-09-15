@@ -6,7 +6,7 @@ import ConsensoGDPR from '../models/ConsensoGDPR';
 import ConsensoPrestazioneSanitaria from '../models/ConsensoPrestazioneSanitaria';
 import Patient from '../models/Patient';
 import crypto from 'crypto';
-import { inviaEmailConsensoGDPR, inviaEmailConsensoPrestazione } from '../utils/email';
+import { inviaEmailConsensoGDPR, inviaEmailConsensoPrestazione, inviaEmail } from '../utils/email';
 
 const router = Router();
 
@@ -347,5 +347,117 @@ router.get(
     }
   }
 );
+
+// ─── FIRMA REMOTA CONSENSO GDPR ───────────────────────────────────────────────
+
+// POST /api/gdpr/consenso/:patientId/invia-firma
+// Invia al paziente un link sicuro per firmare il consenso GDPR
+router.post(
+  '/consenso/:patientId/invia-firma',
+  authorizeRole('admin', 'coordinator', 'operatore'),
+  auditLog('consenso', 'CREATE', (req) => req.params.patientId),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { patientId } = req.params;
+      const { email } = req.body;
+
+      const patient = await Patient.findById(patientId);
+      if (!patient) return res.status(404).json({ message: 'Paziente non trovato' });
+      if (!email?.trim()) return res.status(400).json({ message: 'Email del destinatario richiesta' });
+
+      const consensoEsistente = await ConsensoGDPR.findOne({ patientId, revocato: false, firmato: true });
+      if (consensoEsistente) return res.status(409).json({ message: 'Esiste già un consenso firmato attivo' });
+
+      const token = crypto.randomBytes(32).toString('hex');
+      const user = req.user as { userId: string; email: string };
+
+      const consenso = await ConsensoGDPR.create({
+        patientId,
+        pazienteAnonimoId: crypto.randomUUID(),
+        finalita: { prestazioneSanitaria: true, fatturazione: true, auditInterno: true, ricercaScientifica: false },
+        modalita: { cartaceo: true, informatico: true, telefonico: true },
+        datiSensibili: { datiSanitari: true, datiEconomici: true, immagini: false },
+        comunicazioneTerzi: { mediciSpecialisti: false, struttureSanitarie: false, familiari: false, assicurazioni: false },
+        firmatoDa: 'paziente',
+        nomeFirmatario: patient.firstName,
+        cognomeFirmatario: patient.lastName,
+        versioneInformativa: 'v2025.1',
+        token,
+        dataInvio: new Date(),
+        operatoreId: user.userId,
+        operatoreEmail: user.email,
+      });
+
+      const frontendUrl = process.env.FRONTEND_URL || `https://${req.headers.host}`;
+      const link = `${frontendUrl}/firma-consenso?token=${token}`;
+
+      await inviaEmail({
+        to: email.trim(),
+        subject: `Richiesta firma consenso GDPR - ${patient.firstName} ${patient.lastName}`,
+        html: `<p>Gentile ${patient.firstName} ${patient.lastName},</p>
+               <p>per completare l'adesione al trattamento dei dati è necessario firmare il consenso GDPR.</p>
+               <p><a href="${link}" style="padding:10px 16px;background:#1e4d8c;color:#fff;text-decoration:none;border-radius:6px;">Firma il consenso</a></p>
+               <p>Oppure copia e incolla il link: ${link}</p>
+               <p>Grazie,<br>Abbraccio Cure Domiciliari</p>`,
+      });
+
+      return res.json({ message: 'Email inviata', consensoId: consenso._id, token });
+    } catch (error: any) {
+      console.error('[GDPR] Errore invio firma:', error);
+      return res.status(500).json({ message: 'Errore invio consenso', error: error.message });
+    }
+  }
+);
+
+// GET /api/gdpr/consenso/firma/:token
+// Verifica validità token e restituisce dati paziente
+router.get('/consenso/firma/:token', async (req: Request, res: Response) => {
+  try {
+    const consenso = await ConsensoGDPR.findOne({ token: req.params.token, revocato: false });
+    if (!consenso) return res.status(404).json({ message: 'Link non valido o scaduto' });
+    if (consenso.firmato) return res.status(400).json({ message: 'Consenso già firmato' });
+    const patient = await Patient.findById(consenso.patientId).lean();
+    if (!patient) return res.status(404).json({ message: 'Paziente non trovato' });
+    return res.json({
+      consenso,
+      patient: {
+        _id: patient._id,
+        firstName: patient.firstName,
+        lastName: patient.lastName,
+        birthDate: patient.birthDate,
+        email: patient.email,
+      },
+    });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore verifica link', error: error.message });
+  }
+});
+
+// POST /api/gdpr/consenso/firma/:token
+// Salva firma remota del paziente
+router.post('/consenso/firma/:token', async (req: Request, res: Response) => {
+  try {
+    const { firmaImg, nome, luogo } = req.body;
+    if (!firmaImg) return res.status(400).json({ message: 'Firma richiesta' });
+
+    const consenso = await ConsensoGDPR.findOneAndUpdate(
+      { token: req.params.token, revocato: false, firmato: false },
+      {
+        firmato: true,
+        firmaImg,
+        ...(nome ? { nomeFirmatario: nome } : {}),
+        luogoFirma: luogo,
+        dataFirma: new Date(),
+        htmlFirmato: `<p>Consenso GDPR firmato il ${new Date().toLocaleDateString('it-IT')} inserito da Abbraccio Cure Domiciliari.</p>`,
+      },
+      { new: true }
+    );
+
+    if (!consenso) return res.status(404).json({ message: 'Link non valido o già firmato' });
+    return res.json({ message: 'Consenso firmato e archiviato' });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore firma consenso', error: error.message });
+  }
+});
 
 export default router;

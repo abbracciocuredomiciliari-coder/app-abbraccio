@@ -48,6 +48,12 @@ export interface IConsensoGDPR extends Document {
   // Versione informativa accettata
   versioneInformativa: string;
 
+  // Token per firma digitale remota via email
+  token?: string;
+  firmato: boolean;
+  dataInvio?: Date;
+  firmaImg?: string;
+
   // HTML/PDF firmato (per firma da contratto)
   htmlFirmato?: string;
   
@@ -110,6 +116,10 @@ const consensoSchema = new Schema<IConsensoGDPR>(
     luogoFirma: { type: String },
     
     versioneInformativa: { type: String, required: true }, // es. "v2024.1"
+    token: { type: String, unique: true, sparse: true, index: true },
+    firmato: { type: Boolean, default: false },
+    dataInvio: { type: Date },
+    firmaImg: { type: String },
     htmlFirmato: { type: String },
     
     revocato: { type: Boolean, default: false },

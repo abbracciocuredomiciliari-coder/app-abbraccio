@@ -146,6 +146,8 @@ function Patients() {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [sendingConsentId, setSendingConsentId] = useState<string | null>(null);
+  const [sentConsentIds, setSentConsentIds] = useState<Set<string>>(new Set());
 
   // Modifica paziente e verifica indirizzo
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
@@ -320,6 +322,24 @@ function Patients() {
     setContrattoEmail(patient.email || '');
     setContrattoLoading(false);
     setShowContrattoModal(true);
+  };
+
+  const inviaConsensoEmail = async (patient: Patient) => {
+    if (!patient.email) {
+      alert('Il paziente non ha un indirizzo email. Aggiungilo in anagrafica.');
+      return;
+    }
+    setSendingConsentId(patient._id);
+    try {
+      await api.post(`/gdpr/consenso/${patient._id}/invia-firma`, { email: patient.email });
+      setSentConsentIds(prev => new Set(prev).add(patient._id));
+      setSuccess('✅ Email con link firma consenso inviata');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore invio consenso');
+    } finally {
+      setSendingConsentId(null);
+    }
   };
 
   const chiudiContrattoModal = () => {
@@ -1005,6 +1025,14 @@ function Patients() {
                   >
                     <User size={16} />
                     Anagrafica
+                  </button>
+                  <button
+                    onClick={() => inviaConsensoEmail(patient)}
+                    disabled={sendingConsentId === patient._id || sentConsentIds.has(patient._id)}
+                    className={`tw-whitespace-nowrap ${sentConsentIds.has(patient._id) ? 'tw-bg-green-600 tw-text-white' : 'tw-bg-purple-600 tw-text-white'}`}
+                  >
+                    <Mail size={16} />
+                    {sendingConsentId === patient._id ? 'Invio...' : sentConsentIds.has(patient._id) ? 'Consenso inviato' : 'Invia consenso GDPR'}
                   </button>
                   <button
                     onClick={() => apriContrattoModal(patient)}
