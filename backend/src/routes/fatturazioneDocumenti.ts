@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import DocumentoFatturazione from '../models/DocumentoFatturazione';
 import Patient from '../models/Patient';
+import User from '../models/User';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { auditLog } from '../middleware/audit';
@@ -239,6 +240,29 @@ router.post('/firma/:token', async (req: Request, res: Response) => {
         subject: `Copia ${label} ${doc.numero} — Abbraccio Cure Domiciliari`,
         html,
         attachments: [{ filename, content: unsignedBuffer, contentType: 'application/pdf' }],
+      });
+    }
+
+    // Notifica operatore: contratto arrivato e firmato
+    let operatoreEmail = doc.creatoDa && doc.creatoDa.includes('@') ? doc.creatoDa : '';
+    if (!operatoreEmail && doc.creatoDa) {
+      const userDoc = await User.findOne({ name: doc.creatoDa });
+      if (userDoc) operatoreEmail = userDoc.email;
+    }
+    if (operatoreEmail) {
+      const nomePaziente = doc.patient?.firstName && doc.patient?.lastName
+        ? `${doc.patient.firstName} ${doc.patient.lastName}`
+        : 'Paziente';
+      const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+        <h2 style="color:#16a34a;margin-top:0;">Contratto arrivato — ${label} ${doc.numero}</h2>
+        <p>Il ${label.toLowerCase()} n. <strong>${doc.numero}</strong> relativo a <strong>${nomePaziente}</strong> è stato firmato ed archiviato.</p>
+        <p>Totale: <strong>€${Number(doc.totale).toFixed(2)}</strong></p>
+        <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari S.R.L.S.</p>
+      </div>`;
+      await inviaEmail({
+        to: operatoreEmail,
+        subject: `Contratto arrivato — ${label} ${doc.numero} firmato`,
+        html,
       });
     }
 
