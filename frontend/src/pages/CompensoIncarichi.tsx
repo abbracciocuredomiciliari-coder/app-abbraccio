@@ -130,7 +130,9 @@ export default function CompensoIncarichi() {
 
   // Filtraggio
   const riepilogosFiltrati = riepilogos.filter(r => {
-    const staffNome = `${r.workPlan.staff.firstName} ${r.workPlan.staff.lastName}`.toLowerCase();
+    const staffNome = r.workPlan.staff
+      ? `${r.workPlan.staff.firstName || ''} ${r.workPlan.staff.lastName || ''}`.toLowerCase()
+      : '';
     if (filtroStaff && !staffNome.includes(filtroStaff.toLowerCase())) return false;
     if (filtroPagato === 'pagato' && !r.compensoPagato) return false;
     if (filtroPagato === 'da_pagare' && r.compensoPagato) return false;
@@ -152,11 +154,13 @@ export default function CompensoIncarichi() {
   // Raggruppa per operatore
   const perOperatore: Record<string, { nome: string; ruolo: string; totale: number; pagato: number; daPagare: number; incarichi: number }> = {};
   riepilogosFiltrati.forEach(r => {
-    const key = r.workPlan.staff._id;
-    const nome = `${r.workPlan.staff.firstName} ${r.workPlan.staff.lastName}`;
+    const key = r.workPlan.staff?._id || 'mancante';
+    const nome = r.workPlan.staff
+      ? `${r.workPlan.staff.firstName || ''} ${r.workPlan.staff.lastName || ''}`.trim() || 'Operatore mancante'
+      : 'Operatore mancante';
     const importo = r.compensoSalvato > 0 ? r.compensoSalvato : r.compensoCalcolato;
     if (!perOperatore[key]) {
-      perOperatore[key] = { nome, ruolo: r.workPlan.staff.role, totale: 0, pagato: 0, daPagare: 0, incarichi: 0 };
+      perOperatore[key] = { nome, ruolo: r.workPlan.staff?.role || '—', totale: 0, pagato: 0, daPagare: 0, incarichi: 0 };
     }
     perOperatore[key].totale += importo;
     perOperatore[key].incarichi += 1;
@@ -302,7 +306,7 @@ export default function CompensoIncarichi() {
                                 {r.workPlan.category} — {r.workPlan.task}
                               </div>
                               <div style={{ fontSize: '0.75rem', color: '#888' }}>
-                                🏥 {r.workPlan.staff.firstName} {r.workPlan.staff.lastName} | 📅 {formatData(r.workPlan.date)}
+                                🏥 {r.workPlan.staff?.firstName || '—'} {r.workPlan.staff?.lastName || ''} | 📅 {formatData(r.workPlan.date)}
                               </div>
                             </div>
                             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
