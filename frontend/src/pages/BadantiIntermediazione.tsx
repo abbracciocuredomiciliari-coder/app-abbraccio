@@ -27,6 +27,17 @@ interface Fattura {
   stato: 'emesso' | 'firmato' | 'annullato';
 }
 
+const LIVELLI_DESCRIZIONI: Record<string, string> = {
+  A: 'Operatore base: assistenza minima e piccoli compiti domestici',
+  AS: 'Operatore base super: base con qualifica/anzianità superiore',
+  B: 'Badante/colf convivente: assistenza giornaliera in convivenza',
+  BS: 'Badante convivente super: maggiore autonomia e qualifica',
+  C: 'Badante non convivente: assistenza a non autosufficienti',
+  CS: 'Badante non convivente super: profilo specializzato',
+  D: 'Operatore specializzato: assistenza notturna, turni o profili complessi',
+  DS: 'Operatore super specializzato: coordinamento o massima qualifica',
+};
+
 interface Badante {
   _id: string;
   patient: Patient;
@@ -262,8 +273,11 @@ export default function BadantiIntermediazione() {
                 <label className="tw-flex tw-flex-col tw-gap-1">
                   <span className="tw-text-sm tw-font-medium">Livello</span>
                   <select value={livello} onChange={e => setLivello(e.target.value)} className="tw-border tw-rounded tw-p-2">
-                    {['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS'].map(l => <option key={l} value={l}>{l}</option>)}
+                    {['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS'].map(l => (
+                      <option key={l} value={l}>{l} — {LIVELLI_DESCRIZIONI[l]}</option>
+                    ))}
                   </select>
+                  <span className="tw-text-xs tw-text-slate-500 tw-mt-1">{LIVELLI_DESCRIZIONI[livello]}</span>
                 </label>
                 <label className="tw-flex tw-flex-col tw-gap-1">
                   <span className="tw-text-sm tw-font-medium">Mesi contratto</span>
@@ -386,7 +400,7 @@ export default function BadantiIntermediazione() {
             <div className="tw-space-y-3 tw-mb-4">
               <div className="tw-p-3 tw-bg-slate-50 tw-rounded-xl">
                 <div className="tw-text-sm"><span className="tw-font-semibold">Contratto:</span> {richiestaAperta.contrattoTipo === 'orario_non_convivente' ? 'Orario non convivente' : 'Convivente'}</div>
-                <div className="tw-text-sm"><span className="tw-font-semibold">Livello:</span> {richiestaAperta.livello}</div>
+                <div className="tw-text-sm"><span className="tw-font-semibold">Livello:</span> {richiestaAperta.livello} — {LIVELLI_DESCRIZIONI[richiestaAperta.livello]}</div>
                 {richiestaAperta.oreSettimanali ? <div className="tw-text-sm"><span className="tw-font-semibold">Ore settimanali:</span> {richiestaAperta.oreSettimanali}</div> : null}
                 <div className="tw-text-sm"><span className="tw-font-semibold">Mesi contratto:</span> {richiestaAperta.mesiContratto}</div>
                 <div className="tw-text-sm"><span className="tw-font-semibold">Costo badante mensile:</span> <Euro size={14} className="tw-inline" /> {richiestaAperta.costoMensile?.toFixed(2) || '0.00'}</div>
