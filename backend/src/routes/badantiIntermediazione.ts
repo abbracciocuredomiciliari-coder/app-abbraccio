@@ -31,28 +31,27 @@ function calcolaCostoMensile(richiesta: any) {
 function calcolaPrestazioni(richiesta: any, gestioneAmministrativa: number) {
   const mesi = Number(richiesta.mesiContratto) || 12;
   const costoBadanteMensile = calcolaCostoMensile(richiesta);
-  const costoAnnualeBadante = Math.round(costoBadanteMensile * mesi * 100) / 100;
   const gaInput = Number(gestioneAmministrativa) || 0;
   const gaLordoMensile = Math.round(gaInput * 1.22 * 100) / 100;
-  const gaLordoAnnuale = Math.round(gaLordoMensile * mesi * 100) / 100;
+  const costoMensile = Math.round((costoBadanteMensile + (gaInput > 0 ? gaLordoMensile : 0)) * 100) / 100;
+  const costoAnnuale = Math.round(costoMensile * mesi * 100) / 100;
 
-  const prestazioni: any[] = [];
-
-  let descBadante = `Contratto badante - ${richiesta.contrattoTipo === 'orario_non_convivente' ? 'orario non convivente' : 'convivente'}, livello ${richiesta.livello}`;
+  let descrizione = `Contratto badante - ${richiesta.contrattoTipo === 'orario_non_convivente' ? 'orario non convivente' : 'convivente'}, livello ${richiesta.livello}`;
   if (richiesta.contrattoTipo === 'orario_non_convivente' && richiesta.oreSettimanali) {
-    descBadante += `, ${richiesta.oreSettimanali} ore settimanali`;
+    descrizione += `, ${richiesta.oreSettimanali} ore settimanali`;
   }
-  descBadante += `, ${mesi} mesi - Totale mensile: €${costoBadanteMensile.toFixed(2)} - Totale annuale: €${costoAnnualeBadante.toFixed(2)}`;
-  prestazioni.push({ descrizione: descBadante, quantita: mesi, prezzoUnitario: costoBadanteMensile, importo: costoAnnualeBadante });
-
+  descrizione += `, ${mesi} mesi`;
   if (gaInput > 0) {
-    prestazioni.push({
-      descrizione: `Gestione amministrativa + IVA 22% - Totale mensile: €${gaLordoMensile.toFixed(2)} - Totale annuale: €${gaLordoAnnuale.toFixed(2)}`,
-      quantita: mesi,
-      prezzoUnitario: gaLordoMensile,
-      importo: gaLordoAnnuale,
-    });
+    descrizione += ` - Gestione amministrativa + IVA 22%: €${gaLordoMensile.toFixed(2)}/mese`;
   }
+  descrizione += ` - Costo mensile: €${costoMensile.toFixed(2)} - Costo annuale: €${costoAnnuale.toFixed(2)}`;
+
+  const prestazioni = [{
+    descrizione,
+    quantita: mesi,
+    prezzoUnitario: costoMensile,
+    importo: costoAnnuale,
+  }];
 
   const registrazione = 120;
   prestazioni.push({

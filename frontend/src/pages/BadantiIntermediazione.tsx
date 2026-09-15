@@ -457,20 +457,17 @@ export default function BadantiIntermediazione() {
                 {(() => {
                   const mesi = Number(richiestaAperta.mesiContratto) || 12;
                   const costoBadante = Number(richiestaAperta.costoMensile || 0);
-                  const costoAnnuale = costoBadante * mesi;
-                  const gaNetta = Number(gestioneAmministrativa || 0);
+                  const gaNetta = includiGestione ? Number(gestioneAmministrativa || 0) : 0;
                   const gaLordaMensile = Math.round(gaNetta * 1.22 * 100) / 100;
-                  const gaLordaAnnuale = Math.round(gaLordaMensile * mesi * 100) / 100;
-                  const totMensile = costoBadante + (includiGestione ? gaLordaMensile : 0);
-                  const totAnnuale = costoAnnuale + (includiGestione ? gaLordaAnnuale : 0);
+                  const costoMensile = Math.round((costoBadante + (gaNetta > 0 ? gaLordaMensile : 0)) * 100) / 100;
+                  const costoAnnuale = Math.round(costoMensile * mesi * 100) / 100;
                   return (
                     <>
-                      <div className="tw-text-sm"><span className="tw-font-semibold">Costo badante mensile:</span> <Euro size={14} className="tw-inline" /> {costoBadante.toFixed(2)}</div>
+                      <div className="tw-text-sm"><span className="tw-font-semibold">Costo mensile:</span> <Euro size={14} className="tw-inline" /> {costoMensile.toFixed(2)}</div>
                       {includiGestione && (
-                        <div className="tw-text-sm"><span className="tw-font-semibold">Gestione amministrativa + IVA mensile:</span> <Euro size={14} className="tw-inline" /> {gaLordaMensile.toFixed(2)}</div>
+                        <div className="tw-text-xs tw-text-slate-500">di cui gestione amministrativa + IVA 22%: €{gaLordaMensile.toFixed(2)}/mese</div>
                       )}
-                      <div className="tw-text-sm"><span className="tw-font-semibold">Totale mensile:</span> <Euro size={14} className="tw-inline" /> {totMensile.toFixed(2)}</div>
-                      <div className="tw-text-sm"><span className="tw-font-semibold">Totale annuale:</span> <Euro size={14} className="tw-inline" /> {totAnnuale.toFixed(2)}</div>
+                      <div className="tw-text-sm"><span className="tw-font-semibold">Costo annuale:</span> <Euro size={14} className="tw-inline" /> {costoAnnuale.toFixed(2)}</div>
                       <div className="tw-text-sm tw-text-slate-500 tw-mt-1">Voci una tantum: registrazione contratto 120 € + spese intermediazione 610 € (IVA 22% inclusa).</div>
                     </>
                   );
