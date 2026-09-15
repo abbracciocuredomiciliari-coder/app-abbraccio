@@ -1,7 +1,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { Users, Plus, FileText, Mail, Trash2, Receipt, Check, X, User, Briefcase, Euro } from 'lucide-react';
+import { Users, Plus, FileText, Mail, Trash2, Receipt, Check, X, User, Briefcase, Euro, Download } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 interface Patient {
@@ -152,6 +152,21 @@ export default function BadantiIntermediazione() {
       await caricaDati();
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore invio');
+    }
+  }
+
+  async function scaricaPDF(doc: { _id: string; numero: string }) {
+    try {
+      const res = await api.get(`/fatturazione-documenti/${doc._id}/pdf`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${doc.numero}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore download PDF');
     }
   }
 
@@ -322,9 +337,14 @@ export default function BadantiIntermediazione() {
                       </Button>
                     )}
                     {isGestione && preventivo && preventivo.stato === 'emesso' && (
-                      <Button size="sm" variant="secondary" onClick={() => inviaFirma(preventivo)}>
-                        <Mail size={14} className="tw-inline" /> Invia firma
-                      </Button>
+                      <>
+                        <Button size="sm" variant="secondary" onClick={() => scaricaPDF(preventivo)}>
+                          <Download size={14} className="tw-inline" /> Stampa PDF
+                        </Button>
+                        <Button size="sm" variant="secondary" onClick={() => inviaFirma(preventivo)}>
+                          <Mail size={14} className="tw-inline" /> Invia firma
+                        </Button>
+                      </>
                     )}
                     {isGestione && preventivo?.stato === 'firmato' && !fattura && (
                       <Button size="sm" onClick={() => convertiInFattura(r._id)}>
