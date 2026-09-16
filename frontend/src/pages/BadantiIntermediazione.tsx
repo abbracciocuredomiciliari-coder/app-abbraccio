@@ -265,7 +265,7 @@ export default function BadantiIntermediazione() {
               <Users size={24} />
             </div>
             <div>
-              <h1 className="tw-text-2xl tw-font-bold tw-text-slate-800">Intermediazione Badanti</h1>
+              <h1 className="tw-text-2xl tw-font-bold tw-text-slate-800">Assistenza domiciliare badanti</h1>
               <p className="tw-text-slate-500 tw-text-sm tw-m-0">Gestione richieste, preventivi e fatture — solo pazienti privati</p>
             </div>
           </div>
@@ -337,7 +337,7 @@ export default function BadantiIntermediazione() {
 
           {richieste.length === 0 ? (
             <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-8 tw-text-center tw-text-slate-400">
-              Nessuna richiesta di intermediazione badante.
+              Nessuna richiesta di assistenza domiciliare badanti.
             </div>
           ) : (
             <div className="tw-flex tw-flex-col tw-gap-3">
@@ -468,7 +468,7 @@ export default function BadantiIntermediazione() {
                         <div className="tw-text-xs tw-text-slate-500">di cui gestione amministrativa + IVA 22%: €{gaLordaMensile.toFixed(2)}/mese</div>
                       )}
                       <div className="tw-text-sm"><span className="tw-font-semibold">Costo annuale:</span> <Euro size={14} className="tw-inline" /> {costoAnnuale.toFixed(2)}</div>
-                      <div className="tw-text-sm tw-text-slate-500 tw-mt-1">Voci una tantum: registrazione contratto 120 € + spese intermediazione 610 € (IVA 22% inclusa).</div>
+                      <div className="tw-text-sm tw-text-slate-500 tw-mt-1">Voci una tantum: registrazione contratto 120 € + spese assistenza domiciliare badanti 610 € (IVA 22% inclusa).</div>
                     </>
                   );
                 })()}

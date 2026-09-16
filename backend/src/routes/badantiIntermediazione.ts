@@ -65,7 +65,7 @@ function calcolaPrestazioni(richiesta: any, gestioneAmministrativa: number) {
   const ivaIntermediazione = Math.round(imponibileIntermediazione * 0.22 * 100) / 100;
   const totaleIntermediazione = Math.round((imponibileIntermediazione + ivaIntermediazione) * 100) / 100;
   prestazioni.push({
-    descrizione: `Spese intermediazione e reclutamento (una tantum - €${imponibileIntermediazione.toFixed(2)} imponibile + IVA 22% €${ivaIntermediazione.toFixed(2)})`,
+    descrizione: `Spese assistenza domiciliare badanti e reclutamento (una tantum - €${imponibileIntermediazione.toFixed(2)} imponibile + IVA 22% €${ivaIntermediazione.toFixed(2)})`,
     quantita: 1,
     prezzoUnitario: totaleIntermediazione,
     importo: totaleIntermediazione,
@@ -178,7 +178,7 @@ router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('
     const popolata = await BadanteIntermediazione.findById(richiesta._id).populate('patient', 'firstName lastName codiceFiscale email');
     return res.status(201).json(popolata);
   } catch (error: any) {
-    return res.status(500).json({ message: "Errore nella creazione dell'intermediazione", error: error.message });
+    return res.status(500).json({ message: "Errore nella creazione dell'assistenza domiciliare", error: error.message });
   }
 });
 
@@ -315,7 +315,7 @@ router.post('/:id/fattura-gestione', authenticateToken, authorizeRole(...RUOLI_G
   try {
     const richiesta = await BadanteIntermediazione.findById(req.params.id);
     if (!richiesta) return res.status(404).json({ message: 'Richiesta non trovata' });
-    if (!richiesta.fatturaId) return res.status(400).json({ message: 'Generare prima la fattura di intermediazione' });
+    if (!richiesta.fatturaId) return res.status(400).json({ message: 'Generare prima la fattura di assistenza domiciliare' });
     if (!richiesta.gestioneAmministrativa || Number(richiesta.gestioneAmministrativa) <= 0) {
       return res.status(400).json({ message: 'Nessuna gestione amministrativa configurata' });
     }

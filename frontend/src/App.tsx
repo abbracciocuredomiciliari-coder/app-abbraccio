@@ -436,7 +436,7 @@ function AppShell() {
               </Link>
               <Link to="/badanti-intermediazione" className={isActive('/badanti-intermediazione') ? 'active' : ''}>
                 <Users size={18} />
-                Intermediazione Badanti
+                Assistenza domiciliare badanti
               </Link>
               {!isConvenzione && (
                 <Link to="/tariffario" className={isActive('/tariffario') ? 'active' : ''}>
