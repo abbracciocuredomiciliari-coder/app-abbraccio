@@ -1,31 +1,15 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Esami Strumentali e Diagnostici a domicilio - Abbraccio Cure Domiciliari</title>
-  <meta name="description" content="Esami strumentali e diagnostici a domicilio di Abbraccio Cure Domiciliari: holter, prelievi, RX, ecografie e altro.">
+  <title>Tutti gli esami - Abbraccio Cure Domiciliari</title>
+  <meta name="description" content="Tutti gli esami strumentali e diagnostici a domicilio di Abbraccio Cure Domiciliari.">
   <link rel="icon" type="image/png" href="logo-abbraccio.png">
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    .service-hero { padding: 70px 0 40px; background: var(--white); }
-    .detail-inner { display: grid; grid-template-columns: 1.1fr 1fr; gap: 60px; align-items: center; }
-    .detail-text h1 { font-size: 2.2rem; color: var(--text-dark); margin-bottom: 24px; }
-    .detail-text h1::after { content: ''; display: block; width: 70px; height: 4px; background: var(--green); margin-top: 14px; border-radius: 2px; }
-    .detail-text .lead { color: var(--text); font-size: 1.05rem; line-height: 1.7; margin-bottom: 20px; }
-    .detail-text .lead strong { color: var(--blue); }
-    .detail-text p { color: var(--text-light); margin-bottom: 18px; line-height: 1.7; }
-    .detail-image { position: relative; }
-    .detail-image img { width: 100%; border-radius: 20px; box-shadow: var(--shadow); display: block; }
-    .detail-image::before { content: ''; position: absolute; top: 16px; left: 16px; right: -16px; bottom: -16px; border: 2px solid var(--green); border-radius: 24px; z-index: -1; }
-    .service-activities { padding: 50px 0 70px; background: var(--bg-soft); }
-    .service-activities h2 { font-size: 1.5rem; color: var(--text-dark); margin-bottom: 30px; }
-    .service-activities h2::after { content: ''; display: block; width: 50px; height: 4px; background: var(--green); margin-top: 12px; border-radius: 2px; }
-    .activities-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 40px; list-style: none; }
-    .activities-list li { position: relative; padding-left: 24px; color: var(--text); font-size: 0.95rem; }
-    .activities-list li::before { content: '→'; position: absolute; left: 0; color: var(--green); font-weight: 900; }
     .services-list { padding: 80px 0; background: var(--white); }
     .services-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
     .service-thumb { background: #fff; border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); text-align: center; transition: transform 0.2s; }
@@ -33,8 +17,8 @@
     .service-thumb i { font-size: 2rem; color: var(--blue); margin-bottom: 12px; }
     .service-thumb h3 { font-size: 0.95rem; color: var(--text); margin-bottom: 8px; }
     .service-thumb a { display: inline-block; margin-top: 12px; color: var(--blue); font-weight: 700; font-size: 0.8rem; }
-    @media (max-width: 900px) { .detail-inner { grid-template-columns: 1fr; } .services-grid { grid-template-columns: repeat(2,1fr); } }
-    @media (max-width: 640px) { .services-grid { grid-template-columns: 1fr; } .activities-list { grid-template-columns: 1fr; } .detail-image::before { display: none; } }
+    @media (max-width: 900px) { .services-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 640px) { .services-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -67,14 +51,28 @@
         <li class="dropdown">
           <a href="#" class="dropdown-toggle">SERVIZI</a>
           <div class="dropdown-menu">
-                        <a href="infermiere-a-domicilio.html"><i class="fas fa-user-nurse"></i> Assistenza Infermieristica a domicilio</a>             <a href="fisioterapia-a-domicilio.html"><i class="fas fa-person-walking"></i> Fisioterapia a domicilio</a>             <a href="assistenza-anziani.html"><i class="fas fa-hand-holding-heart"></i> Assistenza Anziani a domicilio</a>             <a href="cure-pazienti-cronici.html"><i class="fas fa-notes-medical"></i> Cure Pazienti Cronici</a>             <a href="assistenza-notturna.html"><i class="fas fa-moon"></i> Assistenza Notturna</a>             <a href="cure-palliative.html"><i class="fas fa-dove"></i> Cure Palliative</a>             <a href="psicologia-a-domicilio.html"><i class="fas fa-brain"></i> Terapia psicologica a domicilio</a>             <a href="servizio-ambulanza.html"><i class="fas fa-ambulance"></i> Servizio Ambulanza</a>
-            <a href="esami-strumentali.html"><i class="fas fa-microscope"></i> Esami Strumentali e Diagnostici a domicilio</a>
+            <a href="infermiere-a-domicilio.html"><i class="fas fa-user-nurse"></i> Assistenza Infermieristica a domicilio</a>             <a href="fisioterapia-a-domicilio.html"><i class="fas fa-person-walking"></i> Fisioterapia a domicilio</a>             <a href="assistenza-anziani.html"><i class="fas fa-hand-holding-heart"></i> Assistenza Anziani a domicilio</a>             <a href="cure-pazienti-cronici.html"><i class="fas fa-notes-medical"></i> Cure Pazienti Cronici</a>             <a href="assistenza-notturna.html"><i class="fas fa-moon"></i> Assistenza Notturna</a>             <a href="cure-palliative.html"><i class="fas fa-dove"></i> Cure Palliative</a>             <a href="psicologia-a-domicilio.html"><i class="fas fa-brain"></i> Terapia psicologica a domicilio</a>             <a href="servizio-ambulanza.html"><i class="fas fa-ambulance"></i> Servizio Ambulanza</a>
             <a href="servizi.html"><i class="fas fa-th-list"></i> Tutti i servizi</a>
           </div>
+        </li>        <li class="dropdown">
+          <a href="#" class="dropdown-toggle">ESAMI</a>
+          <div class="dropdown-menu">
+            <a href="holter-pressorio.html"><i class="fas fa-heart-pulse"></i> Holter Pressorio</a>
+            <a href="holter-ecg.html"><i class="fas fa-wave-square"></i> Holter ECG</a>
+            <a href="apnee-sonno.html"><i class="fas fa-moon"></i> Apnee del Sonno</a>
+            <a href="screening-cardiaci.html"><i class="fas fa-heart-circle-check"></i> Screening Cardiaci</a>
+            <a href="saturimetria-spirometria.html"><i class="fas fa-lungs"></i> Saturimetria e Spirometria</a>
+            <a href="prelievi-ematici.html"><i class="fas fa-droplet"></i> Prelievi Ematici</a>
+            <a href="emogasanalisi.html"><i class="fas fa-lungs-virus"></i> Emogasanalisi</a>
+            <a href="rx-domiciliare.html"><i class="fas fa-x-ray"></i> RX Domiciliare</a>
+            <a href="ecografia-domiciliare.html"><i class="fas fa-wave-square"></i> Ecografia Domiciliare</a>
+            <a href="esami-strumentali.html"><i class="fas fa-th-list"></i> Tutti gli esami</a>
+          </div>
         </li>
+
         <li class="dropdown">
           <a href="#" class="dropdown-toggle">DOVE SIAMO</a>
-                    <div class="dropdown-menu dove">
+          <div class="dropdown-menu dove">
             <a href="dove-siamo.html#roma-centro"><i class="fas fa-map-marker-alt"></i> Roma Centro</a>
             <a href="dove-siamo.html#roma-nord"><i class="fas fa-map-marker-alt"></i> Roma Nord</a>
             <a href="dove-siamo.html#roma-sud"><i class="fas fa-map-marker-alt"></i> Roma Sud</a>
@@ -99,39 +97,15 @@
 
   <script src="nav.js"></script>
 
-  <section class="service-hero" id="dettaglio">
-    <div class="container">
-      <div class="detail-inner">
-        <div class="detail-text">
-          <h1>Esami Strumentali e Diagnostici a domicilio</h1>
-          <p class="lead">La <strong>diagnostica avanzata</strong> di Abbraccio ti permette di <strong>effettuare esami strumentali</strong> comodamente a casa tua, con referti consegnati digitalmente.</p>
-          <p>Gli esami strumentali a domicilio sono affidabili come quelli in clinica. Utilizziamo attrezzature diagnostiche professionali e certificate, identiche a quelle utilizzate nelle strutture ambulatoriali. Gli esami vengono interpretati da medici specialisti e i referti sono consegnati in formato digitale.</p>
-          <a href="https://app.abbracciocuredomiciliari.it/richiesta-servizio" target="_blank" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Richiedi Esami a domicilio</a>
-        </div>
-        <div class="detail-image">
-          <img src="images/IMG-20260616-WA0049.jpg" alt="Esami strumentali e diagnostici a domicilio">
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="service-activities" id="attivita">
-    <div class="container">
-      <h2>Esami e check-up che effettuiamo</h2>
-      <ul class="activities-list">
-            <li>Holter Pressorio</li>             <li>Holter ECG</li>             <li>Screening Apnee del Sonno</li>             <li>Screening Cardiaci</li>             <li>Saturimetria e Spirometria</li>             <li>Prelievi Ematici</li>             <li>Emogasanalisi</li>             <li>RX Domiciliare</li>             <li>Ecografia Domiciliare</li>
-      </ul>
-    </div>
-  </section>
-
-  <section class="services-list" id="tutti-i-servizi">
+  <section class="services-list" id="tutti-gli-esami">
     <div class="container">
       <div class="section-header center">
-        <span class="eyebrow">I Nostri Servizi</span>
-        <h2>Scopri tutti i servizi a domicilio</h2>
+        <span class="eyebrow">Diagnostica Avanzata</span>
+        <h2>9 Esami Strumentali a Domicilio</h2>
+        <p>Diagnostica completa: holter, esami sangue, RX, ecografie e altro</p>
       </div>
       <div class="services-grid">
-      <div class='service-thumb'><i class='fas fa-user-nurse'></i><h3>Assistenza Infermieristica a domicilio</h3><a href='infermiere-a-domicilio.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-person-walking'></i><h3>Fisioterapia a domicilio</h3><a href='fisioterapia-a-domicilio.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-hand-holding-heart'></i><h3>Assistenza Anziani a domicilio</h3><a href='assistenza-anziani.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-notes-medical'></i><h3>Cure Pazienti Cronici</h3><a href='cure-pazienti-cronici.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-moon'></i><h3>Assistenza Notturna</h3><a href='assistenza-notturna.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-dove'></i><h3>Cure Palliative</h3><a href='cure-palliative.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-brain'></i><h3>Terapia psicologica a domicilio</h3><a href='psicologia-a-domicilio.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-ambulance'></i><h3>Servizio Ambulanza</h3><a href='servizio-ambulanza.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-microscope'></i><h3>Esami Strumentali e Diagnostici a domicilio</h3><a href='esami-strumentali.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>
+       <div class='service-thumb'><i class='fas fa-heart-pulse'></i><h3>Holter Pressorio</h3><a href='holter-pressorio.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-wave-square'></i><h3>Holter ECG</h3><a href='holter-ecg.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-moon'></i><h3>Apnee del Sonno</h3><a href='apnee-sonno.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-heart-circle-check'></i><h3>Screening Cardiaci</h3><a href='screening-cardiaci.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-lungs'></i><h3>Saturimetria e Spirometria</h3><a href='saturimetria-spirometria.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-droplet'></i><h3>Prelievi Ematici</h3><a href='prelievi-ematici.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-lungs-virus'></i><h3>Emogasanalisi</h3><a href='emogasanalisi.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-x-ray'></i><h3>RX Domiciliare</h3><a href='rx-domiciliare.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-wave-square'></i><h3>Ecografia Domiciliare</h3><a href='ecografia-domiciliare.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>
       </div>
     </div>
   </section>
