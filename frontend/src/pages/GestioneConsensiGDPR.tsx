@@ -59,12 +59,6 @@ export default function GestioneConsensiGDPR() {
   const stampaConsenso = (c: Consenso, p: Patient) => {
     const win = window.open('', '_blank');
     if (!win) return;
-    if (c.htmlFirmato) {
-      win.document.write(c.htmlFirmato);
-      win.document.close();
-      win.focus();
-      return;
-    }
     const dataFirmaFmt = formatDate(c.dataFirma);
     const nascitaFmt = p.birthDate ? new Date(p.birthDate).toLocaleDateString('it-IT') : '_______________';
     win.document.write(`<!DOCTYPE html>
@@ -180,10 +174,10 @@ con la presente desideriamo comunicarLe che per l'instaurazione e la gestione de
   Versione informativa: ${c.versioneInformativa} — Documento generato il ${new Date().toLocaleDateString('it-IT')}
 </div>
 
-<script>window.onload=function(){window.print()}</script>
 </body></html>`);
     win.document.close();
     win.focus();
+    setTimeout(() => win.print(), 500);
   };
 
   return (
