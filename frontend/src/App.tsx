@@ -526,7 +526,7 @@ function AppShell() {
           <Route path="/checklist-glucometro" element={<Navigate to="/checklist-hub" replace />} />
           <Route path="/gestione-utenti" element={<ProtectedRoute><GestioneUtenti /></ProtectedRoute>} />
           <Route path="/gestione-richieste" element={<ProtectedRoute><GestioneRichieste /></ProtectedRoute>} />
-          <Route path="/centro-prenotazioni-privato" element={<ProtectedRoute><CentroPrenotazioniPrivato /></ProtectedRoute>} />
+          <Route path="/centro-prenotazioni-privato" element={<ProtectedRoute><CentroPrenotazioni /></ProtectedRoute>} />
           <Route path="/portale-paziente" element={<ProtectedRoute><PortalePaziente /></ProtectedRoute>} />
           <Route path="/telemedicina-paziente" element={<ProtectedRoute><TelemedicinaPaziente /></ProtectedRoute>} />
           <Route path="/scheda-servizio" element={<SchedaServizio />} />
