@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Area Riservata - Abbraccio Cure Domiciliari</title>
+  <link rel="icon" type="image/png" href="logo-abbraccio.png">
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .admin-body { background: var(--bg-soft); min-height: 100vh; display: flex; flex-direction: column; }
+    .admin-login, .admin-panel { max-width: 500px; margin: 80px auto; background: #fff; padding: 40px; border-radius: var(--radius); box-shadow: var(--shadow); width: 90%; }
+    .admin-login h2, .admin-panel h2 { color: var(--text-dark); margin-bottom: 10px; }
+    .admin-login p, .admin-panel p { color: var(--text-light); margin-bottom: 24px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px; color: var(--text); }
+    .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.95rem; }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .hidden { display: none; }
+    #saveMsg { color: var(--green); font-weight: 700; margin-top: 12px; }
+    .admin-panel a { color: var(--blue); }
+  </style>
+</head>
+<body class="admin-body">
+  <div style="background:var(--blue);color:#fff;padding:14px 0;">
+    <div class="container" style="display:flex;justify-content:space-between;align-items:center;">
+      <a href="index.html" class="logo" style="color:#fff;"><i class="fas fa-arrow-left"></i> Torna al sito</a>
+      <span style="font-weight:700;">Area Riservata</span>
+    </div>
+  </div>
+
+  <div class="admin-login" id="loginBox">
+    <h2><i class="fas fa-lock"></i> Accesso riservato</h2>
+    <p>Inserisci la password per accedere al pannello di gestione.</p>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="adminPass" placeholder="Password">
+    </div>
+    <button class="btn btn-primary" id="loginBtn"><i class="fas fa-sign-in-alt"></i> Entra</button>
+    <p style="font-size:0.8rem;color:var(--text-light);margin-top:16px;">Per questa preview la password è <strong>admin</strong>.</p>
+  </div>
+
+  <div class="admin-panel hidden" id="editorBox">
+    <h2>Gestione contenuti</h2>
+    <p>Modifica i testi e gli orari. Le modifiche verranno salvate nel browser di questa anteprima.</p>
+    <div class="form-group">
+      <label>Titolo Hero</label>
+      <input type="text" id="heroTitle">
+    </div>
+    <div class="form-group">
+      <label>Sottotitolo Hero</label>
+      <textarea id="heroSubtitle"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Telefono</label>
+      <input type="text" id="phone">
+    </div>
+    <div class="form-group">
+      <label>WhatsApp</label>
+      <input type="text" id="whatsapp">
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="text" id="email">
+    </div>
+    <div class="form-group">
+      <label>Indirizzo</label>
+      <input type="text" id="address">
+    </div>
+    <button class="btn btn-primary" id="saveBtn"><i class="fas fa-save"></i> Salva modifiche</button>
+    <p id="saveMsg"></p>
+    <p style="margin-top:20px;font-size:0.9rem;">Dopo aver salvato, <a href="index.html" target="_blank">apri il sito</a> per vedere le modifiche.</p>
+  </div>
+
+  <script>
+    const loginBox = document.getElementById('loginBox');
+    const editorBox = document.getElementById('editorBox');
+    const loginBtn = document.getElementById('loginBtn');
+    const saveBtn = document.getElementById('saveBtn');
+
+    const defaults = {
+      heroTitle: 'La tua salute, <span>a casa tua.</span>',
+      heroSubtitle: 'Hai bisogno di assistenza sanitaria, fisioterapia, OSS o esami a domicilio? <strong>Ti aiutiamo a Roma e provincia, senza farti perdere tempo.</strong>',
+      phone: '06 01905242',
+      whatsapp: 'WhatsApp',
+      email: 'abbracciocuredomiciliari@gmail.com',
+      address: 'Via di S. Maria Ausiliatrice n° 4/B, 00181 Roma'
+    };
+
+    const saved = localStorage.getItem('vetrina-edits');
+    const edits = saved ? {...defaults, ...JSON.parse(saved)} : defaults;
+
+    document.getElementById('heroTitle').value = edits.heroTitle.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    document.getElementById('heroSubtitle').value = edits.heroSubtitle.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    document.getElementById('phone').value = edits.phone;
+    document.getElementById('whatsapp').value = edits.whatsapp;
+    document.getElementById('email').value = edits.email;
+    document.getElementById('address').value = edits.address;
+
+    loginBtn.addEventListener('click', () => {
+      if (document.getElementById('adminPass').value === 'admin') {
+        loginBox.classList.add('hidden');
+        editorBox.classList.remove('hidden');
+      } else {
+        alert('Password errata. Per la preview usa "admin".');
+      }
+    });
+
+    saveBtn.addEventListener('click', () => {
+      const newEdits = {
+        heroTitle: document.getElementById('heroTitle').value,
+        heroSubtitle: document.getElementById('heroSubtitle').value,
+        phone: document.getElementById('phone').value,
+        whatsapp: document.getElementById('whatsapp').value,
+        email: document.getElementById('email').value,
+        address: document.getElementById('address').value
+      };
+      localStorage.setItem('vetrina-edits', JSON.stringify(newEdits));
+      document.getElementById('saveMsg').textContent = 'Modifiche salvate! Ricarica il sito per vederle.';
+    });
+  </script>
+</body>
+</html>
