@@ -64,7 +64,7 @@ const workPlanSchema = new Schema<IWorkPlan>(
     categories: [String],  // retrocompatibilità
     prestazioni: [{
       tipoPrestazione: { type: String, required: true },
-      staff:           { type: Schema.Types.ObjectId, ref: 'Staff', required: true },
+      staff:           { type: Schema.Types.ObjectId, ref: 'Staff' },
       note:            { type: String, trim: true },
       categoria:       { type: String, enum: ['infermieristica', 'riabilitativa', 'medica', 'assistenziale', 'sociale'], required: true },
     }],

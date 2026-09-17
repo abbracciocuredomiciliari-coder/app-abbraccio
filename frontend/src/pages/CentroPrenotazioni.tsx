@@ -494,7 +494,7 @@ export default function CentroPrenotazioni() {
                 setTimeout(() => setOkPiano(''), 3000);
             }
             catch (err: any) {
-                setErrPiano(err.response?.data?.message || 'Errore');
+                setErrPiano(err.response?.data?.message || err.message || 'Errore');
             }
             setSavingPiano(false);
         }
@@ -524,7 +524,7 @@ export default function CentroPrenotazioni() {
                 setTimeout(() => setOkPiano(''), 3000);
             }
             catch (err: any) {
-                setErrPiano(err.response?.data?.message || 'Errore');
+                setErrPiano(err.response?.data?.message || err.message || 'Errore');
             }
             setSavingPiano(false);
         }
