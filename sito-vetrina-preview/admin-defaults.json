@@ -1,0 +1,368 @@
+﻿{
+  "pages": {
+    "infermiere-a-domicilio": {
+      "key": "infermiere-a-domicilio",
+      "activitiesTitle": "Attività previste dal nostro servizio di Assistenza Infermieristica a domicilio:",
+      "h1": "Assistenza Infermieristica a domicilio",
+      "lead": "La <strong>assistenza infermieristica</strong> di Abbraccio garantisce <strong>terapie, medicazioni e iniezioni</strong> direttamente a casa tua, con personale qualificato e disponibile.",
+      "text": "I nostri infermieri professionisti gestiscono la terapia farmacologica, le medicazioni complesse e il monitoraggio dei parametri vitali, lavorando in sinergia con il medico curante e la famiglia per assicurare continuità di cura.",
+      "activities": [
+        "Terapie e infusioni",
+        "Medicazioni complesse",
+        "Gestione cateteri e stomie",
+        "Iniezioni intramuscolo e sottocute",
+        "Monitoraggio parametri vitali",
+        "Educazione del paziente e familiari",
+        "Assistenza post-operatoria",
+        "Gestione ferite e lesioni cutanee"
+      ],
+      "label": "Assistenza Infermieristica",
+      "image": "images/infermieri.jpg"
+    },
+    "prelievi-ematici": {
+      "key": "prelievi-ematici",
+      "activitiesTitle": "Cosa include l'esame",
+      "h1": "Prelievi Ematici a domicilio",
+      "lead": "La <strong>Prelievi Ematici</strong> di Abbraccio è un esame strumentale a domicilio <strong>completo e affidabile</strong>, con referti digitali.",
+      "text": "Esami del sangue completi con prelievo a domicilio e referti consegnati digitalmente. L'esame viene eseguito direttamente a casa tua con attrezzature certificate, referti digitali e medici specialisti.",
+      "activities": [
+        "Analisi complete",
+        "Esame a domicilio",
+        "Referti digitali",
+        "Apparecchiatura certificata"
+      ],
+      "label": "Prelievi Ematici",
+      "image": "images/IMG-20260616-WA0049.jpg"
+    },
+    "servizi": {
+      "key": "servizi",
+      "eyebrow": "I Nostri Servizi",
+      "h2": "8 servizi per la tua salute a domicilio",
+      "subtitle": "",
+      "label": "Panoramica servizi"
+    },
+    "holter-pressorio": {
+      "key": "holter-pressorio",
+      "activitiesTitle": "Cosa include l'esame",
+      "h1": "Holter Pressorio a domicilio",
+      "lead": "La <strong>Holter Pressorio</strong> di Abbraccio è un esame strumentale a domicilio <strong>completo e affidabile</strong>, con referti digitali.",
+      "text": "Monitoraggio della pressione arteriosa nelle 24 ore per una diagnosi accurata dell'ipertensione. L'esame viene eseguito direttamente a casa tua con attrezzature certificate, referti digitali e medici specialisti.",
+      "activities": [
+        "Monitoraggio 24h",
+        "Esame a domicilio",
+        "Referti digitali",
+        "Apparecchiatura certificata"
+      ],
+      "label": "Holter Pressorio",
+      "image": "images/IMG-20260616-WA0049.jpg"
+    },
+    "assistenza-anziani": {
+      "key": "assistenza-anziani",
+      "activitiesTitle": "Attività previste dal nostro servizio di Assistenza Anziani a domicilio:",
+      "h1": "Assistenza Anziani a domicilio",
+      "lead": "L'<strong>assistenza anziani</strong> di Abbraccio offre <strong>supporto completo</strong> per promuovere autonomia e qualità della vita quotidiana.",
+      "text": "Accompagniamo le persone anziane nelle attività di tutti i giorni, offrendo compagnia, supporto emotivo e monitoraggio della salute, nel rispetto della dignità e dei ritmi di ognuno.",
+      "activities": [
+        "Aiuto nelle attività quotidiane",
+        "Compagnia e supporto emotivo",
+        "Monitoraggio salute costante",
+        "Assistenza nella mobilità",
+        "Preparazione pasti e igiene",
+        "Somministrazione terapia",
+        "Attivazione sociale e relazionale",
+        "Prevenzione cadute"
+      ],
+      "label": "Assistenza Anziani",
+      "image": "images/IMG-20260616-WA0026.jpg"
+    },
+    "fisioterapia-a-domicilio": {
+      "key": "fisioterapia-a-domicilio",
+      "activitiesTitle": "Attività previste dal nostro servizio di Fisioterapia a domicilio:",
+      "h1": "Fisioterapia a domicilio",
+      "lead": "La <strong>fisioterapia a domicilio</strong> di Abbraccio ti permette di <strong>programmare la riabilitazione</strong> con un professionista qualificato nella comodità di casa tua.",
+      "text": "Organizziamo sedute fisioterapiche dopo interventi e operazioni a carico del sistema muscolo-scheletrico e per recuperare le funzionalità muscolari e ossee dopo malattie specifiche. Il fisioterapista è una figura importante soprattutto per gli anziani e per chi ha subito interventi chirurgici.",
+      "activities": [
+        "Fisioterapia motoria",
+        "Riabilitazione post-chirurgica",
+        "Terapia del dolore",
+        "Recupero funzionale",
+        "Rieducazione posturale",
+        "Massoterapia e terapie manuali",
+        "Fisioterapia domiciliare per anziani",
+        "Rieducazione muscolare"
+      ],
+      "label": "Fisioterapia",
+      "image": "images/fisioterapia-1.jpg"
+    },
+    "assistenza-notturna": {
+      "key": "assistenza-notturna",
+      "activitiesTitle": "Attività previste dal nostro servizio di Assistenza Notturna:",
+      "h1": "Assistenza Notturna",
+      "lead": "L'<strong>assistenza notturna</strong> di Abbraccio garantisce <strong>presenza qualificata</strong> durante la notte per sicurezza e tranquillità.",
+      "text": "Professionisti sanitari e assistenziali sono presenti nelle ore notturne per sorvegliare il paziente, gestire emergenze e supportare l'igiene personale, permettendo alla famiglia di riposare serena.",
+      "activities": [
+        "Sorveglianza notturna",
+        "Interventi di emergenza",
+        "Supporto igiene personale",
+        "Controllo e somministrazione terapie",
+        "Assistenza al deambulare notturno",
+        "Vigilanza per pazienti con Alzheimer",
+        "Reperibilità 24 ore su 24",
+        "Report mattutino ai familiari"
+      ],
+      "label": "Assistenza Notturna",
+      "image": "images/IMG-20260616-WA0047.jpg"
+    },
+    "cure-palliative": {
+      "key": "cure-palliative",
+      "activitiesTitle": "Attività previste dal nostro servizio di Cure Palliative:",
+      "h1": "Cure Palliative",
+      "lead": "Le <strong>cure palliative</strong> di Abbraccio offrono <strong>supporto compassionevole</strong> a pazienti in fase avanzata e alle loro famiglie.",
+      "text": "Affianchiamo il paziente con un approccio umano, mirato al controllo del dolore, al supporto psicologico e a un'assistenza dedicata, nel rispetto dei desideri della persona e della famiglia.",
+      "activities": [
+        "Controllo del dolore",
+        "Supporto psicologico",
+        "Assistenza dedicata",
+        "Terapia del dolore a domicilio",
+        "Supporto al caregiver",
+        "Coordinamento con équipe multidisciplinare",
+        "Assistenza spirituale e sociale",
+        "Gestione sintomi complessi"
+      ],
+      "label": "Cure Palliative",
+      "image": "images/IMG-20260616-WA0043.jpg"
+    },
+    "screening-cardiaci": {
+      "key": "screening-cardiaci",
+      "activitiesTitle": "Cosa include l'esame",
+      "h1": "Screening Cardiaci a domicilio",
+      "lead": "La <strong>Screening Cardiaci</strong> di Abbraccio è un esame strumentale a domicilio <strong>completo e affidabile</strong>, con referti digitali.",
+      "text": "Elettrocardiogramma e valutazione cardiologica completa direttamente al tuo domicilio. L'esame viene eseguito direttamente a casa tua con attrezzature certificate, referti digitali e medici specialisti.",
+      "activities": [
+        "ECG + Visita",
+        "Esame a domicilio",
+        "Referti digitali",
+        "Apparecchiatura certificata"
+      ],
+      "label": "Screening Cardiaci",
+      "image": "images/IMG-20260616-WA0049.jpg"
+    },
+    "emogasanalisi": {
+      "key": "emogasanalisi",
+      "activitiesTitle": "Cosa include l'esame",
+      "h1": "Emogasanalisi a domicilio",
+      "lead": "La <strong>Emogasanalisi</strong> di Abbraccio è un esame strumentale a domicilio <strong>completo e affidabile</strong>, con referti digitali.",
+      "text": "Analisi del sangue arterioso per valutare ossigenazione e parametri respiratori a domicilio. L'esame viene eseguito direttamente a casa tua con attrezzature certificate, referti digitali e medici specialisti.",
+      "activities": [
+        "Gas sangue arterioso",
+        "Esame a domicilio",
+        "Referti digitali",
+        "Apparecchiatura certificata"
+      ],
+      "label": "Emogasanalisi",
+      "image": "images/IMG-20260616-WA0049.jpg"
+    },
+    "cure-pazienti-cronici": {
+      "key": "cure-pazienti-cronici",
+      "activitiesTitle": "Attività previste dal nostro servizio di Cure Pazienti Cronici:",
+      "h1": "Cure Pazienti Cronici",
+      "lead": "La <strong>gestione dei pazienti cronici</strong> di Abbraccio assicura <strong>monitoraggio continuo</strong> e interventi personalizzati a domicilio.",
+      "text": "Prendiamo in carico pazienti con patologie croniche attraverso un piano terapeutico condiviso, il controllo dei parametri vitali e l'educazione terapeutica per una vita il più autonoma possibile.",
+      "activities": [
+        "Monitoraggio parametri vitali",
+        "Gestione terapia farmacologica",
+        "Educazione terapeutica",
+        "Controllo glicemia e pressione",
+        "Gestione del dolore cronico",
+        "Coordinamento con il medico curante",
+        "Prevenzione complicanze",
+        "Assistenza nella degenza a domicilio"
+      ],
+      "label": "Cure Pazienti Cronici",
+      "image": "images/IMG-20260616-WA0038.jpg"
+    },
+    "index": {
+      "key": "index",
+      "h1": "La tua salute, <span>a casa tua.</span>",
+      "eyebrow": "Sanità d'eccellenza a domicilio",
+      "subtitle": "Hai bisogno di assistenza sanitaria, fisioterapia, OSS o esami a domicilio? <strong>Ti aiutiamo a Roma e provincia, senza farti perdere tempo.</strong>",
+      "label": "Homepage",
+      "image": "images/IMG-20260617-WA0020.jpg"
+    },
+    "servizio-ambulanza": {
+      "key": "servizio-ambulanza",
+      "activitiesTitle": "Attività previste dal nostro servizio di Servizio Ambulanza:",
+      "h1": "Servizio Ambulanza",
+      "lead": "Il <strong>servizio ambulanza</strong> di Abbraccio offre <strong>trasporto sanitario professionale</strong> per visite, terapie e ricoveri programmati.",
+      "text": "Mezzi attrezzati e personale qualificato per trasferimenti in sicurezza, anche per pazienti con ridotta mobilità o necessità di assistenza continua durante il tragitto.",
+      "activities": [
+        "Trasporto programmato",
+        "Personale qualificato",
+        "Veicoli attrezzati",
+        "Trasporto per visite specialistiche",
+        "Accompagnamento a terapie",
+        "Trasporto lettiga o sedia a rotelle",
+        "Servizi H24 su prenotazione",
+        "Rientro a domicilio post ricovero"
+      ],
+      "label": "Servizio Ambulanza",
+      "image": "images/ambulanza.png"
+    },
+    "psicologia-a-domicilio": {
+      "key": "psicologia-a-domicilio",
+      "activitiesTitle": "Attività previste dal nostro servizio di Terapia psicologica a domicilio:",
+      "h1": "Terapia psicologica a domicilio",
+      "lead": "La <strong>terapia psicologica</strong> di Abbraccio offre <strong>percorsi di supporto personalizzati</strong> per pazienti e caregiver.",
+      "text": "Sedute individuali e colloqui di sostegno pensati per chi affronta una malattia, una perdita o il carico di assistenza, anche comodamente a casa propria.",
+      "activities": [
+        "Primo colloquio psicologico",
+        "Sedute individuali",
+        "Supporto al caregiver",
+        "Colloqui di sostegno per familiari",
+        "Gestione ansia e depressione",
+        "Psicooncologia",
+        "Counseling post-traumatico",
+        "Valutazione del fabbisogno"
+      ],
+      "label": "Terapia psicologica",
+      "image": "images/IMG-20260616-WA0043.jpg"
+    },
+    "ecografia-domiciliare": {
+      "key": "ecografia-domiciliare",
+      "activitiesTitle": "Cosa include l'esame",
+      "h1": "Ecografia Domiciliare a domicilio",
+      "lead": "La <strong>Ecografia Domiciliare</strong> di Abbraccio è un esame strumentale a domicilio <strong>completo e affidabile</strong>, con referti digitali.",
+      "text": "Ecografie addominali, muscolo-scheletriche e vascolari con ecografo portatile. L'esame viene eseguito direttamente a casa tua con attrezzature certificate, referti digitali e medici specialisti.",
+      "activities": [
+        "Ecografo portatile",
+        "Esame a domicilio",
+        "Referti digitali",
+        "Apparecchiatura certificata"
+      ],
+      "label": "Ecografia Domiciliare",
+      "image": "images/IMG-20260616-WA0049.jpg"
+    },
+    "rx-domiciliare": {
+      "key": "rx-domiciliare",
+      "activitiesTitle": "Cosa include l'esame",
+      "h1": "RX Domiciliare a domicilio",
+      "lead": "La <strong>RX Domiciliare</strong> di Abbraccio è un esame strumentale a domicilio <strong>completo e affidabile</strong>, con referti digitali.",
+      "text": "Radiografie tradizionali e digitali direttamente a casa con apparecchiatura portatile. L'esame viene eseguito direttamente a casa tua con attrezzature certificate, referti digitali e medici specialisti.",
+      "activities": [
+        "Radiografia portatile",
+        "Esame a domicilio",
+        "Referti digitali",
+        "Apparecchiatura certificata"
+      ],
+      "label": "RX Domiciliare",
+      "image": "images/IMG-20260616-WA0049.jpg"
+    },
+    "holter-ecg": {
+      "key": "holter-ecg",
+      "activitiesTitle": "Cosa include l'esame",
+      "h1": "Holter ECG a domicilio",
+      "lead": "La <strong>Holter ECG</strong> di Abbraccio è un esame strumentale a domicilio <strong>completo e affidabile</strong>, con referti digitali.",
+      "text": "Registrazione continua dell'attività cardiaca per individuare aritmie e anomalie del ritmo. L'esame viene eseguito direttamente a casa tua con attrezzature certificate, referti digitali e medici specialisti.",
+      "activities": [
+        "ECG dinamico",
+        "Esame a domicilio",
+        "Referti digitali",
+        "Apparecchiatura certificata"
+      ],
+      "label": "Holter ECG",
+      "image": "images/IMG-20260616-WA0049.jpg"
+    },
+    "apnee-sonno": {
+      "key": "apnee-sonno",
+      "activitiesTitle": "Cosa include l'esame",
+      "h1": "Apnee del Sonno a domicilio",
+      "lead": "La <strong>Apnee del Sonno</strong> di Abbraccio è un esame strumentale a domicilio <strong>completo e affidabile</strong>, con referti digitali.",
+      "text": "Monitoraggio notturno per la diagnosi delle apnee ostruttive e dei disturbi respiratori del sonno. L'esame viene eseguito direttamente a casa tua con attrezzature certificate, referti digitali e medici specialisti.",
+      "activities": [
+        "Polisonnografia",
+        "Esame a domicilio",
+        "Referti digitali",
+        "Apparecchiatura certificata"
+      ],
+      "label": "Apnee del Sonno",
+      "image": "images/IMG-20260616-WA0049.jpg"
+    },
+    "saturimetria-spirometria": {
+      "key": "saturimetria-spirometria",
+      "activitiesTitle": "Cosa include l'esame",
+      "h1": "Saturimetria e Spirometria a domicilio",
+      "lead": "La <strong>Saturimetria e Spirometria</strong> di Abbraccio è un esame strumentale a domicilio <strong>completo e affidabile</strong>, con referti digitali.",
+      "text": "Valutazione della funzionalità respiratoria e dell'ossigenazione del sangue. L'esame viene eseguito direttamente a casa tua con attrezzature certificate, referti digitali e medici specialisti.",
+      "activities": [
+        "Funzione respiratoria",
+        "Esame a domicilio",
+        "Referti digitali",
+        "Apparecchiatura certificata"
+      ],
+      "label": "Saturimetria e Spirometria",
+      "image": "images/IMG-20260616-WA0049.jpg"
+    },
+    "esami-strumentali": {
+      "key": "esami-strumentali",
+      "eyebrow": "Diagnostica Avanzata",
+      "h2": "9 Esami Strumentali a Domicilio",
+      "subtitle": "Diagnostica completa: holter, esami sangue, RX, ecografie e altro",
+      "label": "Panoramica esami"
+    }
+  },
+  "gallery": [
+    "IMG-20260616-WA0001.jpg",
+    "IMG-20260616-WA0026 (1).jpg",
+    "IMG-20260616-WA0026.jpg",
+    "IMG-20260616-WA0027.jpg",
+    "IMG-20260616-WA0031.jpg",
+    "IMG-20260616-WA0032 (1).jpg",
+    "IMG-20260616-WA0032.jpg",
+    "IMG-20260616-WA0033.jpg",
+    "IMG-20260616-WA0034.jpg",
+    "IMG-20260616-WA0035.jpg",
+    "IMG-20260616-WA0036.jpg",
+    "IMG-20260616-WA0038.jpg",
+    "IMG-20260616-WA0039.jpg",
+    "IMG-20260616-WA0043.jpg",
+    "IMG-20260616-WA0045.jpg",
+    "IMG-20260616-WA0047.jpg",
+    "IMG-20260616-WA0048.jpg",
+    "IMG-20260616-WA0049.jpg",
+    "IMG-20260617-WA0020.jpg"
+  ],
+  "global": {
+    "phone": "06 01905242",
+    "email": "abbracciocuredomiciliari@gmail.com",
+    "heroSubtitle": "Hai bisogno di assistenza sanitaria, fisioterapia, OSS o esami a domicilio? <strong>Ti aiutiamo a Roma e provincia, senza farti perdere tempo.</strong>",
+    "eyebrow": "Sanità d'eccellenza a domicilio",
+    "whatsapp": "WhatsApp",
+    "logo": "logo-abbraccio.png",
+    "heroImage": "images/IMG-20260617-WA0020.jpg",
+    "heroTitle": "La tua salute, <span>a casa tua.</span>",
+    "address": "Via di S. Maria Ausiliatrice n° 4/B, 00181 Roma"
+  },
+  "news": [
+    {
+      "date": "",
+      "category": "Salute e prevenzione",
+      "title": "Rientro al lavoro e assistenza genitori anziani",
+      "body": "Permessi e soluzioni per conciliare lavoro e assistenza.",
+      "image": ""
+    },
+    {
+      "date": "",
+      "category": "Salute e prevenzione",
+      "title": "Dimissioni protette post-operatorie",
+      "body": "L'importanza dell'assistenza a casa per una ripresa sicura.",
+      "image": ""
+    },
+    {
+      "date": "",
+      "category": "Salute e prevenzione",
+      "title": "Anziani e caldo: organizzare l'assistenza domiciliare",
+      "body": "Consigli per affrontare l'estate in sicurezza.",
+      "image": ""
+    }
+  ]
+}

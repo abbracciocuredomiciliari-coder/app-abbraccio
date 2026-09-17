@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
@@ -10,16 +10,32 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     .admin-body { background: var(--bg-soft); min-height: 100vh; display: flex; flex-direction: column; }
-    .admin-login, .admin-panel { max-width: 500px; margin: 80px auto; background: #fff; padding: 40px; border-radius: var(--radius); box-shadow: var(--shadow); width: 90%; }
+    .admin-login, .admin-panel { max-width: 900px; margin: 40px auto; background: #fff; padding: 32px; border-radius: var(--radius); box-shadow: var(--shadow); width: 95%; }
+    .admin-login { max-width: 500px; margin-top: 80px; text-align: center; }
     .admin-login h2, .admin-panel h2 { color: var(--text-dark); margin-bottom: 10px; }
     .admin-login p, .admin-panel p { color: var(--text-light); margin-bottom: 24px; }
     .form-group { margin-bottom: 18px; }
     .form-group label { display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px; color: var(--text); }
-    .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.95rem; }
-    .form-group textarea { resize: vertical; min-height: 80px; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.95rem; box-sizing: border-box; }
+    .form-group textarea { resize: vertical; min-height: 100px; }
     .hidden { display: none; }
     #saveMsg { color: var(--green); font-weight: 700; margin-top: 12px; }
     .admin-panel a { color: var(--blue); }
+    .tabs { display: flex; gap: 8px; border-bottom: 2px solid var(--bg-soft); margin-bottom: 24px; flex-wrap: wrap; }
+    .tabs button { background: none; border: none; padding: 10px 16px; font-weight: 700; color: var(--text-light); cursor: pointer; border-bottom: 3px solid transparent; }
+    .tabs button.active { color: var(--blue); border-bottom-color: var(--blue); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 24px; }
+    .actions button, .actions a { display: inline-flex; align-items: center; gap: 6px; }
+    .list-editor { display: grid; gap: 12px; margin-bottom: 20px; }
+    .list-item { display: flex; gap: 10px; align-items: center; background: var(--bg-soft); padding: 10px; border-radius: 8px; }
+    .list-item img, .list-item .thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
+    .list-item .name { flex: 1; font-size: 0.9rem; }
+    .list-item button { background: #fff; border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 4px 8px; cursor: pointer; }
+    .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .preview-img { max-height: 120px; border-radius: 8px; margin-top: 8px; }
+    @media (max-width: 700px) { .two-cols { grid-template-columns: 1fr; } .admin-panel { padding: 20px; } .tabs button { padding: 8px; font-size: 0.85rem; } }
   </style>
 </head>
 <body class="admin-body">
@@ -32,92 +48,432 @@
 
   <div class="admin-login" id="loginBox">
     <h2><i class="fas fa-lock"></i> Accesso riservato</h2>
-    <p>Inserisci la password per accedere al pannello di gestione.</p>
-    <div class="form-group">
+    <p>La password per questa anteprima è <strong style="font-size:1.4rem;color:var(--blue);">admin</strong>.</p>
+    <div class="form-group" style="text-align:left;">
       <label>Password</label>
       <input type="password" id="adminPass" placeholder="Password">
     </div>
     <button class="btn btn-primary" id="loginBtn"><i class="fas fa-sign-in-alt"></i> Entra</button>
-    <p style="font-size:0.8rem;color:var(--text-light);margin-top:16px;">Per questa preview la password è <strong>admin</strong>.</p>
   </div>
 
   <div class="admin-panel hidden" id="editorBox">
-    <h2>Gestione contenuti</h2>
-    <p>Modifica i testi e gli orari. Le modifiche verranno salvate nel browser di questa anteprima.</p>
-    <div class="form-group">
-      <label>Titolo Hero</label>
-      <input type="text" id="heroTitle">
+    <h2><i class="fas fa-cog"></i> Gestione contenuti</h2>
+    <p>Da qui modifichi testi, immagini, galleria e news. I dati vengono salvati nel browser e applicati al sito subito dopo il salvataggio.</p>
+
+    <div class="tabs">
+      <button class="active" data-tab="general"><i class="fas fa-home"></i> Generale</button>
+      <button data-tab="pages"><i class="fas fa-file-alt"></i> Pagine</button>
+      <button data-tab="gallery"><i class="fas fa-images"></i> Galleria</button>
+      <button data-tab="news"><i class="fas fa-newspaper"></i> News</button>
     </div>
-    <div class="form-group">
-      <label>Sottotitolo Hero</label>
-      <textarea id="heroSubtitle"></textarea>
+
+    <div class="tab-content active" id="tab-general">
+      <div class="two-cols">
+        <div class="form-group">
+          <label>Titolo Hero (HTML)</label>
+          <input type="text" id="global-heroTitle">
+        </div>
+        <div class="form-group">
+          <label>WhatsApp label</label>
+          <input type="text" id="global-whatsapp">
+        </div>
+        <div class="form-group">
+          <label>Telefono</label>
+          <input type="text" id="global-phone">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="text" id="global-email">
+        </div>
+        <div class="form-group">
+          <label>Indirizzo</label>
+          <input type="text" id="global-address">
+        </div>
+        <div class="form-group">
+          <label>Eyebrow</label>
+          <input type="text" id="global-eyebrow">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Sottotitolo Hero (HTML)</label>
+        <textarea id="global-heroSubtitle"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Immagine Hero (URL, oppure carica un file)</label>
+        <input type="text" id="global-heroImage">
+        <input type="file" id="global-heroImage-file" accept="image/*" style="margin-top:8px;">
+      </div>
+      <div class="form-group">
+        <label>Logo (URL, oppure carica un file)</label>
+        <input type="text" id="global-logo">
+        <input type="file" id="global-logo-file" accept="image/*" style="margin-top:8px;">
+      </div>
     </div>
-    <div class="form-group">
-      <label>Telefono</label>
-      <input type="text" id="phone">
+
+    <div class="tab-content" id="tab-pages">
+      <div class="form-group">
+        <label>Pagina da modificare</label>
+        <select id="page-select"></select>
+      </div>
+      <div id="page-fields"></div>
     </div>
-    <div class="form-group">
-      <label>WhatsApp</label>
-      <input type="text" id="whatsapp">
+
+    <div class="tab-content" id="tab-gallery">
+      <div class="form-group">
+        <label>Aggiungi per nome (deve esistere nella cartella images/)</label>
+        <div style="display:flex;gap:10px;">
+          <input type="text" id="gallery-filename" placeholder="es. foto.jpg" style="flex:1;">
+          <button class="btn btn-primary" id="gallery-add-filename" style="white-space:nowrap;"><i class="fas fa-plus"></i> Aggiungi</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Oppure carica uno o più file (data URL)</label>
+        <input type="file" id="gallery-file" accept="image/*" multiple>
+      </div>
+      <div class="list-editor" id="gallery-list"></div>
     </div>
-    <div class="form-group">
-      <label>Email</label>
-      <input type="text" id="email">
+
+    <div class="tab-content" id="tab-news">
+      <div id="news-list"></div>
+      <h3 style="margin-top:24px;">Aggiungi news</h3>
+      <div class="form-group">
+        <label>Titolo</label>
+        <input type="text" id="news-title">
+      </div>
+      <div class="two-cols">
+        <div class="form-group">
+          <label>Data</label>
+          <input type="date" id="news-date">
+        </div>
+        <div class="form-group">
+          <label>Categoria</label>
+          <input type="text" id="news-category">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Testo</label>
+        <textarea id="news-body"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Immagine (URL, oppure carica un file)</label>
+        <input type="text" id="news-image">
+        <input type="file" id="news-image-file" accept="image/*" style="margin-top:8px;">
+      </div>
+      <button class="btn btn-primary" id="news-add"><i class="fas fa-plus"></i> Aggiungi news</button>
     </div>
-    <div class="form-group">
-      <label>Indirizzo</label>
-      <input type="text" id="address">
+
+    <div class="actions">
+      <button class="btn btn-primary" id="saveBtn"><i class="fas fa-save"></i> Salva nel browser</button>
+      <a href="index.html" target="_blank" class="btn btn-outline"><i class="fas fa-eye"></i> Anteprima sito</a>
+      <button class="btn btn-outline" id="exportBtn"><i class="fas fa-download"></i> Esporta JSON</button>
+      <label class="btn btn-outline" style="cursor:pointer;">
+        <i class="fas fa-upload"></i> Importa JSON
+        <input type="file" id="importBtn" accept="application/json" style="display:none;">
+      </label>
     </div>
-    <button class="btn btn-primary" id="saveBtn"><i class="fas fa-save"></i> Salva modifiche</button>
     <p id="saveMsg"></p>
-    <p style="margin-top:20px;font-size:0.9rem;">Dopo aver salvato, <a href="index.html" target="_blank">apri il sito</a> per vedere le modifiche.</p>
   </div>
 
   <script>
+    const PASS = 'admin';
     const loginBox = document.getElementById('loginBox');
     const editorBox = document.getElementById('editorBox');
     const loginBtn = document.getElementById('loginBtn');
     const saveBtn = document.getElementById('saveBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const importBtn = document.getElementById('importBtn');
+    const saveMsg = document.getElementById('saveMsg');
+    const pageSelect = document.getElementById('page-select');
+    const pageFields = document.getElementById('page-fields');
+    const galleryList = document.getElementById('gallery-list');
+    const newsList = document.getElementById('news-list');
+    const order = ['index','servizi','esami-strumentali','infermiere-a-domicilio','fisioterapia-a-domicilio','assistenza-anziani','cure-pazienti-cronici','assistenza-notturna','cure-palliative','psicologia-a-domicilio','servizio-ambulanza','holter-pressorio','holter-ecg','apnee-sonno','screening-cardiaci','saturimetria-spirometria','prelievi-ematici','emogasanalisi','rx-domiciliare','ecografia-domiciliare'];
+    let defaults = {};
+    let content = {};
+    let currentPage = '';
 
-    const defaults = {
-      heroTitle: 'La tua salute, <span>a casa tua.</span>',
-      heroSubtitle: 'Hai bisogno di assistenza sanitaria, fisioterapia, OSS o esami a domicilio? <strong>Ti aiutiamo a Roma e provincia, senza farti perdere tempo.</strong>',
-      phone: '06 01905242',
-      whatsapp: 'WhatsApp',
-      email: 'abbracciocuredomiciliari@gmail.com',
-      address: 'Via di S. Maria Ausiliatrice n° 4/B, 00181 Roma'
-    };
-
-    const saved = localStorage.getItem('vetrina-edits');
-    const edits = saved ? {...defaults, ...JSON.parse(saved)} : defaults;
-
-    document.getElementById('heroTitle').value = edits.heroTitle.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    document.getElementById('heroSubtitle').value = edits.heroSubtitle.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    document.getElementById('phone').value = edits.phone;
-    document.getElementById('whatsapp').value = edits.whatsapp;
-    document.getElementById('email').value = edits.email;
-    document.getElementById('address').value = edits.address;
+    function deepMerge(base, over) {
+      const r = JSON.parse(JSON.stringify(base));
+      if (!over || typeof over !== 'object') return r;
+      for (const k of Object.keys(over)) {
+        if (over[k] && typeof over[k] === 'object' && !Array.isArray(over[k]) && r[k] && typeof r[k] === 'object') {
+          r[k] = deepMerge(r[k], over[k]);
+        } else {
+          r[k] = over[k];
+        }
+      }
+      return r;
+    }
 
     loginBtn.addEventListener('click', () => {
-      if (document.getElementById('adminPass').value === 'admin') {
+      if (document.getElementById('adminPass').value === PASS) {
         loginBox.classList.add('hidden');
         editorBox.classList.remove('hidden');
+        loadData();
       } else {
-        alert('Password errata. Per la preview usa "admin".');
+        alert('Password errata. Usa "admin".');
       }
     });
 
-    saveBtn.addEventListener('click', () => {
-      const newEdits = {
-        heroTitle: document.getElementById('heroTitle').value,
-        heroSubtitle: document.getElementById('heroSubtitle').value,
-        phone: document.getElementById('phone').value,
-        whatsapp: document.getElementById('whatsapp').value,
-        email: document.getElementById('email').value,
-        address: document.getElementById('address').value
+    document.querySelectorAll('.tabs button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    function loadData() {
+      fetch('admin-defaults.json?' + Date.now())
+        .then(r => r.json())
+        .then(d => {
+          defaults = d;
+          const saved = localStorage.getItem('vetrina-content');
+          content = deepMerge(defaults, saved ? JSON.parse(saved) : {});
+          renderGeneral();
+          renderPageSelect();
+          renderGallery();
+          renderNews();
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Errore caricamento admin-defaults.json. Verifica che esista.');
+        });
+    }
+
+    function renderGeneral() {
+      const g = content.global || {};
+      document.getElementById('global-phone').value = g.phone || '';
+      document.getElementById('global-whatsapp').value = g.whatsapp || '';
+      document.getElementById('global-email').value = g.email || '';
+      document.getElementById('global-address').value = g.address || '';
+      document.getElementById('global-heroTitle').value = g.heroTitle || '';
+      document.getElementById('global-heroSubtitle').value = g.heroSubtitle || '';
+      document.getElementById('global-heroImage').value = g.heroImage || '';
+      document.getElementById('global-logo').value = g.logo || '';
+      document.getElementById('global-eyebrow').value = g.eyebrow || '';
+    }
+
+    function readGeneral() {
+      content.global.phone = document.getElementById('global-phone').value;
+      content.global.whatsapp = document.getElementById('global-whatsapp').value;
+      content.global.email = document.getElementById('global-email').value;
+      content.global.address = document.getElementById('global-address').value;
+      content.global.heroTitle = document.getElementById('global-heroTitle').value;
+      content.global.heroSubtitle = document.getElementById('global-heroSubtitle').value;
+      content.global.heroImage = document.getElementById('global-heroImage').value;
+      content.global.logo = document.getElementById('global-logo').value;
+      content.global.eyebrow = document.getElementById('global-eyebrow').value;
+    }
+
+    function fileToData(input, targetId, cb) {
+      if (!input || !input.files || !input.files[0]) return;
+      const r = new FileReader();
+      r.onload = e => {
+        const el = document.getElementById(targetId);
+        if (el) el.value = e.target.result;
+        if (cb) cb(e.target.result);
       };
-      localStorage.setItem('vetrina-edits', JSON.stringify(newEdits));
-      document.getElementById('saveMsg').textContent = 'Modifiche salvate! Ricarica il sito per vederle.';
+      r.readAsDataURL(input.files[0]);
+    }
+    document.getElementById('global-heroImage-file').addEventListener('change', e => fileToData(e.target, 'global-heroImage'));
+    document.getElementById('global-logo-file').addEventListener('change', e => fileToData(e.target, 'global-logo'));
+
+    function renderPageSelect() {
+      pageSelect.innerHTML = '';
+      order.forEach(k => {
+        const p = content.pages[k];
+        if (!p) return;
+        const opt = document.createElement('option');
+        opt.value = k;
+        opt.textContent = (p.label || p.h1 || p.h2 || k) + (p.key === 'index' ? ' (Homepage)' : '');
+        pageSelect.appendChild(opt);
+      });
+      currentPage = pageSelect.value;
+      pageSelect.addEventListener('change', () => { currentPage = pageSelect.value; renderPageFields(); });
+      renderPageFields();
+    }
+
+    function input(id, label, value, textarea) {
+      const v = (value || '').replace(/"/g, '&quot;');
+      if (textarea) return `<div class="form-group"><label for="${id}">${label}</label><textarea id="${id}">${value || ''}</textarea></div>`;
+      return `<div class="form-group"><label for="${id}">${label}</label><input type="text" id="${id}" value="${v}"></div>`;
+    }
+    function imageInput(id, label, value) {
+      return `<div class="form-group"><label for="${id}">${label}</label><input type="text" id="${id}" value="${(value||'').replace(/"/g,'&quot;')}"><input type="file" id="${id}-file" accept="image/*" style="margin-top:8px;"></div>`;
+    }
+
+    function renderPageFields() {
+      const p = content.pages[currentPage] || {};
+      const t = currentPage === 'index' ? 'index' : (['servizi','esami-strumentali'].includes(currentPage) ? 'overview' : 'service');
+      let html = '';
+      if (t === 'index') {
+        html += input('p-h1', 'Titolo Hero (HTML)', p.h1);
+        html += input('p-subtitle', 'Sottotitolo Hero (HTML)', p.subtitle, true);
+        html += input('p-eyebrow', 'Eyebrow (HTML)', p.eyebrow);
+        html += imageInput('p-image', 'Immagine Hero', p.image);
+      } else if (t === 'overview') {
+        html += input('p-h2', 'Titolo sezione', p.h2);
+        html += input('p-subtitle', 'Sottotitolo', p.subtitle);
+        html += input('p-eyebrow', 'Eyebrow', p.eyebrow);
+      } else {
+        html += input('p-h1', 'Titolo pagina', p.h1);
+        html += input('p-lead', 'Lead (HTML)', p.lead, true);
+        html += input('p-text', 'Testo principale (HTML)', p.text, true);
+        html += imageInput('p-image', 'Immagine', p.image);
+        html += input('p-activitiesTitle', 'Titolo elenco', p.activitiesTitle);
+        html += `<div class="form-group"><label for="p-activities">Elenco punti (uno per riga)</label><textarea id="p-activities" rows="5">${(p.activities || []).join('\n')}</textarea></div>`;
+      }
+      pageFields.innerHTML = html;
+      pageFields.querySelectorAll('input[type="file"]').forEach(f => {
+        f.addEventListener('change', e => {
+          const target = e.target.id.replace('-file', '');
+          fileToData(e.target, target);
+        });
+      });
+    }
+
+    function readPage() {
+      const p = content.pages[currentPage] || {};
+      const t = currentPage === 'index' ? 'index' : (['servizi','esami-strumentali'].includes(currentPage) ? 'overview' : 'service');
+      if (t === 'index') {
+        p.h1 = document.getElementById('p-h1').value;
+        p.subtitle = document.getElementById('p-subtitle').value;
+        p.eyebrow = document.getElementById('p-eyebrow').value;
+        p.image = document.getElementById('p-image').value;
+      } else if (t === 'overview') {
+        p.h2 = document.getElementById('p-h2').value;
+        p.subtitle = document.getElementById('p-subtitle').value;
+        p.eyebrow = document.getElementById('p-eyebrow').value;
+      } else {
+        p.h1 = document.getElementById('p-h1').value;
+        p.lead = document.getElementById('p-lead').value;
+        p.text = document.getElementById('p-text').value;
+        p.image = document.getElementById('p-image').value;
+        p.activitiesTitle = document.getElementById('p-activitiesTitle').value;
+        const raw = document.getElementById('p-activities').value;
+        p.activities = raw.split('\n').map(s => s.trim()).filter(Boolean);
+      }
+      content.pages[currentPage] = p;
+    }
+
+    function renderGallery() {
+      galleryList.innerHTML = '';
+      (content.gallery || []).forEach((img, i) => {
+        const isData = img.startsWith('data:');
+        const el = document.createElement('div');
+        el.className = 'list-item';
+        el.innerHTML = `<img class="thumb" src="${isData ? img : 'images/'+img}" onerror="this.style.display='none'" alt=""><div class="name">${isData ? 'Immagine caricata' : img}</div><button data-idx="${i}" class="up">↑</button><button data-idx="${i}" class="down">↓</button><button data-idx="${i}" class="del">×</button>`;
+        galleryList.appendChild(el);
+      });
+    }
+    galleryList.addEventListener('click', e => {
+      if (e.target.tagName !== 'BUTTON') return;
+      const i = parseInt(e.target.dataset.idx);
+      const g = content.gallery || [];
+      if (e.target.classList.contains('up') && i > 0) [g[i-1], g[i]] = [g[i], g[i-1]];
+      if (e.target.classList.contains('down') && i < g.length-1) [g[i], g[i+1]] = [g[i+1], g[i]];
+      if (e.target.classList.contains('del')) g.splice(i,1);
+      content.gallery = g;
+      renderGallery();
+    });
+    document.getElementById('gallery-add-filename').addEventListener('click', () => {
+      const v = document.getElementById('gallery-filename').value.trim();
+      if (!v) return;
+      if (!content.gallery) content.gallery = [];
+      content.gallery.push(v);
+      document.getElementById('gallery-filename').value = '';
+      renderGallery();
+    });
+    document.getElementById('gallery-file').addEventListener('change', e => {
+      Array.from(e.target.files).forEach(f => {
+        const r = new FileReader();
+        r.onload = ev => {
+          if (!content.gallery) content.gallery = [];
+          content.gallery.push(ev.target.result);
+          renderGallery();
+        };
+        r.readAsDataURL(f);
+      });
+    });
+
+    function renderNews() {
+      newsList.innerHTML = '<h3>News pubblicate</h3>';
+      (content.news || []).forEach((n, i) => {
+        const el = document.createElement('div');
+        el.className = 'list-item';
+        el.innerHTML = `<div class="name"><strong>${n.title || ''}</strong><br><small>${n.date || ''} ${n.category ? '- '+n.category : ''}</small><p>${n.body ? n.body.slice(0,80) : ''}</p></div><button data-idx="${i}" class="del">×</button>`;
+        newsList.appendChild(el);
+      });
+    }
+    newsList.addEventListener('click', e => {
+      if (e.target.classList.contains('del')) {
+        const i = parseInt(e.target.dataset.idx);
+        content.news.splice(i,1);
+        renderNews();
+      }
+    });
+    function addNews() {
+      const fileInput = document.getElementById('news-image-file');
+      function push() {
+        const n = {
+          title: document.getElementById('news-title').value,
+          date: document.getElementById('news-date').value,
+          category: document.getElementById('news-category').value,
+          body: document.getElementById('news-body').value,
+          image: document.getElementById('news-image').value
+        };
+        if (!n.title && !n.body) return;
+        if (!content.news) content.news = [];
+        content.news.unshift(n);
+        document.getElementById('news-title').value = '';
+        document.getElementById('news-date').value = '';
+        document.getElementById('news-category').value = '';
+        document.getElementById('news-body').value = '';
+        document.getElementById('news-image').value = '';
+        fileInput.value = '';
+        renderNews();
+      }
+      if (fileInput.files[0]) {
+        const r = new FileReader();
+        r.onload = e => { document.getElementById('news-image').value = e.target.result; push(); };
+        r.readAsDataURL(fileInput.files[0]);
+      } else { push(); }
+    }
+    document.getElementById('news-add').addEventListener('click', addNews);
+
+    function readAll() {
+      readGeneral();
+      readPage();
+    }
+    saveBtn.addEventListener('click', () => {
+      readAll();
+      localStorage.setItem('vetrina-content', JSON.stringify(content));
+      saveMsg.textContent = 'Modifiche salvate! Ricarica il sito per vederle.';
+      setTimeout(() => saveMsg.textContent = '', 4000);
+    });
+    exportBtn.addEventListener('click', () => {
+      readAll();
+      const blob = new Blob([JSON.stringify(content, null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'vetrina-content.json';
+      a.click();
+    });
+    importBtn.addEventListener('change', e => {
+      const f = e.target.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = ev => {
+        try {
+          const imported = JSON.parse(ev.target.result);
+          content = deepMerge(defaults, imported);
+          localStorage.setItem('vetrina-content', JSON.stringify(content));
+          renderGeneral(); renderPageSelect(); renderGallery(); renderNews();
+          saveMsg.textContent = 'JSON importato con successo.';
+        } catch (ex) { alert('JSON non valido'); }
+      };
+      r.readAsText(f);
     });
   </script>
 </body>

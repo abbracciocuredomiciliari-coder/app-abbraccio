@@ -3,26 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tutti gli esami - Abbraccio Cure Domiciliari</title>
-  <meta name="description" content="Tutti gli esami strumentali e diagnostici a domicilio di Abbraccio Cure Domiciliari.">
+  <title>News - Abbraccio Cure Domiciliari</title>
+  <meta name="description" content="Ultime notizie e consigli di Abbraccio Cure Domiciliari.">
   <link rel="icon" type="image/png" href="logo-abbraccio.png">
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    .services-list { padding: 80px 0; background: var(--white); }
-    .services-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
-    .service-thumb { background: #fff; border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); text-align: center; transition: transform 0.2s; }
-    .service-thumb:hover { transform: translateY(-5px); }
-    .service-thumb i { font-size: 2rem; color: var(--blue); margin-bottom: 12px; }
-    .service-thumb h3 { font-size: 0.95rem; color: var(--text); margin-bottom: 8px; }
-    .service-thumb a { display: inline-block; margin-top: 12px; color: var(--blue); font-weight: 700; font-size: 0.8rem; }
-    @media (max-width: 900px) { .services-grid { grid-template-columns: repeat(2,1fr); } }
-    @media (max-width: 640px) { .services-grid { grid-template-columns: 1fr; } }
+    .news-list { padding: 80px 0; background: var(--white); }
+    .news-list .section-header { margin-bottom: 40px; }
+    .news-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; }
+    .news-card { background: #fff; border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); }
+    .news-card h3 { font-size: 1.1rem; color: var(--text-dark); margin-bottom: 8px; }
+    .news-card small { color: var(--blue); font-weight: 700; }
+    .news-card p { color: var(--text-light); margin-top: 12px; line-height: 1.6; }
+    @media (max-width: 900px) { .news-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
-<!-- Top bar -->
 <div class="topbar">
   <div class="container topbar-inner">
     <div class="topbar-left">
@@ -35,15 +33,11 @@
     </div>
   </div>
 </div>
-<!-- Header -->
 <header class="header" id="header">
   <div class="container header-inner">
     <a href="index.html" class="logo">
       <img src="logo-abbraccio.png" alt="Abbraccio Cure Domiciliari">
-      <div class="logo-text">
-        <strong>Abbraccio</strong>
-        <span>Cure Domiciliari</span>
-      </div>
+      <div class="logo-text"><strong>Abbraccio</strong><span>Cure Domiciliari</span></div>
     </a>
     <nav class="nav" id="navMenu">
       <ul>
@@ -51,10 +45,18 @@
         <li class="dropdown">
           <a href="#" class="dropdown-toggle">SERVIZI</a>
           <div class="dropdown-menu">
-            <a href="infermiere-a-domicilio.html"><i class="fas fa-user-nurse"></i> Assistenza Infermieristica a domicilio</a>             <a href="fisioterapia-a-domicilio.html"><i class="fas fa-person-walking"></i> Fisioterapia a domicilio</a>             <a href="assistenza-anziani.html"><i class="fas fa-hand-holding-heart"></i> Assistenza Anziani a domicilio</a>             <a href="cure-pazienti-cronici.html"><i class="fas fa-notes-medical"></i> Cure Pazienti Cronici</a>             <a href="assistenza-notturna.html"><i class="fas fa-moon"></i> Assistenza Notturna</a>             <a href="cure-palliative.html"><i class="fas fa-dove"></i> Cure Palliative</a>             <a href="psicologia-a-domicilio.html"><i class="fas fa-brain"></i> Terapia psicologica a domicilio</a>             <a href="servizio-ambulanza.html"><i class="fas fa-ambulance"></i> Servizio Ambulanza</a>
+            <a href="infermiere-a-domicilio.html"><i class="fas fa-user-nurse"></i> Assistenza Infermieristica</a>
+            <a href="fisioterapia-a-domicilio.html"><i class="fas fa-person-walking"></i> Fisioterapia a domicilio</a>
+            <a href="assistenza-anziani.html"><i class="fas fa-hand-holding-heart"></i> Assistenza Anziani</a>
+            <a href="cure-pazienti-cronici.html"><i class="fas fa-notes-medical"></i> Cure Pazienti Cronici</a>
+            <a href="assistenza-notturna.html"><i class="fas fa-moon"></i> Assistenza Notturna</a>
+            <a href="cure-palliative.html"><i class="fas fa-dove"></i> Cure Palliative</a>
+            <a href="psicologia-a-domicilio.html"><i class="fas fa-brain"></i> Psicologia</a>
+            <a href="servizio-ambulanza.html"><i class="fas fa-ambulance"></i> Servizio Ambulanza</a>
             <a href="servizi.html"><i class="fas fa-th-list"></i> Tutti i servizi</a>
           </div>
-        </li>        <li class="dropdown">
+        </li>
+        <li class="dropdown">
           <a href="#" class="dropdown-toggle">ESAMI</a>
           <div class="dropdown-menu">
             <a href="holter-pressorio.html"><i class="fas fa-heart-pulse"></i> Holter Pressorio</a>
@@ -69,7 +71,6 @@
             <a href="esami-strumentali.html"><i class="fas fa-th-list"></i> Tutti gli esami</a>
           </div>
         </li>
-
         <li class="dropdown">
           <a href="#" class="dropdown-toggle">DOVE SIAMO</a>
           <div class="dropdown-menu dove">
@@ -95,20 +96,17 @@
   </div>
 </header>
 
-  <script src="nav.js"></script>
+<script src="nav.js"></script>
 
-  <section class="services-list" id="tutti-gli-esami">
-    <div class="container">
-      <div class="section-header center">
-        <span class="eyebrow">Diagnostica Avanzata</span>
-        <h2>9 Esami Strumentali a Domicilio</h2>
-        <p>Diagnostica completa: holter, esami sangue, RX, ecografie e altro</p>
-      </div>
-      <div class="services-grid">
-       <div class='service-thumb'><i class='fas fa-heart-pulse'></i><h3>Holter Pressorio</h3><a href='holter-pressorio.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-wave-square'></i><h3>Holter ECG</h3><a href='holter-ecg.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-moon'></i><h3>Apnee del Sonno</h3><a href='apnee-sonno.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-heart-circle-check'></i><h3>Screening Cardiaci</h3><a href='screening-cardiaci.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-lungs'></i><h3>Saturimetria e Spirometria</h3><a href='saturimetria-spirometria.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-droplet'></i><h3>Prelievi Ematici</h3><a href='prelievi-ematici.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-lungs-virus'></i><h3>Emogasanalisi</h3><a href='emogasanalisi.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-x-ray'></i><h3>RX Domiciliare</h3><a href='rx-domiciliare.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>       <div class='service-thumb'><i class='fas fa-wave-square'></i><h3>Ecografia Domiciliare</h3><a href='ecografia-domiciliare.html'>Scopri <i class='fas fa-arrow-right'></i></a></div>
-      </div>
+<section class="news-list" id="news">
+  <div class="container">
+    <div class="section-header center">
+      <span class="eyebrow">Ultime novità</span>
+      <h2>News e consigli</h2>
     </div>
-  </section>
+    <div id="newsList" class="news-grid"></div>
+  </div>
+</section>
 
 <footer class="footer" id="contatti">
   <div class="container">
@@ -118,6 +116,6 @@
   </div>
 </footer>
 
-  <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
