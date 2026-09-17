@@ -88,7 +88,7 @@ export default function FirmaConsenso() {
             </p>
             <FirmaCanvas
               label="Firma"
-              sublabel="Usa dito o penna sul touchscreen"
+              sublabel="Usa dito, penna o mouse"
               onFirmaCompleta={setFirma}
               altezza={180}
             />

@@ -110,7 +110,7 @@ export default function FirmaContrattoPaziente() {
             <div>
               <div className="tw-bg-blue-50 tw-rounded-lg tw-py-3.5 tw-px-4 tw-mb-5 tw-border tw-border-blue-200">
                 <p className="tw-m-0 tw-text-blue-800 tw-text-[0.9rem]">
-                  Ciao <strong>{contratto.patient?.firstName} {contratto.patient?.lastName}</strong>, per proseguire <strong>leggi i documenti</strong> sottostanti, acconsenti al trattamento dei dati e firma con dito o penna.
+                  Ciao <strong>{contratto.patient?.firstName} {contratto.patient?.lastName}</strong>, per proseguire <strong>leggi i documenti</strong> sottostanti, acconsenti al trattamento dei dati e firma con dito, penna o mouse.
                 </p>
               </div>
 
@@ -157,7 +157,7 @@ export default function FirmaContrattoPaziente() {
               </label>
 
               <FirmaCanvas
-                label="Firma con dito o penna"
+                label="Firma con dito, penna o mouse"
                 sublabel="La firma vale per il contratto d'incarico e per il consenso GDPR"
                 onFirmaCompleta={setFirma}
               />

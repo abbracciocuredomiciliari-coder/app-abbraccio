@@ -223,7 +223,7 @@ export default function FirmaCanvas({
 
           {!haFirmato && !disabled && (
             <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: '0.85rem', marginTop: '8px' }}>
-              ✍️ Firma qui con il dito o con la penna
+              ✍️ Firma qui con dito, penna o mouse
             </p>
           )}
         </div>
