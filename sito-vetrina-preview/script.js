@@ -1,15 +1,7 @@
-const hamburger = document.getElementById('hamburger');
-const nav = document.getElementById('navMenu');
-if (hamburger && nav) {
-  hamburger.addEventListener('click', () => {
-    nav.classList.toggle('open');
-  });
-}
-
 // Popola galleria
 const galleryGrid = document.getElementById('galleryGrid');
 if (galleryGrid) {
-  fetch('images.json')
+  fetch('gallery-images.json')
     .then(r => r.json())
     .then(images => {
       images.forEach((name, i) => {
@@ -32,15 +24,21 @@ function applyEdits() {
   if (!saved) return;
   try {
     const e = JSON.parse(saved);
-    if (e.heroTitle && document.querySelector('.hero h1')) document.querySelector('.hero h1').innerHTML = e.heroTitle;
-    if (e.heroSubtitle && document.querySelector('.hero p')) document.querySelector('.hero p').innerHTML = e.heroSubtitle;
+    const heroH1 = document.querySelector('.hero h1');
+    if (e.heroTitle && heroH1) heroH1.innerHTML = e.heroTitle;
+    const heroP = document.querySelector('.hero p');
+    if (e.heroSubtitle && heroP) heroP.innerHTML = e.heroSubtitle;
     if (e.phone) {
       document.querySelectorAll('.topbar .fa-phone').forEach(el => { el.parentNode.innerHTML = `<i class="fas fa-phone"></i> ${e.phone}`; });
-      document.querySelector('.hero-ctas .btn-primary').innerHTML = `<i class="fas fa-phone"></i> Chiama ora: ${e.phone}`;
+      const heroBtn = document.querySelector('.hero-ctas .btn-primary');
+      if (heroBtn) heroBtn.innerHTML = `<i class="fas fa-phone"></i> Chiama ora: ${e.phone}`;
     }
-    if (e.whatsapp && document.querySelector('.topbar .fa-whatsapp')) document.querySelector('.topbar .fa-whatsapp').parentNode.innerHTML = `<i class="fab fa-whatsapp"></i> ${e.whatsapp}`;
-    if (e.email && document.querySelector('.footer .fa-envelope')) document.querySelector('.footer .fa-envelope').parentNode.innerHTML = `<i class="fas fa-envelope"></i> ${e.email}`;
-    if (e.address && document.querySelector('.footer .fa-map-marker-alt')) document.querySelector('.footer .fa-map-marker-alt').parentNode.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${e.address}`;
+    const wa = document.querySelector('.topbar .fa-whatsapp');
+    if (e.whatsapp && wa) wa.parentNode.innerHTML = `<i class="fab fa-whatsapp"></i> ${e.whatsapp}`;
+    const email = document.querySelector('.footer .fa-envelope');
+    if (e.email && email) email.parentNode.innerHTML = `<i class="fas fa-envelope"></i> ${e.email}`;
+    const addr = document.querySelector('.footer .fa-map-marker-alt');
+    if (e.address && addr) addr.parentNode.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${e.address}`;
   } catch (err) {}
 }
 applyEdits();

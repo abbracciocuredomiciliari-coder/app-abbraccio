@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Servizi - Abbraccio Cure Domiciliari</title>
+  <meta name="description" content="Tutti i servizi sanitari a domicilio di Abbraccio Cure Domiciliari.">
+  <link rel="icon" type="image/png" href="logo-abbraccio.png">
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .service-page { padding: 50px 0 80px; background: var(--bg-soft); }
+    .service-detail { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .detail-inner { display: grid; grid-template-columns: 1.2fr 1fr; gap: 0; }
+    .detail-text { padding: 50px; }
+    .detail-text h1 { font-size: 2.2rem; color: var(--text-dark); margin-bottom: 20px; }
+    .detail-text h1::after { content: ''; display: block; width: 60px; height: 4px; background: var(--green); margin-top: 14px; border-radius: 2px; }
+    .detail-text p { color: var(--text-light); margin-bottom: 20px; line-height: 1.7; }
+    .detail-text ul { list-style: none; margin: 24px 0; }
+    .detail-text li { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: var(--text); }
+    .detail-text li i { color: var(--green); }
+    .detail-image img { width: 100%; height: 100%; object-fit: cover; min-height: 400px; }
+    .services-list { padding: 80px 0; }
+    .services-list .services-grid { grid-template-columns: repeat(4, 1fr); }
+    .service-thumb { background: #fff; border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); text-align: center; transition: transform 0.2s; }
+    .service-thumb:hover { transform: translateY(-5px); }
+    .service-thumb i { font-size: 2rem; color: var(--blue); margin-bottom: 12px; }
+    .service-thumb h3 { font-size: 0.95rem; color: var(--text); margin-bottom: 8px; }
+    .service-thumb a { display: inline-block; margin-top: 12px; color: var(--blue); font-weight: 700; font-size: 0.8rem; }
+    @media (max-width: 900px) { .detail-inner { grid-template-columns: 1fr; } .services-list .services-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 640px) { .services-list .services-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+  <script src="nav.js"></script>
+
+  <section class="service-page" id="dettaglio">
+    <div class="container">
+      <div id="serviceDetail" class="service-detail">
+        <!-- popolato via JS -->
+      </div>
+    </div>
+  </section>
+
+  <section class="services-list" id="tutti-i-servizi">
+    <div class="container">
+      <div class="section-header center">
+        <span class="eyebrow">I Nostri Servizi</span>
+        <h2>Scopri tutti i servizi a domicilio</h2>
+      </div>
+      <div class="services-grid" id="servicesThumbs"></div>
+    </div>
+  </section>
+
+  <footer class="footer" id="contatti">
+    <div class="container">
+      <div class="footer-bottom">
+        <p>© 2026 Abbraccio Cure Domiciliari. Tutti i diritti riservati.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    const services = {
+      infermieristica: {
+        title: 'Assistenza Infermieristica',
+        img: 'images/infermieri.jpg',
+        desc: 'Terapie, medicazioni, iniezioni e gestione farmacologica professionale a domicilio. I nostri infermieri qualificati offrono un supporto continuativo e personalizzato per ogni paziente.',
+        features: ['Terapie e infusioni', 'Medicazioni complesse', 'Gestione cateteri e stomie']
+      },
+      fisioterapia: {
+        title: 'Riabilitazione e Fisioterapia',
+        img: 'images/fisioterapia-1.jpg',
+        desc: 'Programmi riabilitativi personalizzati per il recupero funzionale e il benessere. Garantiamo interventi mirati per ripristinare la mobilità e la qualità della vita.',
+        features: ['Fisioterapia motoria', 'Riabilitazione post-chirurgica', 'Terapia del dolore']
+      },
+      anziani: {
+        title: 'Assistenza Anziani',
+        img: 'images/IMG-20260616-WA0026.jpg',
+        desc: 'Supporto completo per persone anziane, promuovendo autonomia e qualità della vita. Assistiamo con cura e rispetto nelle attività quotidiane.',
+        features: ['Aiuto nelle attività quotidiane', 'Compagnia e supporto emotivo', 'Monitoraggio salute costante']
+      },
+      cronici: {
+        title: 'Cure Pazienti Cronici',
+        img: 'images/IMG-20260616-WA0038.jpg',
+        desc: 'Gestione integrata di patologie croniche con monitoraggio continuo e personalizzato. Prendiamo in carico il paziente con un piano terapeutico su misura.',
+        features: ['Monitoraggio parametri vitali', 'Gestione terapia farmacologica', 'Educazione terapeutica']
+      },
+      notturna: {
+        title: 'Assistenza Notturna',
+        img: 'images/IMG-20260616-WA0047.jpg',
+        desc: 'Presenza qualificata durante la notte per garantire sicurezza e tranquillità. Operiamo anche di notte, nei festivi e nel weekend.',
+        features: ['Sorveglianza notturna', 'Interventi di emergenza', 'Supporto igiene personale']
+      },
+      palliative: {
+        title: 'Cure Palliative',
+        img: 'images/IMG-20260616-WA0043.jpg',
+        desc: 'Supporto compassionevole per pazienti in fase avanzata e per le loro famiglie. Un approccio umano e professionale per accompagnare con dignità.',
+        features: ['Controllo del dolore', 'Supporto psicologico', 'Assistenza dedicata']
+      },
+      psicologia: {
+        title: 'Terapia psicologica',
+        img: 'images/IMG-20260616-WA0043.jpg',
+        desc: 'Percorsi di supporto psicologico personalizzati per pazienti e caregiver, anche a domicilio. Ascolto e strumenti concreti per affrontare il percorso di cura.',
+        features: ['Primo colloquio psicologico', 'Sedute individuali', 'Supporto al caregiver']
+      },
+      ambulanza: {
+        title: 'Servizio Ambulanza',
+        img: 'images/ambulanza.png',
+        desc: 'Trasporto sanitario professionale per visite, terapie e ricoveri programmati. Mezzi attrezzati e personale qualificato per ogni esigenza.',
+        features: ['Trasporto programmato', 'Personale qualificato', 'Veicoli attrezzati']
+      }
+    };
+
+    function renderDetail(key) {
+      const s = services[key] || services.infermieristica;
+      document.getElementById('serviceDetail').innerHTML = `
+        <div class="detail-inner">
+          <div class="detail-text">
+            <h1>${s.title}</h1>
+            <p>${s.desc}</p>
+            <ul>
+              ${s.features.map(f => `<li><i class="fas fa-check-circle"></i> ${f}</li>`).join('')}
+            </ul>
+            <a href="https://app.abbracciocuredomiciliari.it/richiesta-servizio" target="_blank" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Richiedi servizio</a>
+          </div>
+          <div class="detail-image">
+            <img src="${s.img}" alt="${s.title}">
+          </div>
+        </div>
+      `;
+    }
+
+    const thumbs = Object.entries(services).map(([key, s]) => `
+      <div class="service-thumb">
+        <i class="fas ${getIcon(key)}"></i>
+        <h3>${s.title}</h3>
+        <a href="servizi.html?s=${key}">Scopri <i class="fas fa-arrow-right"></i></a>
+      </div>
+    `).join('');
+    document.getElementById('servicesThumbs').innerHTML = thumbs;
+
+    function getIcon(key) {
+      const map = { infermieristica: 'fa-user-nurse', fisioterapia: 'fa-person-walking', anziani: 'fa-hand-holding-heart', cronici: 'fa-notes-medical', notturna: 'fa-moon', palliative: 'fa-dove', psicologia: 'fa-brain', ambulanza: 'fa-ambulance' };
+      return map[key] || 'fa-circle';
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    renderDetail(params.get('s'));
+  </script>
+</body>
+</html>

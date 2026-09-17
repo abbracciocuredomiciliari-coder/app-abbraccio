@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lavora con noi - Abbraccio Cure Domiciliari</title>
+  <meta name="description" content="Unisciti al team di Abbraccio Cure Domiciliari. Posizioni aperte per infermieri, OSS, fisioterapisti e badanti.">
+  <link rel="icon" type="image/png" href="logo-abbraccio.png">
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .jobs-page { padding: 80px 0; background: var(--bg-soft); }
+    .jobs-page-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+    .jobs-form-box { background: #fff; padding: 44px; border-radius: var(--radius); box-shadow: var(--shadow); }
+    .jobs-form-box h1 { color: var(--text-dark); font-size: 2.2rem; margin-bottom: 16px; }
+    .jobs-form-box h1::after { content: ''; display: block; width: 60px; height: 4px; background: var(--green); margin-top: 14px; border-radius: 2px; }
+    .jobs-form-box p { color: var(--text-light); margin-bottom: 28px; }
+    .jobs-form-box label { display: flex; flex-direction: column; gap: 8px; font-weight: 700; font-size: 0.8rem; color: var(--blue); margin-bottom: 20px; }
+    .jobs-form-box select { padding: 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 0.95rem; }
+    .jobs-image img { width: 100%; border-radius: var(--radius); box-shadow: var(--shadow); }
+    .jobs-list { padding: 60px 0; }
+    .jobs-list h2 { text-align: center; color: var(--text-dark); margin-bottom: 30px; }
+    .job-card { background: #fff; padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .job-card strong { color: var(--text-dark); }
+    .job-card span { color: var(--text-light); font-size: 0.9rem; }
+    @media (max-width: 900px) { .jobs-page-inner { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+  <script src="nav.js"></script>
+
+  <section class="jobs-page" id="lavora-con-noi">
+    <div class="container">
+      <div class="jobs-page-inner">
+        <div class="jobs-form-box">
+          <h1>Lavora con Noi</h1>
+          <p>Sei un operatore con esperienza nel settore socio-sanitario? Unisciti al team Abbraccio.</p>
+          <div class="filters">
+            <label>
+              CHE POSIZIONE STAI CERCANDO?
+              <select id="jobRole"><option>- TUTTE LE POSIZIONI -</option><option>Infermiere</option><option>OSS</option><option>Fisioterapista</option><option>Badante</option></select>
+            </label>
+            <label>
+              IN QUALE ZONA?
+              <select id="jobZone"><option>- TUTTE LE ZONE -</option><option>Roma</option><option>Provincia</option><option>Altre province</option></select>
+            </label>
+            <button class="btn btn-primary" id="jobSearch"><i class="fas fa-search"></i> CERCA</button>
+          </div>
+          <p id="jobMsg" style="margin-top:20px;color:var(--green);font-weight:700;"></p>
+        </div>
+        <div class="jobs-image">
+          <img src="images/oss.jpg" alt="Operatore con paziente">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container jobs-list" id="risultati">
+    <h2>Posizioni aperte</h2>
+    <div class="job-card"><strong>Infermiere a domicilio</strong><span>Roma e provincia</span></div>
+    <div class="job-card"><strong>OSS - Operatore Socio Sanitario</strong><span>Roma e provincia</span></div>
+    <div class="job-card"><strong>Fisioterapista</strong><span>Roma e provincia</span></div>
+    <div class="job-card"><strong>Badante / Caregiver</strong><span>Roma e provincia</span></div>
+  </section>
+
+  <footer class="footer" id="contatti">
+    <div class="container">
+      <div class="footer-bottom">
+        <p>© 2026 Abbraccio Cure Domiciliari. Tutti i diritti riservati.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    document.getElementById('jobSearch').addEventListener('click', () => {
+      const r = document.getElementById('jobRole').value;
+      const z = document.getElementById('jobZone').value;
+      document.getElementById('jobMsg').textContent = `Filtrate posizioni per: ${r} in ${z}`;
+    });
+  </script>
+</body>
+</html>

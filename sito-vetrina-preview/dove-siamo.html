@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dove siamo - Abbraccio Cure Domiciliari</title>
+  <meta name="description" content="Le sedi e le aree coperte da Abbraccio Cure Domiciliari.">
+  <link rel="icon" type="image/png" href="logo-abbraccio.png">
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .where-hero { background: var(--grad-hero); color: #fff; padding: 70px 0; text-align: center; }
+    .where-hero h1 { color: #fff; font-size: 2.4rem; margin-bottom: 10px; }
+    .where-hero p { color: rgba(255,255,255,0.85); }
+    .where-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 60px 0; }
+    .where-card { background: #fff; padding: 30px; border-radius: var(--radius); box-shadow: var(--shadow); }
+    .where-card h3 { color: var(--text-dark); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+    .where-card h3 i { color: var(--blue); }
+    .where-card ul { list-style: none; color: var(--text-light); font-size: 0.95rem; }
+    .where-card li { margin-bottom: 8px; }
+    .where-main { padding: 60px 0; background: var(--bg-soft); }
+    .where-main-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+    .where-main h2 { color: var(--text-dark); margin-bottom: 16px; }
+    .where-main p { color: var(--text-light); margin-bottom: 12px; }
+    .where-map { background: #e2e8f0; border-radius: var(--radius); height: 300px; display: flex; align-items: center; justify-content: center; color: var(--text-light); font-weight: 700; }
+    @media (max-width: 900px) { .where-grid, .where-main-inner { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+  <script src="nav.js"></script>
+
+  <section class="where-hero">
+    <div class="container">
+      <h1>Dove siamo</h1>
+      <p>Operativi principalmente nel Lazio e in espansione in tutta Italia</p>
+    </div>
+  </section>
+
+  <section class="where-main">
+    <div class="container">
+      <div class="where-main-inner">
+        <div>
+          <h2>Sede principale</h2>
+          <p><i class="fas fa-map-marker-alt"></i> Via di S. Maria Ausiliatrice n° 4/B, 00181 Roma</p>
+          <p><i class="fas fa-phone"></i> 06 01905242</p>
+          <p><i class="fas fa-mobile-alt"></i> 351.4175117</p>
+          <p><i class="fas fa-envelope"></i> abbracciocuredomiciliari@gmail.com</p>
+          <p>Siamo attivi a Roma e in tutta la Provincia, con servizi di assistenza domiciliare anche in altre regioni.</p>
+        </div>
+        <div class="where-map">
+          <span>Mappa Italia interattiva (da integrare)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container">
+    <div class="where-grid">
+      <div class="where-card" id="lazio">
+        <h3><i class="fas fa-map-marker-alt"></i> Lazio</h3>
+        <ul>
+          <li>Roma centro</li>
+          <li>Provincia di Roma</li>
+          <li>Latina e Frosinone</li>
+          <li>Viterbo e Rieti</li>
+        </ul>
+      </div>
+      <div class="where-card" id="campania">
+        <h3><i class="fas fa-map-marker-alt"></i> Campania</h3>
+        <ul>
+          <li>Napoli</li>
+          <li>Salerno</li>
+          <li>Caserta</li>
+          <li>Avellino e Benevento</li>
+        </ul>
+      </div>
+      <div class="where-card" id="toscana">
+        <h3><i class="fas fa-map-marker-alt"></i> Toscana</h3>
+        <ul>
+          <li>Firenze</li>
+          <li>Pisa e Livorno</li>
+          <li>Prato</li>
+          <li>Arezzo e Grosseto</li>
+        </ul>
+      </div>
+      <div class="where-card" id="lombardia">
+        <h3><i class="fas fa-map-marker-alt"></i> Lombardia</h3>
+        <ul>
+          <li>Milano</li>
+          <li>Monza e Brianza</li>
+          <li>Bergamo e Brescia</li>
+          <li>Como e Varese</li>
+        </ul>
+      </div>
+      <div class="where-card" id="altre">
+        <h3><i class="fas fa-map-marker-alt"></i> Altre regioni</h3>
+        <ul>
+          <li>Emilia Romagna</li>
+          <li>Marche</li>
+          <li>Sicilia</li>
+          <li>Sardegna</li>
+        </ul>
+      </div>
+      <div class="where-card">
+        <h3><i class="fas fa-clock"></i> Orari</h3>
+        <ul>
+          <li>Reperibilità 24/7</li>
+          <li>Sabato e domenica</li>
+          <li>Giorni festivi</li>
+          <li>Assistenza continua</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer" id="contatti">
+    <div class="container">
+      <div class="footer-bottom">
+        <p>© 2026 Abbraccio Cure Domiciliari. Tutti i diritti riservati.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
