@@ -264,7 +264,7 @@ export default function BadantiIntermediazione() {
               <Users size={24} />
             </div>
             <div>
-              <h1 className="tw-text-2xl tw-font-bold tw-text-slate-800">Assistenza domiciliare badanti</h1>
+              <h1 className="tw-text-2xl tw-font-bold tw-text-slate-800">Consulenza contratto badanti</h1>
               <p className="tw-text-slate-500 tw-text-sm tw-m-0">Gestione richieste, preventivi e fatture — solo pazienti privati</p>
             </div>
           </div>
