@@ -23,7 +23,8 @@
     .where-main-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
     .where-main h2 { color: var(--text-dark); margin-bottom: 16px; }
     .where-main p { color: var(--text-light); margin-bottom: 12px; }
-    .where-map { background: #e2e8f0; border-radius: var(--radius); height: 300px; display: flex; align-items: center; justify-content: center; color: var(--text-light); font-weight: 700; }
+    .where-map { border-radius: var(--radius); height: 300px; overflow: hidden; box-shadow: var(--shadow); }
+    .where-map iframe { width: 100%; height: 100%; border: 0; }
     @media (max-width: 900px) { .where-grid, .where-main-inner { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -70,13 +71,15 @@
         </li>
         <li class="dropdown">
           <a href="#" class="dropdown-toggle">DOVE SIAMO</a>
-          <div class="dropdown-menu dove">
+                    <div class="dropdown-menu dove">
+            <a href="dove-siamo.html#roma-centro"><i class="fas fa-map-marker-alt"></i> Roma Centro</a>
+            <a href="dove-siamo.html#roma-nord"><i class="fas fa-map-marker-alt"></i> Roma Nord</a>
+            <a href="dove-siamo.html#roma-sud"><i class="fas fa-map-marker-alt"></i> Roma Sud</a>
+            <a href="dove-siamo.html#roma-est"><i class="fas fa-map-marker-alt"></i> Roma Est</a>
+            <a href="dove-siamo.html#roma-ovest"><i class="fas fa-map-marker-alt"></i> Roma Ovest</a>
+            <a href="dove-siamo.html#provincia-roma"><i class="fas fa-map-marker-alt"></i> Provincia di Roma</a>
             <a href="dove-siamo.html#lazio"><i class="fas fa-map-marker-alt"></i> Lazio</a>
-            <a href="dove-siamo.html#campania"><i class="fas fa-map-marker-alt"></i> Campania</a>
-            <a href="dove-siamo.html#toscana"><i class="fas fa-map-marker-alt"></i> Toscana</a>
-            <a href="dove-siamo.html#lombardia"><i class="fas fa-map-marker-alt"></i> Lombardia</a>
-            <a href="dove-siamo.html#altre"><i class="fas fa-map-marker-alt"></i> Altre regioni</a>
-            <a href="dove-siamo.html"><i class="fas fa-th-list"></i> Tutta Italia</a>
+            <a href="dove-siamo.html"><i class="fas fa-th-list"></i> Tutte le zone</a>
           </div>
         </li>
         <li><a href="lavora-con-noi.html">LAVORA CON NOI</a></li>
@@ -96,7 +99,7 @@
 <section class="where-hero">
     <div class="container">
       <h1>Dove siamo</h1>
-      <p>Operativi principalmente nel Lazio e in espansione in tutta Italia</p>
+      <p>Operativi esclusivamente nel Lazio e a Roma</p>
     </div>
   </section>
 
@@ -109,10 +112,10 @@
           <p><i class="fas fa-phone"></i> 06 01905242</p>
           <p><i class="fas fa-mobile-alt"></i> 351.4175117</p>
           <p><i class="fas fa-envelope"></i> abbracciocuredomiciliari@gmail.com</p>
-          <p>Siamo attivi a Roma e in tutta la Provincia, con servizi di assistenza domiciliare anche in altre regioni.</p>
+          <p>Siamo attivi a Roma e in tutta la Provincia di Roma, nel Reatino, nel Viterbese, nella provincia di Latina e di Frosinone.</p>
         </div>
         <div class="where-map">
-          <span>Mappa Italia interattiva (da integrare)</span>
+          <iframe src="https://www.google.com/maps?q=Via+di+S.+Maria+Ausiliatrice+4%2FB%2C+00181+Roma&output=embed" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
         </div>
       </div>
     </div>
@@ -120,49 +123,67 @@
 
   <section class="container">
     <div class="where-grid">
+      <div class="where-card" id="roma-centro">
+        <h3><i class="fas fa-map-marker-alt"></i> Roma Centro</h3>
+        <ul>
+          <li>Centro storico</li>
+          <li>Municipio I - Centro</li>
+          <li>Testaccio e Trastevere</li>
+          <li>Prati e Vaticano</li>
+        </ul>
+      </div>
+      <div class="where-card" id="roma-nord">
+        <h3><i class="fas fa-map-marker-alt"></i> Roma Nord</h3>
+        <ul>
+          <li>Flaminio</li>
+          <li>Parioli</li>
+          <li>Tor di Quinto</li>
+          <li>Buffalora e Grottarossa</li>
+        </ul>
+      </div>
+      <div class="where-card" id="roma-sud">
+        <h3><i class="fas fa-map-marker-alt"></i> Roma Sud</h3>
+        <ul>
+          <li>Appia e Tuscolano</li>
+          <li>EUR</li>
+          <li>Mostacciano</li>
+          <li>Castel Fusano</li>
+        </ul>
+      </div>
+      <div class="where-card" id="roma-est">
+        <h3><i class="fas fa-map-marker-alt"></i> Roma Est</h3>
+        <ul>
+          <li>Prenestino</li>
+          <li>Torre Maura</li>
+          <li>Casalpalocco</li>
+          <li>Torre Angela</li>
+        </ul>
+      </div>
+      <div class="where-card" id="roma-ovest">
+        <h3><i class="fas fa-map-marker-alt"></i> Roma Ovest</h3>
+        <ul>
+          <li>Eur</li>
+          <li>Magliana</li>
+          <li>Monteverde</li>
+          <li>Acilia</li>
+        </ul>
+      </div>
+      <div class="where-card" id="provincia-roma">
+        <h3><i class="fas fa-map-marker-alt"></i> Provincia di Roma</h3>
+        <ul>
+          <li>Ostia e Fiumicino</li>
+          <li>Ciampino e Marino</li>
+          <li>Tivoli e Guidonia</li>
+          <li>Velletri e Albano</li>
+        </ul>
+      </div>
       <div class="where-card" id="lazio">
         <h3><i class="fas fa-map-marker-alt"></i> Lazio</h3>
         <ul>
-          <li>Roma centro</li>
-          <li>Provincia di Roma</li>
-          <li>Latina e Frosinone</li>
-          <li>Viterbo e Rieti</li>
-        </ul>
-      </div>
-      <div class="where-card" id="campania">
-        <h3><i class="fas fa-map-marker-alt"></i> Campania</h3>
-        <ul>
-          <li>Napoli</li>
-          <li>Salerno</li>
-          <li>Caserta</li>
-          <li>Avellino e Benevento</li>
-        </ul>
-      </div>
-      <div class="where-card" id="toscana">
-        <h3><i class="fas fa-map-marker-alt"></i> Toscana</h3>
-        <ul>
-          <li>Firenze</li>
-          <li>Pisa e Livorno</li>
-          <li>Prato</li>
-          <li>Arezzo e Grosseto</li>
-        </ul>
-      </div>
-      <div class="where-card" id="lombardia">
-        <h3><i class="fas fa-map-marker-alt"></i> Lombardia</h3>
-        <ul>
-          <li>Milano</li>
-          <li>Monza e Brianza</li>
-          <li>Bergamo e Brescia</li>
-          <li>Como e Varese</li>
-        </ul>
-      </div>
-      <div class="where-card" id="altre">
-        <h3><i class="fas fa-map-marker-alt"></i> Altre regioni</h3>
-        <ul>
-          <li>Emilia Romagna</li>
-          <li>Marche</li>
-          <li>Sicilia</li>
-          <li>Sardegna</li>
+          <li>Latina e provincia</li>
+          <li>Frosinone e provincia</li>
+          <li>Viterbo e provincia</li>
+          <li>Rieti e provincia</li>
         </ul>
       </div>
       <div class="where-card">
