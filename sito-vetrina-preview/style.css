@@ -121,7 +121,8 @@ a { text-decoration: none; color: inherit; }
 .dropdown-toggle { cursor: pointer; }
 .dropdown-toggle::after { content: ' \f107'; font-family: 'Font Awesome 6 Free'; font-weight: 900; font-size: 0.7rem; margin-left: 4px; }
 .dropdown-menu { position: absolute; top: calc(100% + 12px); left: 0; background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; min-width: 700px; display: none; z-index: 200; }
-.dropdown.open .dropdown-menu { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.dropdown.open .dropdown-menu,
+.dropdown:hover .dropdown-menu { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .dropdown-menu a { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 10px; border-radius: 10px; color: var(--text); font-size: 0.78rem; font-weight: 700; text-align: center; transition: all 0.2s; }
 .dropdown-menu a:hover { background: var(--bg-soft); color: var(--blue); }
 .dropdown-menu i { font-size: 1.5rem; color: var(--blue); }

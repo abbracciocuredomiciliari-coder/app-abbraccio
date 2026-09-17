@@ -22,25 +22,6 @@ function initNav() {
   document.addEventListener('click', () => {
     document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
   });
-
-  const current = window.location.pathname.split('/').pop() || 'index.html';
-  document.querySelectorAll('.nav a').forEach(a => {
-    const href = a.getAttribute('href');
-    if (href === current || (current === '' && href === 'index.html')) {
-      a.classList.add('active');
-    }
-  });
 }
 
-const headerPlaceholder = document.getElementById('site-header');
-if (headerPlaceholder) {
-  fetch('header.html')
-    .then(r => r.text())
-    .then(html => {
-      headerPlaceholder.innerHTML = html;
-      initNav();
-    })
-    .catch(() => {});
-} else {
-  initNav();
-}
+initNav();
