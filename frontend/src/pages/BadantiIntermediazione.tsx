@@ -456,19 +456,24 @@ export default function BadantiIntermediazione() {
                 <div className="tw-text-sm"><span className="tw-font-semibold">Mesi contratto:</span> {richiestaAperta.mesiContratto}</div>
                 {(() => {
                   const mesi = Number(richiestaAperta.mesiContratto) || 12;
-                  const costoBadante = Number(richiestaAperta.costoMensile || 0);
+                  const costoBadanteMensile = Number(richiestaAperta.costoMensile || 0);
+                  const costoContrattoAnnuale = Math.round(costoBadanteMensile * mesi * 100) / 100;
                   const gaNetta = includiGestione ? Number(gestioneAmministrativa || 0) : 0;
-                  const gaLordaMensile = Math.round(gaNetta * 1.22 * 100) / 100;
-                  const costoMensile = Math.round((costoBadante + (gaNetta > 0 ? gaLordaMensile : 0)) * 100) / 100;
-                  const costoAnnuale = Math.round(costoMensile * mesi * 100) / 100;
+                  const ivaGestioneMensile = Math.round(gaNetta * 0.22 * 100) / 100;
+                  const gaLordaMensile = Math.round((gaNetta + ivaGestioneMensile) * 100) / 100;
+                  const gaLordaAnnuale = Math.round(gaLordaMensile * mesi * 100) / 100;
+                  const attivazione = 120;
+                  const consulenza = 610;
+                  const totaleUnaTantum = attivazione + consulenza;
                   return (
                     <>
-                      <div className="tw-text-sm"><span className="tw-font-semibold">Costo mensile:</span> <Euro size={14} className="tw-inline" /> {costoMensile.toFixed(2)}</div>
+                      <div className="tw-text-sm"><span className="tw-font-semibold">Costo contratto consigliato:</span> <Euro size={14} className="tw-inline" /> {costoContrattoAnnuale.toFixed(2)} ({mesi} mesi)</div>
                       {includiGestione && (
-                        <div className="tw-text-xs tw-text-slate-500">di cui gestione amministrativa + IVA 22%: €{gaLordaMensile.toFixed(2)}/mese</div>
+                        <div className="tw-text-sm"><span className="tw-font-semibold">Gestione amministrativa:</span> <Euro size={14} className="tw-inline" /> {gaLordaAnnuale.toFixed(2)} ({mesi} mesi - imponibile €{gaNetta.toFixed(2)}/mese + IVA €{ivaGestioneMensile.toFixed(2)}/mese)</div>
                       )}
-                      <div className="tw-text-sm"><span className="tw-font-semibold">Costo annuale:</span> <Euro size={14} className="tw-inline" /> {costoAnnuale.toFixed(2)}</div>
-                      <div className="tw-text-sm tw-text-slate-500 tw-mt-1">Voci una tantum: registrazione contratto 120 € + spese assistenza domiciliare badanti 610 € (IVA 22% inclusa).</div>
+                      <div className="tw-text-sm"><span className="tw-font-semibold">Attivazione contratto:</span> <Euro size={14} className="tw-inline" /> {attivazione.toFixed(2)} (una tantum)</div>
+                      <div className="tw-text-sm"><span className="tw-font-semibold">Consulenza specialistica:</span> <Euro size={14} className="tw-inline" /> {consulenza.toFixed(2)} (imponibile €500,00 + IVA 22% €110,00)</div>
+                      <div className="tw-text-sm tw-font-semibold tw-text-slate-700 tw-mt-1">Totale una tantum: <Euro size={14} className="tw-inline" /> {totaleUnaTantum.toFixed(2)}</div>
                     </>
                   );
                 })()}

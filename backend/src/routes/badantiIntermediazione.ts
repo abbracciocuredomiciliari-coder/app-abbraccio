@@ -32,46 +32,62 @@ function calcolaPrestazioni(richiesta: any, gestioneAmministrativa: number) {
   const mesi = Number(richiesta.mesiContratto) || 12;
   const costoBadanteMensile = calcolaCostoMensile(richiesta);
   const gaInput = Number(gestioneAmministrativa) || 0;
-  const gaLordoMensile = Math.round(gaInput * 1.22 * 100) / 100;
-  const costoMensile = Math.round((costoBadanteMensile + (gaInput > 0 ? gaLordoMensile : 0)) * 100) / 100;
-  const costoAnnuale = Math.round(costoMensile * mesi * 100) / 100;
+  const ivaGestioneMensile = Math.round(gaInput * 0.22 * 100) / 100;
+  const gaLordoMensile = Math.round((gaInput + ivaGestioneMensile) * 100) / 100;
 
-  let descrizione = `Contratto badante - ${richiesta.contrattoTipo === 'orario_non_convivente' ? 'orario non convivente' : 'convivente'}, livello ${richiesta.livello}`;
+  const costoBadanteAnnuale = Math.round(costoBadanteMensile * mesi * 100) / 100;
+  const gaLordaAnnuale = Math.round(gaLordoMensile * mesi * 100) / 100;
+
+  const prestazioni: any[] = [];
+
+  // 1) Costo contratto consigliato
+  let descContratto = `Costo contratto consigliato - ${richiesta.contrattoTipo === 'orario_non_convivente' ? 'orario non convivente' : 'convivente'}, livello ${richiesta.livello}`;
   if (richiesta.contrattoTipo === 'orario_non_convivente' && richiesta.oreSettimanali) {
-    descrizione += `, ${richiesta.oreSettimanali} ore settimanali`;
+    descContratto += `, ${richiesta.oreSettimanali} ore settimanali`;
   }
-  descrizione += `, ${mesi} mesi`;
-  if (gaInput > 0) {
-    descrizione += ` - Gestione amministrativa + IVA 22%: €${gaLordoMensile.toFixed(2)}/mese`;
-  }
-  descrizione += ` - Costo mensile: €${costoMensile.toFixed(2)} - Costo annuale: €${costoAnnuale.toFixed(2)}`;
-
-  const prestazioni = [{
-    descrizione,
+  descContratto += `, ${mesi} mesi`;
+  prestazioni.push({
+    descrizione: descContratto,
     quantita: mesi,
-    prezzoUnitario: costoMensile,
-    importo: costoAnnuale,
-  }];
-
-  const registrazione = 120;
-  prestazioni.push({
-    descrizione: 'Registrazione contratto (una tantum prima attivazione)',
-    quantita: 1,
-    prezzoUnitario: registrazione,
-    importo: registrazione,
+    prezzoUnitario: costoBadanteMensile,
+    importo: costoBadanteAnnuale,
+    tipo: 'contratto',
   });
 
-  const imponibileIntermediazione = 500;
-  const ivaIntermediazione = Math.round(imponibileIntermediazione * 0.22 * 100) / 100;
-  const totaleIntermediazione = Math.round((imponibileIntermediazione + ivaIntermediazione) * 100) / 100;
+  // 2) Gestione amministrativa (iva inclusa, con totale di questa voce)
+  if (gaInput > 0) {
+    prestazioni.push({
+      descrizione: `Gestione amministrativa - imponibile €${gaInput.toFixed(2)}/mese + IVA 22% €${ivaGestioneMensile.toFixed(2)}/mese - totale voce: €${gaLordaAnnuale.toFixed(2)}`,
+      quantita: mesi,
+      prezzoUnitario: gaLordoMensile,
+      importo: gaLordaAnnuale,
+      tipo: 'gestione',
+    });
+  }
+
+  // 3) Attivazione contratto una tantum
+  const attivazione = 120;
   prestazioni.push({
-    descrizione: `Spese assistenza domiciliare badanti e reclutamento (una tantum - €${imponibileIntermediazione.toFixed(2)} imponibile + IVA 22% €${ivaIntermediazione.toFixed(2)})`,
+    descrizione: 'Attivazione contratto (una tantum)',
     quantita: 1,
-    prezzoUnitario: totaleIntermediazione,
-    importo: totaleIntermediazione,
+    prezzoUnitario: attivazione,
+    importo: attivazione,
+    tipo: 'attivazione',
   });
 
-  const totaleUnaTantum = Math.round((registrazione + totaleIntermediazione) * 100) / 100;
+  // 4) Consulenza specialistica alla famiglia (500 + iva)
+  const imponibileConsulenza = 500;
+  const ivaConsulenza = Math.round(imponibileConsulenza * 0.22 * 100) / 100;
+  const totaleConsulenza = Math.round((imponibileConsulenza + ivaConsulenza) * 100) / 100;
+  prestazioni.push({
+    descrizione: `Consulenza specialistica alla famiglia per analisi di esigenze assistenziali e supporto alla valutazione del profilo professionale assistente familiare (imponibile €${imponibileConsulenza.toFixed(2)} + IVA 22% €${ivaConsulenza.toFixed(2)})`,
+    quantita: 1,
+    prezzoUnitario: totaleConsulenza,
+    importo: totaleConsulenza,
+    tipo: 'consulenza',
+  });
+
+  const totaleUnaTantum = Math.round((attivazione + totaleConsulenza) * 100) / 100;
   return { prestazioni, totaleUnaTantum };
 }
 
@@ -263,7 +279,7 @@ router.post('/:id/preventivo', authenticateToken, authorizeRole(...RUOLI_GESTION
   }
 });
 
-// POST /api/badanti-intermediazione/:id/fattura — converte preventivo accettato in fattura (solo spese una tantum)
+// POST /api/badanti-intermediazione/:id/fattura — converte preventivo accettato in fattura (solo consulenza)
 router.post('/:id/fattura', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('badanti_intermediazione', 'CREATE'), async (req: AuthRequest, res: Response) => {
   try {
     const richiesta = await BadanteIntermediazione.findById(req.params.id);
@@ -275,8 +291,13 @@ router.post('/:id/fattura', authenticateToken, authorizeRole(...RUOLI_GESTIONE),
     if (!preventivo) return res.status(404).json({ message: 'Preventivo non trovato' });
     if (preventivo.stato !== 'firmato') return res.status(400).json({ message: 'Il preventivo deve essere firmato prima di emettere fattura' });
 
-    const vociUnaTantum = (preventivo.prestazioni || []).filter((p: any) => String(p.descrizione).includes('una tantum'));
-    const totaleUnaTantum = Math.round(vociUnaTantum.reduce((acc: number, p: any) => acc + (Number(p.importo) || 0), 0) * 100) / 100;
+    const vociConsulenza = (preventivo.prestazioni || []).filter((p: any) =>
+      p.tipo === 'consulenza' || String(p.descrizione).toLowerCase().includes('consulenza specialistica')
+    );
+    const totaleConsulenza = Math.round(vociConsulenza.reduce((acc: number, p: any) => acc + (Number(p.importo) || 0), 0) * 100) / 100;
+    if (vociConsulenza.length === 0) {
+      return res.status(400).json({ message: 'Nel preventivo non è presente la voce consulenza da fatturare' });
+    }
     const numero = await generaNumero('fattura');
     const user = req.user as { name?: string; email?: string } | undefined;
 
@@ -286,8 +307,8 @@ router.post('/:id/fattura', authenticateToken, authorizeRole(...RUOLI_GESTIONE),
       patient: preventivo.patient,
       riferimentoTipo: preventivo.riferimentoTipo,
       riferimentoId: preventivo.riferimentoId,
-      prestazioni: vociUnaTantum,
-      totale: totaleUnaTantum,
+      prestazioni: vociConsulenza,
+      totale: totaleConsulenza,
       data: new Date(),
       dataPrestazione: preventivo.dataPrestazione,
       stato: 'emesso',

@@ -5,6 +5,7 @@ export interface IVocePrestazione {
   quantita: number;
   prezzoUnitario: number;
   importo: number;
+  tipo?: string;
 }
 
 export interface IDocumentoFatturazione extends Document {
@@ -39,6 +40,7 @@ const vocePrestazioneSchema = new Schema<IVocePrestazione>(
     quantita: { type: Number, required: true, default: 1 },
     prezzoUnitario: { type: Number, required: true, default: 0 },
     importo: { type: Number, required: true, default: 0 },
+    tipo: { type: String, trim: true },
   },
   { _id: false }
 );
