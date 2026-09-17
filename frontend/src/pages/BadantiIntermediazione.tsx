@@ -103,10 +103,9 @@ export default function BadantiIntermediazione() {
 
   async function caricaPazienti() {
     try {
-      const res = await api.get('/patients');
-      const tutti = res.data?.patients || res.data || [];
-      const badanti = (tutti as Patient[]).filter((p: Patient) => p.categoriaPrivata === 'intermediazione_badanti');
-      setPazienti(badanti);
+      const res = await api.get('/patients?tipo=privato');
+      const pazienti = res.data?.patients || res.data || [];
+      setPazienti(pazienti as Patient[]);
     } catch (err: any) {
       console.error('Errore caricamento pazienti', err);
     }
