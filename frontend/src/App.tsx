@@ -542,7 +542,7 @@ function AppShell() {
           {/* Pianificazione Prelievi (vecchia pagina, mantenuta per compatibilità) */}
           <Route path="/pianificazione-prelievi" element={<ProtectedRoute><PianificazionePrelievi /></ProtectedRoute>} />
           {/* Centro Prenotazioni unificato (privato) — admin/coordinator */}
-          <Route path="/centro-prenotazioni" element={<ProtectedRoute><CentroPrenotazioniConvenzione /></ProtectedRoute>} />
+          <Route path="/centro-prenotazioni" element={<ProtectedRoute><CentroPrenotazioni /></ProtectedRoute>} />
           {/* Centro Prenotazioni convenzione SIAT */}
           <Route path="/centro-prenotazioni-convenzione" element={<ProtectedRoute><CentroPrenotazioniConvenzione /></ProtectedRoute>} />
           {/* Centro Prenotazioni Prelievi — mantenuto per compatibilità */}

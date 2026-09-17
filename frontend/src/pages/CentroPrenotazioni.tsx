@@ -1039,14 +1039,18 @@ export default function CentroPrenotazioni() {
                   </div>)}
                 <label className="tw-font-semibold tw-text-sm">Paziente *<select className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" value={fpPaz} onChange={e => setFpPaz(e.target.value)}><option value="">Seleziona...</option>{pazienti.map(p => <option key={p._id} value={p._id}>{p.firstName} {p.lastName}</option>)}</select></label>
                 <label className="tw-font-semibold tw-text-sm">Operatore (opzionale)<select className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" value={fpStaff} onChange={e => setFpStaff(e.target.value)}><option value="">Seleziona...</option>{staff.map(s => <option key={s._id} value={s._id}>{s.firstName} {s.lastName} — {s.role}</option>)}</select></label>
-                {fpTipo === 'prestazionale' && (<label className="tw-font-semibold tw-text-sm">Prestazione dal tariffario
+                {(fpTipo === 'prestazionale' || fpTipo === 'assistenziale') && (<label className="tw-font-semibold tw-text-sm">Prestazione dal tariffario
                     <select className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" value={fpTariffarioSel} onChange={e => {
                     const id = e.target.value;
                     setFpTariffarioSel(id);
                     const voce = tariffario.find(v => v._id === id);
                     if (voce) {
                         setFpTask(voce.nome);
-                        setFpCosto(voce.prezzo);
+                        if (fpTipo === 'assistenziale' && fpCompenso === 'orario') {
+                            setFpCostoOrario(voce.prezzo);
+                        } else {
+                            setFpCosto(voce.prezzo);
+                        }
                     }
                 }}>
                       <option value="">— Seleziona dal listino (opzionale) —</option>
