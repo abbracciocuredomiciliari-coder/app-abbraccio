@@ -308,7 +308,7 @@ export default function CentroPrenotazioniPrivato() {
                 >
                   <option value="diagnostica">🩺 Diagnostica (prelievi / esami)</option>
                   <option value="assistenza_domiciliare">🏥 Assistenza sanitaria domiciliare</option>
-                  <option value="intermediazione_badanti">🤝 Consulenza contratto badanti</option>
+                  <option value="intermediazione_badanti">🤝 Consulenza famiglie</option>
                 </select>
               </div>
 

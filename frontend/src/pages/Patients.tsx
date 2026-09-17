@@ -932,7 +932,7 @@ function Patients() {
               >
                 <option value="diagnostica">🩺 Diagnostica (prelievi / esami)</option>
                 <option value="assistenza_domiciliare">🏥 Assistenza sanitaria domiciliare</option>
-                <option value="intermediazione_badanti">🤝 Consulenza contratto badanti</option>
+                <option value="intermediazione_badanti">🤝 Consulenza famiglie</option>
               </select>
             </label>
           )}
@@ -971,7 +971,7 @@ function Patients() {
                 : 'tw-bg-white tw-text-slate-600 tw-border tw-border-slate-200 hover:tw-bg-slate-50'
             }`}
           >
-            {cat === 'tutti' ? 'Tutti' : cat === 'diagnostica' ? '🩺 Diagnostica' : cat === 'assistenza_domiciliare' ? '🏥 Assistenza domiciliare' : '🤝 Consulenza contratto badanti'}
+            {cat === 'tutti' ? 'Tutti' : cat === 'diagnostica' ? '🩺 Diagnostica' : cat === 'assistenza_domiciliare' ? '🏥 Assistenza domiciliare' : '🤝 Consulenza famiglie'}
           </button>
         ))}
       </div>
@@ -1079,7 +1079,7 @@ function Patients() {
                       <option value="" disabled>Sposta in...</option>
                       <option value="diagnostica">🩺 Diagnostica</option>
                       <option value="assistenza_domiciliare">🏥 Assistenza domiciliare</option>
-                      <option value="intermediazione_badanti">🤝 Consulenza contratto badanti</option>
+                      <option value="intermediazione_badanti">🤝 Consulenza famiglie</option>
                     </select>
                   ) : null}
                   <ReportGenerator

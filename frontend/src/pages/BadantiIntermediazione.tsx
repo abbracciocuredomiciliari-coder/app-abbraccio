@@ -264,7 +264,7 @@ export default function BadantiIntermediazione() {
               <Users size={24} />
             </div>
             <div>
-              <h1 className="tw-text-2xl tw-font-bold tw-text-slate-800">Consulenza contratto badanti</h1>
+              <h1 className="tw-text-2xl tw-font-bold tw-text-slate-800">Consulenza famiglie</h1>
               <p className="tw-text-slate-500 tw-text-sm tw-m-0">Gestione richieste, preventivi e fatture — solo pazienti privati</p>
             </div>
           </div>
@@ -336,7 +336,7 @@ export default function BadantiIntermediazione() {
 
           {richieste.length === 0 ? (
             <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-8 tw-text-center tw-text-slate-400">
-              Nessuna richiesta di assistenza domiciliare badanti.
+              Nessuna richiesta di Consulenza famiglie.
             </div>
           ) : (
             <div className="tw-flex tw-flex-col tw-gap-3">
