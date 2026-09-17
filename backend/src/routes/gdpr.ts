@@ -10,8 +10,6 @@ import { inviaEmailConsensoGDPR, inviaEmailConsensoPrestazione, inviaEmail } fro
 
 const router = Router();
 
-router.use(authenticateToken);
-
 /**
  * POST /api/gdpr/consenso
  * Registra nuovo consenso informato
@@ -19,7 +17,7 @@ router.use(authenticateToken);
  */
 router.post(
   '/consenso',
-  authorizeRole('admin', 'coordinator', 'operatore'),
+  authenticateToken, authorizeRole('admin', 'coordinator', 'operatore'),
   auditLog('consenso', 'CREATE'),
   async (req: AuthRequest, res: Response) => {
     try {
@@ -81,7 +79,7 @@ router.post(
  */
 router.get(
   '/consenso/:patientId',
-  authorizeRole('admin', 'coordinator', 'operatore', 'direttore'),
+  authenticateToken, authorizeRole('admin', 'coordinator', 'operatore', 'direttore'),
   auditLog('consenso', 'READ', (req) => req.params.patientId),
   async (req: AuthRequest, res: Response) => {
     try {
@@ -111,7 +109,7 @@ router.get(
 
 router.post(
   '/consenso-prestazione',
-  authorizeRole('admin', 'coordinator', 'operatore'),
+  authenticateToken, authorizeRole('admin', 'coordinator', 'operatore'),
   auditLog('consenso_prestazione', 'CREATE'),
   async (req: AuthRequest, res: Response) => {
     try {
@@ -205,7 +203,7 @@ router.post('/consenso-prestazione/:patientId/invia-email', authorizeRole('admin
 
 router.get(
   '/consenso-prestazione/:patientId',
-  authorizeRole('admin', 'coordinator', 'operatore', 'direttore'),
+  authenticateToken, authorizeRole('admin', 'coordinator', 'operatore', 'direttore'),
   auditLog('consenso_prestazione', 'READ', (req) => req.params.patientId),
   async (req: AuthRequest, res: Response) => {
     try {
@@ -227,7 +225,7 @@ router.get(
  */
 router.post(
   '/revoca/:patientId',
-  authorizeRole('admin', 'coordinator'),
+  authenticateToken, authorizeRole('admin', 'coordinator'),
   auditLog('consenso', 'UPDATE', (req) => req.params.patientId),
   async (req: AuthRequest, res: Response) => {
     try {
@@ -269,7 +267,7 @@ router.post(
  */
 router.post(
   '/cancellazione-dati/:patientId',
-  authorizeRole('admin'),
+  authenticateToken, authorizeRole('admin'),
   auditLog('cancellazione-dati', 'DELETE', (req) => req.params.patientId),
   async (req: AuthRequest, res: Response) => {
     try {
@@ -321,7 +319,7 @@ router.post(
  */
 router.get(
   '/report-trattamento/:patientId',
-  authorizeRole('admin', 'direttore'),
+  authenticateToken, authorizeRole('admin', 'direttore'),
   auditLog('report-trattamento', 'READ', (req) => req.params.patientId),
   async (req: AuthRequest, res: Response) => {
     try {
@@ -354,7 +352,7 @@ router.get(
 // Invia al paziente un link sicuro per firmare il consenso GDPR
 router.post(
   '/consenso/:patientId/invia-firma',
-  authorizeRole('admin', 'coordinator', 'operatore'),
+  authenticateToken, authorizeRole('admin', 'coordinator', 'operatore'),
   auditLog('consenso', 'CREATE', (req) => req.params.patientId),
   async (req: AuthRequest, res: Response) => {
     try {
