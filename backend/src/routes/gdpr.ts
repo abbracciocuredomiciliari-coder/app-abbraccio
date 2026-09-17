@@ -369,7 +369,10 @@ router.post(
       if (consensoEsistente) return res.status(409).json({ message: 'Esiste già un consenso firmato attivo' });
 
       const token = crypto.randomBytes(32).toString('hex');
-      const user = req.user as { userId: string; email: string };
+      const user = req.user as { userId: string; email?: string };
+      if (!user?.userId || !user?.email) {
+        return res.status(401).json({ message: 'Operatore non autenticato correttamente' });
+      }
 
       const consenso = await ConsensoGDPR.create({
         patientId,
@@ -379,8 +382,8 @@ router.post(
         datiSensibili: { datiSanitari: true, datiEconomici: true, immagini: false },
         comunicazioneTerzi: { mediciSpecialisti: false, struttureSanitarie: false, familiari: false, assicurazioni: false },
         firmatoDa: 'paziente',
-        nomeFirmatario: patient.firstName,
-        cognomeFirmatario: patient.lastName,
+        nomeFirmatario: patient.firstName || '',
+        cognomeFirmatario: patient.lastName || '',
         versioneInformativa: 'v2025.1',
         token,
         dataInvio: new Date(),
@@ -388,10 +391,10 @@ router.post(
         operatoreEmail: user.email,
       });
 
-      const frontendUrl = process.env.FRONTEND_URL || `https://${req.headers.host}`;
+      const frontendUrl = process.env.FRONTEND_URL || 'https://app.abbracciocuredomiciliari.it';
       const link = `${frontendUrl}/firma-consenso?token=${token}`;
 
-      await inviaEmail({
+      const inviata = await inviaEmail({
         to: email.trim(),
         subject: `Richiesta firma consenso GDPR - ${patient.firstName} ${patient.lastName}`,
         html: `<p>Gentile ${patient.firstName} ${patient.lastName},</p>
@@ -400,6 +403,9 @@ router.post(
                <p>Oppure copia e incolla il link: ${link}</p>
                <p>Grazie,<br>Abbraccio Cure Domiciliari</p>`,
       });
+      if (!inviata) {
+        return res.status(503).json({ message: 'Invio email non riuscito. Verificare la configurazione SMTP.' });
+      }
 
       return res.json({ message: 'Email inviata', consensoId: consenso._id, token });
     } catch (error: any) {
