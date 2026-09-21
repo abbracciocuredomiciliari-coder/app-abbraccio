@@ -156,6 +156,7 @@
         <label>Oppure carica le foto dal dispositivo</label>
         <label class="btn-upload"><i class="fas fa-camera"></i> Carica foto<input type="file" id="gallery-file" accept="image/*" multiple></label>
       </div>
+      <p id="galleryMsg" style="font-size:0.85rem;font-weight:600;min-height:1em;margin:4px 0 10px;"></p>
       <div class="list-editor" id="gallery-list"></div>
     </div>
 
@@ -289,11 +290,12 @@
       }
     }
     async function storeFile(file) {
+      storeFile.lastError = '';
       if (sharedMode && sb) {
         const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
         const name = 'img-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
         const { error } = await sb.storage.from('site-images').upload(name, file, { upsert: true, contentType: file.type });
-        if (error) { saveMsg.textContent = 'Errore upload immagine: ' + error.message; return null; }
+        if (error) { storeFile.lastError = error.message; saveMsg.textContent = 'Errore upload immagine: ' + error.message; return null; }
         return sb.storage.from('site-images').getPublicUrl(name).data.publicUrl;
       }
       return await new Promise(res => { const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(file); });
@@ -579,13 +581,21 @@
       }
     });
 
+    function gallerySrc(name) { return /^(data:|https?:)/.test(name) ? name : 'images/' + name; }
+    const galleryMsg = document.getElementById('galleryMsg');
+    function galleryNote(t, err) { galleryMsg.textContent = t; galleryMsg.style.color = err ? '#b42318' : 'var(--green)'; if (t) setTimeout(() => { if (galleryMsg.textContent === t) galleryMsg.textContent = ''; }, 6000); }
+    async function persistGallery() {
+      try { await persistContent(); galleryNote(sharedMode ? 'Galleria pubblicata online.' : 'Salvato su questo dispositivo (accedi con email admin per pubblicare).'); }
+      catch (err) { galleryNote('Errore pubblicazione: ' + (err.message || err), true); }
+    }
+
     function renderGallery() {
       galleryList.innerHTML = '';
       (content.gallery || []).forEach((img, i) => {
-        const isData = img.startsWith('data:');
+        const isUploaded = /^(data:|https?:)/.test(img);
         const el = document.createElement('div');
         el.className = 'list-item';
-        el.innerHTML = `<img class="thumb" src="${isData ? img : 'images/'+img}" onerror="this.style.display='none'" alt=""><div class="name">${isData ? 'Immagine caricata' : img}</div><button data-idx="${i}" class="up">↑</button><button data-idx="${i}" class="down">↓</button><button data-idx="${i}" class="del">×</button>`;
+        el.innerHTML = `<img class="thumb" src="${gallerySrc(img)}" onerror="this.style.display='none'" alt=""><div class="name">${isUploaded ? 'Immagine caricata' : img}</div><button data-idx="${i}" class="up">↑</button><button data-idx="${i}" class="down">↓</button><button data-idx="${i}" class="del">×</button>`;
         galleryList.appendChild(el);
       });
     }
@@ -598,6 +608,7 @@
       if (e.target.classList.contains('del')) g.splice(i,1);
       content.gallery = g;
       renderGallery();
+      persistGallery();
     });
     document.getElementById('gallery-add-filename').addEventListener('click', () => {
       const v = document.getElementById('gallery-filename').value.trim();
@@ -606,17 +617,25 @@
       content.gallery.push(v);
       document.getElementById('gallery-filename').value = '';
       renderGallery();
+      persistGallery();
     });
     document.getElementById('gallery-file').addEventListener('change', async e => {
-      for (const f of Array.from(e.target.files)) {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
+      galleryNote('Caricamento foto in corso...');
+      let ok = 0, fail = 0;
+      for (const f of files) {
         const url = await storeFile(f);
         if (url) {
           if (!content.gallery) content.gallery = [];
           content.gallery.push(url);
-        }
+          ok++;
+        } else fail++;
       }
       e.target.value = '';
       renderGallery();
+      if (fail) galleryNote('Upload fallito' + (storeFile.lastError ? ': ' + storeFile.lastError : '') + ' — verifica il bucket "site-images" su Supabase (storage-setup.sql).', true);
+      else persistGallery();
     });
 
     function renderNews() {

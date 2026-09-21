@@ -157,7 +157,7 @@ function applyEdits() {
         const div = document.createElement('div');
         div.className = 'gallery-item' + (i === 0 ? ' gallery-wide' : '');
         const img = document.createElement('img');
-        img.src = name.startsWith('data:') ? name : 'images/' + name;
+        img.src = /^(data:|https?:)/.test(name) ? name : 'images/' + name;
         img.alt = 'Abbraccio Cure Domiciliari';
         img.loading = 'lazy';
         div.appendChild(img);
