@@ -356,6 +356,7 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
   const riepiloghiPerAsl = useMemo(() => {
     const map = new Map<string, RiepilogoAsl>();
     pianiConvenzione.forEach(wp => {
+      if (!wp.patient?._id) return;
       const aslKey = wp.patient?.siat?.asl || 'ASL non specificata';
       const existing = map.get(aslKey);
       const compenso = wp.compensoTotale || 0;
@@ -365,7 +366,7 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
         existing.totaleTariffe += tariffa;
         existing.totaleCompensoOperatori += compenso;
         existing.numeroPrestazioni += 1;
-        if (!existing.workPlans.slice(0, -1).some(p => p.patient._id === wp.patient._id))
+        if (!existing.workPlans.slice(0, -1).some(p => p.patient?._id === wp.patient._id))
           existing.numeroPazienti += 1;
       } else {
         map.set(aslKey, { asl: aslKey, workPlans: [wp], totaleTariffe: tariffa, totaleCompensoOperatori: compenso, numeroPrestazioni: 1, numeroPazienti: 1 });
@@ -382,6 +383,7 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
   const riepiloghiPerPaziente = useMemo(() => {
     const map = new Map<string, RiepilogoPaziente>();
     pianiPrivati.forEach(wp => {
+      if (!wp.patient?._id) return;
       const patientId = wp.patient._id;
       const existing = map.get(patientId);
       const compensoOp = wp.compensoTotale || 0;
@@ -720,7 +722,7 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
                                 <td style={{ padding: '10px 8px' }}>{formatData(wp.date)}</td>
                                 <td style={{ padding: '10px 8px', fontWeight: 600 }}>{wp.patient.firstName} {wp.patient.lastName}</td>
                                 <td style={{ padding: '10px 8px' }}>{wp.task}</td>
-                                <td style={{ padding: '10px 8px' }}>{wp.staff.firstName} {wp.staff.lastName}</td>
+                                <td style={{ padding: '10px 8px' }}>{wp.staff ? `${wp.staff.firstName} ${wp.staff.lastName}` : '—'}</td>
                                 <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 700, color: '#0369a1' }}>{formatEuro(wp.tariffaAsl || 0)}</td>
                                 <td style={{ padding: '10px 8px', textAlign: 'right', color: '#7c3aed' }}>{formatEuro(wp.compensoTotale || 0)}</td>
                               </tr>
@@ -1008,7 +1010,7 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
                             <tr key={wp._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                               <td style={{ padding: '10px 8px' }}>{formatData(wp.date)}</td>
                               <td style={{ padding: '10px 8px' }}>{wp.task}</td>
-                              <td style={{ padding: '10px 8px' }}>{wp.staff.firstName} {wp.staff.lastName}</td>
+                              <td style={{ padding: '10px 8px' }}>{wp.staff ? `${wp.staff.firstName} ${wp.staff.lastName}` : '—'}</td>
                               <td style={{ padding: '10px 8px', textAlign: 'right', color: '#7c3aed' }}>{formatEuro(compenso)}</td>
                               <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 600, color: '#166534' }}>{formatEuro(costo)}</td>
                               <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 700, color: utile >= 0 ? '#059669' : '#dc2626' }}>{formatEuro(utile)}</td>
@@ -1133,7 +1135,7 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', borderRadius: '8px', border: `1px solid ${preventivoTipo === 'orario' ? '#1e4d8c' : '#e2e8f0'}`, cursor: 'pointer' }}>
                     <input type="radio" name="preventivoTipo" value="orario" checked={preventivoTipo === 'orario'} onChange={() => setPreventivoTipo('orario')} />
-                    <span style={{ fontSize: '0.875rem' }}>Compenso orario: {oreTotaliSettimana(preventivoModalWp)}h × {formatEuro(calcolaTariffaOraria(preventivoModalWp))}/h = {formatEuro(oreTotaliSettimana(preventivoModalWp) * calcolaTariffaOraria(preventivoModalWp))}</span>
+                    <span style={{ fontSize: '0.875rem' }}>Compenso orario: {Math.round(oreTotaliPeriodo(preventivoModalWp) * 100) / 100}h nel periodo × {formatEuro(calcolaTariffaOraria(preventivoModalWp))}/h = {formatEuro(oreTotaliPeriodo(preventivoModalWp) * calcolaTariffaOraria(preventivoModalWp))}</span>
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', borderRadius: '8px', border: `1px solid ${preventivoTipo === 'giornaliero' ? '#1e4d8c' : '#e2e8f0'}`, cursor: 'pointer' }}>
                     <input type="radio" name="preventivoTipo" value="giornaliero" checked={preventivoTipo === 'giornaliero'} onChange={() => setPreventivoTipo('giornaliero')} />
