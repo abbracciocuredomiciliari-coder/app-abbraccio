@@ -4,6 +4,16 @@ function initNav() {
   if (hamburger && nav) {
     hamburger.addEventListener('click', () => {
       nav.classList.toggle('open');
+      hamburger.classList.toggle('active');
+      document.body.classList.toggle('menu-open', nav.classList.contains('open'));
+    });
+    // chiudi il menu quando si clicca una voce
+    nav.querySelectorAll('a:not(.dropdown-toggle)').forEach(a => {
+      a.addEventListener('click', () => {
+        nav.classList.remove('open');
+        hamburger.classList.remove('active');
+        document.body.classList.remove('menu-open');
+      });
     });
   }
 

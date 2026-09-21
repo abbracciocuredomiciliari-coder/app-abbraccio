@@ -9,6 +9,30 @@ Promise.all([
   }).then(r => r.json()).then(d => (d && d[0] && d[0].content_value) ? JSON.parse(d[0].content_value) : null).catch(() => null)
 ]).then(([d, remote]) => { defaultsData = d; remoteContent = remote; applyEdits(); });
 
+// WhatsApp flottante + barra azioni mobile (presenti su tutte le pagine)
+(function injectCta() {
+  if (!document.getElementById('waFloat')) {
+    const wa = document.createElement('a');
+    wa.id = 'waFloat';
+    wa.className = 'whatsapp-float';
+    wa.href = 'https://wa.me/393514175117';
+    wa.target = '_blank';
+    wa.rel = 'noopener';
+    wa.setAttribute('aria-label', 'WhatsApp');
+    wa.innerHTML = '<i class="fab fa-whatsapp"></i>';
+    document.body.appendChild(wa);
+  }
+  if (!document.getElementById('ctaBar')) {
+    const bar = document.createElement('div');
+    bar.id = 'ctaBar';
+    bar.className = 'mobile-cta-bar';
+    bar.innerHTML = '<a id="ctaCall" href="tel:0601905242"><i class="fas fa-phone"></i>Chiama</a>' +
+      '<a id="ctaWa" class="cta-wa" href="https://wa.me/393514175117" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i>WhatsApp</a>' +
+      '<a class="cta-req" href="https://app.abbracciocuredomiciliari.it/richiesta-assistenza"><i class="fas fa-paper-plane"></i>Richiedi</a>';
+    document.body.appendChild(bar);
+  }
+})();
+
 function deepMerge(base, over) {
   const r = JSON.parse(JSON.stringify(base));
   if (!over || typeof over !== 'object') return r;
@@ -53,8 +77,19 @@ function applyEdits() {
     if (g.whatsapp && wa) wa.parentNode.innerHTML = `<i class="fab fa-whatsapp"></i> ${g.whatsapp}`;
     const email = document.querySelector('.footer .fa-envelope');
     if (g.email && email) email.parentNode.innerHTML = `<i class="fas fa-envelope"></i> ${g.email}`;
+    if (g.email) document.querySelectorAll('a[href^="mailto:"]').forEach(a => a.href = 'mailto:' + g.email);
     const addr = document.querySelector('.footer .fa-map-marker-alt');
     if (g.address && addr) addr.parentNode.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${g.address}`;
+    const waNum = (g.whatsappNumber || '').replace(/\D/g, '');
+    if (waNum) document.querySelectorAll('a[href*="wa.me/"]').forEach(a => a.href = 'https://wa.me/' + waNum);
+    if (g.address) {
+      const map = document.getElementById('sedeMap');
+      if (map) map.src = 'https://maps.google.com/maps?q=' + encodeURIComponent(g.address) + '&z=14&output=embed';
+      const sa = document.getElementById('sedeAddr');
+      if (sa) sa.textContent = g.address;
+      const addrLink = document.querySelector('.footer-contacts a[href*="maps.google"]');
+      if (addrLink) addrLink.href = 'https://maps.google.com/?q=' + encodeURIComponent(g.address);
+    }
 
     // pages
     const p = (c.pages || {})[key];

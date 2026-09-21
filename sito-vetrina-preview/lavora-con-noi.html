@@ -115,23 +115,14 @@
       <div class="jobs-page-inner">
         <div class="jobs-form-box">
           <h1>Lavora con Noi</h1>
-          <p>Sei un operatore con esperienza nel settore socio-sanitario? Unisciti al team Abbraccio.</p>
-          <div class="filters">
-            <label>
-              CHE POSIZIONE STAI CERCANDO?
-              <select id="jobRole"><option>- TUTTE LE POSIZIONI -</option><option>Infermiere</option><option>OSS</option><option>Fisioterapista</option><option>Badante</option></select>
-            </label>
-            <label>
-              IN QUALE ZONA?
-              <select id="jobZone"><option>- TUTTE LE ZONE -</option><option>Roma</option><option>Provincia</option><option>Altre province</option></select>
-            </label>
-            <button class="btn btn-primary" id="jobSearch"><i class="fas fa-search"></i> CERCA</button>
-          </div>
-          
-          <a href="https://app.abbracciocuredomiciliari.it/register" class="btn btn-primary" style="margin-top:16px;"><i class="fas fa-user-plus"></i> Registrati come operatore</a>
+          <p>Sei un operatore sanitario o assistenziale? Registrati sul nostro gestionale: ti ricontattiamo per attivarti nella tua zona.</p>
+          <a href="https://app.abbracciocuredomiciliari.it/register" class="btn btn-primary" style="font-size:1.05rem;padding:14px 26px;"><i class="fas fa-user-plus"></i> Registrati come operatore</a>
+          <div class="sede-addr"><i class="fas fa-map-marker-alt"></i> <span id="sedeAddr">Via di S. Maria Ausiliatrice n° 4/B, 00181 Roma</span></div>
         </div>
         <div class="jobs-image">
-          <img src="images/oss.jpg" alt="Operatore con paziente">
+          <div class="sede-map">
+            <iframe id="sedeMap" src="https://maps.google.com/maps?q=Via%20di%20S.%20Maria%20Ausiliatrice%204%2FB%2C%2000181%20Roma&z=14&output=embed" loading="lazy" title="Sede Abbraccio - Roma"></iframe>
+          </div>
         </div>
       </div>
     </div>
@@ -153,12 +144,5 @@
   </footer>
 
   <script src="script.js"></script>
-  <script>
-    document.getElementById('jobSearch').addEventListener('click', () => {
-      const r = document.getElementById('jobRole').value;
-      const z = document.getElementById('jobZone').value;
-      document.getElementById('jobMsg').textContent = `Filtrate posizioni per: ${r} in ${z}`;
-    });
-  </script>
 </body>
 </html>
