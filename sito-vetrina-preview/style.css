@@ -42,8 +42,8 @@ a { text-decoration: none; color: inherit; }
 .header { background: var(--white); box-shadow: var(--shadow); position: sticky; top: 0; z-index: 100; }
 .header-inner { display: flex; justify-content: space-between; align-items: center; height: 80px; }
 .logo { display: flex; align-items: center; gap: 10px; }
-.logo img { height: 50px; }
-.logo-text { display: flex; flex-direction: column; line-height: 1.1; }
+.logo img { height: 62px; }
+.logo-text { display: none; }
 .logo-text strong { color: var(--blue); font-size: 1.3rem; }
 .logo-text span { color: var(--text-light); font-size: 0.75rem; font-weight: 600; }
 
