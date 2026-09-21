@@ -134,11 +134,11 @@ function applyEdits() {
     if (c.news && c.news.length) {
       const list = document.getElementById('newsList');
       if (list) {
-        list.innerHTML = c.news.map(n => `<div class="news-card"><h3>${n.title || ''}</h3><small>${n.date || ''} ${n.category ? '- '+n.category : ''}</small><p>${n.body || ''}</p></div>`).join('');
+        list.innerHTML = c.news.map(n => `<div class="news-card">${n.image ? `<div class="news-img" style="background-image:url('${n.image}')"></div>` : ''}<h3>${n.title || ''}</h3><small>${n.date || ''} ${n.category ? '- '+n.category : ''}</small><p>${n.body || ''}</p></div>`).join('');
       }
       const blog = document.querySelector('.blog-grid');
       if (blog) {
-        blog.innerHTML = c.news.slice(0,3).map(n => `<article class="blog-card"><div class="blog-img" style="background:#c9a227;"></div><div class="blog-body"><span class="blog-cat">${n.category || 'News'}</span><h3>${n.title || ''}</h3><p>${n.body ? n.body.slice(0,120) : ''}</p></div></article>`).join('');
+        blog.innerHTML = c.news.slice(0,3).map(n => `<article class="blog-card"><div class="blog-img" style="${n.image ? `background-image:url('${n.image}');background-size:cover;background-position:center;` : 'background:#c9a227;'}"></div><div class="blog-body"><span class="blog-cat">${n.category || 'News'}</span><h3>${n.title || ''}</h3><p>${n.body ? n.body.slice(0,120) : ''}</p></div></article>`).join('');
       }
     }
 
