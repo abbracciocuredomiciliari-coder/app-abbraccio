@@ -158,6 +158,23 @@
     </div>
   </section>
 
+  <!-- Shop promo -->
+  <section class="shop-promo" id="shop">
+    <div class="container">
+      <div class="shop-promo-inner">
+        <div class="shop-promo-text">
+          <span class="shop-badge">Novità</span>
+          <h2>Shop Ausili e Prodotti</h2>
+          <p>Scopri una vasta selezione di ausili, accessori e prodotti specializzati per anziani, malati e disabili. Accedi al nostro nuovo shop online e trova le soluzioni migliori per le tue esigenze.</p>
+          <a href="shop.html" class="btn btn-primary"><i class="fas fa-store"></i> Visita shop</a>
+        </div>
+        <div class="shop-promo-img">
+          <img src="images/telemedicina.png" alt="Shop ausili e prodotti sanitari" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Why us -->
   <section class="why-us" id="chi-siamo">
     <div class="container">
@@ -168,7 +185,35 @@
       <div class="why-grid">
         <div class="why-card">
           <div class="why-icon"><i class="fas fa-headset"></i></div>
-          <h3>Reperibilità telefonica H24</h3>
+       Recensioni -->
+  <section class="reviews" id="recensioni">
+    <div class="container">
+      <div class="section-header center">
+        <span class="eyebrow">Dicono di noi</span>
+        <h2>Le recensioni dei nostri assistiti</h2>
+        <p>Ogni giorno le persone che ci accordano fiducia ci raccontano come i nostri servizi le hanno aiutate</p>
+      </div>
+      <div id="reviewsList" class="reviews-grid"></div>
+      <div class="reviews-cta">
+        <button type="button" class="btn btn-primary" id="reviewOpenBtn"><i class="fas fa-pen"></i> Scrivi una recensione</button>
+      </div>
+      <form id="reviewForm" class="review-form hidden">
+        <label for="reviewNome">Il tuo nome</label>
+        <input type="text" id="reviewNome" maxlength="60" placeholder="Es. Marina - Roma" required>
+        <label>Valutazione</label>
+        <div class="review-stars-input" id="reviewStars">
+          <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+        </div>
+        <label for="reviewTesto">La tua esperienza</label>
+        <textarea id="reviewTesto" rows="4" maxlength="600" placeholder="Racconta come ti abbiamo aiutato..." required></textarea>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Invia recensione</button>
+        <p class="review-msg" id="reviewMsg"></p>
+        <p style="font-size:0.78rem;color:var(--text-light);margin-top:10px;">La recensione sarà pubblicata dopo l'approvazione del nostro staff.</p>
+      </form>
+    </div>
+  </section>
+
+  <!--    <h3>Reperibilità telefonica H24</h3>
           <p>I nostri centri sono reperibili 24 ore su 24, anche sabato, domenica e nei giorni di festa.</p>
         </div>
         <div class="why-card">

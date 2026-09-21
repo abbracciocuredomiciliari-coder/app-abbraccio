@@ -78,6 +78,7 @@
       <button data-tab="services"><i class="fas fa-briefcase-medical"></i> Servizi & Esami</button>
       <button data-tab="gallery"><i class="fas fa-images"></i> Galleria</button>
       <button data-tab="news"><i class="fas fa-newspaper"></i> News</button>
+      <button data-tab="reviews"><i class="fas fa-star"></i> Recensioni</button>
       <button data-tab="free"><i class="fas fa-edit"></i> Modifica libera</button>
     </div>
 
@@ -186,6 +187,13 @@
         <img class="img-preview" id="news-image-preview" src="" onerror="this.style.display='none'" alt="">
       </div>
       <button class="btn btn-primary" id="news-add"><i class="fas fa-plus"></i> Aggiungi news</button>
+    </div>
+
+    <div class="tab-content" id="tab-reviews">
+      <p style="font-size:0.9rem;">Le recensioni inviate dal sito restano <strong>in attesa</strong> finché non le approvi. Solo quelle approvate sono visibili online.</p>
+      <div id="reviews-pending"></div>
+      <h3 style="margin-top:24px;">Recensioni pubblicate</h3>
+      <div id="reviews-approved" class="list-editor"></div>
     </div>
 
     <div class="tab-content" id="tab-free">
@@ -368,6 +376,7 @@
         renderServices();
         renderGallery();
         renderNews();
+        renderReviews();
         renderFreeList();
       } catch (err) {
         console.error(err);
@@ -698,6 +707,57 @@
         } catch (ex) { alert('JSON non valido'); }
       };
       r.readAsText(f);
+    });
+
+    // ===== RECENSIONI (approvazione da Area Riservata) =====
+    const reviewsPending = document.getElementById('reviews-pending');
+    const reviewsApproved = document.getElementById('reviews-approved');
+    function escHtml(s) { return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+    function reviewStarsRow(n) { let o = ''; for (let i = 0; i < 5; i++) o += i < n ? '★' : '☆'; return o; }
+
+    async function renderReviews() {
+      if (!sharedMode || !sb) {
+        reviewsPending.innerHTML = '<p style="color:var(--text-light);font-size:0.85rem;">Accedi con l\'account admin per gestire le recensioni.</p>';
+        reviewsApproved.innerHTML = '';
+        return;
+      }
+      const { data, error } = await sb.from('site_reviews').select('*').order('created_at', { ascending: false });
+      if (error) {
+        reviewsPending.innerHTML = '<p style="color:#b42318;font-size:0.85rem;">Tabella recensioni non trovata: esegui <strong>recensioni-setup.sql</strong> nel SQL Editor di Supabase.</p>';
+        reviewsApproved.innerHTML = '';
+        return;
+      }
+      const pending = (data || []).filter(r => !r.approved);
+      const approved = (data || []).filter(r => r.approved);
+      reviewsPending.innerHTML = '<h3 style="display:flex;align-items:center;gap:8px;">In attesa di approvazione <span style="background:#fef3c7;color:#92400e;border-radius:20px;padding:2px 10px;font-size:0.8rem;">' + pending.length + '</span></h3>';
+      if (!pending.length) reviewsPending.innerHTML += '<p style="color:var(--text-light);font-size:0.85rem;">Nessuna recensione in attesa.</p>';
+      const pendList = document.createElement('div');
+      pendList.className = 'list-editor';
+      pending.forEach(r => pendList.appendChild(reviewItem(r, true)));
+      reviewsPending.appendChild(pendList);
+      reviewsApproved.innerHTML = approved.length ? '' : '<p style="color:var(--text-light);font-size:0.85rem;">Nessuna recensione pubblicata.</p>';
+      approved.forEach(r => reviewsApproved.appendChild(reviewItem(r, false)));
+    }
+
+    function reviewItem(r, isPending) {
+      const el = document.createElement('div');
+      el.className = 'list-item';
+      el.innerHTML = `<div class="name"><strong>${escHtml(r.nome)}</strong> <span style="color:#f5b301;">${reviewStarsRow(r.rating)}</span><br><small>${escHtml(r.testo)}</small></div>` +
+        (isPending ? `<button type="button" class="rev-approve" data-id="${r.id}" style="color:#166534;font-weight:700;white-space:nowrap;">✓ Approva</button>` : '') +
+        `<button type="button" class="rev-del" data-id="${r.id}" style="color:#b91c1c;">×</button>`;
+      return el;
+    }
+
+    document.getElementById('tab-reviews').addEventListener('click', async e => {
+      const ap = e.target.closest('.rev-approve');
+      const del = e.target.closest('.rev-del');
+      if (ap) {
+        await sb.from('site_reviews').update({ approved: true }).eq('id', ap.dataset.id);
+        renderReviews();
+      } else if (del && confirm('Eliminare definitivamente questa recensione?')) {
+        await sb.from('site_reviews').delete().eq('id', del.dataset.id);
+        renderReviews();
+      }
     });
 
     // ===== MODIFICA LIBERA (click-to-edit su qualsiasi elemento) =====

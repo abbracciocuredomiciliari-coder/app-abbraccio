@@ -178,3 +178,65 @@ function applyEdits() {
   } catch (err) {}
 }
 applyEdits();
+
+// ===== Recensioni pubbliche (approvate dall'admin) =====
+(function initReviews() {
+  const list = document.getElementById('reviewsList');
+  if (!list) return;
+  const form = document.getElementById('reviewForm');
+  const openBtn = document.getElementById('reviewOpenBtn');
+  const msg = document.getElementById('reviewMsg');
+  const starsBox = document.getElementById('reviewStars');
+  let rating = 5;
+
+  function esc(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  function starRow(n) {
+    let out = '';
+    for (let i = 0; i < 5; i++) out += i < n ? '★' : '<span style="opacity:.25">★</span>';
+    return out;
+  }
+  function paintStars() {
+    if (!starsBox) return;
+    starsBox.querySelectorAll('i').forEach((s, i) => { s.style.opacity = i < rating ? '1' : '.25'; });
+  }
+
+  fetch(SB_URL + '/rest/v1/site_reviews?approved=eq.true&order=created_at.desc&limit=12&select=nome,testo,rating', {
+    headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY }
+  }).then(r => r.ok ? r.json() : []).then(rows => {
+    if (!rows || !rows.length) {
+      list.innerHTML = '<div class="reviews-empty">Nessuna recensione ancora: racconta tu per primo la tua esperienza.</div>';
+      return;
+    }
+    list.innerHTML = rows.map(r =>
+      `<div class="review-card"><div class="review-stars">${starRow(r.rating)}</div><h4>${esc(r.nome)}</h4><p>${esc(r.testo)}</p></div>`
+    ).join('');
+  }).catch(() => { list.innerHTML = ''; });
+
+  if (openBtn && form) openBtn.addEventListener('click', () => form.classList.toggle('hidden'));
+  if (starsBox) {
+    starsBox.querySelectorAll('i').forEach((s, i) => s.addEventListener('click', () => { rating = i + 1; paintStars(); }));
+    paintStars();
+  }
+  if (form) form.addEventListener('submit', e => {
+    e.preventDefault();
+    const nome = document.getElementById('reviewNome').value.trim();
+    const testo = document.getElementById('reviewTesto').value.trim();
+    if (!nome || !testo) { msg.textContent = 'Compila nome e recensione.'; msg.style.color = '#b42318'; return; }
+    msg.textContent = 'Invio in corso...'; msg.style.color = 'var(--text-light)';
+    fetch(SB_URL + '/rest/v1/site_reviews', {
+      method: 'POST',
+      headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ nome: nome, testo: testo, rating: rating })
+    }).then(r => {
+      if (!r.ok) throw new Error('insert failed');
+      msg.textContent = 'Grazie! La recensione sarà visibile dopo l\'approvazione.';
+      msg.style.color = 'var(--green)';
+      form.reset(); rating = 5; paintStars();
+    }).catch(() => {
+      msg.textContent = 'Errore durante l\'invio. Riprova più tardi.';
+      msg.style.color = '#b42318';
+    });
+  });
+})();
