@@ -41,6 +41,7 @@ export interface IWorkPlan extends Document {
   compensoPagato?: boolean;
   // Costo prestazione al paziente (ricavo admin) - solo pazienti PRIVATI
   costoPrestazione?: number;
+  costoOrario?: number; // costo paziente €/h per piani assistenziali a compenso orario
   // Tariffa da fatturare all'ASL - solo pazienti in CONVENZIONE
   tariffaAsl?: number;
   // Nuove macro-categorie e fabbisogni (formato semplificato admin)
@@ -99,6 +100,7 @@ const workPlanSchema = new Schema<IWorkPlan>(
     compensoTotale: { type: Number, default: 0 },
     compensoPagato: { type: Boolean, default: false },
     costoPrestazione: { type: Number, default: 0 },
+    costoOrario: { type: Number, default: 0 },
     tariffaAsl: { type: Number, default: 0 },
     macroCategorie: [{ type: String, enum: ['infermieristico', 'riabilitativo', 'medico_specialistiche'] }],
     fabbisogni: {

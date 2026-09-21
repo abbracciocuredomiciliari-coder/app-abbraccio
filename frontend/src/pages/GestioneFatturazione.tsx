@@ -443,6 +443,22 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
   const oreGiorno = (g: GiornoSettimana) => Math.round((g.accessiAlGiorno || 0) * ((g.minutiPerAccesso || 60) / 60) * 2) / 2;
   const oreTotaliSettimana = (wp: WorkPlanItem) => (wp.giorniSettimana || []).reduce((acc, g) => acc + oreGiorno(g), 0);
 
+  // Occorrenze di un giorno della settimana nell'intero periodo del piano (date → dataFine)
+  const contaOccorrenzeGiorno = (wp: WorkPlanItem, giorno: number) => {
+    if (!wp.date) return 0;
+    const start = new Date(wp.date); start.setHours(0, 0, 0, 0);
+    const end = wp.dataFine ? new Date(wp.dataFine) : new Date(start.getTime() + 6 * 86400000);
+    end.setHours(0, 0, 0, 0);
+    if (end < start) return 0;
+    let count = 0;
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      if (d.getDay() === giorno) count++;
+    }
+    return count;
+  };
+  // Ore totali del piano su tutto il periodo (non solo una settimana)
+  const oreTotaliPeriodo = (wp: WorkPlanItem) => (wp.giorniSettimana || []).reduce((acc, g) => acc + oreGiorno(g) * contaOccorrenzeGiorno(wp, g.giorno), 0);
+
   const calcolaTariffaOraria = (wp: WorkPlanItem) => {
     if ((wp.tipoCompenso === 'orario' || wp.tipoCompenso === 'nessuno') && (wp.tariffa || 0) > 0) return wp.tariffa!;
     const durataOre = (wp.duration || 60) / 60;
@@ -486,22 +502,25 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
           setPreventivoLoading(false);
           return;
         }
-        prestazioni = giorni.map(g => ({
-          descrizione: `${wp.task} — ${GIORNI_LABEL[g.giorno] || ''} ${oreGiorno(g)}h`,
-          quantita: oreGiorno(g),
-          prezzoUnitario: tariffaOraria,
-        }));
+        prestazioni = giorni.map(g => {
+          const occ = contaOccorrenzeGiorno(wp, g.giorno);
+          return {
+            descrizione: `${wp.task} — ${GIORNI_LABEL[g.giorno] || ''} ${oreGiorno(g)}h × ${occ} accessi`,
+            quantita: Math.round(oreGiorno(g) * occ * 100) / 100,
+            prezzoUnitario: tariffaOraria,
+          };
+        });
       } else {
-        // compenso orario singolo con totale ore
-        const totale = oreTotaliSettimana(wp);
+        // compenso orario singolo con totale ore su tutto il periodo
+        const totale = oreTotaliPeriodo(wp);
         if (totale <= 0) {
-          setPreventivoError('Nessuna ora settimanale configurata.');
+          setPreventivoError('Nessuna ora configurata nel periodo.');
           setPreventivoLoading(false);
           return;
         }
         prestazioni = [{
-          descrizione: `${wp.task} — compenso orario`,
-          quantita: totale,
+          descrizione: `${wp.task} — ${Math.round(totale * 100) / 100}h nel periodo`,
+          quantita: Math.round(totale * 100) / 100,
           prezzoUnitario: tariffaOraria,
         }];
       }

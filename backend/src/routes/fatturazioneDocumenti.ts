@@ -131,7 +131,12 @@ router.post('/:id/converti-in-fattura', authenticateToken, authorizeRole(...RUOL
       patient: preventivo.patient,
       riferimentoTipo: preventivo.riferimentoTipo,
       riferimentoId: preventivo.riferimentoId,
-      prestazioni: preventivo.prestazioni,
+      prestazioni: [{
+        descrizione: `${preventivo.prestazioni[0]?.descrizione || 'Prestazioni'} (rif. preventivo ${preventivo.numero})`,
+        quantita: 1,
+        prezzoUnitario: preventivo.totale,
+        importo: preventivo.totale,
+      }],
       totale: preventivo.totale,
       data: new Date(),
       dataPrestazione: preventivo.dataPrestazione,

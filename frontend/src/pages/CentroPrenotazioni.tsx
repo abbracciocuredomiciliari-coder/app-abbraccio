@@ -7,6 +7,19 @@ import { Syringe, HeartPulse, ClipboardList, Plus, X, ChevronLeft, ChevronRight,
 function getDaysInMonth(y: number, m: number) { return new Date(y, m + 1, 0).getDate(); }
 function getFirstDayOfMonth(y: number, m: number) { const d = new Date(y, m, 1).getDay(); return d === 0 ? 6 : d - 1; }
 function toISO(d: Date) { return d.toISOString().split('T')[0]; }
+// Conta le occorrenze dei giorni della settimana selezionati nell'intervallo [inizio, fine]
+function contaOccorrenzeGiorni(inizio: string, fine: string, giorni: { giorno: number; attivo: boolean }[]) {
+    const attivi = new Set(giorni.filter(g => g.attivo).map(g => g.giorno));
+    if (attivi.size === 0 || !inizio) return 0;
+    const start = new Date(`${inizio}T00:00:00`);
+    const end = fine ? new Date(`${fine}T00:00:00`) : new Date(start.getTime() + 6 * 86400000);
+    if (end < start) return 0;
+    let count = 0;
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        if (attivi.has(d.getDay())) count++;
+    }
+    return count;
+}
 const MESI = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
 const GIORNI_SETT = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 const TIPI_PRELIEVO = ['Emocromo completo', 'Glicemia', 'Coagulazione (PT/INR/aPTT)', 'Elettroliti', 'Funzionalità epatica', 'Funzionalità renale', 'Profilo lipidico', 'Ormoni tiroidei (TSH/fT4)', 'PCR / VES', 'Esame urine', 'Emogasanalisi', 'Altro'];
@@ -174,6 +187,7 @@ interface Piano {
     tariffa?: number;
     compensoTotale?: number;
     costoPrestazione?: number;
+    costoOrario?: number;
     giorniSettimana?: any[];
     macroCategorie?: string[];
     fabbisogni?: Record<string, string[]>;
@@ -430,17 +444,18 @@ export default function CentroPrenotazioni() {
     catch { /***/ } };
     const resetFPiano = () => { setFpTipo('prestazionale'); setFpTask(''); setFpDate(''); setFpFine(''); setFpTime(''); setFpDur(60); setFpOre(1); setFpPaz(''); setFpStaff(''); setFpCats([]); setFpNotes(''); setFpCompenso('nessuno'); setFpTariffa(0); setFpCostoOrario(0); setFpCosto(0); setFpTariffarioSel(''); setFpGiorni(GIORNI_DEFAULT.map(g => ({ ...g }))); setFpMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false }); setFpFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] }); setFpStaffPerCat({ infermieristico: '', riabilitativo: '', medico_specialistiche: '' }); };
 
+    // Occorrenze dei giorni selezionati nell'intero periodo (data inizio → data fine)
+    const occorrenzePiano = useMemo(() => contaOccorrenzeGiorni(fpDate, fpFine, fpGiorni), [fpDate, fpFine, fpGiorni]);
+
     useEffect(() => {
         if (fpTipo === 'assistenziale' && fpCompenso === 'orario') {
-            const giorniAttivi = fpGiorni.filter(g => g.attivo).length;
-            const oreTotali = fpOre * giorniAttivi;
+            const oreTotali = fpOre * occorrenzePiano;
             setFpCosto(Math.round(oreTotali * fpCostoOrario * 100) / 100);
         }
-    }, [fpTipo, fpCompenso, fpOre, fpGiorni, fpCostoOrario]);
+    }, [fpTipo, fpCompenso, fpOre, occorrenzePiano, fpCostoOrario]);
 
     // Rigenera (o crea) il preventivo collegato a un piano
-    const rigeneraPreventivoDoc = async (planId: string, patientId: string, task: string, costo: number, dataPrestazione?: string) => {
-        const prestazioni = [{ descrizione: task, quantita: 1, prezzoUnitario: costo }];
+    const rigeneraPreventivoDoc = async (planId: string, patientId: string, prestazioni: { descrizione: string; quantita: number; prezzoUnitario: number }[], dataPrestazione?: string) => {
         const r = await api.get('/fatturazione-documenti', { params: { tipo: 'preventivo' } });
         const esistente = (r.data || []).find((d: any) => d.riferimentoTipo === 'workplan' && String(d.riferimentoId) === String(planId) && d.stato === 'emesso');
         if (esistente) {
@@ -453,7 +468,15 @@ export default function CentroPrenotazioni() {
         if (!dettaglioPiano) return;
         setRigenerandoDoc(true);
         try {
-            await rigeneraPreventivoDoc(dettaglioPiano._id, dettaglioPiano.patient?._id, dettaglioPiano.task, dettaglioPiano.costoPrestazione || 0, dettaglioPiano.date);
+            const w = dettaglioPiano;
+            let prestazioniDoc = [{ descrizione: w.task, quantita: 1, prezzoUnitario: w.costoPrestazione || 0 }];
+            if ((w.costoOrario || 0) > 0 && (w.giorniSettimana || []).length > 0) {
+                const giorniAtt = (w.giorniSettimana || []).map((g: any) => ({ giorno: g.giorno, attivo: true }));
+                const occ = contaOccorrenzeGiorni(String(w.date).slice(0, 10), w.dataFine ? String(w.dataFine).slice(0, 10) : '', giorniAtt);
+                const oreTot = Math.round(((w.duration || 60) / 60) * occ * 100) / 100;
+                if (oreTot > 0) prestazioniDoc = [{ descrizione: w.task, quantita: oreTot, prezzoUnitario: w.costoOrario! }];
+            }
+            await rigeneraPreventivoDoc(w._id, w.patient?._id, prestazioniDoc, w.date);
             setOkPiano('✅ Preventivo rigenerato con i dati aggiornati!');
             setTimeout(() => setOkPiano(''), 4000);
         } catch (err: any) {
@@ -476,7 +499,7 @@ export default function CentroPrenotazioni() {
         setFpNotes(w.notes || '');
         setFpCompenso((w.tipoCompenso as any) || 'nessuno');
         setFpTariffa(w.tariffa || 0);
-        setFpCostoOrario(0);
+        setFpCostoOrario(w.costoOrario || 0);
         setFpCosto(w.costoPrestazione || 0);
         setFpTariffarioSel('');
         setFpGiorni(GIORNI_DEFAULT.map(g => {
@@ -548,7 +571,7 @@ export default function CentroPrenotazioni() {
                 const planId = editingPiano ? editingPiano._id : (await api.post('/workplan', payload)).data._id;
                 if (editingPiano) await api.patch(`/workplan/${editingPiano._id}`, payload);
                 try {
-                    await rigeneraPreventivoDoc(planId, fpPaz, fpTask, fpCosto, fpDate);
+                    await rigeneraPreventivoDoc(planId, fpPaz, [{ descrizione: fpTask, quantita: 1, prezzoUnitario: fpCosto }], fpDate);
                 } catch (e: any) { /* preventivo non bloccante */ }
                 await loadPiani();
                 resetFPiano();
@@ -569,11 +592,16 @@ export default function CentroPrenotazioni() {
             setSavingPiano(true);
             try {
                 const giorniAttivi = fpGiorni.filter(g => g.attivo).map(g => ({ giorno: g.giorno, accessiAlGiorno: g.accessiAlGiorno, minutiPerAccesso: g.minutiPerAccesso }));
-                const payload = { type: fpTipo, categories: fpCats, patient: fpPaz, staff: fpStaff || undefined, task: fpTask, date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpOre * 60, notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined, tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0 };
+                const isOrario = fpCompenso === 'orario' && fpCostoOrario > 0;
+                const oreTotaliPeriodo = Math.round(fpOre * occorrenzePiano * 100) / 100;
+                const payload = { type: fpTipo, categories: fpCats, patient: fpPaz, staff: fpStaff || undefined, task: fpTask, date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpOre * 60, notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined, tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0, costoOrario: isOrario ? fpCostoOrario : 0 };
                 const planId = editingPiano ? editingPiano._id : (await api.post('/workplan', payload)).data._id;
                 if (editingPiano) await api.patch(`/workplan/${editingPiano._id}`, payload);
                 try {
-                    await rigeneraPreventivoDoc(planId, fpPaz, fpTask, fpCosto, fpDate);
+                    const prestazioniDoc = isOrario && oreTotaliPeriodo > 0
+                        ? [{ descrizione: fpTask, quantita: oreTotaliPeriodo, prezzoUnitario: fpCostoOrario }]
+                        : [{ descrizione: fpTask, quantita: 1, prezzoUnitario: fpCosto }];
+                    await rigeneraPreventivoDoc(planId, fpPaz, prestazioniDoc, fpDate);
                 } catch (e: any) { /* preventivo non bloccante */ }
                 await loadPiani();
                 resetFPiano();
@@ -1131,7 +1159,7 @@ export default function CentroPrenotazioni() {
                     </label>
                     <label className="tw-font-semibold tw-text-sm">Totale costo paziente (€)
                       <input className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-slate-100 tw-shadow-sm" type="number" min={0} step={0.01} value={fpCosto} readOnly placeholder="0.00"/>
-                      <span className="tw-text-xs tw-text-slate-400 tw-font-normal">{fpOre}h × {fpGiorni.filter(g => g.attivo).length} giorni × €{fpCostoOrario.toFixed(2)}/h</span>
+                      <span className="tw-text-xs tw-text-slate-400 tw-font-normal">{fpOre}h × {occorrenzePiano} accessi nel periodo × €{fpCostoOrario.toFixed(2)}/h</span>
                     </label>
                   </div>
                 ) : (
