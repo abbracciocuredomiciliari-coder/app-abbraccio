@@ -65,6 +65,7 @@
       <button data-tab="pages"><i class="fas fa-file-alt"></i> Pagine</button>
       <button data-tab="gallery"><i class="fas fa-images"></i> Galleria</button>
       <button data-tab="news"><i class="fas fa-newspaper"></i> News</button>
+      <button data-tab="free"><i class="fas fa-edit"></i> Modifica libera</button>
     </div>
 
     <div class="tab-content active" id="tab-general">
@@ -160,6 +161,34 @@
         <input type="file" id="news-image-file" accept="image/*" style="margin-top:8px;">
       </div>
       <button class="btn btn-primary" id="news-add"><i class="fas fa-plus"></i> Aggiungi news</button>
+    </div>
+
+    <div class="tab-content" id="tab-free">
+      <p style="font-size:0.9rem;">Modifica libera: scegli una pagina, poi <strong>clicca su un testo o un'immagine</strong> nell'anteprima per modificarla. Le modifiche si salvano subito e valgono per tutto il sito.</p>
+      <div class="form-group">
+        <label>Pagina da modificare</label>
+        <select id="free-page"></select>
+      </div>
+      <div id="free-editor" class="hidden" style="background:var(--bg-soft);padding:16px;border-radius:8px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;flex-wrap:wrap;">
+          <strong id="free-sel-label" style="font-size:0.8rem;color:var(--blue);word-break:break-all;"></strong>
+          <button class="btn btn-outline" id="free-parent" style="padding:4px 10px;font-size:0.8rem;white-space:nowrap;"><i class="fas fa-level-up-alt"></i> Elemento superiore</button>
+        </div>
+        <div id="free-text-box">
+          <div class="form-group"><label>Contenuto (HTML)</label><textarea id="free-html" rows="4"></textarea></div>
+        </div>
+        <div id="free-img-box" class="hidden">
+          <div class="form-group"><label>URL immagine</label><input type="text" id="free-src"></div>
+          <div class="form-group"><label>O carica un file</label><input type="file" id="free-file" accept="image/*"></div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-primary" id="free-save"><i class="fas fa-save"></i> Salva modifica</button>
+          <button class="btn btn-outline" id="free-cancel">Annulla</button>
+        </div>
+      </div>
+      <iframe id="free-frame" title="Anteprima pagina" style="width:100%;height:480px;border:2px solid var(--border);border-radius:8px;background:#fff;"></iframe>
+      <h3 style="margin-top:20px;">Modifiche libere su questa pagina</h3>
+      <div id="free-list" class="list-editor"></div>
     </div>
 
     <div class="actions">
@@ -475,6 +504,110 @@
       };
       r.readAsText(f);
     });
+
+    // ===== MODIFICA LIBERA (click-to-edit su qualsiasi elemento) =====
+    const FREE_PAGES = ['index.html','servizi.html','esami-strumentali.html','dove-siamo.html','lavora-con-noi.html','news.html','shop.html','infermiere-a-domicilio.html','fisioterapia-a-domicilio.html','assistenza-anziani.html','cure-pazienti-cronici.html','assistenza-notturna.html','cure-palliative.html','psicologia-a-domicilio.html','servizio-ambulanza.html','holter-pressorio.html','holter-ecg.html','apnee-sonno.html','screening-cardiaci.html','saturimetria-spirometria.html','prelievi-ematici.html','emogasanalisi.html','rx-domiciliare.html','ecografia-domiciliare.html'];
+    const freePageSel = document.getElementById('free-page');
+    const freeFrame = document.getElementById('free-frame');
+    const freeEditor = document.getElementById('free-editor');
+    const freeList = document.getElementById('free-list');
+    let freeEl = null, freePath = '';
+
+    FREE_PAGES.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p; o.textContent = p;
+      freePageSel.appendChild(o);
+    });
+    freePageSel.addEventListener('change', () => { freeFrame.src = freePageSel.value; hideFreeEditor(); renderFreeList(); });
+    freeFrame.addEventListener('load', wireFreeFrame);
+    freeFrame.src = freePageSel.value;
+
+    function elPath(el) {
+      const parts = [];
+      while (el && el.nodeType === 1 && el.tagName !== 'HTML') {
+        let p = el.tagName.toLowerCase();
+        const par = el.parentElement;
+        if (par) {
+          const same = Array.from(par.children).filter(c => c.tagName === el.tagName);
+          if (same.length > 1) p += ':nth-of-type(' + (same.indexOf(el) + 1) + ')';
+        }
+        parts.unshift(p);
+        el = par;
+      }
+      return parts.join(' > ');
+    }
+
+    function wireFreeFrame() {
+      const doc = freeFrame.contentDocument;
+      if (!doc) return;
+      doc.addEventListener('click', e => {
+        e.preventDefault(); e.stopPropagation();
+        pickEl(e.target);
+      }, true);
+      doc.addEventListener('mouseover', e => { if (e.target && e.target.style) e.target.style.outline = '2px solid #0ea5e9'; }, true);
+      doc.addEventListener('mouseout', e => { if (e.target && e.target.style) e.target.style.outline = ''; }, true);
+    }
+
+    function pickEl(el) {
+      freeEl = el;
+      freePath = elPath(el);
+      document.getElementById('free-sel-label').textContent = freePath;
+      const isImg = el.tagName === 'IMG';
+      document.getElementById('free-text-box').classList.toggle('hidden', isImg);
+      document.getElementById('free-img-box').classList.toggle('hidden', !isImg);
+      if (isImg) document.getElementById('free-src').value = el.getAttribute('src') || '';
+      else document.getElementById('free-html').value = el.innerHTML;
+      freeEditor.classList.remove('hidden');
+      freeEditor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    function hideFreeEditor() { freeEditor.classList.add('hidden'); freeEl = null; }
+
+    document.getElementById('free-parent').addEventListener('click', () => {
+      if (freeEl && freeEl.parentElement && freeEl.parentElement.tagName !== 'BODY') pickEl(freeEl.parentElement);
+    });
+    document.getElementById('free-cancel').addEventListener('click', hideFreeEditor);
+    document.getElementById('free-file').addEventListener('change', e => fileToData(e.target, 'free-src'));
+
+    document.getElementById('free-save').addEventListener('click', () => {
+      if (!freeEl || !freePath) return;
+      const page = freePageSel.value;
+      const isImg = freeEl.tagName === 'IMG';
+      const type = isImg ? 'src' : 'html';
+      const value = isImg ? document.getElementById('free-src').value : document.getElementById('free-html').value;
+      if (!content.overrides) content.overrides = {};
+      if (!content.overrides[page]) content.overrides[page] = [];
+      const arr = content.overrides[page];
+      const ex = arr.findIndex(o => o.sel === freePath && o.type === type);
+      const rec = { sel: freePath, type, value };
+      if (ex >= 0) arr[ex] = rec; else arr.push(rec);
+      if (isImg) freeEl.src = value; else freeEl.innerHTML = value;
+      localStorage.setItem('vetrina-content', JSON.stringify(content));
+      saveMsg.textContent = 'Modifica libera salvata.';
+      setTimeout(() => saveMsg.textContent = '', 3000);
+      hideFreeEditor();
+      renderFreeList();
+    });
+
+    function renderFreeList() {
+      const page = freePageSel.value;
+      const arr = (content.overrides && content.overrides[page]) || [];
+      freeList.innerHTML = arr.length ? '' : '<p style="color:var(--text-light);font-size:0.85rem;">Nessuna modifica libera su questa pagina.</p>';
+      arr.forEach((o, i) => {
+        const el = document.createElement('div');
+        el.className = 'list-item';
+        el.innerHTML = `<div class="name"><strong>${o.type === 'src' ? 'Immagine' : 'Testo'}</strong> — ${o.sel}<br><small>${(o.value || '').replace(/</g, '&lt;').slice(0, 80)}</small></div><button data-idx="${i}" class="del">×</button>`;
+        freeList.appendChild(el);
+      });
+    }
+    freeList.addEventListener('click', e => {
+      if (!e.target.classList.contains('del')) return;
+      const page = freePageSel.value;
+      content.overrides[page].splice(parseInt(e.target.dataset.idx), 1);
+      localStorage.setItem('vetrina-content', JSON.stringify(content));
+      renderFreeList();
+      freeFrame.src = freePageSel.value;
+    });
+    renderFreeList();
   </script>
 </body>
 </html>

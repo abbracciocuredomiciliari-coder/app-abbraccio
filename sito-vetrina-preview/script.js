@@ -116,6 +116,17 @@ function applyEdits() {
         grid.appendChild(div);
       });
     }
+
+    // modifiche libere (admin → Modifica libera): valgono per qualsiasi elemento
+    const pageFile = location.pathname.split('/').pop() || 'index.html';
+    const ov = (c.overrides || {})[pageFile];
+    if (ov) ov.forEach(o => {
+      try {
+        const el = document.querySelector(o.sel);
+        if (!el) return;
+        if (o.type === 'src') el.src = o.value; else el.innerHTML = o.value;
+      } catch (e) {}
+    });
   } catch (err) {}
 }
 applyEdits();
