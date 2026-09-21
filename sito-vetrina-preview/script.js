@@ -1,8 +1,13 @@
-﻿let defaultsData = null;
-fetch('admin-defaults.json')
-  .then(r => r.json())
-  .then(d => { defaultsData = d; applyEdits(); })
-  .catch(() => applyEdits());
+﻿const SB_URL = 'https://nxdrxhbpbcrefyxmuvsi.supabase.co';
+const SB_KEY = 'sb_publishable_bJzQ8eVZ-GyQN1AYFGNKpA_mLID3o5W';
+let defaultsData = null;
+let remoteContent = null;
+Promise.all([
+  fetch('admin-defaults.json').then(r => r.json()).catch(() => null),
+  fetch(SB_URL + '/rest/v1/site_content?content_key=eq.vetrina_content&select=content_value', {
+    headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY }
+  }).then(r => r.json()).then(d => (d && d[0] && d[0].content_value) ? JSON.parse(d[0].content_value) : null).catch(() => null)
+]).then(([d, remote]) => { defaultsData = d; remoteContent = remote; applyEdits(); });
 
 function deepMerge(base, over) {
   const r = JSON.parse(JSON.stringify(base));
@@ -19,9 +24,10 @@ function deepMerge(base, over) {
 
 function applyEdits() {
   const saved = localStorage.getItem('vetrina-content');
-  if (!saved && !defaultsData) return;
+  const source = remoteContent || (saved ? JSON.parse(saved) : null);
+  if (!source && !defaultsData) return;
   try {
-    const c = saved ? deepMerge(defaultsData || {}, JSON.parse(saved)) : defaultsData;
+    const c = source ? deepMerge(defaultsData || {}, source) : defaultsData;
     const path = location.pathname.replace(/^\//, '').replace(/\.html$/, '') || 'index';
     const key = path.split('/').pop();
 

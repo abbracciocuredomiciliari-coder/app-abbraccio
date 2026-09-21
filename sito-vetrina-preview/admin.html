@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <style>
     .admin-body { background: var(--bg-soft); min-height: 100vh; display: flex; flex-direction: column; }
     .admin-login, .admin-panel { max-width: 900px; margin: 40px auto; background: #fff; padding: 32px; border-radius: var(--radius); box-shadow: var(--shadow); width: 95%; }
@@ -48,17 +50,22 @@
 
   <div class="admin-login" id="loginBox">
     <h2><i class="fas fa-lock"></i> Accesso riservato</h2>
-    <p>La password per questa anteprima è <strong style="font-size:1.4rem;color:var(--blue);">admin</strong>.</p>
+    <p>Accedi con l'account admin: le modifiche saranno <strong>pubblicate online e visibili a tutti</strong>.<br><small>Solo password <strong>admin</strong> (senza email) = modalità provvisoria, modifiche visibili solo su questo dispositivo.</small></p>
+    <div class="form-group" style="text-align:left;">
+      <label>Email admin</label>
+      <input type="email" id="adminEmail" placeholder="email@esempio.it" autocomplete="username">
+    </div>
     <div class="form-group" style="text-align:left;">
       <label>Password</label>
-      <input type="password" id="adminPass" placeholder="Password">
+      <input type="password" id="adminPass" placeholder="Password" autocomplete="current-password">
     </div>
     <button class="btn btn-primary" id="loginBtn"><i class="fas fa-sign-in-alt"></i> Entra</button>
+    <p id="loginMsg" style="margin-top:12px;font-size:0.85rem;min-height:1em;"></p>
   </div>
 
   <div class="admin-panel hidden" id="editorBox">
     <h2><i class="fas fa-cog"></i> Gestione contenuti</h2>
-    <p>Da qui modifichi testi, immagini, galleria e news. I dati vengono salvati nel browser e applicati al sito subito dopo il salvataggio.</p>
+    <p>Da qui modifichi testi, immagini, galleria e news. Con l'account admin le modifiche vengono <strong>pubblicate online</strong> e visibili su tutti i dispositivi.</p>
 
     <div class="tabs">
       <button class="active" data-tab="general"><i class="fas fa-home"></i> Generale</button>
@@ -199,6 +206,7 @@
         <i class="fas fa-upload"></i> Importa JSON
         <input type="file" id="importBtn" accept="application/json" style="display:none;">
       </label>
+      <button class="btn btn-outline" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Esci</button>
     </div>
     <p id="saveMsg"></p>
   </div>
@@ -221,6 +229,58 @@
     let content = {};
     let currentPage = '';
 
+    // ===== Supabase (salvataggio condiviso online) =====
+    let sb = null;
+    let sharedMode = false;
+    const loginMsgEl = document.getElementById('loginMsg');
+    function loginMsg(t, err) { if (loginMsgEl) { loginMsgEl.textContent = t; loginMsgEl.style.color = err ? '#b42318' : 'var(--text-light)'; } }
+    if (window.supabase && window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) {
+      sb = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.publishableKey);
+    }
+    async function migrateDataUrls(obj) {
+      for (const k of Object.keys(obj)) {
+        const v = obj[k];
+        if (typeof v === 'string' && v.startsWith('data:image')) {
+          try {
+            const blob = await (await fetch(v)).blob();
+            const ext = ((v.match(/data:image\/(\w+)/) || [])[1] || 'jpg').replace('jpeg', 'jpg');
+            const name = 'upload-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+            const { error } = await sb.storage.from('site-images').upload(name, blob, { upsert: true });
+            if (!error) obj[k] = sb.storage.from('site-images').getPublicUrl(name).data.publicUrl;
+          } catch (e) {}
+        } else if (v && typeof v === 'object') {
+          await migrateDataUrls(v);
+        }
+      }
+    }
+    async function persistContent() {
+      localStorage.setItem('vetrina-content', JSON.stringify(content));
+      if (sharedMode && sb) {
+        await migrateDataUrls(content);
+        const { error } = await sb.from('site_content').upsert({ content_key: 'vetrina_content', content_value: JSON.stringify(content) }, { onConflict: 'content_key' });
+        if (error) throw error;
+        localStorage.setItem('vetrina-content', JSON.stringify(content));
+      }
+    }
+    async function storeFile(file) {
+      if (sharedMode && sb) {
+        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+        const name = 'img-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+        const { error } = await sb.storage.from('site-images').upload(name, file, { upsert: true, contentType: file.type });
+        if (error) { saveMsg.textContent = 'Errore upload immagine: ' + error.message; return null; }
+        return sb.storage.from('site-images').getPublicUrl(name).data.publicUrl;
+      }
+      return await new Promise(res => { const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(file); });
+    }
+    // Ripristina sessione admin se già loggato
+    (async () => {
+      if (!sb) return;
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) return;
+      const { data: isAdmin } = await sb.rpc('is_admin');
+      if (isAdmin) { sharedMode = true; loginBox.classList.add('hidden'); editorBox.classList.remove('hidden'); loadData(); }
+    })();
+
     function deepMerge(base, over) {
       const r = JSON.parse(JSON.stringify(base));
       if (!over || typeof over !== 'object') return r;
@@ -234,14 +294,31 @@
       return r;
     }
 
-    loginBtn.addEventListener('click', () => {
-      if (document.getElementById('adminPass').value === PASS) {
+    loginBtn.addEventListener('click', async () => {
+      const email = document.getElementById('adminEmail').value.trim();
+      const pass = document.getElementById('adminPass').value;
+      if (!email && pass === PASS) {
         loginBox.classList.add('hidden');
         editorBox.classList.remove('hidden');
         loadData();
-      } else {
-        alert('Password errata. Usa "admin".');
+        return;
       }
+      if (!sb) { loginMsg('Supabase non configurato.', true); return; }
+      if (!email || !pass) { loginMsg('Inserisci email e password, oppure solo "admin" per la modalità provvisoria.', true); return; }
+      loginMsg('Accesso in corso...');
+      const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if (error) { loginMsg(error.message, true); return; }
+      const { data: isAdmin } = await sb.rpc('is_admin');
+      if (!isAdmin) { await sb.auth.signOut(); loginMsg('Account non autorizzato.', true); return; }
+      sharedMode = true;
+      loginMsg('');
+      loginBox.classList.add('hidden');
+      editorBox.classList.remove('hidden');
+      loadData();
+    });
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      if (sb) await sb.auth.signOut();
+      location.reload();
     });
 
     document.querySelectorAll('.tabs button').forEach(btn => {
@@ -253,22 +330,30 @@
       });
     });
 
-    function loadData() {
-      fetch('admin-defaults.json?' + Date.now())
-        .then(r => r.json())
-        .then(d => {
-          defaults = d;
-          const saved = localStorage.getItem('vetrina-content');
-          content = deepMerge(defaults, saved ? JSON.parse(saved) : {});
-          renderGeneral();
-          renderPageSelect();
-          renderGallery();
-          renderNews();
-        })
-        .catch(err => {
-          console.error(err);
-          alert('Errore caricamento admin-defaults.json. Verifica che esista.');
-        });
+    async function loadData() {
+      try {
+        const d = await fetch('admin-defaults.json?' + Date.now()).then(r => r.json());
+        defaults = d;
+        let remote = null;
+        if (sharedMode && sb) {
+          const { data } = await sb.from('site_content').select('content_value').eq('content_key', 'vetrina_content').maybeSingle();
+          if (data && data.content_value) { try { remote = JSON.parse(data.content_value); } catch (e) {} }
+        }
+        const saved = localStorage.getItem('vetrina-content');
+        const local = saved ? JSON.parse(saved) : null;
+        content = deepMerge(defaults, remote || local || {});
+        if (sharedMode && !remote && local) {
+          saveMsg.textContent = 'Trovate modifiche salvate solo su questo dispositivo: premi "Salva" per pubblicarle online.';
+        }
+        renderGeneral();
+        renderPageSelect();
+        renderGallery();
+        renderNews();
+        renderFreeList();
+      } catch (err) {
+        console.error(err);
+        alert('Errore caricamento admin-defaults.json. Verifica che esista.');
+      }
     }
 
     function renderGeneral() {
@@ -298,13 +383,12 @@
 
     function fileToData(input, targetId, cb) {
       if (!input || !input.files || !input.files[0]) return;
-      const r = new FileReader();
-      r.onload = e => {
-        const el = document.getElementById(targetId);
-        if (el) el.value = e.target.result;
-        if (cb) cb(e.target.result);
-      };
-      r.readAsDataURL(input.files[0]);
+      const el = document.getElementById(targetId);
+      storeFile(input.files[0]).then(url => {
+        if (!url) return;
+        if (el) el.value = url;
+        if (cb) cb(url);
+      });
     }
     document.getElementById('global-heroImage-file').addEventListener('change', e => fileToData(e.target, 'global-heroImage'));
     document.getElementById('global-logo-file').addEventListener('change', e => fileToData(e.target, 'global-logo'));
@@ -415,16 +499,16 @@
       document.getElementById('gallery-filename').value = '';
       renderGallery();
     });
-    document.getElementById('gallery-file').addEventListener('change', e => {
-      Array.from(e.target.files).forEach(f => {
-        const r = new FileReader();
-        r.onload = ev => {
+    document.getElementById('gallery-file').addEventListener('change', async e => {
+      for (const f of Array.from(e.target.files)) {
+        const url = await storeFile(f);
+        if (url) {
           if (!content.gallery) content.gallery = [];
-          content.gallery.push(ev.target.result);
-          renderGallery();
-        };
-        r.readAsDataURL(f);
-      });
+          content.gallery.push(url);
+        }
+      }
+      e.target.value = '';
+      renderGallery();
     });
 
     function renderNews() {
@@ -443,7 +527,7 @@
         renderNews();
       }
     });
-    function addNews() {
+    async function addNews() {
       const fileInput = document.getElementById('news-image-file');
       function push() {
         const n = {
@@ -465,10 +549,10 @@
         renderNews();
       }
       if (fileInput.files[0]) {
-        const r = new FileReader();
-        r.onload = e => { document.getElementById('news-image').value = e.target.result; push(); };
-        r.readAsDataURL(fileInput.files[0]);
-      } else { push(); }
+        const url = await storeFile(fileInput.files[0]);
+        if (url) document.getElementById('news-image').value = url;
+      }
+      push();
     }
     document.getElementById('news-add').addEventListener('click', addNews);
 
@@ -476,11 +560,16 @@
       readGeneral();
       readPage();
     }
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
       readAll();
-      localStorage.setItem('vetrina-content', JSON.stringify(content));
-      saveMsg.textContent = 'Modifiche salvate! Ricarica il sito per vederle.';
-      setTimeout(() => saveMsg.textContent = '', 4000);
+      saveMsg.textContent = 'Salvataggio...';
+      try {
+        await persistContent();
+        saveMsg.textContent = sharedMode ? 'Pubblicato! Le modifiche sono visibili a tutti.' : 'Salvato solo su questo dispositivo (accedi con email admin per pubblicare online).';
+      } catch (e) {
+        saveMsg.textContent = 'Errore pubblicazione: ' + (e.message || e);
+      }
+      setTimeout(() => saveMsg.textContent = '', 6000);
     });
     exportBtn.addEventListener('click', () => {
       readAll();
@@ -497,7 +586,7 @@
         try {
           const imported = JSON.parse(ev.target.result);
           content = deepMerge(defaults, imported);
-          localStorage.setItem('vetrina-content', JSON.stringify(content));
+          persistContent();
           renderGeneral(); renderPageSelect(); renderGallery(); renderNews();
           saveMsg.textContent = 'JSON importato con successo.';
         } catch (ex) { alert('JSON non valido'); }
@@ -581,8 +670,8 @@
       const rec = { sel: freePath, type, value };
       if (ex >= 0) arr[ex] = rec; else arr.push(rec);
       if (isImg) freeEl.src = value; else freeEl.innerHTML = value;
-      localStorage.setItem('vetrina-content', JSON.stringify(content));
-      saveMsg.textContent = 'Modifica libera salvata.';
+      persistContent();
+      saveMsg.textContent = sharedMode ? 'Modifica pubblicata online.' : 'Modifica salvata solo su questo dispositivo.';
       setTimeout(() => saveMsg.textContent = '', 3000);
       hideFreeEditor();
       renderFreeList();
@@ -603,7 +692,7 @@
       if (!e.target.classList.contains('del')) return;
       const page = freePageSel.value;
       content.overrides[page].splice(parseInt(e.target.dataset.idx), 1);
-      localStorage.setItem('vetrina-content', JSON.stringify(content));
+      persistContent();
       renderFreeList();
       freeFrame.src = freePageSel.value;
     });
