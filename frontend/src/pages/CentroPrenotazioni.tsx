@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { Syringe, HeartPulse, ClipboardList, Plus, X, ChevronLeft, ChevronRight, Calendar, Clock, User, CheckCircle, Trash2, ChevronDown, ChevronUp, UserCheck, Eye, TestTube2, Bandage, Activity, CalendarDays, Users, Copy, Search, Download, Mail } from 'lucide-react';
+import { Syringe, HeartPulse, ClipboardList, Plus, X, ChevronLeft, ChevronRight, Calendar, Clock, User, CheckCircle, Trash2, ChevronDown, ChevronUp, UserCheck, Eye, TestTube2, Bandage, Activity, CalendarDays, Users, Copy, Search, Download, Mail, Pencil, FileText } from 'lucide-react';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function getDaysInMonth(y: number, m: number) { return new Date(y, m + 1, 0).getDate(); }
 function getFirstDayOfMonth(y: number, m: number) { const d = new Date(y, m, 1).getDay(); return d === 0 ? 6 : d - 1; }
@@ -175,6 +175,9 @@ interface Piano {
     compensoTotale?: number;
     costoPrestazione?: number;
     giorniSettimana?: any[];
+    macroCategorie?: string[];
+    fabbisogni?: Record<string, string[]>;
+    prestazioni?: any[];
 }
 interface VoceTariffario {
     _id: string;
@@ -375,6 +378,9 @@ export default function CentroPrenotazioni() {
     const [errPiano, setErrPiano] = useState('');
     const [okPiano, setOkPiano] = useState('');
     const [copiedId, setCopiedId] = useState<string | null>(null);
+    const [dettaglioPiano, setDettaglioPiano] = useState<Piano | null>(null);
+    const [editingPiano, setEditingPiano] = useState<Piano | null>(null);
+    const [rigenerandoDoc, setRigenerandoDoc] = useState(false);
     const [fpTipo, setFpTipo] = useState<'prestazionale' | 'assistenziale'>('prestazionale');
     const [fpTask, setFpTask] = useState('');
     const [fpDate, setFpDate] = useState('');
@@ -432,6 +438,68 @@ export default function CentroPrenotazioni() {
         }
     }, [fpTipo, fpCompenso, fpOre, fpGiorni, fpCostoOrario]);
 
+    // Rigenera (o crea) il preventivo collegato a un piano
+    const rigeneraPreventivoDoc = async (planId: string, patientId: string, task: string, costo: number, dataPrestazione?: string) => {
+        const prestazioni = [{ descrizione: task, quantita: 1, prezzoUnitario: costo }];
+        const r = await api.get('/fatturazione-documenti', { params: { tipo: 'preventivo' } });
+        const esistente = (r.data || []).find((d: any) => d.riferimentoTipo === 'workplan' && String(d.riferimentoId) === String(planId) && d.stato === 'emesso');
+        if (esistente) {
+            await api.put(`/fatturazione-documenti/${esistente._id}`, { prestazioni });
+        } else {
+            await api.post('/fatturazione-documenti', { tipo: 'preventivo', patient: patientId, riferimentoTipo: 'workplan', riferimentoId: planId, dataPrestazione, prestazioni });
+        }
+    };
+    const rigeneraPreventivoDaDettaglio = async () => {
+        if (!dettaglioPiano) return;
+        setRigenerandoDoc(true);
+        try {
+            await rigeneraPreventivoDoc(dettaglioPiano._id, dettaglioPiano.patient?._id, dettaglioPiano.task, dettaglioPiano.costoPrestazione || 0, dettaglioPiano.date);
+            setOkPiano('✅ Preventivo rigenerato con i dati aggiornati!');
+            setTimeout(() => setOkPiano(''), 4000);
+        } catch (err: any) {
+            setErrPiano(err.response?.data?.message || 'Errore nella rigenerazione del preventivo');
+        }
+        setRigenerandoDoc(false);
+    };
+    const apriModificaPiano = (w: Piano) => {
+        setEditingPiano(w);
+        setFpTipo(w.type);
+        setFpTask(w.task || '');
+        setFpDate(w.date ? String(w.date).slice(0, 10) : '');
+        setFpFine(w.dataFine ? String(w.dataFine).slice(0, 10) : '');
+        setFpTime(w.time || '');
+        setFpDur(w.duration || 60);
+        setFpOre(w.duration ? Math.max(0.5, w.duration / 60) : 1);
+        setFpPaz(w.patient?._id || '');
+        setFpStaff(w.staff?._id || w.staff || '');
+        setFpCats(w.type === 'assistenziale' ? (w.categories || []) : []);
+        setFpNotes(w.notes || '');
+        setFpCompenso((w.tipoCompenso as any) || 'nessuno');
+        setFpTariffa(w.tariffa || 0);
+        setFpCostoOrario(0);
+        setFpCosto(w.costoPrestazione || 0);
+        setFpTariffarioSel('');
+        setFpGiorni(GIORNI_DEFAULT.map(g => {
+            const ex = (w.giorniSettimana || []).find((x: any) => x.giorno === g.giorno);
+            return ex ? { ...g, attivo: true, accessiAlGiorno: ex.accessiAlGiorno || 1, minutiPerAccesso: ex.minutiPerAccesso || 60 } : { ...g };
+        }));
+        const mc = w.macroCategorie || [];
+        setFpMacroCats({ infermieristico: mc.includes('infermieristico'), riabilitativo: mc.includes('riabilitativo'), medico_specialistiche: mc.includes('medico_specialistiche') });
+        const fb = w.fabbisogni || {};
+        setFpFabbisogni({ infermieristico: fb.infermieristico || [], riabilitativo: fb.riabilitativo || [], medico_specialistiche: fb.medico_specialistiche || [] });
+        const catToMacro: Record<string, MacroCategoria> = { infermieristica: 'infermieristico', riabilitativa: 'riabilitativo', medica: 'medico_specialistiche' };
+        const spc: Record<MacroCategoria, string> = { infermieristico: '', riabilitativo: '', medico_specialistiche: '' };
+        (w.prestazioni || []).forEach((pr: any) => {
+            const m = catToMacro[pr.categoria];
+            const sid = typeof pr.staff === 'string' ? pr.staff : pr.staff?._id;
+            if (m && sid && !spc[m]) spc[m] = sid;
+        });
+        setFpStaffPerCat(spc);
+        setErrPiano('');
+        setShowFPiano(true);
+    };
+    const chiudiFormPiano = () => { setShowFPiano(false); setEditingPiano(null); };
+
     const creaPiano = async (ev: FormEvent) => {
         ev.preventDefault();
         setErrPiano('');
@@ -466,7 +534,7 @@ export default function CentroPrenotazioni() {
                 const giorniAttivi = fpGiorni.filter(g => g.attivo).map(g => ({ giorno: g.giorno, accessiAlGiorno: g.accessiAlGiorno, minutiPerAccesso: g.minutiPerAccesso }));
                 const allFabbisogniLabels: string[] = [];
                 macroSel.forEach(cat => { const labels = fpFabbisogni[cat].map(f => { const opt = FABBISOGNI_OPTIONS[cat].find(o => o.value === f); return opt ? `${MACRO_CATEGORIE_LABELS[cat].label.split(' ')[1]}: ${opt.label}` : f; }); allFabbisogniLabels.push(...labels); });
-                const res = await api.post('/workplan', {
+                const payload = {
                     type: fpTipo,
                     macroCategorie: macroSel,
                     fabbisogni: { infermieristico: fpFabbisogni.infermieristico, riabilitativo: fpFabbisogni.riabilitativo, medico_specialistiche: fpFabbisogni.medico_specialistiche },
@@ -476,22 +544,17 @@ export default function CentroPrenotazioni() {
                     date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpDur,
                     notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined,
                     tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0,
-                });
+                };
+                const planId = editingPiano ? editingPiano._id : (await api.post('/workplan', payload)).data._id;
+                if (editingPiano) await api.patch(`/workplan/${editingPiano._id}`, payload);
                 try {
-                    await api.post('/fatturazione-documenti', {
-                        tipo: 'preventivo',
-                        patient: fpPaz,
-                        riferimentoTipo: 'workplan',
-                        riferimentoId: res.data._id,
-                        dataPrestazione: fpDate,
-                        prestazioni: [{ descrizione: fpTask, quantita: 1, prezzoUnitario: fpCosto }],
-                    });
+                    await rigeneraPreventivoDoc(planId, fpPaz, fpTask, fpCosto, fpDate);
                 } catch (e: any) { /* preventivo non bloccante */ }
                 await loadPiani();
                 resetFPiano();
-                setShowFPiano(false);
-                setOkPiano('✅ Incarico creato!');
-                setTimeout(() => setOkPiano(''), 3000);
+                chiudiFormPiano();
+                setOkPiano(editingPiano ? '✅ Incarico aggiornato e preventivo rigenerato!' : '✅ Incarico creato!');
+                setTimeout(() => setOkPiano(''), 4000);
             }
             catch (err: any) {
                 setErrPiano(err.response?.data?.message || err.message || 'Errore');
@@ -506,22 +569,17 @@ export default function CentroPrenotazioni() {
             setSavingPiano(true);
             try {
                 const giorniAttivi = fpGiorni.filter(g => g.attivo).map(g => ({ giorno: g.giorno, accessiAlGiorno: g.accessiAlGiorno, minutiPerAccesso: g.minutiPerAccesso }));
-                const res = await api.post('/workplan', { type: fpTipo, categories: fpCats, patient: fpPaz, staff: fpStaff || undefined, task: fpTask, date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpOre * 60, notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined, tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0 });
+                const payload = { type: fpTipo, categories: fpCats, patient: fpPaz, staff: fpStaff || undefined, task: fpTask, date: fpDate, dataFine: fpFine || undefined, time: fpTime || undefined, duration: fpOre * 60, notes: fpNotes || undefined, giorniSettimana: giorniAttivi.length > 0 ? giorniAttivi : undefined, tipoCompenso: fpCompenso, tariffa: fpCompenso !== 'nessuno' ? fpTariffa : 0, costoPrestazione: fpCosto > 0 ? fpCosto : 0 };
+                const planId = editingPiano ? editingPiano._id : (await api.post('/workplan', payload)).data._id;
+                if (editingPiano) await api.patch(`/workplan/${editingPiano._id}`, payload);
                 try {
-                    await api.post('/fatturazione-documenti', {
-                        tipo: 'preventivo',
-                        patient: fpPaz,
-                        riferimentoTipo: 'workplan',
-                        riferimentoId: res.data._id,
-                        dataPrestazione: fpDate,
-                        prestazioni: [{ descrizione: fpTask, quantita: 1, prezzoUnitario: fpCosto }],
-                    });
+                    await rigeneraPreventivoDoc(planId, fpPaz, fpTask, fpCosto, fpDate);
                 } catch (e: any) { /* preventivo non bloccante */ }
                 await loadPiani();
                 resetFPiano();
-                setShowFPiano(false);
-                setOkPiano('✅ Incarico creato!');
-                setTimeout(() => setOkPiano(''), 3000);
+                chiudiFormPiano();
+                setOkPiano(editingPiano ? '✅ Incarico aggiornato e preventivo rigenerato!' : '✅ Incarico creato!');
+                setTimeout(() => setOkPiano(''), 4000);
             }
             catch (err: any) {
                 setErrPiano(err.response?.data?.message || err.message || 'Errore');
@@ -879,7 +937,7 @@ export default function CentroPrenotazioni() {
                 <Search className="tw-absolute tw-left-3 tw-top-1/2 -tw-translate-y-1/2 tw-text-slate-400" size={14}/>
                 <input className="tw-pl-9 tw-py-2 tw-pr-3 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-w-full tw-bg-white tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" value={searchP} onChange={e => setSearchP(e.target.value)} placeholder="Cerca..."/>
               </div>
-              {puoGestire && <button className="tw-bg-emerald-600 hover:tw-bg-emerald-700 tw-text-white tw-py-2 tw-px-3.5 tw-rounded-lg tw-border-0 tw-cursor-pointer tw-font-semibold tw-text-sm tw-flex tw-items-center tw-gap-1.5 tw-whitespace-nowrap tw-shadow-sm tw-transition-colors" onClick={() => setShowFPiano(true)}><Plus size={14}/> Nuovo</button>}
+              {puoGestire && <button className="tw-bg-emerald-600 hover:tw-bg-emerald-700 tw-text-white tw-py-2 tw-px-3.5 tw-rounded-lg tw-border-0 tw-cursor-pointer tw-font-semibold tw-text-sm tw-flex tw-items-center tw-gap-1.5 tw-whitespace-nowrap tw-shadow-sm tw-transition-colors" onClick={() => { setEditingPiano(null); resetFPiano(); setShowFPiano(true); }}><Plus size={14}/> Nuovo</button>}
             </div>
           </div>
           {pianiFiltrati.length === 0
@@ -900,7 +958,8 @@ export default function CentroPrenotazioni() {
                       <div className="tw-text-[0.7rem] tw-text-slate-400 tw-mt-1"><Calendar className="tw-inline tw-mr-1" size={10}/>{new Date(w.date).toLocaleDateString('it-IT')}{w.dataFine && ` → ${new Date(w.dataFine).toLocaleDateString('it-IT')}`}</div>
                     </div>
                     <div className="tw-flex tw-gap-1 tw-flex-shrink-0 tw-flex-wrap">
-                      <button className="tw-bg-emerald-50 hover:tw-bg-emerald-100 tw-border tw-border-emerald-100 tw-rounded-lg tw-py-1.5 tw-px-2 tw-cursor-pointer tw-text-emerald-600 tw-text-[0.7rem] tw-flex tw-items-center tw-gap-1 tw-transition-colors" onClick={() => navigate('/workplan')}><Eye size={12}/> Dettaglio</button>
+                      <button className="tw-bg-emerald-50 hover:tw-bg-emerald-100 tw-border tw-border-emerald-100 tw-rounded-lg tw-py-1.5 tw-px-2 tw-cursor-pointer tw-text-emerald-600 tw-text-[0.7rem] tw-flex tw-items-center tw-gap-1 tw-transition-colors" onClick={() => setDettaglioPiano(w)}><Eye size={12}/> Dettaglio</button>
+                      {puoGestire && <button className="tw-bg-amber-50 hover:tw-bg-amber-100 tw-border tw-border-amber-100 tw-rounded-lg tw-py-1.5 tw-px-2 tw-cursor-pointer tw-text-amber-600 tw-text-[0.7rem] tw-flex tw-items-center tw-gap-1 tw-transition-colors" onClick={() => apriModificaPiano(w)}><Pencil size={12}/> Modifica</button>}
                       <button className="tw-bg-sky-50 hover:tw-bg-sky-100 tw-border tw-border-sky-100 tw-rounded-lg tw-py-1.5 tw-px-2 tw-cursor-pointer tw-text-sky-600 tw-text-[0.7rem] tw-flex tw-items-center tw-gap-1 tw-transition-colors" onClick={() => copiaLink(w._id)}>{copiedId === w._id ? <CheckCircle size={12}/> : <Copy size={12}/>}</button>
                       {puoGestire && <button className="tw-bg-red-50 hover:tw-bg-red-100 tw-border tw-border-red-100 tw-rounded-lg tw-py-1.5 tw-px-2 tw-cursor-pointer tw-text-red-600 tw-transition-colors" onClick={() => eliminaPiano(w._id)}><Trash2 size={12}/></button>}
                     </div>
@@ -961,8 +1020,8 @@ export default function CentroPrenotazioni() {
       {showFPiano && puoGestire && (<div className="piano-fullscreen tw-fixed tw-inset-0 tw-bg-slate-50 tw-z-[1000] tw-overflow-y-auto">
           <div className="piano-fullscreen-inner tw-max-w-[1200px] tw-w-full tw-mx-auto tw-p-6 md:tw-p-8 tw-min-h-screen tw-box-border">
             <div className="tw-flex tw-justify-between tw-items-center tw-mb-6 tw-bg-white tw-rounded-2xl tw-shadow-sm tw-border tw-border-slate-100 tw-p-5">
-              <h3 className="tw-m-0 tw-text-emerald-600 tw-flex tw-items-center tw-gap-2 tw-font-bold tw-text-lg"><ClipboardList size={22}/>Nuovo Incarico</h3>
-              <button className="tw-bg-transparent tw-border-0 tw-cursor-pointer tw-text-slate-500 hover:tw-text-slate-700 tw-transition-colors" onClick={() => setShowFPiano(false)}><X size={22}/></button>
+              <h3 className="tw-m-0 tw-text-emerald-600 tw-flex tw-items-center tw-gap-2 tw-font-bold tw-text-lg"><ClipboardList size={22}/>{editingPiano ? 'Modifica Incarico' : 'Nuovo Incarico'}</h3>
+              <button className="tw-bg-transparent tw-border-0 tw-cursor-pointer tw-text-slate-500 hover:tw-text-slate-700 tw-transition-colors" onClick={chiudiFormPiano}><X size={22}/></button>
             </div>
             <form onSubmit={creaPiano}>
               <div className="tw-grid tw-gap-4">
@@ -1102,10 +1161,38 @@ export default function CentroPrenotazioni() {
                 <label className="tw-font-semibold tw-text-sm">Note<textarea className="tw-block tw-w-full tw-mt-1 tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-200 tw-text-sm tw-bg-white tw-shadow-sm tw-resize-y focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-emerald-500/20 focus:tw-border-emerald-500" value={fpNotes} onChange={e => setFpNotes(e.target.value)} rows={2}/></label>
               </div>
               <div className="tw-flex tw-gap-2.5 tw-mt-6 tw-justify-end">
-                <button className="tw-py-2.5 tw-px-5 tw-rounded-lg tw-border tw-border-slate-200 tw-bg-white tw-cursor-pointer tw-text-slate-700 tw-font-semibold hover:tw-bg-slate-50 tw-transition-colors" type="button" onClick={() => setShowFPiano(false)}>Annulla</button>
-                <button className="tw-py-2.5 tw-px-6 tw-rounded-lg tw-bg-emerald-600 hover:tw-bg-emerald-700 tw-text-white tw-border-0 tw-cursor-pointer tw-font-bold tw-flex tw-items-center tw-gap-2 tw-shadow-sm tw-transition-colors" type="submit" disabled={savingPiano}>{savingPiano ? '...' : <><CheckCircle size={16}/>Crea Incarico</>}</button>
+                <button className="tw-py-2.5 tw-px-5 tw-rounded-lg tw-border tw-border-slate-200 tw-bg-white tw-cursor-pointer tw-text-slate-700 tw-font-semibold hover:tw-bg-slate-50 tw-transition-colors" type="button" onClick={chiudiFormPiano}>Annulla</button>
+                <button className="tw-py-2.5 tw-px-6 tw-rounded-lg tw-bg-emerald-600 hover:tw-bg-emerald-700 tw-text-white tw-border-0 tw-cursor-pointer tw-font-bold tw-flex tw-items-center tw-gap-2 tw-shadow-sm tw-transition-colors" type="submit" disabled={savingPiano}>{savingPiano ? '...' : <><CheckCircle size={16}/>{editingPiano ? 'Salva e rigenera preventivo' : 'Crea Incarico'}</>}</button>
               </div>
             </form>
+          </div>
+        </div>)}
+
+      {/* ══ MODAL DETTAGLIO PIANO ═══════════════════════════════════════════ */}
+      {dettaglioPiano && (<div className="modal-overlay tw-fixed tw-inset-0 tw-bg-black/50 tw-backdrop-blur-sm tw-flex tw-items-start tw-justify-center tw-z-[1050] tw-py-10 tw-px-4 tw-overflow-y-auto" onClick={() => setDettaglioPiano(null)}>
+          <div className="modal-content tw-max-w-[560px] tw-w-full tw-bg-white tw-rounded-2xl tw-shadow-2xl tw-p-6 tw-max-h-[calc(100vh_-_80px)] tw-overflow-y-auto tw-box-border" onClick={e => e.stopPropagation()}>
+            <div className="tw-flex tw-justify-between tw-items-center tw-mb-4">
+              <h3 className="tw-m-0 tw-text-emerald-600 tw-flex tw-items-center tw-gap-2 tw-font-bold tw-text-lg"><ClipboardList size={20}/>Dettaglio piano</h3>
+              <button className="tw-bg-transparent tw-border-0 tw-cursor-pointer tw-text-slate-500 hover:tw-text-slate-700" onClick={() => setDettaglioPiano(null)}><X size={22}/></button>
+            </div>
+            <div className="tw-grid tw-gap-2 tw-text-sm">
+              <div><strong>Paziente:</strong> {dettaglioPiano.patient?.firstName} {dettaglioPiano.patient?.lastName}</div>
+              <div><strong>Tipo:</strong> {dettaglioPiano.type === 'prestazionale' ? '🩺 Prestazionale' : '🤝 Assistenziale'}</div>
+              <div><strong>Attività:</strong> {dettaglioPiano.task}</div>
+              {(dettaglioPiano.categories || []).length > 0 && <div><strong>Categorie/fabbisogni:</strong> {(dettaglioPiano.categories || []).join(', ')}</div>}
+              <div><strong>Operatore:</strong> {dettaglioPiano.staff?.firstName ? `${dettaglioPiano.staff.firstName} ${dettaglioPiano.staff.lastName} — ${dettaglioPiano.staff.role || ''}` : 'Da assegnare'}</div>
+              <div><strong>Periodo:</strong> {new Date(dettaglioPiano.date).toLocaleDateString('it-IT')}{dettaglioPiano.dataFine ? ` → ${new Date(dettaglioPiano.dataFine).toLocaleDateString('it-IT')}` : ''}{dettaglioPiano.time ? ` · ore ${dettaglioPiano.time}` : ''}{dettaglioPiano.duration ? ` · ${dettaglioPiano.duration} min` : ''}</div>
+              {(dettaglioPiano.giorniSettimana || []).length > 0 && <div><strong>Giorni ricorrenti:</strong> {(dettaglioPiano.giorniSettimana || []).map((g: any) => GIORNI_SETT[(g.giorno + 6) % 7]).join(', ')}</div>}
+              <div><strong>Costo paziente:</strong> €{(dettaglioPiano.costoPrestazione || 0).toFixed(2)}</div>
+              {dettaglioPiano.tipoCompenso && dettaglioPiano.tipoCompenso !== 'nessuno' && <div><strong>Compenso operatore:</strong> {dettaglioPiano.tipoCompenso} — €{(dettaglioPiano.tariffa || 0).toFixed(2)}</div>}
+              {dettaglioPiano.notes && <div><strong>Note:</strong> {dettaglioPiano.notes}</div>}
+            </div>
+            <div className="tw-flex tw-gap-2.5 tw-mt-6 tw-justify-end tw-flex-wrap">
+              <button className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border tw-border-slate-200 tw-bg-white tw-cursor-pointer tw-text-slate-700 tw-font-semibold hover:tw-bg-slate-50" onClick={() => setDettaglioPiano(null)}>Chiudi</button>
+              <button className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border tw-border-sky-200 tw-bg-sky-50 tw-cursor-pointer tw-text-sky-700 tw-font-semibold hover:tw-bg-sky-100 tw-flex tw-items-center tw-gap-1.5" onClick={() => copiaLink(dettaglioPiano._id)}>{copiedId === dettaglioPiano._id ? <CheckCircle size={14}/> : <Copy size={14}/>} Copia link</button>
+              {puoGestire && <button className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border-0 tw-bg-violet-600 hover:tw-bg-violet-700 tw-text-white tw-cursor-pointer tw-font-semibold tw-flex tw-items-center tw-gap-1.5" onClick={rigeneraPreventivoDaDettaglio} disabled={rigenerandoDoc}><FileText size={14}/>{rigenerandoDoc ? '...' : 'Rigenera preventivo'}</button>}
+              {puoGestire && <button className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border-0 tw-bg-amber-500 hover:tw-bg-amber-600 tw-text-white tw-cursor-pointer tw-font-semibold tw-flex tw-items-center tw-gap-1.5" onClick={() => { const w = dettaglioPiano; setDettaglioPiano(null); apriModificaPiano(w); }}><Pencil size={14}/> Modifica piano</button>}
+            </div>
           </div>
         </div>)}
 
