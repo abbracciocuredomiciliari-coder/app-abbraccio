@@ -159,6 +159,7 @@ router.get('/firma/:token', async (req: Request, res: Response) => {
       .lean();
     if (!doc) return res.status(404).json({ message: 'Link non valido o scaduto' });
     if (doc.firma?.firmato) return res.status(400).json({ message: 'Documento già firmato', giaFirmato: true });
+    if (doc.stato === 'rifiutato') return res.status(400).json({ message: 'Preventivo già rifiutato', giaRifiutato: true });
     return res.json({
       tipo: doc.tipo,
       numero: doc.numero,
@@ -270,6 +271,67 @@ router.post('/firma/:token', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('[Fatturazione firma] Errore:', error);
     return res.status(500).json({ message: 'Errore salvataggio firma', error: error.message });
+  }
+});
+
+// POST /api/fatturazione-documenti/firma/:token/rifiuta — rifiuta preventivo con motivazione (pubblico con token)
+router.post('/firma/:token/rifiuta', async (req: Request, res: Response) => {
+  try {
+    const { motivazione, nome } = req.body;
+    if (!motivazione || !String(motivazione).trim()) {
+      return res.status(400).json({ message: 'Indicare la motivazione del rifiuto' });
+    }
+
+    const doc = await DocumentoFatturazione.findOne({ 'firma.token': req.params.token })
+      .populate('patient', 'firstName lastName codiceFiscale address email');
+    if (!doc) return res.status(404).json({ message: 'Link non valido o scaduto' });
+    if (doc.firma?.firmato) return res.status(400).json({ message: 'Documento già firmato' });
+    if (doc.stato === 'rifiutato') return res.status(400).json({ message: 'Preventivo già rifiutato' });
+    if (doc.tipo !== 'preventivo') return res.status(400).json({ message: 'Solo i preventivi possono essere rifiutati' });
+
+    doc.stato = 'rifiutato';
+    doc.motivazioneRifiuto = String(motivazione).trim();
+    doc.rifiutatoIl = new Date();
+    if (nome && doc.firma) doc.firma.nome = String(nome).trim();
+    await doc.save();
+
+    // Notifica admin + creatore del documento
+    const docJson: any = doc.toJSON();
+    const nomePaziente = docJson.patient?.firstName && docJson.patient?.lastName
+      ? `${docJson.patient.firstName} ${docJson.patient.lastName}`
+      : 'Paziente';
+    const destinatari = new Set<string>();
+    const adminEmail = process.env.ADMIN_EMAIL || 'abbracciocuredomiciliari@gmail.com';
+    if (adminEmail) destinatari.add(adminEmail);
+    let operatoreEmail = docJson.creatoDa && docJson.creatoDa.includes('@') ? docJson.creatoDa : '';
+    if (!operatoreEmail && docJson.creatoDa) {
+      const userDoc = await User.findOne({ name: docJson.creatoDa });
+      if (userDoc) operatoreEmail = userDoc.email;
+    }
+    if (operatoreEmail) destinatari.add(operatoreEmail);
+
+    const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+      <h2 style="color:#dc2626;margin-top:0;">Preventivo rifiutato — ${doc.numero}</h2>
+      <p>Il preventivo n. <strong>${doc.numero}</strong> relativo a <strong>${nomePaziente}</strong> è stato <strong>rifiutato</strong>${nome ? ` da <strong>${nome}</strong>` : ''}.</p>
+      <p>Totale: <strong>€${Number(doc.totale).toFixed(2)}</strong></p>
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-top:12px;">
+        <strong>Motivazione:</strong><br>${String(motivazione).trim().replace(/\n/g, '<br>')}
+      </div>
+      <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari S.R.L.S.</p>
+    </div>`;
+
+    for (const to of destinatari) {
+      try {
+        await inviaEmail({ to, subject: `Preventivo ${doc.numero} rifiutato — ${nomePaziente}`, html });
+      } catch (emailErr) {
+        console.warn('⚠️ Errore invio notifica rifiuto preventivo:', emailErr);
+      }
+    }
+
+    return res.json({ message: 'Preventivo rifiutato. La motivazione è stata inviata.' });
+  } catch (error: any) {
+    console.error('[Fatturazione rifiuto] Errore:', error);
+    return res.status(500).json({ message: 'Errore nel rifiuto del preventivo', error: error.message });
   }
 });
 

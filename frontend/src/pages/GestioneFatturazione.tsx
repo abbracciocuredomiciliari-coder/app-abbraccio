@@ -64,7 +64,9 @@ interface DocumentoFatturazione {
   totale: number;
   data: string;
   dataPrestazione?: string;
-  stato: 'emesso' | 'firmato' | 'annullato';
+  stato: 'emesso' | 'firmato' | 'annullato' | 'rifiutato';
+  motivazioneRifiuto?: string;
+  rifiutatoIl?: string;
   note?: string;
   documentoOrigineId?: string;
   firma?: {
@@ -431,8 +433,9 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
     return ids;
   }, [documenti]);
 
-  const documentiAttivi = useMemo(() => documenti.filter(d => !archivioIds.has(d._id)), [documenti, archivioIds]);
+  const documentiAttivi = useMemo(() => documenti.filter(d => !archivioIds.has(d._id) && d.stato !== 'rifiutato'), [documenti, archivioIds]);
   const archivioFatture = useMemo(() => documenti.filter(d => d.tipo === 'fattura' && d.stato === 'firmato'), [documenti]);
+  const preventiviRifiutati = useMemo(() => documenti.filter(d => d.tipo === 'preventivo' && d.stato === 'rifiutato'), [documenti]);
 
   const formatData = (d: string) => new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
   const formatEuro = (n: number) => `€${n.toFixed(2)}`;
@@ -811,6 +814,56 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
               </div>
             )
           )}
+        </div>
+      )}
+
+      {/* ══════════════════════ PREVENTIVI RIFIUTATI ══════════ */}
+      {!isConvenzione && preventiviRifiutati.length > 0 && (
+        <div style={{ background: 'white', borderRadius: '12px', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #fecaca' }}>
+          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#b91c1c' }}>
+            🚫 Preventivi rifiutati
+            <span style={{ background: '#fee2e2', color: '#b91c1c', borderRadius: '20px', padding: '2px 10px', fontSize: '0.8rem' }}>{preventiviRifiutati.length}</span>
+          </h3>
+          <div style={{ overflowX: 'auto', marginTop: '14px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #fecaca' }}>
+                  <th style={{ textAlign: 'left', padding: '8px' }}>N.</th>
+                  <th style={{ textAlign: 'left', padding: '8px' }}>Paziente</th>
+                  <th style={{ textAlign: 'left', padding: '8px' }}>Data doc.</th>
+                  <th style={{ textAlign: 'left', padding: '8px' }}>Rifiutato il</th>
+                  <th style={{ textAlign: 'right', padding: '8px' }}>Totale</th>
+                  <th style={{ textAlign: 'left', padding: '8px' }}>Motivazione</th>
+                  <th style={{ padding: '8px' }} />
+                </tr>
+              </thead>
+              <tbody>
+                {preventiviRifiutati.map(doc => (
+                  <tr key={doc._id} style={{ borderBottom: '1px solid #fef2f2' }}>
+                    <td style={{ padding: '8px', fontWeight: 600 }}>{doc.numero}</td>
+                    <td style={{ padding: '8px' }}>{doc.patient?.firstName} {doc.patient?.lastName}</td>
+                    <td style={{ padding: '8px' }}>{formatData(doc.data)}</td>
+                    <td style={{ padding: '8px' }}>{doc.rifiutatoIl ? formatData(doc.rifiutatoIl) : '-'}</td>
+                    <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#b91c1c' }}>{formatEuro(doc.totale)}</td>
+                    <td style={{ padding: '8px', maxWidth: '320px' }}>
+                      <span style={{ display: 'block', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '6px 10px', fontSize: '0.85rem', color: '#7f1d1d', whiteSpace: 'pre-wrap' }}>
+                        {doc.motivazioneRifiuto || '—'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '8px' }}>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                        <button onClick={() => anteprimaDocumento(doc)} title="Anteprima PDF" style={{ background: '#f0f9ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0ea5e9' }}><Eye size={14} /></button>
+                        <button onClick={() => scaricaDocumentoPDF(doc)} title="Scarica PDF" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Download size={14} /></button>
+                        {user?.role === 'admin' && (
+                          <button onClick={() => eliminaDocumento(doc)} title="Elimina definitivamente" style={{ background: '#fee2e2', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#b91c1c' }}><Trash2 size={14} /></button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

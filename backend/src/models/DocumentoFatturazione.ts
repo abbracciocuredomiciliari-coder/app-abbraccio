@@ -18,7 +18,9 @@ export interface IDocumentoFatturazione extends Document {
   totale: number;
   data: Date;
   dataPrestazione?: Date; // data della prestazione/visita effettuata
-  stato: 'emesso' | 'firmato' | 'annullato';
+  stato: 'emesso' | 'firmato' | 'annullato' | 'rifiutato';
+  motivazioneRifiuto?: string;
+  rifiutatoIl?: Date;
   note?: string;
   creatoDa: string;
   totaleLabel?: string;
@@ -56,7 +58,9 @@ const documentoFatturazioneSchema = new Schema<IDocumentoFatturazione>(
     totale: { type: Number, required: true, default: 0 },
     data: { type: Date, required: true, default: Date.now },
     dataPrestazione: { type: Date },
-    stato: { type: String, enum: ['emesso', 'firmato', 'annullato'], default: 'emesso' },
+    stato: { type: String, enum: ['emesso', 'firmato', 'annullato', 'rifiutato'], default: 'emesso' },
+    motivazioneRifiuto: { type: String, trim: true },
+    rifiutatoIl: { type: Date },
     note: { type: String, trim: true },
     creatoDa: { type: String, required: true },
     totaleLabel: { type: String, trim: true },

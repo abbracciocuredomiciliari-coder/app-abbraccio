@@ -7,7 +7,7 @@ export default function FirmaDocumento() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') || '';
 
-  const [stato, setStato] = useState<'caricamento' | 'pronto' | 'firmato' | 'errore'>('caricamento');
+  const [stato, setStato] = useState<'caricamento' | 'pronto' | 'firmato' | 'rifiutato' | 'errore'>('caricamento');
   const [errore, setErrore] = useState('');
   const [doc, setDoc] = useState<any>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -16,6 +16,9 @@ export default function FirmaDocumento() {
   const [consensoRegistro, setConsensoRegistro] = useState(false);
   const [nome, setNome] = useState('');
   const [sending, setSending] = useState(false);
+  const [showRifiuto, setShowRifiuto] = useState(false);
+  const [motivazione, setMotivazione] = useState('');
+  const [sendingRifiuto, setSendingRifiuto] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -49,6 +52,10 @@ export default function FirmaDocumento() {
         setPdfUrl(objectUrl);
         setStato('pronto');
       } catch (err: any) {
+        if (err?.response?.data?.giaRifiutato) {
+          setStato('rifiutato');
+          return;
+        }
         const msg = err?.response?.data?.message || 'Errore nel caricamento del documento. Riprova più tardi.';
         setErrore(msg);
         setStato('errore');
@@ -76,6 +83,22 @@ export default function FirmaDocumento() {
       setErrore(err?.response?.data?.message || 'Errore nel salvataggio della firma. Riprova.');
     } finally {
       setSending(false);
+    }
+  };
+
+  const inviaRifiuto = async () => {
+    if (!motivazione.trim()) return;
+    setSendingRifiuto(true);
+    try {
+      await api.post(`/fatturazione-documenti/firma/${token}/rifiuta`, {
+        motivazione: motivazione.trim(),
+        nome,
+      });
+      setStato('rifiutato');
+    } catch (err: any) {
+      setErrore(err?.response?.data?.message || 'Errore nell\'invio del rifiuto. Riprova.');
+    } finally {
+      setSendingRifiuto(false);
     }
   };
 
@@ -111,6 +134,16 @@ export default function FirmaDocumento() {
             <h3 className="tw-text-green-600 tw-mt-0 tw-mb-2">Documento firmato</h3>
             <p className="tw-text-green-800 tw-m-0 tw-text-[0.9rem]">
               Grazie {nome || ''}. Il documento firmato è stato inviato e archiviato.
+            </p>
+          </div>
+        )}
+
+        {stato === 'rifiutato' && (
+          <div className="tw-text-center tw-p-5 tw-bg-red-50 tw-rounded-xl tw-border tw-border-red-200">
+            <div className="tw-text-[2.5rem] tw-mb-3">🚫</div>
+            <h3 className="tw-text-red-600 tw-mt-0 tw-mb-2">Preventivo rifiutato</h3>
+            <p className="tw-text-red-900 tw-m-0 tw-text-[0.9rem]">
+              Il rifiuto è stato registrato e la motivazione inviata all'amministrazione. Grazie {nome || ''}.
             </p>
           </div>
         )}
@@ -187,6 +220,45 @@ export default function FirmaDocumento() {
             >
               {sending ? 'Invio in corso...' : 'Invia firma'}
             </button>
+
+            {doc.tipo === 'preventivo' && !showRifiuto && (
+              <button
+                onClick={() => setShowRifiuto(true)}
+                className="tw-w-full tw-mt-3 tw-py-2.5 tw-rounded-lg tw-bg-white tw-border tw-border-red-200 tw-text-red-600 tw-font-semibold tw-cursor-pointer hover:tw-bg-red-50 tw-transition-colors"
+              >
+                Rifiuta preventivo
+              </button>
+            )}
+
+            {doc.tipo === 'preventivo' && showRifiuto && (
+              <div className="tw-mt-4 tw-p-4 tw-bg-red-50 tw-rounded-xl tw-border tw-border-red-200">
+                <label className="tw-block tw-text-sm tw-font-semibold tw-text-red-800 tw-mb-2">
+                  Motivazione del rifiuto *
+                </label>
+                <textarea
+                  value={motivazione}
+                  onChange={(e) => setMotivazione(e.target.value)}
+                  rows={3}
+                  placeholder="Scrivi qui il motivo del rifiuto (es. costo troppo alto, tempi, altro)..."
+                  className="tw-w-full tw-p-2.5 tw-rounded-lg tw-border tw-border-red-200 tw-text-sm tw-resize-y"
+                />
+                <div className="tw-flex tw-gap-2.5 tw-mt-3 tw-justify-end">
+                  <button
+                    onClick={() => { setShowRifiuto(false); setMotivazione(''); }}
+                    className="tw-py-2 tw-px-4 tw-rounded-lg tw-border tw-border-slate-200 tw-bg-white tw-cursor-pointer tw-text-slate-700 tw-font-semibold hover:tw-bg-slate-50"
+                  >
+                    Annulla
+                  </button>
+                  <button
+                    onClick={inviaRifiuto}
+                    disabled={!motivazione.trim() || sendingRifiuto}
+                    className="tw-py-2 tw-px-5 tw-rounded-lg tw-bg-red-600 hover:tw-bg-red-700 disabled:tw-bg-slate-300 tw-text-white tw-font-bold tw-border-0 tw-cursor-pointer tw-transition-colors"
+                  >
+                    {sendingRifiuto ? 'Invio...' : 'Conferma rifiuto'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {errore && <p className="tw-text-red-600 tw-text-sm tw-mt-3 tw-text-center">{errore}</p>}
           </div>
