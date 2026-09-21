@@ -75,6 +75,7 @@
     <div class="tabs">
       <button class="active" data-tab="general"><i class="fas fa-home"></i> Generale</button>
       <button data-tab="pages"><i class="fas fa-file-alt"></i> Pagine</button>
+      <button data-tab="services"><i class="fas fa-briefcase-medical"></i> Servizi & Esami</button>
       <button data-tab="gallery"><i class="fas fa-images"></i> Galleria</button>
       <button data-tab="news"><i class="fas fa-newspaper"></i> News</button>
       <button data-tab="free"><i class="fas fa-edit"></i> Modifica libera</button>
@@ -135,6 +136,11 @@
         <select id="page-select"></select>
       </div>
       <div id="page-fields"></div>
+    </div>
+
+    <div class="tab-content" id="tab-services">
+      <p style="font-size:0.9rem;">Clicca <strong>Modifica</strong> su un servizio o esame per cambiare <strong>foto, titolo e descrizione</strong>. Il pulsante "Salva e pubblica" rende la modifica subito visibile online.</p>
+      <div id="services-list"></div>
     </div>
 
     <div class="tab-content" id="tab-gallery">
@@ -359,6 +365,7 @@
         }
         renderGeneral();
         renderPageSelect();
+        renderServices();
         renderGallery();
         renderNews();
         renderFreeList();
@@ -492,6 +499,77 @@
       content.pages[currentPage] = p;
     }
 
+    // ===== SERVIZI & ESAMI (modifica semplice foto + descrizione) =====
+    const SERVICES_GROUPS = [
+      { title: 'Servizi', keys: ['infermiere-a-domicilio','fisioterapia-a-domicilio','assistenza-anziani','cure-pazienti-cronici','assistenza-notturna','cure-palliative','psicologia-a-domicilio','servizio-ambulanza'] },
+      { title: 'Esami strumentali', keys: ['holter-pressorio','holter-ecg','apnee-sonno','screening-cardiaci','saturimetria-spirometria','prelievi-ematici','emogasanalisi','rx-domiciliare','ecografia-domiciliare'] },
+    ];
+    const servicesList = document.getElementById('services-list');
+
+    function renderServices() {
+      servicesList.innerHTML = '';
+      SERVICES_GROUPS.forEach(gr => {
+        const h = document.createElement('h3');
+        h.textContent = gr.title;
+        h.style.margin = '18px 0 10px';
+        servicesList.appendChild(h);
+        gr.keys.forEach(k => {
+          const p = (content.pages && content.pages[k]) || {};
+          const card = document.createElement('div');
+          card.className = 'list-item';
+          card.style.flexWrap = 'wrap';
+          card.innerHTML =
+            `<img class="thumb" src="${p.image || ''}" onerror="this.style.display='none'" alt="">` +
+            `<div class="name"><strong>${p.label || p.h1 || k}</strong><br><small>${k}.html</small></div>` +
+            `<button type="button" class="btn btn-outline svc-toggle" data-key="${k}" style="padding:6px 12px;font-size:0.8rem;white-space:nowrap;"><i class="fas fa-edit"></i> Modifica</button>` +
+            `<div class="svc-form hidden" id="svc-form-${k}" style="flex-basis:100%;margin-top:12px;">` +
+              input(`svc-${k}-h1`, 'Titolo', p.h1) +
+              input(`svc-${k}-lead`, 'Descrizione breve (puoi usare <strong> per il grassetto)', p.lead, true) +
+              input(`svc-${k}-text`, 'Testo principale', p.text, true) +
+              imageInput(`svc-${k}-image`, 'Foto', p.image) +
+              input(`svc-${k}-activitiesTitle`, 'Titolo elenco attività', p.activitiesTitle) +
+              `<div class="form-group"><label>Elenco attività (una per riga)</label><textarea id="svc-${k}-activities" rows="5">${(p.activities || []).join('\n')}</textarea></div>` +
+              `<button type="button" class="btn btn-primary svc-save" data-key="${k}"><i class="fas fa-save"></i> Salva e pubblica</button>` +
+            `</div>`;
+          servicesList.appendChild(card);
+        });
+      });
+    }
+
+    servicesList.addEventListener('click', async e => {
+      const tog = e.target.closest('.svc-toggle');
+      if (tog) {
+        document.getElementById('svc-form-' + tog.dataset.key).classList.toggle('hidden');
+        return;
+      }
+      const save = e.target.closest('.svc-save');
+      if (save) {
+        const k = save.dataset.key;
+        if (!content.pages) content.pages = {};
+        const p = content.pages[k] || (content.pages[k] = {});
+        p.h1 = document.getElementById(`svc-${k}-h1`).value;
+        p.lead = document.getElementById(`svc-${k}-lead`).value;
+        p.text = document.getElementById(`svc-${k}-text`).value;
+        p.image = document.getElementById(`svc-${k}-image`).value;
+        p.activitiesTitle = document.getElementById(`svc-${k}-activitiesTitle`).value;
+        p.activities = document.getElementById(`svc-${k}-activities`).value.split('\n').map(s => s.trim()).filter(Boolean);
+        saveMsg.textContent = 'Salvataggio...';
+        try {
+          await persistContent();
+          saveMsg.textContent = sharedMode ? 'Pubblicato online!' : 'Salvato su questo dispositivo (accedi con email admin per pubblicare).';
+          renderServices();
+        } catch (err) {
+          saveMsg.textContent = 'Errore pubblicazione: ' + (err.message || err);
+        }
+        setTimeout(() => saveMsg.textContent = '', 5000);
+      }
+    });
+    servicesList.addEventListener('change', e => {
+      if (e.target.type === 'file' && e.target.id.endsWith('-file')) {
+        fileToData(e.target, e.target.id.replace('-file', ''));
+      }
+    });
+
     function renderGallery() {
       galleryList.innerHTML = '';
       (content.gallery || []).forEach((img, i) => {
@@ -615,7 +693,7 @@
           const imported = JSON.parse(ev.target.result);
           content = deepMerge(defaults, imported);
           persistContent();
-          renderGeneral(); renderPageSelect(); renderGallery(); renderNews();
+          renderGeneral(); renderPageSelect(); renderServices(); renderGallery(); renderNews();
           saveMsg.textContent = 'JSON importato con successo.';
         } catch (ex) { alert('JSON non valido'); }
       };
