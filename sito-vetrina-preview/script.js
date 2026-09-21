@@ -130,6 +130,13 @@ function applyEdits() {
       if (se && data.eyebrow) se.innerHTML = data.eyebrow;
     }
 
+    // foto card servizi/esami sincronizzate con le immagini scelte nell'admin
+    document.querySelectorAll('.service-thumb[data-page], .service-item[data-page]').forEach(el => {
+      const pg = (c.pages || {})[el.getAttribute('data-page')];
+      const img = el.querySelector('.thumb-media img');
+      if (pg && pg.image && img) img.src = pg.image;
+    });
+
     // news
     if (c.news && c.news.length) {
       const list = document.getElementById('newsList');
