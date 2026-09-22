@@ -104,6 +104,16 @@ body.menu-open .hamburger span { background: #fff; }
 .shop-promo-text p { color: var(--text-light); line-height: 1.7; margin-bottom: 24px; }
 .shop-promo-img img { width: 100%; border-radius: 20px; box-shadow: var(--shadow); display: block; }
 
+/* Telemedicina */
+.telemedicina { padding: 70px 0; background: var(--bg-soft); }
+.tele-inner { display: grid; grid-template-columns: 1.1fr 1fr; gap: 50px; align-items: center; }
+.tele-text h2 { font-size: 2rem; color: var(--text-dark); margin-bottom: 16px; }
+.tele-text p { color: var(--text-light); line-height: 1.7; margin-bottom: 20px; }
+.tele-list { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; margin-bottom: 26px; }
+.tele-list li { display: flex; align-items: center; gap: 10px; font-size: 0.92rem; font-weight: 600; color: var(--text); }
+.tele-list li i { color: var(--green); width: 20px; text-align: center; }
+.tele-img img { width: 100%; border-radius: 20px; box-shadow: var(--shadow); display: block; }
+
 /* Recensioni */
 .reviews { padding: 80px 0; background: var(--bg-soft); }
 .reviews-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
@@ -172,7 +182,9 @@ body.menu-open .hamburger span { background: #fff; }
 .footer-col h4 { color: var(--white); margin-bottom: 16px; font-size: 1rem; }
 .footer-col p, .footer-col li { font-size: 0.92rem; margin-bottom: 10px; }
 .footer-col ul { list-style: none; }
-.footer-col a { color: #cbd5e1; }
+.footer-col a { color: #cbd5e1; overflow-wrap: anywhere; }
+.footer-col p { overflow-wrap: anywhere; }
+.footer-grid > * { min-width: 0; }
 .footer-col a:hover { color: var(--white); }
 .footer-bottom { border-top: 1px solid #334155; padding-top: 20px; text-align: center; font-size: 0.85rem; }
 
@@ -221,9 +233,11 @@ body.menu-open .hamburger span { background: #fff; }
   .btn { padding: 10px 18px; font-size: 0.9rem; }
   .hero { padding: 56px 0; }
   .hero h1 { font-size: 2.1rem; }
-  .services, .why-us, .jobs, .blog, .gallery, .reviews, .shop-promo { padding: 48px 0; }
+  .services, .why-us, .jobs, .blog, .gallery, .reviews, .shop-promo, .telemedicina { padding: 48px 0; }
   .reviews-grid { grid-template-columns: 1fr; }
   .shop-promo-inner { grid-template-columns: 1fr; gap: 28px; }
+  .tele-inner { grid-template-columns: 1fr; gap: 28px; }
+  .tele-list { grid-template-columns: 1fr 1fr; }
   .section-header { margin-bottom: 26px; }
   .section-header h2 { font-size: 1.5rem; }
   .service-item, .service-thumb { padding: 12px 14px; gap: 12px; }
