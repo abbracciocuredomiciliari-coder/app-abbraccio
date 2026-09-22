@@ -129,6 +129,18 @@
         <label class="btn-upload"><i class="fas fa-camera"></i> Carica foto<input type="file" id="global-logo-file" accept="image/*"></label>
         <img class="img-preview" id="global-logo-preview" src="" onerror="this.style.display='none'" alt="">
       </div>
+      <div class="form-group">
+        <label>Foto "Lavora con noi" (URL, oppure carica un file)</label>
+        <input type="text" id="global-jobsImage">
+        <label class="btn-upload"><i class="fas fa-camera"></i> Carica foto<input type="file" id="global-jobsImage-file" accept="image/*"></label>
+        <img class="img-preview" id="global-jobsImage-preview" src="" onerror="this.style.display='none'" alt="">
+      </div>
+      <div class="form-group">
+        <label>Foto presentazione Shop (URL, oppure carica un file)</label>
+        <input type="text" id="global-shopImage">
+        <label class="btn-upload"><i class="fas fa-camera"></i> Carica foto<input type="file" id="global-shopImage-file" accept="image/*"></label>
+        <img class="img-preview" id="global-shopImage-preview" src="" onerror="this.style.display='none'" alt="">
+      </div>
     </div>
 
     <div class="tab-content" id="tab-pages">
@@ -401,6 +413,12 @@
       if (hp) { hp.src = g.heroImage || ''; hp.style.display = g.heroImage ? 'block' : 'none'; }
       const lp = document.getElementById('global-logo-preview');
       if (lp) { lp.src = g.logo || ''; lp.style.display = g.logo ? 'block' : 'none'; }
+      document.getElementById('global-jobsImage').value = g.jobsImage || '';
+      document.getElementById('global-shopImage').value = g.shopImage || '';
+      const jp = document.getElementById('global-jobsImage-preview');
+      if (jp) { jp.src = g.jobsImage || ''; jp.style.display = g.jobsImage ? 'block' : 'none'; }
+      const sp2 = document.getElementById('global-shopImage-preview');
+      if (sp2) { sp2.src = g.shopImage || ''; sp2.style.display = g.shopImage ? 'block' : 'none'; }
       document.getElementById('global-eyebrow').value = g.eyebrow || '';
     }
 
@@ -414,6 +432,8 @@
       content.global.heroSubtitle = document.getElementById('global-heroSubtitle').value;
       content.global.heroImage = document.getElementById('global-heroImage').value;
       content.global.logo = document.getElementById('global-logo').value;
+      content.global.jobsImage = document.getElementById('global-jobsImage').value;
+      content.global.shopImage = document.getElementById('global-shopImage').value;
       content.global.eyebrow = document.getElementById('global-eyebrow').value;
     }
 
@@ -430,6 +450,8 @@
     }
     document.getElementById('global-heroImage-file').addEventListener('change', e => fileToData(e.target, 'global-heroImage'));
     document.getElementById('global-logo-file').addEventListener('change', e => fileToData(e.target, 'global-logo'));
+    document.getElementById('global-jobsImage-file').addEventListener('change', e => fileToData(e.target, 'global-jobsImage'));
+    document.getElementById('global-shopImage-file').addEventListener('change', e => fileToData(e.target, 'global-shopImage'));
 
     function renderPageSelect() {
       pageSelect.innerHTML = '';

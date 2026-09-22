@@ -67,6 +67,7 @@
         </li>
 
         <li><a href="index.html#telemedicina">TELEMEDICINA</a></li>
+        <li><a href="visite-specialistiche.html">VISITE</a></li>
         <li class="dropdown">
           <a href="#" class="dropdown-toggle">DOVE SIAMO</a>
                     <div class="dropdown-menu dove">
@@ -103,8 +104,10 @@
         <p>Hai bisogno di assistenza sanitaria, fisioterapia, OSS o esami a domicilio? <strong>Ti aiutiamo a Roma e provincia, senza farti perdere tempo.</strong></p>
         <div class="hero-ctas">
           <a href="tel:0601905242" class="btn btn-primary"><i class="fas fa-phone"></i> Chiama ora: 06 01905242</a>
+          <a href="https://wa.me/393514175117" class="btn btn-wa" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> WhatsApp</a>
           <a href="https://app.abbracciocuredomiciliari.it/richiesta-assistenza" class="btn btn-outline"><i class="fas fa-paper-plane"></i> Invia richiesta</a>
         </div>
+        <div class="hero-h24"><i class="fas fa-clock"></i> Reperibilità telefonica tutti i giorni, 24 ore su 24</div>
         <div class="hero-locality"><i class="fas fa-location-dot"></i> <strong>Operativi a Roma e Provincia</strong> — Assistenza direttamente a casa tua</div>
       </div>
       <div class="hero-image-wrap">
@@ -195,7 +198,7 @@
           <a href="shop.html" class="btn btn-primary"><i class="fas fa-store"></i> Visita shop</a>
         </div>
         <div class="shop-promo-img">
-          <img src="images/promo-servizi.jpg" alt="Shop ausili e prodotti sanitari" loading="lazy">
+          <img id="shopImage" src="images/promo-servizi.jpg" alt="Shop ausili e prodotti sanitari" loading="lazy">
         </div>
       </div>
     </div>
@@ -265,12 +268,9 @@
           <h2>Sei un operatore sanitario o assistenziale?</h2>
           <p>Registrati come operatore sul nostro gestionale: ti ricontattiamo per attivarti nella tua zona.</p>
           <a href="https://app.abbracciocuredomiciliari.it/register" class="btn btn-primary"><i class="fas fa-user-plus"></i> Registrati come operatore</a>
-          <div class="sede-addr"><i class="fas fa-map-marker-alt"></i> <span id="sedeAddr">Via di S. Maria Ausiliatrice n° 4/B, 00181 Roma</span></div>
         </div>
         <div class="jobs-image">
-          <div class="sede-map">
-            <iframe id="sedeMap" src="https://maps.google.com/maps?q=Via%20di%20S.%20Maria%20Ausiliatrice%204%2FB%2C%2000181%20Roma&z=14&output=embed" loading="lazy" title="Sede Abbraccio - Roma"></iframe>
-          </div>
+          <img id="jobsImage" src="images/team-abbraccio.jpg" alt="Il team Abbraccio al lavoro" loading="lazy">
         </div>
       </div>
     </div>
@@ -285,6 +285,22 @@
         <p>Immagini reali del nostro lavoro quotidiano a Roma e Provincia</p>
       </div>
       <div id="galleryGrid" class="gallery-grid"></div>
+    </div>
+  </section>
+
+  <!-- Dove ci troviamo -->
+  <section class="dove" id="dove-siamo">
+    <div class="container">
+      <div class="section-header center">
+        <span class="eyebrow">Dove ci troviamo</span>
+        <h2>La nostra sede a Roma</h2>
+      </div>
+      <div class="dove-inner">
+        <div class="sede-addr"><i class="fas fa-map-marker-alt"></i> <span id="sedeAddr">Via di S. Maria Ausiliatrice n° 4/B, 00181 Roma</span></div>
+        <div class="sede-map">
+          <iframe id="sedeMap" src="https://maps.google.com/maps?q=Via%20di%20S.%20Maria%20Ausiliatrice%204%2FB%2C%2000181%20Roma&z=14&output=embed" loading="lazy" title="Sede Abbraccio - Roma"></iframe>
+        </div>
+      </div>
     </div>
   </section>
 

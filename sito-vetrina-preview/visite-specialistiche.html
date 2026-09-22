@@ -3,32 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dove siamo - Abbraccio Cure Domiciliari</title>
-  <meta name="description" content="Le sedi e le aree coperte da Abbraccio Cure Domiciliari.">
+  <title>Visite Mediche Specialistiche - Abbraccio Cure Domiciliari</title>
+  <meta name="description" content="Visite mediche specialistiche a domicilio a Roma: cardiologo, geriatra, urologo, neurologo e altri specialisti. Prenota la tua visita.">
   <link rel="icon" type="image/png" href="logo-abbraccio.png">
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    .where-hero { background: var(--grad-hero); color: #fff; padding: 70px 0; text-align: center; }
-    .where-hero h1 { color: #fff; font-size: 2.4rem; margin-bottom: 10px; }
-    .where-hero p { color: rgba(255,255,255,0.85); }
-    .where-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 60px 0; }
-    .where-card { background: #fff; padding: 30px; border-radius: var(--radius); box-shadow: var(--shadow); }
-    .where-card h3 { color: var(--text-dark); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
-    .where-card h3 i { color: var(--blue); }
-    .where-card ul { list-style: none; color: var(--text-light); font-size: 0.95rem; }
-    .where-card li { margin-bottom: 8px; }
-    .where-main { padding: 60px 0; background: var(--bg-soft); }
-    .where-main-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
-    .where-main h2 { color: var(--text-dark); margin-bottom: 16px; }
-    .where-main p { color: var(--text-light); margin-bottom: 12px; }
-    .where-map { border-radius: var(--radius); height: 300px; overflow: hidden; box-shadow: var(--shadow); }
-    .where-map iframe { width: 100%; height: 100%; border: 0; }
-    @media (max-width: 900px) { .where-grid, .where-main-inner { grid-template-columns: 1fr; } }
+    .services-list { padding: 80px 0; background: var(--white); }
+    .services-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .visit-card { display: flex; align-items: center; gap: 16px; padding: 14px 18px; border: 1px solid #e6edf5; border-radius: 18px; background: #fff; box-shadow: 0 2px 10px rgba(16,42,80,.07); }
+    .thumb-media { position: relative; width: 64px; height: 64px; border-radius: 14px; overflow: hidden; flex-shrink: 0; background: rgba(26,46,90,.08); display: flex; align-items: center; justify-content: center; }
+    .thumb-media > i { font-size: 1.4rem; color: var(--blue); }
+    .visit-card h3 { flex: 1; margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-dark); }
+    .visit-card .btn { flex-shrink: 0; padding: 9px 16px; font-size: 0.82rem; white-space: nowrap; }
+    @media (max-width: 900px) { .services-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 640px) { .services-grid { grid-template-columns: 1fr; } .services-list { padding: 48px 0; } }
   </style>
 </head>
-<body><!-- Top bar -->
+<body>
+<!-- Top bar -->
 <div class="topbar">
   <div class="container topbar-inner">
     <div class="topbar-left">
@@ -41,7 +35,6 @@
     </div>
   </div>
 </div>
-
 <!-- Header -->
 <header class="header" id="header">
   <div class="container header-inner">
@@ -68,7 +61,8 @@
             <a href="servizio-ambulanza.html"><i class="fas fa-ambulance"></i> Servizio Ambulanza</a>
             <a href="servizi.html"><i class="fas fa-th-list"></i> Tutti i servizi</a>
           </div>
-        </li>        <li class="dropdown">
+        </li>
+        <li class="dropdown">
           <a href="#" class="dropdown-toggle">ESAMI</a>
           <div class="dropdown-menu">
             <a href="holter-pressorio.html"><i class="fas fa-heart-pulse"></i> Holter Pressorio</a>
@@ -85,10 +79,9 @@
         </li>
         <li><a href="index.html#telemedicina">TELEMEDICINA</a></li>
         <li><a href="visite-specialistiche.html">VISITE</a></li>
-
         <li class="dropdown">
           <a href="#" class="dropdown-toggle">DOVE SIAMO</a>
-                    <div class="dropdown-menu dove">
+          <div class="dropdown-menu dove">
             <a href="dove-siamo.html#roma-centro"><i class="fas fa-map-marker-alt"></i> Roma Centro</a>
             <a href="dove-siamo.html#roma-nord"><i class="fas fa-map-marker-alt"></i> Roma Nord</a>
             <a href="dove-siamo.html#roma-sud"><i class="fas fa-map-marker-alt"></i> Roma Sud</a>
@@ -111,117 +104,39 @@
   </div>
 </header>
 
-
   <script src="nav.js"></script>
-<section class="where-hero">
-    <div class="container">
-      <h1>Dove siamo</h1>
-      <p>Operativi esclusivamente nel Lazio e a Roma</p>
-    </div>
-  </section>
 
-  <section class="where-main">
+  <section class="services-list" id="visite">
     <div class="container">
-      <div class="where-main-inner">
-        <div>
-          <h2>Sede principale</h2>
-          <p><i class="fas fa-map-marker-alt"></i> Via di S. Maria Ausiliatrice n° 4/B, 00181 Roma</p>
-          <p><i class="fas fa-phone"></i> 06 01905242</p>
-          <p><i class="fas fa-mobile-alt"></i> 351.4175117</p>
-          <p><i class="fas fa-envelope"></i> abbracciocuredomiciliari@gmail.com</p>
-          <p>Siamo attivi a Roma e in tutta la Provincia di Roma, nel Reatino, nel Viterbese, nella provincia di Latina e di Frosinone.</p>
-        </div>
-        <div class="where-map">
-          <iframe src="https://www.google.com/maps?q=Via+di+S.+Maria+Ausiliatrice+4%2FB%2C+00181+Roma&output=embed" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
-        </div>
+      <div class="section-header center">
+        <span class="eyebrow">Visite Specialistiche</span>
+        <h2>Medici specialisti a domicilio</h2>
+        <p>Prenota una visita specialistica direttamente a casa tua, a Roma e provincia</p>
       </div>
-    </div>
-  </section>
-
-  <section class="container">
-    <div class="where-grid">
-      <div class="where-card" id="roma-centro">
-        <h3><i class="fas fa-map-marker-alt"></i> Roma Centro</h3>
-        <ul>
-          <li>Centro storico</li>
-          <li>Municipio I - Centro</li>
-          <li>Testaccio e Trastevere</li>
-          <li>Prati e Vaticano</li>
-        </ul>
-      </div>
-      <div class="where-card" id="roma-nord">
-        <h3><i class="fas fa-map-marker-alt"></i> Roma Nord</h3>
-        <ul>
-          <li>Flaminio</li>
-          <li>Parioli</li>
-          <li>Tor di Quinto</li>
-          <li>Buffalora e Grottarossa</li>
-        </ul>
-      </div>
-      <div class="where-card" id="roma-sud">
-        <h3><i class="fas fa-map-marker-alt"></i> Roma Sud</h3>
-        <ul>
-          <li>Appia e Tuscolano</li>
-          <li>EUR</li>
-          <li>Mostacciano</li>
-          <li>Castel Fusano</li>
-        </ul>
-      </div>
-      <div class="where-card" id="roma-est">
-        <h3><i class="fas fa-map-marker-alt"></i> Roma Est</h3>
-        <ul>
-          <li>Prenestino</li>
-          <li>Torre Maura</li>
-          <li>Casalpalocco</li>
-          <li>Torre Angela</li>
-        </ul>
-      </div>
-      <div class="where-card" id="roma-ovest">
-        <h3><i class="fas fa-map-marker-alt"></i> Roma Ovest</h3>
-        <ul>
-          <li>Eur</li>
-          <li>Magliana</li>
-          <li>Monteverde</li>
-          <li>Acilia</li>
-        </ul>
-      </div>
-      <div class="where-card" id="provincia-roma">
-        <h3><i class="fas fa-map-marker-alt"></i> Provincia di Roma</h3>
-        <ul>
-          <li>Ostia e Fiumicino</li>
-          <li>Ciampino e Marino</li>
-          <li>Tivoli e Guidonia</li>
-          <li>Velletri e Albano</li>
-        </ul>
-      </div>
-      <div class="where-card" id="lazio">
-        <h3><i class="fas fa-map-marker-alt"></i> Lazio</h3>
-        <ul>
-          <li>Latina e provincia</li>
-          <li>Frosinone e provincia</li>
-          <li>Viterbo e provincia</li>
-          <li>Rieti e provincia</li>
-        </ul>
-      </div>
-      <div class="where-card">
-        <h3><i class="fas fa-clock"></i> Orari</h3>
-        <ul>
-          <li>Reperibilità 24/7</li>
-          <li>Sabato e domenica</li>
-          <li>Giorni festivi</li>
-          <li>Assistenza continua</li>
-        </ul>
+      <div class="services-grid">
+        <div class="visit-card"><span class="thumb-media"><i class="fas fa-heart-pulse"></i></span><h3>Cardiologo</h3><a class="btn btn-primary" href="https://app.abbracciocuredomiciliari.it/richiesta-servizio"><i class="fas fa-calendar-check"></i> Prenota visita</a></div>
+        <div class="visit-card"><span class="thumb-media"><i class="fas fa-user-shield"></i></span><h3>Geriatra</h3><a class="btn btn-primary" href="https://app.abbracciocuredomiciliari.it/richiesta-servizio"><i class="fas fa-calendar-check"></i> Prenota visita</a></div>
+        <div class="visit-card"><span class="thumb-media"><i class="fas fa-user-md"></i></span><h3>Urologo</h3><a class="btn btn-primary" href="https://app.abbracciocuredomiciliari.it/richiesta-servizio"><i class="fas fa-calendar-check"></i> Prenota visita</a></div>
+        <div class="visit-card"><span class="thumb-media"><i class="fas fa-dna"></i></span><h3>Endocrinologo</h3><a class="btn btn-primary" href="https://app.abbracciocuredomiciliari.it/richiesta-servizio"><i class="fas fa-calendar-check"></i> Prenota visita</a></div>
+        <div class="visit-card"><span class="thumb-media"><i class="fas fa-ear-listen"></i></span><h3>Otorino</h3><a class="btn btn-primary" href="https://app.abbracciocuredomiciliari.it/richiesta-servizio"><i class="fas fa-calendar-check"></i> Prenota visita</a></div>
+        <div class="visit-card"><span class="thumb-media"><i class="fas fa-person-cane"></i></span><h3>Fisiatra</h3><a class="btn btn-primary" href="https://app.abbracciocuredomiciliari.it/richiesta-servizio"><i class="fas fa-calendar-check"></i> Prenota visita</a></div>
+        <div class="visit-card"><span class="thumb-media"><i class="fas fa-ribbon"></i></span><h3>Oncologo</h3><a class="btn btn-primary" href="https://app.abbracciocuredomiciliari.it/richiesta-servizio"><i class="fas fa-calendar-check"></i> Prenota visita</a></div>
+        <div class="visit-card"><span class="thumb-media"><i class="fas fa-heart-circle-check"></i></span><h3>Angiologo</h3><a class="btn btn-primary" href="https://app.abbracciocuredomiciliari.it/richiesta-servizio"><i class="fas fa-calendar-check"></i> Prenota visita</a></div>
+        <div class="visit-card"><span class="thumb-media"><i class="fas fa-brain"></i></span><h3>Neurologo</h3><a class="btn btn-primary" href="https://app.abbracciocuredomiciliari.it/richiesta-servizio"><i class="fas fa-calendar-check"></i> Prenota visita</a></div>
+        <div class="visit-card"><span class="thumb-media"><i class="fas fa-lungs"></i></span><h3>Broncopneumologo</h3><a class="btn btn-primary" href="https://app.abbracciocuredomiciliari.it/richiesta-servizio"><i class="fas fa-calendar-check"></i> Prenota visita</a></div>
+        <div class="visit-card"><span class="thumb-media"><i class="fas fa-apple-whole"></i></span><h3>Nutrizionista</h3><a class="btn btn-primary" href="https://app.abbracciocuredomiciliari.it/richiesta-servizio"><i class="fas fa-calendar-check"></i> Prenota visita</a></div>
+        <div class="visit-card"><span class="thumb-media"><i class="fas fa-comments"></i></span><h3>Psicologa</h3><a class="btn btn-primary" href="https://app.abbracciocuredomiciliari.it/richiesta-servizio"><i class="fas fa-calendar-check"></i> Prenota visita</a></div>
       </div>
     </div>
   </section>
 
   <footer class="footer" id="contatti">
-    <div class="container">
-      <div class="footer-bottom">
-        <p>© 2026 Abbraccio Cure Domiciliari. Tutti i diritti riservati.</p>
-      </div>
+  <div class="container">
+    <div class="footer-bottom">
+      <p>© 2026 Abbraccio Cure Domiciliari. Tutti i diritti riservati.</p>
     </div>
-  </footer>
+  </div>
+</footer>
 
   <script src="script.js"></script>
 </body>

@@ -90,6 +90,10 @@ function applyEdits() {
       const addrLink = document.querySelector('.footer-contacts a[href*="maps.google"]');
       if (addrLink) addrLink.href = 'https://maps.google.com/?q=' + encodeURIComponent(g.address);
     }
+    const jobsImg = document.getElementById('jobsImage');
+    if (jobsImg && g.jobsImage) jobsImg.src = g.jobsImage;
+    const shopImg = document.getElementById('shopImage');
+    if (shopImg && g.shopImage) shopImg.src = g.shopImage;
 
     // pages
     const p = (c.pages || {})[key];

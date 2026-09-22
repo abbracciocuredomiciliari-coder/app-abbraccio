@@ -78,6 +78,11 @@ body.menu-open .hamburger span { background: #fff; }
 .btn-primary:hover { background: var(--blue-dark); }
 .btn-outline { background: transparent; color: var(--blue); border: 2px solid var(--blue); }
 .btn-outline:hover { background: var(--blue); color: #fff; }
+.btn-wa { background: #25d366; color: #fff; }
+.btn-wa:hover { background: #1eb856; }
+.hero .btn-outline { color: #fff; border-color: rgba(255,255,255,0.7); }
+.hero .btn-outline:hover { background: rgba(255,255,255,0.15); color: #fff; }
+.hero-h24 { display: flex; align-items: center; gap: 8px; color: #e8c46a; font-weight: 700; font-size: 0.9rem; margin-bottom: 14px; }
 
 /* Sections */
 .section-header { margin-bottom: 40px; }
@@ -205,6 +210,11 @@ body.menu-open .hamburger span { background: #fff; }
 .mobile-cta-bar { display: none; }
 
 /* Mappa sede */
+/* Dove ci troviamo */
+.dove { padding: 80px 0; background: var(--white); }
+.dove-inner { max-width: 760px; margin: 0 auto; }
+.dove .sede-addr { justify-content: center; font-size: 1.15rem; margin: 0 0 20px; }
+
 .sede-map { border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); border: 1px solid #eef2f6; }
 .sede-map iframe { width: 100%; height: 320px; border: 0; display: block; }
 .sede-addr { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-weight: 700; color: var(--blue); font-size: 0.95rem; }
@@ -233,7 +243,9 @@ body.menu-open .hamburger span { background: #fff; }
   .btn { padding: 10px 18px; font-size: 0.9rem; }
   .hero { padding: 56px 0; }
   .hero h1 { font-size: 2.1rem; }
-  .services, .why-us, .jobs, .blog, .gallery, .reviews, .shop-promo, .telemedicina { padding: 48px 0; }
+  .services, .why-us, .jobs, .blog, .gallery, .reviews, .shop-promo, .telemedicina, .dove { padding: 48px 0; }
+  .hero-ctas { flex-direction: column; }
+  .hero-ctas .btn { width: 100%; justify-content: center; padding: 14px 18px; font-size: 1rem; }
   .reviews-grid { grid-template-columns: 1fr; }
   .shop-promo-inner { grid-template-columns: 1fr; gap: 28px; }
   .tele-inner { grid-template-columns: 1fr; gap: 28px; }
