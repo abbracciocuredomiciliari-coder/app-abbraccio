@@ -109,23 +109,32 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
       pdf.rect(colX[2], startY, colW[2], rowH).fillAndStroke('#1e4d8c', '#1e4d8c');
       pdf.rect(colX[3], startY, colW[3], rowH).fillAndStroke('#1e4d8c', '#1e4d8c');
 
+      const prestazioni = Array.isArray(doc.prestazioni) ? doc.prestazioni : [];
+      // Una voce è "oraria" se flaggata tipo='orario' oppure (preventivo da workplan) con quantità ≠ 1
+      const isVoceOraria = (p: any) =>
+        p.tipo === 'orario' ||
+        (doc.tipo === 'preventivo' && doc.riferimentoTipo === 'workplan' && Number(p.quantita) !== 1);
+      const hasOre = prestazioni.some(isVoceOraria);
+
       pdf.fillColor('#ffffff');
       pdf.text('Prestazione', colX[0] + 5, startY + 6, { width: colW[0] - 10 });
       pdf.fillColor('#ffffff');
-      pdf.text('Qtà', colX[1] + 5, startY + 6, { width: colW[1] - 10, align: 'center' });
+      pdf.text(hasOre ? 'Ore' : 'Qtà', colX[1] + 5, startY + 6, { width: colW[1] - 10, align: 'center' });
       pdf.fillColor('#ffffff');
-      pdf.text('Prezzo un.', colX[2] + 5, startY + 6, { width: colW[2] - 10, align: 'right' });
+      pdf.text(hasOre ? '€/ora' : 'Prezzo un.', colX[2] + 5, startY + 6, { width: colW[2] - 10, align: 'right' });
       pdf.fillColor('#ffffff');
       pdf.text('Importo', colX[3] + 5, startY + 6, { width: colW[3] - 10, align: 'right' });
 
       let rowY = startY + rowH;
       pdf.font('Helvetica').fontSize(9).fillColor('#000000');
-      const prestazioni = Array.isArray(doc.prestazioni) ? doc.prestazioni : [];
+      let totaleOre = 0;
       for (const p of prestazioni) {
         const desc = String(p.descrizione || '').trim() || 'Prestazione';
         const qty = Number(p.quantita) || 1;
         const unit = Number(p.prezzoUnitario) || 0;
         const importo = Number(p.importo) || 0;
+        const oraria = isVoceOraria(p);
+        if (oraria) totaleOre += qty;
 
         const descH = pdf.heightOfString(desc, { width: colW[0] - 10 });
         const h = Math.max(20, descH + 10);
@@ -145,9 +154,9 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
         pdf.fillColor('#000000').font('Helvetica').fontSize(9);
         pdf.text(desc, colX[0] + 5, rowY + 5, { width: colW[0] - 10, lineGap: 1 });
         pdf.fillColor('#000000');
-        pdf.text(String(qty), colX[1] + 5, rowY + 5, { width: colW[1] - 10, align: 'center' });
+        pdf.text(oraria ? `${String(qty).replace('.', ',')} h` : String(qty), colX[1] + 5, rowY + 5, { width: colW[1] - 10, align: 'center' });
         pdf.fillColor('#000000');
-        pdf.text(formatEuro(unit), colX[2] + 5, rowY + 5, { width: colW[2] - 10, align: 'right' });
+        pdf.text(oraria ? `${formatEuro(unit)}/h` : formatEuro(unit), colX[2] + 5, rowY + 5, { width: colW[2] - 10, align: 'right' });
         pdf.fillColor('#000000');
         pdf.text(formatEuro(importo), colX[3] + 5, rowY + 5, { width: colW[3] - 10, align: 'right' });
 
@@ -161,6 +170,10 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
         totalY = 50;
       }
       const totaleLabel = doc.totaleLabel || 'TOTALE';
+      if (hasOre && totaleOre > 0) {
+        pdf.font('Helvetica-Bold').fontSize(10).fillColor('#1e4d8c')
+          .text(`Totale ore preventivo: ${String(Math.round(totaleOre * 100) / 100).replace('.', ',')} h`, 50, totalY + 16, { width: 300 });
+      }
       pdf.rect(360, totalY, 200, 45).fillAndStroke('#f0fdf4', '#16a34a');
       pdf.font('Helvetica-Bold').fontSize(10).fillColor('#166534').text(totaleLabel, 370, totalY + 8, { width: 130, align: 'left' });
       pdf.font('Helvetica-Bold').fontSize(18).fillColor('#166534').text(formatEuro(Number(doc.totale) || 0), 370, totalY + 22, { width: 180, align: 'right' });
@@ -179,9 +192,14 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
 
       if (doc.tipo === 'preventivo') {
         const totale = Number(doc.totale) || 0;
-        const detrazione = totale * 0.19;
+        const FRANCHIGIA = 129.11;
+        const baseDetraibile = Math.max(0, totale - FRANCHIGIA);
+        const detrazione = Math.round(baseDetraibile * 0.19 * 100) / 100;
+        const testoDetrazione = baseDetraibile > 0
+          ? `Detrazione fiscale: le spese sanitarie sono detraibili al 19% nella dichiarazione dei redditi, per la parte che eccede la franchigia di ${formatEuro(FRANCHIGIA)}. Detrazione stimata su questo preventivo: ${formatEuro(detrazione)} (19% di ${formatEuro(baseDetraibile)} = ${formatEuro(totale)} - ${formatEuro(FRANCHIGIA)} di franchigia).`
+          : `Detrazione fiscale: le spese sanitarie sono detraibili al 19% nella dichiarazione dei redditi, per la parte che eccede la franchigia di ${formatEuro(FRANCHIGIA)}. Questo preventivo non supera la franchigia: nessuna detrazione stimata.`;
         pdf.font('Helvetica-Oblique').fontSize(9).fillColor('#555555').text(
-          `Detrazione fiscale: le spese sanitarie sono detraibili al 19% nella dichiarazione dei redditi (oltre la franchigia prevista dalla normativa vigente). Detrazione stimata su questo preventivo: ${formatEuro(detrazione)} (19% di ${formatEuro(totale)}).`,
+          testoDetrazione,
           50, noteY, { width: 500, lineGap: 1 }
         );
         noteY += 34;

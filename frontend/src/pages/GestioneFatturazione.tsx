@@ -60,7 +60,7 @@ interface DocumentoFatturazione {
   numero: string;
   tipo: 'preventivo' | 'fattura';
   patient: Patient;
-  prestazioni: { descrizione: string; quantita: number; prezzoUnitario: number; importo: number }[];
+  prestazioni: { descrizione: string; quantita: number; prezzoUnitario: number; importo: number; tipo?: string }[];
   totale: number;
   data: string;
   dataPrestazione?: string;
@@ -499,7 +499,7 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
     setPreventivoLoading(true);
     try {
       const wp = preventivoModalWp;
-      let prestazioni: { descrizione: string; quantita: number; prezzoUnitario: number }[] = [];
+      let prestazioni: { descrizione: string; quantita: number; prezzoUnitario: number; tipo?: string }[] = [];
       const tariffaOraria = calcolaTariffaOraria(wp);
 
       if (preventivoTipo === 'fisso' || tariffaOraria <= 0) {
@@ -521,6 +521,7 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
             descrizione: `${wp.task} — ${GIORNI_LABEL[g.giorno] || ''} ${oreGiorno(g)}h × ${occ} accessi`,
             quantita: Math.round(oreGiorno(g) * occ * 100) / 100,
             prezzoUnitario: tariffaOraria,
+            tipo: 'orario',
           };
         });
       } else {
@@ -535,6 +536,7 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
           descrizione: `${wp.task} — ${Math.round(totale * 100) / 100}h nel periodo`,
           quantita: Math.round(totale * 100) / 100,
           prezzoUnitario: tariffaOraria,
+          tipo: 'orario',
         }];
       }
 
@@ -1157,9 +1159,12 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
               {(() => {
                 const tot = totalePreventivoSelezionato(preventivoModalWp, preventivoTipo);
                 if (tot <= 0) return null;
+                const FRANCHIGIA = 129.11;
+                const base = Math.max(0, tot - FRANCHIGIA);
+                const detrazione = Math.round(base * 0.19 * 100) / 100;
                 return (
                   <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '10px 12px', fontSize: '0.82rem', color: '#166534', marginBottom: '16px', lineHeight: 1.5 }}>
-                    💶 <strong>Detraibile al 19%</strong> in dichiarazione dei redditi: <strong>{formatEuro(tot * 0.19)}</strong> su un totale di {formatEuro(tot)} (oltre la franchigia prevista dalla normativa).
+                    💶 <strong>Detraibile al 19%</strong> in dichiarazione dei redditi: <strong>{formatEuro(detrazione)}</strong> = 19% di {formatEuro(base)} ({formatEuro(tot)} − {formatEuro(FRANCHIGIA)} di franchigia).
                   </div>
                 );
               })()}
