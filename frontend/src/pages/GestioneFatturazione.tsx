@@ -481,6 +481,17 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
     setPreventivoError('');
   };
 
+  const totalePreventivoSelezionato = (wp: WorkPlanItem, tipo: 'giornaliero' | 'orario' | 'fisso'): number => {
+    const tariffaOraria = calcolaTariffaOraria(wp);
+    if (tipo === 'fisso' || tariffaOraria <= 0) return wp.costoPrestazione || 0;
+    if (tipo === 'giornaliero') {
+      return (wp.giorniSettimana || [])
+        .filter(g => (g.accessiAlGiorno || 0) > 0)
+        .reduce((sum, g) => sum + oreGiorno(g) * contaOccorrenzeGiorno(wp, g.giorno) * tariffaOraria, 0);
+    }
+    return oreTotaliPeriodo(wp) * tariffaOraria;
+  };
+
   const generaPreventivo = async (e: FormEvent) => {
     e.preventDefault();
     if (!preventivoModalWp) return;
@@ -1143,6 +1154,15 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
                   </label>
                 </div>
               </div>
+              {(() => {
+                const tot = totalePreventivoSelezionato(preventivoModalWp, preventivoTipo);
+                if (tot <= 0) return null;
+                return (
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '10px 12px', fontSize: '0.82rem', color: '#166534', marginBottom: '16px', lineHeight: 1.5 }}>
+                    💶 <strong>Detraibile al 19%</strong> in dichiarazione dei redditi: <strong>{formatEuro(tot * 0.19)}</strong> su un totale di {formatEuro(tot)} (oltre la franchigia prevista dalla normativa).
+                  </div>
+                );
+              })()}
               {preventivoError && <div style={{ color: '#dc2626', fontSize: '0.875rem', marginBottom: '14px' }}>{preventivoError}</div>}
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 <button type="button" onClick={chiudiPreventivoModal} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', fontWeight: 600 }}>Annulla</button>

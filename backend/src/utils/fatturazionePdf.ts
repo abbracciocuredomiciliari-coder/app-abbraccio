@@ -177,6 +177,16 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
         noteY += 28;
       }
 
+      if (doc.tipo === 'preventivo') {
+        const totale = Number(doc.totale) || 0;
+        const detrazione = totale * 0.19;
+        pdf.font('Helvetica-Oblique').fontSize(9).fillColor('#555555').text(
+          `Detrazione fiscale: le spese sanitarie sono detraibili al 19% nella dichiarazione dei redditi (oltre la franchigia prevista dalla normativa vigente). Detrazione stimata su questo preventivo: ${formatEuro(detrazione)} (19% di ${formatEuro(totale)}).`,
+          50, noteY, { width: 500, lineGap: 1 }
+        );
+        noteY += 34;
+      }
+
       if (doc.note) {
         pdf.font('Helvetica-Bold').fontSize(9).fillColor('#333333').text('Note:', 50, noteY);
         const noteH = pdf.heightOfString(String(doc.note), { width: 500 });
