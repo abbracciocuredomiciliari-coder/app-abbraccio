@@ -227,6 +227,14 @@
       "label": "Terapia psicologica",
       "image": "images/IMG-20260616-WA0043.jpg"
     },
+    "visite-specialistiche": {
+      "key": "visite-specialistiche",
+      "h1": "Visite Mediche Specialistiche",
+      "lead": "Medici specialisti a domicilio a Roma e provincia: cardiologo, geriatra, urologo e altri.",
+      "text": "Prenota una visita specialistica direttamente a casa tua.",
+      "label": "Visite Specialistiche",
+      "image": ""
+    },
     "ecografia-domiciliare": {
       "key": "ecografia-domiciliare",
       "activitiesTitle": "Cosa include l'esame",

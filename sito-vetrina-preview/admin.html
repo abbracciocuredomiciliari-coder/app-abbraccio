@@ -263,7 +263,7 @@
     const pageFields = document.getElementById('page-fields');
     const galleryList = document.getElementById('gallery-list');
     const newsList = document.getElementById('news-list');
-    const order = ['index','servizi','esami-strumentali','infermiere-a-domicilio','fisioterapia-a-domicilio','assistenza-anziani','cure-pazienti-cronici','assistenza-notturna','cure-palliative','psicologia-a-domicilio','servizio-ambulanza','holter-pressorio','holter-ecg','apnee-sonno','screening-cardiaci','saturimetria-spirometria','prelievi-ematici','emogasanalisi','rx-domiciliare','ecografia-domiciliare'];
+    const order = ['index','servizi','esami-strumentali','infermiere-a-domicilio','fisioterapia-a-domicilio','assistenza-anziani','cure-pazienti-cronici','assistenza-notturna','cure-palliative','psicologia-a-domicilio','visite-specialistiche','servizio-ambulanza','holter-pressorio','holter-ecg','apnee-sonno','screening-cardiaci','saturimetria-spirometria','prelievi-ematici','emogasanalisi','rx-domiciliare','ecografia-domiciliare'];
     let defaults = {};
     let content = {};
     let currentPage = '';
@@ -534,7 +534,7 @@
 
     // ===== SERVIZI & ESAMI (modifica semplice foto + descrizione) =====
     const SERVICES_GROUPS = [
-      { title: 'Servizi', keys: ['infermiere-a-domicilio','fisioterapia-a-domicilio','assistenza-anziani','cure-pazienti-cronici','assistenza-notturna','cure-palliative','psicologia-a-domicilio','servizio-ambulanza'] },
+      { title: 'Servizi', keys: ['infermiere-a-domicilio','fisioterapia-a-domicilio','assistenza-anziani','cure-pazienti-cronici','assistenza-notturna','cure-palliative','visite-specialistiche','servizio-ambulanza'] },
       { title: 'Esami strumentali', keys: ['holter-pressorio','holter-ecg','apnee-sonno','screening-cardiaci','saturimetria-spirometria','prelievi-ematici','emogasanalisi','rx-domiciliare','ecografia-domiciliare'] },
     ];
     const servicesList = document.getElementById('services-list');
@@ -802,7 +802,7 @@
     });
 
     // ===== MODIFICA LIBERA (click-to-edit su qualsiasi elemento) =====
-    const FREE_PAGES = ['index.html','servizi.html','esami-strumentali.html','dove-siamo.html','lavora-con-noi.html','news.html','shop.html','infermiere-a-domicilio.html','fisioterapia-a-domicilio.html','assistenza-anziani.html','cure-pazienti-cronici.html','assistenza-notturna.html','cure-palliative.html','psicologia-a-domicilio.html','servizio-ambulanza.html','holter-pressorio.html','holter-ecg.html','apnee-sonno.html','screening-cardiaci.html','saturimetria-spirometria.html','prelievi-ematici.html','emogasanalisi.html','rx-domiciliare.html','ecografia-domiciliare.html'];
+    const FREE_PAGES = ['index.html','servizi.html','esami-strumentali.html','dove-siamo.html','lavora-con-noi.html','news.html','shop.html','infermiere-a-domicilio.html','fisioterapia-a-domicilio.html','assistenza-anziani.html','cure-pazienti-cronici.html','assistenza-notturna.html','cure-palliative.html','psicologia-a-domicilio.html','visite-specialistiche.html','servizio-ambulanza.html','holter-pressorio.html','holter-ecg.html','apnee-sonno.html','screening-cardiaci.html','saturimetria-spirometria.html','prelievi-ematici.html','emogasanalisi.html','rx-domiciliare.html','ecografia-domiciliare.html'];
     const freePageSel = document.getElementById('free-page');
     const freeFrame = document.getElementById('free-frame');
     const freeEditor = document.getElementById('free-editor');
