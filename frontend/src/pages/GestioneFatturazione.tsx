@@ -427,7 +427,7 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
   const archivioIds = useMemo(() => {
     const ids = new Set<string>();
     documenti.forEach(d => {
-      if (d.tipo === 'fattura' && d.stato === 'firmato') {
+      if (d.tipo === 'fattura' && (d.stato === 'emesso' || d.stato === 'firmato')) {
         ids.add(d._id);
         if (d.documentoOrigineId) ids.add(d.documentoOrigineId);
       }
@@ -436,7 +436,7 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
   }, [documenti]);
 
   const documentiAttivi = useMemo(() => documenti.filter(d => !archivioIds.has(d._id) && d.stato !== 'rifiutato'), [documenti, archivioIds]);
-  const archivioFatture = useMemo(() => documenti.filter(d => d.tipo === 'fattura' && d.stato === 'firmato'), [documenti]);
+  const archivioFatture = useMemo(() => documenti.filter(d => d.tipo === 'fattura' && (d.stato === 'emesso' || d.stato === 'firmato')), [documenti]);
   const preventiviRifiutati = useMemo(() => documenti.filter(d => d.tipo === 'preventivo' && d.stato === 'rifiutato'), [documenti]);
 
   const formatData = (d: string) => new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -901,12 +901,12 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
         </div>
       )}
 
-      {/* ══════════════════════ ARCHIVIO FATTURE FIRMATE ══════════ */}
+      {/* ══════════════════════ ARCHIVIO FATTURE ══════════ */}
       {!isConvenzione && archivioFatture.length > 0 && (
         <div style={{ background: 'white', borderRadius: '12px', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' }}>
           <div onClick={() => setShowArchivio(!showArchivio)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
             <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#374151' }}>
-              <FileText size={20} />Archivio Fatture Firmate
+              <FileText size={20} />Archivio Fatture
               <span style={{ background: '#f3e8ff', color: '#7e22ce', borderRadius: '20px', padding: '2px 10px', fontSize: '0.8rem' }}>{archivioFatture.length}</span>
             </h3>
             {showArchivio ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
@@ -921,6 +921,7 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
                     <th style={{ textAlign: 'left', padding: '8px' }}>Paziente</th>
                     <th style={{ textAlign: 'right', padding: '8px' }}>Totale</th>
                     <th style={{ textAlign: 'left', padding: '8px' }}>Data</th>
+                    <th style={{ textAlign: 'center', padding: '8px' }}>Stato</th>
                     <th style={{ padding: '8px' }} />
                   </tr>
                 </thead>
@@ -934,10 +935,18 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
                         <td style={{ padding: '8px' }}>{fattura.patient?.firstName} {fattura.patient?.lastName}</td>
                         <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#166534' }}>{formatEuro(fattura.totale)}</td>
                         <td style={{ padding: '8px' }}>{formatData(fattura.data)}</td>
+                        <td style={{ padding: '8px', textAlign: 'center' }}>
+                          {fattura.stato === 'firmato' ? `✍️ Firmato${fattura.firma?.rifiutoRegistro ? ' (rifiuto)' : ''}` : '✅ Emesso'}
+                        </td>
                         <td style={{ padding: '8px' }}>
                           <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                             <button onClick={() => anteprimaDocumento(fattura)} title="Anteprima fattura" style={{ background: '#f0f9ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0ea5e9' }}><Eye size={14} /></button>
                             <button onClick={() => scaricaDocumentoPDF(fattura)} title="Scarica fattura" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Download size={14} /></button>
+                            <button onClick={() => apriInvioEmail(fattura)} title="Invia via email" style={{ background: '#f0fdf4', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#16a34a' }}><Mail size={14} /></button>
+                            {fattura.stato === 'emesso' && !fattura.firma?.email && !fattura.firma?.token && (
+                              <button onClick={() => apriModificaVoci(fattura)} title="Modifica voci" style={{ background: '#e0f2fe', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0284c7' }}><Pencil size={14} /></button>
+                            )}
+                            <button onClick={() => apriModificaNumero(fattura)} title="Modifica numero" style={{ background: '#fefce8', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#ca8a04' }}><Pencil size={14} /></button>
                             {fattura.firma?.firmato && (
                               <button onClick={() => scaricaDocumentoFirmato(fattura)} title="Scarica fattura firmata" style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#166534' }}><Download size={14} /></button>
                             )}
