@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, FormEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
@@ -35,6 +36,7 @@ interface WorkPlanItem {
   patient: Patient & { tipoGestione?: string; siat?: { asl?: string; npi?: string; codiceAutorizzazione?: string } };
   staff: { firstName: string; lastName: string; role: string };
   giorniSettimana?: GiornoSettimana[];
+  inAccettazione?: boolean;
 }
 
 interface RiepilogoAsl {
@@ -69,6 +71,8 @@ interface DocumentoFatturazione {
   rifiutatoIl?: string;
   note?: string;
   documentoOrigineId?: string;
+  riferimentoTipo?: string;
+  riferimentoId?: string;
   firma?: {
     firmato: boolean;
     firmatoIl?: string;
@@ -86,11 +90,13 @@ interface GestioneFatturazioneProps {
 export default function GestioneFatturazione({ archivioOnly = false }: GestioneFatturazioneProps) {
   const { user } = useAuth();
   const { isConvenzione } = useModalita();
+  const [searchParams] = useSearchParams();
+  const pazienteDaUrl = searchParams.get('paziente') || '';
   const [workplans, setWorkplans] = useState<WorkPlanItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [dataInizio, setDataInizio] = useState('');
   const [dataFine, setDataFine] = useState('');
-  const [ricercaPaziente, setRicercaPaziente] = useState('');
+  const [ricercaPaziente, setRicercaPaziente] = useState(pazienteDaUrl);
   const [pazienteEspanso, setPazienteEspanso] = useState<string | null>(null);
   const [aslEspansa, setAslEspansa] = useState<string | null>(null);
   const [showFiltri, setShowFiltri] = useState(true);
@@ -138,6 +144,19 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
       setDocumenti(res.data);
     } catch (err) {
       console.error('Errore caricamento documenti:', err);
+    }
+  };
+
+  const cambiaAccettazionePiano = async (workplanId: string, inAccettazione: boolean) => {
+    const msg = inAccettazione
+      ? 'Riportare il piano collegato in accettazione?\n\nNon sarà più un incarico operativo: servirà solo per generare preventivi.'
+      : 'Attivare il piano come incarico operativo?\n\nL\'operatore assegnato riceverà la notifica email.';
+    if (!confirm(msg)) return;
+    try {
+      await api.patch(`/workplan/${workplanId}/accettazione`, { inAccettazione });
+      await caricaDati();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore aggiornamento stato accettazione del piano');
     }
   };
 
@@ -888,6 +907,9 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                         <button onClick={() => anteprimaDocumento(doc)} title="Anteprima PDF" style={{ background: '#f0f9ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0ea5e9' }}><Eye size={14} /></button>
                         <button onClick={() => scaricaDocumentoPDF(doc)} title="Scarica PDF" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Download size={14} /></button>
+                        {doc.riferimentoTipo === 'workplan' && doc.riferimentoId && (
+                          <button onClick={() => cambiaAccettazionePiano(doc.riferimentoId!, true)} title="Riporta il piano collegato in accettazione" style={{ background: '#fef3c7', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', color: '#b45309', fontSize: '0.75rem', fontWeight: 700 }}>↩ Accettazione</button>
+                        )}
                         {user?.role === 'admin' && (
                           <button onClick={() => eliminaDocumento(doc)} title="Elimina definitivamente" style={{ background: '#fee2e2', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#b91c1c' }}><Trash2 size={14} /></button>
                         )}
@@ -1031,20 +1053,35 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
                           return (
                             <tr key={wp._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                               <td style={{ padding: '10px 8px' }}>{formatData(wp.date)}</td>
-                              <td style={{ padding: '10px 8px' }}>{wp.task}</td>
+                              <td style={{ padding: '10px 8px' }}>
+                                {wp.task}
+                                {wp.inAccettazione && <span style={{ marginLeft: '8px', fontSize: '0.7rem', padding: '2px 7px', background: '#fef3c7', color: '#b45309', borderRadius: '10px', fontWeight: 700, border: '1px solid #fde68a' }}>⏳ Accettazione</span>}
+                              </td>
                               <td style={{ padding: '10px 8px' }}>{wp.staff ? `${wp.staff.firstName} ${wp.staff.lastName}` : '—'}</td>
                               <td style={{ padding: '10px 8px', textAlign: 'right', color: '#7c3aed' }}>{formatEuro(compenso)}</td>
                               <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 600, color: '#166534' }}>{formatEuro(costo)}</td>
                               <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 700, color: utile >= 0 ? '#059669' : '#dc2626' }}>{formatEuro(utile)}</td>
                               <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => apriPreventivoModal(wp)}
-                                  title="Genera preventivo"
-                                  style={{ background: '#fef3c7', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', color: '#92400e', fontSize: '0.75rem', fontWeight: 700 }}
-                                >
-                                  📄 Preventivo
-                                </button>
+                                <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => apriPreventivoModal(wp)}
+                                    title="Genera preventivo"
+                                    style={{ background: '#fef3c7', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', color: '#92400e', fontSize: '0.75rem', fontWeight: 700 }}
+                                  >
+                                    📄 Preventivo
+                                  </button>
+                                  {wp.inAccettazione && (
+                                    <button
+                                      type="button"
+                                      onClick={() => cambiaAccettazionePiano(wp._id, false)}
+                                      title="Attiva come piano lavorativo effettivo"
+                                      style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', color: '#166534', fontSize: '0.75rem', fontWeight: 700 }}
+                                    >
+                                      ✅ Attiva
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           );

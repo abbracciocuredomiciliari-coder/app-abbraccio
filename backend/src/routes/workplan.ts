@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import WorkPlan from '../models/WorkPlan';
 import WorkPlanAccess from '../models/WorkPlanAccess';
+import Patient from '../models/Patient';
 import Staff from '../models/Staff';
 import User from '../models/User';
 import { authenticateToken } from '../middleware/auth';
@@ -30,6 +31,8 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
       const staffMember = await getStaffByUser(user.id || user.userId, user.email);
       if (staffMember) {
         filter.staff = staffMember._id;
+        // Gli operatori non vedono i piani in accettazione (bozze per preventivo)
+        filter.inAccettazione = { $ne: true };
       } else {
         return res.json([]);
       }
@@ -80,7 +83,7 @@ router.get('/miei-pazienti', authenticateToken, async (req: Request, res: Respon
     const isPrivileged = ['admin', 'coordinator', 'direttore'].includes(user.role);
     const { tipo } = req.query;
 
-    let filter: any = { status: { $ne: 'cancelled' } };
+    let filter: any = { status: { $ne: 'cancelled' }, inAccettazione: { $ne: true } };
 
     if (!isPrivileged) {
       const staffMember = await getStaffByUser(user.id || user.userId, user.email);
@@ -182,7 +185,7 @@ router.get('/assignment-status', authenticateToken, authorizeRole('admin', 'coor
   try {
     const { tipo } = req.query;
     const isTipo = tipo === 'privato' || tipo === 'convenzione';
-    const assignmentsRaw = await WorkPlan.find({ status: 'pending' })
+    const assignmentsRaw = await WorkPlan.find({ status: 'pending', inAccettazione: { $ne: true } })
       .populate('patient', 'firstName lastName tipoGestione')
       .populate('staff', 'firstName lastName role email')
       .sort({ updatedAt: -1 })
@@ -214,8 +217,23 @@ router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async
       storicoAssegnazioni: body.staff ? [{ staff: body.staff, stato: 'assegnato', data: new Date() }] : [],
     });
 
-    // Invia email notifica all'operatore assegnato
+    // Nuovo piano per un paziente terminato → lo riattiva automaticamente
     try {
+      if (workplan.patient) {
+        const paz = await Patient.findById(workplan.patient);
+        if (paz?.terminato) {
+          paz.terminato = false;
+          paz.terminatoIl = undefined;
+          await paz.save();
+        }
+      }
+    } catch (pErr) {
+      console.warn('⚠️ Errore riattivazione paziente terminato:', pErr);
+    }
+
+    // Invia email notifica all'operatore assegnato (mai per piani in accettazione)
+    try {
+      if (workplan.inAccettazione) return res.status(201).json(workplan);
       const populated = await WorkPlan.findById(workplan._id)
         .populate('patient', 'firstName lastName')
         .populate('staff', 'firstName lastName email')
@@ -249,6 +267,79 @@ router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async
   } catch (error: any) {
     console.error('❌ Errore creazione workplan:', error);
     return res.status(400).json({ message: 'Errore nella creazione dell incarico', error: error.message, details: error.errors });
+  }
+});
+
+// PATCH /api/workplan/:id/accettazione — porta un piano in accettazione o lo attiva come piano effettivo
+router.patch('/:id/accettazione', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { inAccettazione } = req.body as { inAccettazione?: boolean };
+    if (typeof inAccettazione !== 'boolean') {
+      return res.status(400).json({ message: 'Campo inAccettazione (boolean) obbligatorio' });
+    }
+
+    const workplan = await WorkPlan.findById(id);
+    if (!workplan) return res.status(404).json({ message: 'Incarico non trovato' });
+
+    workplan.inAccettazione = inAccettazione;
+
+    if (inAccettazione) {
+      // Riporta in accettazione: il piano torna bozza per preventivo, riattivato se annullato
+      if (workplan.status === 'cancelled') workplan.status = 'pending';
+      await workplan.save();
+      // Il paziente torna in fase di accettazione
+      if (workplan.patient) await Patient.findByIdAndUpdate(workplan.patient, { inAccettazione: true });
+      return res.json({ message: 'Piano riportato in accettazione', workplan });
+    }
+
+    // Attivazione: il piano diventa un piano lavorativo effettivo
+    if (workplan.status === 'cancelled') workplan.status = 'pending';
+    const staffId = workplan.staff?.toString();
+    if (staffId) {
+      workplan.statoAccettazione = 'in_attesa';
+      const giaAssegnato = (workplan.storicoAssegnazioni || []).some(a => a.staff.toString() === staffId && a.stato === 'assegnato');
+      if (!giaAssegnato) {
+        workplan.storicoAssegnazioni = [...(workplan.storicoAssegnazioni || []), { staff: workplan.staff, stato: 'assegnato', data: new Date() }];
+      }
+    }
+    await workplan.save();
+
+    // Il paziente esce dalla fase di accettazione: marca come accettato
+    if (workplan.patient) {
+      const paz = await Patient.findById(workplan.patient);
+      if (paz) {
+        paz.inAccettazione = false;
+        if (!paz.accettatoIl) paz.accettatoIl = new Date();
+        paz.alertAccettazioneVisto = undefined; // riapri segnale dashboard
+        await paz.save();
+      }
+    }
+
+    // Notifica email all'operatore come per un nuovo incarico
+    try {
+      const populated = await WorkPlan.findById(workplan._id)
+        .populate('patient', 'firstName lastName')
+        .populate('staff', 'firstName lastName email');
+      const staffDoc = populated?.staff as any;
+      const patientDoc = populated?.patient as any;
+      if (staffDoc?.email) {
+        await inviaEmailNuovoPianoDiLavoro(
+          staffDoc.email,
+          `${staffDoc.firstName} ${staffDoc.lastName}`,
+          `${patientDoc?.firstName || ''} ${patientDoc?.lastName || ''}`.trim(),
+          new Date(workplan.date).toLocaleDateString('it-IT'),
+          workplan.task,
+          workplan._id.toString()
+        );
+      }
+    } catch (emailErr) {
+      console.warn('⚠️ Errore invio email attivazione piano:', emailErr);
+    }
+
+    return res.json({ message: 'Piano attivato come incarico operativo', workplan });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore aggiornamento stato accettazione', error: error?.message });
   }
 });
 

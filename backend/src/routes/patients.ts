@@ -59,6 +59,9 @@ router.post('/', authorizeRole('admin', 'coordinator'), auditLog('patients', 'CR
       codiceFiscale: codiceFiscale?.trim(),
       tipoGestione: tipoGestione || 'privato',
       categoriaPrivata: categoriaPrivata || undefined,
+      inAccettazione: req.body.inAccettazione === true,
+      terminato: req.body.terminato === true,
+      terminatoIl: req.body.terminato === true ? new Date() : undefined,
       siat: siat || undefined,
     });
     return res.status(201).json(patient);
@@ -208,6 +211,34 @@ router.get('/scadenze-pai', authorizeRole('admin', 'coordinator', 'direttore'), 
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GET /api/patients/nuovi-accettati
+// Restituisce pazienti che hanno accettato (firma preventivo / attivazione piano)
+// il cui alert dashboard non sia stato ancora chiuso dopo l'ultima accettazione
+// ─────────────────────────────────────────────────────────────────────────────
+router.get('/nuovi-accettati', authorizeRole('admin', 'coordinator', 'direttore'), async (req: Request, res: Response) => {
+  try {
+    const pazienti = await Patient.find({
+      accettatoIl: { $exists: true, $ne: null },
+      terminato: { $ne: true },
+    })
+      .select('firstName lastName accettatoIl alertAccettazioneVisto categoriaPrivata')
+      .sort({ accettatoIl: -1 });
+
+    const daAlertare = pazienti.filter(p => {
+      if (!p.accettatoIl) return false;
+      const vistoIl = p.alertAccettazioneVisto?.vistoIl;
+      // Alert già gestito dopo l'ultima accettazione → non mostrare
+      if (vistoIl && new Date(vistoIl) >= new Date(p.accettatoIl)) return false;
+      return true;
+    });
+
+    return res.json(daAlertare);
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore recupero nuovi accettati', error });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PATCH /api/patients/:id - Modifica dati anagrafici/indirizzo/contatti paziente
 // ─────────────────────────────────────────────────────────────────────────────
 router.patch('/:id', authorizeRole('admin', 'coordinator'), auditLog('patients', 'UPDATE', req => req.params.id), async (req: Request, res: Response) => {
@@ -217,7 +248,7 @@ router.patch('/:id', authorizeRole('admin', 'coordinator'), auditLog('patients',
 
     const {
       firstName, lastName, birthDate, address, assistanceNeeds,
-      contactPhone, email, codiceFiscale, categoriaPrivata, tipoGestione,
+      contactPhone, email, codiceFiscale, categoriaPrivata, tipoGestione, inAccettazione, terminato, accetta,
     } = req.body;
 
     if (firstName !== undefined) patient.firstName = firstName.trim();
@@ -232,6 +263,22 @@ router.patch('/:id', authorizeRole('admin', 'coordinator'), auditLog('patients',
     if (tipoGestione !== undefined && ['privato', 'convenzione'].includes(tipoGestione)) {
       patient.tipoGestione = tipoGestione;
       if (tipoGestione === 'convenzione') patient.categoriaPrivata = undefined;
+    }
+    if (inAccettazione !== undefined) patient.inAccettazione = inAccettazione === true;
+    if (accetta === true) {
+      // Passaggio manuale: paziente accettato senza firma preventivo / attivazione piano
+      patient.inAccettazione = false;
+      if (!patient.accettatoIl) patient.accettatoIl = new Date();
+      patient.alertAccettazioneVisto = undefined; // riapri segnale dashboard del passaggio
+    }
+    if (terminato !== undefined) {
+      patient.terminato = terminato === true;
+      if (patient.terminato) {
+        if (!patient.terminatoIl) patient.terminatoIl = new Date();
+        patient.inAccettazione = false;  // un paziente terminato non è più in accettazione
+      } else {
+        patient.terminatoIl = undefined;
+      }
     }
 
     await patient.save();
@@ -278,6 +325,33 @@ router.patch('/:id/segna-alert-visto', authorizeRole('admin', 'coordinator', 'di
     return res.json({ ok: true, alertPaiVisto: paziente.alertPaiVisto });
   } catch (error) {
     return res.status(500).json({ message: 'Errore aggiornamento alert PAI', error });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PATCH /api/patients/:id/segna-accettazione-vista
+// Segna l'alert 'paziente accettato' come visto dall'utente corrente
+// ─────────────────────────────────────────────────────────────────────────────
+router.patch('/:id/segna-accettazione-vista', authorizeRole('admin', 'coordinator', 'direttore'), async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const paziente = await Patient.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          alertAccettazioneVisto: {
+            vistoIl: new Date(),
+            vistoDa: user.name || user.email,
+            vistoDaId: user.id || user.userId,
+          },
+        },
+      },
+      { new: true }
+    );
+    if (!paziente) return res.status(404).json({ message: 'Paziente non trovato' });
+    return res.json({ ok: true, alertAccettazioneVisto: paziente.alertAccettazioneVisto });
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore aggiornamento alert accettazione', error });
   }
 });
 

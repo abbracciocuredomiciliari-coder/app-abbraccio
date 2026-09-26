@@ -53,7 +53,7 @@ export default function ArchivioFatture() {
   const [showArchivio, setShowArchivio] = useState(true);
 
   const archivioFatture = useMemo(
-    () => documenti.filter(d => d.tipo === 'fattura' && d.stato === 'firmato'),
+    () => documenti.filter(d => d.tipo === 'fattura' && (d.stato === 'emesso' || d.stato === 'firmato')),
     [documenti]
   );
 
@@ -172,14 +172,14 @@ export default function ArchivioFatture() {
         <div style={{ background: 'white', borderRadius: '12px', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' }}>
           <div onClick={() => setShowArchivio(!showArchivio)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
             <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#374151' }}>
-              <FileText size={20} />Archivio Fatture Firmate
+              <FileText size={20} />Archivio Fatture
               <span style={{ background: '#f3e8ff', color: '#7e22ce', borderRadius: '20px', padding: '2px 10px', fontSize: '0.8rem' }}>{archivioFatture.length}</span>
             </h3>
             {showArchivio ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
           </div>
           {showArchivio && (
             archivioFatture.length === 0 ? (
-              <p style={{ color: '#9ca3af', marginTop: '14px', marginBottom: 0 }}>Nessuna fattura firmata archiviata.</p>
+              <p style={{ color: '#9ca3af', marginTop: '14px', marginBottom: 0 }}>Nessuna fattura archiviata.</p>
             ) : (
               <div style={{ overflowX: 'auto', marginTop: '14px' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -190,6 +190,7 @@ export default function ArchivioFatture() {
                       <th style={{ textAlign: 'left', padding: '8px' }}>Paziente</th>
                       <th style={{ textAlign: 'right', padding: '8px' }}>Totale</th>
                       <th style={{ textAlign: 'left', padding: '8px' }}>Data</th>
+                      <th style={{ textAlign: 'center', padding: '8px' }}>Stato</th>
                       <th style={{ padding: '8px' }} />
                     </tr>
                   </thead>
@@ -203,6 +204,9 @@ export default function ArchivioFatture() {
                           <td style={{ padding: '8px' }}>{fattura.patient?.firstName} {fattura.patient?.lastName}</td>
                           <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#166534' }}>{formatEuro(fattura.totale)}</td>
                           <td style={{ padding: '8px' }}>{formatData(fattura.data)}</td>
+                          <td style={{ padding: '8px', textAlign: 'center' }}>
+                            {fattura.stato === 'firmato' ? `✍️ Firmato${fattura.firma?.rifiutoRegistro ? ' (rifiuto)' : ''}` : '✅ Emesso'}
+                          </td>
                           <td style={{ padding: '8px' }}>
                             <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                               <button onClick={() => anteprimaDocumento(fattura)} title="Anteprima fattura" style={{ background: '#f0f9ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0ea5e9' }}><Eye size={14} /></button>

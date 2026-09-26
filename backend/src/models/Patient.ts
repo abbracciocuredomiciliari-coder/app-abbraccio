@@ -21,6 +21,17 @@ export interface IPatient extends Document {
   // === MODALITÀ GESTIONE ===
   tipoGestione: 'privato' | 'convenzione';  // default: privato
 
+  // === ACCETTAZIONE ===
+  inAccettazione?: boolean;  // paziente in fase di accettazione: solo preventivi, nessun piano operativo
+  accettatoIl?: Date;        // data accettazione preventivo / attivazione piano
+  terminato?: boolean;       // paziente terminato: percorso concluso
+  terminatoIl?: Date;        // data chiusura paziente
+  alertAccettazioneVisto?: {  // alert dashboard 'paziente accettato' già visto
+    vistoIl: Date;
+    vistoDa: string;
+    vistoDaId: string;
+  };
+
   // === CATEGORIA SERVIZIO PRIVATO ===
   categoriaPrivata?: 'diagnostica' | 'assistenza_domiciliare' | 'intermediazione_badanti';
 
@@ -66,6 +77,15 @@ const patientSchema = new Schema<IPatient>(
     caregiverRiferimento: { type: String, trim: true },
     caregiverTelefono: { type: String, trim: true },
     tipoGestione: { type: String, enum: ['privato', 'convenzione'], default: 'privato' },
+    inAccettazione: { type: Boolean, default: false },
+    accettatoIl: { type: Date },
+    terminato: { type: Boolean, default: false },
+    terminatoIl: { type: Date },
+    alertAccettazioneVisto: {
+      vistoIl: { type: Date },
+      vistoDa: { type: String },
+      vistoDaId: { type: String },
+    },
     categoriaPrivata: { type: String, enum: ['diagnostica', 'assistenza_domiciliare', 'intermediazione_badanti'] },
     alertPaiVisto: {
       vistoIl: { type: Date },

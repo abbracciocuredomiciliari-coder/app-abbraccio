@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 import SkeletonList from '../components/SkeletonList';
@@ -59,6 +60,10 @@ interface Patient {
   caregiverRiferimento?: string;
   caregiverTelefono?: string;
   tipoGestione?: 'privato' | 'convenzione';
+  inAccettazione?: boolean;
+  accettatoIl?: string;
+  terminato?: boolean;
+  terminatoIl?: string;
   categoriaPrivata?: 'diagnostica' | 'assistenza_domiciliare' | 'intermediazione_badanti';
   siat?: {
     npi?: string;
@@ -126,12 +131,14 @@ const categoryColors: Record<string, string> = {
 
 function Patients() {
   const { user, getToken } = useAuth();
+  const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategoria, setActiveCategoria] = useState<'tutti' | 'diagnostica' | 'assistenza_domiciliare' | 'intermediazione_badanti'>('tutti');
+  const [activeAccettazione, setActiveAccettazione] = useState<'tutti' | 'in_accettazione' | 'accettati' | 'terminati'>('tutti');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -142,7 +149,9 @@ function Patients() {
     contactPhone: '',
     email: '',
     codiceFiscale: '',
-    tipoGestione: 'privato' as 'privato' | 'convenzione'
+    tipoGestione: 'privato' as 'privato' | 'convenzione',
+    inAccettazione: false,
+    terminato: false
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -200,7 +209,7 @@ function Patients() {
 
   useEffect(() => {
     filterPatients();
-  }, [searchTerm, patients, activeCategoria]);
+  }, [searchTerm, patients, activeCategoria, activeAccettazione]);
 
   const loadPatients = async () => {
     try {
@@ -221,6 +230,14 @@ function Patients() {
         p.categoriaPrivata === activeCategoria ||
         (p.tipoGestione === 'privato' && !p.categoriaPrivata && activeCategoria === 'diagnostica')
       );
+    }
+
+    if (activeAccettazione === 'in_accettazione') {
+      filtered = filtered.filter(p => p.inAccettazione === true && p.terminato !== true);
+    } else if (activeAccettazione === 'accettati') {
+      filtered = filtered.filter(p => p.inAccettazione !== true && p.terminato !== true && !!p.accettatoIl);
+    } else if (activeAccettazione === 'terminati') {
+      filtered = filtered.filter(p => p.terminato === true);
     }
 
     if (searchTerm.trim()) {
@@ -272,7 +289,9 @@ function Patients() {
         contactPhone: '',
         email: '',
         codiceFiscale: '',
-        tipoGestione: 'privato'
+        tipoGestione: 'privato',
+        inAccettazione: false,
+        terminato: false
       });
       setEditingPatient(null);
       setIndirizzoCoords(null);
@@ -289,7 +308,7 @@ function Patients() {
     if (showForm) {
       setShowForm(false);
     } else {
-      setFormData({ firstName: '', lastName: '', birthDate: '', address: '', assistanceNeeds: '', categoriaPrivata: 'diagnostica', contactPhone: '', email: '', codiceFiscale: '', tipoGestione: 'privato' });
+      setFormData({ firstName: '', lastName: '', birthDate: '', address: '', assistanceNeeds: '', categoriaPrivata: 'diagnostica', contactPhone: '', email: '', codiceFiscale: '', tipoGestione: 'privato', inAccettazione: false, terminato: false });
       setEditingPatient(null);
       setSuggerimentiIndirizzo([]);
       setIndirizzoCoords(null);
@@ -309,11 +328,37 @@ function Patients() {
       email: patient.email || '',
       codiceFiscale: patient.codiceFiscale || '',
       tipoGestione: patient.tipoGestione || 'privato',
+      inAccettazione: patient.inAccettazione === true,
+      terminato: patient.terminato === true,
     });
     setEditingPatient(patient);
     setSuggerimentiIndirizzo([]);
     setIndirizzoCoords(null);
     setShowForm(true);
+  };
+
+  const segnaAccettato = async (patient: Patient) => {
+    if (!confirm(`Segnare ${patient.firstName} ${patient.lastName} come ACCETTATO? Uscirà dalla fase di accettazione.`)) return;
+    try {
+      await api.patch(`/patients/${patient._id}`, { accetta: true });
+      loadPatients();
+      setSuccess('✅ Paziente segnato come accettato');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore aggiornamento paziente');
+    }
+  };
+
+  const riattivaPaziente = async (patient: Patient) => {
+    if (!confirm(`Riattivare ${patient.firstName} ${patient.lastName}? Tornerà tra i pazienti attivi e potrai assegnargli un nuovo piano.`)) return;
+    try {
+      await api.patch(`/patients/${patient._id}`, { terminato: false });
+      loadPatients();
+      setSuccess('↩ Paziente riattivato');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore riattivazione paziente');
+    }
   };
 
   const apriContrattoModal = (patient: Patient) => {
@@ -922,6 +967,19 @@ function Patients() {
               <option value="convenzione">🏥 SIAT — Convenzione</option>
             </select>
           </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', background: formData.inAccettazione ? '#fef3c7' : '#f8fafc', border: `1px solid ${formData.inAccettazione ? '#f59e0b' : '#e2e8f0'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={formData.inAccettazione} onChange={e => setFormData(prev => ({ ...prev, inAccettazione: e.target.checked }))} style={{ width: '18px', height: '18px', accentColor: '#d97706' }} />
+            <span style={{ fontSize: '0.9rem', color: '#374151' }}>
+              <strong>Paziente accettazione</strong> — il paziente è in fase di accettazione: serve per preventivi e piani in accettazione, non ancora operativi.
+            </span>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', background: formData.terminato ? '#fee2e2' : '#f8fafc', border: `1px solid ${formData.terminato ? '#ef4444' : '#e2e8f0'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={formData.terminato} onChange={e => setFormData(prev => ({ ...prev, terminato: e.target.checked, inAccettazione: e.target.checked ? false : prev.inAccettazione }))} style={{ width: '18px', height: '18px', accentColor: '#dc2626' }} />
+            <span style={{ fontSize: '0.9rem', color: '#374151' }}>
+              <strong>Paziente terminato</strong> — il percorso con il paziente è concluso: finisce nello slot "Terminati".
+            </span>
+          </label>
+
           {formData.tipoGestione === 'privato' && (
             <label>
               Categoria servizio privato *
@@ -960,7 +1018,7 @@ function Patients() {
       )}
 
       {/* Tabs categoria */}
-      <div className="tw-flex tw-flex-wrap tw-gap-2 tw-mb-5">
+      <div className="tw-flex tw-flex-wrap tw-gap-2 tw-mb-2">
         {(['tutti', 'diagnostica', 'assistenza_domiciliare', 'intermediazione_badanti'] as const).map(cat => (
           <button
             key={cat}
@@ -972,6 +1030,28 @@ function Patients() {
             }`}
           >
             {cat === 'tutti' ? 'Tutti' : cat === 'diagnostica' ? '🩺 Diagnostica' : cat === 'assistenza_domiciliare' ? '🏥 Assistenza domiciliare' : '🤝 Consulenza famiglie'}
+          </button>
+        ))}
+      </div>
+
+      {/* Tabs stato accettazione */}
+      <div className="tw-flex tw-flex-wrap tw-gap-2 tw-mb-5">
+        {([
+          { key: 'tutti', label: 'Tutti gli stati', count: patients.length },
+          { key: 'in_accettazione', label: '⏳ In accettazione', count: patients.filter(p => p.inAccettazione === true && p.terminato !== true).length },
+          { key: 'accettati', label: '✅ Accettati', count: patients.filter(p => p.inAccettazione !== true && p.terminato !== true && !!p.accettatoIl).length },
+          { key: 'terminati', label: '🏁 Terminati', count: patients.filter(p => p.terminato === true).length },
+        ] as const).map(st => (
+          <button
+            key={st.key}
+            onClick={() => setActiveAccettazione(st.key)}
+            className={`tw-px-4 tw-py-2 tw-rounded-xl tw-font-semibold tw-text-sm tw-transition-colors ${
+              activeAccettazione === st.key
+                ? (st.key === 'in_accettazione' ? 'tw-bg-amber-500 tw-text-white tw-border-0' : st.key === 'accettati' ? 'tw-bg-emerald-600 tw-text-white tw-border-0' : st.key === 'terminati' ? 'tw-bg-slate-600 tw-text-white tw-border-0' : 'tw-bg-brand tw-text-white tw-border-0')
+                : 'tw-bg-white tw-text-slate-600 tw-border tw-border-slate-200 hover:tw-bg-slate-50'
+            }`}
+          >
+            {st.label} ({st.count})
           </button>
         ))}
       </div>
@@ -1000,6 +1080,21 @@ function Patients() {
                     <span className="tw-text-xs tw-px-2 tw-py-0.5 tw-rounded-full tw-bg-brand/10 tw-text-brand tw-font-medium">
                       ID: {patient._id.slice(-6).toUpperCase()}
                     </span>
+                    {patient.inAccettazione && !patient.terminato && (
+                      <span className="tw-text-xs tw-px-2 tw-py-0.5 tw-rounded-full tw-bg-amber-100 tw-text-amber-700 tw-font-bold tw-border tw-border-amber-200">
+                        ⏳ In accettazione
+                      </span>
+                    )}
+                    {!patient.inAccettazione && !patient.terminato && patient.accettatoIl && (
+                      <span className="tw-text-xs tw-px-2 tw-py-0.5 tw-rounded-full tw-bg-emerald-100 tw-text-emerald-700 tw-font-bold tw-border tw-border-emerald-200" title={`Accettato il ${formatDate(patient.accettatoIl)}`}>
+                        ✅ Accettato
+                      </span>
+                    )}
+                    {patient.terminato && (
+                      <span className="tw-text-xs tw-px-2 tw-py-0.5 tw-rounded-full tw-bg-slate-200 tw-text-slate-600 tw-font-bold tw-border tw-border-slate-300" title={patient.terminatoIl ? `Terminato il ${formatDate(patient.terminatoIl)}` : 'Terminato'}>
+                        🏁 Terminato
+                      </span>
+                    )}
                   </div>
                   <div className="tw-flex tw-flex-wrap tw-gap-4 tw-text-[0.88rem] tw-text-slate-500">
                     <span>📅 Nato il: {formatDate(patient.birthDate)}</span>
@@ -1019,6 +1114,36 @@ function Patients() {
                   )}
                 </div>
                 <div className="tw-flex tw-gap-2 tw-flex-shrink-0 tw-items-center">
+                  {patient.terminato && (user?.role === 'admin' || user?.role === 'coordinator') && (
+                    <button
+                      onClick={() => riattivaPaziente(patient)}
+                      className="tw-bg-amber-600 tw-text-white tw-whitespace-nowrap"
+                      title="Riattiva il paziente: torna attivo e può ricevere un nuovo piano"
+                    >
+                      <UserPlus size={16} />
+                      Riattiva
+                    </button>
+                  )}
+                  {patient.inAccettazione && !patient.terminato && (user?.role === 'admin' || user?.role === 'coordinator') && (
+                    <>
+                      <button
+                        onClick={() => navigate(`/workplan?patientId=${patient._id}&nuovo=1&accettazione=1`)}
+                        className="tw-bg-amber-500 tw-text-white tw-whitespace-nowrap"
+                        title="Apri il modulo Piano di Lavoro (in accettazione) col paziente preselezionato: definisci il fabbisogno, salva, poi genera il preventivo in Fatturazione"
+                      >
+                        <FileText size={16} />
+                        Preventivo
+                      </button>
+                      <button
+                        onClick={() => segnaAccettato(patient)}
+                        className="tw-bg-emerald-600 tw-text-white tw-whitespace-nowrap"
+                        title="Segna il paziente come accettato (esce dalla fase di accettazione)"
+                      >
+                        <CheckCircle size={16} />
+                        Accetta
+                      </button>
+                    </>
+                  )}
                   <button
                     onClick={() => { setSelectedAnagrafica(patient); setShowAnagraficaModal(true); }}
                     className="tw-bg-indigo-600 tw-text-white tw-whitespace-nowrap"

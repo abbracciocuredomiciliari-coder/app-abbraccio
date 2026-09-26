@@ -41,6 +41,14 @@ interface PazienteScadenza {
   };
 }
 
+interface PazienteAccettato {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  accettatoIl?: string;
+  categoriaPrivata?: string;
+}
+
 function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -67,6 +75,11 @@ function Dashboard() {
   const [showPaiAlert, setShowPaiAlert] = useState(false);
   const [chiudendoId, setChiudendoId] = useState<string | null>(null);
 
+  // Alert nuovi pazienti accettati (preventivo firmato / piano attivato)
+  const [nuoviAccettati, setNuoviAccettati] = useState<PazienteAccettato[]>([]);
+  const [showAccettatiAlert, setShowAccettatiAlert] = useState(false);
+  const [chiudendoAccettazioneId, setChiudendoAccettazioneId] = useState<string | null>(null);
+
   // Utenti in attesa di approvazione (solo admin)
   const [pendingCount, setPendingCount] = useState(0);
 
@@ -77,6 +90,13 @@ function Dashboard() {
     } catch { /* noop */ }
   };
 
+  const caricaNuoviAccettati = async () => {
+    try {
+      const res = await api.get('/patients/nuovi-accettati');
+      setNuoviAccettati(res.data || []);
+    } catch { /* noop */ }
+  };
+
   useEffect(() => {
     const loadDashboard = async () => {
       try {
@@ -84,6 +104,7 @@ function Dashboard() {
         const [dashRes] = await Promise.all([
           api.get(`/dashboard${tipoQuery}`),
           isPrivilegiato ? caricaScadenzePai() : Promise.resolve(),
+          isPrivilegiato ? caricaNuoviAccettati() : Promise.resolve(),
         ]);
         setCounts(dashRes.data);
         try {
@@ -122,6 +143,15 @@ function Dashboard() {
       setCounts(prev => ({ ...prev, paiInScadenza7gg: Math.max(0, prev.paiInScadenza7gg - 1) }));
     } catch { /* noop */ }
     setChiudendoId(null);
+  };
+
+  const segnaAccettazioneVista = async (pazienteId: string) => {
+    setChiudendoAccettazioneId(pazienteId);
+    try {
+      await api.patch(`/patients/${pazienteId}/segna-accettazione-vista`);
+      setNuoviAccettati(prev => prev.filter(p => p._id !== pazienteId));
+    } catch { /* noop */ }
+    setChiudendoAccettazioneId(null);
   };
 
   const formatDataBreve = (d?: string) => {
@@ -312,6 +342,61 @@ function Dashboard() {
       </div>
 
       <DashboardTelemedicina />
+
+      {/* ════ ALERT NUOVI PAZIENTI ACCETTATI ════ */}
+      {isPrivilegiato && nuoviAccettati.length > 0 && (
+        <div className="tw-mt-5">
+          <button
+            type="button"
+            onClick={() => setShowAccettatiAlert(v => !v)}
+            className={`tw-w-full tw-flex tw-items-center tw-justify-between tw-gap-3 tw-bg-emerald-600/[0.07] tw-border-2 tw-border-emerald-300 tw-px-4 tw-py-3 tw-cursor-pointer ${showAccettatiAlert ? 'tw-rounded-t-lg' : 'tw-rounded-lg'}`}
+          >
+            <div className="tw-flex tw-items-center tw-gap-2.5">
+              <CheckCircle size={20} color="#059669" />
+              <span className="tw-font-bold tw-text-emerald-700 tw-text-sm">
+                ✅ {nuoviAccettati.length} {nuoviAccettati.length === 1 ? 'preventivo firmato — paziente passato ad Accettato' : 'preventivi firmati — pazienti passati ad Accettati'}
+              </span>
+              <span className="tw-bg-emerald-600 tw-text-white tw-rounded-lg tw-px-2 tw-py-0.5 tw-text-xs tw-font-extrabold">
+                {nuoviAccettati.length}
+              </span>
+            </div>
+            <span className="tw-text-xs tw-text-emerald-700 tw-font-semibold">{showAccettatiAlert ? '▲ Chiudi' : '▼ Mostra lista'}</span>
+          </button>
+
+          {showAccettatiAlert && (
+            <div className="tw-border-2 tw-border-t-0 tw-border-emerald-300 tw-rounded-b-lg tw-bg-white tw-overflow-hidden">
+              <div className="tw-flex tw-flex-col">
+                {nuoviAccettati.map((paz, i) => (
+                  <div
+                    key={paz._id}
+                    className={`tw-flex tw-items-start tw-justify-between tw-gap-3 tw-flex-wrap tw-px-4 tw-py-3.5 ${i > 0 ? 'tw-border-t tw-border-emerald-100' : ''}`}
+                  >
+                    <div className="tw-flex-1 tw-min-w-[200px]">
+                      <div className="tw-flex tw-items-center tw-gap-2 tw-flex-wrap tw-font-bold tw-text-[0.92rem] tw-text-brand tw-mb-0.5">
+                        {paz.firstName} {paz.lastName}
+                        <span className="tw-bg-emerald-600 tw-text-white tw-rounded tw-px-1.5 tw-py-0.5 tw-text-[0.72rem] tw-font-extrabold">✅ ACCETTATO</span>
+                      </div>
+                      <div className="tw-flex tw-flex-wrap tw-gap-2 tw-text-[0.8rem] tw-text-slate-600">
+                        <span>📅 Accettato il: <strong>{formatDataBreve(paz.accettatoIl)}</strong></span>
+                        {paz.categoriaPrivata && <span>🏷️ {paz.categoriaPrivata === 'diagnostica' ? 'Diagnostica' : paz.categoriaPrivata === 'assistenza_domiciliare' ? 'Assistenza domiciliare' : 'Consulenza famiglie'}</span>}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => segnaAccettazioneVista(paz._id)}
+                      disabled={chiudendoAccettazioneId === paz._id}
+                      className={`tw-flex tw-items-center tw-gap-1.5 tw-flex-shrink-0 tw-whitespace-nowrap tw-rounded-lg tw-border tw-border-emerald-300 tw-px-3.5 tw-py-2 tw-text-[0.82rem] tw-font-bold tw-text-emerald-800 ${chiudendoAccettazioneId === paz._id ? 'tw-bg-slate-200 tw-cursor-not-allowed' : 'tw-bg-emerald-50 tw-cursor-pointer'}`}
+                    >
+                      <Eye size={14} />
+                      {chiudendoAccettazioneId === paz._id ? '...' : 'Ho visto – chiudi'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ════ ALERT PAI IN SCADENZA 7 GIORNI ════ */}
       {isPrivilegiato && counts.paiInScadenza7gg > 0 && (

@@ -226,6 +226,22 @@ router.post('/firma/:token', async (req: Request, res: Response) => {
     docMongoose.stato = 'firmato';
     await docMongoose.save();
 
+    // Il paziente ha accettato il documento: esce dalla fase di accettazione
+    try {
+      const patientId = (docMongoose.patient as any)?._id || docMongoose.patient;
+      if (patientId) {
+        const paz = await Patient.findById(patientId);
+        if (paz && (paz.inAccettazione || !paz.accettatoIl)) {
+          paz.inAccettazione = false;
+          if (!paz.accettatoIl) paz.accettatoIl = new Date();
+          paz.alertAccettazioneVisto = undefined; // riapri segnale dashboard
+          await paz.save();
+        }
+      }
+    } catch (pErr) {
+      console.warn('⚠️ Errore aggiornamento stato accettazione paziente:', pErr);
+    }
+
     const doc: any = docMongoose.toJSON();
     const unsignedDoc = { ...doc, firma: { ...doc.firma, firmato: false, firmaImg: undefined } };
     const unsignedBuffer = await generaDocumentoPDF(unsignedDoc);

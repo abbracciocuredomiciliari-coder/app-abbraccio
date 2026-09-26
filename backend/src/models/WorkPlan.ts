@@ -28,6 +28,7 @@ export interface IWorkPlan extends Document {
   task: string;
   notes?: string;
   status: 'pending' | 'completed' | 'cancelled';
+  inAccettazione?: boolean;  // piano in accettazione: bozza per preventivo, non operativo
   statoAccettazione?: 'in_attesa' | 'accettato' | 'rifiutato';
   dataAccettazione?: Date;
   motivoRifiuto?: string;
@@ -89,6 +90,7 @@ const workPlanSchema = new Schema<IWorkPlan>(
       enum: ['pending', 'completed', 'cancelled'], 
       default: 'pending' 
     },
+    inAccettazione: { type: Boolean, default: false },
     storicoAssegnazioni: [{
       staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: true },
       stato: { type: String, enum: ['assegnato', 'accettato', 'rifiutato'], required: true },

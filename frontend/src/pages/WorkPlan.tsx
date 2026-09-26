@@ -26,6 +26,8 @@ import {
   HeartPulse,
   Syringe,
   FileText,
+  UserPlus,
+  Undo2,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
@@ -67,6 +69,8 @@ interface WorkPlanItem {
   task: string;
   notes?: string;
   status: 'pending' | 'completed' | 'cancelled';
+  inAccettazione?: boolean;
+  statoAccettazione?: 'in_attesa' | 'accettato' | 'rifiutato';
   createdAt: string;
   giorniSettimana?: GiornoSettimana[];
   tipoCompenso?: 'orario' | 'fisso' | 'nessuno';
@@ -287,6 +291,8 @@ function WorkPlan() {
   const [searchParams] = useSearchParams();
   const queryTipo = searchParams.get('tipo') as 'privato' | 'convenzione' | null;
   const queryPatientId = searchParams.get('patientId') || '';
+  const queryNuovo = searchParams.get('nuovo') === '1';
+  const queryAccettazione = searchParams.get('accettazione') === '1';
   const { user } = useAuth();
   const { isConvenzione } = useModalita();
   // Tab principale: piano di lavoro (prestazionale/assistenziale) oppure esami strumentali
@@ -300,7 +306,7 @@ function WorkPlan() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(queryNuovo);
 
   // Modal storico accessi + compenso
   const [showAccessiModal, setShowAccessiModal] = useState(false);
@@ -344,6 +350,12 @@ function WorkPlan() {
   const [tipoCompenso, setTipoCompenso] = useState<'orario' | 'fisso' | 'nessuno'>('nessuno');
   const [tariffa, setTariffa] = useState<number>(0);
   const [costoPrestazione, setCostoPrestazione] = useState<number>(0);
+  // Modalità accettazione: piano bozza per preventivo, non operativo
+  const [formAccettazione, setFormAccettazione] = useState(queryAccettazione);
+  // Mini-form nuovo paziente inline
+  const [showNuovoPaziente, setShowNuovoPaziente] = useState(false);
+  const [npSaving, setNpSaving] = useState(false);
+  const [npForm, setNpForm] = useState({ firstName: '', lastName: '', birthDate: '', address: '', assistanceNeeds: '', contactPhone: '', email: '', codiceFiscale: '' });
   // Multi-prestazione con operatore per ciascuna
   const [prestazioniForm, setPrestazioniForm] = useState<PrestazioneForm[]>([]);
   const [catFiltro, setCatFiltro] = useState<CatPrestazione | ''>('');
@@ -496,6 +508,7 @@ function WorkPlan() {
         tipoCompenso,
         tariffa: tipoCompenso !== 'nessuno' ? tariffa : 0,
         costoPrestazione: isSiat ? 0 : (costoPrestazione > 0 ? costoPrestazione : 0),
+        inAccettazione: formAccettazione,
       });
       await loadData();
       setTask(''); setDate(''); setDataFine(''); setTime(''); setDuration(60);
@@ -505,8 +518,9 @@ function WorkPlan() {
       setMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false });
       setFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] });
       setTipoCompenso('nessuno'); setTariffa(0); setCostoPrestazione(0);
+      setFormAccettazione(false);
       setGiorniForm(prev => prev.map(g => ({ ...g, attivo: false, accessiAlGiorno: 1, minutiPerAccesso: 60 })));
-      setSuccess('Incarico aggiunto con successo!');
+      setSuccess(formAccettazione ? 'Piano in accettazione creato! Genera il preventivo dalla pagina Fatturazione.' : 'Incarico aggiunto con successo!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       console.error('Errore creazione piano:', err.response?.data || err.message);
@@ -523,6 +537,51 @@ function WorkPlan() {
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error('Errore completamento incarico', err);
+    }
+  };
+
+  // Attiva un piano in accettazione come incarico operativo, o viceversa
+  const cambiaAccettazionePiano = async (item: WorkPlanItem, inAccettazione: boolean) => {
+    const msg = inAccettazione
+      ? 'Riportare questo piano in accettazione?\n\nNon sarà più un incarico operativo: servirà solo per generare preventivi.'
+      : 'Attivare questo piano come incarico operativo?\n\nL\'operatore assegnato riceverà la notifica email.';
+    if (!confirm(msg)) return;
+    try {
+      await api.patch(`/workplan/${item._id}/accettazione`, { inAccettazione });
+      await loadData();
+      setSuccess(inAccettazione ? 'Piano riportato in accettazione!' : 'Piano attivato come incarico operativo!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Errore aggiornamento stato accettazione');
+      setTimeout(() => setError(''), 4000);
+    }
+  };
+
+  // Crea un nuovo paziente dal mini-form inline (modalità accettazione)
+  const creaNuovoPaziente = async () => {
+    if (!npForm.firstName.trim() || !npForm.lastName.trim() || !npForm.birthDate || !npForm.address.trim() || !npForm.assistanceNeeds.trim()) {
+      setError('Compila nome, cognome, data di nascita, indirizzo e bisogni assistenziali del nuovo paziente.');
+      return;
+    }
+    setNpSaving(true);
+    setError('');
+    try {
+      const res = await api.post('/patients', {
+        ...npForm,
+        tipoGestione: isConvenzione ? 'convenzione' : 'privato',
+        inAccettazione: formAccettazione,
+      });
+      const nuovo = res.data;
+      setPatients(prev => [...prev, nuovo]);
+      setPatient(nuovo._id);
+      setShowNuovoPaziente(false);
+      setNpForm({ firstName: '', lastName: '', birthDate: '', address: '', assistanceNeeds: '', contactPhone: '', email: '', codiceFiscale: '' });
+      setSuccess(`Paziente ${nuovo.firstName} ${nuovo.lastName} creato e selezionato.`);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Errore nella creazione del paziente');
+    } finally {
+      setNpSaving(false);
     }
   };
 
@@ -949,9 +1008,43 @@ function WorkPlan() {
               <select value={patient} onChange={(e) => setPatient(e.target.value)} required>
                 <option value="">Seleziona un paziente</option>
                 {patients.map((item) => (
-                  <option key={item._id} value={item._id}>{item.firstName} {item.lastName}</option>
+                  <option key={item._id} value={item._id}>{item.firstName} {item.lastName}{(item as any).inAccettazione ? ' (accettazione)' : ''}</option>
                 ))}
               </select>
+            </label>
+
+            {/* Nuovo paziente inline (modalità accettazione) */}
+            <button type="button" onClick={() => setShowNuovoPaziente(prev => !prev)} style={{ alignSelf: 'flex-start', background: 'none', border: 'none', color: '#1e4d8c', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', padding: '2px 0' }}>
+              <UserPlus size={15} /> {showNuovoPaziente ? 'Chiudi inserimento paziente' : 'Nuovo paziente (accettazione)'}
+            </button>
+            {showNuovoPaziente && (
+              <div style={{ border: '1px solid #bfdbfe', background: '#eff6ff', borderRadius: '10px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <input type="text" placeholder="Nome *" value={npForm.firstName} onChange={e => setNpForm(p => ({ ...p, firstName: e.target.value }))} />
+                  <input type="text" placeholder="Cognome *" value={npForm.lastName} onChange={e => setNpForm(p => ({ ...p, lastName: e.target.value }))} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <input type="date" title="Data di nascita *" value={npForm.birthDate} onChange={e => setNpForm(p => ({ ...p, birthDate: e.target.value }))} />
+                  <input type="tel" placeholder="Telefono" value={npForm.contactPhone} onChange={e => setNpForm(p => ({ ...p, contactPhone: e.target.value }))} />
+                </div>
+                <input type="text" placeholder="Indirizzo *" value={npForm.address} onChange={e => setNpForm(p => ({ ...p, address: e.target.value }))} />
+                <input type="text" placeholder="Bisogni assistenziali *" value={npForm.assistanceNeeds} onChange={e => setNpForm(p => ({ ...p, assistanceNeeds: e.target.value }))} />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <input type="email" placeholder="Email" value={npForm.email} onChange={e => setNpForm(p => ({ ...p, email: e.target.value }))} />
+                  <input type="text" placeholder="Codice fiscale" value={npForm.codiceFiscale} onChange={e => setNpForm(p => ({ ...p, codiceFiscale: e.target.value.toUpperCase() }))} />
+                </div>
+                <button type="button" onClick={creaNuovoPaziente} disabled={npSaving} style={{ background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <UserPlus size={15} /> {npSaving ? 'Creazione...' : 'Crea e seleziona paziente'}
+                </button>
+              </div>
+            )}
+
+            {/* Modalità accettazione */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', background: formAccettazione ? '#fef3c7' : '#f8fafc', border: `1px solid ${formAccettazione ? '#f59e0b' : '#e2e8f0'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', marginTop: '4px' }}>
+              <input type="checkbox" checked={formAccettazione} onChange={e => setFormAccettazione(e.target.checked)} style={{ width: '18px', height: '18px', accentColor: '#d97706' }} />
+              <span style={{ fontSize: '0.9rem', color: '#374151' }}>
+                <strong>Piano in accettazione</strong> — serve solo per generare il preventivo; non diventa un incarico operativo e l'operatore non viene notificato.
+              </span>
             </label>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -1283,9 +1376,9 @@ function WorkPlan() {
               </div>
             )}
 
-            <button type="submit">
+            <button type="submit" style={formAccettazione ? { background: '#d97706' } : undefined}>
               <Plus size={16} />
-              Aggiungi Incarico
+              {formAccettazione ? 'Aggiungi Piano in Accettazione' : 'Aggiungi Incarico'}
             </button>
           </form>
         </div>}
@@ -1322,6 +1415,9 @@ function WorkPlan() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
                         <strong>{item.patient?.firstName ?? '(eliminato)'} {item.patient?.lastName ?? ''}</strong>
                         <span style={{ fontSize: '0.72rem', padding: '2px 7px', backgroundColor: `${getStatusColor(item.status)}20`, color: getStatusColor(item.status), borderRadius: 'var(--radius-full)', fontWeight: 600 }}>{getStatusLabel(item.status)}</span>
+                        {item.inAccettazione && (
+                          <span style={{ fontSize: '0.72rem', padding: '2px 7px', backgroundColor: '#fef3c7', color: '#b45309', borderRadius: 'var(--radius-full)', fontWeight: 700, border: '1px solid #fde68a' }}>⏳ In accettazione</span>
+                        )}
                         {item.tipoCompenso && item.tipoCompenso !== 'nessuno' && (
                           <span style={{ fontSize: '0.72rem', padding: '2px 7px', backgroundColor: '#f0fdf4', color: '#16a34a', borderRadius: 'var(--radius-full)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px' }}>
                             <Euro size={10} />
@@ -1400,36 +1496,52 @@ function WorkPlan() {
                       {item.notes && <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: 'var(--gray-600)', fontStyle: 'italic' }}>{item.notes}</p>}
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0, flexDirection: 'row', flexWrap: 'wrap', maxWidth: '340px', justifyContent: 'flex-end' }}>
-                      {/* Storico accessi + compenso */}
-                      <button type="button" onClick={() => apriStorico(item)} style={{ background: '#8b5cf6', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Storico accessi e compenso">
-                        <ClipboardList size={16} />
-                        <span>Storico</span>
-                      </button>
-                      {/* Cartella clinica PDF */}
-                      <button type="button" onClick={() => visualizzaCartellaClinica(item)} style={{ background: '#0d9488', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Visualizza/Stampa cartella clinica PDF">
-                        <FileText size={16} />
-                        <span>Cartella</span>
-                      </button>
-                      {/* Accesso remoto e copia link */}
-                      <button type="button" onClick={() => apriAccesso(item._id)} style={{ background: '#3b82f6', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Apri pagina registrazione accessi">
-                        <Link2 size={16} />
-                        <span>Registra</span>
-                      </button>
-                      <button type="button" onClick={() => copiaLink(item._id)} style={{ background: copiedId === item._id ? '#10b981' : '#6c757d', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title={copiedId === item._id ? 'Link copiato!' : 'Copia link accesso'}>
-                        <Copy size={16} />
-                        <span>{copiedId === item._id ? 'Copiato!' : 'Copia'}</span>
-                      </button>
-                      {item.status === 'pending' && (
-                        <button type="button" onClick={() => completeWorkplan(item._id)} style={{ background: 'var(--success)', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Termina incarico - Segna come completato">
+                      {item.inAccettazione ? (
+                        /* Piano in accettazione: solo attivazione o eliminazione */
+                        <button type="button" onClick={() => cambiaAccettazionePiano(item, false)} style={{ background: '#059669', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Attiva come piano lavorativo effettivo">
                           <CheckCircle size={16} />
-                          <span>Termina</span>
+                          <span>Attiva piano</span>
                         </button>
-                      )}
-                      {(user?.role === 'admin' || user?.role === 'coordinator') && (
-                        <button type="button" onClick={() => archiviaIncarico(item)} style={{ background: '#7c3aed', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Archivia cartella clinica">
-                          <Archive size={16} />
-                          <span>Archivia</span>
-                        </button>
+                      ) : (
+                        <>
+                          {/* Storico accessi + compenso */}
+                          <button type="button" onClick={() => apriStorico(item)} style={{ background: '#8b5cf6', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Storico accessi e compenso">
+                            <ClipboardList size={16} />
+                            <span>Storico</span>
+                          </button>
+                          {/* Cartella clinica PDF */}
+                          <button type="button" onClick={() => visualizzaCartellaClinica(item)} style={{ background: '#0d9488', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Visualizza/Stampa cartella clinica PDF">
+                            <FileText size={16} />
+                            <span>Cartella</span>
+                          </button>
+                          {/* Accesso remoto e copia link */}
+                          <button type="button" onClick={() => apriAccesso(item._id)} style={{ background: '#3b82f6', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Apri pagina registrazione accessi">
+                            <Link2 size={16} />
+                            <span>Registra</span>
+                          </button>
+                          <button type="button" onClick={() => copiaLink(item._id)} style={{ background: copiedId === item._id ? '#10b981' : '#6c757d', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title={copiedId === item._id ? 'Link copiato!' : 'Copia link accesso'}>
+                            <Copy size={16} />
+                            <span>{copiedId === item._id ? 'Copiato!' : 'Copia'}</span>
+                          </button>
+                          {item.status === 'pending' && (
+                            <button type="button" onClick={() => completeWorkplan(item._id)} style={{ background: 'var(--success)', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Termina incarico - Segna come completato">
+                              <CheckCircle size={16} />
+                              <span>Termina</span>
+                            </button>
+                          )}
+                          {(item.status === 'cancelled' || item.statoAccettazione === 'rifiutato') && (
+                            <button type="button" onClick={() => cambiaAccettazionePiano(item, true)} style={{ background: '#d97706', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Riporta il piano in accettazione (bozza per preventivo)">
+                              <Undo2 size={16} />
+                              <span>Accettazione</span>
+                            </button>
+                          )}
+                          {(user?.role === 'admin' || user?.role === 'coordinator') && (
+                            <button type="button" onClick={() => archiviaIncarico(item)} style={{ background: '#7c3aed', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Archivia cartella clinica">
+                              <Archive size={16} />
+                              <span>Archivia</span>
+                            </button>
+                          )}
+                        </>
                       )}
                       <button type="button" onClick={() => deleteWorkplan(item._id)} style={{ background: 'var(--danger)', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Elimina incarico">
                         <Trash2 size={16} />
