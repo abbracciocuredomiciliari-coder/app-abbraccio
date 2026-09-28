@@ -251,12 +251,27 @@ const FABBISOGNI_OPTIONS = {
     { value: 'piano_terapeutico', label: 'Piano terapeutico ADI' },
     { value: 'altro', label: 'Altro (specificare in note)' },
   ],
+  oss: [
+    { value: 'igiene_personale', label: 'Igiene personale / bagno assistito' },
+    { value: 'vestizione', label: 'Aiuto vestizione e svestizione' },
+    { value: 'alimentazione', label: 'Assistenza pasto / alimentazione' },
+    { value: 'mobilizzazione', label: 'Mobilizzazione e trasferimenti' },
+    { value: 'eliminazione', label: 'Assistenza eliminazione (padella/pannolone)' },
+    { value: 'deambulazione', label: 'Accompagnamento alla deambulazione' },
+    { value: 'sorveglianza', label: 'Sorveglianza e compagnia' },
+    { value: 'commissioni', label: 'Accompagnamento visite / commissioni' },
+    { value: 'sollievo_caregiver', label: 'Sollievo al caregiver' },
+    { value: 'assistenza_notturna', label: 'Assistenza notturna' },
+    { value: 'promemoria_farmaci', label: 'Promemoria assunzione farmaci' },
+    { value: 'altro', label: 'Altro (specificare in note)' },
+  ],
 };
 
 const MACRO_CATEGORIE_LABELS: Record<string, { label: string; color: string; bg: string; icon: any }> = {
   infermieristico: { label: '💉 Infermieristico', color: '#2563eb', bg: '#eff6ff', icon: null },
   riabilitativo: { label: '🏃 Riabilitativo', color: '#16a34a', bg: '#f0fdf4', icon: null },
   medico_specialistiche: { label: '🩺 Medico e Specialistiche', color: '#7c3aed', bg: '#f5f3ff', icon: null },
+  oss: { label: '🤲 OSS', color: '#d97706', bg: '#fffbeb', icon: null },
 };
 
 // retrocompatibilità per la lista esistente
@@ -365,17 +380,19 @@ function WorkPlan() {
   const [tipoSpecifico, setTipoSpecifico] = useState<string>('');
 
   // Nuove 3 macro-categorie per admin (Infermieristico, Riabilitativo, Medico/specialistiche)
-  type MacroCategoria = 'infermieristico' | 'riabilitativo' | 'medico_specialistiche';
+  type MacroCategoria = 'infermieristico' | 'riabilitativo' | 'medico_specialistiche' | 'oss';
   const [macroCats, setMacroCats] = useState<Record<MacroCategoria, boolean>>({
     infermieristico: false,
     riabilitativo: false,
     medico_specialistiche: false,
+    oss: false,
   });
   // Fabbisogni selezionati per ogni macro-categoria
   const [fabbisogni, setFabbisogni] = useState<Record<MacroCategoria, string[]>>({
     infermieristico: [],
     riabilitativo: [],
     medico_specialistiche: [],
+    oss: [],
   });
 
   const selectedPatient = patients.find(p => p._id === patient);
@@ -453,7 +470,7 @@ function WorkPlan() {
         setError('Seleziona almeno una categoria assistenziale.');
         return;
       }
-      const fabbisogniTotali = fabbisogni.infermieristico.length + fabbisogni.riabilitativo.length + fabbisogni.medico_specialistiche.length;
+      const fabbisogniTotali = fabbisogni.infermieristico.length + fabbisogni.riabilitativo.length + fabbisogni.medico_specialistiche.length + fabbisogni.oss.length;
       if (fabbisogniTotali === 0) {
         setError('Seleziona almeno un fabbisogno per categoria.');
         return;
@@ -493,6 +510,7 @@ function WorkPlan() {
           infermieristico: fabbisogni.infermieristico,
           riabilitativo: fabbisogni.riabilitativo,
           medico_specialistiche: fabbisogni.medico_specialistiche,
+          oss: fabbisogni.oss,
         },
         // Retrocompatibilità
         categories: allFabbisogniLabels,
@@ -515,8 +533,8 @@ function WorkPlan() {
       setPatient(''); setStaff(''); setCategories([]); setNotes('');
       setPrestazioniForm([]); setCatFiltro('');
       // Reset nuove macro-categorie e fabbisogni
-      setMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false });
-      setFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [] });
+      setMacroCats({ infermieristico: false, riabilitativo: false, medico_specialistiche: false, oss: false });
+      setFabbisogni({ infermieristico: [], riabilitativo: [], medico_specialistiche: [], oss: [] });
       setTipoCompenso('nessuno'); setTariffa(0); setCostoPrestazione(0);
       setFormAccettazione(false);
       setGiorniForm(prev => prev.map(g => ({ ...g, attivo: false, accessiAlGiorno: 1, minutiPerAccesso: 60 })));
@@ -1224,7 +1242,7 @@ function WorkPlan() {
               })}
 
               {/* Riepilogo selezione */}
-              {((Object.keys(macroCats) as MacroCategoria[]).some(c => macroCats[c]) || fabbisogni.infermieristico.length + fabbisogni.riabilitativo.length + fabbisogni.medico_specialistiche.length > 0) && (
+              {((Object.keys(macroCats) as MacroCategoria[]).some(c => macroCats[c]) || fabbisogni.infermieristico.length + fabbisogni.riabilitativo.length + fabbisogni.medico_specialistiche.length + fabbisogni.oss.length > 0) && (
                 <div style={{ marginTop: '12px', padding: '10px', background: '#f0f9ff', borderRadius: '8px', fontSize: '0.85rem' }}>
                   <strong>Riepilogo:</strong>
                   <ul style={{ margin: '6px 0 0', paddingLeft: '18px' }}>
@@ -1236,6 +1254,9 @@ function WorkPlan() {
                     )}
                     {macroCats.medico_specialistiche && fabbisogni.medico_specialistiche.length > 0 && (
                       <li>🩺 Medico/specialistiche: {fabbisogni.medico_specialistiche.map(f => FABBISOGNI_OPTIONS.medico_specialistiche.find(o => o.value === f)?.label).join(', ')}</li>
+                    )}
+                    {macroCats.oss && fabbisogni.oss.length > 0 && (
+                      <li>🤲 OSS: {fabbisogni.oss.map(f => FABBISOGNI_OPTIONS.oss.find(o => o.value === f)?.label).join(', ')}</li>
                     )}
                   </ul>
                 </div>
