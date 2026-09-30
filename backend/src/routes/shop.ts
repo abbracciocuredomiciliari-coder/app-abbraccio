@@ -151,7 +151,15 @@ router.post('/products/:id/reviews', async (req: Request, res: Response) => {
 router.get('/config', async (_req: Request, res: Response) => {
   try {
     const cfg = await ShopConfig.findOne().lean();
-    return res.json({ paypalLink: cfg?.paypalLink || '', iban: cfg?.iban || '', noteCheckout: cfg?.noteCheckout || '' });
+    return res.json({
+      paypalLink: cfg?.paypalLink || '',
+      iban: cfg?.iban || '',
+      noteCheckout: cfg?.noteCheckout || '',
+      offerte: cfg?.offerte || [],
+      telefonoAssistenza: cfg?.telefonoAssistenza || '',
+      whatsappAssistenza: cfg?.whatsappAssistenza || '',
+      emailAssistenza: cfg?.emailAssistenza || '',
+    });
   } catch (err) {
     return res.status(500).json({ message: 'Errore config', error: String(err) });
   }
@@ -176,8 +184,9 @@ router.post('/orders', async (req: Request, res: Response) => {
       if (!p) return res.status(400).json({ message: `Prodotto non valido: ${i.nome || i.productId}` });
       if (!p.disponibile) return res.status(400).json({ message: `"${p.nome}" non è disponibile` });
       const qty = Math.max(1, Math.min(50, Number(i.qty) || 1));
-      totale += (p.prezzo || 0) * qty;
-      finalItems.push({ product: p._id, nome: p.nome, prezzo: p.prezzo || 0, qty });
+      const prezzoEff = (p.inOfferta && (p.prezzoScontato || 0) > 0) ? p.prezzoScontato! : (p.prezzo || 0);
+      totale += prezzoEff * qty;
+      finalItems.push({ product: p._id, nome: p.nome, prezzo: prezzoEff, qty });
     }
     const order = await ShopOrder.create({
       tipo: 'acquisto',
@@ -277,7 +286,7 @@ router.get('/admin/products', authenticateShopAdmin, async (_req: Request, res: 
 // Crea prodotto
 router.post('/admin/products', authenticateShopAdmin, async (req: Request, res: Response) => {
   try {
-    const { nome, descrizione, categoria, prezzo, prezzoNoleggio, cauzione, disponibile, attivo, ordine } = req.body || {};
+    const { nome, descrizione, categoria, prezzo, prezzoNoleggio, cauzione, disponibile, attivo, ordine, inOfferta, prezzoScontato, tempoSpedizione, ritiroMagazzino, badge } = req.body || {};
     if (!nome?.trim() || !['vendita', 'noleggio', 'apnea'].includes(categoria)) {
       return res.status(400).json({ message: 'Nome e categoria valida obbligatori' });
     }
@@ -288,6 +297,11 @@ router.post('/admin/products', authenticateShopAdmin, async (req: Request, res: 
       cauzione: Number(cauzione) || 0,
       disponibile: disponibile !== false, attivo: attivo !== false,
       ordine: Number(ordine) || 0, immagini: [],
+      inOfferta: !!inOfferta,
+      prezzoScontato: Number(prezzoScontato) || 0,
+      tempoSpedizione: tempoSpedizione?.trim() || '',
+      ritiroMagazzino: !!ritiroMagazzino,
+      badge: badge?.trim() || '',
     });
     return res.status(201).json(p);
   } catch (err) {
@@ -390,6 +404,12 @@ router.patch('/admin/orders/:id', authenticateShopAdmin, async (req: Request, re
   return res.json(o);
 });
 
+router.delete('/admin/orders/:id', authenticateShopAdmin, async (req: Request, res: Response) => {
+  const o = await ShopOrder.findByIdAndDelete(req.params.id);
+  if (!o) return res.status(404).json({ message: 'Ordine non trovato' });
+  return res.json({ ok: true });
+});
+
 // Config — get/set link PayPal
 router.get('/admin/config', authenticateShopAdmin, async (_req: Request, res: Response) => {
   const cfg = await ShopConfig.findOne() || await ShopConfig.create({});
@@ -397,10 +417,18 @@ router.get('/admin/config', authenticateShopAdmin, async (_req: Request, res: Re
 });
 
 router.put('/admin/config', authenticateShopAdmin, async (req: Request, res: Response) => {
-  const { paypalLink, iban, noteCheckout } = req.body || {};
+  const { paypalLink, iban, noteCheckout, offerte, telefonoAssistenza, whatsappAssistenza, emailAssistenza } = req.body || {};
   const cfg = await ShopConfig.findOneAndUpdate(
     {},
-    { paypalLink: paypalLink?.trim() || '', iban: iban?.trim() || '', noteCheckout: noteCheckout?.trim() || '' },
+    {
+      paypalLink: paypalLink?.trim() || '',
+      iban: iban?.trim() || '',
+      noteCheckout: noteCheckout?.trim() || '',
+      offerte: Array.isArray(offerte) ? offerte.map((o: string) => String(o).trim()).filter(Boolean) : [],
+      telefonoAssistenza: telefonoAssistenza?.trim() || '',
+      whatsappAssistenza: whatsappAssistenza?.trim() || '',
+      emailAssistenza: emailAssistenza?.trim() || '',
+    },
     { new: true, upsert: true }
   );
   return res.json(cfg);

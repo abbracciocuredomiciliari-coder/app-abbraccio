@@ -13,6 +13,11 @@ export interface IShopProduct extends Document {
   disponibile: boolean;
   attivo: boolean;
   ordine: number;
+  inOfferta: boolean;
+  prezzoScontato?: number;
+  tempoSpedizione?: string; // es. "2-3 giorni lavorativi"
+  ritiroMagazzino: boolean;
+  badge?: string; // es. "Novità", "Bestseller"
 }
 
 const shopProductSchema = new Schema<IShopProduct>(
@@ -31,6 +36,11 @@ const shopProductSchema = new Schema<IShopProduct>(
     disponibile: { type: Boolean, default: true },
     attivo: { type: Boolean, default: true },
     ordine: { type: Number, default: 0 },
+    inOfferta: { type: Boolean, default: false },
+    prezzoScontato: { type: Number, default: 0 },
+    tempoSpedizione: { type: String, default: '', trim: true },
+    ritiroMagazzino: { type: Boolean, default: false },
+    badge: { type: String, default: '', trim: true },
   },
   { timestamps: true }
 );
