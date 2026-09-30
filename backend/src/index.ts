@@ -50,6 +50,7 @@ import tariffarioRouter, { seedTariffarioSeVuoto, migraEsamiStrumentaliTariffari
 import fatturazioneDocumentiRouter from './routes/fatturazioneDocumenti';
 import badantiIntermediazioneRouter from './routes/badantiIntermediazione';
 import ritenuteAccontoRouter from './routes/ritenuteAcconto';
+import shopRouter, { seedShopAdmin } from './routes/shop';
 
 if (!process.env.JWT_SECRET) {
   console.error('ERRORE: JWT_SECRET non è impostato. Configurare la variabile d\'ambiente nel file .env prima di avviare il server.');
@@ -83,6 +84,13 @@ const allowedOrigins: string[] = [
   'https://abbraccio-cure.onrender.com',
   'https://api.abbracciocuredomiciliari.it',
   'https://app.abbracciocuredomiciliari.it',
+  // Sito pubblico (Shop Abbraccio chiama l'API)
+  'https://www.abbracciocuredomiciliari.it',
+  'https://abbracciocuredomiciliari.it',
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
+  'http://localhost:5500',
+  'http://127.0.0.1:5500',
 ];
 // Aggiungi FRONTEND_URL da env se diverso da quelli già in lista
 if (process.env.FRONTEND_URL && !allowedOrigins.includes(process.env.FRONTEND_URL)) {
@@ -139,6 +147,7 @@ const proteggiUploads = (req: Request, res: Response, next: NextFunction) => {
 };
 
 connectDB();
+seedShopAdmin();
 seedTariffarioSeVuoto();
 migraEsamiStrumentaliTariffario();
 migraVociAssistenzaTariffario();
@@ -189,8 +198,15 @@ app.use('/api/tariffario', tariffarioRouter);
 app.use('/api/fatturazione-documenti', fatturazioneDocumentiRouter);
 app.use('/api/badanti-intermediazione', badantiIntermediazioneRouter);
 app.use('/api/ritenute-acconto', ritenuteAccontoRouter);
+// Shop Abbraccio: pubblico (prodotti/ordini/recensioni) + admin shop con JWT separato
+app.use('/api/shop', shopRouter);
 // Alias senza prefisso /api per compatibilità con URL diretti degli allegati
 app.use('/allegati', allegatiRouter);
+
+// Immagini prodotti shop — pubbliche (visibili dal sito senza login)
+app.use('/shop-images', express.static(path.join(process.cwd(), 'uploads', 'shop'), {
+  setHeaders: (res) => { res.set('Cache-Control', 'public, max-age=86400'); },
+}));
 
 // Serve file statici uploads — protetti da autenticazione JWT
 app.use('/uploads', proteggiUploads, express.static(path.join(process.cwd(), 'uploads')));
