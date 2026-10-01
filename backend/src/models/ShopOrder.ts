@@ -5,10 +5,12 @@ export interface IShopOrderItem {
   nome: string;
   prezzo: number;
   qty: number;
+  tariffa?: string; // noleggio: 'giorno' | 'settimana' | 'mese'
 }
 
 export interface IShopOrder extends Document {
   tipo: 'acquisto' | 'noleggio' | 'apnea';
+  metodoPagamento?: 'paypal' | 'carta' | 'bonifico';
   items: IShopOrderItem[];
   cliente: {
     nome: string;
@@ -26,12 +28,14 @@ export interface IShopOrder extends Document {
 const shopOrderSchema = new Schema<IShopOrder>(
   {
     tipo: { type: String, enum: ['acquisto', 'noleggio', 'apnea'], required: true },
+    metodoPagamento: { type: String, enum: ['paypal', 'carta', 'bonifico'], default: null },
     items: [
       {
         product: { type: Schema.Types.ObjectId, ref: 'ShopProduct' },
         nome: { type: String, required: true },
         prezzo: { type: Number, default: 0 },
         qty: { type: Number, default: 1 },
+        tariffa: { type: String, default: '' },
       },
     ],
     cliente: {

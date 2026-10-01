@@ -153,6 +153,7 @@ router.get('/config', async (_req: Request, res: Response) => {
     const cfg = await ShopConfig.findOne().lean();
     return res.json({
       paypalLink: cfg?.paypalLink || '',
+      linkCarta: cfg?.linkCarta || '',
       iban: cfg?.iban || '',
       noteCheckout: cfg?.noteCheckout || '',
       offerte: cfg?.offerte || [],
@@ -168,28 +169,47 @@ router.get('/config', async (_req: Request, res: Response) => {
 // Ordine acquisto (carrello)
 router.post('/orders', async (req: Request, res: Response) => {
   try {
-    const { items, cliente } = req.body || {};
+    const { items, cliente, metodoPagamento } = req.body || {};
     if (!Array.isArray(items) || !items.length) return res.status(400).json({ message: 'Carrello vuoto' });
     if (!cliente?.nome || !cliente?.email || !cliente?.telefono) {
       return res.status(400).json({ message: 'Nome, email e telefono obbligatori' });
     }
+    if (!['paypal', 'carta', 'bonifico'].includes(metodoPagamento)) {
+      return res.status(400).json({ message: 'Seleziona un metodo di pagamento' });
+    }
     // Ricalcola prezzi lato server (mai fidarsi del client)
     const ids = items.map((i: any) => i.productId).filter(Boolean);
-    const prods = await ShopProduct.find({ _id: { $in: ids }, attivo: true, categoria: 'vendita' });
+    const prods = await ShopProduct.find({ _id: { $in: ids }, attivo: true, categoria: { $in: ['vendita', 'noleggio'] } });
     const pmap = new Map(prods.map(p => [p._id.toString(), p]));
     let totale = 0;
+    let hasNoleggio = false;
     const finalItems: any[] = [];
+    const TARIFFA_LABEL: Record<string, string> = { giorno: 'giorno', settimana: 'settimana', mese: 'mese' };
     for (const i of items) {
       const p = pmap.get(String(i.productId));
       if (!p) return res.status(400).json({ message: `Prodotto non valido: ${i.nome || i.productId}` });
       if (!p.disponibile) return res.status(400).json({ message: `"${p.nome}" non è disponibile` });
       const qty = Math.max(1, Math.min(50, Number(i.qty) || 1));
-      const prezzoEff = (p.inOfferta && (p.prezzoScontato || 0) > 0) ? p.prezzoScontato! : (p.prezzo || 0);
+      let prezzoEff: number;
+      let tariffa = '';
+      if (p.categoria === 'noleggio') {
+        hasNoleggio = true;
+        tariffa = TARIFFA_LABEL[String(i.tariffa)] || '';
+        const n = p.prezzoNoleggio || {};
+        const tariffaEff = tariffa && n[tariffa as 'giorno'|'settimana'|'mese'] ? tariffa
+          : (n.mese ? 'mese' : n.settimana ? 'settimana' : 'giorno');
+        tariffa = tariffaEff;
+        prezzoEff = Number((n as any)[tariffaEff]) || 0;
+        finalItems.push({ product: p._id, nome: `${p.nome} (noleggio/${tariffaEff})`, prezzo: prezzoEff, qty, tariffa: tariffaEff });
+      } else {
+        prezzoEff = (p.inOfferta && (p.prezzoScontato || 0) > 0) ? p.prezzoScontato! : (p.prezzo || 0);
+        finalItems.push({ product: p._id, nome: p.nome, prezzo: prezzoEff, qty });
+      }
       totale += prezzoEff * qty;
-      finalItems.push({ product: p._id, nome: p.nome, prezzo: prezzoEff, qty });
     }
     const order = await ShopOrder.create({
-      tipo: 'acquisto',
+      tipo: hasNoleggio ? 'noleggio' : 'acquisto',
+      metodoPagamento,
       items: finalItems,
       cliente: {
         nome: cliente.nome.trim(), email: cliente.email.trim().toLowerCase(),
@@ -209,6 +229,7 @@ router.post('/orders', async (req: Request, res: Response) => {
           <tr><td style="padding:8px;background:#f1f5f9;font-weight:bold;">Email:</td><td style="padding:8px;">${cliente.email}</td></tr>
           <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;">Telefono:</td><td style="padding:8px;">${cliente.telefono}</td></tr>
           ${cliente.indirizzo ? `<tr><td style="padding:8px;background:#f1f5f9;font-weight:bold;">Indirizzo:</td><td style="padding:8px;">${cliente.indirizzo}</td></tr>` : ''}
+          <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;">Pagamento:</td><td style="padding:8px;"><strong>${metodoPagamento === 'paypal' ? 'PayPal' : metodoPagamento === 'carta' ? 'Carta di credito' : 'Bonifico bancario'}</strong></td></tr>
         </table>
         <table style="width:100%;border-collapse:collapse;">
           <tr style="background:#f8fafc;"><th style="padding:8px;text-align:left;">Prodotto</th><th style="padding:8px;">Qtà</th><th style="padding:8px;text-align:right;">Prezzo</th></tr>
@@ -417,11 +438,12 @@ router.get('/admin/config', authenticateShopAdmin, async (_req: Request, res: Re
 });
 
 router.put('/admin/config', authenticateShopAdmin, async (req: Request, res: Response) => {
-  const { paypalLink, iban, noteCheckout, offerte, telefonoAssistenza, whatsappAssistenza, emailAssistenza } = req.body || {};
+  const { paypalLink, linkCarta, iban, noteCheckout, offerte, telefonoAssistenza, whatsappAssistenza, emailAssistenza } = req.body || {};
   const cfg = await ShopConfig.findOneAndUpdate(
     {},
     {
       paypalLink: paypalLink?.trim() || '',
+      linkCarta: linkCarta?.trim() || '',
       iban: iban?.trim() || '',
       noteCheckout: noteCheckout?.trim() || '',
       offerte: Array.isArray(offerte) ? offerte.map((o: string) => String(o).trim()).filter(Boolean) : [],

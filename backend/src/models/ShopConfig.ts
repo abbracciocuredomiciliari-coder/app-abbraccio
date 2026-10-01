@@ -2,6 +2,7 @@ import { Schema, model, Document } from 'mongoose';
 
 export interface IShopConfig extends Document {
   paypalLink: string; // es. https://paypal.me/AbbraccioCure
+  linkCarta?: string; // es. link Stripe payment page per carta di credito (fallback: paypalLink)
   iban?: string;
   noteCheckout?: string;
   offerte: string[]; // messaggi ticker scorrevole offerte
@@ -13,6 +14,7 @@ export interface IShopConfig extends Document {
 const shopConfigSchema = new Schema<IShopConfig>(
   {
     paypalLink: { type: String, default: '', trim: true },
+    linkCarta: { type: String, default: '', trim: true },
     iban: { type: String, default: '', trim: true },
     noteCheckout: { type: String, default: '', trim: true },
     offerte: [{ type: String, trim: true }],
