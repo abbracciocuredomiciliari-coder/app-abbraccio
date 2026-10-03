@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
+import { useModalita } from '../context/ModalitaContext';
 import { Euro, TrendingUp, CheckCircle, Clock, AlertCircle, Receipt, ChevronDown, ChevronUp, ShieldOff } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
@@ -39,6 +40,7 @@ function formatData(d: string) {
 
 export default function CompensoIncarichi() {
   const { user } = useAuth();
+  const { isConvenzione } = useModalita();
   const isPrivilegiato = user && ['admin', 'coordinator', 'direttore'].includes(user.role);
 
   const [workplans, setWorkplans] = useState<WorkPlanItem[]>([]);
@@ -55,12 +57,12 @@ export default function CompensoIncarichi() {
 
   useEffect(() => {
     caricaDati();
-  }, []);
+  }, [isConvenzione]);
 
   const caricaDati = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/workplan');
+      const res = await api.get('/workplan', { params: { tipo: isConvenzione ? 'convenzione' : 'privato' } });
       const piani: WorkPlanItem[] = res.data;
       // Filtra solo quelli con compenso impostato
       const conCompenso = piani.filter(p => p.tipoCompenso && p.tipoCompenso !== 'nessuno');
