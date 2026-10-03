@@ -47,6 +47,8 @@ export default function CompensoIncarichi() {
   const [loadingDettagli, setLoadingDettagli] = useState(false);
   const [filtroStaff, setFiltroStaff] = useState('');
   const [filtroPagato, setFiltroPagato] = useState<'tutti' | 'pagato' | 'da_pagare'>('tutti');
+  const [compensoEdit, setCompensoEdit] = useState<Record<string, string>>({});
+  const [savingCompenso, setSavingCompenso] = useState<string | null>(null);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [showFatturazione, setShowFatturazione] = useState(false);
@@ -125,6 +127,38 @@ export default function CompensoIncarichi() {
     } catch {
       setError('Errore nell\'aggiornamento del pagamento.');
       setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  // Correzione manuale del compenso (es. accesso non registrato con firma)
+  const salvaCompensoManuale = async (r: RiepilogoItem) => {
+    const raw = (compensoEdit[r.workPlan._id] || '').replace(',', '.').trim();
+    const val = parseFloat(raw);
+    if (isNaN(val) || val < 0) {
+      setError('Inserisci un importo valido (es. 25.50).');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+    setSavingCompenso(r.workPlan._id);
+    try {
+      await api.patch(`/workplan/${r.workPlan._id}/compenso`, { compensoTotale: val });
+      const rounded = Math.round(val * 100) / 100;
+      setRiepilogos(prev => prev.map(x =>
+        x.workPlan._id === r.workPlan._id
+          ? { ...x, compensoSalvato: rounded, utile: Math.round((x.costoPrestazione - rounded) * 100) / 100 }
+          : x
+      ));
+      setWorkplans(prev => prev.map(w =>
+        w._id === r.workPlan._id ? { ...w, compensoTotale: rounded } : w
+      ));
+      setCompensoEdit(prev => { const n = { ...prev }; delete n[r.workPlan._id]; return n; });
+      setSuccess(`✅ Compenso aggiornato a € ${rounded.toFixed(2)}`);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch {
+      setError('Errore nel salvataggio del compenso.');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setSavingCompenso(null);
     }
   };
 
@@ -300,7 +334,7 @@ export default function CompensoIncarichi() {
                           <div key={r.workPlan._id} style={{ background: '#fff', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                             <div style={{ flex: 1, minWidth: '180px' }}>
                               <div style={{ fontWeight: '700', color: '#1e4d8c', fontSize: '0.92rem' }}>
-                                👤 {r.workPlan.patient.firstName} {r.workPlan.patient.lastName}
+                                👤 {r.workPlan.patient?.firstName || 'Paziente'} {r.workPlan.patient?.lastName || 'eliminato'}
                               </div>
                               <div style={{ fontSize: '0.8rem', color: '#555' }}>
                                 {r.workPlan.category} — {r.workPlan.task}
@@ -440,13 +474,13 @@ export default function CompensoIncarichi() {
                     {/* Info incarico */}
                     <div style={{ flex: 1, minWidth: '200px' }}>
                       <div style={{ fontWeight: '700', fontSize: '1rem', color: '#1e4d8c', marginBottom: '4px' }}>
-                        👤 {r.workPlan.patient.firstName} {r.workPlan.patient.lastName}
+                        👤 {r.workPlan.patient?.firstName || 'Paziente'} {r.workPlan.patient?.lastName || 'eliminato'}
                       </div>
                       <div style={{ fontSize: '0.88rem', color: '#374151', marginBottom: '3px' }}>
                         {r.workPlan.category} — {r.workPlan.task}
                       </div>
                       <div style={{ fontSize: '0.8rem', color: '#888', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                        <span>🏥 {r.workPlan.staff.firstName} {r.workPlan.staff.lastName} ({r.workPlan.staff.role})</span>
+                        <span>🏥 {r.workPlan.staff?.firstName || 'Operatore'} {r.workPlan.staff?.lastName || 'mancante'}{r.workPlan.staff?.role ? ` (${r.workPlan.staff.role})` : ''}</span>
                         <span>📅 {formatData(r.workPlan.date)}{r.workPlan.dataFine ? ` → ${formatData(r.workPlan.dataFine)}` : ''}</span>
                       </div>
                     </div>
@@ -535,6 +569,29 @@ export default function CompensoIncarichi() {
                       ℹ️ Compenso calcolato dagli accessi (non ancora salvato). Vai su "Piano di Lavoro" → Storico per salvarlo.
                     </div>
                   )}
+
+                  {/* Correzione manuale compenso (es. accesso senza firma) */}
+                  <div style={{ marginTop: '10px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', padding: '8px 12px', background: '#fffbeb', border: '1px dashed #f59e0b', borderRadius: '8px' }}>
+                    <span style={{ fontSize: '0.78rem', color: '#92400e', fontWeight: 600 }}>✏️ Correggi compenso:</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder={importo.toFixed(2)}
+                      value={compensoEdit[r.workPlan._id] ?? ''}
+                      onChange={e => setCompensoEdit(prev => ({ ...prev, [r.workPlan._id]: e.target.value }))}
+                      style={{ width: '100px', padding: '6px 8px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.85rem' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => salvaCompensoManuale(r)}
+                      disabled={savingCompenso === r.workPlan._id || !(compensoEdit[r.workPlan._id] || '').trim()}
+                      style={{ background: '#d97706', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontWeight: '600', fontSize: '0.78rem', opacity: (compensoEdit[r.workPlan._id] || '').trim() ? 1 : 0.5 }}
+                    >
+                      {savingCompenso === r.workPlan._id ? '⏳ …' : '💾 Salva compenso'}
+                    </button>
+                    <span style={{ fontSize: '0.72rem', color: '#a16207' }}>utile se l'accesso non è stato registrato con firma</span>
+                  </div>
                 </div>
               );
             })

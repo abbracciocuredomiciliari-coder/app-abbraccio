@@ -10,6 +10,7 @@ import User from '../models/User';
 import Staff from '../models/Staff';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
+import { getStaffByUser } from '../utils/staffHelper';
 import { inviaEmail, inviaEmailNotificaAdmin, inviaEmailResetPassword } from '../utils/email';
 import { compilaTestoContratto, generaPdfContratto } from './contratto';
 
@@ -251,7 +252,7 @@ router.post('/register-completo', registerLimiter, upload.fields([
 
 // LOGIN — blocca utenti pending o rejected
 router.post('/login', loginLimiter, async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { email, password, workspace } = req.body;
 
   try {
     const user = await User.findOne({ email: email?.toLowerCase().trim() });
@@ -282,6 +283,25 @@ router.post('/login', loginLimiter, async (req: Request, res: Response) => {
       });
     }
 
+    // ─── Validazione area di lavoro (Privati / Convenzione SIAT) ─────────────
+    // Ruoli privilegiati accedono sempre a entrambe le aree.
+    const RUOLI_PRIVILEGIATI = ['admin', 'coordinator', 'direttore'];
+    const privilegiato = RUOLI_PRIVILEGIATI.includes(user.role);
+    let modalitaAbilitata: 'entrambi' | 'privato' | 'convenzione' = 'entrambi';
+    if (!privilegiato) {
+      const staff = await getStaffByUser(String(user._id), user.email);
+      modalitaAbilitata = staff?.modalitaAbilitata || 'entrambi';
+    }
+    const ws = workspace === 'convenzione' ? 'convenzione' : workspace === 'privato' ? 'privato' : null;
+    if (ws && modalitaAbilitata !== 'entrambi' && modalitaAbilitata !== ws) {
+      const nomeArea = ws === 'convenzione' ? 'Convenzione SIAT' : 'Gestione Privata';
+      const nomeAbilitata = modalitaAbilitata === 'convenzione' ? 'Convenzione SIAT' : 'Gestione Privata';
+      return res.status(403).json({
+        message: `Non sei autorizzato ad accedere all'area ${nomeArea}. La tua abilitazione è: ${nomeAbilitata}.`,
+        status: 'area_not_allowed',
+      });
+    }
+
     const token = jwt.sign(
       { userId: user._id, name: user.name, email: user.email, role: user.role },
       jwtSecret,
@@ -291,6 +311,7 @@ router.post('/login', loginLimiter, async (req: Request, res: Response) => {
     return res.json({
       token,
       user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      modalitaAbilitata,
     });
   } catch (error) {
     return res.status(500).json({ message: 'Errore durante il login', error });

@@ -22,7 +22,7 @@ export interface VoiceExtractedData {
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 const STT_MODEL = process.env.GROQ_STT_MODEL || 'whisper-large-v3-turbo';
-const LLM_MODEL = process.env.GROQ_LLM_MODEL || 'llama-3.3-70b-versatile';
+const LLM_MODEL = process.env.GROQ_LLM_MODEL || 'openai/gpt-oss-120b';
 
 export function isVoiceAiAvailable(): boolean {
   return Boolean(GROQ_API_KEY && GROQ_API_KEY.trim().length > 0);

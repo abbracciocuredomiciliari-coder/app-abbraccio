@@ -218,6 +218,9 @@ function Staff() {
         s.modalitaAbilitata !== 'privato' &&
         !categoriePrivate.includes(s.category)
       );
+    } else {
+      // In Gestione Privata: nasconde lo staff abilitato solo alla convenzione SIAT
+      filtered = filtered.filter(s => s.modalitaAbilitata !== 'convenzione');
     }
 
     if (selectedCategory) {
@@ -671,14 +674,17 @@ function Staff() {
         )}
       </div>
 
-      {/* Modalità (Privati / SIAT / Entrambi) */}
+      {/* Modalità (chip contestuali all'area attiva) */}
       <div className="tw-flex tw-flex-wrap tw-gap-2 tw-mb-5">
         {[
-          { value: 'tutte', label: 'Tutte le modalità' },
+          { value: 'tutte', label: 'Tutti' },
           { value: 'privato', label: '👤 Solo Privati' },
           { value: 'convenzione', label: '🏥 Solo SIAT' },
           { value: 'entrambi', label: '🔀 Entrambi' },
-        ].map(mod => (
+        ].filter(mod =>
+          !(isConvenzione && mod.value === 'privato') &&
+          !(!isConvenzione && mod.value === 'convenzione')
+        ).map(mod => (
           <button
             key={mod.value}
             onClick={() => setSelectedModalita(mod.value as any)}

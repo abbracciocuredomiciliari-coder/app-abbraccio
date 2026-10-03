@@ -27,8 +27,13 @@ export function ModalitaProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user) return;
+    // La modalità scelta nei pulsanti del login è in localStorage: ri-sincronizza
+    // lo stato a ogni cambio utente (altrimenti resta quella del mount iniziale)
+    const sceltaLogin: Modalita =
+      localStorage.getItem('modalita') === 'convenzione' ? 'convenzione' : 'privato';
     if (isPrivilegiato) {
       setModalitaAbilitata('entrambi');
+      setModalitaState(sceltaLogin);
       return;
     }
     // Operatori: leggi dal profilo staff
@@ -36,17 +41,16 @@ export function ModalitaProvider({ children }: { children: ReactNode }) {
       .then(res => {
         const abilitata: ModalitaAbilitata = res.data.modalitaAbilitata || 'entrambi';
         setModalitaAbilitata(abilitata);
-        // Correggi la modalità corrente se non abilitata
-        if (abilitata === 'privato' && modalita === 'convenzione') {
-          setModalitaState('privato');
-          localStorage.setItem('modalita', 'privato');
-        } else if (abilitata === 'convenzione' && modalita === 'privato') {
-          setModalitaState('convenzione');
-          localStorage.setItem('modalita', 'convenzione');
-        }
+        // Se l'operatore è abilitato a una sola area, prevale l'abilitazione
+        const target: Modalita = abilitata === 'entrambi' ? sceltaLogin : abilitata;
+        setModalitaState(target);
+        localStorage.setItem('modalita', target);
       })
-      .catch(() => setModalitaAbilitata('entrambi'));
-  }, [user?.role]);
+      .catch(() => {
+        setModalitaAbilitata('entrambi');
+        setModalitaState(sceltaLogin);
+      });
+  }, [user?.id]);
 
   const setModalita = (m: Modalita) => {
     // Blocca se non abilitato

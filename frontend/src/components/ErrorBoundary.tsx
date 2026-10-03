@@ -90,8 +90,11 @@ export class ErrorBoundary extends Component<Props, State> {
             >
               {this.state.error?.message || 'Qualcosa è andato storto.'}
             </p>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <Button onClick={this.handleReset} variant="primary">
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Button onClick={() => { window.location.href = '/dashboard'; }} variant="primary">
+                Torna alla dashboard
+              </Button>
+              <Button onClick={this.handleReset} variant="secondary">
                 Riprova
               </Button>
               <Button onClick={() => window.location.reload()} variant="secondary">

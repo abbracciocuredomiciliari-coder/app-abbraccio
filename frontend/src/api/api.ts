@@ -21,6 +21,10 @@ api.interceptors.request.use((config) => {
     if (token) {
       (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
     }
+    const modalita = localStorage.getItem('modalita');
+    if (modalita === 'privato' || modalita === 'convenzione') {
+      (config.headers as Record<string, string>)['x-modalita'] = modalita;
+    }
   }
   return config;
 });

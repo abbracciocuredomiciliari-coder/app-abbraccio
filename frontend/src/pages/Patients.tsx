@@ -959,13 +959,19 @@ function Patients() {
           </label>
           <label>
             Gestione paziente
-            <select
-              value={formData.tipoGestione}
-              onChange={e => setFormData(prev => ({ ...prev, tipoGestione: e.target.value as 'privato' | 'convenzione' }))}
-            >
-              <option value="privato">👤 Privato</option>
-              <option value="convenzione">🏥 SIAT — Convenzione</option>
-            </select>
+            {editingPatient ? (
+              <select
+                value={formData.tipoGestione}
+                onChange={e => setFormData(prev => ({ ...prev, tipoGestione: e.target.value as 'privato' | 'convenzione' }))}
+              >
+                <option value="privato">👤 Privato</option>
+                <option value="convenzione">🏥 SIAT — Convenzione</option>
+              </select>
+            ) : (
+              <select value="privato" disabled>
+                <option value="privato">👤 Privato</option>
+              </select>
+            )}
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: '10px', background: formData.inAccettazione ? '#fef3c7' : '#f8fafc', border: `1px solid ${formData.inAccettazione ? '#f59e0b' : '#e2e8f0'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer' }}>
             <input type="checkbox" checked={formData.inAccettazione} onChange={e => setFormData(prev => ({ ...prev, inAccettazione: e.target.checked }))} style={{ width: '18px', height: '18px', accentColor: '#d97706' }} />
