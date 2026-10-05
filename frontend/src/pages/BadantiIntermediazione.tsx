@@ -103,7 +103,7 @@ export default function BadantiIntermediazione() {
 
   async function caricaPazienti() {
     try {
-      const res = await api.get('/patients?tipo=privato');
+      const res = await api.get('/patients?tipo=consulenza');
       const pazienti = res.data?.patients || res.data || [];
       setPazienti(pazienti as Patient[]);
     } catch (err: any) {

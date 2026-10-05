@@ -19,7 +19,7 @@ export interface IPatient extends Document {
   caregiverTelefono?: string;
   
   // === MODALITÀ GESTIONE ===
-  tipoGestione: 'privato' | 'convenzione';  // default: privato
+  tipoGestione: 'privato' | 'convenzione' | 'consulenza';  // default: privato
 
   // === ACCETTAZIONE ===
   inAccettazione?: boolean;  // paziente in fase di accettazione: solo preventivi, nessun piano operativo
@@ -76,7 +76,7 @@ const patientSchema = new Schema<IPatient>(
     allergie: { type: String, trim: true },
     caregiverRiferimento: { type: String, trim: true },
     caregiverTelefono: { type: String, trim: true },
-    tipoGestione: { type: String, enum: ['privato', 'convenzione'], default: 'privato' },
+    tipoGestione: { type: String, enum: ['privato', 'convenzione', 'consulenza'], default: 'privato' },
     inAccettazione: { type: Boolean, default: false },
     accettatoIl: { type: Date },
     terminato: { type: Boolean, default: false },

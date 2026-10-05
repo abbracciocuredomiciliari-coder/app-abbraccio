@@ -22,7 +22,7 @@ api.interceptors.request.use((config) => {
       (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
     }
     const modalita = localStorage.getItem('modalita');
-    if (modalita === 'privato' || modalita === 'convenzione') {
+    if (modalita === 'privato' || modalita === 'convenzione' || modalita === 'consulenza') {
       (config.headers as Record<string, string>)['x-modalita'] = modalita;
     }
   }

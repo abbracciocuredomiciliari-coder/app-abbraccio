@@ -100,7 +100,7 @@ const documentTypes = [
 
 function Staff() {
   const { user } = useAuth();
-  const { isConvenzione } = useModalita();
+  const { isConvenzione, isConsulenza } = useModalita();
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [filteredStaff, setFilteredStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -195,7 +195,7 @@ function Staff() {
 
   useEffect(() => {
     filterStaff();
-  }, [searchTerm, selectedCategory, selectedModalita, staffMembers, isConvenzione]);
+  }, [searchTerm, selectedCategory, selectedModalita, staffMembers, isConvenzione, isConsulenza]);
 
   const loadStaff = async () => {
     try {
@@ -209,11 +209,25 @@ function Staff() {
   };
 
   const categoriePrivate = ['privato', 'osa', 'assistente-familiare', 'badante'];
+  // Area Consulenza Famiglie: solo personale domestico/familiare (colf, badanti, assistenti familiari, osa)
+  const categorieConsulenza = ['privato', 'osa', 'assistente-familiare', 'badante'];
+
+  // In area Consulenza Famiglie il nuovo personale è sempre di tipo familiare e abilitato al privato
+  useEffect(() => {
+    if (!isConsulenza) return;
+    if (!categorieConsulenza.includes(formData.category)) {
+      setFormData(prev => ({ ...prev, category: 'badante', role: '', modalitaAbilitata: 'privato' }));
+    }
+  }, [isConsulenza, showForm]);
 
   const filterStaff = () => {
     let filtered = [...staffMembers];
 
-    if (isConvenzione) {
+    if (isConsulenza) {
+      filtered = filtered.filter(s =>
+        categorieConsulenza.includes(s.category) && s.modalitaAbilitata !== 'convenzione'
+      );
+    } else if (isConvenzione) {
       filtered = filtered.filter(s =>
         s.modalitaAbilitata !== 'privato' &&
         !categoriePrivate.includes(s.category)
@@ -259,7 +273,7 @@ function Staff() {
     setSuccess('');
 
     try {
-      await api.post('/staff', formData);
+      await api.post('/staff', isConsulenza ? { ...formData, modalitaAbilitata: 'privato' } : formData);
       setFormData({
         firstName: '',
         lastName: '',
@@ -617,7 +631,7 @@ function Staff() {
     <section className="section-wide">
       <h2>
         <Users size={28} />
-        Gestione Personale
+        {isConsulenza ? 'Personale Consulenza Famiglie' : 'Gestione Personale'}
       </h2>
 
       {success && (
@@ -650,7 +664,11 @@ function Staff() {
             Tutti
           </button>
           {categories
-            .filter(cat => !isConvenzione || !categoriePrivate.includes(cat.value))
+            .filter(cat =>
+              isConsulenza
+                ? categorieConsulenza.includes(cat.value)
+                : (!isConvenzione || !categoriePrivate.includes(cat.value))
+            )
             .map(cat => (
               <button
                 key={cat.value}
@@ -674,7 +692,8 @@ function Staff() {
         )}
       </div>
 
-      {/* Modalità (chip contestuali all'area attiva) */}
+      {/* Modalità (chip contestuali all'area attiva) — nascosti in Consulenza Famiglie */}
+      {!isConsulenza && (
       <div className="tw-flex tw-flex-wrap tw-gap-2 tw-mb-5">
         {[
           { value: 'tutte', label: 'Tutti' },
@@ -694,6 +713,7 @@ function Staff() {
           </button>
         ))}
       </div>
+      )}
 
       {/* Search Results Info */}
       {(searchTerm || selectedCategory) && (
@@ -751,7 +771,11 @@ function Staff() {
                 onChange={handleInputChange}
               >
                 {categories
-                  .filter(cat => !['privato','osa','assistente-familiare','badante'].includes(cat.value) || (!isConvenzione && formData.modalitaAbilitata !== 'convenzione'))
+                  .filter(cat =>
+                    isConsulenza
+                      ? categorieConsulenza.includes(cat.value)
+                      : (!['privato','osa','assistente-familiare','badante'].includes(cat.value) || (!isConvenzione && formData.modalitaAbilitata !== 'convenzione'))
+                  )
                   .map(cat => (
                     <option key={cat.value} value={cat.value}>{cat.label}</option>
                   ))}
@@ -791,18 +815,20 @@ function Staff() {
               required
             />
           </label>
-          <label>
-            Modalità abilitata
-            <select
-              name="modalitaAbilitata"
-              value={formData.modalitaAbilitata}
-              onChange={handleInputChange}
-            >
-              <option value="entrambi">Entrambe (Privato + Convenzione)</option>
-              <option value="privato">Solo Pazienti Privati</option>
-              <option value="convenzione">Solo Pazienti Convenzione SIAT</option>
-            </select>
-          </label>
+          {!isConsulenza && (
+            <label>
+              Modalità abilitata
+              <select
+                name="modalitaAbilitata"
+                value={formData.modalitaAbilitata}
+                onChange={handleInputChange}
+              >
+                <option value="entrambi">Entrambe (Privato + Convenzione)</option>
+                <option value="privato">Solo Pazienti Privati</option>
+                <option value="convenzione">Solo Pazienti Convenzione SIAT</option>
+              </select>
+            </label>
+          )}
           <label>
             Note (opzionale)
             <textarea
@@ -969,9 +995,11 @@ function Staff() {
                         className="tw-text-[0.78rem] tw-py-1 tw-px-2 tw-rounded-md tw-border tw-border-slate-300 tw-cursor-pointer tw-bg-white tw-text-slate-700"
                         title="Sposta categoria"
                       >
-                        {categories.map(cat => (
-                          <option key={cat.value} value={cat.value}>{cat.label}</option>
-                        ))}
+                        {categories
+                          .filter(cat => !isConsulenza || categorieConsulenza.includes(cat.value))
+                          .map(cat => (
+                            <option key={cat.value} value={cat.value}>{cat.label}</option>
+                          ))}
                       </select>
                     )}
                     {canEdit && (

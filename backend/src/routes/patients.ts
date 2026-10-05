@@ -14,8 +14,23 @@ router.get('/', auditLog('patients', 'READ'), async (req: Request, res: Response
     const { tipo, page, limit, search, cf } = req.query;
     const filter: any = {};
     if (cf && typeof cf === 'string' && cf.trim()) filter.codiceFiscaleHash = hashForSearch(cf.trim().toUpperCase());
-    if (tipo === 'privato') filter.tipoGestione = 'privato';
-    else if (tipo === 'convenzione') filter.tipoGestione = 'convenzione';
+    if (tipo === 'privato') {
+      filter.tipoGestione = 'privato';
+      // I pazienti "consulenza famiglie" (intermediazione badanti) non fanno più parte dell'area privata
+      filter.categoriaPrivata = { $ne: 'intermediazione_badanti' };
+    } else if (tipo === 'convenzione') {
+      filter.tipoGestione = 'convenzione';
+    } else if (tipo === 'consulenza') {
+      // Pazienti dell'area Consulenza Famiglie: nuovi con tipoGestione dedicato
+      // e storici marcati come intermediazione_badanti
+      filter.$or = [
+        { tipoGestione: 'consulenza' },
+        { tipoGestione: 'privato', categoriaPrivata: 'intermediazione_badanti' },
+      ];
+    }
+    if (req.query.categoriaPrivata && tipo !== 'consulenza' && req.query.categoriaPrivata !== 'intermediazione_badanti') {
+      filter.categoriaPrivata = req.query.categoriaPrivata;
+    }
     if (req.query.categoriaPrivata) filter.categoriaPrivata = req.query.categoriaPrivata;
     // Ricerca per nome/cognome se passato
     if (search && typeof search === 'string' && search.trim()) {
@@ -57,8 +72,8 @@ router.post('/', authorizeRole('admin', 'coordinator'), auditLog('patients', 'CR
       contactPhone: req.body.contactPhone?.trim(),
       email: req.body.email?.trim(),
       codiceFiscale: codiceFiscale?.trim(),
-      tipoGestione: tipoGestione || 'privato',
-      categoriaPrivata: categoriaPrivata || undefined,
+      tipoGestione: ['privato', 'convenzione', 'consulenza'].includes(tipoGestione) ? tipoGestione : 'privato',
+      categoriaPrivata: tipoGestione === 'consulenza' ? 'intermediazione_badanti' : (tipoGestione === 'convenzione' ? undefined : (categoriaPrivata || undefined)),
       inAccettazione: req.body.inAccettazione === true,
       terminato: req.body.terminato === true,
       terminatoIl: req.body.terminato === true ? new Date() : undefined,
@@ -260,9 +275,10 @@ router.patch('/:id', authorizeRole('admin', 'coordinator'), auditLog('patients',
     if (email !== undefined) patient.email = email?.trim() || undefined;
     if (codiceFiscale !== undefined) patient.codiceFiscale = codiceFiscale?.trim() || undefined;
     if (categoriaPrivata !== undefined) patient.categoriaPrivata = categoriaPrivata;
-    if (tipoGestione !== undefined && ['privato', 'convenzione'].includes(tipoGestione)) {
+    if (tipoGestione !== undefined && ['privato', 'convenzione', 'consulenza'].includes(tipoGestione)) {
       patient.tipoGestione = tipoGestione;
       if (tipoGestione === 'convenzione') patient.categoriaPrivata = undefined;
+      if (tipoGestione === 'consulenza') patient.categoriaPrivata = 'intermediazione_badanti';
     }
     if (inAccettazione !== undefined) patient.inAccettazione = inAccettazione === true;
     if (accetta === true) {

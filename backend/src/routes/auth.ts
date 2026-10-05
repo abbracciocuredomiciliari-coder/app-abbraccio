@@ -292,9 +292,11 @@ router.post('/login', loginLimiter, async (req: Request, res: Response) => {
       const staff = await getStaffByUser(String(user._id), user.email);
       modalitaAbilitata = staff?.modalitaAbilitata || 'entrambi';
     }
-    const ws = workspace === 'convenzione' ? 'convenzione' : workspace === 'privato' ? 'privato' : null;
-    if (ws && modalitaAbilitata !== 'entrambi' && modalitaAbilitata !== ws) {
-      const nomeArea = ws === 'convenzione' ? 'Convenzione SIAT' : 'Gestione Privata';
+    const ws = workspace === 'convenzione' ? 'convenzione' : workspace === 'privato' ? 'privato' : workspace === 'consulenza' ? 'consulenza' : null;
+    // Consulenza Famiglie è un'area privata: accessibile a chi ha 'entrambi' o 'privato'
+    const wsEquivalente = ws === 'consulenza' ? 'privato' : ws;
+    if (wsEquivalente && modalitaAbilitata !== 'entrambi' && modalitaAbilitata !== wsEquivalente) {
+      const nomeArea = ws === 'convenzione' ? 'Convenzione SIAT' : ws === 'consulenza' ? 'Consulenza Famiglie' : 'Gestione Privata';
       const nomeAbilitata = modalitaAbilitata === 'convenzione' ? 'Convenzione SIAT' : 'Gestione Privata';
       return res.status(403).json({
         message: `Non sei autorizzato ad accedere all'area ${nomeArea}. La tua abilitazione è: ${nomeAbilitata}.`,

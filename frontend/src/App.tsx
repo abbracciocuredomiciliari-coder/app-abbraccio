@@ -118,7 +118,7 @@ function isPrivilegiato(role: string) {
 
 function AppShell() {
   const { user, logout } = useAuth();
-  const { modalita, setModalita, isConvenzione, modalitaAbilitata, canSwitch } = useModalita();
+  const { modalita, setModalita, isConvenzione, isConsulenza, modalitaAbilitata, canSwitch } = useModalita();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const { toasts, removeToast } = useToast();
@@ -179,16 +179,16 @@ function AppShell() {
               type="button"
               onClick={() => {
                 if (!canSwitch) return;
-                const nuovaModalita = isConvenzione ? 'privato' : 'convenzione';
-                const nomeAttuale = isConvenzione ? 'Convenzione SIAT' : 'Gestione Privata';
-                const nomeNuovo = nuovaModalita === 'convenzione' ? 'Convenzione SIAT' : 'Gestione Privata';
-                const msg = `Stai per passare da ${nomeAttuale} a ${nomeNuovo}.\n\nVuoi cambiare gestione?`;
+                const ordine = ['privato', 'convenzione', 'consulenza'] as const;
+                const nomi = { privato: 'Gestione Privata', convenzione: 'Convenzione SIAT', consulenza: 'Consulenza Famiglie' } as const;
+                const nuovaModalita = ordine[(ordine.indexOf(modalita) + 1) % ordine.length];
+                const msg = `Stai per passare da ${nomi[modalita]} a ${nomi[nuovaModalita]}.\n\nVuoi cambiare gestione?`;
                 if (window.confirm(msg)) setModalita(nuovaModalita);
               }}
               title={
                 !canSwitch
                   ? `Abilitazione: solo ${modalitaAbilitata === 'privato' ? 'pazienti privati' : 'pazienti in convenzione'}`
-                  : (isConvenzione ? 'Passa a Gestione Privata' : 'Passa a Convenzione SIAT')
+                  : 'Cambia area di lavoro'
               }
               style={{
                 marginTop: '12px',
@@ -210,7 +210,7 @@ function AppShell() {
               }}
             >
               <ArrowLeftRight size={14} />
-              {isConvenzione ? '🏥 Convenzione SIAT' : '👤 Gestione Privata'}
+              {isConvenzione ? '🏥 Convenzione SIAT' : isConsulenza ? '🤝 Consulenza Famiglie' : '👤 Gestione Privata'}
               {!canSwitch && <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>🔒</span>}
             </button>
           )}
@@ -312,8 +312,8 @@ function AppShell() {
             </>
           )}
 
-          {/* ===== MENU PRIVILEGIATI (admin, coordinator, direttore) ===== */}
-          {user && isPrivilegiato(user.role) && (
+          {/* ===== MENU PRIVILEGIATI (admin, coordinator, direttore) — aree Privato/Convenzione ===== */}
+          {user && isPrivilegiato(user.role) && !isConsulenza && (
             <>
               {/* — Panoramica — */}
               <span className="nav-section-label">Panoramica</span>
@@ -434,10 +434,6 @@ function AppShell() {
                 <Archive size={18} />
                 Archivio Fatture
               </Link>
-              <Link to="/badanti-intermediazione" className={isActive('/badanti-intermediazione') ? 'active' : ''}>
-                <Users size={18} />
-                Consulenza famiglie
-              </Link>
               {!isConvenzione && (
                 <Link to="/tariffario" className={isActive('/tariffario') ? 'active' : ''}>
                   <Tag size={18} />
@@ -468,6 +464,54 @@ function AppShell() {
                   <Link to="/esportazione-siat" className={isActive('/esportazione-siat') ? 'active' : ''}>
                     <FileText size={18} />
                     Esportazione SIAT
+                  </Link>
+                </>
+              )}
+            </>
+          )}
+
+          {/* ===== MENU CONSULENZA FAMIGLIE (admin, coordinator, direttore) ===== */}
+          {user && isPrivilegiato(user.role) && isConsulenza && (
+            <>
+              <span className="nav-section-label">Consulenza Famiglie</span>
+              <Link to="/badanti-intermediazione" className={isActive('/badanti-intermediazione') ? 'active' : ''}>
+                <Users size={18} />
+                Consulenza famiglie
+              </Link>
+              <Link to="/patients" className={isActive('/patients') ? 'active' : ''}>
+                <UserCircle size={18} />
+                Pazienti consulenza
+              </Link>
+              <Link to="/staff" className={isActive('/staff') ? 'active' : ''}>
+                <UserPlus size={18} />
+                Personale (colf/badanti)
+              </Link>
+              <Link to="/gestione-contratti" className={isActive('/gestione-contratti') ? 'active' : ''}>
+                <FileText size={18} />
+                Contratti operatori
+              </Link>
+
+              <span className="nav-section-label">Amministrazione</span>
+              <Link to="/gestione-fatturazione" className={isActive('/gestione-fatturazione') ? 'active' : ''}>
+                <Receipt size={18} />
+                Fatturazione
+              </Link>
+              <Link to="/archivio-fatture" className={isActive('/archivio-fatture') ? 'active' : ''}>
+                <Archive size={18} />
+                Archivio Fatture
+              </Link>
+
+              {/* — Sistema (solo admin) — */}
+              {user.role === 'admin' && (
+                <>
+                  <span className="nav-section-label">Sistema</span>
+                  <Link to="/gestione-utenti" className={isActive('/gestione-utenti') ? 'active' : ''}>
+                    <ShieldCheck size={18} />
+                    Gestione Utenti
+                  </Link>
+                  <Link to="/gestione-richieste" className={isActive('/gestione-richieste') ? 'active' : ''}>
+                    <Calendar size={18} />
+                    Gestione Richieste
                   </Link>
                 </>
               )}

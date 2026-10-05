@@ -139,7 +139,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
       .populate('fatturaId', 'numero stato totale')
       .populate('fattureGestione', 'numero stato totale data')
       .sort({ createdAt: -1 });
-    const soloPrivate = richieste.filter((r: any) => r.patient?.tipoGestione === 'privato');
+    const soloPrivate = richieste.filter((r: any) => r.patient?.tipoGestione !== 'convenzione');
     return res.json(soloPrivate);
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore nel caricamento delle richieste', error: error.message });

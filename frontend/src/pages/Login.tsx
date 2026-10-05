@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { Heart, Mail, Lock, LogIn, AlertCircle, Clock, UserRound, Building2, Check } from 'lucide-react';
+import { Heart, Mail, Lock, LogIn, AlertCircle, Clock, UserRound, Building2, Check, Handshake } from 'lucide-react';
 import { Alert } from '../components/ui/Alert';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
@@ -17,8 +17,8 @@ function Login() {
   const [sessionExpiredMsg, setSessionExpiredMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [isWakingUp, setIsWakingUp] = useState(false);
-  const [workspace, setWorkspace] = useState<'privato' | 'convenzione'>(
-    () => (localStorage.getItem('modalita') as 'privato' | 'convenzione') || 'privato'
+  const [workspace, setWorkspace] = useState<'privato' | 'convenzione' | 'consulenza'>(
+    () => (localStorage.getItem('modalita') as 'privato' | 'convenzione' | 'consulenza') || 'privato'
   );
 
   useEffect(() => {
@@ -108,7 +108,7 @@ function Login() {
         <p className="tw-text-center tw-text-[0.82rem] tw-font-semibold tw-text-slate-500 tw-mb-2.5 tw-uppercase tw-tracking-wide">
           Seleziona l'area di lavoro
         </p>
-        <div className="tw-grid tw-grid-cols-2 tw-gap-3">
+        <div className="tw-grid tw-grid-cols-3 tw-gap-3">
           <button
             type="button"
             onClick={() => setWorkspace('privato')}
@@ -148,6 +148,27 @@ function Login() {
             <span className="tw-font-bold tw-text-[0.95rem]">Convenzione SIAT</span>
             <span className="tw-text-[0.72rem] tw-opacity-80">Pazienti in convenzione</span>
             {workspace === 'convenzione' && (
+              <span className="tw-absolute tw-top-2 tw-right-2 tw-bg-white/25 tw-rounded-full tw-p-0.5"><Check size={14} /></span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setWorkspace('consulenza')}
+            aria-pressed={workspace === 'consulenza'}
+            className="tw-relative tw-rounded-2xl tw-p-4 tw-flex tw-flex-col tw-items-center tw-gap-1.5 tw-transition-all tw-duration-200 tw-border-2"
+            style={{
+              background: workspace === 'consulenza' ? 'linear-gradient(135deg, #b45309 0%, #d97706 55%, #fbbf24 100%)' : '#fff',
+              borderColor: workspace === 'consulenza' ? 'transparent' : '#e2e8f0',
+              color: workspace === 'consulenza' ? '#fff' : '#64748b',
+              boxShadow: workspace === 'consulenza' ? '0 10px 24px rgba(217, 119, 6, 0.35)' : 'none',
+              transform: workspace === 'consulenza' ? 'scale(1.02)' : 'scale(1)',
+              cursor: 'pointer',
+            }}
+          >
+            <Handshake size={30} />
+            <span className="tw-font-bold tw-text-[0.95rem]">Consulenza Famiglie</span>
+            <span className="tw-text-[0.72rem] tw-opacity-80">Colf, badanti e assistenti</span>
+            {workspace === 'consulenza' && (
               <span className="tw-absolute tw-top-2 tw-right-2 tw-bg-white/25 tw-rounded-full tw-p-0.5"><Check size={14} /></span>
             )}
           </button>
@@ -213,7 +234,7 @@ function Login() {
           icon={<LogIn size={18} />}
           className="tw-w-full"
         >
-          {isWakingUp ? 'Avvio server in corso…' : `Accedi — ${workspace === 'convenzione' ? 'Convenzione SIAT' : 'Gestione Privata'}`}
+          {isWakingUp ? 'Avvio server in corso…' : `Accedi — ${workspace === 'convenzione' ? 'Convenzione SIAT' : workspace === 'consulenza' ? 'Consulenza Famiglie' : 'Gestione Privata'}`}
         </Button>
 
         <p className="tw-text-center tw-text-[0.88rem] tw-text-slate-500 tw-my-0 tw-mb-2.5">

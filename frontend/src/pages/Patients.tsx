@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useModalita } from '../context/ModalitaContext';
 import api from '../api/api';
 import SkeletonList from '../components/SkeletonList';
 import {
@@ -59,7 +60,7 @@ interface Patient {
   allergie?: string;
   caregiverRiferimento?: string;
   caregiverTelefono?: string;
-  tipoGestione?: 'privato' | 'convenzione';
+  tipoGestione?: 'privato' | 'convenzione' | 'consulenza';
   inAccettazione?: boolean;
   accettatoIl?: string;
   terminato?: boolean;
@@ -131,6 +132,7 @@ const categoryColors: Record<string, string> = {
 
 function Patients() {
   const { user, getToken } = useAuth();
+  const { isConsulenza } = useModalita();
   const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
@@ -149,7 +151,7 @@ function Patients() {
     contactPhone: '',
     email: '',
     codiceFiscale: '',
-    tipoGestione: 'privato' as 'privato' | 'convenzione',
+    tipoGestione: 'privato' as 'privato' | 'convenzione' | 'consulenza',
     inAccettazione: false,
     terminato: false
   });
@@ -213,7 +215,7 @@ function Patients() {
 
   const loadPatients = async () => {
     try {
-      const response = await api.get('/patients?tipo=privato');
+      const response = await api.get(isConsulenza ? '/patients?tipo=consulenza' : '/patients?tipo=privato');
       setPatients(response.data);
     } catch (error) {
       console.error('Errore caricamento pazienti', error);
@@ -266,15 +268,19 @@ function Patients() {
         const vecchiaGestione = editingPatient.tipoGestione || 'privato';
         const nuovaGestione = formData.tipoGestione || 'privato';
         if (vecchiaGestione !== nuovaGestione) {
-          const msg = `Vuoi cambiare gestione del paziente da ${vecchiaGestione === 'convenzione' ? 'SIAT' : 'Privato'} a ${nuovaGestione === 'convenzione' ? 'SIAT' : 'Privato'}?\n\nI dati del paziente verranno spostati nell'area ${nuovaGestione === 'convenzione' ? 'Pazienti Convenzione SIAT' : 'Pazienti Privati'}.`;
+          const nomiGestione: Record<string, string> = { privato: 'Privato', convenzione: 'SIAT', consulenza: 'Consulenza Famiglie' };
+          const nomiArea: Record<string, string> = { privato: 'Pazienti Privati', convenzione: 'Pazienti Convenzione SIAT', consulenza: 'Pazienti Consulenza Famiglie' };
+          const msg = `Vuoi cambiare gestione del paziente da ${nomiGestione[vecchiaGestione] || 'Privato'} a ${nomiGestione[nuovaGestione] || 'Privato'}?\n\nI dati del paziente verranno spostati nell'area ${nomiArea[nuovaGestione] || 'Pazienti Privati'}.`;
           if (!confirm(msg)) return;
         }
         const payload = { ...formData } as any;
+        if (isConsulenza) { payload.tipoGestione = 'consulenza'; payload.categoriaPrivata = 'intermediazione_badanti'; }
         if (payload.tipoGestione === 'convenzione') payload.categoriaPrivata = undefined;
         await api.patch(`/patients/${editingPatient._id}`, payload);
         setSuccess('Paziente aggiornato con successo!');
       } else {
         const payload = { ...formData } as any;
+        if (isConsulenza) { payload.tipoGestione = 'consulenza'; payload.categoriaPrivata = 'intermediazione_badanti'; }
         if (payload.tipoGestione === 'convenzione') payload.categoriaPrivata = undefined;
         await api.post('/patients', payload);
         setSuccess('Paziente salvato con successo!');
@@ -813,7 +819,7 @@ function Patients() {
     <section className="tw-max-w-none">
       <h2 className="tw-flex tw-items-center tw-gap-2">
         <FileText size={28} />
-        Gestione Pazienti
+        {isConsulenza ? 'Pazienti — Consulenza Famiglie' : 'Gestione Pazienti'}
       </h2>
 
       {success && (
@@ -962,14 +968,17 @@ function Patients() {
             {editingPatient ? (
               <select
                 value={formData.tipoGestione}
-                onChange={e => setFormData(prev => ({ ...prev, tipoGestione: e.target.value as 'privato' | 'convenzione' }))}
+                onChange={e => setFormData(prev => ({ ...prev, tipoGestione: e.target.value as 'privato' | 'convenzione' | 'consulenza' }))}
               >
                 <option value="privato">👤 Privato</option>
                 <option value="convenzione">🏥 SIAT — Convenzione</option>
+                <option value="consulenza">🤝 Consulenza Famiglie</option>
               </select>
             ) : (
-              <select value="privato" disabled>
-                <option value="privato">👤 Privato</option>
+              <select value={isConsulenza ? 'consulenza' : 'privato'} disabled>
+                {isConsulenza
+                  ? <option value="consulenza">🤝 Consulenza Famiglie</option>
+                  : <option value="privato">👤 Privato</option>}
               </select>
             )}
           </label>
@@ -986,7 +995,7 @@ function Patients() {
             </span>
           </label>
 
-          {formData.tipoGestione === 'privato' && (
+          {formData.tipoGestione === 'privato' && !isConsulenza && (
             <label>
               Categoria servizio privato *
               <select
@@ -996,7 +1005,6 @@ function Patients() {
               >
                 <option value="diagnostica">🩺 Diagnostica (prelievi / esami)</option>
                 <option value="assistenza_domiciliare">🏥 Assistenza sanitaria domiciliare</option>
-                <option value="intermediazione_badanti">🤝 Consulenza famiglie</option>
               </select>
             </label>
           )}
@@ -1023,9 +1031,10 @@ function Patients() {
         </form>
       )}
 
-      {/* Tabs categoria */}
+      {/* Tabs categoria — nascosti nell'area Consulenza Famiglie */}
+      {!isConsulenza && (
       <div className="tw-flex tw-flex-wrap tw-gap-2 tw-mb-2">
-        {(['tutti', 'diagnostica', 'assistenza_domiciliare', 'intermediazione_badanti'] as const).map(cat => (
+        {(['tutti', 'diagnostica', 'assistenza_domiciliare'] as const).map(cat => (
           <button
             key={cat}
             onClick={() => setActiveCategoria(cat)}
@@ -1035,10 +1044,11 @@ function Patients() {
                 : 'tw-bg-white tw-text-slate-600 tw-border tw-border-slate-200 hover:tw-bg-slate-50'
             }`}
           >
-            {cat === 'tutti' ? 'Tutti' : cat === 'diagnostica' ? '🩺 Diagnostica' : cat === 'assistenza_domiciliare' ? '🏥 Assistenza domiciliare' : '🤝 Consulenza famiglie'}
+            {cat === 'tutti' ? 'Tutti' : cat === 'diagnostica' ? '🩺 Diagnostica' : '🏥 Assistenza domiciliare'}
           </button>
         ))}
       </div>
+      )}
 
       {/* Tabs stato accettazione */}
       <div className="tw-flex tw-flex-wrap tw-gap-2 tw-mb-5">
@@ -1195,7 +1205,7 @@ function Patients() {
                     <MessageCircle size={16} />
                     Chat
                   </button>
-                  {user?.role === 'admin' || user?.role === 'coordinator' ? (
+                  {!isConsulenza && (user?.role === 'admin' || user?.role === 'coordinator') ? (
                     <select
                       value={patient.categoriaPrivata || ''}
                       onChange={e => {
@@ -1210,7 +1220,6 @@ function Patients() {
                       <option value="" disabled>Sposta in...</option>
                       <option value="diagnostica">🩺 Diagnostica</option>
                       <option value="assistenza_domiciliare">🏥 Assistenza domiciliare</option>
-                      <option value="intermediazione_badanti">🤝 Consulenza famiglie</option>
                     </select>
                   ) : null}
                   <ReportGenerator
