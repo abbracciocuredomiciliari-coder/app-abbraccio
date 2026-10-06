@@ -108,7 +108,7 @@ function Login() {
         <p className="tw-text-center tw-text-[0.82rem] tw-font-semibold tw-text-slate-500 tw-mb-2.5 tw-uppercase tw-tracking-wide">
           Seleziona l'area di lavoro
         </p>
-        <div className="tw-grid tw-grid-cols-3 tw-gap-3">
+        <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-3 tw-gap-3">
           <button
             type="button"
             onClick={() => setWorkspace('privato')}
