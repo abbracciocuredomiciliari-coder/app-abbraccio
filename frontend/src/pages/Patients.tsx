@@ -1,5 +1,4 @@
 import { FormEvent, useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
 import api from '../api/api';
@@ -133,12 +132,19 @@ const categoryColors: Record<string, string> = {
 function Patients() {
   const { user, getToken } = useAuth();
   const { isConsulenza } = useModalita();
-  const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [preventivoRapidoPaziente, setPreventivoRapidoPaziente] = useState<Patient | null>(null);
+  const [preventivoRapidoRighe, setPreventivoRapidoRighe] = useState<{ descrizione: string; quantita: number; prezzoUnitario: number; aliquotaIva: number }[]>([
+    { descrizione: '', quantita: 1, prezzoUnitario: 0, aliquotaIva: 0 },
+  ]);
+  const [preventivoRapidoData, setPreventivoRapidoData] = useState('');
+  const [preventivoRapidoNote, setPreventivoRapidoNote] = useState('');
+  const [preventivoRapidoLoading, setPreventivoRapidoLoading] = useState(false);
+  const [preventivoRapidoError, setPreventivoRapidoError] = useState('');
   const [activeCategoria, setActiveCategoria] = useState<'tutti' | 'diagnostica' | 'assistenza_domiciliare' | 'intermediazione_badanti'>('tutti');
   const [activeAccettazione, setActiveAccettazione] = useState<'tutti' | 'in_accettazione' | 'accettati' | 'terminati'>('tutti');
   const [formData, setFormData] = useState({
@@ -352,6 +358,70 @@ function Patients() {
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore aggiornamento paziente');
+    }
+  };
+
+  const apriPreventivoRapido = (patient: Patient) => {
+    setPreventivoRapidoPaziente(patient);
+    setPreventivoRapidoRighe([{ descrizione: '', quantita: 1, prezzoUnitario: 0, aliquotaIva: 0 }]);
+    setPreventivoRapidoData(new Date().toISOString().split('T')[0]);
+    setPreventivoRapidoNote('');
+    setPreventivoRapidoError('');
+  };
+
+  const chiudiPreventivoRapido = () => {
+    setPreventivoRapidoPaziente(null);
+    setPreventivoRapidoError('');
+    setPreventivoRapidoLoading(false);
+  };
+
+  const aggiornaRigaPreventivoRapido = (i: number, field: 'descrizione' | 'quantita' | 'prezzoUnitario' | 'aliquotaIva', value: string | number) => {
+    setPreventivoRapidoRighe(prev => prev.map((r, j) => j === i ? { ...r, [field]: value } : r));
+  };
+
+  const aggiungiRigaPreventivoRapido = () => {
+    setPreventivoRapidoRighe(prev => [...prev, { descrizione: '', quantita: 1, prezzoUnitario: 0, aliquotaIva: 0 }]);
+  };
+
+  const rimuoviRigaPreventivoRapido = (i: number) => {
+    setPreventivoRapidoRighe(prev => prev.filter((_, j) => j !== i));
+  };
+
+  const totalePreventivoRapido = preventivoRapidoRighe.reduce((acc, r) => {
+    const importo = (Number(r.quantita) || 0) * (Number(r.prezzoUnitario) || 0);
+    return { imponibile: acc.imponibile + importo, iva: acc.iva + importo * ((Number(r.aliquotaIva) || 0) / 100) };
+  }, { imponibile: 0, iva: 0 });
+
+  const generaPreventivoRapido = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!preventivoRapidoPaziente) return;
+    const righeValide = preventivoRapidoRighe.filter(r => r.descrizione.trim() && (Number(r.prezzoUnitario) || 0) > 0);
+    if (righeValide.length === 0) {
+      setPreventivoRapidoError('Inserisci almeno una prestazione con descrizione e importo.');
+      return;
+    }
+    setPreventivoRapidoError('');
+    setPreventivoRapidoLoading(true);
+    try {
+      await api.post('/fatturazione-documenti', {
+        tipo: 'preventivo',
+        patient: preventivoRapidoPaziente._id,
+        dataPrestazione: preventivoRapidoData || undefined,
+        note: preventivoRapidoNote || undefined,
+        prestazioni: righeValide.map(r => ({
+          descrizione: r.descrizione.trim(),
+          quantita: Number(r.quantita) || 1,
+          prezzoUnitario: Number(r.prezzoUnitario) || 0,
+          aliquotaIva: Number(r.aliquotaIva) || 0,
+        })),
+      });
+      setSuccess('✅ Preventivo generato! Lo trovi in Gestione Fatturazione.');
+      setTimeout(() => setSuccess(''), 4000);
+      chiudiPreventivoRapido();
+    } catch (err: any) {
+      setPreventivoRapidoError(err?.response?.data?.message || 'Errore nella generazione del preventivo');
+    } finally {
+      setPreventivoRapidoLoading(false);
     }
   };
 
@@ -1143,9 +1213,9 @@ function Patients() {
                   {patient.inAccettazione && !patient.terminato && (user?.role === 'admin' || user?.role === 'coordinator') && (
                     <>
                       <button
-                        onClick={() => navigate(`/workplan?patientId=${patient._id}&nuovo=1&accettazione=1`)}
+                        onClick={() => apriPreventivoRapido(patient)}
                         className="tw-bg-amber-500 tw-text-white tw-whitespace-nowrap"
-                        title="Apri il modulo Piano di Lavoro (in accettazione) col paziente preselezionato: definisci il fabbisogno, salva, poi genera il preventivo in Fatturazione"
+                        title="Genera subito un preventivo per questo paziente, senza creare un piano di lavoro"
                       >
                         <FileText size={16} />
                         Preventivo
@@ -1936,6 +2006,135 @@ function Patients() {
                 {contrattoLoading ? 'Invio...' : 'Invia firma'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ MODAL PREVENTIVO RAPIDO (senza piano di lavoro) ═══ */}
+      {preventivoRapidoPaziente && (
+        <div className="tw-fixed tw-inset-0 tw-z-50 tw-bg-black/60 tw-flex tw-items-start tw-justify-center tw-p-4 tw-overflow-y-auto" onClick={chiudiPreventivoRapido}>
+          <div className="tw-bg-white tw-rounded-2xl tw-shadow-2xl tw-w-full tw-max-w-[640px] tw-my-10 tw-p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="tw-m-0 tw-mb-1 tw-text-brand tw-text-lg tw-font-bold">
+              📄 Nuovo preventivo
+            </h3>
+            <p className="tw-text-sm tw-text-slate-500 tw-mb-4">
+              {preventivoRapidoPaziente.firstName} {preventivoRapidoPaziente.lastName} — generato subito, senza creare un piano di lavoro
+            </p>
+            <form onSubmit={generaPreventivoRapido}>
+              <div className="tw-mb-4">
+                <label className="tw-block tw-text-sm tw-font-semibold tw-mb-1.5">Data prestazione</label>
+                <input
+                  type="date"
+                  value={preventivoRapidoData}
+                  onChange={e => setPreventivoRapidoData(e.target.value)}
+                  className="tw-w-full tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-box-border"
+                />
+              </div>
+
+              <div className="tw-mb-4">
+                <label className="tw-block tw-text-sm tw-font-semibold tw-mb-2">Prestazioni</label>
+                {preventivoRapidoRighe.map((riga, i) => (
+                  <div key={i} className="tw-flex tw-gap-2 tw-mb-2 tw-items-start">
+                    <input
+                      type="text"
+                      value={riga.descrizione}
+                      onChange={e => aggiornaRigaPreventivoRapido(i, 'descrizione', e.target.value)}
+                      placeholder="Descrizione prestazione"
+                      className="tw-flex-[2] tw-p-2 tw-rounded-lg tw-border tw-border-slate-300"
+                    />
+                    <input
+                      type="number"
+                      min={0.01}
+                      step={0.01}
+                      value={riga.quantita}
+                      onChange={e => aggiornaRigaPreventivoRapido(i, 'quantita', Number(e.target.value))}
+                      title="Quantità"
+                      className="tw-w-[64px] tw-p-2 tw-rounded-lg tw-border tw-border-slate-300"
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={riga.prezzoUnitario}
+                      onChange={e => aggiornaRigaPreventivoRapido(i, 'prezzoUnitario', Number(e.target.value))}
+                      placeholder="€"
+                      title="Prezzo unitario"
+                      className="tw-w-[90px] tw-p-2 tw-rounded-lg tw-border tw-border-slate-300"
+                    />
+                    <select
+                      value={riga.aliquotaIva}
+                      onChange={e => aggiornaRigaPreventivoRapido(i, 'aliquotaIva', Number(e.target.value))}
+                      title="IVA"
+                      className="tw-w-[92px] tw-p-2 tw-rounded-lg tw-border tw-border-slate-300"
+                    >
+                      <option value={0}>Esente</option>
+                      <option value={4}>IVA 4%</option>
+                      <option value={5}>IVA 5%</option>
+                      <option value={10}>IVA 10%</option>
+                      <option value={22}>IVA 22%</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => rimuoviRigaPreventivoRapido(i)}
+                      disabled={preventivoRapidoRighe.length === 1}
+                      className="tw-px-2.5 tw-py-2 tw-rounded-lg tw-bg-red-50 tw-text-red-700 tw-font-bold tw-border-0 disabled:tw-opacity-40"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={aggiungiRigaPreventivoRapido}
+                  className="tw-px-3.5 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-bg-slate-50 tw-font-semibold"
+                >
+                  + Aggiungi riga
+                </button>
+              </div>
+
+              <div className="tw-mb-4">
+                <label className="tw-block tw-text-sm tw-font-semibold tw-mb-1.5">Note (opzionale)</label>
+                <textarea
+                  value={preventivoRapidoNote}
+                  onChange={e => setPreventivoRapidoNote(e.target.value)}
+                  rows={2}
+                  className="tw-w-full tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-box-border"
+                />
+              </div>
+
+              <div className="tw-flex tw-justify-between tw-items-center tw-mb-4 tw-gap-2 tw-bg-emerald-50 tw-border tw-border-emerald-200 tw-rounded-lg tw-p-3">
+                <div className="tw-text-sm tw-text-emerald-800">
+                  Imponibile {totalePreventivoRapido.imponibile.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
+                  {totalePreventivoRapido.iva > 0
+                    ? ` + IVA ${totalePreventivoRapido.iva.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}`
+                    : ' · esente art. 10 c.1 n.18 DPR 633/72'}
+                </div>
+                <div className="tw-text-lg tw-font-bold tw-text-emerald-800">
+                  {(totalePreventivoRapido.imponibile + totalePreventivoRapido.iva).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
+                </div>
+              </div>
+
+              {preventivoRapidoError && (
+                <div className="tw-text-red-600 tw-text-sm tw-mb-3">{preventivoRapidoError}</div>
+              )}
+
+              <div className="tw-flex tw-gap-2.5 tw-justify-end">
+                <button
+                  type="button"
+                  onClick={chiudiPreventivoRapido}
+                  className="tw-px-4 tw-py-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-bg-slate-50 tw-font-semibold"
+                >
+                  Annulla
+                </button>
+                <button
+                  type="submit"
+                  disabled={preventivoRapidoLoading}
+                  className="tw-px-4.5 tw-py-2.5 tw-rounded-lg tw-bg-brand tw-text-white tw-font-bold tw-border-0"
+                >
+                  {preventivoRapidoLoading ? 'Generazione...' : 'Genera preventivo'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
