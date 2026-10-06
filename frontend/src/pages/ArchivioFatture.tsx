@@ -47,7 +47,7 @@ function formatEuro(n: number) {
 
 export default function ArchivioFatture() {
   const { user } = useAuth();
-  const { isConvenzione } = useModalita();
+  const { isConvenzione, isConsulenza } = useModalita();
   const [documenti, setDocumenti] = useState<DocumentoFatturazione[]>([]);
   const [loading, setLoading] = useState(true);
   const [showArchivio, setShowArchivio] = useState(true);
@@ -60,7 +60,7 @@ export default function ArchivioFatture() {
   const caricaDocumenti = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/fatturazione-documenti');
+      const res = await api.get('/fatturazione-documenti', { params: { area: isConsulenza ? 'consulenza' : 'gestionale' } });
       setDocumenti(res.data);
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore nel caricamento dei documenti');

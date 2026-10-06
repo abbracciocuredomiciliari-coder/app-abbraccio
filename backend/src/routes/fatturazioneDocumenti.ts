@@ -14,9 +14,13 @@ const router = Router();
 const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
 
 // ─── Numerazione progressiva per tipo + anno ───────────────────────────────────
-async function generaNumero(tipo: 'preventivo' | 'fattura'): Promise<string> {
+// Le fatture dell'area Consulenza Famiglie usano una serie dedicata (FATT-CF),
+// con progressivo autonomo rispetto alla fatturazione generale.
+async function generaNumero(tipo: 'preventivo' | 'fattura', consulenza = false): Promise<string> {
   const anno = new Date().getFullYear();
-  const prefisso = tipo === 'preventivo' ? 'PREV' : 'FATT';
+  const prefisso = consulenza
+    ? (tipo === 'preventivo' ? 'PREV-CF' : 'FATT-CF')
+    : (tipo === 'preventivo' ? 'PREV' : 'FATT');
   const base = `${prefisso}-${anno}-`;
   const count = await DocumentoFatturazione.countDocuments({
     numero: { $regex: `^${base}` },
@@ -30,16 +34,34 @@ async function generaNumero(tipo: 'preventivo' | 'fattura'): Promise<string> {
   return numero;
 }
 
-// GET /api/fatturazione-documenti — lista (filtro per paziente opzionale)
+// Un documento appartiene all'area Consulenza Famiglie se nasce dal flusso
+// intermediazione badanti (riferimentoTipo 'badante') o se il paziente è
+// di tipo consulenza / legacy intermediazione_badanti.
+function isPazienteConsulenza(paziente: any): boolean {
+  return paziente?.tipoGestione === 'consulenza' || paziente?.categoriaPrivata === 'intermediazione_badanti';
+}
+
+function isDocConsulenza(doc: any): boolean {
+  return doc.riferimentoTipo === 'badante' || isPazienteConsulenza(doc.patient);
+}
+
+// GET /api/fatturazione-documenti — lista (filtri: paziente, tipo, area)
+// area=consulenza → solo documenti Consulenza Famiglie
+// area=gestionale → tutti i documenti tranne quelli Consulenza Famiglie
 router.get('/', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const { patient, tipo } = req.query;
+    const { patient, tipo, area } = req.query;
     const filtro: any = {};
     if (patient) filtro.patient = patient;
     if (tipo) filtro.tipo = tipo;
-    const documenti = await DocumentoFatturazione.find(filtro)
-      .populate('patient', 'firstName lastName codiceFiscale address email')
+    let documenti = await DocumentoFatturazione.find(filtro)
+      .populate('patient', 'firstName lastName codiceFiscale address email tipoGestione categoriaPrivata')
       .sort({ data: -1 });
+    if (area === 'consulenza') {
+      documenti = documenti.filter((d: any) => isDocConsulenza(d));
+    } else if (area === 'gestionale') {
+      documenti = documenti.filter((d: any) => !isDocConsulenza(d));
+    }
     return res.json(documenti);
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore nel caricamento dei documenti', error: error.message });
@@ -95,7 +117,8 @@ router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('
     const totaleIva = Math.round(prestazioniNormalizzate.reduce((acc: number, p: any) => acc + p.importo * ((p.aliquotaIva || 0) / 100), 0) * 100) / 100;
     const totale = Math.round((imponibile + totaleIva) * 100) / 100;
     const user = req.user as { name?: string; email?: string } | undefined;
-    const numero = numeroManuale && numeroManuale.trim() ? String(numeroManuale).trim().toUpperCase() : await generaNumero(tipo);
+    const consulenza = isPazienteConsulenza(pazienteEsiste);
+    const numero = numeroManuale && numeroManuale.trim() ? String(numeroManuale).trim().toUpperCase() : await generaNumero(tipo, consulenza);
 
     const doc = await DocumentoFatturazione.create({
       numero,
@@ -129,7 +152,8 @@ router.post('/:id/converti-in-fattura', authenticateToken, authorizeRole(...RUOL
     if (!preventivo) return res.status(404).json({ message: 'Preventivo non trovato' });
     if (preventivo.tipo !== 'preventivo') return res.status(400).json({ message: 'Il documento indicato non è un preventivo' });
 
-    const numero = await generaNumero('fattura');
+    const pazientePrev = await Patient.findById(preventivo.patient);
+    const numero = await generaNumero('fattura', isPazienteConsulenza(pazientePrev) || preventivo.riferimentoTipo === 'badante');
     const user = req.user as { name?: string; email?: string } | undefined;
 
     // Copia tutte le voci del preventivo preservando aliquote IVA e professionista

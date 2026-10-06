@@ -91,7 +91,7 @@ interface GestioneFatturazioneProps {
 
 export default function GestioneFatturazione({ archivioOnly = false }: GestioneFatturazioneProps) {
   const { user } = useAuth();
-  const { isConvenzione } = useModalita();
+  const { isConvenzione, isConsulenza } = useModalita();
   const [searchParams] = useSearchParams();
   const pazienteDaUrl = searchParams.get('paziente') || '';
   const [workplans, setWorkplans] = useState<WorkPlanItem[]>([]);
@@ -143,7 +143,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
 
   const caricaDocumenti = async () => {
     try {
-      const res = await api.get('/fatturazione-documenti');
+      const res = await api.get('/fatturazione-documenti', { params: { area: isConsulenza ? 'consulenza' : 'gestionale' } });
       setDocumenti(res.data);
     } catch (err) {
       console.error('Errore caricamento documenti:', err);
@@ -641,7 +641,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px', color: isConvenzione ? '#0369a1' : '#1e4d8c' }}>
           {archivioOnly ? <Archive size={28} /> : (isConvenzione ? <Building2 size={28} /> : <Receipt size={28} />)}
-          {archivioOnly ? 'Archivio Fatture' : (isConvenzione ? 'Tariffa da Fatturare all\u2019ASL' : 'Fatturazione Pazienti Privati')}
+          {archivioOnly ? 'Archivio Fatture' : (isConvenzione ? 'Tariffa da Fatturare all\u2019ASL' : (isConsulenza ? 'Fatturazione Consulenza Famiglie' : 'Fatturazione Pazienti Privati'))}
         </h1>
         {!archivioOnly && (
           <div style={{ display: 'flex', gap: '10px' }}>
@@ -649,7 +649,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
               <Button variant="primary" onClick={stampaRiepilogoAsl} icon={<Printer size={18} />}>
                 Stampa Report ASL
               </Button>
-            ) : (
+            ) : !isConsulenza && (
               <>
                 <Button variant="primary" onClick={() => visualizzaPDF()} icon={<FileText size={18} />}>
                   Visualizza Report
@@ -664,6 +664,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
       </div>
 
       {/* Filtri */}
+      {!isConsulenza && (
       <div style={{ background: 'white', borderRadius: '12px', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' }}>
         <div onClick={() => setShowFiltri(!showFiltri)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
           <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#374151' }}>
@@ -688,6 +689,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
           </div>
         )}
       </div>
+      )}
 
       {/* ══════════════════════ VISTA CONVENZIONE ASL ══════════════════════ */}
       {isConvenzione && !loading && (
@@ -786,7 +788,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
       )}
 
       {/* ══════════════════════ VISTA PRIVATI ══════════════════════ */}
-      {!isConvenzione && !loading && totaliGenerali.numeroPazienti > 0 && (
+      {!isConvenzione && !isConsulenza && !loading && totaliGenerali.numeroPazienti > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           <div style={{ background: 'linear-gradient(135deg, #166534 0%, #14532d 100%)', borderRadius: '12px', padding: '20px', color: 'white', textAlign: 'center' }}>
             <div style={{ fontSize: '2rem', fontWeight: 800 }}>{formatEuro(totaliGenerali.totaleFatturato)}</div>
@@ -1008,7 +1010,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
       )}
 
       {/* Lista pazienti PRIVATI */}
-      {!isConvenzione && (loading ? (
+      {!isConvenzione && !isConsulenza && (loading ? (
         <div style={{ textAlign: 'center', padding: '40px' }}><p>Caricamento...</p></div>
       ) : riepiloghiPerPaziente.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px', background: '#f9fafb', borderRadius: '12px' }}>

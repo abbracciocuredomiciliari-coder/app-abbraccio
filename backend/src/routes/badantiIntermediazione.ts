@@ -96,9 +96,11 @@ const router = Router();
 const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
 
 // ─── Numerazione progressiva per preventivi/fatture ────────────────────────────
+// Le fatture della Consulenza Famiglie usano una serie dedicata FATT-CF con
+// progressivo autonomo, distaccato dalla fatturazione dei pazienti privati.
 async function generaNumero(tipo: 'preventivo' | 'fattura'): Promise<string> {
   const anno = new Date().getFullYear();
-  const prefisso = tipo === 'preventivo' ? 'PREV' : 'FATT';
+  const prefisso = tipo === 'preventivo' ? 'PREV-CF' : 'FATT-CF';
   const base = `${prefisso}-${anno}-`;
   const count = await DocumentoFatturazione.countDocuments({
     numero: { $regex: `^${base}` },
