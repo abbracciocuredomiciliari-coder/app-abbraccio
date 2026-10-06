@@ -1,4 +1,5 @@
 import { useEffect, useState, FormEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { Users, Plus, FileText, Mail, Trash2, Receipt, Check, X, User, Briefcase, Euro, Download } from 'lucide-react';
@@ -17,6 +18,7 @@ interface Preventivo {
   _id: string;
   numero: string;
   totale: number;
+  totaleMensileStimato?: number;
   stato: 'emesso' | 'firmato' | 'annullato';
 }
 
@@ -57,13 +59,16 @@ interface Badante {
 
 export default function BadantiIntermediazione() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const patientIdDaUrl = searchParams.get('patientId') || '';
+  const apriNuovoDaUrl = searchParams.get('nuovo') === '1';
   const [richieste, setRichieste] = useState<Badante[]>([]);
   const [pazienti, setPazienti] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(apriNuovoDaUrl);
 
-  const [patient, setPatient] = useState('');
+  const [patient, setPatient] = useState(patientIdDaUrl);
   const [contrattoTipo, setContrattoTipo] = useState<'orario_non_convivente' | 'convivente'>('orario_non_convivente');
   const [livello, setLivello] = useState('A');
   const [oreSettimanali, setOreSettimanali] = useState('24');
@@ -363,7 +368,12 @@ export default function BadantiIntermediazione() {
                           </div>
                           {preventivo && (
                             <div className="tw-text-sm tw-text-slate-600">
-                              <strong>Preventivo:</strong> {preventivo.numero} — <Euro size={14} className="tw-inline" /> {preventivo.totale.toFixed(2)} ({preventivo.stato})
+                              <strong>Preventivo:</strong> {preventivo.numero} — <Euro size={14} className="tw-inline" /> {preventivo.totale.toFixed(2)} una tantum ({preventivo.stato})
+                              {Number(preventivo.totaleMensileStimato) > 0 && (
+                                <span className="tw-ml-2 tw-inline-flex tw-items-center tw-px-2 tw-py-0.5 tw-rounded-full tw-bg-blue-100 tw-text-blue-700 tw-font-bold tw-text-xs">
+                                  💶 €{Number(preventivo.totaleMensileStimato).toFixed(2)}/mese
+                                </span>
+                              )}
                             </div>
                           )}
                           {fattura && (
@@ -448,7 +458,24 @@ export default function BadantiIntermediazione() {
           <div className="tw-bg-white tw-rounded-2xl tw-p-6 tw-w-full tw-max-w-2xl tw-max-h-[90vh] tw-overflow-y-auto tw-shadow-xl">
             <h2 className="tw-text-lg tw-font-bold tw-mb-4 tw-flex tw-items-center tw-gap-2 tw-text-slate-800"><FileText size={20} /> Genera preventivo</h2>
             <div className="tw-space-y-3 tw-mb-4">
+              {(() => {
+                const costoBadanteMensile = Number(richiestaAperta.costoMensile || 0);
+                const gaNetta = includiGestione ? Number(gestioneAmministrativa || 0) : 0;
+                const ivaGestioneMensile = Math.round(gaNetta * 0.22 * 100) / 100;
+                const gaLordaMensile = Math.round((gaNetta + ivaGestioneMensile) * 100) / 100;
+                const totaleMensile = Math.round((costoBadanteMensile + gaLordaMensile) * 100) / 100;
+                return (
+                  <div className="tw-p-4 tw-bg-blue-50 tw-border-2 tw-border-blue-200 tw-rounded-xl tw-flex tw-justify-between tw-items-center tw-flex-wrap tw-gap-2">
+                    <div>
+                      <div className="tw-text-xs tw-uppercase tw-font-bold tw-text-blue-700 tw-tracking-wide">💶 Totale mensile a carico della famiglia</div>
+                      <div className="tw-text-xs tw-text-blue-600 tw-mt-0.5">Badante €{costoBadanteMensile.toFixed(2)}/mese{includiGestione && gaNetta > 0 ? ` + Gestione amministrativa €${gaLordaMensile.toFixed(2)}/mese (IVA incl.)` : ''}</div>
+                    </div>
+                    <div className="tw-text-2xl tw-font-extrabold tw-text-blue-800">€{totaleMensile.toFixed(2)}<span className="tw-text-sm tw-font-semibold">/mese</span></div>
+                  </div>
+                );
+              })()}
               <div className="tw-p-3 tw-bg-slate-50 tw-rounded-xl">
+                <div className="tw-text-xs tw-font-bold tw-text-slate-500 tw-uppercase tw-mb-1.5">Dettaglio contratto e costi una tantum</div>
                 <div className="tw-text-sm"><span className="tw-font-semibold">Contratto:</span> {richiestaAperta.contrattoTipo === 'orario_non_convivente' ? 'Orario non convivente' : 'Convivente'}</div>
                 <div className="tw-text-sm"><span className="tw-font-semibold">Livello:</span> {richiestaAperta.livello} — {LIVELLI_DESCRIZIONI[richiestaAperta.livello]}</div>
                 {richiestaAperta.oreSettimanali ? <div className="tw-text-sm"><span className="tw-font-semibold">Ore settimanali:</span> {richiestaAperta.oreSettimanali}</div> : null}
@@ -472,7 +499,7 @@ export default function BadantiIntermediazione() {
                       )}
                       <div className="tw-text-sm"><span className="tw-font-semibold">Attivazione contratto:</span> <Euro size={14} className="tw-inline" /> {attivazione.toFixed(2)} (una tantum)</div>
                       <div className="tw-text-sm"><span className="tw-font-semibold">Consulenza specialistica:</span> <Euro size={14} className="tw-inline" /> {consulenza.toFixed(2)} (imponibile €500,00 + IVA 22% €110,00)</div>
-                      <div className="tw-text-sm tw-font-semibold tw-text-slate-700 tw-mt-1">Totale una tantum: <Euro size={14} className="tw-inline" /> {totaleUnaTantum.toFixed(2)}</div>
+                      <div className="tw-text-sm tw-font-semibold tw-text-slate-700 tw-mt-1">Totale una tantum (pagato subito): <Euro size={14} className="tw-inline" /> {totaleUnaTantum.toFixed(2)}</div>
                     </>
                   );
                 })()}

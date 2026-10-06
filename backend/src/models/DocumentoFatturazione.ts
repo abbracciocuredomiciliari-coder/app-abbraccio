@@ -28,6 +28,8 @@ export interface IDocumentoFatturazione extends Document {
   note?: string;
   creatoDa: string;
   totaleLabel?: string;
+  totaleMensileStimato?: number; // costo ricorrente mensile (es. badante + gestione amministrativa), informativo
+  totaleMensileLabel?: string;
   documentoOrigineId?: Types.ObjectId; // se una fattura nasce dalla conferma di un preventivo
   firma?: {
     token: string;
@@ -72,6 +74,8 @@ const documentoFatturazioneSchema = new Schema<IDocumentoFatturazione>(
     note: { type: String, trim: true },
     creatoDa: { type: String, required: true },
     totaleLabel: { type: String, trim: true },
+    totaleMensileStimato: { type: Number },
+    totaleMensileLabel: { type: String, trim: true },
     documentoOrigineId: { type: Schema.Types.ObjectId, ref: 'DocumentoFatturazione' },
     firma: {
       token: { type: String, unique: true, sparse: true },

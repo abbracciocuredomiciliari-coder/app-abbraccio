@@ -204,8 +204,21 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
         pdf.font('Helvetica-Bold').fontSize(18).fillColor('#166534').text(formatEuro(totaleLordo), 370, totalY + 22, { width: 180, align: 'right' });
       }
 
-      // ─── Note e scadenze
+      // ─── Costo mensile stimato (Consulenza Famiglie / badanti) — evidenziato a parte dal totale una tantum
       let noteY = totalY + (haIva ? 92 : 65);
+      const totaleMensile = Number(doc.totaleMensileStimato) || 0;
+      if (totaleMensile > 0) {
+        if (noteY + 50 > 740) {
+          pdf.addPage();
+          noteY = 50;
+        }
+        const mensileLabel = doc.totaleMensileLabel || 'COSTO MENSILE STIMATO';
+        pdf.rect(50, noteY, 500, 42).fillAndStroke('#eff6ff', '#1e4d8c');
+        pdf.font('Helvetica-Bold').fontSize(10).fillColor('#1e4d8c').text(mensileLabel, 62, noteY + 9, { width: 320, align: 'left' });
+        pdf.font('Helvetica-Bold').fontSize(16).fillColor('#1e4d8c').text(formatEuro(totaleMensile) + ' /mese', 350, noteY + 10, { width: 190, align: 'right' });
+        noteY += 54;
+      }
+
       if (noteY > 700) {
         pdf.addPage();
         noteY = 50;
@@ -219,7 +232,7 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
         noteY += 28;
       }
 
-      if (doc.tipo === 'preventivo') {
+      if (doc.tipo === 'preventivo' && doc.riferimentoTipo !== 'badante') {
         const totale = Number(doc.totale) || 0;
         const FRANCHIGIA = 129.11;
         const baseDetraibile = Math.max(0, totale - FRANCHIGIA);

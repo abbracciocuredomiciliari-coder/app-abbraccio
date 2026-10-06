@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
 import api from '../api/api';
@@ -132,6 +133,7 @@ const categoryColors: Record<string, string> = {
 function Patients() {
   const { user, getToken } = useAuth();
   const { isConsulenza } = useModalita();
+  const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1235,9 +1237,11 @@ function Patients() {
                   {patient.inAccettazione && !patient.terminato && (user?.role === 'admin' || user?.role === 'coordinator') && (
                     <>
                       <button
-                        onClick={() => apriPreventivoRapido(patient)}
+                        onClick={() => isConsulenza
+                          ? navigate(`/badanti-intermediazione?patientId=${patient._id}&nuovo=1`)
+                          : apriPreventivoRapido(patient)}
                         className="tw-bg-amber-500 tw-text-white tw-whitespace-nowrap"
-                        title="Genera subito un preventivo per questo paziente, senza creare un piano di lavoro"
+                        title={isConsulenza ? 'Apri Consulenza Famiglie per generare il preventivo di intermediazione badante' : 'Genera subito un preventivo per questo paziente, senza creare un piano di lavoro'}
                       >
                         <FileText size={16} />
                         Preventivo

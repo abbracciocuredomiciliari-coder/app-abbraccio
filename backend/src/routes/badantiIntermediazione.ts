@@ -88,7 +88,8 @@ function calcolaPrestazioni(richiesta: any, gestioneAmministrativa: number) {
   });
 
   const totaleUnaTantum = Math.round((attivazione + totaleConsulenza) * 100) / 100;
-  return { prestazioni, totaleUnaTantum };
+  const totaleMensileStimato = Math.round((costoBadanteMensile + gaLordoMensile) * 100) / 100;
+  return { prestazioni, totaleUnaTantum, totaleMensileStimato };
 }
 
 const router = Router();
@@ -137,7 +138,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
     if (patient) filtro.patient = patient;
     const richieste = await BadanteIntermediazione.find(filtro)
       .populate('patient', 'firstName lastName codiceFiscale email tipoGestione')
-      .populate('preventivoId', 'numero stato totale')
+      .populate('preventivoId', 'numero stato totale totaleMensileStimato')
       .populate('fatturaId', 'numero stato totale')
       .populate('fattureGestione', 'numero stato totale data')
       .sort({ createdAt: -1 });
@@ -247,7 +248,8 @@ router.post('/:id/preventivo', authenticateToken, authorizeRole(...RUOLI_GESTION
 
     const { gestioneAmministrativa, dataPrestazione, note } = req.body;
     const ga = Number(gestioneAmministrativa) >= 0 ? Number(gestioneAmministrativa) : (Number(richiesta.gestioneAmministrativa) || 0);
-    const { prestazioni, totaleUnaTantum } = calcolaPrestazioni(richiesta, ga);
+    const { prestazioni, totaleUnaTantum, totaleMensileStimato } = calcolaPrestazioni(richiesta, ga);
+    const mesi = Number(richiesta.mesiContratto) || 12;
     const user = req.user as { name?: string; email?: string } | undefined;
     const numero = await generaNumero('preventivo');
 
@@ -260,6 +262,8 @@ router.post('/:id/preventivo', authenticateToken, authorizeRole(...RUOLI_GESTION
       prestazioni,
       totale: totaleUnaTantum,
       totaleLabel: 'TOTALE UNA TANTUM',
+      totaleMensileStimato,
+      totaleMensileLabel: `COSTO MENSILE A CARICO FAMIGLIA (x ${mesi} mesi)`,
       data: new Date(),
       dataPrestazione: dataPrestazione ? new Date(dataPrestazione) : undefined,
       stato: 'emesso',
