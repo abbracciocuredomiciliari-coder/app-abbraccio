@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../api/api';
+import { useModalita } from '../context/ModalitaContext';
 import { Search, FileText, Download, Mail, User, CheckCircle, AlertCircle, X, Eye } from 'lucide-react';
 
 interface Utente {
@@ -9,6 +10,7 @@ interface Utente {
   role: string;
   status: string;
   professione?: string;
+  categoria?: string;
   partitaIva?: string;
   regimeFiscale?: string;
   firmaContratto?: string;
@@ -29,7 +31,17 @@ const roleLabel: Record<string, string> = {
   caregiver: 'Operatore',
 };
 
+// Personale dell'area Consulenza Famiglie: colf, badanti, assistenti familiari
+// (categorie private/familiari) — in quell'area si vedono solo i loro contratti.
+const CATEGORIE_FAMIGLIA = ['privato', 'osa', 'assistente-familiare', 'badante'];
+const isPersonaleFamiglia = (u: Utente) => {
+  const cat = (u.categoria || '').toLowerCase().trim();
+  const prof = (u.professione || '').toLowerCase();
+  return CATEGORIE_FAMIGLIA.includes(cat) || /colf|badant|assistente familiare/.test(prof);
+};
+
 export default function GestioneContratti() {
+  const { isConsulenza } = useModalita();
   const [utenti, setUtenti] = useState<Utente[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState('');
@@ -60,14 +72,15 @@ export default function GestioneContratti() {
   }, []);
 
   const filtrati = useMemo(() => {
+    const base = isConsulenza ? utenti.filter(isPersonaleFamiglia) : utenti.filter(u => !isPersonaleFamiglia(u));
     const q = filtro.toLowerCase().trim();
-    if (!q) return utenti;
-    return utenti.filter(u =>
+    if (!q) return base;
+    return base.filter(u =>
       (u.name || '').toLowerCase().includes(q) ||
       (u.email || '').toLowerCase().includes(q) ||
       (u.professione || '').toLowerCase().includes(q)
     );
-  }, [utenti, filtro]);
+  }, [utenti, filtro, isConsulenza]);
 
   const scaricaPDF = async (userId: string, tipo: 'piva' | 'ritenuta', firmato: boolean) => {
     const key = `${userId}-${tipo}-${firmato}`;
@@ -189,8 +202,8 @@ export default function GestioneContratti() {
 
   return (
     <div className="tw-p-5 tw-max-w-6xl tw-mx-auto">
-      <h1 className="tw-text-2xl tw-font-bold tw-text-slate-800 tw-mb-1">Gestione contratti operatori</h1>
-      <p className="tw-text-slate-500 tw-mb-6">Visualizza, scarica, stampa e invia per firma i due tipi di contratto.</p>
+      <h1 className="tw-text-2xl tw-font-bold tw-text-slate-800 tw-mb-1">{isConsulenza ? 'Contratti personale famiglie' : 'Gestione contratti operatori'}</h1>
+      <p className="tw-text-slate-500 tw-mb-6">{isConsulenza ? 'Contratti e documenti di colf, badanti e assistenti familiari.' : 'Visualizza, scarica, stampa e invia per firma i due tipi di contratto.'}</p>
 
       {toast && (
         <div className={`tw-fixed tw-top-4 tw-right-4 tw-z-50 tw-px-4 tw-py-3 tw-rounded-lg tw-shadow-lg tw-text-sm tw-font-medium ${toast.tipo === 'ok' ? 'tw-bg-green-100 tw-text-green-800' : 'tw-bg-red-100 tw-text-red-800'}`}>
