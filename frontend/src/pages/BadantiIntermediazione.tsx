@@ -11,7 +11,7 @@ interface Patient {
   lastName: string;
   codiceFiscale?: string;
   email?: string;
-  categoriaPrivata?: 'diagnostica' | 'assistenza_domiciliare' | 'intermediazione_badanti';
+  categoriaPrivata?: 'diagnostica' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'visite_mediche' | 'intermediazione_badanti';
 }
 
 interface Preventivo {

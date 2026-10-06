@@ -5,7 +5,7 @@ import api from '../api/api';
 // Tipi
 // ═════════════════════════════════════════════════════════════════════════════
 type TipoServizio = 'prelievo' | 'esame_strumentale' | 'prestazione' | 'assistenza';
-type CategoriaPrivata = 'diagnostica' | 'assistenza_domiciliare' | 'intermediazione_badanti';
+type CategoriaPrivata = 'diagnostica' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'visite_mediche' | 'intermediazione_badanti';
 type StatoRichiesta = 'in_attesa' | 'in_revisione' | 'confermata' | 'modificata' | 'rifiutata' | 'completata';
 
 interface Richiesta {
@@ -306,8 +306,11 @@ export default function CentroPrenotazioniPrivato() {
                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
                   required
                 >
-                  <option value="diagnostica">🩺 Diagnostica (prelievi / esami)</option>
-                  <option value="assistenza_domiciliare">🏥 Assistenza sanitaria domiciliare</option>
+                  <option value="diagnostica">� Diagnostica (RX / Ecografie / Esami strumentali)</option>
+                  <option value="prelievi">🩸 Prelievi</option>
+                  <option value="assistenza_domiciliare">� Assistenza domiciliare</option>
+                  <option value="trasporto">🚑 Trasporto</option>
+                  <option value="visite_mediche">🩺 Visite mediche</option>
                   <option value="intermediazione_badanti">🤝 Consulenza famiglie</option>
                 </select>
               </div>

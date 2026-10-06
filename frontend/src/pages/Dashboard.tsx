@@ -378,7 +378,7 @@ function Dashboard() {
                       </div>
                       <div className="tw-flex tw-flex-wrap tw-gap-2 tw-text-[0.8rem] tw-text-slate-600">
                         <span>📅 Accettato il: <strong>{formatDataBreve(paz.accettatoIl)}</strong></span>
-                        {paz.categoriaPrivata && <span>🏷️ {paz.categoriaPrivata === 'diagnostica' ? 'Diagnostica' : paz.categoriaPrivata === 'assistenza_domiciliare' ? 'Assistenza domiciliare' : 'Consulenza famiglie'}</span>}
+                        {paz.categoriaPrivata && <span>🏷️ {({ diagnostica: 'Diagnostica', prelievi: 'Prelievi', assistenza_domiciliare: 'Assistenza domiciliare', trasporto: 'Trasporto', visite_mediche: 'Visite mediche', intermediazione_badanti: 'Consulenza famiglie' } as Record<string, string>)[paz.categoriaPrivata] || paz.categoriaPrivata}</span>}
                       </div>
                     </div>
                     <button

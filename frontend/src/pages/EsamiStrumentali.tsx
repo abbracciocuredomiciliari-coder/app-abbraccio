@@ -229,8 +229,12 @@ export default function EsamiStrumentali() {
     const map = new Map<string, VoceTariffario[]>();
     const labels: Record<string, string> = {
       prestazioni_infermieristiche: 'Cardiologia / Fisiologia',
+      prelievi: 'Prelievi',
+      assistenza_domiciliare: 'Assistenza Domiciliare',
+      trasporto: 'Trasporto',
       radiologia: 'Radiologia (RX)',
       ecografia: 'Ecografie / Ecocolordoppler',
+      visite_mediche: 'Visite Mediche',
     };
     tariffeEsami.forEach(v => {
       const cat = v.categoria;

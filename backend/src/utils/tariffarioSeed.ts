@@ -1,5 +1,5 @@
 export interface VoceTariffarioSeed {
-  categoria: 'prestazioni_infermieristiche' | 'assistenza_trasporto' | 'radiologia' | 'ecografia';
+  categoria: 'prestazioni_infermieristiche' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'radiologia' | 'ecografia' | 'visite_mediche';
   nome: string;
   prezzo: number;
   unitaMisura?: string;
@@ -30,24 +30,28 @@ export const TARIFFARIO_SEED: VoceTariffarioSeed[] = [
   { categoria: 'prestazioni_infermieristiche', nome: 'Gestione stomie/nefrostomie', prezzo: 50, ordine: 17 },
   { categoria: 'prestazioni_infermieristiche', nome: 'Medicazione PICC/Midline/CVC', prezzo: 50, note: '+ materiale', ordine: 18 },
   { categoria: 'prestazioni_infermieristiche', nome: 'Aspirazione secrezioni', prezzo: 50, ordine: 19 },
-  { categoria: 'prestazioni_infermieristiche', nome: 'Prelievo ematico ed esame urine (consegnato)', prezzo: 25, ordine: 20 },
-  { categoria: 'prestazioni_infermieristiche', nome: 'Raccolta urine sterile con cateterismo estemporaneo', prezzo: 25, ordine: 21 },
-  { categoria: 'prestazioni_infermieristiche', nome: 'ECG', prezzo: 60, ordine: 22 },
-  { categoria: 'prestazioni_infermieristiche', nome: 'Holter cardiaco', prezzo: 120, ordine: 23 },
-  { categoria: 'prestazioni_infermieristiche', nome: 'Holter pressorio', prezzo: 120, ordine: 24 },
-  { categoria: 'prestazioni_infermieristiche', nome: 'Spirometria', prezzo: 100, ordine: 25 },
-  { categoria: 'prestazioni_infermieristiche', nome: 'Polisonnigrafo', prezzo: 180, ordine: 26 },
+  { categoria: 'prestazioni_infermieristiche', nome: 'ECG', prezzo: 60, ordine: 20 },
+  { categoria: 'prestazioni_infermieristiche', nome: 'Holter cardiaco', prezzo: 120, ordine: 21 },
+  { categoria: 'prestazioni_infermieristiche', nome: 'Holter pressorio', prezzo: 120, ordine: 22 },
+  { categoria: 'prestazioni_infermieristiche', nome: 'Spirometria', prezzo: 100, ordine: 23 },
+  { categoria: 'prestazioni_infermieristiche', nome: 'Polisonnigrafo', prezzo: 180, ordine: 24 },
 
-  // ─── Assistenza e Trasporto ────────────────────────────────────────────────
-  { categoria: 'assistenza_trasporto', nome: 'Ambulanza percorso urbano andata', prezzo: 150, note: 'Tratta urbana', ordine: 1 },
-  { categoria: 'assistenza_trasporto', nome: 'Ambulanza andata e ritorno', prezzo: 280, ordine: 2 },
-  { categoria: 'assistenza_trasporto', nome: 'Extraurbano', prezzo: 1, unitaMisura: 'a km', ordine: 3 },
-  { categoria: 'assistenza_trasporto', nome: 'Urgenza (in 2h)', prezzo: 50, ordine: 4 },
-  { categoria: 'assistenza_trasporto', nome: 'Bagno a letto', prezzo: 45, ordine: 5 },
-  { categoria: 'assistenza_trasporto', nome: 'Assistenza OSS', prezzo: 23, unitaMisura: 'ora', ordine: 6 },
-  { categoria: 'assistenza_trasporto', nome: 'Assistenza notturna (notte h21–h07)', prezzo: 25, unitaMisura: 'ora', note: 'Intera notte forfait € 200,00', ordine: 7 },
-  { categoria: 'assistenza_trasporto', nome: 'Assistenza infermieristica', prezzo: 35, unitaMisura: 'ora', ordine: 8 },
-  { categoria: 'assistenza_trasporto', nome: 'Assistenza infermieristica notturna (h21–h07)', prezzo: 40, unitaMisura: 'ora', note: 'Intera notte forfait € 250,00', ordine: 9 },
+  // ─── Prelievi ───────────────────────────────────────────────────────────────
+  { categoria: 'prelievi', nome: 'Prelievo ematico ed esame urine (consegnato)', prezzo: 25, ordine: 1 },
+  { categoria: 'prelievi', nome: 'Raccolta urine sterile con cateterismo estemporaneo', prezzo: 25, ordine: 2 },
+
+  // ─── Assistenza Domiciliare ─────────────────────────────────────────────────
+  { categoria: 'assistenza_domiciliare', nome: 'Bagno a letto', prezzo: 45, ordine: 1 },
+  { categoria: 'assistenza_domiciliare', nome: 'Assistenza OSS', prezzo: 23, unitaMisura: 'ora', ordine: 2 },
+  { categoria: 'assistenza_domiciliare', nome: 'Assistenza notturna (notte h21–h07)', prezzo: 25, unitaMisura: 'ora', note: 'Intera notte forfait € 200,00', ordine: 3 },
+  { categoria: 'assistenza_domiciliare', nome: 'Assistenza infermieristica', prezzo: 35, unitaMisura: 'ora', ordine: 4 },
+  { categoria: 'assistenza_domiciliare', nome: 'Assistenza infermieristica notturna (h21–h07)', prezzo: 40, unitaMisura: 'ora', note: 'Intera notte forfait € 250,00', ordine: 5 },
+
+  // ─── Trasporto ──────────────────────────────────────────────────────────────
+  { categoria: 'trasporto', nome: 'Ambulanza percorso urbano andata', prezzo: 150, note: 'Tratta urbana', ordine: 1 },
+  { categoria: 'trasporto', nome: 'Ambulanza andata e ritorno', prezzo: 280, ordine: 2 },
+  { categoria: 'trasporto', nome: 'Extraurbano', prezzo: 1, unitaMisura: 'a km', ordine: 3 },
+  { categoria: 'trasporto', nome: 'Urgenza (in 2h)', prezzo: 50, ordine: 4 },
 
   // ─── Radiologia (RX) ────────────────────────────────────────────────────────
   { categoria: 'radiologia', nome: 'RX cranio e seni paranasali', prezzo: 160, unitaMisura: '1 tratto', ordine: 1 },
@@ -95,4 +99,7 @@ export const TARIFFARIO_SEED: VoceTariffarioSeed[] = [
   { categoria: 'ecografia', nome: 'Ecocolordoppler fegato', prezzo: 210, unitaMisura: '1 organo', ordine: 17 },
   { categoria: 'ecografia', nome: 'Ecocolordoppler renale', prezzo: 210, unitaMisura: '1 organo', ordine: 18 },
   { categoria: 'ecografia', nome: 'Ecocolordoppler tiroide', prezzo: 210, unitaMisura: '1 organo', ordine: 19 },
+
+  // ─── Visite Mediche ─────────────────────────────────────────────────────────
+  // (da compilare: aggiungere le visite mediche con relative tariffe dalla pagina Tariffario)
 ];

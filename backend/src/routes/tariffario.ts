@@ -60,7 +60,7 @@ export async function migraEsamiStrumentaliTariffario() {
 }
 
 const NOMI_ASSISTENZA_TRASPORTO = ['Bagno a letto', 'Assistenza OSS', 'Assistenza notturna (notte h21–h07)', 'Assistenza infermieristica', 'Assistenza infermieristica notturna (h21–h07)'];
-const VOCI_ASSISTENZA_SEED = TARIFFARIO_SEED.filter(v => v.categoria === 'assistenza_trasporto' && NOMI_ASSISTENZA_TRASPORTO.includes(v.nome));
+const VOCI_ASSISTENZA_SEED = TARIFFARIO_SEED.filter(v => v.categoria === 'assistenza_domiciliare' && NOMI_ASSISTENZA_TRASPORTO.includes(v.nome));
 
 export async function migraVociAssistenzaTariffario() {
   try {
@@ -87,6 +87,42 @@ export async function migraVociAssistenzaTariffario() {
     }
   } catch (err) {
     console.error('Errore migrazione voci assistenza tariffario:', err);
+  }
+}
+
+// ─── Separazione definitiva: Assistenza Domiciliare / Trasporto / Prelievi ─────
+// Storicamente "assistenza_trasporto" mischiava assistenza oraria (OSS/infermieristica)
+// con il vero trasporto in ambulanza, e i prelievi stavano dentro "prestazioni_infermieristiche".
+// Questa migrazione idempotente separa le tre cose in categorie dedicate e coerenti.
+const NOMI_SOLO_ASSISTENZA = ['Bagno a letto', 'Assistenza OSS', 'Assistenza notturna (notte h21–h07)', 'Assistenza infermieristica', 'Assistenza infermieristica notturna (h21–h07)'];
+const NOMI_SOLO_TRASPORTO = ['Ambulanza percorso urbano andata', 'Ambulanza andata e ritorno', 'Extraurbano', 'Urgenza (in 2h)'];
+const NOMI_PRELIEVI = ['Prelievo ematico ed esame urine (consegnato)', 'Raccolta urine sterile con cateterismo estemporaneo'];
+
+export async function separaCategorieTariffario() {
+  try {
+    const rAssistenza = await Tariffario.updateMany(
+      { nome: { $in: NOMI_SOLO_ASSISTENZA } },
+      { $set: { categoria: 'assistenza_domiciliare' } }
+    );
+    const rTrasporto = await Tariffario.updateMany(
+      { nome: { $in: NOMI_SOLO_TRASPORTO } },
+      { $set: { categoria: 'trasporto' } }
+    );
+    const rPrelievi = await Tariffario.updateMany(
+      { nome: { $in: NOMI_PRELIEVI } },
+      { $set: { categoria: 'prelievi' } }
+    );
+    // Rete di sicurezza: qualsiasi voce rimasta nella vecchia categoria mista finisce in trasporto
+    const rResidue = await Tariffario.updateMany(
+      { categoria: 'assistenza_trasporto' },
+      { $set: { categoria: 'trasporto' } }
+    );
+    const totale = rAssistenza.modifiedCount + rTrasporto.modifiedCount + rPrelievi.modifiedCount + rResidue.modifiedCount;
+    if (totale > 0) {
+      console.log(`✅ Tariffario: separate categorie (assistenza ${rAssistenza.modifiedCount}, trasporto ${rTrasporto.modifiedCount}, prelievi ${rPrelievi.modifiedCount}, residue ${rResidue.modifiedCount}).`);
+    }
+  } catch (err) {
+    console.error('Errore separazione categorie tariffario:', err);
   }
 }
 

@@ -1,7 +1,7 @@
 import { Document, Schema, model } from 'mongoose';
 
 export interface ITariffario extends Document {
-  categoria: 'prestazioni_infermieristiche' | 'assistenza_trasporto' | 'radiologia' | 'ecografia';
+  categoria: 'prestazioni_infermieristiche' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'radiologia' | 'ecografia' | 'visite_mediche' | 'assistenza_trasporto';
   nome: string;
   prezzo: number;
   unitaMisura?: string; // es. "1 tratto", "cad", "ora"
@@ -17,7 +17,7 @@ const tariffarioSchema = new Schema<ITariffario>(
     categoria: {
       type: String,
       required: true,
-      enum: ['prestazioni_infermieristiche', 'assistenza_trasporto', 'radiologia', 'ecografia'],
+      enum: ['prestazioni_infermieristiche', 'prelievi', 'assistenza_domiciliare', 'trasporto', 'radiologia', 'ecografia', 'visite_mediche', 'assistenza_trasporto'],
     },
     nome: { type: String, required: true, trim: true },
     prezzo: { type: Number, required: true, default: 0 },

@@ -65,7 +65,7 @@ interface Patient {
   accettatoIl?: string;
   terminato?: boolean;
   terminatoIl?: string;
-  categoriaPrivata?: 'diagnostica' | 'assistenza_domiciliare' | 'intermediazione_badanti';
+  categoriaPrivata?: 'diagnostica' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'visite_mediche' | 'intermediazione_badanti';
   siat?: {
     npi?: string;
     codiceAutorizzazione?: string;
@@ -149,7 +149,24 @@ function Patients() {
   const [preventivoRapidoLoading, setPreventivoRapidoLoading] = useState(false);
   const [preventivoRapidoError, setPreventivoRapidoError] = useState('');
   const [tariffarioVoci, setTariffarioVoci] = useState<{ _id: string; categoria: string; nome: string; prezzo: number }[]>([]);
-  const [activeCategoria, setActiveCategoria] = useState<'tutti' | 'diagnostica' | 'assistenza_domiciliare' | 'intermediazione_badanti'>('tutti');
+  const TARIFFARIO_CATEGORIE_LABEL: Record<string, string> = {
+    prestazioni_infermieristiche: '💉 Prestazioni Infermieristiche',
+    prelievi: '🩸 Prelievi',
+    assistenza_domiciliare: '🏠 Assistenza Domiciliare',
+    trasporto: '🚑 Trasporto',
+    radiologia: '🩻 Radiologia (RX)',
+    ecografia: '🔊 Ecografie / Ecocolordoppler',
+    visite_mediche: '🩺 Visite Mediche',
+  };
+  const [activeCategoria, setActiveCategoria] = useState<'tutti' | 'diagnostica' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'visite_mediche' | 'intermediazione_badanti'>('tutti');
+  const CATEGORIA_PRIVATA_LABEL: Record<string, string> = {
+    diagnostica: '🩻 Diagnostica (RX/Ecografie/Esami strumentali)',
+    prelievi: '🩸 Prelievi',
+    assistenza_domiciliare: '🏠 Assistenza domiciliare',
+    trasporto: '🚑 Trasporto',
+    visite_mediche: '🩺 Visite mediche',
+    intermediazione_badanti: '🤝 Consulenza famiglie',
+  };
   const [activeAccettazione, setActiveAccettazione] = useState<'tutti' | 'in_accettazione' | 'accettati' | 'terminati'>('tutti');
   const [formData, setFormData] = useState({
     firstName: '',
@@ -1097,8 +1114,11 @@ function Patients() {
                 onChange={e => setFormData(prev => ({ ...prev, categoriaPrivata: e.target.value as any }))}
                 required
               >
-                <option value="diagnostica">🩺 Diagnostica (prelievi / esami)</option>
-                <option value="assistenza_domiciliare">🏥 Assistenza sanitaria domiciliare</option>
+                <option value="diagnostica">🩻 Diagnostica (RX / Ecografie / Esami strumentali)</option>
+                <option value="prelievi">🩸 Prelievi</option>
+                <option value="assistenza_domiciliare">🏠 Assistenza domiciliare</option>
+                <option value="trasporto">🚑 Trasporto</option>
+                <option value="visite_mediche">🩺 Visite mediche</option>
               </select>
             </label>
           )}
@@ -1128,7 +1148,7 @@ function Patients() {
       {/* Tabs categoria — nascosti nell'area Consulenza Famiglie */}
       {!isConsulenza && (
       <div className="tw-flex tw-flex-wrap tw-gap-2 tw-mb-2">
-        {(['tutti', 'diagnostica', 'assistenza_domiciliare'] as const).map(cat => (
+        {(['tutti', 'diagnostica', 'prelievi', 'assistenza_domiciliare', 'trasporto', 'visite_mediche'] as const).map(cat => (
           <button
             key={cat}
             onClick={() => setActiveCategoria(cat)}
@@ -1138,7 +1158,7 @@ function Patients() {
                 : 'tw-bg-white tw-text-slate-600 tw-border tw-border-slate-200 hover:tw-bg-slate-50'
             }`}
           >
-            {cat === 'tutti' ? 'Tutti' : cat === 'diagnostica' ? '🩺 Diagnostica' : '🏥 Assistenza domiciliare'}
+            {cat === 'tutti' ? 'Tutti' : CATEGORIA_PRIVATA_LABEL[cat]}
           </button>
         ))}
       </div>
@@ -1314,8 +1334,11 @@ function Patients() {
                       title="Sposta categoria"
                     >
                       <option value="" disabled>Sposta in...</option>
-                      <option value="diagnostica">🩺 Diagnostica</option>
-                      <option value="assistenza_domiciliare">🏥 Assistenza domiciliare</option>
+                      <option value="diagnostica">🩻 Diagnostica</option>
+                      <option value="prelievi">🩸 Prelievi</option>
+                      <option value="assistenza_domiciliare">🏠 Assistenza domiciliare</option>
+                      <option value="trasporto">🚑 Trasporto</option>
+                      <option value="visite_mediche">🩺 Visite mediche</option>
                     </select>
                   ) : null}
                   <ReportGenerator
@@ -2081,9 +2104,28 @@ function Patients() {
                       title="Carica dal tariffario"
                     >
                       <option value="">— Scegli dal tariffario (opzionale) —</option>
-                      {tariffarioVoci.map(v => (
-                        <option key={v._id} value={v._id}>{v.nome} ({v.prezzo.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })})</option>
-                      ))}
+                      {Object.keys(TARIFFARIO_CATEGORIE_LABEL).map(cat => {
+                        const vociCat = tariffarioVoci.filter(v => v.categoria === cat);
+                        if (vociCat.length === 0) return null;
+                        return (
+                          <optgroup key={cat} label={TARIFFARIO_CATEGORIE_LABEL[cat]}>
+                            {vociCat.map(v => (
+                              <option key={v._id} value={v._id}>{v.nome} ({v.prezzo.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })})</option>
+                            ))}
+                          </optgroup>
+                        );
+                      })}
+                      {(() => {
+                        const altre = tariffarioVoci.filter(v => !TARIFFARIO_CATEGORIE_LABEL[v.categoria]);
+                        if (altre.length === 0) return null;
+                        return (
+                          <optgroup label="Altro">
+                            {altre.map(v => (
+                              <option key={v._id} value={v._id}>{v.nome} ({v.prezzo.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })})</option>
+                            ))}
+                          </optgroup>
+                        );
+                      })()}
                     </select>
                   </div>
                   <div className="tw-flex tw-gap-2 tw-items-start">

@@ -6,7 +6,7 @@ import { Tag, Plus, Pencil, Trash2, Check, X, Search } from 'lucide-react';
 
 interface VoceTariffario {
   _id: string;
-  categoria: 'prestazioni_infermieristiche' | 'assistenza_trasporto' | 'radiologia' | 'ecografia';
+  categoria: 'prestazioni_infermieristiche' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'radiologia' | 'ecografia' | 'visite_mediche';
   nome: string;
   prezzo: number;
   unitaMisura?: string;
@@ -18,9 +18,12 @@ interface VoceTariffario {
 
 const CATEGORIE: { value: VoceTariffario['categoria']; label: string; color: string }[] = [
   { value: 'prestazioni_infermieristiche', label: '💉 Prestazioni Infermieristiche', color: '#0369a1' },
-  { value: 'assistenza_trasporto', label: '🚑 Assistenza e Trasporto', color: '#7c3aed' },
+  { value: 'prelievi', label: '🩸 Prelievi', color: '#be123c' },
+  { value: 'assistenza_domiciliare', label: '🏠 Assistenza Domiciliare', color: '#7c3aed' },
+  { value: 'trasporto', label: '🚑 Trasporto', color: '#ea580c' },
   { value: 'radiologia', label: '🩻 Radiologia (RX)', color: '#b45309' },
   { value: 'ecografia', label: '🔊 Ecografie / Ecocolordoppler', color: '#059669' },
+  { value: 'visite_mediche', label: '🩺 Visite Mediche', color: '#0891b2' },
 ];
 
 export default function Tariffario() {
@@ -48,7 +51,7 @@ export default function Tariffario() {
   useEffect(() => { carica(); }, []);
 
   const vociFiltrate = useMemo(() => {
-    let list = voci.filter(v => !v.isEsameStrumentale);
+    let list = voci;
     if (catFiltro !== 'tutte') list = list.filter(v => v.categoria === catFiltro);
     const t = search.toLowerCase().trim();
     if (t) list = list.filter(v => v.nome.toLowerCase().includes(t));
