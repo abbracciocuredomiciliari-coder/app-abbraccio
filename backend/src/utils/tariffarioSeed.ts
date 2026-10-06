@@ -101,5 +101,19 @@ export const TARIFFARIO_SEED: VoceTariffarioSeed[] = [
   { categoria: 'ecografia', nome: 'Ecocolordoppler tiroide', prezzo: 210, unitaMisura: '1 organo', ordine: 19 },
 
   // ─── Visite Mediche ─────────────────────────────────────────────────────────
-  // (da compilare: aggiungere le visite mediche con relative tariffe dalla pagina Tariffario)
+  { categoria: 'visite_mediche', nome: 'Visita cardiologica', prezzo: 180, ordine: 1 },
+  { categoria: 'visite_mediche', nome: 'Visita geriatrica', prezzo: 180, ordine: 2 },
+  { categoria: 'visite_mediche', nome: 'Visita urologica', prezzo: 180, ordine: 3 },
+  { categoria: 'visite_mediche', nome: 'Visita ortopedica', prezzo: 0, note: 'Prezzo da definire', ordine: 4 },
+  { categoria: 'visite_mediche', nome: 'Visita dermatologica', prezzo: 0, note: 'Prezzo da definire', ordine: 5 },
+  { categoria: 'visite_mediche', nome: 'Visita endocrinologica', prezzo: 180, ordine: 6 },
+  { categoria: 'visite_mediche', nome: 'Visita otorinolaringoiatrica', prezzo: 180, ordine: 7 },
+  { categoria: 'visite_mediche', nome: 'Visita fisiatrica', prezzo: 180, ordine: 8 },
+  { categoria: 'visite_mediche', nome: 'Visita oncologica', prezzo: 180, ordine: 9 },
+  { categoria: 'visite_mediche', nome: 'Visita angiologica', prezzo: 180, ordine: 10 },
+  { categoria: 'visite_mediche', nome: 'Visita neurologica', prezzo: 0, note: 'Prezzo da definire', ordine: 11 },
+  { categoria: 'visite_mediche', nome: 'Visita ginecologica', prezzo: 0, note: 'Prezzo da definire', ordine: 12 },
+  { categoria: 'visite_mediche', nome: 'Visita broncopneumologica', prezzo: 180, ordine: 13 },
+  { categoria: 'visite_mediche', nome: 'Consulenza nutrizionistica', prezzo: 150, ordine: 14 },
+  { categoria: 'visite_mediche', nome: 'Colloquio psicologico', prezzo: 130, ordine: 15 },
 ];

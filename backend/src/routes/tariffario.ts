@@ -90,6 +90,25 @@ export async function migraVociAssistenzaTariffario() {
   }
 }
 
+// ─── Seed incrementale Visite Mediche: inserisce le voci mancanti (idempotente) ───
+const VOCI_VISITE_SEED = TARIFFARIO_SEED.filter(v => v.categoria === 'visite_mediche');
+
+export async function seedVisiteMedicheTariffario() {
+  try {
+    const esistenti = await Tariffario.find({ categoria: 'visite_mediche' }).select('nome').lean();
+    const esistentiNomi = new Set(esistenti.map((d: any) => d.nome));
+    const mancanti = VOCI_VISITE_SEED
+      .filter(v => !esistentiNomi.has(v.nome))
+      .map(v => ({ ...v, attivo: true }));
+    if (mancanti.length > 0) {
+      await Tariffario.insertMany(mancanti);
+      console.log(`✅ Tariffario: caricate ${mancanti.length} voci visite mediche.`);
+    }
+  } catch (err) {
+    console.error('Errore seed visite mediche tariffario:', err);
+  }
+}
+
 // ─── Separazione definitiva: Assistenza Domiciliare / Trasporto / Prelievi ─────
 // Storicamente "assistenza_trasporto" mischiava assistenza oraria (OSS/infermieristica)
 // con il vero trasporto in ambulanza, e i prelievi stavano dentro "prestazioni_infermieristiche".

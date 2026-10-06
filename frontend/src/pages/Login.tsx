@@ -104,16 +104,16 @@ function Login() {
         </p>
       </div>
 
-      <div className="tw-max-w-md tw-mx-auto tw-mb-5">
+      <div className="tw-max-w-2xl tw-mx-auto tw-mb-5">
         <p className="tw-text-center tw-text-[0.82rem] tw-font-semibold tw-text-slate-500 tw-mb-2.5 tw-uppercase tw-tracking-wide">
           Seleziona l'area di lavoro
         </p>
-        <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-3 tw-gap-3">
+        <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-3 tw-gap-2">
           <button
             type="button"
             onClick={() => setWorkspace('privato')}
             aria-pressed={workspace === 'privato'}
-            className="tw-relative tw-rounded-2xl tw-p-4 tw-flex tw-flex-col tw-items-center tw-gap-1.5 tw-transition-all tw-duration-200 tw-border-2"
+            className="tw-relative tw-rounded-2xl tw-p-3 tw-flex tw-flex-col tw-items-center tw-gap-1 tw-transition-all tw-duration-200 tw-border-2 tw-overflow-hidden"
             style={{
               background: workspace === 'privato' ? 'linear-gradient(135deg, #4f46e5 0%, #6366f1 55%, #38bdf8 100%)' : '#fff',
               borderColor: workspace === 'privato' ? 'transparent' : '#e2e8f0',
@@ -123,9 +123,9 @@ function Login() {
               cursor: 'pointer',
             }}
           >
-            <UserRound size={30} />
-            <span className="tw-font-bold tw-text-[0.95rem]">Gestione Privata</span>
-            <span className="tw-text-[0.72rem] tw-opacity-80">Pazienti privati</span>
+            <UserRound size={28} />
+            <span className="tw-font-bold tw-text-[0.85rem] tw-text-center tw-leading-tight">Gestione Privata</span>
+            <span className="tw-text-[0.7rem] tw-opacity-80 tw-text-center tw-leading-tight">Pazienti privati</span>
             {workspace === 'privato' && (
               <span className="tw-absolute tw-top-2 tw-right-2 tw-bg-white/25 tw-rounded-full tw-p-0.5"><Check size={14} /></span>
             )}
@@ -134,7 +134,7 @@ function Login() {
             type="button"
             onClick={() => setWorkspace('convenzione')}
             aria-pressed={workspace === 'convenzione'}
-            className="tw-relative tw-rounded-2xl tw-p-4 tw-flex tw-flex-col tw-items-center tw-gap-1.5 tw-transition-all tw-duration-200 tw-border-2"
+            className="tw-relative tw-rounded-2xl tw-p-3 tw-flex tw-flex-col tw-items-center tw-gap-1 tw-transition-all tw-duration-200 tw-border-2 tw-overflow-hidden"
             style={{
               background: workspace === 'convenzione' ? 'linear-gradient(135deg, #0f766e 0%, #0d9488 55%, #2dd4bf 100%)' : '#fff',
               borderColor: workspace === 'convenzione' ? 'transparent' : '#e2e8f0',
@@ -144,9 +144,9 @@ function Login() {
               cursor: 'pointer',
             }}
           >
-            <Building2 size={30} />
-            <span className="tw-font-bold tw-text-[0.95rem]">Convenzione SIAT</span>
-            <span className="tw-text-[0.72rem] tw-opacity-80">Pazienti in convenzione</span>
+            <Building2 size={28} />
+            <span className="tw-font-bold tw-text-[0.85rem] tw-text-center tw-leading-tight">Convenzione SIAT</span>
+            <span className="tw-text-[0.7rem] tw-opacity-80 tw-text-center tw-leading-tight">Pazienti in convenzione</span>
             {workspace === 'convenzione' && (
               <span className="tw-absolute tw-top-2 tw-right-2 tw-bg-white/25 tw-rounded-full tw-p-0.5"><Check size={14} /></span>
             )}
@@ -155,7 +155,7 @@ function Login() {
             type="button"
             onClick={() => setWorkspace('consulenza')}
             aria-pressed={workspace === 'consulenza'}
-            className="tw-relative tw-rounded-2xl tw-p-4 tw-flex tw-flex-col tw-items-center tw-gap-1.5 tw-transition-all tw-duration-200 tw-border-2"
+            className="tw-relative tw-rounded-2xl tw-p-3 tw-flex tw-flex-col tw-items-center tw-gap-1 tw-transition-all tw-duration-200 tw-border-2 tw-overflow-hidden"
             style={{
               background: workspace === 'consulenza' ? 'linear-gradient(135deg, #b45309 0%, #d97706 55%, #fbbf24 100%)' : '#fff',
               borderColor: workspace === 'consulenza' ? 'transparent' : '#e2e8f0',
@@ -165,9 +165,9 @@ function Login() {
               cursor: 'pointer',
             }}
           >
-            <Handshake size={30} />
-            <span className="tw-font-bold tw-text-[0.95rem]">Consulenza Famiglie</span>
-            <span className="tw-text-[0.72rem] tw-opacity-80">Colf, badanti e assistenti</span>
+            <Handshake size={28} />
+            <span className="tw-font-bold tw-text-[0.85rem] tw-text-center tw-leading-tight">Consulenza Famiglie</span>
+            <span className="tw-text-[0.7rem] tw-opacity-80 tw-text-center tw-leading-tight">Colf, badanti e assistenti</span>
             {workspace === 'consulenza' && (
               <span className="tw-absolute tw-top-2 tw-right-2 tw-bg-white/25 tw-rounded-full tw-p-0.5"><Check size={14} /></span>
             )}

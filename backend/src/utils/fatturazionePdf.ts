@@ -181,11 +181,17 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
         totalY = 50;
       }
       const totaleLabel = doc.totaleLabel || 'TOTALE';
-      // IVA: usa i campi salvati se presenti, altrimenti li ricalcola dalle righe
+      // IVA: usa i campi salvati se valorizzati, altrimenti li ricalcola dalle righe
+      // (imponibile/totaleIva hanno default 0 nel modello: uno 0 salvato è da considerarsi "non impostato")
       const imponibileCalc = Math.round(prestazioni.reduce((a: number, p: any) => a + (Number(p.importo) || 0), 0) * 100) / 100;
       const ivaCalc = Math.round(prestazioni.reduce((a: number, p: any) => a + (Number(p.importo) || 0) * ((Number(p.aliquotaIva) || 0) / 100), 0) * 100) / 100;
-      const imponibile = doc.imponibile != null ? Number(doc.imponibile) : imponibileCalc;
-      const totaleIva = doc.totaleIva != null ? Number(doc.totaleIva) : ivaCalc;
+      // Per i documenti badante/consulenza le righe includono costi ricorrenti annuali solo informativi:
+      // il "TOTALE UNA TANTUM" è doc.totale, non la somma delle righe
+      const isBadante = doc.riferimentoTipo === 'badante';
+      const imponibile = isBadante
+        ? (Number(doc.totale) || imponibileCalc)
+        : (Number(doc.imponibile) || imponibileCalc);
+      const totaleIva = isBadante ? 0 : (Number(doc.totaleIva) || ivaCalc);
       const totaleLordo = Math.round((imponibile + totaleIva) * 100) / 100;
       const haIva = totaleIva > 0.004;
       if (hasOre && totaleOre > 0) {
