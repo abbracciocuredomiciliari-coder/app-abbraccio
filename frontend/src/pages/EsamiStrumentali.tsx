@@ -235,6 +235,7 @@ export default function EsamiStrumentali() {
       radiologia: 'Radiologia (RX)',
       ecografia: 'Ecografie / Ecocolordoppler',
       visite_mediche: 'Visite Mediche',
+      riabilitazione: 'Riabilitazione',
     };
     tariffeEsami.forEach(v => {
       const cat = v.categoria;

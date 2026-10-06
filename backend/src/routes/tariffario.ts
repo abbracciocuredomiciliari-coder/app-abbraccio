@@ -90,22 +90,24 @@ export async function migraVociAssistenzaTariffario() {
   }
 }
 
-// ─── Seed incrementale Visite Mediche: inserisce le voci mancanti (idempotente) ───
-const VOCI_VISITE_SEED = TARIFFARIO_SEED.filter(v => v.categoria === 'visite_mediche');
+// ─── Seed incrementale: inserisce le voci seed mancanti per le categorie "extra" ───
+// (visite_mediche, riabilitazione, ecc.) — idempotente, match per categoria+nome
+const CATEGORIE_SEED_INCREMENTALE = ['visite_mediche', 'riabilitazione'];
+const VOCI_SEED_INCREMENTALE = TARIFFARIO_SEED.filter(v => CATEGORIE_SEED_INCREMENTALE.includes(v.categoria));
 
-export async function seedVisiteMedicheTariffario() {
+export async function seedVociTariffarioMancanti() {
   try {
-    const esistenti = await Tariffario.find({ categoria: 'visite_mediche' }).select('nome').lean();
-    const esistentiNomi = new Set(esistenti.map((d: any) => d.nome));
-    const mancanti = VOCI_VISITE_SEED
-      .filter(v => !esistentiNomi.has(v.nome))
+    const esistenti = await Tariffario.find({ categoria: { $in: CATEGORIE_SEED_INCREMENTALE } }).select('categoria nome').lean();
+    const esistentiKey = new Set(esistenti.map((d: any) => `${d.categoria}|${d.nome}`));
+    const mancanti = VOCI_SEED_INCREMENTALE
+      .filter(v => !esistentiKey.has(`${v.categoria}|${v.nome}`))
       .map(v => ({ ...v, attivo: true }));
     if (mancanti.length > 0) {
       await Tariffario.insertMany(mancanti);
-      console.log(`✅ Tariffario: caricate ${mancanti.length} voci visite mediche.`);
+      console.log(`✅ Tariffario: caricate ${mancanti.length} voci mancanti (${[...new Set(mancanti.map(v => v.categoria))].join(', ')}).`);
     }
   } catch (err) {
-    console.error('Errore seed visite mediche tariffario:', err);
+    console.error('Errore seed incrementale tariffario:', err);
   }
 }
 

@@ -6,7 +6,7 @@ import { Tag, Plus, Pencil, Trash2, Check, X, Search } from 'lucide-react';
 
 interface VoceTariffario {
   _id: string;
-  categoria: 'prestazioni_infermieristiche' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'radiologia' | 'ecografia' | 'visite_mediche';
+  categoria: 'prestazioni_infermieristiche' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'radiologia' | 'ecografia' | 'visite_mediche' | 'riabilitazione';
   nome: string;
   prezzo: number;
   unitaMisura?: string;
@@ -24,6 +24,7 @@ const CATEGORIE: { value: VoceTariffario['categoria']; label: string; color: str
   { value: 'radiologia', label: '🩻 Radiologia (RX)', color: '#b45309' },
   { value: 'ecografia', label: '🔊 Ecografie / Ecocolordoppler', color: '#059669' },
   { value: 'visite_mediche', label: '🩺 Visite Mediche', color: '#0891b2' },
+  { value: 'riabilitazione', label: '🤸 Riabilitazione', color: '#be185d' },
 ];
 
 export default function Tariffario() {

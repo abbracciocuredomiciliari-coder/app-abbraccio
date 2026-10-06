@@ -65,7 +65,7 @@ interface Patient {
   accettatoIl?: string;
   terminato?: boolean;
   terminatoIl?: string;
-  categoriaPrivata?: 'diagnostica' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'visite_mediche' | 'intermediazione_badanti';
+  categoriaPrivata?: 'diagnostica' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'visite_mediche' | 'riabilitazione' | 'intermediazione_badanti';
   siat?: {
     npi?: string;
     codiceAutorizzazione?: string;
@@ -157,14 +157,16 @@ function Patients() {
     radiologia: '🩻 Radiologia (RX)',
     ecografia: '🔊 Ecografie / Ecocolordoppler',
     visite_mediche: '🩺 Visite Mediche',
+    riabilitazione: '🤸 Riabilitazione',
   };
-  const [activeCategoria, setActiveCategoria] = useState<'tutti' | 'diagnostica' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'visite_mediche' | 'intermediazione_badanti'>('tutti');
+  const [activeCategoria, setActiveCategoria] = useState<'tutti' | 'diagnostica' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'visite_mediche' | 'riabilitazione' | 'intermediazione_badanti'>('tutti');
   const CATEGORIA_PRIVATA_LABEL: Record<string, string> = {
     diagnostica: '🩻 Diagnostica (RX/Ecografie/Esami strumentali)',
     prelievi: '🩸 Prelievi',
     assistenza_domiciliare: '🏠 Assistenza domiciliare',
     trasporto: '🚑 Trasporto',
     visite_mediche: '🩺 Visite mediche',
+    riabilitazione: '🤸 Riabilitazione',
     intermediazione_badanti: '🤝 Consulenza famiglie',
   };
   const [activeAccettazione, setActiveAccettazione] = useState<'tutti' | 'in_accettazione' | 'accettati' | 'terminati'>('tutti');
@@ -1119,6 +1121,7 @@ function Patients() {
                 <option value="assistenza_domiciliare">🏠 Assistenza domiciliare</option>
                 <option value="trasporto">🚑 Trasporto</option>
                 <option value="visite_mediche">🩺 Visite mediche</option>
+                <option value="riabilitazione">🤸 Riabilitazione</option>
               </select>
             </label>
           )}
@@ -1148,7 +1151,7 @@ function Patients() {
       {/* Tabs categoria — nascosti nell'area Consulenza Famiglie */}
       {!isConsulenza && (
       <div className="tw-flex tw-flex-wrap tw-gap-2 tw-mb-2">
-        {(['tutti', 'diagnostica', 'prelievi', 'assistenza_domiciliare', 'trasporto', 'visite_mediche'] as const).map(cat => (
+        {(['tutti', 'diagnostica', 'prelievi', 'assistenza_domiciliare', 'trasporto', 'visite_mediche', 'riabilitazione'] as const).map(cat => (
           <button
             key={cat}
             onClick={() => setActiveCategoria(cat)}
@@ -1339,6 +1342,7 @@ function Patients() {
                       <option value="assistenza_domiciliare">🏠 Assistenza domiciliare</option>
                       <option value="trasporto">🚑 Trasporto</option>
                       <option value="visite_mediche">🩺 Visite mediche</option>
+                      <option value="riabilitazione">🤸 Riabilitazione</option>
                     </select>
                   ) : null}
                   <ReportGenerator

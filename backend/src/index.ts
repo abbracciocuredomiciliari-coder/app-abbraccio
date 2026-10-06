@@ -46,7 +46,7 @@ import formazioneSanitariaRouter from './routes/formazioneSanitaria';
 import verbaliEquipeRouter from './routes/verbaliEquipe';
 import relazioniVocaliRouter from './routes/relazioniVocali';
 import telemedicinaRouter from './routes/telemedicina';
-import tariffarioRouter, { seedTariffarioSeVuoto, migraEsamiStrumentaliTariffario, migraVociAssistenzaTariffario, separaCategorieTariffario, seedVisiteMedicheTariffario } from './routes/tariffario';
+import tariffarioRouter, { seedTariffarioSeVuoto, migraEsamiStrumentaliTariffario, migraVociAssistenzaTariffario, separaCategorieTariffario, seedVociTariffarioMancanti } from './routes/tariffario';
 import fatturazioneDocumentiRouter from './routes/fatturazioneDocumenti';
 import badantiIntermediazioneRouter from './routes/badantiIntermediazione';
 import ritenuteAccontoRouter from './routes/ritenuteAcconto';
@@ -152,7 +152,7 @@ seedTariffarioSeVuoto();
 migraEsamiStrumentaliTariffario();
 migraVociAssistenzaTariffario();
 separaCategorieTariffario();
-seedVisiteMedicheTariffario();
+seedVociTariffarioMancanti();
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'App Abbraccio API in esecuzione' });

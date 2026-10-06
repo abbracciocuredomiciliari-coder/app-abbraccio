@@ -1,5 +1,5 @@
 export interface VoceTariffarioSeed {
-  categoria: 'prestazioni_infermieristiche' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'radiologia' | 'ecografia' | 'visite_mediche';
+  categoria: 'prestazioni_infermieristiche' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'radiologia' | 'ecografia' | 'visite_mediche' | 'riabilitazione';
   nome: string;
   prezzo: number;
   unitaMisura?: string;
@@ -116,4 +116,10 @@ export const TARIFFARIO_SEED: VoceTariffarioSeed[] = [
   { categoria: 'visite_mediche', nome: 'Visita broncopneumologica', prezzo: 180, ordine: 13 },
   { categoria: 'visite_mediche', nome: 'Consulenza nutrizionistica', prezzo: 150, ordine: 14 },
   { categoria: 'visite_mediche', nome: 'Colloquio psicologico', prezzo: 130, ordine: 15 },
+
+  // ─── Riabilitazione ─────────────────────────────────────────────────────────
+  { categoria: 'riabilitazione', nome: 'Fisioterapista', prezzo: 55, unitaMisura: 'ora', ordine: 1 },
+  { categoria: 'riabilitazione', nome: 'Neuropsicomotricista', prezzo: 55, unitaMisura: 'ora', ordine: 2 },
+  { categoria: 'riabilitazione', nome: 'Logopedista', prezzo: 55, unitaMisura: 'ora', ordine: 3 },
+  { categoria: 'riabilitazione', nome: 'Terapista occupazionale', prezzo: 55, unitaMisura: 'ora', ordine: 4 },
 ];

@@ -33,7 +33,7 @@ export interface IPatient extends Document {
   };
 
   // === CATEGORIA SERVIZIO PRIVATO ===
-  categoriaPrivata?: 'diagnostica' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'visite_mediche' | 'intermediazione_badanti';
+  categoriaPrivata?: 'diagnostica' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'visite_mediche' | 'riabilitazione' | 'intermediazione_badanti';
 
   // === ALERT PAI IN SCADENZA ===
   alertPaiVisto?: {
@@ -86,7 +86,7 @@ const patientSchema = new Schema<IPatient>(
       vistoDa: { type: String },
       vistoDaId: { type: String },
     },
-    categoriaPrivata: { type: String, enum: ['diagnostica', 'prelievi', 'assistenza_domiciliare', 'trasporto', 'visite_mediche', 'intermediazione_badanti'] },
+    categoriaPrivata: { type: String, enum: ['diagnostica', 'prelievi', 'assistenza_domiciliare', 'trasporto', 'visite_mediche', 'riabilitazione', 'intermediazione_badanti'] },
     alertPaiVisto: {
       vistoIl: { type: Date },
       vistoDa: { type: String },
