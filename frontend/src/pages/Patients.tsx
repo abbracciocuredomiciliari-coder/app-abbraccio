@@ -138,13 +138,15 @@ function Patients() {
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [preventivoRapidoPaziente, setPreventivoRapidoPaziente] = useState<Patient | null>(null);
-  const [preventivoRapidoRighe, setPreventivoRapidoRighe] = useState<{ descrizione: string; quantita: number; prezzoUnitario: number; aliquotaIva: number }[]>([
-    { descrizione: '', quantita: 1, prezzoUnitario: 0, aliquotaIva: 0 },
+  const [preventivoRapidoRighe, setPreventivoRapidoRighe] = useState<{ descrizione: string; quantita: number; prezzoUnitario: number; aliquotaIva: number; tariffarioId: string }[]>([
+    { descrizione: '', quantita: 1, prezzoUnitario: 0, aliquotaIva: 0, tariffarioId: '' },
   ]);
   const [preventivoRapidoData, setPreventivoRapidoData] = useState('');
   const [preventivoRapidoNote, setPreventivoRapidoNote] = useState('');
+  const [preventivoRapidoCF, setPreventivoRapidoCF] = useState('');
   const [preventivoRapidoLoading, setPreventivoRapidoLoading] = useState(false);
   const [preventivoRapidoError, setPreventivoRapidoError] = useState('');
+  const [tariffarioVoci, setTariffarioVoci] = useState<{ _id: string; categoria: string; nome: string; prezzo: number }[]>([]);
   const [activeCategoria, setActiveCategoria] = useState<'tutti' | 'diagnostica' | 'assistenza_domiciliare' | 'intermediazione_badanti'>('tutti');
   const [activeAccettazione, setActiveAccettazione] = useState<'tutti' | 'in_accettazione' | 'accettati' | 'terminati'>('tutti');
   const [formData, setFormData] = useState({
@@ -361,12 +363,19 @@ function Patients() {
     }
   };
 
-  const apriPreventivoRapido = (patient: Patient) => {
+  const apriPreventivoRapido = async (patient: Patient) => {
     setPreventivoRapidoPaziente(patient);
-    setPreventivoRapidoRighe([{ descrizione: '', quantita: 1, prezzoUnitario: 0, aliquotaIva: 0 }]);
+    setPreventivoRapidoRighe([{ descrizione: '', quantita: 1, prezzoUnitario: 0, aliquotaIva: 0, tariffarioId: '' }]);
     setPreventivoRapidoData(new Date().toISOString().split('T')[0]);
     setPreventivoRapidoNote('');
+    setPreventivoRapidoCF(patient.codiceFiscale || '');
     setPreventivoRapidoError('');
+    if (tariffarioVoci.length === 0) {
+      try {
+        const res = await api.get('/tariffario', { params: { soloAttivi: 'true' } });
+        setTariffarioVoci(res.data);
+      } catch { /* tariffario non disponibile, resta vuoto */ }
+    }
   };
 
   const chiudiPreventivoRapido = () => {
@@ -379,8 +388,15 @@ function Patients() {
     setPreventivoRapidoRighe(prev => prev.map((r, j) => j === i ? { ...r, [field]: value } : r));
   };
 
+  const selezionaTariffarioRiga = (i: number, tariffarioId: string) => {
+    const voce = tariffarioVoci.find(v => v._id === tariffarioId);
+    setPreventivoRapidoRighe(prev => prev.map((r, j) => j === i
+      ? { ...r, tariffarioId, descrizione: voce ? voce.nome : r.descrizione, prezzoUnitario: voce ? voce.prezzo : r.prezzoUnitario }
+      : r));
+  };
+
   const aggiungiRigaPreventivoRapido = () => {
-    setPreventivoRapidoRighe(prev => [...prev, { descrizione: '', quantita: 1, prezzoUnitario: 0, aliquotaIva: 0 }]);
+    setPreventivoRapidoRighe(prev => [...prev, { descrizione: '', quantita: 1, prezzoUnitario: 0, aliquotaIva: 0, tariffarioId: '' }]);
   };
 
   const rimuoviRigaPreventivoRapido = (i: number) => {
@@ -403,6 +419,12 @@ function Patients() {
     setPreventivoRapidoError('');
     setPreventivoRapidoLoading(true);
     try {
+      const cfPulito = preventivoRapidoCF.trim().toUpperCase();
+      if (cfPulito && cfPulito !== (preventivoRapidoPaziente.codiceFiscale || '')) {
+        await api.patch(`/patients/${preventivoRapidoPaziente._id}`, { codiceFiscale: cfPulito });
+        setPatients(prev => prev.map(p => p._id === preventivoRapidoPaziente._id ? { ...p, codiceFiscale: cfPulito } : p));
+        setFilteredPatients(prev => prev.map(p => p._id === preventivoRapidoPaziente._id ? { ...p, codiceFiscale: cfPulito } : p));
+      }
       await api.post('/fatturazione-documenti', {
         tipo: 'preventivo',
         patient: preventivoRapidoPaziente._id,
@@ -2021,20 +2043,46 @@ function Patients() {
               {preventivoRapidoPaziente.firstName} {preventivoRapidoPaziente.lastName} — generato subito, senza creare un piano di lavoro
             </p>
             <form onSubmit={generaPreventivoRapido}>
-              <div className="tw-mb-4">
-                <label className="tw-block tw-text-sm tw-font-semibold tw-mb-1.5">Data prestazione</label>
-                <input
-                  type="date"
-                  value={preventivoRapidoData}
-                  onChange={e => setPreventivoRapidoData(e.target.value)}
-                  className="tw-w-full tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-box-border"
-                />
+              <div className="tw-flex tw-gap-3 tw-mb-4">
+                <div className="tw-flex-1">
+                  <label className="tw-block tw-text-sm tw-font-semibold tw-mb-1.5">Data prestazione</label>
+                  <input
+                    type="date"
+                    value={preventivoRapidoData}
+                    onChange={e => setPreventivoRapidoData(e.target.value)}
+                    className="tw-w-full tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-box-border"
+                  />
+                </div>
+                <div className="tw-flex-1">
+                  <label className="tw-block tw-text-sm tw-font-semibold tw-mb-1.5">Codice Fiscale paziente</label>
+                  <input
+                    type="text"
+                    value={preventivoRapidoCF}
+                    onChange={e => setPreventivoRapidoCF(e.target.value.toUpperCase())}
+                    placeholder="RSSMRA70A01H501Z"
+                    className="tw-w-full tw-p-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-box-border tw-font-mono tw-uppercase"
+                  />
+                </div>
               </div>
 
               <div className="tw-mb-4">
                 <label className="tw-block tw-text-sm tw-font-semibold tw-mb-2">Prestazioni</label>
                 {preventivoRapidoRighe.map((riga, i) => (
-                  <div key={i} className="tw-flex tw-gap-2 tw-mb-2 tw-items-start">
+                  <div key={i} className="tw-flex tw-flex-col tw-gap-1.5 tw-mb-2.5 tw-p-2 tw-rounded-lg tw-bg-slate-50 tw-border tw-border-slate-200">
+                  <div className="tw-flex tw-gap-2">
+                    <select
+                      value={riga.tariffarioId}
+                      onChange={e => selezionaTariffarioRiga(i, e.target.value)}
+                      className="tw-flex-[2] tw-p-2 tw-rounded-lg tw-border tw-border-slate-300 tw-bg-white"
+                      title="Carica dal tariffario"
+                    >
+                      <option value="">— Scegli dal tariffario (opzionale) —</option>
+                      {tariffarioVoci.map(v => (
+                        <option key={v._id} value={v._id}>{v.nome} ({v.prezzo.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="tw-flex tw-gap-2 tw-items-start">
                     <input
                       type="text"
                       value={riga.descrizione}
@@ -2081,6 +2129,7 @@ function Patients() {
                     >
                       ✕
                     </button>
+                  </div>
                   </div>
                 ))}
                 <button
