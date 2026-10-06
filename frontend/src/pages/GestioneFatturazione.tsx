@@ -524,7 +524,8 @@ const [preventivoIva, setPreventivoIva] = useState(0);
     setPreventivoLoading(true);
     try {
       const wp = preventivoModalWp;
-      const profLabel = `${(wp.staff as any)?.category || (wp.staff as any)?.role || ''} ${wp.staff?.firstName || ''} ${wp.staff?.lastName || ''}`.replace(/\s+/g, ' ').trim();
+      // Solo la tipologia di professionista (es. "Infermiere", "Medico") — mai il nome in fattura
+      const profLabel = String((wp.staff as any)?.category || (wp.staff as any)?.role || '').trim();
       let prestazioni: { descrizione: string; quantita: number; prezzoUnitario: number; tipo?: string; aliquotaIva?: number; tipoProfessionista?: string }[] = [];
       const tariffaOraria = calcolaTariffaOraria(wp);
 
