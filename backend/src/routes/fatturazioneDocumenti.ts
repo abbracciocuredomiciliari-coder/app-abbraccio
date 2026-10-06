@@ -81,6 +81,9 @@ router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('
         quantita,
         prezzoUnitario,
         importo: Math.round(quantita * prezzoUnitario * 100) / 100,
+        tipo: p.tipo ? String(p.tipo) : undefined,
+        aliquotaIva: Number(p.aliquotaIva) >= 0 ? Number(p.aliquotaIva) : 0,
+        tipoProfessionista: p.tipoProfessionista ? String(p.tipoProfessionista).trim() : undefined,
       };
     }).filter((p: any) => p.descrizione);
 
@@ -88,7 +91,9 @@ router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('
       return res.status(400).json({ message: 'Le prestazioni indicate non sono valide' });
     }
 
-    const totale = Math.round(prestazioniNormalizzate.reduce((acc: number, p: any) => acc + p.importo, 0) * 100) / 100;
+    const imponibile = Math.round(prestazioniNormalizzate.reduce((acc: number, p: any) => acc + p.importo, 0) * 100) / 100;
+    const totaleIva = Math.round(prestazioniNormalizzate.reduce((acc: number, p: any) => acc + p.importo * ((p.aliquotaIva || 0) / 100), 0) * 100) / 100;
+    const totale = Math.round((imponibile + totaleIva) * 100) / 100;
     const user = req.user as { name?: string; email?: string } | undefined;
     const numero = numeroManuale && numeroManuale.trim() ? String(numeroManuale).trim().toUpperCase() : await generaNumero(tipo);
 
@@ -99,6 +104,8 @@ router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('
       riferimentoTipo,
       riferimentoId: riferimentoId || undefined,
       prestazioni: prestazioniNormalizzate,
+      imponibile,
+      totaleIva,
       totale,
       data: new Date(),
       dataPrestazione: dataPrestazione ? new Date(dataPrestazione) : undefined,
@@ -125,19 +132,32 @@ router.post('/:id/converti-in-fattura', authenticateToken, authorizeRole(...RUOL
     const numero = await generaNumero('fattura');
     const user = req.user as { name?: string; email?: string } | undefined;
 
+    // Copia tutte le voci del preventivo preservando aliquote IVA e professionista
+    const prestazioniFattura = preventivo.prestazioni.map((p: any, i: number) => ({
+      descrizione: i === 0
+        ? `${p.descrizione || 'Prestazioni'} (rif. preventivo ${preventivo.numero})`
+        : String(p.descrizione || ''),
+      quantita: Number(p.quantita) || 1,
+      prezzoUnitario: Number(p.prezzoUnitario) || 0,
+      importo: Math.round((Number(p.quantita) || 1) * (Number(p.prezzoUnitario) || 0) * 100) / 100,
+      tipo: p.tipo,
+      aliquotaIva: Number(p.aliquotaIva) || 0,
+      tipoProfessionista: p.tipoProfessionista,
+    }));
+    const imponibile = Math.round(prestazioniFattura.reduce((acc: number, p: any) => acc + p.importo, 0) * 100) / 100;
+    const totaleIva = Math.round(prestazioniFattura.reduce((acc: number, p: any) => acc + p.importo * ((p.aliquotaIva || 0) / 100), 0) * 100) / 100;
+    const totaleFattura = Math.round((imponibile + totaleIva) * 100) / 100;
+
     const fattura = await DocumentoFatturazione.create({
       numero,
       tipo: 'fattura',
       patient: preventivo.patient,
       riferimentoTipo: preventivo.riferimentoTipo,
       riferimentoId: preventivo.riferimentoId,
-      prestazioni: [{
-        descrizione: `${preventivo.prestazioni[0]?.descrizione || 'Prestazioni'} (rif. preventivo ${preventivo.numero})`,
-        quantita: 1,
-        prezzoUnitario: preventivo.totale,
-        importo: preventivo.totale,
-      }],
-      totale: preventivo.totale,
+      prestazioni: prestazioniFattura,
+      imponibile,
+      totaleIva,
+      totale: totaleFattura,
       data: new Date(),
       dataPrestazione: preventivo.dataPrestazione,
       stato: 'emesso',
@@ -527,14 +547,20 @@ router.put('/:id', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog
         quantita,
         prezzoUnitario,
         importo: Math.round(quantita * prezzoUnitario * 100) / 100,
+        tipo: p.tipo ? String(p.tipo) : undefined,
+        aliquotaIva: Number(p.aliquotaIva) >= 0 ? Number(p.aliquotaIva) : 0,
+        tipoProfessionista: p.tipoProfessionista ? String(p.tipoProfessionista).trim() : undefined,
       };
     }).filter((p: any) => p.descrizione);
     if (prestazioniNormalizzate.length === 0) {
       return res.status(400).json({ message: 'Le prestazioni indicate non sono valide' });
     }
-    const totale = Math.round(prestazioniNormalizzate.reduce((acc: number, p: any) => acc + p.importo, 0) * 100) / 100;
+    const imponibile = Math.round(prestazioniNormalizzate.reduce((acc: number, p: any) => acc + p.importo, 0) * 100) / 100;
+    const totaleIva = Math.round(prestazioniNormalizzate.reduce((acc: number, p: any) => acc + p.importo * ((p.aliquotaIva || 0) / 100), 0) * 100) / 100;
     doc.prestazioni = prestazioniNormalizzate;
-    doc.totale = totale;
+    doc.imponibile = imponibile;
+    doc.totaleIva = totaleIva;
+    doc.totale = Math.round((imponibile + totaleIva) * 100) / 100;
     if (note !== undefined) doc.note = note;
     await doc.save();
     const docPopolato = await DocumentoFatturazione.findById(doc._id).populate('patient', 'firstName lastName codiceFiscale address email');

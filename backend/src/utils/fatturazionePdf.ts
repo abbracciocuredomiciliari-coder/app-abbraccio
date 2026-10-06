@@ -99,8 +99,8 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
 
       // ─── Tabella prestazioni
       const startY = boxY + boxHeight + 30;
-      const colX = [50, 310, 360, 460];
-      const colW = [260, 50, 100, 100];
+      const colX = [50, 290, 330, 410, 470];
+      const colW = [240, 40, 80, 60, 90];
       const rowH = 22;
 
       pdf.font('Helvetica-Bold').fontSize(9).fillColor('#ffffff');
@@ -108,6 +108,7 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
       pdf.rect(colX[1], startY, colW[1], rowH).fillAndStroke('#1e4d8c', '#1e4d8c');
       pdf.rect(colX[2], startY, colW[2], rowH).fillAndStroke('#1e4d8c', '#1e4d8c');
       pdf.rect(colX[3], startY, colW[3], rowH).fillAndStroke('#1e4d8c', '#1e4d8c');
+      pdf.rect(colX[4], startY, colW[4], rowH).fillAndStroke('#1e4d8c', '#1e4d8c');
 
       const prestazioni = Array.isArray(doc.prestazioni) ? doc.prestazioni : [];
       // Una voce è "oraria" se flaggata tipo='orario' oppure (preventivo da workplan) con quantità ≠ 1
@@ -123,16 +124,23 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
       pdf.fillColor('#ffffff');
       pdf.text(hasOre ? '€/ora' : 'Prezzo un.', colX[2] + 5, startY + 6, { width: colW[2] - 10, align: 'right' });
       pdf.fillColor('#ffffff');
-      pdf.text('Importo', colX[3] + 5, startY + 6, { width: colW[3] - 10, align: 'right' });
+      pdf.text('IVA', colX[3] + 5, startY + 6, { width: colW[3] - 10, align: 'center' });
+      pdf.fillColor('#ffffff');
+      pdf.text('Importo', colX[4] + 5, startY + 6, { width: colW[4] - 10, align: 'right' });
 
       let rowY = startY + rowH;
       pdf.font('Helvetica').fontSize(9).fillColor('#000000');
       let totaleOre = 0;
       for (const p of prestazioni) {
-        const desc = String(p.descrizione || '').trim() || 'Prestazione';
+        let desc = String(p.descrizione || '').trim() || 'Prestazione';
+        const prof = String(p.tipoProfessionista || '').trim();
+        if (prof && !desc.toLowerCase().includes(prof.toLowerCase())) {
+          desc += ` — ${doc.tipo === 'fattura' ? 'Prestazione eseguita da' : 'Prestazione a cura di'} ${prof}`;
+        }
         const qty = Number(p.quantita) || 1;
         const unit = Number(p.prezzoUnitario) || 0;
         const importo = Number(p.importo) || 0;
+        const aliquota = Number(p.aliquotaIva) || 0;
         const oraria = isVoceOraria(p);
         if (oraria) totaleOre += qty;
 
@@ -150,6 +158,7 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
         pdf.rect(colX[1], rowY, colW[1], h).fillAndStroke('#ffffff', '#e2e8f0');
         pdf.rect(colX[2], rowY, colW[2], h).fillAndStroke('#ffffff', '#e2e8f0');
         pdf.rect(colX[3], rowY, colW[3], h).fillAndStroke('#ffffff', '#e2e8f0');
+        pdf.rect(colX[4], rowY, colW[4], h).fillAndStroke('#ffffff', '#e2e8f0');
 
         pdf.fillColor('#000000').font('Helvetica').fontSize(9);
         pdf.text(desc, colX[0] + 5, rowY + 5, { width: colW[0] - 10, lineGap: 1 });
@@ -158,7 +167,9 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
         pdf.fillColor('#000000');
         pdf.text(oraria ? `${formatEuro(unit)}/h` : formatEuro(unit), colX[2] + 5, rowY + 5, { width: colW[2] - 10, align: 'right' });
         pdf.fillColor('#000000');
-        pdf.text(formatEuro(importo), colX[3] + 5, rowY + 5, { width: colW[3] - 10, align: 'right' });
+        pdf.text(aliquota > 0 ? `${aliquota}%` : 'Esente', colX[3] + 5, rowY + 5, { width: colW[3] - 10, align: 'center' });
+        pdf.fillColor('#000000');
+        pdf.text(formatEuro(importo), colX[4] + 5, rowY + 5, { width: colW[4] - 10, align: 'right' });
 
         rowY += h;
       }
@@ -170,23 +181,41 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
         totalY = 50;
       }
       const totaleLabel = doc.totaleLabel || 'TOTALE';
+      // IVA: usa i campi salvati se presenti, altrimenti li ricalcola dalle righe
+      const imponibileCalc = Math.round(prestazioni.reduce((a: number, p: any) => a + (Number(p.importo) || 0), 0) * 100) / 100;
+      const ivaCalc = Math.round(prestazioni.reduce((a: number, p: any) => a + (Number(p.importo) || 0) * ((Number(p.aliquotaIva) || 0) / 100), 0) * 100) / 100;
+      const imponibile = doc.imponibile != null ? Number(doc.imponibile) : imponibileCalc;
+      const totaleIva = doc.totaleIva != null ? Number(doc.totaleIva) : ivaCalc;
+      const totaleLordo = Math.round((imponibile + totaleIva) * 100) / 100;
+      const haIva = totaleIva > 0.004;
       if (hasOre && totaleOre > 0) {
         pdf.font('Helvetica-Bold').fontSize(10).fillColor('#1e4d8c')
           .text(`Totale ore preventivo: ${String(Math.round(totaleOre * 100) / 100).replace('.', ',')} h`, 50, totalY + 16, { width: 300 });
       }
-      pdf.rect(360, totalY, 200, 45).fillAndStroke('#f0fdf4', '#16a34a');
-      pdf.font('Helvetica-Bold').fontSize(10).fillColor('#166534').text(totaleLabel, 370, totalY + 8, { width: 130, align: 'left' });
-      pdf.font('Helvetica-Bold').fontSize(18).fillColor('#166534').text(formatEuro(Number(doc.totale) || 0), 370, totalY + 22, { width: 180, align: 'right' });
+      pdf.rect(360, totalY, 200, haIva ? 72 : 45).fillAndStroke('#f0fdf4', '#16a34a');
+      if (haIva) {
+        pdf.font('Helvetica').fontSize(9).fillColor('#166534')
+          .text(`Imponibile: ${formatEuro(imponibile)}`, 370, totalY + 8, { width: 180, align: 'left' });
+        pdf.text(`IVA: ${formatEuro(totaleIva)}`, 370, totalY + 22, { width: 180, align: 'left' });
+        pdf.font('Helvetica-Bold').fontSize(10).fillColor('#166534').text(totaleLabel, 370, totalY + 38, { width: 130, align: 'left' });
+        pdf.font('Helvetica-Bold').fontSize(18).fillColor('#166534').text(formatEuro(totaleLordo), 370, totalY + 50, { width: 180, align: 'right' });
+      } else {
+        pdf.font('Helvetica-Bold').fontSize(10).fillColor('#166534').text(totaleLabel, 370, totalY + 8, { width: 130, align: 'left' });
+        pdf.font('Helvetica-Bold').fontSize(18).fillColor('#166534').text(formatEuro(totaleLordo), 370, totalY + 22, { width: 180, align: 'right' });
+      }
 
       // ─── Note e scadenze
-      let noteY = totalY + 65;
+      let noteY = totalY + (haIva ? 92 : 65);
       if (noteY > 700) {
         pdf.addPage();
         noteY = 50;
       }
 
       if (doc.tipo === 'fattura') {
-        pdf.font('Helvetica-Oblique').fontSize(9).fillColor('#555555').text('Operazione effettuata ai sensi del DPR 633/72. Per servizi sanitari di tipo domiciliare si applica l\'esenzione IVA ove previsto dalla normativa vigente.', 50, noteY, { width: 500 });
+        const testoIva = haIva
+          ? 'IVA applicata nei limiti di legge sulle prestazioni soggette. Le prestazioni sanitarie contrassegnate come esenti sono senza applicazione dell\'IVA ai sensi dell\'art. 10, comma 1, n. 18, D.P.R. 26 ottobre 1972, n. 633.'
+          : 'Operazione esente da IVA ai sensi dell\'art. 10, comma 1, n. 18, D.P.R. 26 ottobre 1972, n. 633 — prestazione sanitaria di cura, diagnosi e riabilitazione della persona resa da professionisti sanitari.';
+        pdf.font('Helvetica-Oblique').fontSize(9).fillColor('#555555').text(testoIva, 50, noteY, { width: 500 });
         noteY += 28;
       }
 

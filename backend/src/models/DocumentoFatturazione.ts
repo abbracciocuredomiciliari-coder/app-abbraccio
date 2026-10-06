@@ -6,6 +6,8 @@ export interface IVocePrestazione {
   prezzoUnitario: number;
   importo: number;
   tipo?: string;
+  aliquotaIva?: number; // percentuale IVA (0 o assente = esente art. 10 DPR 633/72)
+  tipoProfessionista?: string; // es. "Medico", "Infermiere", "Fisioterapista"
 }
 
 export interface IDocumentoFatturazione extends Document {
@@ -16,6 +18,8 @@ export interface IDocumentoFatturazione extends Document {
   riferimentoId?: Types.ObjectId;
   prestazioni: IVocePrestazione[];
   totale: number;
+  imponibile?: number; // somma importi righe (senza IVA)
+  totaleIva?: number;   // IVA totale documento
   data: Date;
   dataPrestazione?: Date; // data della prestazione/visita effettuata
   stato: 'emesso' | 'firmato' | 'annullato' | 'rifiutato';
@@ -43,6 +47,8 @@ const vocePrestazioneSchema = new Schema<IVocePrestazione>(
     prezzoUnitario: { type: Number, required: true, default: 0 },
     importo: { type: Number, required: true, default: 0 },
     tipo: { type: String, trim: true },
+    aliquotaIva: { type: Number, default: 0 },
+    tipoProfessionista: { type: String, trim: true },
   },
   { _id: false }
 );
@@ -56,6 +62,8 @@ const documentoFatturazioneSchema = new Schema<IDocumentoFatturazione>(
     riferimentoId: { type: Schema.Types.ObjectId },
     prestazioni: { type: [vocePrestazioneSchema], required: true },
     totale: { type: Number, required: true, default: 0 },
+    imponibile: { type: Number, default: 0 },
+    totaleIva: { type: Number, default: 0 },
     data: { type: Date, required: true, default: Date.now },
     dataPrestazione: { type: Date },
     stato: { type: String, enum: ['emesso', 'firmato', 'annullato', 'rifiutato'], default: 'emesso' },

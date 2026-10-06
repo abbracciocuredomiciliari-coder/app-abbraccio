@@ -34,7 +34,7 @@ interface WorkPlanItem {
   tipoCompenso?: 'orario' | 'fisso' | 'nessuno';
   tariffa?: number;
   patient: Patient & { tipoGestione?: string; siat?: { asl?: string; npi?: string; codiceAutorizzazione?: string } };
-  staff: { firstName: string; lastName: string; role: string };
+  staff: { firstName: string; lastName: string; role: string; category?: string };
   giorniSettimana?: GiornoSettimana[];
   inAccettazione?: boolean;
 }
@@ -62,8 +62,10 @@ interface DocumentoFatturazione {
   numero: string;
   tipo: 'preventivo' | 'fattura';
   patient: Patient;
-  prestazioni: { descrizione: string; quantita: number; prezzoUnitario: number; importo: number; tipo?: string }[];
+  prestazioni: { descrizione: string; quantita: number; prezzoUnitario: number; importo: number; tipo?: string; aliquotaIva?: number; tipoProfessionista?: string }[];
   totale: number;
+  imponibile?: number;
+  totaleIva?: number;
   data: string;
   dataPrestazione?: string;
   stato: 'emesso' | 'firmato' | 'annullato' | 'rifiutato';
@@ -112,13 +114,14 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
   const [numeroLoading, setNumeroLoading] = useState(false);
 
   const [editModalDoc, setEditModalDoc] = useState<DocumentoFatturazione | null>(null);
-  const [editPrestazioni, setEditPrestazioni] = useState<{ descrizione: string; quantita: number; prezzoUnitario: number }[]>([]);
+  const [editPrestazioni, setEditPrestazioni] = useState<{ descrizione: string; quantita: number; prezzoUnitario: number; aliquotaIva: number; tipo?: string; tipoProfessionista?: string }[]>([]);
   const [editNote, setEditNote] = useState('');
   const [editLoading, setEditLoading] = useState(false);
 
   const [preventivoModalWp, setPreventivoModalWp] = useState<WorkPlanItem | null>(null);
   const [preventivoData, setPreventivoData] = useState('');
   const [preventivoTipo, setPreventivoTipo] = useState<'giornaliero' | 'orario' | 'fisso'>('fisso');
+const [preventivoIva, setPreventivoIva] = useState(0);
   const [preventivoLoading, setPreventivoLoading] = useState(false);
   const [preventivoError, setPreventivoError] = useState('');
 
@@ -298,7 +301,7 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
 
   const apriModificaVoci = (doc: DocumentoFatturazione) => {
     setEditModalDoc(doc);
-    setEditPrestazioni(doc.prestazioni.map(p => ({ descrizione: p.descrizione, quantita: p.quantita, prezzoUnitario: p.prezzoUnitario })));
+    setEditPrestazioni(doc.prestazioni.map(p => ({ descrizione: p.descrizione, quantita: p.quantita, prezzoUnitario: p.prezzoUnitario, aliquotaIva: Number(p.aliquotaIva) || 0, tipo: p.tipo, tipoProfessionista: p.tipoProfessionista })));
     setEditNote(doc.note || '');
   };
 
@@ -309,12 +312,12 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
     setEditLoading(false);
   };
 
-  const aggiornaVoce = (i: number, field: 'descrizione' | 'quantita' | 'prezzoUnitario', value: string | number) => {
+  const aggiornaVoce = (i: number, field: 'descrizione' | 'quantita' | 'prezzoUnitario' | 'aliquotaIva', value: string | number) => {
     setEditPrestazioni(prev => prev.map((p, j) => j === i ? { ...p, [field]: value } : p));
   };
 
   const aggiungiVoce = () => {
-    setEditPrestazioni(prev => [...prev, { descrizione: '', quantita: 1, prezzoUnitario: 0 }]);
+    setEditPrestazioni(prev => [...prev, { descrizione: '', quantita: 1, prezzoUnitario: 0, aliquotaIva: 0 }]);
   };
 
   const rimuoviVoce = (i: number) => {
@@ -322,7 +325,9 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
   };
 
   const totaleEdit = useMemo(() => {
-    return Math.round(editPrestazioni.reduce((acc, p) => acc + ((Number(p.quantita) || 0) * (Number(p.prezzoUnitario) || 0)), 0) * 100) / 100;
+    const imponibile = editPrestazioni.reduce((acc, p) => acc + ((Number(p.quantita) || 0) * (Number(p.prezzoUnitario) || 0)), 0);
+    const iva = editPrestazioni.reduce((acc, p) => acc + ((Number(p.quantita) || 0) * (Number(p.prezzoUnitario) || 0)) * ((Number(p.aliquotaIva) || 0) / 100), 0);
+    return { imponibile: Math.round(imponibile * 100) / 100, iva: Math.round(iva * 100) / 100, lordo: Math.round((imponibile + iva) * 100) / 100 };
   }, [editPrestazioni]);
 
   const salvaVoci = async (e: FormEvent) => {
@@ -335,7 +340,7 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
     setEditLoading(true);
     try {
       await api.put(`/fatturazione-documenti/${editModalDoc._id}`, {
-        prestazioni: editPrestazioni.map(p => ({ descrizione: p.descrizione.trim(), quantita: Number(p.quantita), prezzoUnitario: Number(p.prezzoUnitario) })),
+        prestazioni: editPrestazioni.map(p => ({ descrizione: p.descrizione.trim(), quantita: Number(p.quantita), prezzoUnitario: Number(p.prezzoUnitario), aliquotaIva: Number(p.aliquotaIva) || 0, tipo: p.tipo, tipoProfessionista: p.tipoProfessionista })),
         note: editNote,
       });
       alert('Documento aggiornato');
@@ -491,6 +496,7 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
     setPreventivoModalWp(wp);
     setPreventivoData(wp.date ? new Date(wp.date).toISOString().split('T')[0] : '');
     setPreventivoTipo('fisso');
+    setPreventivoIva(0);
     setPreventivoError('');
   };
 
@@ -518,7 +524,8 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
     setPreventivoLoading(true);
     try {
       const wp = preventivoModalWp;
-      let prestazioni: { descrizione: string; quantita: number; prezzoUnitario: number; tipo?: string }[] = [];
+      const profLabel = `${(wp.staff as any)?.category || (wp.staff as any)?.role || ''} ${wp.staff?.firstName || ''} ${wp.staff?.lastName || ''}`.replace(/\s+/g, ' ').trim();
+      let prestazioni: { descrizione: string; quantita: number; prezzoUnitario: number; tipo?: string; aliquotaIva?: number; tipoProfessionista?: string }[] = [];
       const tariffaOraria = calcolaTariffaOraria(wp);
 
       if (preventivoTipo === 'fisso' || tariffaOraria <= 0) {
@@ -526,6 +533,8 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
           descrizione: `${wp.task}`,
           quantita: 1,
           prezzoUnitario: wp.costoPrestazione || 0,
+          aliquotaIva: preventivoIva,
+          tipoProfessionista: profLabel || undefined,
         }];
       } else if (preventivoTipo === 'giornaliero') {
         const giorni = (wp.giorniSettimana || []).filter(g => (g.accessiAlGiorno || 0) > 0);
@@ -541,6 +550,8 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
             quantita: Math.round(oreGiorno(g) * occ * 100) / 100,
             prezzoUnitario: tariffaOraria,
             tipo: 'orario',
+            aliquotaIva: preventivoIva,
+            tipoProfessionista: profLabel || undefined,
           };
         });
       } else {
@@ -556,6 +567,8 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
           quantita: Math.round(totale * 100) / 100,
           prezzoUnitario: tariffaOraria,
           tipo: 'orario',
+          aliquotaIva: preventivoIva,
+          tipoProfessionista: profLabel || undefined,
         }];
       }
 
@@ -1202,6 +1215,16 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
                   </label>
                 </div>
               </div>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>IVA</label>
+                <select value={preventivoIva} onChange={e => setPreventivoIva(Number(e.target.value))} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', boxSizing: 'border-box' }}>
+                  <option value={0}>Esente — art. 10 c.1 n.18 DPR 633/72 (prestazione sanitaria)</option>
+                  <option value={4}>IVA 4%</option>
+                  <option value={5}>IVA 5%</option>
+                  <option value={10}>IVA 10%</option>
+                  <option value={22}>IVA 22%</option>
+                </select>
+              </div>
               {(() => {
                 const tot = totalePreventivoSelezionato(preventivoModalWp, preventivoTipo);
                 if (tot <= 0) return null;
@@ -1238,6 +1261,13 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
                     <input type="text" required value={p.descrizione} onChange={e => aggiornaVoce(i, 'descrizione', e.target.value)} placeholder="Descrizione" style={{ flex: 2, padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }} />
                     <input type="number" min={0.01} step={0.01} required value={p.quantita} onChange={e => aggiornaVoce(i, 'quantita', Number(e.target.value))} style={{ width: '80px', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }} />
                     <input type="number" min={0} step={0.01} required value={p.prezzoUnitario} onChange={e => aggiornaVoce(i, 'prezzoUnitario', Number(e.target.value))} style={{ width: '100px', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }} />
+                    <select value={Number(p.aliquotaIva) || 0} onChange={e => aggiornaVoce(i, 'aliquotaIva', Number(e.target.value))} style={{ width: '92px', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }}>
+                      <option value={0}>Esente</option>
+                      <option value={4}>IVA 4%</option>
+                      <option value={5}>IVA 5%</option>
+                      <option value={10}>IVA 10%</option>
+                      <option value={22}>IVA 22%</option>
+                    </select>
                     <button type="button" onClick={() => rimuoviVoce(i)} style={{ padding: '8px 10px', borderRadius: '6px', border: 'none', background: '#fee2e2', color: '#b91c1c', cursor: 'pointer', fontWeight: 700 }}>✕</button>
                   </div>
                 ))}
@@ -1247,8 +1277,11 @@ export default function GestioneFatturazione({ archivioOnly = false }: GestioneF
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>Note</label>
                 <textarea value={editNote} onChange={e => setEditNote(e.target.value)} rows={2} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#166534' }}>Totale: {formatEuro(totaleEdit)}</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '10px' }}>
+                <div style={{ fontSize: '0.82rem', color: '#374151' }}>
+                  Imponibile {formatEuro(totaleEdit.imponibile)}{totaleEdit.iva > 0 ? ` + IVA ${formatEuro(totaleEdit.iva)}` : ' · IVA esente (art. 10 c.1 n.18 DPR 633/72)'}
+                </div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#166534' }}>Totale: {formatEuro(totaleEdit.lordo)}</div>
               </div>
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 <button type="button" onClick={chiudiModificaVoci} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', fontWeight: 600 }}>Annulla</button>
