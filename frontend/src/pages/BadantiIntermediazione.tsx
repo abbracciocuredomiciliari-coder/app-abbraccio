@@ -42,7 +42,7 @@ const LIVELLI_DESCRIZIONI: Record<string, string> = {
 
 interface Badante {
   _id: string;
-  patient: Patient;
+  patient: Patient | null; // null se il paziente è stato eliminato (populate orfano)
   contrattoTipo: 'orario_non_convivente' | 'convivente';
   livello: string;
   oreSettimanali?: number;
@@ -289,7 +289,7 @@ export default function BadantiIntermediazione() {
                   <span className="tw-text-sm tw-font-medium">Paziente</span>
                   <select value={patient} onChange={e => setPatient(e.target.value)} className="tw-border tw-rounded tw-p-2" required>
                     <option value="">Seleziona...</option>
-                    {pazienti.map(p => (
+                    {pazienti.filter(Boolean).map(p => (
                       <option key={p._id} value={p._id}>{p.firstName} {p.lastName} {p.codiceFiscale ? `(${p.codiceFiscale})` : ''}</option>
                     ))}
                   </select>
@@ -349,6 +349,8 @@ export default function BadantiIntermediazione() {
                 const preventivo = r.preventivoId && typeof r.preventivoId === 'object' ? r.preventivoId : undefined;
                 const fattura = r.fatturaId && typeof r.fatturaId === 'object' ? r.fatturaId : undefined;
                 const isOpen = selectedQuote === r._id;
+                // Paziente eliminato: populate restituisce null, mostriamo un fallback invece di crashare
+                const nomePaziente = r.patient ? `${r.patient.firstName} ${r.patient.lastName}` : 'Paziente rimosso';
                 return (
                   <div key={r._id} className="tw-bg-white tw-rounded-xl tw-overflow-hidden tw-border tw-border-rose-100 tw-shadow-sm hover:tw-shadow-md tw-transition-shadow tw-border-l-4 tw-border-l-rose-600">
                     <div className="tw-p-4">
@@ -356,8 +358,8 @@ export default function BadantiIntermediazione() {
                         <div className="tw-flex-1 tw-min-w-[240px]">
                           <div className="tw-flex tw-items-center tw-flex-wrap tw-gap-2 tw-mb-1">
                             <User size={18} className="tw-text-rose-600" />
-                            <strong className="tw-text-[1.05rem] tw-text-slate-800">{r.patient.firstName} {r.patient.lastName}</strong>
-                            <span className="tw-text-xs tw-px-2 tw-py-0.5 tw-rounded-full tw-bg-slate-100 tw-text-slate-600 tw-font-medium">{r.patient.codiceFiscale || ''}</span>
+                            <strong className="tw-text-[1.05rem] tw-text-slate-800">{nomePaziente}</strong>
+                            <span className="tw-text-xs tw-px-2 tw-py-0.5 tw-rounded-full tw-bg-slate-100 tw-text-slate-600 tw-font-medium">{r.patient?.codiceFiscale || ''}</span>
                             <span className={statoBadge(r.stato)}>{r.stato.replace('_', ' ')}</span>
                           </div>
                           <div className="tw-flex tw-flex-wrap tw-gap-3 tw-text-sm tw-text-slate-500 tw-mb-2">
