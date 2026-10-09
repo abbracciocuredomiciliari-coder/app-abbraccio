@@ -167,7 +167,7 @@ function Patients() {
     trasporto: '🚑 Trasporto',
     visite_mediche: '🩺 Visite mediche',
     riabilitazione: '🤸 Riabilitazione',
-    intermediazione_badanti: '🤝 Consulenza famiglie',
+    intermediazione_badanti: '🤝 Intermediazioni',
   };
   const [activeAccettazione, setActiveAccettazione] = useState<'tutti' | 'in_accettazione' | 'accettati' | 'terminati'>('tutti');
   const [formData, setFormData] = useState({
@@ -300,8 +300,8 @@ function Patients() {
         const vecchiaGestione = editingPatient.tipoGestione || 'privato';
         const nuovaGestione = formData.tipoGestione || 'privato';
         if (vecchiaGestione !== nuovaGestione) {
-          const nomiGestione: Record<string, string> = { privato: 'Privato', convenzione: 'SIAT', consulenza: 'Consulenza Famiglie' };
-          const nomiArea: Record<string, string> = { privato: 'Pazienti Privati', convenzione: 'Pazienti Convenzione SIAT', consulenza: 'Pazienti Consulenza Famiglie' };
+          const nomiGestione: Record<string, string> = { privato: 'Privato', convenzione: 'SIAT', consulenza: 'Intermediazioni' };
+          const nomiArea: Record<string, string> = { privato: 'Pazienti Privati', convenzione: 'Pazienti Convenzione SIAT', consulenza: 'Pazienti Intermediazioni' };
           const msg = `Vuoi cambiare gestione del paziente da ${nomiGestione[vecchiaGestione] || 'Privato'} a ${nomiGestione[nuovaGestione] || 'Privato'}?\n\nI dati del paziente verranno spostati nell'area ${nomiArea[nuovaGestione] || 'Pazienti Privati'}.`;
           if (!confirm(msg)) return;
         }
@@ -952,7 +952,7 @@ function Patients() {
     <section className="tw-max-w-none">
       <h2 className="tw-flex tw-items-center tw-gap-2">
         <FileText size={28} />
-        {isConsulenza ? 'Pazienti — Consulenza Famiglie' : 'Gestione Pazienti'}
+        {isConsulenza ? 'Pazienti — Intermediazioni' : 'Gestione Pazienti'}
       </h2>
 
       {success && (
@@ -1105,12 +1105,12 @@ function Patients() {
               >
                 <option value="privato">👤 Privato</option>
                 <option value="convenzione">🏥 SIAT — Convenzione</option>
-                <option value="consulenza">🤝 Consulenza Famiglie</option>
+                <option value="consulenza">🤝 Intermediazioni</option>
               </select>
             ) : (
               <select value={isConsulenza ? 'consulenza' : 'privato'} disabled>
                 {isConsulenza
-                  ? <option value="consulenza">🤝 Consulenza Famiglie</option>
+                  ? <option value="consulenza">🤝 Intermediazioni</option>
                   : <option value="privato">👤 Privato</option>}
               </select>
             )}
@@ -1168,7 +1168,7 @@ function Patients() {
         </form>
       )}
 
-      {/* Tabs categoria — nascosti nell'area Consulenza Famiglie */}
+      {/* Tabs categoria — nascosti nell'area Intermediazioni */}
       {!isConsulenza && (
       <div className="tw-flex tw-flex-wrap tw-gap-2 tw-mb-2">
         {(['tutti', 'diagnostica', 'prelievi', 'assistenza_domiciliare', 'trasporto', 'visite_mediche', 'riabilitazione'] as const).map(cat => (
@@ -1284,7 +1284,7 @@ function Patients() {
                           ? navigate(`/badanti-intermediazione?patientId=${patient._id}&nuovo=1`)
                           : apriPreventivoRapido(patient)}
                         className="tw-bg-amber-500 tw-text-white tw-whitespace-nowrap"
-                        title={isConsulenza ? 'Apri Consulenza Famiglie per generare il preventivo di intermediazione badante' : 'Genera subito un preventivo per questo paziente, senza creare un piano di lavoro'}
+                        title={isConsulenza ? 'Apri Intermediazioni per generare il preventivo di intermediazione badante' : 'Genera subito un preventivo per questo paziente, senza creare un piano di lavoro'}
                       >
                         <FileText size={16} />
                         Preventivo

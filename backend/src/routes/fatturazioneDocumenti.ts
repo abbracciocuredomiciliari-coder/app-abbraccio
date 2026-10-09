@@ -14,7 +14,7 @@ const router = Router();
 const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
 
 // ─── Numerazione progressiva per tipo + anno ───────────────────────────────────
-// Le fatture dell'area Consulenza Famiglie usano una serie dedicata (FATT-CF),
+// Le fatture dell'area Intermediazioni usano una serie dedicata (FATT-CF),
 // con progressivo autonomo rispetto alla fatturazione generale.
 async function generaNumero(tipo: 'preventivo' | 'fattura', consulenza = false): Promise<string> {
   const anno = new Date().getFullYear();
@@ -34,7 +34,7 @@ async function generaNumero(tipo: 'preventivo' | 'fattura', consulenza = false):
   return numero;
 }
 
-// Un documento appartiene all'area Consulenza Famiglie se nasce dal flusso
+// Un documento appartiene all'area Intermediazioni se nasce dal flusso
 // intermediazione badanti (riferimentoTipo 'badante') o se il paziente è
 // di tipo consulenza / legacy intermediazione_badanti.
 function isPazienteConsulenza(paziente: any): boolean {
@@ -46,8 +46,8 @@ function isDocConsulenza(doc: any): boolean {
 }
 
 // GET /api/fatturazione-documenti — lista (filtri: paziente, tipo, area)
-// area=consulenza → solo documenti Consulenza Famiglie
-// area=gestionale → tutti i documenti tranne quelli Consulenza Famiglie
+// area=consulenza → solo documenti Intermediazioni
+// area=gestionale → tutti i documenti tranne quelli Intermediazioni
 router.get('/', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { patient, tipo, area } = req.query;

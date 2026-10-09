@@ -166,7 +166,7 @@ function Login() {
             }}
           >
             <Handshake size={28} />
-            <span className="tw-font-bold tw-text-[0.85rem] tw-text-center tw-leading-tight">Consulenza Famiglie</span>
+            <span className="tw-font-bold tw-text-[0.85rem] tw-text-center tw-leading-tight">Intermediazioni</span>
             <span className="tw-text-[0.7rem] tw-opacity-80 tw-text-center tw-leading-tight">Colf, badanti e assistenti</span>
             {workspace === 'consulenza' && (
               <span className="tw-absolute tw-top-2 tw-right-2 tw-bg-white/25 tw-rounded-full tw-p-0.5"><Check size={14} /></span>
@@ -234,7 +234,7 @@ function Login() {
           icon={<LogIn size={18} />}
           className="tw-w-full"
         >
-          {isWakingUp ? 'Avvio server in corso…' : `Accedi — ${workspace === 'convenzione' ? 'Convenzione SIAT' : workspace === 'consulenza' ? 'Consulenza Famiglie' : 'Gestione Privata'}`}
+          {isWakingUp ? 'Avvio server in corso…' : `Accedi — ${workspace === 'convenzione' ? 'Convenzione SIAT' : workspace === 'consulenza' ? 'Intermediazioni' : 'Gestione Privata'}`}
         </Button>
 
         <p className="tw-text-center tw-text-[0.88rem] tw-text-slate-500 tw-my-0 tw-mb-2.5">

@@ -312,7 +312,7 @@ export default function CentroPrenotazioniPrivato() {
                   <option value="trasporto">🚑 Trasporto</option>
                   <option value="visite_mediche">🩺 Visite mediche</option>
                   <option value="riabilitazione">🤸 Riabilitazione</option>
-                  <option value="intermediazione_badanti">🤝 Consulenza famiglie</option>
+                  <option value="intermediazione_badanti">🤝 Intermediazioni</option>
                 </select>
               </div>
 

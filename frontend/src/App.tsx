@@ -180,7 +180,7 @@ function AppShell() {
               onClick={() => {
                 if (!canSwitch) return;
                 const ordine = ['privato', 'convenzione', 'consulenza'] as const;
-                const nomi = { privato: 'Gestione Privata', convenzione: 'Convenzione SIAT', consulenza: 'Consulenza Famiglie' } as const;
+                const nomi = { privato: 'Gestione Privata', convenzione: 'Convenzione SIAT', consulenza: 'Intermediazioni' } as const;
                 const nuovaModalita = ordine[(ordine.indexOf(modalita) + 1) % ordine.length];
                 const msg = `Stai per passare da ${nomi[modalita]} a ${nomi[nuovaModalita]}.\n\nVuoi cambiare gestione?`;
                 if (window.confirm(msg)) setModalita(nuovaModalita);
@@ -210,7 +210,7 @@ function AppShell() {
               }}
             >
               <ArrowLeftRight size={14} />
-              {isConvenzione ? '🏥 Convenzione SIAT' : isConsulenza ? '🤝 Consulenza Famiglie' : '👤 Gestione Privata'}
+              {isConvenzione ? '🏥 Convenzione SIAT' : isConsulenza ? '🤝 Intermediazioni' : '👤 Gestione Privata'}
               {!canSwitch && <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>🔒</span>}
             </button>
           )}
@@ -470,17 +470,17 @@ function AppShell() {
             </>
           )}
 
-          {/* ===== MENU CONSULENZA FAMIGLIE (admin, coordinator, direttore) ===== */}
+          {/* ===== MENU INTERMEDIAZIONI (admin, coordinator, direttore) ===== */}
           {user && isPrivilegiato(user.role) && isConsulenza && (
             <>
-              <span className="nav-section-label">Consulenza Famiglie</span>
+              <span className="nav-section-label">Intermediazioni</span>
               <Link to="/badanti-intermediazione" className={isActive('/badanti-intermediazione') ? 'active' : ''}>
                 <Users size={18} />
-                Consulenza famiglie
+                Intermediazioni
               </Link>
               <Link to="/patients" className={isActive('/patients') ? 'active' : ''}>
                 <UserCircle size={18} />
-                Pazienti consulenza
+                Pazienti intermediazioni
               </Link>
               <Link to="/staff" className={isActive('/staff') ? 'active' : ''}>
                 <UserPlus size={18} />

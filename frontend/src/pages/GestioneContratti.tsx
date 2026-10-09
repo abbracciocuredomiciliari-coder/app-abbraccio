@@ -31,7 +31,7 @@ const roleLabel: Record<string, string> = {
   caregiver: 'Operatore',
 };
 
-// Personale dell'area Consulenza Famiglie: colf, badanti, assistenti familiari
+// Personale dell'area Intermediazioni: colf, badanti, assistenti familiari
 // (categorie private/familiari) — in quell'area si vedono solo i loro contratti.
 const CATEGORIE_FAMIGLIA = ['privato', 'osa', 'assistente-familiare', 'badante'];
 const isPersonaleFamiglia = (u: Utente) => {
@@ -202,7 +202,7 @@ export default function GestioneContratti() {
 
   return (
     <div className="tw-p-5 tw-max-w-6xl tw-mx-auto">
-      <h1 className="tw-text-2xl tw-font-bold tw-text-slate-800 tw-mb-1">{isConsulenza ? 'Contratti personale famiglie' : 'Gestione contratti operatori'}</h1>
+      <h1 className="tw-text-2xl tw-font-bold tw-text-slate-800 tw-mb-1">{isConsulenza ? 'Contratti personale intermediazioni' : 'Gestione contratti operatori'}</h1>
       <p className="tw-text-slate-500 tw-mb-6">{isConsulenza ? 'Contratti e documenti di colf, badanti e assistenti familiari.' : 'Visualizza, scarica, stampa e invia per firma i due tipi di contratto.'}</p>
 
       {toast && (

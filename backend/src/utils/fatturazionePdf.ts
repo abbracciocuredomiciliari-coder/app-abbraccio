@@ -210,7 +210,7 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
         pdf.font('Helvetica-Bold').fontSize(18).fillColor('#166534').text(formatEuro(totaleLordo), 370, totalY + 22, { width: 180, align: 'right' });
       }
 
-      // ─── Costo mensile stimato (Consulenza Famiglie / badanti) — evidenziato a parte dal totale una tantum
+      // ─── Costo mensile stimato (Intermediazioni / badanti) — evidenziato a parte dal totale una tantum
       let noteY = totalY + (haIva ? 92 : 65);
       const totaleMensile = Number(doc.totaleMensileStimato) || 0;
       if (totaleMensile > 0) {

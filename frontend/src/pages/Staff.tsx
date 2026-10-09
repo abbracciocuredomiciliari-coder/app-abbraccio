@@ -209,10 +209,10 @@ function Staff() {
   };
 
   const categoriePrivate = ['privato', 'osa', 'assistente-familiare', 'badante'];
-  // Area Consulenza Famiglie: solo personale domestico/familiare (colf, badanti, assistenti familiari, osa)
+  // Area Intermediazioni: solo personale domestico/familiare (colf, badanti, assistenti familiari, osa)
   const categorieConsulenza = ['privato', 'osa', 'assistente-familiare', 'badante'];
 
-  // In area Consulenza Famiglie il nuovo personale è sempre di tipo familiare e abilitato al privato
+  // In area Intermediazioni il nuovo personale è sempre di tipo familiare e abilitato al privato
   useEffect(() => {
     if (!isConsulenza) return;
     if (!categorieConsulenza.includes(formData.category)) {
@@ -631,7 +631,7 @@ function Staff() {
     <section className="section-wide">
       <h2>
         <Users size={28} />
-        {isConsulenza ? 'Personale Consulenza Famiglie' : 'Gestione Personale'}
+        {isConsulenza ? 'Personale Intermediazioni' : 'Gestione Personale'}
       </h2>
 
       {success && (
@@ -692,7 +692,7 @@ function Staff() {
         )}
       </div>
 
-      {/* Modalità (chip contestuali all'area attiva) — nascosti in Consulenza Famiglie */}
+      {/* Modalità (chip contestuali all'area attiva) — nascosti in Intermediazioni */}
       {!isConsulenza && (
       <div className="tw-flex tw-flex-wrap tw-gap-2 tw-mb-5">
         {[

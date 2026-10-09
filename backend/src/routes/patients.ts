@@ -16,12 +16,12 @@ router.get('/', auditLog('patients', 'READ'), async (req: Request, res: Response
     if (cf && typeof cf === 'string' && cf.trim()) filter.codiceFiscaleHash = hashForSearch(cf.trim().toUpperCase());
     if (tipo === 'privato') {
       filter.tipoGestione = 'privato';
-      // I pazienti "consulenza famiglie" (intermediazione badanti) non fanno più parte dell'area privata
+      // I pazienti "Intermediazioni" (intermediazione badanti) non fanno più parte dell'area privata
       filter.categoriaPrivata = { $ne: 'intermediazione_badanti' };
     } else if (tipo === 'convenzione') {
       filter.tipoGestione = 'convenzione';
     } else if (tipo === 'consulenza') {
-      // Pazienti dell'area Consulenza Famiglie: nuovi con tipoGestione dedicato
+      // Pazienti dell'area Intermediazioni: nuovi con tipoGestione dedicato
       // e storici marcati come intermediazione_badanti
       filter.$or = [
         { tipoGestione: 'consulenza' },
