@@ -520,7 +520,7 @@ function Patients() {
         patient: contrattoPatient._id,
         profilo: contrattoProfilo,
         email: contrattoEmail,
-        importo: 150,
+        importo: contrattoProfilo === 'Assistente familiare' ? 250 : 150,
       });
       return res.data._id as string;
     } catch (err: any) {

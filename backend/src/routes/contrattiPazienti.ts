@@ -174,8 +174,8 @@ function generaHtmlContratto(contratto: any, paziente: any, includeFirma = false
 }
 
 function generaHtmlContrattoBadante(contratto: any, paziente: any, includeFirma = false, firmaImg?: string) {
-  const importo1 = Number(contratto.importo || 150).toFixed(2).replace('.', ',');
-  const importo2 = '350,00';
+  // Corrispettivo unico (selezione/reclutamento + collocamento a buon fine): default €250 + IVA
+  const importo1 = Number(contratto.importo || 250).toFixed(2).replace('.', ',');
   const luogo = contratto.luogoFirma || 'Roma';
   const data = contratto.dataFirma ? new Date(contratto.dataFirma).toLocaleDateString('it-IT') : formatData(new Date());
 
@@ -279,14 +279,9 @@ function generaHtmlContrattoBadante(contratto: any, paziente: any, includeFirma 
     </thead>
     <tbody>
       <tr>
-        <td><strong>1. Reclutamento &amp; Selezione</strong></td>
-        <td>Attivazione ricerca, pubblicazione annunci, screening curricula e colloquio di selezione. Dovuto alla firma del presente contratto.</td>
+        <td><strong>Selezione, Reclutamento e Collocamento a buon fine</strong></td>
+        <td>Attivazione ricerca, pubblicazione annunci, screening curricula, colloquio di selezione e collocamento a buon fine con sottoscrizione del contratto di lavoro o effettivo inserimento lavorativo della badante selezionata presso la famiglia. Corrispettivo unico dovuto alla firma del presente contratto.</td>
         <td class="price">€ ${importo1}</td>
-      </tr>
-      <tr>
-        <td><strong>2. Collocamento con Successo</strong></td>
-        <td>Sottoscrizione del contratto di lavoro o effettivo inserimento lavorativo della badante selezionata presso la famiglia.</td>
-        <td class="price">€ ${importo2}</td>
       </tr>
     </tbody>
   </table>
@@ -296,7 +291,7 @@ function generaHtmlContrattoBadante(contratto: any, paziente: any, includeFirma 
   </div>
 
   <div class="section"><p class="section-title">4. GARANZIA DI SOSTITUZIONE</p></div>
-  <p>Qualora il rapporto lavorativo con la badante si interrompa entro 30 giorni dall'assunzione per dimissioni o mancato superamento del periodo di prova, l'Agenzia effettuerà una seconda selezione senza l'addebito di ulteriori costi di avvio o esito positivo.</p>
+  <p>Qualora il rapporto lavorativo con la badante si interrompa entro 30 giorni dall'assunzione per dimissioni o mancato superamento del periodo di prova, l'Agenzia effettuerà una seconda selezione senza l'addebito di ulteriori corrispettivi.</p>
 
   <p style="margin-top:18px;"><strong>Luogo e Data:</strong> ${luogo}, lì ${data}</p>
 
