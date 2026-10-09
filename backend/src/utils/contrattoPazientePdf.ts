@@ -85,10 +85,10 @@ function headerAzienda(doc: InstanceType<typeof PDFDocument>, titolo: string, so
 }
 
 function footer(doc: InstanceType<typeof PDFDocument>) {
-  const y = 800;
+  const y = 770;
   doc.moveTo(MARGINE, y).lineTo(MARGINE + LARGHEZZA, y).strokeColor('#cbd5e1').lineWidth(0.6).stroke();
   doc.font('Helvetica').fontSize(7.5).fillColor(GRIGIO)
-    .text(`Documento generato elettronicamente da ${AZIENDA.nome} — ${new Date().toLocaleString('it-IT')}`, MARGINE, y + 6, { width: LARGHEZZA, align: 'center' });
+    .text(`Documento generato elettronicamente da ${AZIENDA.nome} — ${new Date().toLocaleString('it-IT')}`, MARGINE, y + 5, { width: LARGHEZZA, align: 'center' });
 }
 
 // Inserisce la firma digitale (data URL base64 PNG) se presente

@@ -99,10 +99,10 @@ function headerAzienda(doc: InstanceType<typeof PDFDocument>) {
 }
 
 function footer(doc: InstanceType<typeof PDFDocument>) {
-  const y = 800;
+  const y = 772;
   doc.moveTo(MARGINE, y).lineTo(MARGINE + LARGHEZZA, y).strokeColor('#cbd5e1').lineWidth(0.6).stroke();
   doc.font('Helvetica').fontSize(7).fillColor(GRIGIO)
-    .text('ABBRACCIO CURE DOMICILIARI • Via Santa Maria Ausiliatrice 4B, Roma • Tel. 06 01905 242 • WhatsApp 351 4175117 — Documento organizzativo: non sostituisce la prescrizione medica quando richiesta.', MARGINE, y + 6, { width: LARGHEZZA, align: 'center' });
+    .text('ABBRACCIO CURE DOMICILIARI • Via Santa Maria Ausiliatrice 4B, Roma • Tel. 06 01905 242 • WhatsApp 351 4175117 — Documento organizzativo: non sostituisce la prescrizione medica quando richiesta.', MARGINE, y + 5, { width: LARGHEZZA, align: 'center' });
 }
 
 export async function generaMandatoRxTeamPDF(mandato: any, paziente: any): Promise<Buffer> {
@@ -181,8 +181,8 @@ export async function generaMandatoRxTeamPDF(mandato: any, paziente: any): Promi
   doc.y = ay + Math.ceil(chiaviAccesso.length / 3) * 18 + 6;
   campo(doc, 'Note organizzative', mandato.noteOrganizzative || '');
 
-  // Blocco firma / accettazione
-  if (doc.y > 680) doc.addPage();
+  // Blocco firma / accettazione (riserva spazio per tutto il blocco finale, incluse le righe firma Abbraccio/RX Team)
+  if (doc.y > 630) doc.addPage();
   sezione(doc, 'ACCETTAZIONE DEL PAZIENTE / FAMILIARE');
   const luogo = mandato.luogoFirma || 'Roma';
   const dataFirma = mandato.dataFirma ? new Date(mandato.dataFirma).toLocaleDateString('it-IT') : fmtData(new Date());
@@ -209,8 +209,10 @@ export async function generaMandatoRxTeamPDF(mandato: any, paziente: any): Promi
   }
 
   doc.moveDown(0.6);
+  if (doc.y > 735) doc.addPage();
   doc.font('Helvetica').fontSize(8).fillColor(GRIGIO).text('ABBRACCIO CURE DOMICILIARI — Firma / timbro: ______________________________', MARGINE, doc.y);
   doc.moveDown(0.3);
+  if (doc.y > 735) doc.addPage();
   doc.text('RX TEAM — Presa in carico / esecuzione — Data ____________   Firma / sigla __________________', MARGINE, doc.y);
 
   footer(doc);
