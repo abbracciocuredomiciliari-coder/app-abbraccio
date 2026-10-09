@@ -17,6 +17,7 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const FirmaContratto = lazy(() => import('./pages/FirmaContratto'));
 const FirmaContrattoPaziente = lazy(() => import('./pages/FirmaContrattoPaziente'));
+const FirmaMandatoRxTeam = lazy(() => import('./pages/FirmaMandatoRxTeam'));
 const FirmaVerbaleEsterno = lazy(() => import('./pages/FirmaVerbaleEsterno'));
 const FirmaDocumento = lazy(() => import('./pages/FirmaDocumento'));
 const FirmaRitenuta = lazy(() => import('./pages/FirmaRitenuta'));
@@ -546,6 +547,7 @@ function AppShell() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/firma-contratto" element={<FirmaContratto />} />
           <Route path="/firma-contratto-paziente" element={<FirmaContrattoPaziente />} />
+          <Route path="/firma-mandato-rx-team" element={<FirmaMandatoRxTeam />} />
           <Route path="/firma-verbale" element={<FirmaVerbaleEsterno />} />
           <Route path="/firma-documento" element={<FirmaDocumento />} />
           <Route path="/firma-ritenuta" element={<FirmaRitenuta />} />

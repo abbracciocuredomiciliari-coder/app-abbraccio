@@ -225,6 +225,30 @@ function Patients() {
   const [contrattoPreventivoId, setContrattoPreventivoId] = useState('');
   const [contrattoAllegato, setContrattoAllegato] = useState<File | null>(null);
 
+  // Stato modal mandato RX Team (foglio di accompagnamento diagnostica domiciliare)
+  const [showRxTeamModal, setShowRxTeamModal] = useState(false);
+  const [rxTeamPatient, setRxTeamPatient] = useState<Patient | null>(null);
+  const [rxTeamEsami, setRxTeamEsami] = useState<Record<string, { attivo: boolean; dettaglio: string }>>({
+    rx_domiciliare: { attivo: false, dettaglio: '' },
+    ecografia_domiciliare: { attivo: false, dettaglio: '' },
+    ecocolordoppler: { attivo: false, dettaglio: '' },
+    ecocolordoppler_tsa: { attivo: false, dettaglio: '' },
+    altro: { attivo: false, dettaglio: '' },
+  });
+  const [rxTeamPrescrizione, setRxTeamPrescrizione] = useState<'allegata' | 'da_consegnare' | 'non_prevista'>('non_prevista');
+  const [rxTeamQuesitoClinico, setRxTeamQuesitoClinico] = useState('');
+  const [rxTeamCompenso, setRxTeamCompenso] = useState('');
+  const [rxTeamDataEsecuzione, setRxTeamDataEsecuzione] = useState('');
+  const [rxTeamFasciaOraria, setRxTeamFasciaOraria] = useState('');
+  const [rxTeamReferente, setRxTeamReferente] = useState('');
+  const [rxTeamRecapitoNote, setRxTeamRecapitoNote] = useState('');
+  const [rxTeamAccesso, setRxTeamAccesso] = useState<Record<string, boolean>>({
+    allettato: false, deambulante: false, carrozzina: false, ascensore: false, scaleAccessoDifficoltoso: false, ossigenoterapia: false,
+  });
+  const [rxTeamNoteOrganizzative, setRxTeamNoteOrganizzative] = useState('');
+  const [rxTeamEmail, setRxTeamEmail] = useState('');
+  const [rxTeamLoading, setRxTeamLoading] = useState(false);
+
   // Stato modal consenso GDPR
   const [showConsensoModal, setShowConsensoModal] = useState(false);
   const [consensoPaziente, setConsensoPaziente] = useState<Patient | null>(null);
@@ -577,6 +601,103 @@ function Patients() {
         alert(err?.response?.data?.message || "Errore nell'invio dell'email");
       } finally {
         setContrattoLoading(false);
+      }
+    }
+  };
+
+  const apriRxTeamModal = (patient: Patient) => {
+    setRxTeamPatient(patient);
+    setRxTeamEsami({
+      rx_domiciliare: { attivo: false, dettaglio: '' },
+      ecografia_domiciliare: { attivo: false, dettaglio: '' },
+      ecocolordoppler: { attivo: false, dettaglio: '' },
+      ecocolordoppler_tsa: { attivo: false, dettaglio: '' },
+      altro: { attivo: false, dettaglio: '' },
+    });
+    setRxTeamPrescrizione('non_prevista');
+    setRxTeamQuesitoClinico('');
+    setRxTeamCompenso('');
+    setRxTeamDataEsecuzione('');
+    setRxTeamFasciaOraria('');
+    setRxTeamReferente('');
+    setRxTeamRecapitoNote('');
+    setRxTeamAccesso({ allettato: false, deambulante: false, carrozzina: false, ascensore: false, scaleAccessoDifficoltoso: false, ossigenoterapia: false });
+    setRxTeamNoteOrganizzative('');
+    setRxTeamEmail(patient.email || '');
+    setRxTeamLoading(false);
+    setShowRxTeamModal(true);
+  };
+
+  const chiudiRxTeamModal = () => {
+    setShowRxTeamModal(false);
+    setRxTeamPatient(null);
+    setRxTeamLoading(false);
+  };
+
+  const creaMandatoRxTeam = async () => {
+    if (!rxTeamPatient) return null;
+    const esamiSelezionati = Object.entries(rxTeamEsami)
+      .filter(([, v]) => v.attivo)
+      .map(([tipo, v]) => ({ tipo, dettaglio: v.dettaglio }));
+    if (esamiSelezionati.length === 0) {
+      alert('Seleziona almeno un esame richiesto');
+      return null;
+    }
+    if (!rxTeamCompenso || isNaN(Number(rxTeamCompenso))) {
+      alert('Inserisci il compenso dell\'esame');
+      return null;
+    }
+    setRxTeamLoading(true);
+    try {
+      const res = await api.post('/mandati-rx-team', {
+        patient: rxTeamPatient._id,
+        esami: esamiSelezionati,
+        prescrizioneMedica: rxTeamPrescrizione,
+        quesitoClinico: rxTeamQuesitoClinico,
+        compenso: Number(rxTeamCompenso),
+        dataEsecuzione: rxTeamDataEsecuzione,
+        fasciaOraria: rxTeamFasciaOraria,
+        referenteRxTeam: rxTeamReferente,
+        recapitoNote: rxTeamRecapitoNote,
+        accessoInfo: rxTeamAccesso,
+        noteOrganizzative: rxTeamNoteOrganizzative,
+        email: rxTeamEmail,
+      });
+      return res.data._id as string;
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nella creazione del mandato RX Team');
+      return null;
+    } finally {
+      setRxTeamLoading(false);
+    }
+  };
+
+  const stampaMandatoRxTeam = async () => {
+    const id = await creaMandatoRxTeam();
+    if (id) {
+      const res = await api.get(`/mandati-rx-team/${id}/pdf`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    }
+  };
+
+  const inviaMandatoRxTeamEmail = async () => {
+    if (!rxTeamEmail) {
+      alert('Inserisci un indirizzo email');
+      return;
+    }
+    const id = await creaMandatoRxTeam();
+    if (id) {
+      try {
+        setRxTeamLoading(true);
+        await api.post(`/mandati-rx-team/${id}/invia-email`, { email: rxTeamEmail });
+        alert('Email di firma inviata');
+        chiudiRxTeamModal();
+      } catch (err: any) {
+        alert(err?.response?.data?.message || "Errore nell'invio dell'email");
+      } finally {
+        setRxTeamLoading(false);
       }
     }
   };
@@ -1321,6 +1442,16 @@ function Patients() {
                     <FileText size={16} />
                     Contratto
                   </button>
+                  {!isConsulenza && (patient.categoriaPrivata === 'diagnostica' || !patient.categoriaPrivata) && (
+                    <button
+                      onClick={() => apriRxTeamModal(patient)}
+                      className="tw-bg-sky-700 tw-text-white tw-whitespace-nowrap"
+                      title="Crea e invia il foglio di accompagnamento / mandato RX Team per esame diagnostico domiciliare"
+                    >
+                      <Stethoscope size={16} />
+                      RX Team
+                    </button>
+                  )}
                   <button
                     onClick={() => openDocumentsModal(patient)}
                     className="tw-whitespace-nowrap"
@@ -2104,6 +2235,206 @@ function Patients() {
               >
                 <Mail size={16} />
                 {contrattoLoading ? 'Invio...' : 'Invia firma'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ MODAL MANDATO RX TEAM (foglio di accompagnamento diagnostica domiciliare) ═══ */}
+      {showRxTeamModal && rxTeamPatient && (
+        <div className="tw-fixed tw-inset-0 tw-z-50 tw-bg-black/60 tw-flex tw-items-start tw-justify-center tw-p-4 tw-overflow-y-auto" onClick={chiudiRxTeamModal}>
+          <div className="tw-bg-white tw-rounded-2xl tw-shadow-2xl tw-w-full tw-max-w-[560px] tw-my-10 tw-p-6" onClick={e => e.stopPropagation()}>
+            <div className="tw-flex tw-justify-between tw-items-center tw-mb-4 tw-flex-wrap tw-gap-2">
+              <h3 className="tw-m-0 tw-text-brand tw-text-lg">
+                <Stethoscope size={22} className="tw-inline tw-mr-2" />
+                Foglio di accompagnamento RX Team
+              </h3>
+              <button onClick={chiudiRxTeamModal} className="tw-bg-slate-100 tw-border tw-border-slate-200 tw-rounded-md tw-px-2.5 tw-py-1.5 tw-cursor-pointer hover:tw-bg-slate-200">
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="tw-text-sm tw-text-slate-600 tw-mb-4">
+              Prestazione diagnostica domiciliare per <strong>{rxTeamPatient.firstName} {rxTeamPatient.lastName}</strong> — collaborazione Abbraccio Cure Domiciliari × RX Team.
+            </p>
+
+            <div className="tw-mb-4">
+              <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Esame/i richiesto/i</label>
+              <div className="tw-flex tw-flex-col tw-gap-2 tw-bg-slate-50 tw-border tw-border-slate-200 tw-rounded-lg tw-p-3">
+                {([
+                  ['rx_domiciliare', 'RX domiciliare', 'Distretto / sede'],
+                  ['ecografia_domiciliare', 'Ecografia domiciliare', 'Tipo'],
+                  ['ecocolordoppler', 'EcoColorDoppler', 'Distretto'],
+                  ['ecocolordoppler_tsa', 'EcoColorDoppler TSA', 'Note'],
+                  ['altro', 'Altro esame', 'Specificare'],
+                ] as const).map(([key, label, placeholder]) => (
+                  <div key={key} className="tw-flex tw-items-center tw-gap-2">
+                    <input
+                      type="checkbox"
+                      checked={rxTeamEsami[key]?.attivo || false}
+                      onChange={(e) => setRxTeamEsami(prev => ({ ...prev, [key]: { ...prev[key], attivo: e.target.checked } }))}
+                    />
+                    <span className="tw-text-sm tw-text-slate-700 tw-w-44 tw-flex-shrink-0">{label}</span>
+                    <input
+                      type="text"
+                      value={rxTeamEsami[key]?.dettaglio || ''}
+                      onChange={(e) => setRxTeamEsami(prev => ({ ...prev, [key]: { ...prev[key], dettaglio: e.target.value } }))}
+                      placeholder={placeholder}
+                      disabled={!rxTeamEsami[key]?.attivo}
+                      className="tw-flex-1 tw-px-2 tw-py-1.5 tw-rounded-md tw-border tw-border-slate-300 tw-text-sm disabled:tw-bg-slate-100"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="tw-mb-4">
+              <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Prescrizione medica</label>
+              <select
+                value={rxTeamPrescrizione}
+                onChange={(e) => setRxTeamPrescrizione(e.target.value as any)}
+                className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]"
+              >
+                <option value="allegata">Allegata</option>
+                <option value="da_consegnare">Da consegnare al professionista</option>
+                <option value="non_prevista">Non prevista per la prestazione concordata</option>
+              </select>
+            </div>
+
+            <div className="tw-mb-4">
+              <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Quesito clinico / indicazioni</label>
+              <textarea
+                value={rxTeamQuesitoClinico}
+                onChange={(e) => setRxTeamQuesitoClinico(e.target.value)}
+                rows={2}
+                className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]"
+              />
+            </div>
+
+            <div className="tw-mb-4 tw-bg-emerald-50 tw-border tw-border-emerald-200 tw-rounded-lg tw-p-3">
+              <label className="tw-block tw-text-sm tw-font-semibold tw-text-emerald-800 tw-mb-2">💶 Compenso dell'esame (€)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={rxTeamCompenso}
+                onChange={(e) => setRxTeamCompenso(e.target.value)}
+                placeholder="es. 80.00"
+                className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-emerald-300 tw-text-[0.9rem]"
+              />
+              <p className="tw-text-xs tw-text-emerald-700 tw-mt-1 tw-mb-0">
+                Il compenso viene corrisposto direttamente a RX Team dal paziente. Comparirà nel documento come importo da accettare alla firma.
+              </p>
+            </div>
+
+            <div className="tw-grid tw-grid-cols-2 tw-gap-3 tw-mb-4">
+              <div>
+                <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Data esecuzione concordata</label>
+                <input
+                  type="text"
+                  value={rxTeamDataEsecuzione}
+                  onChange={(e) => setRxTeamDataEsecuzione(e.target.value)}
+                  placeholder="es. 15/10/2026"
+                  className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]"
+                />
+              </div>
+              <div>
+                <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Fascia oraria</label>
+                <input
+                  type="text"
+                  value={rxTeamFasciaOraria}
+                  onChange={(e) => setRxTeamFasciaOraria(e.target.value)}
+                  placeholder="es. 9:00-12:00"
+                  className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]"
+                />
+              </div>
+              <div>
+                <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Referente RX Team</label>
+                <input
+                  type="text"
+                  value={rxTeamReferente}
+                  onChange={(e) => setRxTeamReferente(e.target.value)}
+                  className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]"
+                />
+              </div>
+              <div>
+                <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Recapito / note</label>
+                <input
+                  type="text"
+                  value={rxTeamRecapitoNote}
+                  onChange={(e) => setRxTeamRecapitoNote(e.target.value)}
+                  className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]"
+                />
+              </div>
+            </div>
+
+            <div className="tw-mb-4">
+              <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Informazioni per l'accesso domiciliare</label>
+              <div className="tw-grid tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1.5 tw-bg-slate-50 tw-border tw-border-slate-200 tw-rounded-lg tw-p-3">
+                {([
+                  ['allettato', 'Allettato'],
+                  ['deambulante', 'Deambulante'],
+                  ['carrozzina', 'Carrozzina'],
+                  ['ascensore', 'Ascensore'],
+                  ['scaleAccessoDifficoltoso', 'Scale/accesso difficoltoso'],
+                  ['ossigenoterapia', 'Ossigenoterapia'],
+                ] as const).map(([key, label]) => (
+                  <label key={key} className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={rxTeamAccesso[key] || false}
+                      onChange={(e) => setRxTeamAccesso(prev => ({ ...prev, [key]: e.target.checked }))}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="tw-mb-4">
+              <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Note organizzative</label>
+              <textarea
+                value={rxTeamNoteOrganizzative}
+                onChange={(e) => setRxTeamNoteOrganizzative(e.target.value)}
+                rows={2}
+                className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]"
+              />
+            </div>
+
+            <div className="tw-mb-4">
+              <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Email destinatario (per firma)</label>
+              <input
+                type="email"
+                value={rxTeamEmail}
+                onChange={(e) => setRxTeamEmail(e.target.value)}
+                placeholder="paziente@email.com"
+                className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]"
+              />
+            </div>
+
+            <div className="tw-flex tw-justify-end tw-gap-3">
+              <button
+                onClick={chiudiRxTeamModal}
+                className="tw-px-4 tw-py-2 tw-rounded-lg tw-border tw-border-slate-200 tw-bg-white tw-text-slate-700 tw-font-semibold hover:tw-bg-slate-50"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={stampaMandatoRxTeam}
+                disabled={rxTeamLoading}
+                className="tw-px-4 tw-py-2 tw-rounded-lg tw-bg-brand tw-text-white tw-font-semibold hover:tw-bg-brand-dark tw-flex tw-items-center tw-gap-2"
+              >
+                <Printer size={16} />
+                {rxTeamLoading ? 'Creazione...' : 'Stampa / PDF'}
+              </button>
+              <button
+                onClick={inviaMandatoRxTeamEmail}
+                disabled={rxTeamLoading}
+                className="tw-px-4 tw-py-2 tw-rounded-lg tw-bg-emerald-600 tw-text-white tw-font-semibold hover:tw-bg-emerald-700 tw-flex tw-items-center tw-gap-2"
+              >
+                <Mail size={16} />
+                {rxTeamLoading ? 'Invio...' : 'Invia firma'}
               </button>
             </div>
           </div>
