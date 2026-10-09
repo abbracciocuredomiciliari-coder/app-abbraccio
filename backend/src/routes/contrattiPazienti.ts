@@ -181,7 +181,11 @@ function generaHtmlContratto(contratto: any, paziente: any, includeFirma = false
 
 function generaHtmlContrattoBadante(contratto: any, paziente: any, includeFirma = false, firmaImg?: string) {
   // Corrispettivo unico (selezione/reclutamento + collocamento a buon fine): default €250 + IVA
-  const importo1 = Number(contratto.importo || 250).toFixed(2).replace('.', ',');
+  const importoNetto = Number(contratto.importo || 250);
+  const iva = Math.round(importoNetto * 0.22 * 100) / 100;
+  const totaleIvato = Math.round((importoNetto + iva) * 100) / 100;
+  const fmtImporto = (n: number) => n.toFixed(2).replace('.', ',');
+  const importo1 = fmtImporto(importoNetto);
   const luogo = contratto.luogoFirma || 'Roma';
   const data = contratto.dataFirma ? new Date(contratto.dataFirma).toLocaleDateString('it-IT') : formatData(new Date());
 
@@ -288,6 +292,18 @@ function generaHtmlContrattoBadante(contratto: any, paziente: any, includeFirma 
         <td><strong>Selezione, Reclutamento e Collocamento a buon fine</strong></td>
         <td>Attivazione ricerca, pubblicazione annunci, screening curricula, colloquio di selezione e collocamento a buon fine con sottoscrizione del contratto di lavoro o effettivo inserimento lavorativo della badante selezionata presso la famiglia. Corrispettivo unico dovuto alla firma del presente contratto.</td>
         <td class="price">€ ${importo1}</td>
+      </tr>
+      <tr>
+        <td colspan="2" style="text-align:right;">Imponibile</td>
+        <td class="price">€ ${importo1}</td>
+      </tr>
+      <tr>
+        <td colspan="2" style="text-align:right;">IVA 22%</td>
+        <td class="price">€ ${fmtImporto(iva)}</td>
+      </tr>
+      <tr style="background:#f0fdf4;">
+        <td colspan="2" style="text-align:right;"><strong>TOTALE IVA INCLUSA</strong></td>
+        <td class="price" style="font-size:14px;color:#166534;"><strong>€ ${fmtImporto(totaleIvato)}</strong></td>
       </tr>
     </tbody>
   </table>
