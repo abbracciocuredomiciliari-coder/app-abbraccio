@@ -10,6 +10,7 @@ import { authorizeRole } from '../middleware/roles';
 import { auditLog } from '../middleware/audit';
 import { inviaEmail } from '../utils/email';
 import { generaDocumentoPDF } from '../utils/fatturazionePdf';
+import { AZIENDA, generaContrattoPazientePDF, generaGdprPDF } from '../utils/contrattoPazientePdf';
 import { decrypt } from '../utils/encryption';
 import ConsensoGDPR from '../models/ConsensoGDPR';
 
@@ -18,16 +19,6 @@ const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
 
 // Allegato preventivo caricato manualmente (PDF/immagine), salvato nel documento contratto
 const uploadAllegato = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
-
-const AZIENDA = {
-  nome: process.env.AZIENDA_NOME || 'ABBRACCIO CURE DOMICILIARI S.R.L.S.',
-  indirizzo: process.env.AZIENDA_INDIRIZZO || 'ROMA (RM) VIA DI S MARIA AUSILIATRICE 4B',
-  capCitta: process.env.AZIENDA_CAP_CITTA || 'CAP 00181',
-  pec: process.env.AZIENDA_PEC || 'abbracciocuredomiciliari@facilepec.com',
-  rea: process.env.AZIENDA_REA || 'RM - 1777027',
-  cf: process.env.AZIENDA_CF || '18316251000',
-  piva: process.env.AZIENDA_PIVA || 'P.IVA da configurare',
-};
 
 function formatData(d: any) {
   if (!d) return '___';
@@ -668,15 +659,12 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
     await contratto.save();
 
     const pazienteNorm = normalizzaPaziente(contratto.patient);
-    const htmlContratto = generaHtmlContratto(contratto, pazienteNorm, false);
-    const htmlGdpr = generaHtmlGdpr(pazienteNorm, {
+    const pdfContratto = await generaContrattoPazientePDF(contratto.toObject(), pazienteNorm);
+    const pdfGdpr = await generaGdprPDF(pazienteNorm, {
       nomeFirmatario: contratto.nome || `${pazienteNorm.firstName} ${pazienteNorm.lastName}`,
       cognomeFirmatario: '',
-      versioneInformativa: 'v2026.1',
       finalita: { prestazioneSanitaria: true, fatturazione: true, auditInterno: true, ricercaScientifica: false },
       datiSensibili: { datiSanitari: true, datiEconomici: true, immagini: false },
-      modalita: { cartaceo: true, informatico: true, telefonico: true },
-      comunicazioneTerzi: { mediciSpecialisti: false, struttureSanitarie: false, familiari: false, assicurazioni: false },
       accettato: false,
     });
 
@@ -685,6 +673,8 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
     const apiHost = req.get('host') || 'api.abbracciocuredomiciliari.it';
     const anteprimaUrl = `${apiProtocol}://${apiHost}/api/contratti-pazienti/anteprima/${contratto.token}`;
     const gdprUrl = `${apiProtocol}://${apiHost}/api/contratti-pazienti/gdpr/${contratto.token}`;
+    const contrattoPdfUrl = `${apiProtocol}://${apiHost}/api/contratti-pazienti/contratto-pdf/${contratto.token}`;
+    const gdprPdfUrl = `${apiProtocol}://${apiHost}/api/contratti-pazienti/gdpr-pdf/${contratto.token}`;
     const firmaUrl = `${frontendUrl}/firma-contratto-paziente?token=${contratto.token}`;
     const preventivoUrl = contratto.preventivoId ? `${apiProtocol}://${apiHost}/api/contratti-pazienti/preventivo/${contratto.token}` : '';
     const allegatoUrl = contratto.allegatoData ? `${apiProtocol}://${apiHost}/api/contratti-pazienti/allegato/${contratto.token}` : '';
@@ -692,11 +682,13 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
     const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
       <h2 style="color:#1e4d8c;margin-top:0;">Contratto d'incarico e informativa GDPR</h2>
       <p>Gentile <strong>${pazienteNorm.firstName || ''} ${pazienteNorm.lastName || ''}</strong>,</p>
-      <p>in allegato trovi il contratto d'incarico completo e l'informativa GDPR${(preventivoUrl || allegatoUrl) ? ', insieme al documento preventivo,' : ''} per l'attività di reclutamento del profilo <strong>${contratto.profilo}</strong>.</p>
+      <p>in allegato trovi in formato PDF il contratto d'incarico completo e l'informativa GDPR${(preventivoUrl || allegatoUrl) ? ', insieme al documento preventivo,' : ''} per l'attività di reclutamento del profilo <strong>${contratto.profilo}</strong>.</p>
       <p style="margin:16px 0;padding:16px;background:#f0fdf4;border-left:4px solid #16a34a;border-radius:6px;">
         <strong>Leggi entrambi i documenti</strong> prima di firmare:<br/>
         <a href="${anteprimaUrl}" style="display:inline-block;margin-top:8px;background:#16a34a;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Visualizza contratto</a>
-        <a href="${gdprUrl}" style="display:inline-block;margin-top:8px;margin-left:8px;background:#16a34a;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Visualizza GDPR</a>
+        <a href="${gdprUrl}" style="display:inline-block;margin-top:8px;margin-left:8px;background:#16a34a;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Visualizza GDPR</a><br/>
+        <a href="${contrattoPdfUrl}" style="display:inline-block;margin-top:8px;background:#047857;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:bold;">Scarica contratto (PDF)</a>
+        <a href="${gdprPdfUrl}" style="display:inline-block;margin-top:8px;margin-left:8px;background:#047857;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:bold;">Scarica GDPR (PDF)</a>
       </p>
       ${(preventivoUrl || allegatoUrl) ? `<p style="margin:16px 0;padding:16px;background:#fffbeb;border-left:4px solid #d97706;border-radius:6px;">
         <strong>Documento preventivo allegato</strong> — scaricalo in formato PDF:<br/>
@@ -712,14 +704,14 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
 
     const attachments: { filename: string; content?: Buffer; contentType?: string }[] = [
       {
-        filename: `contratto-incarico-${contratto.profilo.toLowerCase().replace(/\s+/g, '-')}.html`,
-        content: Buffer.from(htmlContratto, 'utf-8'),
-        contentType: 'text/html',
+        filename: `contratto-incarico-${contratto.profilo.toLowerCase().replace(/\s+/g, '-')}.pdf`,
+        content: pdfContratto,
+        contentType: 'application/pdf',
       },
       {
-        filename: `informativa-gdpr.html`,
-        content: Buffer.from(htmlGdpr, 'utf-8'),
-        contentType: 'text/html',
+        filename: `informativa-gdpr.pdf`,
+        content: pdfGdpr,
+        contentType: 'application/pdf',
       },
     ];
     if (contratto.preventivoId) {
@@ -778,6 +770,51 @@ router.get('/gdpr/:token', async (req: Request, res: Response) => {
     return res.send(html);
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore generazione anteprima GDPR', error: error.message });
+  }
+});
+
+// GET /api/contratti-pazienti/contratto-pdf/:token — download pubblico PDF del contratto (via token firma)
+router.get('/contratto-pdf/:token', async (req: Request, res: Response) => {
+  try {
+    const contratto = await ContrattoPaziente.findOne({ token: req.params.token })
+      .populate('patient', 'firstName lastName birthDate address contactPhone codiceFiscale email');
+    if (!contratto) return res.status(404).json({ message: 'Link non valido' });
+
+    const paziente = normalizzaPaziente(contratto.patient);
+    const buffer = await generaContrattoPazientePDF(contratto.toObject(), paziente);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="CONTRATTO-${contratto.profilo.toLowerCase().replace(/\s+/g, '-')}.pdf"`);
+    return res.send(buffer);
+  } catch (error: any) {
+    console.error('[Contratto paziente PDF] Errore:', error);
+    return res.status(500).json({ message: 'Errore generazione PDF contratto', error: error.message });
+  }
+});
+
+// GET /api/contratti-pazienti/gdpr-pdf/:token — download pubblico PDF informativa GDPR (via token firma)
+router.get('/gdpr-pdf/:token', async (req: Request, res: Response) => {
+  try {
+    const contratto = await ContrattoPaziente.findOne({ token: req.params.token })
+      .populate('patient', 'firstName lastName birthDate');
+    if (!contratto) return res.status(404).json({ message: 'Link non valido' });
+
+    const paziente = normalizzaPaziente(contratto.patient);
+    const buffer = await generaGdprPDF(paziente, {
+      nomeFirmatario: contratto.nome || `${paziente.firstName} ${paziente.lastName}`,
+      cognomeFirmatario: '',
+      finalita: { prestazioneSanitaria: true, fatturazione: true, auditInterno: true, ricercaScientifica: false },
+      datiSensibili: { datiSanitari: true, datiEconomici: true, immagini: false },
+      accettato: contratto.stato === 'firmato',
+      dataFirma: contratto.dataFirma,
+      luogoFirma: contratto.luogoFirma,
+      firmaImg: contratto.stato === 'firmato' ? contratto.firmaImg : undefined,
+    });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="INFORMATIVA-GDPR.pdf"');
+    return res.send(buffer);
+  } catch (error: any) {
+    console.error('[GDPR paziente PDF] Errore:', error);
+    return res.status(500).json({ message: 'Errore generazione PDF GDPR', error: error.message });
   }
 });
 

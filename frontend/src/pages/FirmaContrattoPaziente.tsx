@@ -109,6 +109,8 @@ export default function FirmaContrattoPaziente() {
           const apiBase = (api.defaults.baseURL || '/api').replace(/\/$/, '');
           const anteprimaUrl = `${apiBase}/contratti-pazienti/anteprima/${token}`;
           const gdprUrl = `${apiBase}/contratti-pazienti/gdpr/${token}`;
+          const contrattoPdfUrl = `${apiBase}/contratti-pazienti/contratto-pdf/${token}`;
+          const gdprPdfUrl = `${apiBase}/contratti-pazienti/gdpr-pdf/${token}`;
           const preventivoUrl = `${apiBase}/contratti-pazienti/preventivo/${token}`;
           const allegatoUrl = `${apiBase}/contratti-pazienti/allegato/${token}`;
           return (
@@ -119,12 +121,21 @@ export default function FirmaContrattoPaziente() {
                 </p>
               </div>
 
-              <div className="tw-flex tw-gap-3 tw-mb-5">
+              <div className="tw-flex tw-gap-3 tw-mb-2">
                 <a href={anteprimaUrl} target="_blank" rel="noreferrer" className="tw-flex-1 tw-text-center tw-py-2 tw-px-3 tw-rounded-lg tw-bg-blue-100 tw-text-blue-800 tw-text-sm tw-font-semibold hover:tw-bg-blue-200 tw-transition-colors">
                   📄 Leggi contratto
                 </a>
                 <a href={gdprUrl} target="_blank" rel="noreferrer" className="tw-flex-1 tw-text-center tw-py-2 tw-px-3 tw-rounded-lg tw-bg-blue-100 tw-text-blue-800 tw-text-sm tw-font-semibold hover:tw-bg-blue-200 tw-transition-colors">
                   📋 Leggi informativa GDPR
+                </a>
+              </div>
+
+              <div className="tw-flex tw-gap-3 tw-mb-5">
+                <a href={contrattoPdfUrl} target="_blank" rel="noreferrer" className="tw-flex-1 tw-text-center tw-py-2 tw-px-3 tw-rounded-lg tw-bg-emerald-100 tw-text-emerald-800 tw-text-sm tw-font-semibold hover:tw-bg-emerald-200 tw-transition-colors">
+                  ⬇️ Scarica contratto (PDF)
+                </a>
+                <a href={gdprPdfUrl} target="_blank" rel="noreferrer" className="tw-flex-1 tw-text-center tw-py-2 tw-px-3 tw-rounded-lg tw-bg-emerald-100 tw-text-emerald-800 tw-text-sm tw-font-semibold hover:tw-bg-emerald-200 tw-transition-colors">
+                  ⬇️ Scarica GDPR (PDF)
                 </a>
               </div>
 
