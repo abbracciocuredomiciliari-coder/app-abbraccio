@@ -1,17 +1,23 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
+import multer from 'multer';
 import ContrattoPaziente from '../models/ContrattoPaziente';
 import Patient from '../models/Patient';
 import PatientDocument from '../models/PatientDocument';
+import DocumentoFatturazione from '../models/DocumentoFatturazione';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { auditLog } from '../middleware/audit';
 import { inviaEmail } from '../utils/email';
+import { generaDocumentoPDF } from '../utils/fatturazionePdf';
 import { decrypt } from '../utils/encryption';
 import ConsensoGDPR from '../models/ConsensoGDPR';
 
 const router = Router();
 const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
+
+// Allegato preventivo caricato manualmente (PDF/immagine), salvato nel documento contratto
+const uploadAllegato = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
 
 const AZIENDA = {
   nome: process.env.AZIENDA_NOME || 'ABBRACCIO CURE DOMICILIARI S.R.L.S.',
@@ -469,12 +475,19 @@ con la presente desideriamo comunicarLe che per l'instaurazione e la gestione de
 // POST /api/contratti-pazienti — crea un nuovo contratto d'incarico
 router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('contratti_pazienti', 'CREATE'), async (req: AuthRequest, res: Response) => {
   try {
-    const { patient, profilo, importo, email } = req.body;
+    const { patient, profilo, importo, email, preventivoId } = req.body;
     if (!patient || !profilo) return res.status(400).json({ message: 'Paziente e profilo obbligatori' });
     if (!['OSS', 'Infermiere', 'Assistente familiare', 'Operatore generale'].includes(profilo)) return res.status(400).json({ message: 'Profilo non valido' });
 
     const paziente = await Patient.findById(patient);
     if (!paziente) return res.status(404).json({ message: 'Paziente non trovato' });
+
+    let preventivoRef: any = undefined;
+    if (preventivoId) {
+      const prev = await DocumentoFatturazione.findOne({ _id: preventivoId, patient, tipo: 'preventivo' }).select('_id');
+      if (!prev) return res.status(400).json({ message: 'Preventivo non valido per questo paziente' });
+      preventivoRef = prev._id;
+    }
 
     const token = crypto.randomBytes(32).toString('hex');
     const contratto = await ContrattoPaziente.create({
@@ -485,11 +498,67 @@ router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('
       email: email || paziente.email,
       nome: `${paziente.firstName} ${paziente.lastName}`,
       stato: 'emesso',
+      preventivoId: preventivoRef,
     });
 
     return res.status(201).json(contratto);
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore nella creazione del contratto', error: error.message });
+  }
+});
+
+// POST /api/contratti-pazienti/:id/allegato — carica un file preventivo (PDF/immagine) da allegare alla richiesta firma
+router.post('/:id/allegato', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('contratti_pazienti', 'UPDATE'), uploadAllegato.single('file'), async (req: AuthRequest, res: Response) => {
+  try {
+    const contratto = await ContrattoPaziente.findById(req.params.id);
+    if (!contratto) return res.status(404).json({ message: 'Contratto non trovato' });
+    if (!req.file) return res.status(400).json({ message: 'File obbligatorio' });
+
+    contratto.allegatoFileName = req.file.originalname;
+    contratto.allegatoContentType = req.file.mimetype;
+    contratto.allegatoData = req.file.buffer;
+    await contratto.save();
+
+    return res.json({ message: 'Allegato caricato', fileName: contratto.allegatoFileName });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore caricamento allegato', error: error.message });
+  }
+});
+
+// GET /api/contratti-pazienti/preventivo/:token — download pubblico PDF del preventivo collegato (via token firma)
+router.get('/preventivo/:token', async (req: Request, res: Response) => {
+  try {
+    const contratto = await ContrattoPaziente.findOne({ token: req.params.token });
+    if (!contratto) return res.status(404).json({ message: 'Link non valido' });
+    if (!contratto.preventivoId) return res.status(404).json({ message: 'Nessun preventivo allegato' });
+
+    const doc = await DocumentoFatturazione.findById(contratto.preventivoId)
+      .populate('patient', 'firstName lastName codiceFiscale address email')
+      .lean();
+    if (!doc) return res.status(404).json({ message: 'Preventivo non trovato' });
+
+    const buffer = await generaDocumentoPDF(doc);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="PREVENTIVO-${doc.numero}.pdf"`);
+    return res.send(buffer);
+  } catch (error: any) {
+    console.error('[Contratti pazienti preventivo] Errore:', error);
+    return res.status(500).json({ message: 'Errore generazione PDF preventivo', error: error.message });
+  }
+});
+
+// GET /api/contratti-pazienti/allegato/:token — download pubblico del file preventivo caricato (via token firma)
+router.get('/allegato/:token', async (req: Request, res: Response) => {
+  try {
+    const contratto = await ContrattoPaziente.findOne({ token: req.params.token });
+    if (!contratto) return res.status(404).json({ message: 'Link non valido' });
+    if (!contratto.allegatoData) return res.status(404).json({ message: 'Nessun allegato' });
+
+    res.setHeader('Content-Type', contratto.allegatoContentType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${contratto.allegatoFileName || 'allegato'}"`);
+    return res.send(contratto.allegatoData);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore download allegato', error: error.message });
   }
 });
 
@@ -560,6 +629,9 @@ router.get('/firma/:token', async (req: Request, res: Response) => {
       profilo: contratto.profilo,
       importo: contratto.importo,
       nome: contratto.nome,
+      hasPreventivo: !!contratto.preventivoId,
+      hasAllegato: !!contratto.allegatoData,
+      allegatoFileName: contratto.allegatoFileName || '',
     });
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore verifica link', error: error.message });
@@ -598,16 +670,23 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
     const anteprimaUrl = `${apiProtocol}://${apiHost}/api/contratti-pazienti/anteprima/${contratto.token}`;
     const gdprUrl = `${apiProtocol}://${apiHost}/api/contratti-pazienti/gdpr/${contratto.token}`;
     const firmaUrl = `${frontendUrl}/firma-contratto-paziente?token=${contratto.token}`;
+    const preventivoUrl = contratto.preventivoId ? `${apiProtocol}://${apiHost}/api/contratti-pazienti/preventivo/${contratto.token}` : '';
+    const allegatoUrl = contratto.allegatoData ? `${apiProtocol}://${apiHost}/api/contratti-pazienti/allegato/${contratto.token}` : '';
 
     const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
       <h2 style="color:#1e4d8c;margin-top:0;">Contratto d'incarico e informativa GDPR</h2>
       <p>Gentile <strong>${pazienteNorm.firstName || ''} ${pazienteNorm.lastName || ''}</strong>,</p>
-      <p>in allegato trovi il contratto d'incarico completo e l'informativa GDPR per l'attività di reclutamento del profilo <strong>${contratto.profilo}</strong>.</p>
+      <p>in allegato trovi il contratto d'incarico completo e l'informativa GDPR${(preventivoUrl || allegatoUrl) ? ', insieme al documento preventivo,' : ''} per l'attività di reclutamento del profilo <strong>${contratto.profilo}</strong>.</p>
       <p style="margin:16px 0;padding:16px;background:#f0fdf4;border-left:4px solid #16a34a;border-radius:6px;">
         <strong>Leggi entrambi i documenti</strong> prima di firmare:<br/>
         <a href="${anteprimaUrl}" style="display:inline-block;margin-top:8px;background:#16a34a;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Visualizza contratto</a>
         <a href="${gdprUrl}" style="display:inline-block;margin-top:8px;margin-left:8px;background:#16a34a;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Visualizza GDPR</a>
       </p>
+      ${(preventivoUrl || allegatoUrl) ? `<p style="margin:16px 0;padding:16px;background:#fffbeb;border-left:4px solid #d97706;border-radius:6px;">
+        <strong>Documento preventivo allegato</strong> — scaricalo in formato PDF:<br/>
+        ${preventivoUrl ? `<a href="${preventivoUrl}" style="display:inline-block;margin-top:8px;background:#d97706;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Scarica preventivo (PDF)</a>` : ''}
+        ${allegatoUrl ? `<a href="${allegatoUrl}" style="display:inline-block;margin-top:8px;${preventivoUrl ? 'margin-left:8px;' : ''}background:#d97706;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Scarica allegato${contratto.allegatoFileName ? ` (${contratto.allegatoFileName})` : ''}</a>` : ''}
+      </p>` : ''}
       <p style="margin:16px 0;padding:16px;background:#eff6ff;border-left:4px solid #1e4d8c;border-radius:6px;">
         Dopo averli letti, firma contratto e consenso <strong>online con dito o penna</strong>:<br/>
         <a href="${firmaUrl}" style="display:inline-block;margin-top:8px;background:#1e4d8c;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Firma contratto e consenso</a>
@@ -615,22 +694,43 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
       <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari S.R.L.S.</p>
     </div>`;
 
+    const attachments: { filename: string; content?: Buffer; contentType?: string }[] = [
+      {
+        filename: `contratto-incarico-${contratto.profilo.toLowerCase().replace(/\s+/g, '-')}.html`,
+        content: Buffer.from(htmlContratto, 'utf-8'),
+        contentType: 'text/html',
+      },
+      {
+        filename: `informativa-gdpr.html`,
+        content: Buffer.from(htmlGdpr, 'utf-8'),
+        contentType: 'text/html',
+      },
+    ];
+    if (contratto.preventivoId) {
+      const docPrev = await DocumentoFatturazione.findById(contratto.preventivoId)
+        .populate('patient', 'firstName lastName codiceFiscale address email')
+        .lean();
+      if (docPrev) {
+        attachments.push({
+          filename: `PREVENTIVO-${docPrev.numero}.pdf`,
+          content: await generaDocumentoPDF(docPrev),
+          contentType: 'application/pdf',
+        });
+      }
+    }
+    if (contratto.allegatoData) {
+      attachments.push({
+        filename: contratto.allegatoFileName || 'allegato',
+        content: contratto.allegatoData,
+        contentType: contratto.allegatoContentType || 'application/octet-stream',
+      });
+    }
+
     await inviaEmail({
       to: email,
       subject: `Contratto d'incarico e GDPR ${contratto.profilo} — Abbraccio Cure Domiciliari`,
       html,
-      attachments: [
-        {
-          filename: `contratto-incarico-${contratto.profilo.toLowerCase().replace(/\s+/g, '-')}.html`,
-          content: Buffer.from(htmlContratto, 'utf-8'),
-          contentType: 'text/html',
-        },
-        {
-          filename: `informativa-gdpr.html`,
-          content: Buffer.from(htmlGdpr, 'utf-8'),
-          contentType: 'text/html',
-        },
-      ],
+      attachments,
     });
 
     return res.json({ message: 'Email inviata con successo' });

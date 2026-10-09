@@ -16,6 +16,10 @@ export interface IContrattoPaziente extends Document {
   gdprAccettato?: boolean;
   gdprHtmlFirmato?: string;
   consensoGdprId?: string;
+  preventivoId?: Types.ObjectId; // preventivo (DocumentoFatturazione) allegato alla richiesta firma
+  allegatoFileName?: string;     // file preventivo caricato a mano
+  allegatoContentType?: string;
+  allegatoData?: Buffer;
 }
 
 const contrattoPazienteSchema = new Schema<IContrattoPaziente>(
@@ -35,6 +39,10 @@ const contrattoPazienteSchema = new Schema<IContrattoPaziente>(
     gdprAccettato: { type: Boolean, default: false },
     gdprHtmlFirmato: { type: String },
     consensoGdprId: { type: String },
+    preventivoId: { type: Schema.Types.ObjectId, ref: 'DocumentoFatturazione' },
+    allegatoFileName: { type: String },
+    allegatoContentType: { type: String },
+    allegatoData: { type: Buffer },
   },
   { timestamps: true }
 );

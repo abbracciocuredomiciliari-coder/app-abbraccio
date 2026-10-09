@@ -221,6 +221,9 @@ function Patients() {
   const [contrattoProfilo, setContrattoProfilo] = useState<'Operatore generale' | 'Assistente familiare'>('Operatore generale');
   const [contrattoEmail, setContrattoEmail] = useState('');
   const [contrattoLoading, setContrattoLoading] = useState(false);
+  const [contrattoPreventivi, setContrattoPreventivi] = useState<{ _id: string; numero: string; totale: number; data: string }[]>([]);
+  const [contrattoPreventivoId, setContrattoPreventivoId] = useState('');
+  const [contrattoAllegato, setContrattoAllegato] = useState<File | null>(null);
 
   // Stato modal consenso GDPR
   const [showConsensoModal, setShowConsensoModal] = useState(false);
@@ -485,7 +488,13 @@ function Patients() {
     setContrattoProfilo(patient.categoriaPrivata === 'intermediazione_badanti' ? 'Assistente familiare' : 'Operatore generale');
     setContrattoEmail(patient.email || '');
     setContrattoLoading(false);
+    setContrattoPreventivoId('');
+    setContrattoAllegato(null);
+    setContrattoPreventivi([]);
     setShowContrattoModal(true);
+    api.get('/fatturazione-documenti', { params: { patient: patient._id, tipo: 'preventivo' } })
+      .then(res => setContrattoPreventivi((res.data || []).map((d: any) => ({ _id: d._id, numero: d.numero, totale: d.totale, data: d.data }))))
+      .catch(() => setContrattoPreventivi([]));
   };
 
   const inviaConsensoEmail = async (patient: Patient) => {
@@ -510,6 +519,9 @@ function Patients() {
     setShowContrattoModal(false);
     setContrattoPatient(null);
     setContrattoLoading(false);
+    setContrattoPreventivoId('');
+    setContrattoAllegato(null);
+    setContrattoPreventivi([]);
   };
 
   const creaContratto = async () => {
@@ -521,8 +533,16 @@ function Patients() {
         profilo: contrattoProfilo,
         email: contrattoEmail,
         importo: contrattoProfilo === 'Assistente familiare' ? 250 : 150,
+        preventivoId: contrattoPreventivoId || undefined,
       });
-      return res.data._id as string;
+      const id = res.data._id as string;
+      // Allega file preventivo caricato manualmente (se presente)
+      if (contrattoAllegato) {
+        const fd = new FormData();
+        fd.append('file', contrattoAllegato);
+        await api.post(`/contratti-pazienti/${id}/allegato`, fd);
+      }
+      return id;
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore nella creazione del contratto');
       return null;
@@ -2024,7 +2044,7 @@ function Patients() {
               </select>
             </div>
 
-            <div className="tw-mb-6">
+            <div className="tw-mb-4">
               <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Email destinatario (per firma)</label>
               <input
                 type="email"
@@ -2033,6 +2053,33 @@ function Patients() {
                 placeholder="paziente@email.com"
                 className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]"
               />
+            </div>
+
+            <div className="tw-mb-4 tw-bg-amber-50 tw-border tw-border-amber-200 tw-rounded-lg tw-p-3">
+              <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">📎 Documento preventivo da allegare (opzionale)</label>
+              {contrattoPreventivi.length > 0 && (
+                <select
+                  value={contrattoPreventivoId}
+                  onChange={(e) => setContrattoPreventivoId(e.target.value)}
+                  className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem] tw-mb-2"
+                >
+                  <option value="">Nessun preventivo dal gestionale</option>
+                  {contrattoPreventivi.map(p => (
+                    <option key={p._id} value={p._id}>
+                      {p.numero} — €{Number(p.totale || 0).toFixed(2)} ({new Date(p.data).toLocaleDateString('it-IT')})
+                    </option>
+                  ))}
+                </select>
+              )}
+              <input
+                type="file"
+                accept=".pdf,image/*"
+                onChange={(e) => setContrattoAllegato(e.target.files?.[0] || null)}
+                className="tw-w-full tw-text-sm tw-text-slate-600"
+              />
+              <p className="tw-text-xs tw-text-slate-500 tw-mt-1 tw-mb-0">
+                Puoi allegare un preventivo già emesso (verrà inviato in PDF) e/o caricare un file. Il paziente lo riceverà in allegato e potrà scaricarlo prima di firmare.
+              </p>
             </div>
 
             <div className="tw-flex tw-justify-end tw-gap-3">

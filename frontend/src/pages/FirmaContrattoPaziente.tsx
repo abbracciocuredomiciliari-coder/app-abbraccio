@@ -16,6 +16,9 @@ interface ContrattoData {
   profilo: 'OSS' | 'Infermiere' | 'Assistente familiare' | 'Operatore generale';
   importo: number;
   nome?: string;
+  hasPreventivo?: boolean;
+  hasAllegato?: boolean;
+  allegatoFileName?: string;
 }
 
 export default function FirmaContrattoPaziente() {
@@ -106,6 +109,8 @@ export default function FirmaContrattoPaziente() {
           const apiBase = (api.defaults.baseURL || '/api').replace(/\/$/, '');
           const anteprimaUrl = `${apiBase}/contratti-pazienti/anteprima/${token}`;
           const gdprUrl = `${apiBase}/contratti-pazienti/gdpr/${token}`;
+          const preventivoUrl = `${apiBase}/contratti-pazienti/preventivo/${token}`;
+          const allegatoUrl = `${apiBase}/contratti-pazienti/allegato/${token}`;
           return (
             <div>
               <div className="tw-bg-blue-50 tw-rounded-lg tw-py-3.5 tw-px-4 tw-mb-5 tw-border tw-border-blue-200">
@@ -122,6 +127,21 @@ export default function FirmaContrattoPaziente() {
                   📋 Leggi informativa GDPR
                 </a>
               </div>
+
+              {(contratto.hasPreventivo || contratto.hasAllegato) && (
+                <div className="tw-flex tw-gap-3 tw-mb-5 tw-flex-wrap">
+                  {contratto.hasPreventivo && (
+                    <a href={preventivoUrl} target="_blank" rel="noreferrer" className="tw-flex-1 tw-text-center tw-py-2 tw-px-3 tw-rounded-lg tw-bg-amber-100 tw-text-amber-800 tw-text-sm tw-font-semibold hover:tw-bg-amber-200 tw-transition-colors">
+                      💶 Scarica preventivo (PDF)
+                    </a>
+                  )}
+                  {contratto.hasAllegato && (
+                    <a href={allegatoUrl} target="_blank" rel="noreferrer" className="tw-flex-1 tw-text-center tw-py-2 tw-px-3 tw-rounded-lg tw-bg-amber-100 tw-text-amber-800 tw-text-sm tw-font-semibold hover:tw-bg-amber-200 tw-transition-colors">
+                      📎 Scarica allegato{contratto.allegatoFileName ? ` (${contratto.allegatoFileName})` : ''}
+                    </a>
+                  )}
+                </div>
+              )}
 
               <div className="tw-mb-4">
                 <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Nome e cognome del firmatario</label>
