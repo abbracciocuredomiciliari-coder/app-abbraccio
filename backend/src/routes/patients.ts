@@ -232,10 +232,23 @@ router.get('/scadenze-pai', authorizeRole('admin', 'coordinator', 'direttore'), 
 // ─────────────────────────────────────────────────────────────────────────────
 router.get('/nuovi-accettati', authorizeRole('admin', 'coordinator', 'direttore'), async (req: Request, res: Response) => {
   try {
-    const pazienti = await Patient.find({
+    const { tipo } = req.query;
+    const filter: any = {
       accettatoIl: { $exists: true, $ne: null },
       terminato: { $ne: true },
-    })
+    };
+    if (tipo === 'convenzione') {
+      filter.tipoGestione = 'convenzione';
+    } else if (tipo === 'consulenza') {
+      filter.$or = [
+        { tipoGestione: 'consulenza' },
+        { tipoGestione: 'privato', categoriaPrivata: 'intermediazione_badanti' },
+      ];
+    } else if (tipo === 'privato') {
+      filter.tipoGestione = 'privato';
+      filter.categoriaPrivata = { $ne: 'intermediazione_badanti' };
+    }
+    const pazienti = await Patient.find(filter)
       .select('firstName lastName accettatoIl alertAccettazioneVisto categoriaPrivata')
       .sort({ accettatoIl: -1 });
 

@@ -20,6 +20,9 @@ interface DashboardCounts {
   operatoriSenzaZonaCount: number;
   scadenzeImminentiCount: number;
   paiInScadenza7gg: number;
+  inAccettazioneCount: number;
+  accettatiCount: number;
+  terminatiCount: number;
 }
 
 interface PazienteScadenza {
@@ -52,8 +55,10 @@ interface PazienteAccettato {
 function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isConvenzione } = useModalita();
+  const { isConvenzione, isConsulenza, modalita } = useModalita();
   const isPrivilegiato = user && ['admin', 'coordinator', 'direttore'].includes(user.role);
+  const tipoQuery = `?tipo=${isConsulenza ? 'consulenza' : isConvenzione ? 'convenzione' : 'privato'}`;
+  const areaNome = isConsulenza ? 'Intermediazioni' : isConvenzione ? 'Convenzione SIAT' : 'Gestione Privata';
 
   const [counts, setCounts] = useState<DashboardCounts>({
     patientsCount: 0,
@@ -65,6 +70,9 @@ function Dashboard() {
     operatoriSenzaZonaCount: 0,
     scadenzeImminentiCount: 0,
     paiInScadenza7gg: 0,
+    inAccettazioneCount: 0,
+    accettatiCount: 0,
+    terminatiCount: 0,
   });
   const [loading, setLoading] = useState(true);
   const [unreadChat, setUnreadChat] = useState({ general: 0, patient: 0, total: 0 });
@@ -92,7 +100,7 @@ function Dashboard() {
 
   const caricaNuoviAccettati = async () => {
     try {
-      const res = await api.get('/patients/nuovi-accettati');
+      const res = await api.get(`/patients/nuovi-accettati${tipoQuery}`);
       setNuoviAccettati(res.data || []);
     } catch { /* noop */ }
   };
@@ -100,10 +108,9 @@ function Dashboard() {
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        const tipoQuery = isConvenzione ? '?tipo=convenzione' : '?tipo=privato';
         const [dashRes] = await Promise.all([
           api.get(`/dashboard${tipoQuery}`),
-          isPrivilegiato ? caricaScadenzePai() : Promise.resolve(),
+          isPrivilegiato && isConvenzione ? caricaScadenzePai() : Promise.resolve(),
           isPrivilegiato ? caricaNuoviAccettati() : Promise.resolve(),
         ]);
         setCounts(dashRes.data);
@@ -113,7 +120,6 @@ function Dashboard() {
         } catch { /* non bloccante */ }
         if (isPrivilegiato) {
           try {
-            const tipoQuery = isConvenzione ? '?tipo=convenzione' : '?tipo=privato';
             const assignmentsRes = await api.get(`/workplan/assignment-status${tipoQuery}`);
             setAssignmentCounts(assignmentsRes.data.counts || { in_attesa: 0, accettato: 0, rifiutato: 0 });
           } catch { /* non bloccante */ }
@@ -133,7 +139,7 @@ function Dashboard() {
     };
 
     loadDashboard();
-  }, [isConvenzione]);
+  }, [modalita]);
 
   const segnaVisto = async (pazienteId: string) => {
     setChiudendoId(pazienteId);
@@ -166,31 +172,49 @@ function Dashboard() {
 
   const dashboardCards = [
     {
+      title: 'Pazienti registrati',
+      subtitle: 'totali in archivio',
+      value: counts.patientsCount,
+      icon: Users,
+      color: '#4f46e5',
+      bgColor: 'rgba(79, 70, 229, 0.1)',
+      link: '/patients',
+    },
+    {
       title: 'Pazienti attivi',
-      subtitle: `${counts.patientsCount} totali`,
-      value: counts.activePatientsCount,
+      subtitle: 'accettati — piano in corso',
+      value: counts.accettatiCount,
       icon: CheckCircle,
       color: '#059669',
       bgColor: 'rgba(5, 150, 105, 0.1)',
       link: '/patients',
     },
     {
+      title: 'In accettazione',
+      subtitle: 'in attesa di accettazione',
+      value: counts.inAccettazioneCount,
+      icon: Bell,
+      color: counts.inAccettazioneCount > 0 ? '#d97706' : '#64748b',
+      bgColor: counts.inAccettazioneCount > 0 ? 'rgba(217, 119, 6, 0.1)' : 'rgba(100, 116, 139, 0.08)',
+      link: '/patients',
+    },
+    {
+      title: 'Terminati',
+      subtitle: 'percorso concluso',
+      value: counts.terminatiCount,
+      icon: ClipboardList,
+      color: '#64748b',
+      bgColor: 'rgba(100, 116, 139, 0.08)',
+      link: '/patients',
+    },
+    {
       title: 'Incarichi attivi',
-      subtitle: `${counts.workplanCount} totali`,
+      subtitle: `${counts.workplanCount} piani totali`,
       value: counts.activeWorkplanCount,
       icon: ClipboardList,
       color: '#f59e0b',
       bgColor: 'rgba(245, 158, 11, 0.1)',
       link: '/workplan',
-    },
-    {
-      title: 'Pazienti totali',
-      subtitle: 'in archivio',
-      value: counts.patientsCount,
-      icon: Users,
-      color: '#4f46e5',
-      bgColor: 'rgba(79, 70, 229, 0.1)',
-      link: '/patients',
     },
     ...(isPrivilegiato ? [{
       title: 'Pazienti assegnati',
@@ -288,7 +312,7 @@ function Dashboard() {
     <section className="tw-max-w-none">
       <h2 className="tw-flex tw-items-center tw-gap-2">
         <Activity size={28} />
-        Dashboard
+        Dashboard — {areaNome}
       </h2>
 
       {/* Banner utenti in attesa — solo admin */}

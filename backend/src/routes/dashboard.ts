@@ -19,16 +19,33 @@ router.get('/', authenticateToken, authorizeRole('admin', 'coordinator', 'dirett
     const { tipo } = req.query;
     const isConvenzione = tipo === 'convenzione';
     const isPrivato = tipo === 'privato';
-    const isTipo = isConvenzione || isPrivato;
+    const isConsulenza = tipo === 'consulenza';
+    const isTipo = isConvenzione || isPrivato || isConsulenza;
 
     let patientFilter: any = {};
     if (isConvenzione) patientFilter = { tipoGestione: 'convenzione' };
-    else if (isPrivato) patientFilter = { $or: [{ tipoGestione: 'privato' }, { tipoGestione: { $exists: false } }] };
+    else if (isConsulenza) {
+      // Area Intermediazioni: nuovi pazienti consulenza + storici intermediazione_badanti
+      patientFilter = {
+        $or: [
+          { tipoGestione: 'consulenza' },
+          { tipoGestione: 'privato', categoriaPrivata: 'intermediazione_badanti' },
+        ],
+      };
+    } else if (isPrivato) {
+      patientFilter = {
+        $or: [{ tipoGestione: 'privato' }, { tipoGestione: { $exists: false } }],
+        categoriaPrivata: { $ne: 'intermediazione_badanti' },
+      };
+    }
 
     const [
       patientsCount,
       staffCount,
       operatoriSenzaZonaCount,
+      inAccettazioneCount,
+      accettatiCount,
+      terminatiCount,
     ] = await Promise.all([
       Patient.countDocuments(isTipo ? patientFilter : {}),
       Staff.countDocuments({ active: true }),
@@ -40,6 +57,9 @@ router.get('/', authenticateToken, authorizeRole('admin', 'coordinator', 'dirett
           { 'domicilioCoords.lat': { $exists: false } },
         ],
       }),
+      Patient.countDocuments({ ...(isTipo ? patientFilter : {}), inAccettazione: true, terminato: { $ne: true } }),
+      Patient.countDocuments({ ...(isTipo ? patientFilter : {}), accettatoIl: { $exists: true, $ne: null }, terminato: { $ne: true } }),
+      Patient.countDocuments({ ...(isTipo ? patientFilter : {}), terminato: true }),
     ]);
 
     // Conteggio piani e pazienti attivi per gestione
@@ -111,6 +131,9 @@ router.get('/', authenticateToken, authorizeRole('admin', 'coordinator', 'dirett
       operatoriSenzaZonaCount,
       scadenzeImminentiCount,
       paiInScadenza7gg,
+      inAccettazioneCount,
+      accettatiCount,
+      terminatiCount,
     });
   } catch (error) {
     return res.status(500).json({ message: 'Errore nel recupero dei dati della dashboard', error });
