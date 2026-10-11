@@ -4,7 +4,7 @@ import api from '../api/api';
 // ═════════════════════════════════════════════════════════════════════════════
 // Tipi
 // ═════════════════════════════════════════════════════════════════════════════
-type TipoServizio = 'prelievo' | 'esame_strumentale' | 'prestazione' | 'assistenza';
+type TipoServizio = 'prelievo' | 'esame_strumentale' | 'prestazione' | 'assistenza' | 'riabilitazione' | 'medico' | 'visita_specialistica' | 'ambulanza' | 'intermediazione' | 'psicologia' | 'telemedicina';
 type CategoriaPrivata = 'diagnostica' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'visite_mediche' | 'riabilitazione' | 'intermediazione_badanti';
 type StatoRichiesta = 'in_attesa' | 'in_revisione' | 'confermata' | 'modificata' | 'rifiutata' | 'completata';
 
@@ -136,13 +136,27 @@ export default function CentroPrenotazioniPrivato() {
       prelievo: '💉',
       esame_strumentale: '🔬',
       prestazione: '🏥',
-      assistenza: '🤝'
+      assistenza: '🤝',
+      riabilitazione: '🏋️',
+      medico: '👨‍⚕️',
+      visita_specialistica: '🩺',
+      ambulanza: '🚑',
+      intermediazione: '🏠',
+      psicologia: '🧠',
+      telemedicina: '📡'
     };
     const labels: Record<TipoServizio, string> = {
       prelievo: 'Prelievo',
       esame_strumentale: 'Esame Strumentale',
       prestazione: 'Prestazione',
-      assistenza: 'Assistenza'
+      assistenza: 'Assistenza',
+      riabilitazione: 'Riabilitazione',
+      medico: 'Visita Medica',
+      visita_specialistica: 'Visita Specialistica',
+      ambulanza: 'Ambulanza',
+      intermediazione: 'Intermediazione',
+      psicologia: 'Psicologia',
+      telemedicina: 'Telemedicina'
     };
     return `${icons[tipo]} ${labels[tipo]}`;
   };
@@ -329,6 +343,13 @@ export default function CentroPrenotazioniPrivato() {
                   <option value="esame_strumentale">🔬 Esame Strumentale</option>
                   <option value="prestazione">🏥 Prestazione</option>
                   <option value="assistenza">🤝 Assistenza</option>
+                  <option value="visita_specialistica">🩺 Visita Specialistica</option>
+                  <option value="medico">👨‍⚕️ Visita Medica</option>
+                  <option value="riabilitazione">🏋️ Riabilitazione</option>
+                  <option value="ambulanza">🚑 Ambulanza</option>
+                  <option value="intermediazione">🏠 Intermediazione</option>
+                  <option value="psicologia">🧠 Psicologia</option>
+                  <option value="telemedicina">📡 Telemedicina</option>
                 </select>
               </div>
 

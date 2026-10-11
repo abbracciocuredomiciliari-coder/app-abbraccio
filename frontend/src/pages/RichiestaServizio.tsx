@@ -1,5 +1,5 @@
-import { FormEvent, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { FormEvent, useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { Syringe, HeartPulse, Activity, CheckCircle, ChevronLeft, ChevronRight, Send, UserPlus, Calendar } from 'lucide-react';
 
@@ -12,16 +12,24 @@ const MESI = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','
 const GIORNI_SETT = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
 
 const TIPI_SERVIZIO = [
+  { value: 'visita_specialistica', label: 'Visita Specialistica', emoji: '🩺', color: '#2563eb', bg: '#dbeafe', Icon: HeartPulse,
+    tipi: ['Cardiologo','Geriatra','Urologo','Endocrinologo','Otorinolaringoiatra','Fisiatra','Oncologo','Angiologo','Neurologo','Broncopneumologo','Nutrizionista','Psicologa','Altro specialista'] },
+  { value: 'medico', label: 'Visita Medica', emoji: '👨‍⚕️', color: '#1d4ed8', bg: '#dbeafe', Icon: HeartPulse,
+    tipi: ['Visita generale','Visita specialistica','Consulenza geriatrica','Valutazione clinica','Prescrizione terapia','Altro'] },
+  { value: 'esame_strumentale', label: 'Esame Strumentale', emoji: '🔬', color: '#7c3aed', bg: '#ede9fe', Icon: HeartPulse,
+    tipi: ['ECG','Holter ECG','Holter pressorio','Ecografia','RX domiciliare','Spirometria','Saturimetria','EGA','Polisonnografia','Ecocardiogramma','Screening cardiaco','Glicemia capillare','Titolazione CPAP','Altro'] },
   { value: 'prelievo', label: 'Prelievo', emoji: '💉', color: '#dc2626', bg: '#fee2e2', Icon: Syringe,
     tipi: ['Emocromo completo','Glicemia','Coagulazione (PT/INR/aPTT)','Elettroliti','Funzionalità epatica','Funzionalità renale','Profilo lipidico','Ormoni tiroidei (TSH/fT4)','PCR / VES','Esame urine','Emogasanalisi','Altro'] },
-  { value: 'esame_strumentale', label: 'Esame Strumentale', emoji: '🔬', color: '#7c3aed', bg: '#ede9fe', Icon: HeartPulse,
-    tipi: ['ECG','Holter ECG','Holter pressorio','Glicemia capillare','EGA','Spirometria','Ecocardiogramma','Polisonnografia','Titolazione CPAP','Altro'] },
   { value: 'prestazione', label: 'Prestazione Infermieristica', emoji: '🏥', color: '#0369a1', bg: '#eff6ff', Icon: Activity,
     tipi: ['Medicazione','Somministrazione farmaci','Misurazione parametri vitali','Cateterismo','Gestione stomia','Prelievo arterioso','Altro'] },
+  { value: 'assistenza', label: 'Assistenza Domiciliare', emoji: '🤲', color: '#b45309', bg: '#fef3c7', Icon: HeartPulse,
+    tipi: ['Assistenza anziani','Assistenza notturna','Cure palliative','Assistenza pazienti cronici','Igiene personale','Compagnia e vigilanza','Aiuto domestico','Altro'] },
   { value: 'riabilitazione', label: 'Riabilitazione', emoji: '🏋️', color: '#16a34a', bg: '#dcfce7', Icon: Activity,
     tipi: ['Fisioterapia','Logopedia','Ergoterapia','Neuro-riabilitazione','Riabilitazione respiratoria','Altro'] },
-  { value: 'medico', label: 'Visita Medica', emoji: '👨‍⚕️', color: '#2563eb', bg: '#dbeafe', Icon: HeartPulse,
-    tipi: ['Visita generale','Visita specialista','Consulenza geriatrica','Valutazione clinica','Prescrizione terapia','Altro'] },
+  { value: 'ambulanza', label: 'Servizio Ambulanza', emoji: '�', color: '#b91c1c', bg: '#fee2e2', Icon: Activity,
+    tipi: ['Trasporto programmato','Trasporto lettiga o sedia a rotelle','Accompagnamento a visite/terapie','Rientro post-ricovero','Altro'] },
+  { value: 'intermediazione', label: 'Badante, Colf e Assistenti Familiari', emoji: '🏠', color: '#c2410c', bg: '#ffedd5', Icon: UserPlus,
+    tipi: ['Badante','Colf','Assistente familiare','Caregiver convivente','Altro'] },
   { value: 'psicologia', label: 'Terapia psicologica', emoji: '🧠', color: '#9333ea', bg: '#f3e8ff', Icon: HeartPulse,
     tipi: ['Primo colloquio psicologico','Seduta individuale','Supporto psicologico al caregiver','Valutazione psicodiagnostica','Altro'] },
   { value: 'telemedicina', label: 'Telemedicina / Telemonitoraggio', emoji: '📡', color: '#0f766e', bg: '#ccfbf1', Icon: Activity,
@@ -119,6 +127,18 @@ export default function RichiestaServizio() {
 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const tipo = searchParams.get('tipo');
+    const spec = searchParams.get('spec');
+    if (tipo && TIPI_SERVIZIO.some(t => t.value === tipo)) {
+      setModalita('prenotazione');
+      setTipoServizio(tipo);
+      if (spec) setTipoSpecifico(spec);
+      setStep(2);
+    }
+  }, [searchParams]);
 
   const tipoInfo = TIPI_SERVIZIO.find(t => t.value === tipoServizio);
   const prevMonth = () => { if (calMonth === 0) { setCalMonth(11); setCalYear(y => y-1); } else setCalMonth(m => m-1); };

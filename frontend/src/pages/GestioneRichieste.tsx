@@ -29,7 +29,7 @@ function apriPDFScheda(s: any) {
 // ═════════════════════════════════════════════════════════════════════════════
 // Tipi
 // ═════════════════════════════════════════════════════════════════════════════
-type TipoServizio = 'prelievo' | 'esame_strumentale' | 'prestazione' | 'assistenza';
+type TipoServizio = 'prelievo' | 'esame_strumentale' | 'prestazione' | 'assistenza' | 'riabilitazione' | 'medico' | 'visita_specialistica' | 'ambulanza' | 'intermediazione' | 'psicologia' | 'telemedicina';
 type StatoRichiesta = 'in_attesa' | 'in_revisione' | 'confermata' | 'modificata' | 'rifiutata' | 'completata';
 
 interface Richiesta {
@@ -292,13 +292,27 @@ export default function GestioneRichieste() {
       prelievo: '💉',
       esame_strumentale: '🔬',
       prestazione: '🏥',
-      assistenza: '🤝'
+      assistenza: '🤝',
+      riabilitazione: '🏋️',
+      medico: '👨‍⚕️',
+      visita_specialistica: '🩺',
+      ambulanza: '🚑',
+      intermediazione: '🏠',
+      psicologia: '🧠',
+      telemedicina: '📡'
     };
     const labels: Record<TipoServizio, string> = {
       prelievo: 'Prelievo',
       esame_strumentale: 'Esame Str.',
       prestazione: 'Prestazione',
-      assistenza: 'Assistenza'
+      assistenza: 'Assistenza',
+      riabilitazione: 'Riabilitazione',
+      medico: 'Visita Medica',
+      visita_specialistica: 'Visita Spec.',
+      ambulanza: 'Ambulanza',
+      intermediazione: 'Intermediazione',
+      psicologia: 'Psicologia',
+      telemedicina: 'Telemedicina'
     };
     return `${icons[tipo]} ${labels[tipo]}`;
   };

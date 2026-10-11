@@ -14,14 +14,26 @@ const MESI = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','
 const GIORNI_SETT = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
 
 const TIPI_SERVIZIO = [
+  { value: 'visita_specialistica', label: '🩺 Visita Specialistica', color: '#2563eb', bg: '#dbeafe', Icon: HeartPulse,
+    tipi: ['Cardiologo','Geriatra','Urologo','Endocrinologo','Otorinolaringoiatra','Fisiatra','Oncologo','Angiologo','Neurologo','Broncopneumologo','Nutrizionista','Psicologa','Altro specialista'] },
+  { value: 'medico', label: '👨‍⚕️ Visita Medica', color: '#1d4ed8', bg: '#dbeafe', Icon: HeartPulse,
+    tipi: ['Visita generale','Visita specialistica','Consulenza geriatrica','Valutazione clinica','Prescrizione terapia','Altro'] },
+  { value: 'esame_strumentale', label: '🔬 Esame Strumentale', color: '#7c3aed', bg: '#ede9fe', Icon: HeartPulse,
+    tipi: ['ECG','Holter ECG','Holter pressorio','Ecografia','RX domiciliare','Spirometria','Saturimetria','EGA','Polisonnografia','Ecocardiogramma','Screening cardiaco','Glicemia capillare','Titolazione CPAP','Altro'] },
   { value: 'prelievo', label: '💉 Prelievo', color: '#dc2626', bg: '#fee2e2', Icon: Syringe,
     tipi: ['Emocromo completo','Glicemia','Coagulazione (PT/INR/aPTT)','Elettroliti','Funzionalità epatica','Funzionalità renale','Profilo lipidico','Ormoni tiroidei (TSH/fT4)','PCR / VES','Esame urine','Emogasanalisi','Altro'] },
-  { value: 'esame_strumentale', label: '🔬 Esame Strumentale', color: '#7c3aed', bg: '#ede9fe', Icon: HeartPulse,
-    tipi: ['ECG','Holter ECG','Holter pressorio','Glicemia capillare','EGA','Spirometria','Ecocardiogramma','Polisonnografia','Titolazione CPAP','Altro'] },
   { value: 'prestazione', label: '🏥 Prestazione Infermieristica', color: '#0369a1', bg: '#eff6ff', Icon: Activity,
     tipi: ['Medicazione','Somministrazione farmaci','Misurazione parametri vitali','Cateterismo','Gestione stomia','Prelievo arterioso','Altro'] },
+  { value: 'assistenza', label: '🤲 Assistenza Domiciliare', color: '#b45309', bg: '#fef3c7', Icon: HeartPulse,
+    tipi: ['Assistenza anziani','Assistenza notturna','Cure palliative','Assistenza pazienti cronici','Igiene personale','Compagnia e vigilanza','Aiuto domestico','Altro'] },
+  { value: 'riabilitazione', label: '🏋️ Riabilitazione', color: '#16a34a', bg: '#dcfce7', Icon: Activity,
+    tipi: ['Fisioterapia','Logopedia','Ergoterapia','Neuro-riabilitazione','Riabilitazione respiratoria','Altro'] },
+  { value: 'ambulanza', label: '🚑 Servizio Ambulanza', color: '#b91c1c', bg: '#fee2e2', Icon: Activity,
+    tipi: ['Trasporto programmato','Trasporto lettiga o sedia a rotelle','Accompagnamento a visite/terapie','Rientro post-ricovero','Altro'] },
   { value: 'psicologia', label: '🧠 Terapia psicologica', color: '#9333ea', bg: '#f3e8ff', Icon: HeartPulse,
     tipi: ['Primo colloquio psicologico','Seduta individuale','Supporto psicologico al caregiver','Valutazione psicodiagnostica','Altro'] },
+  { value: 'telemedicina', label: '📡 Telemedicina / Telemonitoraggio', color: '#0f766e', bg: '#ccfbf1', Icon: Activity,
+    tipi: ['Telemonitoraggio parametri vitali','Video consulto','Telemedicina specialistica','Altro'] },
 ];
 
 const PRIORITA = [

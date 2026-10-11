@@ -346,7 +346,7 @@ router.patch('/:id/gestisci', authenticateToken, authorizeRole('admin', 'coordin
         if (staffRef) esameData.staff = staffRef;
         const esame = await EsameStrumentale.create(esameData);
         richiesta.esameStrumentaleId = esame._id;
-      } else if (['prestazione', 'assistenza', 'psicologia', 'riabilitazione', 'medico', 'telemedicina'].includes(richiesta.tipoServizio)) {
+      } else if (['prestazione', 'assistenza', 'psicologia', 'riabilitazione', 'medico', 'visita_specialistica', 'ambulanza', 'telemedicina'].includes(richiesta.tipoServizio)) {
         const workplan = await WorkPlan.create({
           type: richiesta.tipoServizio === 'assistenza' ? 'assistenziale' : 'prestazionale',
           category: richiesta.tipoSpecifico || 'Prestazione richiesta',
