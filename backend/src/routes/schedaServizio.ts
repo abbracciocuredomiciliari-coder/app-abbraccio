@@ -202,6 +202,19 @@ router.patch('/:id/rifiuta', authenticateToken, authorizeRole('admin', 'coordina
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// DELETE /api/scheda-servizio/:id — Admin elimina la scheda
+// ═══════════════════════════════════════════════════════════════════════════
+router.delete('/:id', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
+  try {
+    const scheda = await SchedaServizio.findByIdAndDelete(req.params.id);
+    if (!scheda) return res.status(404).json({ message: 'Scheda non trovata' });
+    return res.json({ message: 'Scheda eliminata' });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Errore eliminazione scheda', error: err?.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Helper: genera HTML della scheda per archiviazione
 // ═══════════════════════════════════════════════════════════════════════════
 function generaHtmlScheda(scheda: any, paziente: any): string {

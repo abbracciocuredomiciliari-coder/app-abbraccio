@@ -600,6 +600,10 @@ export default function GestioneRichieste() {
                             ✓ Nella cartella del paziente
                           </span>
                         )}
+                        <button onClick={async () => { if (!confirm(`Eliminare definitivamente la scheda di ${s.nomeCognomePaziente}?`)) return; await api.delete(`/scheda-servizio/${s._id}`); await caricaDati(); }}
+                          style={{ background: 'white', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '8px', padding: '6px 14px', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>
+                          🗑️ Elimina
+                        </button>
                       </div>
                     </div>
                   </div>
