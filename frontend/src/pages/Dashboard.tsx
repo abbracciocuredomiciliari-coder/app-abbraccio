@@ -3,7 +3,7 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
-import { Users, Activity, CheckCircle, ClipboardList, MapPin, AlertTriangle, Bell, Eye, MessageCircle, Video } from 'lucide-react';
+import { Users, Activity, CheckCircle, ClipboardList, MapPin, AlertTriangle, Bell, Eye, MessageCircle } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Loading } from '../components/ui/Loading';
 import { Badge } from '../components/ui/Badge';
@@ -236,15 +236,6 @@ function Dashboard() {
       color: unreadChat.total > 0 ? '#ef4444' : '#0d9488',
       bgColor: unreadChat.total > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(13, 148, 136, 0.1)',
       link: '/chat',
-    },
-    {
-      title: 'Telemedicina',
-      subtitle: 'Gestione video-consulti e parametri',
-      value: 'Vai',
-      icon: Video,
-      color: '#0f766e',
-      bgColor: 'rgba(15, 118, 110, 0.1)',
-      link: '/telemedicina',
     },
     ]),
   ];
