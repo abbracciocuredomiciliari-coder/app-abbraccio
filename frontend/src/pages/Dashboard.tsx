@@ -207,6 +207,7 @@ function Dashboard() {
       bgColor: 'rgba(100, 116, 139, 0.08)',
       link: '/patients',
     },
+    ...(isConsulenza ? [] : [
     {
       title: 'Incarichi attivi',
       subtitle: `${counts.workplanCount} piani totali`,
@@ -218,7 +219,7 @@ function Dashboard() {
     },
     ...(isPrivilegiato ? [{
       title: 'Pazienti assegnati',
-      subtitle: `${assignmentCounts.in_attesa} in attesa · ${assignmentCounts.accettato} accettati · ${assignmentCounts.rifiutato} rifiutati`,
+      subtitle: `${assignmentCounts.in_attesa} in attesa · ${assignmentCounts.accettato} accettati`,
       value: assignmentCounts.in_attesa,
       icon: ClipboardList,
       color: assignmentCounts.in_attesa > 0 ? '#dc2626' : '#2563eb',
@@ -245,10 +246,11 @@ function Dashboard() {
       bgColor: 'rgba(15, 118, 110, 0.1)',
       link: '/telemedicina',
     },
+    ]),
   ];
 
   const alertCards = [
-    counts.operatoriSenzaZonaCount > 0 && {
+    !isConsulenza && counts.operatoriSenzaZonaCount > 0 && {
       title: 'Operatori senza zona',
       desc: `${counts.operatoriSenzaZonaCount} operatori non hanno impostato il domicilio di partenza e non vengono trovati nell\'assegnazione geografica.`,
       icon: MapPin,
@@ -283,7 +285,7 @@ function Dashboard() {
     return (
       <section className="tw-max-w-none">
         <h2><Activity size={28} />Dashboard</h2>
-        <div className="tw-grid tw-grid-cols-[repeat(auto-fit,minmax(200px,1fr))] tw-gap-4 tw-mb-6">
+        <div className="tw-grid tw-grid-cols-[repeat(auto-fit,minmax(165px,1fr))] tw-gap-4 tw-mb-6">
           {[1, 2, 3, 4].map(i => (
             <Card key={i} padding="md">
               <div className="tw-flex tw-justify-between tw-items-start tw-mb-4">
@@ -334,7 +336,7 @@ function Dashboard() {
         </div>
       )}
 
-      <div className="tw-grid tw-grid-cols-[repeat(auto-fit,minmax(200px,1fr))] tw-gap-4">
+      <div className="tw-grid tw-grid-cols-[repeat(auto-fit,minmax(165px,1fr))] tw-gap-4">
         {dashboardCards.map((card) => (
           <button
             key={card.title}
@@ -365,7 +367,7 @@ function Dashboard() {
         ))}
       </div>
 
-      <DashboardTelemedicina />
+      {!isConsulenza && <DashboardTelemedicina />}
 
       {/* ════ ALERT NUOVI PAZIENTI ACCETTATI ════ */}
       {isPrivilegiato && nuoviAccettati.length > 0 && (
