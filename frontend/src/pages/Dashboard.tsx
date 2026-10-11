@@ -285,7 +285,7 @@ function Dashboard() {
     return (
       <section className="tw-max-w-none">
         <h2><Activity size={28} />Dashboard</h2>
-        <div className="tw-grid tw-grid-cols-[repeat(auto-fit,minmax(165px,1fr))] tw-gap-4 tw-mb-6">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           {[1, 2, 3, 4].map(i => (
             <Card key={i} padding="md">
               <div className="tw-flex tw-justify-between tw-items-start tw-mb-4">
@@ -336,7 +336,7 @@ function Dashboard() {
         </div>
       )}
 
-      <div className="tw-grid tw-grid-cols-[repeat(auto-fit,minmax(165px,1fr))] tw-gap-4">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
         {dashboardCards.map((card) => (
           <button
             key={card.title}
