@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { HeartPulse, CheckCircle, AlertCircle, ArrowLeft, User, Phone, Mail, MapPin, Calendar, FileText, Stethoscope, Activity, UserPlus } from 'lucide-react';
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api';
 
 export default function RichiestaAssistenza() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -55,10 +55,10 @@ export default function RichiestaAssistenza() {
         firstName,
         lastName,
         birthDate,
-        codiceFiscale,
+        codiceFiscale: codiceFiscale || undefined,
         address,
-        contactPhone,
-        email,
+        contactPhone: contactPhone || undefined,
+        email: email || undefined,
         assistanceNeeds,
         diagnosiAmmissione: diagnosi,
         comorbilita,
@@ -66,8 +66,8 @@ export default function RichiestaAssistenza() {
         noteAggiuntive,
         richiedenteNome: isPazienteStesso ? `${firstName} ${lastName}` : caregiverNome,
         richiedenteRelazione: caregiverRelazione,
-        richiedenteEmail: caregiverEmail,
-        richiedenteTelefono: caregiverTelefono,
+        richiedenteEmail: caregiverEmail || undefined,
+        richiedenteTelefono: caregiverTelefono || undefined,
       });
       setInviata(true);
     } catch (err: any) {
@@ -199,7 +199,7 @@ export default function RichiestaAssistenza() {
                   </div>
 
                   <div style={{ display: 'grid', gap: '16px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
                       <label>
                         <span style={labelStyle}>Nome *</span>
                         <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} style={inputStyle} placeholder="Mario" required />
@@ -210,7 +210,7 @@ export default function RichiestaAssistenza() {
                       </label>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
                       <label>
                         <span style={labelStyle}>Data di nascita *</span>
                         <input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} style={inputStyle} required />
@@ -229,7 +229,7 @@ export default function RichiestaAssistenza() {
                       </div>
                     </label>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
                       <label>
                         <span style={labelStyle}>Telefono</span>
                         <div style={{ position: 'relative' }}>
@@ -341,7 +341,7 @@ export default function RichiestaAssistenza() {
                         <input type="text" value={caregiverNome} onChange={(e) => setCaregiverNome(e.target.value)} style={inputStyle} placeholder="Es: Giuseppe Rossi" required={!isPazienteStesso} />
                       </label>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
                         <label>
                           <span style={labelStyle}>Telefono del richiedente</span>
                           <input type="tel" value={caregiverTelefono} onChange={(e) => setCaregiverTelefono(e.target.value)} style={inputStyle} placeholder="+39 333 7654321" />
@@ -373,7 +373,7 @@ export default function RichiestaAssistenza() {
                   </div>
 
                   <div style={{ display: 'grid', gap: '14px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
                       <div>
                         <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '2px' }}>Paziente</div>
                         <div style={{ fontWeight: '600', color: '#1e3a5f' }}>{firstName} {lastName}</div>

@@ -1,13 +1,13 @@
 import { Document, Schema, model, Types } from 'mongoose';
 
-export type TipoServizio = 'prelievo' | 'esame_strumentale' | 'prestazione' | 'assistenza' | 'telemedicina';
+export type TipoServizio = 'prelievo' | 'esame_strumentale' | 'prestazione' | 'assistenza' | 'riabilitazione' | 'medico' | 'psicologia' | 'telemedicina';
 export type StatoRichiesta = 'in_attesa' | 'in_revisione' | 'confermata' | 'modificata' | 'rifiutata' | 'completata';
 
 export interface IRichiestaPrenotazione extends Document {
   // Richiedente (caregiver/paziente registrato)
   richiedenteUserId: Types.ObjectId;
   richiedenteNome: string;
-  richiedenteEmail: string;
+  richiedenteEmail?: string;
   richiedenteTelefono?: string;
 
   // Paziente (può essere lo stesso richiedente o un altro)
@@ -29,7 +29,7 @@ export interface IRichiestaPrenotazione extends Document {
 
   // Stato e gestione
   stato: StatoRichiesta;
-  priorita?: 'bassa' | 'normale' | 'alta' | 'urgente';
+  priorita?: 'bassa' | 'normale' | 'alta' | 'urgente' | 'molto_urgente';
   noteRichiedente?: string;
   noteAdmin?: string;
   noteRisposta?: string;  // Note quando si approva/rifiuta
@@ -62,7 +62,7 @@ const richiestaPrenotazioneSchema = new Schema<IRichiestaPrenotazione>(
     // richiedenteUserId opzionale per richieste pubbliche (non autenticate)
     richiedenteUserId: { type: Schema.Types.ObjectId, ref: 'User', required: false },
     richiedenteNome: { type: String, required: true, trim: true },
-    richiedenteEmail: { type: String, required: true, trim: true, lowercase: true },
+    richiedenteEmail: { type: String, required: false, trim: true, lowercase: true },
     richiedenteTelefono: { type: String, trim: true },
 
     pazienteId: { type: Schema.Types.ObjectId, ref: 'Patient', required: false },
@@ -73,7 +73,7 @@ const richiestaPrenotazioneSchema = new Schema<IRichiestaPrenotazione>(
     tipoServizio: {
       type: String,
       required: true,
-      enum: ['prelievo', 'esame_strumentale', 'prestazione', 'assistenza', 'telemedicina']
+      enum: ['prelievo', 'esame_strumentale', 'prestazione', 'assistenza', 'riabilitazione', 'medico', 'psicologia', 'telemedicina']
     },
     tipoSpecifico: { type: String, trim: true },
     categoriaPrivata: { type: String, enum: ['diagnostica', 'assistenza_domiciliare', 'intermediazione_badanti'] },
@@ -91,7 +91,7 @@ const richiestaPrenotazioneSchema = new Schema<IRichiestaPrenotazione>(
     },
     priorita: {
       type: String,
-      enum: ['bassa', 'normale', 'alta', 'urgente'],
+      enum: ['bassa', 'normale', 'alta', 'urgente', 'molto_urgente'],
       default: 'normale'
     },
     noteRichiedente: { type: String, trim: true },

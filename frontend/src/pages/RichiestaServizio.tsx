@@ -135,7 +135,7 @@ export default function RichiestaServizio() {
     setSending(true); setError('');
     try {
       await axios.post(`${API_BASE}/richieste-prenotazioni/pubblica`, {
-        richiedenteNome, richiedenteEmail, richiedenteTelefono,
+        richiedenteNome, richiedenteEmail: richiedenteEmail || undefined, richiedenteTelefono: richiedenteTelefono || undefined,
         pazienteNome, pazienteIndirizzo, pazienteTelefono,
         tipoServizio, tipoSpecifico: tipoSpecifico || undefined,
         dataPreferita: selectedDate, orarioPreferito: orarioPref || undefined,
@@ -224,16 +224,16 @@ export default function RichiestaServizio() {
 
               <div style={{ background: '#f0f9ff', borderRadius: '8px', padding: '10px 14px', fontWeight: '700', color: '#0369a1', fontSize: '0.85rem' }}>👤 Dati anagrafici del paziente</div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '10px' }}>
                 <div><label style={iStyle2}>Nome *</label><input value={regFirstName} onChange={e => setRegFirstName(e.target.value)} required placeholder="Es. Mario" style={iStyle1} /></div>
                 <div><label style={iStyle2}>Cognome *</label><input value={regLastName} onChange={e => setRegLastName(e.target.value)} required placeholder="Es. Rossi" style={iStyle1} /></div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '10px' }}>
                 <div><label style={iStyle2}>Data di nascita *</label><input type="date" value={regBirthDate} onChange={e => setRegBirthDate(e.target.value)} required style={iStyle1} /></div>
                 <div><label style={iStyle2}>Codice Fiscale</label><input value={regCF} onChange={e => setRegCF(e.target.value.toUpperCase())} placeholder="Es. RSSMRO..." style={iStyle1} maxLength={16} /></div>
               </div>
               <div><label style={iStyle2}>Indirizzo domicilio *</label><input value={regAddress} onChange={e => setRegAddress(e.target.value)} required placeholder="Via, numero civico, città, CAP" style={iStyle1} /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '10px' }}>
                 <div><label style={iStyle2}>Telefono</label><input type="tel" value={regPhone} onChange={e => setRegPhone(e.target.value)} placeholder="Es. 333 123 4567" style={iStyle1} /></div>
                 <div><label style={iStyle2}>Email paziente</label><input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} placeholder="email@esempio.it" style={iStyle1} /></div>
               </div>
@@ -256,7 +256,7 @@ export default function RichiestaServizio() {
 
               <div style={{ background: '#fdf4ff', borderRadius: '8px', padding: '10px 14px', fontWeight: '700', color: '#7e22ce', fontSize: '0.85rem' }}>👥 Chi sta compilando questa richiesta?</div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '10px' }}>
                 <div>
                   <label style={iStyle2}>Nome e Cognome *</label>
                   <input value={regRichNome} onChange={e => setRegRichNome(e.target.value)} required placeholder="Chi compila il modulo" style={iStyle1} />
@@ -271,7 +271,7 @@ export default function RichiestaServizio() {
                   </select>
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '10px' }}>
                 <div><label style={iStyle2}>Email richiedente</label><input type="email" value={regRichEmail} onChange={e => setRegRichEmail(e.target.value)} placeholder="Per ricevere aggiornamenti" style={iStyle1} /></div>
                 <div><label style={iStyle2}>Telefono richiedente</label><input type="tel" value={regRichTel} onChange={e => setRegRichTel(e.target.value)} placeholder="Es. 333 123 4567" style={iStyle1} /></div>
               </div>
@@ -360,7 +360,7 @@ export default function RichiestaServizio() {
                 )}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '10px', marginBottom: '16px' }}>
                 <div>
                   <label style={labelStyle}>Orario preferito</label>
                   <input type="time" value={orarioPref} onChange={e => setOrarioPref(e.target.value)} style={iStyle} />
