@@ -279,7 +279,7 @@ export default function GestioneRichieste() {
       rifiutata: { bg: '#fee2e2', color: '#991b1b', label: '❌ Rifiutata' },
       completata: { bg: '#f3e8ff', color: '#6b21a8', label: '✔️ Completata' }
     };
-    const s = styles[stato];
+    const s = styles[stato] || { bg: '#e5e7eb', color: '#374151', label: stato };
     return (
       <span style={{ background: s.bg, color: s.color, padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
         {s.label}
@@ -314,7 +314,7 @@ export default function GestioneRichieste() {
       psicologia: 'Psicologia',
       telemedicina: 'Telemedicina'
     };
-    return `${icons[tipo]} ${labels[tipo]}`;
+    return `${icons[tipo] || '📋'} ${labels[tipo] || tipo}`;
   };
 
   const getPrioritaBadge = (p?: string) => {
@@ -322,9 +322,10 @@ export default function GestioneRichieste() {
       bassa: { bg: '#dcfce7', color: '#166534' },
       normale: { bg: '#dbeafe', color: '#1e40af' },
       alta: { bg: '#ffedd5', color: '#9a3412' },
-      urgente: { bg: '#fee2e2', color: '#991b1b' }
+      urgente: { bg: '#fee2e2', color: '#991b1b' },
+      molto_urgente: { bg: '#7f1d1d', color: '#ffffff' }
     };
-    const s = styles[p || 'normale'];
+    const s = styles[p || 'normale'] || styles.normale;
     return (
       <span style={{ background: s.bg, color: s.color, padding: '2px 8px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase' }}>
         {p || 'normale'}

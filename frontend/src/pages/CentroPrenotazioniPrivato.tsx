@@ -123,7 +123,7 @@ export default function CentroPrenotazioniPrivato() {
       rifiutata: { bg: '#fee2e2', color: '#991b1b', label: '❌ Rifiutata' },
       completata: { bg: '#f3e8ff', color: '#6b21a8', label: '✔️ Completata' }
     };
-    const s = styles[stato];
+    const s = styles[stato] || { bg: '#e5e7eb', color: '#374151', label: stato };
     return (
       <span style={{ background: s.bg, color: s.color, padding: '4px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600 }}>
         {s.label}
@@ -158,7 +158,7 @@ export default function CentroPrenotazioniPrivato() {
       psicologia: 'Psicologia',
       telemedicina: 'Telemedicina'
     };
-    return `${icons[tipo]} ${labels[tipo]}`;
+    return `${icons[tipo] || '📋'} ${labels[tipo] || tipo}`;
   };
 
   const filteredRichieste = richieste.filter((r: Richiesta) => {
