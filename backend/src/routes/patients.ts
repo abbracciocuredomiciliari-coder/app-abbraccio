@@ -242,10 +242,10 @@ router.get('/nuovi-accettati', authorizeRole('admin', 'coordinator', 'direttore'
     } else if (tipo === 'consulenza') {
       filter.$or = [
         { tipoGestione: 'consulenza' },
-        { tipoGestione: 'privato', categoriaPrivata: 'intermediazione_badanti' },
+        { categoriaPrivata: 'intermediazione_badanti' },
       ];
     } else if (tipo === 'privato') {
-      filter.tipoGestione = 'privato';
+      filter.$or = [{ tipoGestione: 'privato' }, { tipoGestione: { $exists: false } }];
       filter.categoriaPrivata = { $ne: 'intermediazione_badanti' };
     }
     const pazienti = await Patient.find(filter)

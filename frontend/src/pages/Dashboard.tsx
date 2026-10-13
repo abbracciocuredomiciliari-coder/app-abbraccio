@@ -91,6 +91,9 @@ function Dashboard() {
   // Utenti in attesa di approvazione (solo admin)
   const [pendingCount, setPendingCount] = useState(0);
 
+  // Nuove richieste in attesa (prenotazioni sito + registrazioni pazienti + schede servizi)
+  const [richiesteInAttesa, setRichiesteInAttesa] = useState(0);
+
   const caricaScadenzePai = async () => {
     try {
       const res = await api.get('/patients/scadenze-pai');
@@ -129,6 +132,17 @@ function Dashboard() {
           try {
             const usersRes = await api.get('/auth/all-users');
             setPendingCount(usersRes.data.filter((u: any) => u.status === 'pending').length);
+          } catch { /* non bloccante */ }
+        }
+        // Conta richieste in attesa (admin/coordinator)
+        if (user?.role === 'admin' || user?.role === 'coordinator') {
+          try {
+            const [pren, paz, schede] = await Promise.all([
+              api.get('/richieste-prenotazioni', { params: { stato: 'in_attesa' } }),
+              api.get('/richieste-paziente', { params: { stato: 'in_attesa' } }),
+              api.get('/scheda-servizio', { params: { stato: 'inviata' } }),
+            ]);
+            setRichiesteInAttesa((pren.data?.length || 0) + (paz.data?.length || 0) + (schede.data?.length || 0));
           } catch { /* non bloccante */ }
         }
       } catch (error) {
@@ -324,6 +338,25 @@ function Dashboard() {
             </div>
           </div>
           <span className="tw-flex-shrink-0 tw-rounded-full tw-bg-amber-500 tw-text-white tw-font-extrabold tw-text-sm tw-px-3 tw-py-1">{pendingCount}</span>
+        </div>
+      )}
+
+      {/* Banner nuove richieste — admin/coordinator */}
+      {(user?.role === 'admin' || user?.role === 'coordinator') && richiesteInAttesa > 0 && (
+        <div
+          onClick={() => navigate('/gestione-richieste')}
+          className="tw-flex tw-items-center tw-gap-3 tw-mb-5 tw-cursor-pointer tw-rounded-xl tw-border-2 tw-border-sky-400 tw-bg-sky-400/10 tw-px-4 tw-py-3 hover:tw-bg-sky-400/20 tw-transition-colors"
+        >
+          <ClipboardList size={22} color="#0284c7" className="tw-flex-shrink-0" />
+          <div className="tw-flex-1">
+            <div className="tw-font-bold tw-text-sky-800 tw-text-sm">
+              {richiesteInAttesa} {richiesteInAttesa === 1 ? 'nuova richiesta in attesa' : 'nuove richieste in attesa'}
+            </div>
+            <div className="tw-text-sky-700 tw-text-xs tw-mt-0.5">
+              Prenotazioni servizi, nuovi pazienti e schede servizi da gestire
+            </div>
+          </div>
+          <span className="tw-flex-shrink-0 tw-rounded-full tw-bg-sky-500 tw-text-white tw-font-extrabold tw-text-sm tw-px-3 tw-py-1">{richiesteInAttesa}</span>
         </div>
       )}
 
