@@ -37,8 +37,10 @@ api.interceptors.response.use(
     const config = error.config as any;
 
     // Retry automatico su 408 (Request Timeout) e 503 (Service Unavailable)
-    // Causati dal cold start di Render free tier
-    if (status === 408 || status === 503) {
+    // e su errore di rete per le sole GET (es. backend in riavvio dopo deploy)
+    const isGet = (config?.method || 'get').toLowerCase() === 'get';
+    const reteAssente = !status && !!config; // nessuna risposta: server irraggiungibile/riavvio
+    if (status === 408 || status === 503 || (reteAssente && isGet)) {
       config._retryCount = (config._retryCount || 0) + 1;
       if (config._retryCount <= 2) {
         await new Promise(resolve => setTimeout(resolve, 3000 * config._retryCount));
