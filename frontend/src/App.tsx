@@ -487,6 +487,10 @@ function AppShell() {
                 <UserPlus size={18} />
                 Personale (colf/badanti)
               </Link>
+              <Link to="/assegnazione-pai" className={isActive('/assegnazione-pai') ? 'active' : ''}>
+                <Map size={18} />
+                Assegnazione su mappa
+              </Link>
               <Link to="/gestione-contratti" className={isActive('/gestione-contratti') ? 'active' : ''}>
                 <FileText size={18} />
                 Contratti operatori

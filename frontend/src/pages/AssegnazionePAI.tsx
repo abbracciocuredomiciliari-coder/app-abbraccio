@@ -52,9 +52,15 @@ const COLORI_CATEGORIA: Record<string, string> = {
   medico: '#dc2626',
   coordinamento: '#d97706',
   direzione: '#374151',
+  privato: '#ea580c',
+  osa: '#a855f7',
+  'assistente-familiare': '#8b5cf6',
+  badante: '#be185d',
+  sociale: '#0284c7',
 };
 
 const FIGURE_FILTRO = ['infermiere', 'oss', 'fisioterapista', 'badante', 'caregiver', 'medico', 'coordinatore', 'direttore'];
+const FIGURE_FILTRO_INTERMEDIAZIONE = ['badante', 'colf', 'assistente familiare', 'assistente-familiare', 'caregiver', 'oss', 'osa'];
 
 function capitalize(s: string) {
   return s ? s[0].toUpperCase() + s.slice(1) : '';
@@ -63,7 +69,8 @@ function capitalize(s: string) {
 // ─── Componente ────────────────────────────────────────────────────────────────
 export default function AssegnazionePAI() {
   const { user } = useAuth();
-  const { isConvenzione, modalita } = useModalita();
+  const { isConvenzione, isConsulenza, modalita } = useModalita();
+  const tipoGestioneQuery = isConsulenza ? 'consulenza' : isConvenzione ? 'convenzione' : 'privato';
 
   // Ricerca paziente
   const [cercaPaziente, setCercaPaziente] = useState('');
@@ -99,23 +106,18 @@ export default function AssegnazionePAI() {
   const [figuraFiltro, setFiguraFiltro] = useState<string[]>([]);
 
   const isPrivilegiato = user && ['admin', 'coordinator', 'direttore'].includes(user.role);
-  const colore = isConvenzione ? '#0369a1' : '#1e4d8c';
-  const titoloTipo = isConvenzione ? 'Assegnazione PAI — Convenzione SIAT' : 'Assegnazione Piano di Lavoro — Privato';
+  const colore = isConvenzione ? '#0369a1' : isConsulenza ? '#ea580c' : '#1e4d8c';
+  const titoloTipo = isConvenzione ? 'Assegnazione PAI — Convenzione SIAT' : isConsulenza ? 'Assegnazione Operatore — Intermediazioni' : 'Assegnazione Piano di Lavoro — Privato';
+  const figureFiltro = isConsulenza ? FIGURE_FILTRO_INTERMEDIAZIONE : FIGURE_FILTRO;
 
   // ─── Cerca pazienti ────────────────────────────────────────────────────────
   const cercaPazienti = useCallback(async () => {
     if (!cercaPaziente.trim()) return;
     try {
-      const res = await api.get('/patients', { params: { search: cercaPaziente } });
-      const tutti: Paziente[] = res.data || [];
-      setRisultatiPazienti(
-        tutti.filter(p => isConvenzione
-          ? p.tipoGestione === 'convenzione'
-          : (p.tipoGestione === 'privato' || !p.tipoGestione)
-        )
-      );
+      const res = await api.get('/patients', { params: { search: cercaPaziente, tipo: tipoGestioneQuery } });
+      setRisultatiPazienti(res.data || []);
     } catch { setRisultatiPazienti([]); }
-  }, [cercaPaziente, isConvenzione]);
+  }, [cercaPaziente, tipoGestioneQuery]);
 
   // ─── Seleziona paziente + geocodifica + cerca operatori ───────────────────
   const selezionaPaziente = async (p: Paziente) => {
@@ -137,7 +139,7 @@ export default function AssegnazionePAI() {
       setLoadingZona(true);
       try {
         const res = await api.get('/staff/zona', {
-          params: { lat: coords.lat, lng: coords.lng, tipoGestione: isConvenzione ? 'convenzione' : 'privato' }
+          params: { lat: coords.lat, lng: coords.lng, tipoGestione: tipoGestioneQuery }
         });
         setOperatoriInZona(res.data || []);
       } catch { setOperatoriInZona([]); }
@@ -165,7 +167,7 @@ export default function AssegnazionePAI() {
     setLoadingZona(true);
     try {
       const res = await api.get('/staff/zona', {
-        params: { lat: coords.lat, lng: coords.lng, tipoGestione: isConvenzione ? 'convenzione' : 'privato' },
+        params: { lat: coords.lat, lng: coords.lng, tipoGestione: tipoGestioneQuery },
       });
       setOperatoriInZona(res.data || []);
     } catch { setOperatoriInZona([]); }
@@ -247,7 +249,9 @@ export default function AssegnazionePAI() {
         <div style={{ marginTop: '6px' }}>
           {isConvenzione
             ? <span style={{ background: '#eff6ff', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: '6px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 700 }}><Building2 size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />Convenzione SIAT</span>
-            : <span style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 700 }}>👤 Gestione Privata</span>
+            : isConsulenza
+              ? <span style={{ background: '#fff7ed', color: '#ea580c', border: '1px solid #fed7aa', borderRadius: '6px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 700 }}>🏠 Intermediazioni</span>
+              : <span style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 700 }}>👤 Gestione Privata</span>
           }
         </div>
       </div>
@@ -371,7 +375,7 @@ export default function AssegnazionePAI() {
               {/* Filtro figure */}
               <div style={{ marginBottom: '10px', display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.76rem', color: '#64748b', fontWeight: 600 }}>Filtra figura:</span>
-                {FIGURE_FILTRO.map(fig => (
+                {figureFiltro.map(fig => (
                   <label key={fig} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.76rem', color: '#475569', background: '#f8fafc', border: `1px solid ${figuraFiltro.includes(fig) ? colore : '#e2e8f0'}`, borderRadius: '6px', padding: '4px 8px', cursor: 'pointer' }}>
                     <input
                       type="checkbox"

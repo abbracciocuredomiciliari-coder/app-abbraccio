@@ -37,6 +37,11 @@ router.get('/zona', authenticateToken, authorizeRole('admin', 'coordinator', 'di
     const query: any = { active: true, 'domicilioCoords.lat': { $exists: true } };
     if (tipoGestione === 'privato') query.modalitaAbilitata = { $in: ['privato', 'entrambi'] };
     if (tipoGestione === 'convenzione') query.modalitaAbilitata = { $in: ['convenzione', 'entrambi'] };
+    if (tipoGestione === 'consulenza') {
+      // Intermediazioni: solo personale domestico/familiare
+      query.modalitaAbilitata = { $in: ['privato', 'entrambi'] };
+      query.category = { $in: ['privato', 'osa', 'assistente-familiare', 'badante', 'sociale'] };
+    }
 
     const tuttiStaff = await Staff.find(query).select(
       'firstName lastName role category domicilioPartenza domicilioCoords raggioAzioneKm modalitaAbilitata active'
