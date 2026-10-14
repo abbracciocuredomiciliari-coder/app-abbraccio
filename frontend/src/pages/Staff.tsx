@@ -79,7 +79,7 @@ const rolesByCategory: Record<string, string[]> = {
   infermieristico: ['Infermiere', 'Infermiere pediatrico', 'Infermiere di comunità'],
   oss: ['OSS - Operatore Socio Sanitario'],
   riabilitativo: ['Fisioterapista', 'Neuropsicomotricista', 'Logopedista', 'Terapista occupazionale'],
-  medico: ['Medico rianimatore', 'Broncopneumologo', 'Psicologo', 'Neurologo', 'Geriatra'],
+  medico: ['Medico rianimatore', 'Cardiologo', 'Geriatra', 'Urologo', 'Ortopedico', 'Dermatologo', 'Endocrinologo', 'Otorinolaringoiatra', 'Fisiatra', 'Oncologo', 'Angiologo', 'Neurologo', 'Ginecologo', 'Broncopneumologo', 'Nutrizionista', 'Psicologo'],
   sociale: ['Assistente sociale'],
   coordinamento: ['Coordinatore infermieristico', 'Coordinatore medico', 'Coordinatore fisioterapico'],
   direzione: ['Direttore sanitario'],
