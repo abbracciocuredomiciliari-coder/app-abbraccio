@@ -93,11 +93,13 @@ export default function ArchivioPreventivi() {
     caricaDocumenti();
   }, []);
 
+  const isFirmato = (doc: DocumentoFatturazione) => doc.stato === 'firmato' || !!doc.firma?.firmato;
+
   const endpointPdf = (doc: DocumentoFatturazione) =>
-    doc.firma?.firmato ? `/fatturazione-documenti/${doc._id}/firmato` : `/fatturazione-documenti/${doc._id}/pdf`;
+    isFirmato(doc) ? `/fatturazione-documenti/${doc._id}/firmato` : `/fatturazione-documenti/${doc._id}/pdf`;
 
   const nomeFilePdf = (doc: DocumentoFatturazione) =>
-    `PREVENTIVO-${doc.numero}${doc.firma?.firmato ? '-firmato' : ''}.pdf`;
+    `PREVENTIVO-${doc.numero}${isFirmato(doc) ? '-firmato' : ''}.pdf`;
 
   const anteprimaDocumento = async (doc: DocumentoFatturazione) => {
     try {

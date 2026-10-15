@@ -425,9 +425,16 @@ router.get('/:id/firmato', authenticateToken, async (req: Request, res: Response
       .populate('patient', 'firstName lastName codiceFiscale address email')
       .lean();
     if (!doc) return res.status(404).json({ message: 'Documento non trovato' });
-    if (!doc.firma?.firmato) return res.status(400).json({ message: 'Documento non ancora firmato' });
+    if (!doc.firma?.firmato && doc.stato !== 'firmato') {
+      return res.status(400).json({ message: 'Documento non ancora firmato' });
+    }
 
-    const buffer = await generaDocumentoPDF(doc);
+    // Tolleranza per documenti con stato 'firmato' ma flag firma.firmato azzerato
+    // dal vecchio re-invio email: il PDF viene comunque reso in versione firmata.
+    const docFirmato = doc.firma?.firmato
+      ? doc
+      : { ...doc, firma: { ...(doc.firma || {}), firmato: true, firmatoIl: doc.firma?.firmatoIl || (doc as any).updatedAt } };
+    const buffer = await generaDocumentoPDF(docFirmato);
     const filename = `${doc.tipo === 'fattura' ? 'FATTURA' : 'PREVENTIVO'}-${doc.numero}-firmato.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

@@ -195,13 +195,14 @@ const [preventivoIva, setPreventivoIva] = useState(0);
 
   const scaricaDocumentoPDF = async (doc: DocumentoFatturazione) => {
     try {
-      const endpoint = doc.firma?.firmato ? `/fatturazione-documenti/${doc._id}/firmato` : `/fatturazione-documenti/${doc._id}/pdf`;
+      const firmato = !!doc.firma?.firmato || doc.stato === 'firmato';
+      const endpoint = firmato ? `/fatturazione-documenti/${doc._id}/firmato` : `/fatturazione-documenti/${doc._id}/pdf`;
       const res = await api.get(endpoint, { responseType: 'blob' });
       const blob = new Blob([res.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${doc.tipo === 'fattura' ? 'FATTURA' : 'PREVENTIVO'}-${doc.numero}${doc.firma?.firmato ? '-firmato' : ''}.pdf`;
+      a.download = `${doc.tipo === 'fattura' ? 'FATTURA' : 'PREVENTIVO'}-${doc.numero}${firmato ? '-firmato' : ''}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -263,7 +264,8 @@ const [preventivoIva, setPreventivoIva] = useState(0);
 
   const anteprimaDocumento = async (doc: DocumentoFatturazione) => {
     try {
-      const endpoint = doc.firma?.firmato ? `/fatturazione-documenti/${doc._id}/firmato` : `/fatturazione-documenti/${doc._id}/pdf`;
+      const firmato = !!doc.firma?.firmato || doc.stato === 'firmato';
+      const endpoint = firmato ? `/fatturazione-documenti/${doc._id}/firmato` : `/fatturazione-documenti/${doc._id}/pdf`;
       const res = await api.get(endpoint, { responseType: 'blob' });
       const blob = new Blob([res.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
