@@ -638,12 +638,14 @@ export default function CentroPrenotazioni() {
     };
     const scaricaDocumentoPDF = async (doc: any) => {
         try {
-            const res = await api.get(`/fatturazione-documenti/${doc._id}/pdf`, { responseType: 'blob' });
+            const firmato = !!doc.firma?.firmato || doc.stato === 'firmato';
+            const endpoint = firmato ? `/fatturazione-documenti/${doc._id}/firmato` : `/fatturazione-documenti/${doc._id}/pdf`;
+            const res = await api.get(endpoint, { responseType: 'blob' });
             const blob = new Blob([res.data], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${doc.tipo === 'fattura' ? 'FATTURA' : 'PREVENTIVO'}-${doc.numero}.pdf`;
+            a.download = `${doc.tipo === 'fattura' ? 'FATTURA' : 'PREVENTIVO'}-${doc.numero}${firmato ? '-firmato' : ''}.pdf`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);

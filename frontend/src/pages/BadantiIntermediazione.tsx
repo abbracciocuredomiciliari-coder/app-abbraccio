@@ -175,14 +175,16 @@ export default function BadantiIntermediazione() {
     }
   }
 
-  async function scaricaPDF(doc: { _id: string; numero: string }) {
+  async function scaricaPDF(doc: { _id: string; numero: string; stato?: string }) {
     try {
-      const res = await api.get(`/fatturazione-documenti/${doc._id}/pdf`, { responseType: 'blob' });
+      const firmato = doc.stato === 'firmato';
+      const endpoint = firmato ? `/fatturazione-documenti/${doc._id}/firmato` : `/fatturazione-documenti/${doc._id}/pdf`;
+      const res = await api.get(endpoint, { responseType: 'blob' });
       const blob = new Blob([res.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${doc.numero}.pdf`;
+      a.download = `${doc.numero}${firmato ? '-firmato' : ''}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err: any) {
@@ -410,6 +412,11 @@ export default function BadantiIntermediazione() {
                                 <Mail size={14} className="tw-inline" /> Firma
                               </Button>
                             </>
+                          )}
+                          {isGestione && preventivo?.stato === 'firmato' && (
+                            <Button size="sm" variant="secondary" onClick={() => scaricaPDF(preventivo)}>
+                              <Download size={14} className="tw-inline" /> PDF firmato
+                            </Button>
                           )}
                           {isGestione && preventivo?.stato === 'firmato' && !fattura && (
                             <Button size="sm" onClick={() => convertiInFattura(r._id)}>

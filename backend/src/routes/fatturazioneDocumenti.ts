@@ -287,10 +287,9 @@ router.post('/firma/:token', async (req: Request, res: Response) => {
     }
 
     const doc: any = docMongoose.toJSON();
-    const unsignedDoc = { ...doc, firma: { ...doc.firma, firmato: false, firmaImg: undefined } };
-    const unsignedBuffer = await generaDocumentoPDF(unsignedDoc);
+    const signedBuffer = await generaDocumentoPDF(doc);
     const label = doc.tipo === 'fattura' ? 'Fattura' : 'Preventivo';
-    const filename = `${label.toUpperCase()}-${doc.numero}.pdf`;
+    const filename = `${label.toUpperCase()}-${doc.numero}-firmato.pdf`;
     const nomeDestinatario = doc.firma?.nome || 'Cliente';
 
     if (doc.firma?.email) {
@@ -305,7 +304,7 @@ router.post('/firma/:token', async (req: Request, res: Response) => {
         to: doc.firma.email,
         subject: `Copia ${label} ${doc.numero} — Abbraccio Cure Domiciliari`,
         html,
-        attachments: [{ filename, content: unsignedBuffer, contentType: 'application/pdf' }],
+        attachments: [{ filename, content: signedBuffer, contentType: 'application/pdf' }],
       });
     }
 
@@ -449,19 +448,22 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
       .populate('patient', 'firstName lastName codiceFiscale address email');
     if (!docMongoose) return res.status(404).json({ message: 'Documento non trovato' });
 
-    const token = crypto.randomBytes(32).toString('hex');
+    // Se il documento è già firmato NON si tocca la firma: si rispedisce la copia firmata.
+    // Solo se non ancora firmato si genera un nuovo token di firma.
+    const giaFirmato = !!docMongoose.firma?.firmato;
+    const token = giaFirmato ? docMongoose.firma!.token : crypto.randomBytes(32).toString('hex');
     docMongoose.firma = {
       ...(docMongoose.firma || {}),
+      firmato: docMongoose.firma?.firmato ?? false,
       token,
-      firmato: false,
       email,
-      nome: nome || `${(docMongoose.patient as any)?.firstName || ''} ${(docMongoose.patient as any)?.lastName || ''}`.trim() || 'Cliente',
+      nome: nome || docMongoose.firma?.nome || `${(docMongoose.patient as any)?.firstName || ''} ${(docMongoose.patient as any)?.lastName || ''}`.trim() || 'Cliente',
     };
     await docMongoose.save();
 
     const doc: any = docMongoose.toJSON();
     const buffer = await generaDocumentoPDF(doc);
-    const filename = `${doc.tipo === 'fattura' ? 'FATTURA' : 'PREVENTIVO'}-${doc.numero}.pdf`;
+    const filename = `${doc.tipo === 'fattura' ? 'FATTURA' : 'PREVENTIVO'}-${doc.numero}${doc.firma?.firmato ? '-firmato' : ''}.pdf`;
     const label = doc.tipo === 'fattura' ? 'Fattura' : 'Preventivo';
     const nomeDestinatario = doc.firma?.nome || 'Cliente';
     const frontendUrl = process.env.FRONTEND_URL || 'https://app.abbracciocuredomiciliari.it';
@@ -470,10 +472,10 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
       <h2 style="color:#1e4d8c;margin-top:0;">${label} ${doc.numero}</h2>
       <p>Gentile <strong>${nomeDestinatario}</strong>,</p>
       <p>in allegato trovi la copia del <strong>${label.toLowerCase()}</strong> emesso il ${new Date(doc.data).toLocaleDateString('it-IT')}.</p>
-      <p style="margin:16px 0;padding:16px;background:#eff6ff;border-left:4px solid #1e4d8c;border-radius:6px;">
+      ${giaFirmato ? `<p style="margin:16px 0;padding:16px;background:#f0fdf4;border-left:4px solid #16a34a;border-radius:6px;">Il documento risulta già <strong>firmato digitalmente</strong>: in allegato trovi la copia firmata.</p>` : `<p style="margin:16px 0;padding:16px;background:#eff6ff;border-left:4px solid #1e4d8c;border-radius:6px;">
         Per firmare il documento <strong>online con dito o penna</strong> clicca qui:<br/>
         <a href="${frontendUrl}/firma-documento?token=${token}" style="display:inline-block;margin-top:8px;background:#1e4d8c;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Firma ${label}</a>
-      </p>
+      </p>`}
       <p>Per qualsiasi informazione puoi contattarci all'indirizzo PEC ${aziendaPec}.</p>
       <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari S.R.L.S.</p>
     </div>`;
@@ -504,10 +506,9 @@ router.post('/:id/rinvia-email', authenticateToken, authorizeRole(...RUOLI_GESTI
     if (!toEmail) return res.status(400).json({ message: 'Email destinatario obbligatoria' });
 
     const doc: any = docMongoose.toJSON();
-    const unsignedDoc = { ...doc, firma: { ...doc.firma, firmato: false, firmaImg: undefined } };
-    const buffer = await generaDocumentoPDF(unsignedDoc);
+    const buffer = await generaDocumentoPDF(doc);
     const label = doc.tipo === 'fattura' ? 'Fattura' : 'Preventivo';
-    const filename = `${label.toUpperCase()}-${doc.numero}.pdf`;
+    const filename = `${label.toUpperCase()}-${doc.numero}${doc.firma?.firmato ? '-firmato' : ''}.pdf`;
     const nomeDestinatario = doc.firma?.nome || 'Cliente';
 
     const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
