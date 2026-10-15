@@ -219,6 +219,7 @@ function Patients() {
   const [showContrattoModal, setShowContrattoModal] = useState(false);
   const [contrattoPatient, setContrattoPatient] = useState<Patient | null>(null);
   const [contrattoProfilo, setContrattoProfilo] = useState<'Operatore generale' | 'Assistente familiare'>('Operatore generale');
+  const [contrattoImporto, setContrattoImporto] = useState('150');
   const [contrattoEmail, setContrattoEmail] = useState('');
   const [contrattoLoading, setContrattoLoading] = useState(false);
   const [contrattoPreventivi, setContrattoPreventivi] = useState<{ _id: string; numero: string; totale: number; data: string }[]>([]);
@@ -509,7 +510,9 @@ function Patients() {
 
   const apriContrattoModal = (patient: Patient) => {
     setContrattoPatient(patient);
-    setContrattoProfilo(patient.categoriaPrivata === 'intermediazione_badanti' ? 'Assistente familiare' : 'Operatore generale');
+    const profiloIniziale = patient.categoriaPrivata === 'intermediazione_badanti' ? 'Assistente familiare' : 'Operatore generale';
+    setContrattoProfilo(profiloIniziale);
+    setContrattoImporto(profiloIniziale === 'Assistente familiare' ? '250' : '150');
     setContrattoEmail(patient.email || '');
     setContrattoLoading(false);
     setContrattoPreventivoId('');
@@ -556,7 +559,7 @@ function Patients() {
         patient: contrattoPatient._id,
         profilo: contrattoProfilo,
         email: contrattoEmail,
-        importo: contrattoProfilo === 'Assistente familiare' ? 250 : 150,
+        importo: Number(contrattoImporto) || (contrattoProfilo === 'Assistente familiare' ? 250 : 150),
         preventivoId: contrattoPreventivoId || undefined,
       });
       const id = res.data._id as string;
@@ -2167,12 +2170,35 @@ function Patients() {
               <label className="tw-block tw-text-sm tw-font-semibold tw-text-slate-700 tw-mb-2">Profilo da reclutare</label>
               <select
                 value={contrattoProfilo}
-                onChange={(e) => setContrattoProfilo(e.target.value as 'Operatore generale' | 'Assistente familiare')}
+                onChange={(e) => {
+                  const nuovoProfilo = e.target.value as 'Operatore generale' | 'Assistente familiare';
+                  setContrattoProfilo(nuovoProfilo);
+                  setContrattoImporto(nuovoProfilo === 'Assistente familiare' ? '250' : '150');
+                }}
                 className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-[0.9rem]"
               >
                 <option value="Operatore generale">Operatore generale</option>
                 <option value="Assistente familiare">Assistente familiare (badante/colf)</option>
               </select>
+            </div>
+
+            <div className="tw-mb-4 tw-bg-emerald-50 tw-border tw-border-emerald-200 tw-rounded-lg tw-p-3">
+              <label className="tw-block tw-text-sm tw-font-semibold tw-text-emerald-800 tw-mb-2">💶 Importo da addebitare (€, prima dell'IVA)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={contrattoImporto}
+                onChange={(e) => setContrattoImporto(e.target.value)}
+                className="tw-w-full tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-border-emerald-300 tw-text-[0.9rem]"
+              />
+              {contrattoProfilo === 'Assistente familiare' ? (
+                <p className="tw-text-xs tw-text-emerald-700 tw-mt-1 tw-mb-0">
+                  IVA 22%: € {(Number(contrattoImporto || 0) * 0.22).toFixed(2).replace('.', ',')} — Totale IVA inclusa: € {(Number(contrattoImporto || 0) * 1.22).toFixed(2).replace('.', ',')}
+                </p>
+              ) : (
+                <p className="tw-text-xs tw-text-emerald-700 tw-mt-1 tw-mb-0">Importo oltre IVA, come indicato nel contratto.</p>
+              )}
             </div>
 
             <div className="tw-mb-4">
