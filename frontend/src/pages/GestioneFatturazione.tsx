@@ -992,6 +992,9 @@ const [preventivoIva, setPreventivoIva] = useState(0);
                               <>
                                 <button onClick={() => anteprimaDocumento(preventivo)} title="Anteprima preventivo" style={{ background: '#fefce8', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#ca8a04' }}><Eye size={14} /></button>
                                 <button onClick={() => scaricaDocumentoPDF(preventivo)} title="Scarica preventivo" style={{ background: '#fef3c7', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#92400e' }}><Download size={14} /></button>
+                                {preventivo.firma?.firmato && (
+                                  <button onClick={() => scaricaDocumentoFirmato(preventivo)} title="Scarica preventivo firmato" style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#166534' }}><Download size={14} /></button>
+                                )}
                               </>
                             )}
                             {user?.role === 'admin' && (

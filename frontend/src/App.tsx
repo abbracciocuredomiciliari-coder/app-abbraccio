@@ -51,6 +51,7 @@ const ProtocolliProcedure = lazy(() => import('./pages/ProtocolliProcedure'));
 const ReportConsegne = lazy(() => import('./pages/ReportConsegne'));
 const GestioneFatturazione = lazy(() => import('./pages/GestioneFatturazione'));
 const ArchivioFatture = lazy(() => import('./pages/ArchivioFatture'));
+const ArchivioPreventivi = lazy(() => import('./pages/ArchivioPreventivi'));
 const BadantiIntermediazione = lazy(() => import('./pages/BadantiIntermediazione'));
 const GestioneContratti = lazy(() => import('./pages/GestioneContratti'));
 const Tariffario = lazy(() => import('./pages/Tariffario'));
@@ -435,6 +436,10 @@ function AppShell() {
                 <Archive size={18} />
                 Archivio Fatture
               </Link>
+              <Link to="/archivio-preventivi" className={isActive('/archivio-preventivi') ? 'active' : ''}>
+                <ClipboardList size={18} />
+                Archivio Preventivi
+              </Link>
               {!isConvenzione && (
                 <Link to="/tariffario" className={isActive('/tariffario') ? 'active' : ''}>
                   <Tag size={18} />
@@ -504,6 +509,10 @@ function AppShell() {
               <Link to="/archivio-fatture" className={isActive('/archivio-fatture') ? 'active' : ''}>
                 <Archive size={18} />
                 Archivio Fatture
+              </Link>
+              <Link to="/archivio-preventivi" className={isActive('/archivio-preventivi') ? 'active' : ''}>
+                <ClipboardList size={18} />
+                Archivio Preventivi
               </Link>
 
               {/* — Sistema (solo admin) — */}
@@ -619,6 +628,7 @@ function AppShell() {
           <Route path="/gestione-fatturazione" element={<ProtectedRoute><GestioneFatturazione /></ProtectedRoute>} />
           <Route path="/gestione-ritenute" element={<ProtectedRoute><GestioneRitenute /></ProtectedRoute>} />
           <Route path="/archivio-fatture" element={<ProtectedRoute><ArchivioFatture /></ProtectedRoute>} />
+          <Route path="/archivio-preventivi" element={<ProtectedRoute><ArchivioPreventivi /></ProtectedRoute>} />
           <Route path="/badanti-intermediazione" element={<ProtectedRoute><BadantiIntermediazione /></ProtectedRoute>} />
           <Route path="/tariffario" element={<ProtectedRoute><Tariffario /></ProtectedRoute>} />
           <Route path="/gestione-contratti" element={<ProtectedRoute><GestioneContratti /></ProtectedRoute>} />
