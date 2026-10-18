@@ -78,6 +78,7 @@ interface DocumentoFatturazione {
   firma?: {
     firmato: boolean;
     firmatoIl?: string;
+    inviatoIl?: string;
     nome?: string;
     email?: string;
     token?: string;
@@ -214,8 +215,9 @@ const [preventivoIva, setPreventivoIva] = useState(0);
 
   const apriInvioEmail = (doc: DocumentoFatturazione) => {
     setEmailModalDoc(doc);
-    setEmailDestinatario(doc.patient?.email || '');
-    setEmailNome(`${doc.patient?.firstName || ''} ${doc.patient?.lastName || ''}`.trim());
+    // Precompila con l'ultima email a cui il documento è stato inviato, altrimenti l'email anagrafica
+    setEmailDestinatario(doc.firma?.email || doc.patient?.email || '');
+    setEmailNome(doc.firma?.nome || `${doc.patient?.firstName || ''} ${doc.patient?.lastName || ''}`.trim());
     setEmailSending(false);
   };
 
@@ -1134,6 +1136,13 @@ const [preventivoIva, setPreventivoIva] = useState(0);
             <h3 style={{ margin: '0 0 16px', color: '#1e4d8c', fontSize: '1.1rem', fontWeight: 700 }}>
               Invia {emailModalDoc.tipo === 'fattura' ? 'Fattura' : 'Preventivo'} via email
             </h3>
+            {emailModalDoc.firma?.email && (
+              <p style={{ margin: '0 0 14px', padding: '10px 12px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', fontSize: '0.82rem', color: '#92400e' }}>
+                📨 Già inviato a <strong>{emailModalDoc.firma.email}</strong>
+                {emailModalDoc.firma.inviatoIl ? ` il ${formatData(emailModalDoc.firma.inviatoIl)}` : ''}.
+                Proseguendo viene inviata una nuova copia.
+              </p>
+            )}
             <form onSubmit={inviaDocumentoEmail}>
               <div style={{ marginBottom: '14px' }}>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>Email destinatario</label>

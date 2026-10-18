@@ -37,6 +37,7 @@ export interface IDocumentoFatturazione extends Document {
     firmatoIl?: Date;
     nome?: string;
     email?: string;
+    inviatoIl?: Date; // ultimo invio email del documento riuscito
     firmaImg?: string; // firma in base64 PNG
     rifiutoRegistro?: boolean; // per fatture: rifiuto comunicazione Sistema TS (spese sanitarie)
   };
@@ -83,6 +84,7 @@ const documentoFatturazioneSchema = new Schema<IDocumentoFatturazione>(
       firmatoIl: { type: Date },
       nome: { type: String, trim: true },
       email: { type: String, trim: true },
+      inviatoIl: { type: Date },
       firmaImg: { type: String },
       rifiutoRegistro: { type: Boolean, default: false },
     },

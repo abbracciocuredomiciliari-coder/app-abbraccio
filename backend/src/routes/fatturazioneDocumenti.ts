@@ -300,12 +300,13 @@ router.post('/firma/:token', async (req: Request, res: Response) => {
         <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari S.R.L.S.</p>
       </div>`;
 
-      await inviaEmail({
+      const copiaInviata = await inviaEmail({
         to: doc.firma.email,
         subject: `Copia ${label} ${doc.numero} — Abbraccio Cure Domiciliari`,
         html,
         attachments: [{ filename, content: signedBuffer, contentType: 'application/pdf' }],
       });
+      if (!copiaInviata) console.warn(`⚠️ Copia firmata ${doc.numero} NON inviata a ${doc.firma.email} — SMTP non disponibile`);
     }
 
     // Notifica operatore: contratto arrivato e firmato
@@ -457,18 +458,21 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
 
     // Se il documento è già firmato NON si tocca la firma: si rispedisce la copia firmata.
     // Solo se non ancora firmato si genera un nuovo token di firma.
+    // Il token/email firma vengono persistiti SOLO se l'invio riesce: in caso di errore SMTP
+    // il documento non deve risultare "già inviato".
     const giaFirmato = !!docMongoose.firma?.firmato;
     const token = giaFirmato ? docMongoose.firma!.token : crypto.randomBytes(32).toString('hex');
-    docMongoose.firma = {
+    const firmaDaSalvare = {
       ...(docMongoose.firma || {}),
       firmato: docMongoose.firma?.firmato ?? false,
       token,
       email,
       nome: nome || docMongoose.firma?.nome || `${(docMongoose.patient as any)?.firstName || ''} ${(docMongoose.patient as any)?.lastName || ''}`.trim() || 'Cliente',
+      inviatoIl: new Date(),
     };
-    await docMongoose.save();
 
     const doc: any = docMongoose.toJSON();
+    doc.firma = firmaDaSalvare;
     const buffer = await generaDocumentoPDF(doc);
     const filename = `${doc.tipo === 'fattura' ? 'FATTURA' : 'PREVENTIVO'}-${doc.numero}${doc.firma?.firmato ? '-firmato' : ''}.pdf`;
     const label = doc.tipo === 'fattura' ? 'Fattura' : 'Preventivo';
@@ -487,12 +491,20 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
       <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari S.R.L.S.</p>
     </div>`;
 
-    await inviaEmail({
+    const inviata = await inviaEmail({
       to: email,
       subject: `${label} ${doc.numero} — Abbraccio Cure Domiciliari`,
       html,
       attachments: [{ filename, content: buffer, contentType: 'application/pdf' }],
     });
+    if (!inviata) {
+      return res.status(502).json({
+        message: 'Email NON inviata: il server di posta non è raggiungibile o ha rifiutato il messaggio. Controllare la configurazione SMTP sul server.',
+      });
+    }
+
+    docMongoose.firma = firmaDaSalvare;
+    await docMongoose.save();
 
     return res.json({ message: `${label} inviata con successo a ${email}` });
   } catch (error: any) {
@@ -525,12 +537,21 @@ router.post('/:id/rinvia-email', authenticateToken, authorizeRole(...RUOLI_GESTI
       <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari S.R.L.S.</p>
     </div>`;
 
-    await inviaEmail({
+    const inviata = await inviaEmail({
       to: toEmail,
       subject: `Copia ${label} ${doc.numero} — Abbraccio Cure Domiciliari`,
       html,
       attachments: [{ filename, content: buffer, contentType: 'application/pdf' }],
     });
+    if (!inviata) {
+      return res.status(502).json({
+        message: 'Email NON inviata: il server di posta non è raggiungibile o ha rifiutato il messaggio. Controllare la configurazione SMTP sul server.',
+      });
+    }
+
+    // Traccia l'ultimo invio riuscito
+    docMongoose.firma = { ...(docMongoose.firma || {}), email: toEmail, inviatoIl: new Date() } as any;
+    await docMongoose.save();
 
     return res.json({ message: `${label} rispedita con successo a ${toEmail}` });
   } catch (error: any) {

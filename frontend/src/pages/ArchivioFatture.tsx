@@ -25,6 +25,7 @@ interface DocumentoFatturazione {
   firma?: {
     firmato: boolean;
     firmatoIl?: string;
+    inviatoIl?: string;
     nome?: string;
     email?: string;
     token?: string;
@@ -132,7 +133,7 @@ export default function ArchivioFatture() {
   };
 
   const rinviaDocumento = async (doc: DocumentoFatturazione) => {
-    const email = doc.firma?.email || window.prompt('Email del destinatario');
+    const email = window.prompt('Email del destinatario', doc.firma?.email || (doc.patient as any)?.email || '');
     if (!email) return;
     try {
       await api.post(`/fatturazione-documenti/${doc._id}/rinvia-email`, { email });
