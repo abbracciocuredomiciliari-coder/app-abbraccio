@@ -103,10 +103,16 @@ async function generaNumero(tipo: 'preventivo' | 'fattura'): Promise<string> {
   const anno = new Date().getFullYear();
   const prefisso = tipo === 'preventivo' ? 'PREV-CF' : 'FATT-CF';
   const base = `${prefisso}-${anno}-`;
-  const count = await DocumentoFatturazione.countDocuments({
-    numero: { $regex: `^${base}` },
-  });
-  let progressivo = count + 1;
+  // Il progressivo riparte dall'ultimo numero presente in archivio per la serie
+  // (rispetta rinumerazioni manuali ed eliminazioni, non il semplice conteggio).
+  const esistenti = await DocumentoFatturazione.find({ numero: { $regex: `^${base}` } })
+    .select('numero')
+    .lean();
+  const maxProgressivo = esistenti.reduce((max: number, d: any) => {
+    const m = String(d.numero || '').match(/-(\d+)$/);
+    return m ? Math.max(max, parseInt(m[1], 10)) : max;
+  }, 0);
+  let progressivo = maxProgressivo + 1;
   let numero = `${base}${String(progressivo).padStart(5, '0')}`;
   while (await DocumentoFatturazione.exists({ numero })) {
     progressivo++;

@@ -22,10 +22,17 @@ async function generaNumero(tipo: 'preventivo' | 'fattura', consulenza = false):
     ? (tipo === 'preventivo' ? 'PREV-CF' : 'FATT-CF')
     : (tipo === 'preventivo' ? 'PREV' : 'FATT');
   const base = `${prefisso}-${anno}-`;
-  const count = await DocumentoFatturazione.countDocuments({
-    numero: { $regex: `^${base}` },
-  });
-  let progressivo = count + 1;
+  // Il progressivo riparte sempre dall'ULTIMO numero presente in archivio per la serie,
+  // non dal conteggio: così rispetta rinumerazioni manuali (es. fatture cartacee)
+  // ed eliminazioni senza creare salti o sovrapposizioni.
+  const esistenti = await DocumentoFatturazione.find({ numero: { $regex: `^${base}` } })
+    .select('numero')
+    .lean();
+  const maxProgressivo = esistenti.reduce((max: number, d: any) => {
+    const m = String(d.numero || '').match(/-(\d+)$/);
+    return m ? Math.max(max, parseInt(m[1], 10)) : max;
+  }, 0);
+  let progressivo = maxProgressivo + 1;
   let numero = `${base}${String(progressivo).padStart(5, '0')}`;
   while (await DocumentoFatturazione.exists({ numero })) {
     progressivo++;
