@@ -675,7 +675,10 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
     const contratto = await ContrattoPaziente.findById(req.params.id).select('_id');
     if (!contratto) return res.status(404).json({ message: 'Contratto non trovato' });
 
-    await inviaEmailContrattoPaziente(String(contratto._id), email, req);
+    const inviata = await inviaEmailContrattoPaziente(String(contratto._id), email, req);
+    if (!inviata) {
+      return res.status(502).json({ message: `Email non inviata a ${email}: il server SMTP ha rifiutato il messaggio o non è configurato` });
+    }
 
     return res.json({ message: 'Email inviata con successo' });
   } catch (error: any) {

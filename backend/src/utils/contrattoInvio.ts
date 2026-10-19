@@ -21,8 +21,10 @@ export function normalizzaPaziente(raw: any) {
 }
 
 // Invia al destinatario: contratto PDF, informativa GDPR PDF, preventivo/allegato
-// e link pubblico per la firma online. Solleva eccezione in caso di errore.
-export async function inviaEmailContrattoPaziente(contrattoId: string, email: string, req: Request) {
+// e link pubblico per la firma online. Ritorna true solo se l'SMTP ha accettato
+// il messaggio; false se non configurato o rifiutato dal server. Solleva
+// eccezione per errori pre-invio (contratto mancante, generazione PDF).
+export async function inviaEmailContrattoPaziente(contrattoId: string, email: string, req: Request): Promise<boolean> {
   const contratto = await ContrattoPaziente.findById(contrattoId)
     .populate('patient', 'firstName lastName birthDate address contactPhone codiceFiscale email');
   if (!contratto) throw new Error('Contratto non trovato');
@@ -106,7 +108,7 @@ export async function inviaEmailContrattoPaziente(contrattoId: string, email: st
     });
   }
 
-  await inviaEmail({
+  return await inviaEmail({
     to: email,
     subject: `Contratto d'incarico e GDPR ${contratto.profilo} — Abbraccio Cure Domiciliari`,
     html,

@@ -510,8 +510,10 @@ async function generaContrattoDaSimulazione(richiesta: any, body: any, req: Requ
   const emailDest = (email || paziente.email || '').trim();
   let emailInviata = false;
   if (inviaEmailFlag && emailDest) {
-    await inviaEmailContrattoPaziente(String(contratto._id), emailDest, req);
-    emailInviata = true;
+    emailInviata = await inviaEmailContrattoPaziente(String(contratto._id), emailDest, req);
+    if (!emailInviata) {
+      console.warn(`[Intermediazione] Contratto ${contratto._id} generato ma email a ${emailDest} rifiutata dall'SMTP`);
+    }
   }
 
   return { contratto, richiesta, emailInviata };
