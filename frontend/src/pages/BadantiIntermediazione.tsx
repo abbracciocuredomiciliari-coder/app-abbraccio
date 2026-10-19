@@ -2,7 +2,7 @@ import { useEffect, useState, FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { Users, Plus, FileText, Mail, Trash2, Receipt, Check, X, User, Briefcase, Euro, Download } from 'lucide-react';
+import { Users, Plus, FileText, Mail, Trash2, Receipt, Check, X, User, Briefcase, Euro, Download, Settings } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 interface Patient {
@@ -248,6 +248,8 @@ export default function BadantiIntermediazione() {
   const [selectedQuote, setSelectedQuote] = useState<string | null>(null);
 
   const isGestione = user?.role === 'admin' || user?.role === 'coordinator' || user?.role === 'direttore';
+  const isAdmin = user?.role === 'admin';
+  const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => { caricaDati(); caricaPazienti(); caricaTariffe(); }, []);
 
@@ -267,6 +269,7 @@ export default function BadantiIntermediazione() {
     if (!tariffe) return;
     try {
       setTariffeSaving(true);
+      if (!confirm('Confermi l\'aggiornamento delle tariffe CCNL/INPS? I nuovi valori si applicheranno subito a simulatore, PDF e preventivi da firmare.')) return;
       const res = await api.put('/badanti-intermediazione/tariffe-ccnl', { parametri: tariffe });
       setTariffe(res.data?.parametri || tariffe);
       setTariffeMeta(m => ({ ...m, personalizzato: true, aggiornatoIl: new Date().toISOString() }));
@@ -594,6 +597,33 @@ export default function BadantiIntermediazione() {
             <Button variant="secondary" onClick={() => setShowSim(s => !s)} className="tw-flex tw-items-center tw-gap-2">
               <Euro size={18} /> {showSim ? 'Chiudi calcolo' : 'Simula costo'}
             </Button>
+            {isAdmin && (
+              <div className="tw-relative">
+                <button
+                  onClick={() => setShowMenu(s => !s)}
+                  title="Impostazioni"
+                  className="tw-p-2 tw-rounded-lg tw-border tw-border-slate-200 tw-text-slate-500 hover:tw-text-slate-800 hover:tw-bg-slate-50"
+                >
+                  <Settings size={18} />
+                </button>
+                {showMenu && (
+                  <>
+                    <div className="tw-fixed tw-inset-0 tw-z-10" onClick={() => setShowMenu(false)} />
+                    <div className="tw-absolute tw-right-0 tw-mt-2 tw-w-64 tw-bg-white tw-rounded-xl tw-border tw-border-slate-200 tw-shadow-lg tw-z-20 tw-p-1">
+                      <button
+                        onClick={() => { setShowMenu(false); setShowTariffe(true); }}
+                        className="tw-w-full tw-text-left tw-px-3 tw-py-2 tw-rounded-lg hover:tw-bg-slate-50 tw-text-sm tw-flex tw-items-center tw-gap-2"
+                      >
+                        <Euro size={16} className="tw-text-amber-600" /> Tariffe CCNL / INPS
+                        <span className="tw-ml-auto tw-text-[10px] tw-font-bold tw-text-slate-400">
+                          {tariffeMeta.personalizzato ? 'personalizzate' : 'ufficiali'}
+                        </span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
             {isGestione && (
               <Button onClick={() => setShowForm(s => !s)} className="tw-flex tw-items-center tw-gap-2">
                 {showForm ? <X size={18} /> : <Plus size={18} />} Nuova richiesta
@@ -745,61 +775,6 @@ export default function BadantiIntermediazione() {
           </div>
         )}
 
-        {/* ── Parametri CCNL / INPS — aggiornamento annuale tariffe ── */}
-        {isGestione && tariffe && (
-          <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
-            <button
-              onClick={() => setShowTariffe(s => !s)}
-              className="tw-w-full tw-flex tw-justify-between tw-items-center tw-text-left"
-            >
-              <h2 className="tw-text-lg tw-font-semibold tw-flex tw-items-center tw-gap-2 tw-text-slate-700">
-                <Euro size={20} /> Parametri CCNL / INPS
-                <span className={`tw-text-xs tw-font-bold ${tariffeMeta.personalizzato ? 'tw-text-amber-600' : 'tw-text-slate-400'}`}>
-                  {tariffeMeta.personalizzato ? 'Tariffe personalizzate' : 'Minimi ufficiali'}
-                  {tariffeMeta.aggiornatoIl ? ` · agg. ${new Date(tariffeMeta.aggiornatoIl).toLocaleDateString('it-IT')}${tariffeMeta.aggiornatoDa ? ` da ${tariffeMeta.aggiornatoDa}` : ''}` : ''}
-                </span>
-              </h2>
-              {showTariffe ? <X size={18} /> : <Plus size={18} />}
-            </button>
-
-            {showTariffe && (
-              <div className="tw-mt-4 tw-space-y-5">
-                <p className="tw-text-xs tw-text-slate-500">
-                  Aggiorna qui i minimi retributivi, le indennità e i contributi quando escono le nuove tabelle CCNL/INPS.
-                  I valori si applicano subito al simulatore, al PDF preventivo e al preventivo reale da firmare.
-                </p>
-                {SEZIONI_TARIFFE.map(s => (
-                  <div key={s.titolo}>
-                    <h3 className="tw-text-xs tw-font-bold tw-text-slate-500 tw-uppercase tw-mb-2">{s.titolo}</h3>
-                    <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-4 lg:tw-grid-cols-6 tw-gap-2">
-                      {s.campi.map(c => (
-                        <label key={c.path} className="tw-flex tw-flex-col tw-gap-0.5">
-                          <span className="tw-text-[11px] tw-text-slate-500">{c.label}</span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={getPath(tariffe, c.path) ?? ''}
-                            onChange={e => setTariffe((t: any) => setPath(t, c.path, e.target.value === '' ? undefined : Number(e.target.value)))}
-                            className="tw-border tw-rounded tw-p-1.5 tw-text-sm"
-                          />
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-                <div className="tw-flex tw-justify-end tw-gap-2 tw-flex-wrap">
-                  <Button size="sm" variant="secondary" onClick={resetTariffe} disabled={tariffeSaving}>
-                    Ripristina minimi ufficiali
-                  </Button>
-                  <Button size="sm" onClick={salvaTariffe} disabled={tariffeSaving}>
-                    {tariffeSaving ? 'Salvataggio...' : 'Salva tariffe'}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
         {showForm && (
           <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
             <h2 className="tw-text-lg tw-font-semibold tw-mb-4 tw-text-slate-700">Nuova richiesta</h2>
@@ -875,6 +850,7 @@ export default function BadantiIntermediazione() {
                 return (
                   <div key={r._id} className="tw-bg-white tw-rounded-xl tw-overflow-hidden tw-border tw-border-rose-100 tw-shadow-sm hover:tw-shadow-md tw-transition-shadow tw-border-l-4 tw-border-l-rose-600">
                     <div className="tw-p-4">
+                      {/* ── Dati paziente/richiesta (riga superiore, senza azioni) ── */}
                       <div className="tw-flex tw-flex-wrap tw-justify-between tw-items-start tw-gap-4">
                         <div className="tw-flex-1 tw-min-w-[240px]">
                           <div className="tw-flex tw-items-center tw-flex-wrap tw-gap-2 tw-mb-1">
@@ -916,7 +892,11 @@ export default function BadantiIntermediazione() {
                             </div>
                           )}
                         </div>
-                        <div className="tw-flex tw-gap-2 tw-flex-shrink-0 tw-flex-wrap tw-items-center">
+                      </div>
+
+                      {/* ── Fascia azioni separata dai dati paziente ── */}
+                      {(isGestione || contratto) && (
+                        <div className="tw-flex tw-gap-2 tw-flex-wrap tw-items-center tw-justify-end tw-border-t tw-border-slate-100 tw-mt-3 tw-pt-3">
                           {isGestione && !preventivo && !contratto && (
                             <Button size="sm" onClick={() => setSelectedQuote(isOpen ? null : r._id)}>
                               {isOpen ? 'Chiudi' : 'Genera preventivo'}
@@ -988,7 +968,7 @@ export default function BadantiIntermediazione() {
                             </button>
                           )}
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -1225,6 +1205,64 @@ export default function BadantiIntermediazione() {
               <Button size="sm" variant="secondary" onClick={() => setSelectedQuote(null)}>Annulla</Button>
               <Button size="sm" onClick={() => generaPreventivoContratto(selectedQuote)} disabled={prevLoading || (prevInvia && !prevEmail)}>
                 {prevLoading ? 'Generazione...' : prevInvia ? 'Genera e invia per firma' : 'Genera preventivo + contratto'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modale Tariffe CCNL / INPS — accesso riservato dal menu ⚙ (solo admin) ── */}
+      {showTariffe && tariffe && (
+        <div className="tw-fixed tw-inset-0 tw-bg-black/40 tw-flex tw-items-center tw-justify-center tw-z-50 tw-p-4">
+          <div className="tw-bg-white tw-rounded-2xl tw-p-6 tw-w-full tw-max-w-5xl tw-max-h-[90vh] tw-overflow-y-auto tw-shadow-xl">
+            <div className="tw-flex tw-justify-between tw-items-start">
+              <h2 className="tw-text-lg tw-font-bold tw-flex tw-items-center tw-gap-2 tw-text-slate-800">
+                <Euro size={20} /> Parametri CCNL / INPS
+              </h2>
+              <button onClick={() => setShowTariffe(false)} className="tw-p-1 tw-text-slate-400 hover:tw-text-slate-700"><X size={20} /></button>
+            </div>
+            <p className="tw-text-xs tw-text-slate-500 tw-mb-1">
+              Aggiorna qui i minimi retributivi, le indennità e i contributi quando escono le nuove tabelle CCNL/INPS.
+              I valori si applicano subito al simulatore, al PDF preventivo e al preventivo reale da firmare.
+            </p>
+            <p className="tw-text-xs tw-mb-4 tw-font-semibold">
+              <span className={tariffeMeta.personalizzato ? 'tw-text-amber-600' : 'tw-text-slate-400'}>
+                {tariffeMeta.personalizzato ? 'Tariffe personalizzate salvate' : 'Minimi ufficiali (nessuna personalizzazione)'}
+              </span>
+              {tariffeMeta.aggiornatoIl ? (
+                <span className="tw-text-slate-400 tw-font-normal"> · agg. {new Date(tariffeMeta.aggiornatoIl).toLocaleDateString('it-IT')}{tariffeMeta.aggiornatoDa ? ` da ${tariffeMeta.aggiornatoDa}` : ''}</span>
+              ) : null}
+            </p>
+
+            <div className="tw-space-y-5">
+              {SEZIONI_TARIFFE.map(s => (
+                <div key={s.titolo}>
+                  <h3 className="tw-text-xs tw-font-bold tw-text-slate-500 tw-uppercase tw-mb-2">{s.titolo}</h3>
+                  <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-4 lg:tw-grid-cols-6 tw-gap-2">
+                    {s.campi.map(c => (
+                      <label key={c.path} className="tw-flex tw-flex-col tw-gap-0.5">
+                        <span className="tw-text-[11px] tw-text-slate-500">{c.label}</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={getPath(tariffe, c.path) ?? ''}
+                          onChange={e => setTariffe((t: any) => setPath(t, c.path, e.target.value === '' ? undefined : Number(e.target.value)))}
+                          className="tw-border tw-rounded tw-p-1.5 tw-text-sm"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="tw-flex tw-justify-end tw-gap-2 tw-mt-6 tw-flex-wrap">
+              <Button size="sm" variant="secondary" onClick={() => setShowTariffe(false)}>Annulla</Button>
+              <Button size="sm" variant="secondary" onClick={resetTariffe} disabled={tariffeSaving}>
+                Ripristina minimi ufficiali
+              </Button>
+              <Button size="sm" onClick={salvaTariffe} disabled={tariffeSaving}>
+                {tariffeSaving ? 'Salvataggio...' : 'Salva tariffe'}
               </Button>
             </div>
           </div>
