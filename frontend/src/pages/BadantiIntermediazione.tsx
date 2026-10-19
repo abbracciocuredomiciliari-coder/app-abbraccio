@@ -1,8 +1,7 @@
-import { useEffect, useState, FormEvent } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { Users, Plus, FileText, Mail, Trash2, Receipt, Check, X, User, Briefcase, Euro, Download, Settings } from 'lucide-react';
+import { Users, FileText, Mail, Trash2, Receipt, Check, X, User, Briefcase, Euro, Download, Settings } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 interface Patient {
@@ -190,24 +189,12 @@ interface Badante {
 
 export default function BadantiIntermediazione() {
   const { user } = useAuth();
-  const [searchParams] = useSearchParams();
-  const patientIdDaUrl = searchParams.get('patientId') || '';
-  const apriNuovoDaUrl = searchParams.get('nuovo') === '1';
   const [richieste, setRichieste] = useState<Badante[]>([]);
-  const [pazienti, setPazienti] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showForm, setShowForm] = useState(apriNuovoDaUrl);
-
-  const [patient, setPatient] = useState(patientIdDaUrl);
-  const [contrattoTipo, setContrattoTipo] = useState<'orario_non_convivente' | 'convivente'>('orario_non_convivente');
-  const [livello, setLivello] = useState('A');
-  const [oreSettimanali, setOreSettimanali] = useState('24');
-  const [mesiContratto, setMesiContratto] = useState('12');
-  const [note, setNote] = useState('');
   const [meseGestione, setMeseGestione] = useState('');
 
-  // Modale "Genera preventivo" → simulatore + contratto da inviare per firma
+  // Modale "Simula costo" → simulatore + contratto da inviare per firma
   const [prevEmail, setPrevEmail] = useState('');
   const [prevImporto, setPrevImporto] = useState('610');
   const [prevCaf, setPrevCaf] = useState('150');
@@ -251,7 +238,7 @@ export default function BadantiIntermediazione() {
   const isAdmin = user?.role === 'admin';
   const [showMenu, setShowMenu] = useState(false);
 
-  useEffect(() => { caricaDati(); caricaPazienti(); caricaTariffe(); }, []);
+  useEffect(() => { caricaDati(); caricaTariffe(); }, []);
 
   async function caricaTariffe() {
     try {
@@ -385,45 +372,7 @@ export default function BadantiIntermediazione() {
     }
   }
 
-  async function caricaPazienti() {
-    try {
-      const res = await api.get('/patients?tipo=consulenza');
-      const pazienti = res.data?.patients || res.data || [];
-      setPazienti(pazienti as Patient[]);
-    } catch (err: any) {
-      console.error('Errore caricamento pazienti', err);
-    }
-  }
-
-  async function salvaRichiesta(e: FormEvent) {
-    e.preventDefault();
-    if (!patient) return alert('Seleziona un paziente');
-    try {
-      setSaving(true);
-      await api.post('/badanti-intermediazione', {
-        patient,
-        contrattoTipo,
-        livello,
-        oreSettimanali: contrattoTipo === 'orario_non_convivente' && oreSettimanali ? Number(oreSettimanali) : undefined,
-        mesiContratto: mesiContratto ? Number(mesiContratto) : undefined,
-        note,
-      });
-      setPatient('');
-      setContrattoTipo('orario_non_convivente');
-      setLivello('A');
-      setOreSettimanali('24');
-      setMesiContratto('12');
-      setNote('');
-      setShowForm(false);
-      await caricaDati();
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Errore salvataggio');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  // Genera il preventivo reale dal simulatore → PDF → contratto (con GDPR) per la firma
+  // Genera il contratto dal simulatore → PDF costo → contratto (con GDPR) per la firma
   async function generaPreventivoContratto(id: string) {
     try {
       setPrevLoading(true);
@@ -444,8 +393,8 @@ export default function BadantiIntermediazione() {
       setSelectedQuote(null);
       await caricaDati();
       alert(res.data?.emailInviata
-        ? 'Preventivo generato e contratto inviato al paziente per la firma (contratto + GDPR + preventivo).'
-        : 'Preventivo generato e contratto creato. Puoi inviarlo per la firma dalla riga della richiesta.');
+        ? 'Contratto generato e inviato al paziente per la firma (contratto + GDPR + PDF costo).'
+        : 'Contratto generato. Puoi inviarlo per la firma dalla riga della richiesta.');
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore generazione preventivo');
     } finally {
@@ -474,18 +423,6 @@ export default function BadantiIntermediazione() {
     if (!email) return;
     try {
       await api.post(`/contratti-pazienti/${contratto._id}/invia-email`, { email });
-      alert('Email inviata');
-      await caricaDati();
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Errore invio');
-    }
-  }
-
-  async function inviaFirma(preventivo: Preventivo) {
-    const email = window.prompt('Email del destinatario');
-    if (!email) return;
-    try {
-      await api.post(`/fatturazione-documenti/${preventivo._id}/invia-email`, { email });
       alert('Email inviata');
       await caricaDati();
     } catch (err: any) {
@@ -644,11 +581,6 @@ export default function BadantiIntermediazione() {
                 )}
               </div>
             )}
-            {isGestione && (
-              <Button onClick={() => setShowForm(s => !s)} className="tw-flex tw-items-center tw-gap-2">
-                {showForm ? <X size={18} /> : <Plus size={18} />} Nuova richiesta
-              </Button>
-            )}
           </div>
         </div>
 
@@ -746,7 +678,7 @@ export default function BadantiIntermediazione() {
               </Button>
               {simRisultato && (
                 <Button variant="secondary" onClick={scaricaPdfPreventivo} disabled={simPdfLoading} className="tw-flex tw-items-center tw-gap-2">
-                  <FileText size={18} /> {simPdfLoading ? 'Generazione...' : 'Scarica PDF preventivo'}
+                  <FileText size={18} /> {simPdfLoading ? 'Generazione...' : 'Scarica PDF simulazione'}
                 </Button>
               )}
             </div>
@@ -795,60 +727,6 @@ export default function BadantiIntermediazione() {
           </div>
         )}
 
-        {showForm && (
-          <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
-            <h2 className="tw-text-lg tw-font-semibold tw-mb-4 tw-text-slate-700">Nuova richiesta</h2>
-            <form onSubmit={salvaRichiesta} className="tw-space-y-4">
-              <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-2 tw-gap-4">
-                <label className="tw-flex tw-flex-col tw-gap-1">
-                  <span className="tw-text-sm tw-font-medium">Paziente</span>
-                  <select value={patient} onChange={e => setPatient(e.target.value)} className="tw-border tw-rounded tw-p-2" required>
-                    <option value="">Seleziona...</option>
-                    {pazienti.filter(Boolean).map(p => (
-                      <option key={p._id} value={p._id}>{p.firstName} {p.lastName} {p.codiceFiscale ? `(${p.codiceFiscale})` : ''}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="tw-flex tw-flex-col tw-gap-1">
-                  <span className="tw-text-sm tw-font-medium">Tipo contratto</span>
-                  <select value={contrattoTipo} onChange={e => setContrattoTipo(e.target.value as any)} className="tw-border tw-rounded tw-p-2">
-                    <option value="orario_non_convivente">Ad orario non convivente</option>
-                    <option value="convivente">Convivente</option>
-                  </select>
-                </label>
-                <label className="tw-flex tw-flex-col tw-gap-1">
-                  <span className="tw-text-sm tw-font-medium">Livello</span>
-                  <select value={livello} onChange={e => setLivello(e.target.value)} className="tw-border tw-rounded tw-p-2">
-                    {['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS'].map(l => (
-                      <option key={l} value={l}>{l} — {LIVELLI_DESCRIZIONI[l]}</option>
-                    ))}
-                  </select>
-                  <span className="tw-text-xs tw-text-slate-500 tw-mt-1">{LIVELLI_DESCRIZIONI[livello]}</span>
-                </label>
-                <label className="tw-flex tw-flex-col tw-gap-1">
-                  <span className="tw-text-sm tw-font-medium">Mesi contratto</span>
-                  <input type="number" value={mesiContratto} onChange={e => setMesiContratto(e.target.value)} className="tw-border tw-rounded tw-p-2" />
-                </label>
-                {contrattoTipo === 'orario_non_convivente' && (
-                  <label className="tw-flex tw-flex-col tw-gap-1">
-                    <span className="tw-text-sm tw-font-medium">Ore settimanali</span>
-                    <input type="number" value={oreSettimanali} onChange={e => setOreSettimanali(e.target.value)} className="tw-border tw-rounded tw-p-2" />
-                  </label>
-                )}
-                <label className="tw-flex tw-flex-col tw-gap-1 md:tw-col-span-2">
-                  <span className="tw-text-sm tw-font-medium">Note</span>
-                  <textarea value={note} onChange={e => setNote(e.target.value)} rows={3} className="tw-border tw-rounded tw-p-2" />
-                </label>
-              </div>
-              <div className="tw-flex tw-justify-end">
-                <Button type="submit" disabled={saving} className="tw-flex tw-items-center tw-gap-2">
-                  <Check size={18} /> {saving ? 'Salvataggio...' : 'Salva richiesta'}
-                </Button>
-              </div>
-            </form>
-          </div>
-        )}
-
         <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
           <h2 className="tw-text-lg tw-font-semibold tw-mb-4 tw-flex tw-items-center tw-gap-2 tw-text-slate-700">
             <FileText size={20} /> Richieste ({richieste.length})
@@ -861,7 +739,6 @@ export default function BadantiIntermediazione() {
           ) : (
             <div className="tw-flex tw-flex-col tw-gap-3">
               {richieste.map(r => {
-                const preventivo = r.preventivoId && typeof r.preventivoId === 'object' ? r.preventivoId : undefined;
                 const contratto = r.contrattoId && typeof r.contrattoId === 'object' ? r.contrattoId : undefined;
                 const fattura = r.fatturaId && typeof r.fatturaId === 'object' ? r.fatturaId : undefined;
                 const isOpen = selectedQuote === r._id;
@@ -885,16 +762,6 @@ export default function BadantiIntermediazione() {
                             <span>{r.mesiContratto} mesi</span>
                             {r.costoMensile ? <span className="tw-font-medium tw-text-slate-700"><Euro size={14} className="tw-inline" /> {r.costoMensile.toFixed(2)}/mese</span> : null}
                           </div>
-                          {preventivo && (
-                            <div className="tw-text-sm tw-text-slate-600">
-                              <strong>Preventivo:</strong> {preventivo.numero} — <Euro size={14} className="tw-inline" /> {preventivo.totale.toFixed(2)} una tantum ({preventivo.stato})
-                              {Number(preventivo.totaleMensileStimato) > 0 && (
-                                <span className="tw-ml-2 tw-inline-flex tw-items-center tw-px-2 tw-py-0.5 tw-rounded-full tw-bg-blue-100 tw-text-blue-700 tw-font-bold tw-text-xs">
-                                  💶 €{Number(preventivo.totaleMensileStimato).toFixed(2)}/mese
-                                </span>
-                              )}
-                            </div>
-                          )}
                           {fattura && (
                             <div className="tw-text-sm tw-text-slate-600 tw-mt-1">
                               <strong>Fattura:</strong> {fattura.numero} — <Euro size={14} className="tw-inline" /> {fattura.totale.toFixed(2)}
@@ -917,9 +784,9 @@ export default function BadantiIntermediazione() {
                       {/* ── Fascia azioni separata dai dati paziente ── */}
                       {(isGestione || contratto) && (
                         <div className="tw-flex tw-gap-2 tw-flex-wrap tw-items-center tw-justify-end tw-border-t tw-border-slate-100 tw-mt-3 tw-pt-3">
-                          {isGestione && !preventivo && !contratto && (
+                          {isGestione && !contratto && (
                             <Button size="sm" onClick={() => setSelectedQuote(isOpen ? null : r._id)}>
-                              {isOpen ? 'Chiudi' : 'Genera preventivo'}
+                              {isOpen ? 'Chiudi' : 'Simula costo'}
                             </Button>
                           )}
                           {contratto && (
@@ -939,22 +806,7 @@ export default function BadantiIntermediazione() {
                               )}
                             </>
                           )}
-                          {isGestione && preventivo && preventivo.stato === 'emesso' && (
-                            <>
-                              <Button size="sm" variant="secondary" onClick={() => scaricaPDF(preventivo)}>
-                                <Download size={14} className="tw-inline" /> PDF
-                              </Button>
-                              <Button size="sm" variant="secondary" onClick={() => inviaFirma(preventivo)}>
-                                <Mail size={14} className="tw-inline" /> Firma
-                              </Button>
-                            </>
-                          )}
-                          {isGestione && preventivo?.stato === 'firmato' && (
-                            <Button size="sm" variant="secondary" onClick={() => scaricaPDF(preventivo)}>
-                              <Download size={14} className="tw-inline" /> PDF firmato
-                            </Button>
-                          )}
-                          {isGestione && (preventivo?.stato === 'firmato' || contratto?.stato === 'firmato') && !fattura && (
+                          {isGestione && contratto?.stato === 'firmato' && !fattura && (
                             <Button size="sm" onClick={() => convertiInFattura(r._id)}>
                               <Receipt size={14} className="tw-inline" /> Fattura
                             </Button>
@@ -1111,8 +963,8 @@ export default function BadantiIntermediazione() {
       {selectedQuote && richiestaAperta && (
         <div className="tw-fixed tw-inset-0 tw-bg-black/40 tw-flex tw-items-center tw-justify-center tw-z-50 tw-p-4">
           <div className="tw-bg-white tw-rounded-2xl tw-p-6 tw-w-full tw-max-w-3xl tw-max-h-[90vh] tw-overflow-y-auto tw-shadow-xl">
-            <h2 className="tw-text-lg tw-font-bold tw-mb-1 tw-flex tw-items-center tw-gap-2 tw-text-slate-800"><Euro size={20} /> Genera preventivo — simulatore CCNL 2026</h2>
-            <p className="tw-text-xs tw-text-slate-500 tw-mb-4">Il PDF del preventivo sarà allegato al contratto d'incarico inviato al paziente insieme all'informativa GDPR per la firma di accettazione.</p>
+            <h2 className="tw-text-lg tw-font-bold tw-mb-1 tw-flex tw-items-center tw-gap-2 tw-text-slate-800"><Euro size={20} /> Simula costo e contratto d'incarico</h2>
+            <p className="tw-text-xs tw-text-slate-500 tw-mb-4">Il PDF con la simulazione del costo sarà allegato al contratto d'incarico inviato al paziente insieme all'informativa GDPR per la firma.</p>
             <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-3 tw-gap-3 tw-mb-4">
               <label className="tw-flex tw-flex-col tw-gap-1">
                 <span className="tw-text-sm tw-font-medium">Tipo di contratto</span>
@@ -1219,7 +1071,7 @@ export default function BadantiIntermediazione() {
             <div className="tw-flex tw-justify-end tw-gap-2">
               <Button size="sm" variant="secondary" onClick={() => setSelectedQuote(null)}>Annulla</Button>
               <Button size="sm" onClick={() => generaPreventivoContratto(selectedQuote)} disabled={prevLoading || (prevInvia && !prevEmail)}>
-                {prevLoading ? 'Generazione...' : prevInvia ? 'Genera e invia per firma' : 'Genera preventivo + contratto'}
+                {prevLoading ? 'Generazione...' : prevInvia ? 'Genera e invia per firma' : 'Genera contratto'}
               </Button>
             </div>
           </div>

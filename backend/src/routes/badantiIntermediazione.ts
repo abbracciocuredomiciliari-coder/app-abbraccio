@@ -519,8 +519,10 @@ router.post('/:id/fattura', authenticateToken, authorizeRole(...RUOLI_GESTIONE),
       if (!contratto) return res.status(404).json({ message: 'Contratto non trovato' });
       if (contratto.stato !== 'firmato') return res.status(400).json({ message: 'Il contratto deve essere firmato prima di emettere fattura' });
 
-      const totale = Math.round(Number(contratto.importo || 0) * 100) / 100;
-      if (!(totale > 0)) return res.status(400).json({ message: 'Importo contratto non valido' });
+      const imponibile = Math.round(Number(contratto.importo || 0) * 100) / 100;
+      if (!(imponibile > 0)) return res.status(400).json({ message: 'Importo contratto non valido' });
+      const iva = Math.round(imponibile * 0.22 * 100) / 100;
+      const totale = Math.round((imponibile + iva) * 100) / 100;
       const numero = await generaNumero('fattura');
 
       const fattura = await DocumentoFatturazione.create({
@@ -532,10 +534,13 @@ router.post('/:id/fattura', authenticateToken, authorizeRole(...RUOLI_GESTIONE),
         prestazioni: [{
           descrizione: `Corrispettivo per incarico di intermediazione e reclutamento ${contratto.profilo} — contratto firmato il ${contratto.dataFirma ? new Date(contratto.dataFirma).toLocaleDateString('it-IT') : '—'}`,
           quantita: 1,
-          prezzoUnitario: totale,
-          importo: totale,
+          prezzoUnitario: imponibile,
+          importo: imponibile,
+          aliquotaIva: 22,
           tipo: 'consulenza',
         }],
+        imponibile,
+        totaleIva: iva,
         totale,
         data: new Date(),
         stato: 'emesso',
