@@ -17,6 +17,8 @@ export interface IContrattoPaziente extends Document {
   gdprHtmlFirmato?: string;
   consensoGdprId?: string;
   preventivoId?: Types.ObjectId; // preventivo (DocumentoFatturazione) allegato alla richiesta firma
+  richiestaId?: Types.ObjectId;  // richiesta intermediazione badanti collegata
+  contesto?: string;             // es. 'intermediazione' → archivio GDPR/contratti dedicato
   allegatoFileName?: string;     // file preventivo caricato a mano
   allegatoContentType?: string;
   allegatoData?: Buffer;
@@ -40,6 +42,8 @@ const contrattoPazienteSchema = new Schema<IContrattoPaziente>(
     gdprHtmlFirmato: { type: String },
     consensoGdprId: { type: String },
     preventivoId: { type: Schema.Types.ObjectId, ref: 'DocumentoFatturazione' },
+    richiestaId: { type: Schema.Types.ObjectId, ref: 'BadanteIntermediazione' },
+    contesto: { type: String, trim: true },
     allegatoFileName: { type: String },
     allegatoContentType: { type: String },
     allegatoData: { type: Buffer },

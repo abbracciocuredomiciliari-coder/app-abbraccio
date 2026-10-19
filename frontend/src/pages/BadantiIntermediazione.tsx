@@ -77,6 +77,30 @@ const TIPI_CONTRATTO_SIM = [
   { value: 'sostituzione', label: 'Sostituzione', livelli: ['CS', 'DS'], orario: true },
 ];
 
+interface ContrattoCollegato {
+  _id: string;
+  stato: 'emesso' | 'firmato';
+  email?: string;
+  nome?: string;
+  dataFirma?: string;
+  allegatoFileName?: string;
+  token?: string;
+}
+
+interface ConsensoGdprRow {
+  _id: string;
+  nomeFirmatario?: string;
+  cognomeFirmatario?: string;
+  codiceFiscaleFirmatario?: string;
+  dataFirma?: string;
+  luogoFirma?: string;
+  versioneInformativa?: string;
+  revocato?: boolean;
+  dataRevoca?: string;
+  ipAddress?: string;
+  patient?: { firstName: string; lastName: string } | null;
+}
+
 interface Badante {
   _id: string;
   patient: Patient | null; // null se il paziente è stato eliminato (populate orfano)
@@ -89,6 +113,9 @@ interface Badante {
   note?: string;
   stato: string;
   preventivoId?: Preventivo | string;
+  contrattoId?: ContrattoCollegato | string;
+  simulazione?: { totaleCostoMensile?: number } | null;
+  preventivoPdfFileName?: string;
   fatturaId?: Fattura | string;
   fattureGestione?: Fattura[] | string[];
   createdAt: string;
@@ -111,10 +138,19 @@ export default function BadantiIntermediazione() {
   const [oreSettimanali, setOreSettimanali] = useState('24');
   const [mesiContratto, setMesiContratto] = useState('12');
   const [note, setNote] = useState('');
-  const [gestioneAmministrativa, setGestioneAmministrativa] = useState('');
-  const [includiGestione, setIncludiGestione] = useState(true);
-  const [quoteNote, setQuoteNote] = useState('');
   const [meseGestione, setMeseGestione] = useState('');
+
+  // Modale "Genera preventivo" → simulatore + contratto da inviare per firma
+  const [prevEmail, setPrevEmail] = useState('');
+  const [prevImporto, setPrevImporto] = useState('610');
+  const [prevCaf, setPrevCaf] = useState('150');
+  const [prevInvia, setPrevInvia] = useState(true);
+  const [prevLoading, setPrevLoading] = useState(false);
+
+  // Archivi dedicati all'intermediazione
+  const [archivioContratti, setArchivioContratti] = useState<Badante[]>([]);
+  const [archivioGdpr, setArchivioGdpr] = useState<ConsensoGdprRow[]>([]);
+  const [showArchivio, setShowArchivio] = useState(false);
 
   // ── Simulazione costo badante (calcolatore CCNL/INPS 2026, stile doemploy) ──
   const [showSim, setShowSim] = useState(false);
@@ -141,11 +177,19 @@ export default function BadantiIntermediazione() {
 
   useEffect(() => { caricaDati(); caricaPazienti(); }, []);
 
+  // All'apertura del modale preventivo: inizializza il simulatore dai dati della richiesta
   useEffect(() => {
     const r = richieste.find(x => x._id === selectedQuote);
     if (r) {
-      setGestioneAmministrativa(r.gestioneAmministrativa ? String(r.gestioneAmministrativa) : '');
-      setIncludiGestione(!!r.gestioneAmministrativa && Number(r.gestioneAmministrativa) > 0);
+      setSimContratto(r.contrattoTipo === 'orario_non_convivente' ? 'non_convivente' : 'convivente');
+      setSimLivello(r.livello || 'BS');
+      setSimOre(r.oreSettimanali ? String(r.oreSettimanali) : '30');
+      setSimRisultato(null);
+      setSimErr('');
+      setPrevEmail(r.patient?.email || '');
+      setPrevImporto('610');
+      setPrevCaf('150');
+      setPrevInvia(!!r.patient?.email);
     }
   }, [selectedQuote]);
 
@@ -154,6 +198,16 @@ export default function BadantiIntermediazione() {
       setLoading(true);
       const res = await api.get('/badanti-intermediazione');
       setRichieste(res.data || []);
+      if (isGestione) {
+        try {
+          const [ac, ag] = await Promise.all([
+            api.get('/badanti-intermediazione/archivio/contratti'),
+            api.get('/badanti-intermediazione/archivio/gdpr'),
+          ]);
+          setArchivioContratti(ac.data || []);
+          setArchivioGdpr(ag.data || []);
+        } catch { /* archivi opzionali: non bloccare la pagina */ }
+      }
     } catch (err: any) {
       console.error('Errore caricamento badanti', err);
       alert(err?.response?.data?.message || 'Errore caricamento');
@@ -250,22 +304,61 @@ export default function BadantiIntermediazione() {
     }
   }
 
-  async function generaPreventivo(id: string) {
+  // Genera il preventivo reale dal simulatore → PDF → contratto (con GDPR) per la firma
+  async function generaPreventivoContratto(id: string) {
     try {
-      setSaving(true);
-      await api.post(`/badanti-intermediazione/${id}/preventivo`, {
-        gestioneAmministrativa: includiGestione ? Number(gestioneAmministrativa) : 0,
-        note: quoteNote,
+      setPrevLoading(true);
+      const res = await api.post(`/badanti-intermediazione/${id}/preventivo`, {
+        contrattoTipo: simContratto,
+        livello: simLivello,
+        oreSettimanali: simIsOrario ? Number(simOre) : undefined,
+        tempoDeterminato: simDeterminato,
+        indennitaPiuAutosuff: simPiuAutosuff,
+        certificazioneUni: simCertUni,
+        indennitaBabysitter: simBabysitter,
+        pagaPersonalizzata: simPagaCustom ? Number(simPagaCustom) : undefined,
+        cafMensile: Number(prevCaf) >= 0 ? Number(prevCaf) : 150,
+        importo: Number(prevImporto) > 0 ? Number(prevImporto) : 610,
+        email: prevEmail || undefined,
+        inviaEmail: prevInvia,
       });
       setSelectedQuote(null);
-      setGestioneAmministrativa('');
-      setIncludiGestione(true);
-      setQuoteNote('');
       await caricaDati();
+      alert(res.data?.emailInviata
+        ? 'Preventivo generato e contratto inviato al paziente per la firma (contratto + GDPR + preventivo).'
+        : 'Preventivo generato e contratto creato. Puoi inviarlo per la firma dalla riga della richiesta.');
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore generazione preventivo');
     } finally {
-      setSaving(false);
+      setPrevLoading(false);
+    }
+  }
+
+  // Scarica il PDF preventivo allegato al contratto
+  async function scaricaPreventivoContratto(contratto: ContrattoCollegato) {
+    try {
+      const res = await api.get(`/contratti-pazienti/${contratto._id}/allegato`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = contratto.allegatoFileName || 'preventivo.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore download preventivo');
+    }
+  }
+
+  // Invia (o reinvia) contratto + GDPR + preventivo al paziente per la firma
+  async function inviaFirmaContratto(contratto: ContrattoCollegato) {
+    const email = window.prompt('Email del destinatario', contratto.email || '');
+    if (!email) return;
+    try {
+      await api.post(`/contratti-pazienti/${contratto._id}/invia-email`, { email });
+      alert('Email inviata');
+      await caricaDati();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore invio');
     }
   }
 
@@ -598,6 +691,7 @@ export default function BadantiIntermediazione() {
             <div className="tw-flex tw-flex-col tw-gap-3">
               {richieste.map(r => {
                 const preventivo = r.preventivoId && typeof r.preventivoId === 'object' ? r.preventivoId : undefined;
+                const contratto = r.contrattoId && typeof r.contrattoId === 'object' ? r.contrattoId : undefined;
                 const fattura = r.fatturaId && typeof r.fatturaId === 'object' ? r.fatturaId : undefined;
                 const isOpen = selectedQuote === r._id;
                 // Paziente eliminato: populate restituisce null, mostriamo un fallback invece di crashare
@@ -647,10 +741,27 @@ export default function BadantiIntermediazione() {
                           )}
                         </div>
                         <div className="tw-flex tw-gap-2 tw-flex-shrink-0 tw-flex-wrap tw-items-center">
-                          {isGestione && !preventivo && (
+                          {isGestione && !preventivo && !contratto && (
                             <Button size="sm" onClick={() => setSelectedQuote(isOpen ? null : r._id)}>
                               {isOpen ? 'Chiudi' : 'Genera preventivo'}
                             </Button>
+                          )}
+                          {contratto && (
+                            <>
+                              <Button size="sm" variant="secondary" onClick={() => scaricaPreventivoContratto(contratto)}>
+                                <Download size={14} className="tw-inline" /> Preventivo
+                              </Button>
+                              {isGestione && contratto.stato === 'emesso' && (
+                                <Button size="sm" variant="secondary" onClick={() => inviaFirmaContratto(contratto)}>
+                                  <Mail size={14} className="tw-inline" /> Invia per firma
+                                </Button>
+                              )}
+                              {contratto.stato === 'firmato' && (
+                                <span className="tw-inline-flex tw-items-center tw-gap-1 tw-px-2 tw-py-1 tw-rounded tw-bg-green-100 tw-text-green-700 tw-text-xs tw-font-bold">
+                                  <Check size={14} /> Firmato{contratto.dataFirma ? ` il ${new Date(contratto.dataFirma).toLocaleDateString('it-IT')}` : ''}
+                                </span>
+                              )}
+                            </>
                           )}
                           {isGestione && preventivo && preventivo.stato === 'emesso' && (
                             <>
@@ -711,81 +822,233 @@ export default function BadantiIntermediazione() {
         </div>
       </div>
 
+      {/* ── Archivio "Preventivo + Contratto" e archivio GDPR intermediazione ── */}
+      {isGestione && (
+        <div className="tw-max-w-7xl tw-mx-auto tw-mt-6">
+          <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
+            <button
+              onClick={() => setShowArchivio(s => !s)}
+              className="tw-w-full tw-flex tw-justify-between tw-items-center tw-text-left"
+            >
+              <h2 className="tw-text-lg tw-font-semibold tw-flex tw-items-center tw-gap-2 tw-text-slate-700">
+                <FileText size={20} /> Archivi intermediazione
+                <span className="tw-text-xs tw-font-bold tw-text-slate-500">
+                  Contratti {archivioContratti.length} · GDPR {archivioGdpr.length}
+                </span>
+              </h2>
+              {showArchivio ? <X size={18} /> : <Plus size={18} />}
+            </button>
+
+            {showArchivio && (
+              <div className="tw-mt-4 tw-space-y-6">
+                <div>
+                  <h3 className="tw-text-sm tw-font-bold tw-text-slate-600 tw-uppercase tw-mb-2">Archivio Preventivo + Contratto</h3>
+                  {archivioContratti.length === 0 ? (
+                    <div className="tw-text-sm tw-text-slate-400">Nessun contratto generato.</div>
+                  ) : (
+                    <div className="tw-overflow-x-auto">
+                      <table className="tw-w-full tw-text-sm">
+                        <thead>
+                          <tr className="tw-text-left tw-text-xs tw-text-slate-500 tw-uppercase tw-border-b">
+                            <th className="tw-py-2 tw-pr-3">Paziente</th>
+                            <th className="tw-py-2 tw-pr-3">Documento</th>
+                            <th className="tw-py-2 tw-pr-3">Stato</th>
+                            <th className="tw-py-2 tw-pr-3">Email</th>
+                            <th className="tw-py-2">Azioni</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {archivioContratti.map(r => {
+                            const c = r.contrattoId && typeof r.contrattoId === 'object' ? r.contrattoId : undefined;
+                            const nomeP = r.patient ? `${r.patient.firstName} ${r.patient.lastName}` : '—';
+                            return (
+                              <tr key={r._id} className="tw-border-b tw-border-slate-100">
+                                <td className="tw-py-2 tw-pr-3 tw-font-medium tw-text-slate-700">{nomeP}</td>
+                                <td className="tw-py-2 tw-pr-3 tw-text-slate-500">{r.preventivoPdfFileName || c?.allegatoFileName || 'preventivo.pdf'}</td>
+                                <td className="tw-py-2 tw-pr-3">
+                                  {c?.stato === 'firmato'
+                                    ? <span className="tw-text-green-700 tw-font-semibold">Firmato{c.dataFirma ? ` ${new Date(c.dataFirma).toLocaleDateString('it-IT')}` : ''}</span>
+                                    : <span className="tw-text-amber-600 tw-font-semibold">In attesa firma</span>}
+                                </td>
+                                <td className="tw-py-2 tw-pr-3 tw-text-slate-500">{c?.email || '—'}</td>
+                                <td className="tw-py-2 tw-flex tw-gap-2">
+                                  {c && (
+                                    <Button size="sm" variant="secondary" onClick={() => scaricaPreventivoContratto(c)}>
+                                      <Download size={14} className="tw-inline" /> Preventivo
+                                    </Button>
+                                  )}
+                                  {c && c.stato !== 'firmato' && (
+                                    <Button size="sm" variant="secondary" onClick={() => inviaFirmaContratto(c)}>
+                                      <Mail size={14} className="tw-inline" /> Invia
+                                    </Button>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="tw-text-sm tw-font-bold tw-text-slate-600 tw-uppercase tw-mb-2">Archivio GDPR Intermediazione</h3>
+                  {archivioGdpr.length === 0 ? (
+                    <div className="tw-text-sm tw-text-slate-400">Nessun consenso GDPR raccolto dall'intermediazione.</div>
+                  ) : (
+                    <div className="tw-overflow-x-auto">
+                      <table className="tw-w-full tw-text-sm">
+                        <thead>
+                          <tr className="tw-text-left tw-text-xs tw-text-slate-500 tw-uppercase tw-border-b">
+                            <th className="tw-py-2 tw-pr-3">Paziente</th>
+                            <th className="tw-py-2 tw-pr-3">Firmatario</th>
+                            <th className="tw-py-2 tw-pr-3">Data firma</th>
+                            <th className="tw-py-2 tw-pr-3">Luogo</th>
+                            <th className="tw-py-2 tw-pr-3">Versione</th>
+                            <th className="tw-py-2">Stato</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {archivioGdpr.map(g => (
+                            <tr key={g._id} className="tw-border-b tw-border-slate-100">
+                              <td className="tw-py-2 tw-pr-3 tw-font-medium tw-text-slate-700">
+                                {g.patient ? `${g.patient.firstName} ${g.patient.lastName}` : '—'}
+                              </td>
+                              <td className="tw-py-2 tw-pr-3">{`${g.nomeFirmatario || ''} ${g.cognomeFirmatario || ''}`.trim() || '—'}</td>
+                              <td className="tw-py-2 tw-pr-3">{g.dataFirma ? new Date(g.dataFirma).toLocaleDateString('it-IT') : '—'}</td>
+                              <td className="tw-py-2 tw-pr-3">{g.luogoFirma || '—'}</td>
+                              <td className="tw-py-2 tw-pr-3">{g.versioneInformativa || '—'}</td>
+                              <td className="tw-py-2">
+                                {g.revocato
+                                  ? <span className="tw-text-red-600 tw-font-semibold">Revocato</span>
+                                  : <span className="tw-text-green-700 tw-font-semibold">Valido</span>}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {selectedQuote && richiestaAperta && (
         <div className="tw-fixed tw-inset-0 tw-bg-black/40 tw-flex tw-items-center tw-justify-center tw-z-50 tw-p-4">
-          <div className="tw-bg-white tw-rounded-2xl tw-p-6 tw-w-full tw-max-w-2xl tw-max-h-[90vh] tw-overflow-y-auto tw-shadow-xl">
-            <h2 className="tw-text-lg tw-font-bold tw-mb-4 tw-flex tw-items-center tw-gap-2 tw-text-slate-800"><FileText size={20} /> Genera preventivo</h2>
-            <div className="tw-space-y-3 tw-mb-4">
-              {(() => {
-                const costoBadanteMensile = Number(richiestaAperta.costoMensile || 0);
-                const gaNetta = includiGestione ? Number(gestioneAmministrativa || 0) : 0;
-                const ivaGestioneMensile = Math.round(gaNetta * 0.22 * 100) / 100;
-                const gaLordaMensile = Math.round((gaNetta + ivaGestioneMensile) * 100) / 100;
-                const totaleMensile = Math.round((costoBadanteMensile + gaLordaMensile) * 100) / 100;
-                return (
-                  <div className="tw-p-4 tw-bg-blue-50 tw-border-2 tw-border-blue-200 tw-rounded-xl tw-flex tw-justify-between tw-items-center tw-flex-wrap tw-gap-2">
-                    <div>
-                      <div className="tw-text-xs tw-uppercase tw-font-bold tw-text-blue-700 tw-tracking-wide">💶 Totale mensile a carico della famiglia</div>
-                      <div className="tw-text-xs tw-text-blue-600 tw-mt-0.5">Badante €{costoBadanteMensile.toFixed(2)}/mese{includiGestione && gaNetta > 0 ? ` + Gestione amministrativa €${gaLordaMensile.toFixed(2)}/mese (IVA incl.)` : ''}</div>
-                    </div>
-                    <div className="tw-text-2xl tw-font-extrabold tw-text-blue-800">€{totaleMensile.toFixed(2)}<span className="tw-text-sm tw-font-semibold">/mese</span></div>
-                  </div>
-                );
-              })()}
-              <div className="tw-p-3 tw-bg-slate-50 tw-rounded-xl">
-                <div className="tw-text-xs tw-font-bold tw-text-slate-500 tw-uppercase tw-mb-1.5">Dettaglio contratto e costi una tantum</div>
-                <div className="tw-text-sm"><span className="tw-font-semibold">Contratto:</span> {richiestaAperta.contrattoTipo === 'orario_non_convivente' ? 'Orario non convivente' : 'Convivente'}</div>
-                <div className="tw-text-sm"><span className="tw-font-semibold">Livello:</span> {richiestaAperta.livello} — {LIVELLI_DESCRIZIONI[richiestaAperta.livello]}</div>
-                {richiestaAperta.oreSettimanali ? <div className="tw-text-sm"><span className="tw-font-semibold">Ore settimanali:</span> {richiestaAperta.oreSettimanali}</div> : null}
-                <div className="tw-text-sm"><span className="tw-font-semibold">Mesi contratto:</span> {richiestaAperta.mesiContratto}</div>
-                {(() => {
-                  const mesi = Number(richiestaAperta.mesiContratto) || 12;
-                  const costoBadanteMensile = Number(richiestaAperta.costoMensile || 0);
-                  const costoContrattoAnnuale = Math.round(costoBadanteMensile * mesi * 100) / 100;
-                  const gaNetta = includiGestione ? Number(gestioneAmministrativa || 0) : 0;
-                  const ivaGestioneMensile = Math.round(gaNetta * 0.22 * 100) / 100;
-                  const gaLordaMensile = Math.round((gaNetta + ivaGestioneMensile) * 100) / 100;
-                  const gaLordaAnnuale = Math.round(gaLordaMensile * mesi * 100) / 100;
-                  const attivazione = 120;
-                  const consulenza = 610;
-                  const totaleUnaTantum = attivazione + consulenza;
-                  return (
-                    <>
-                      <div className="tw-text-sm"><span className="tw-font-semibold">Costo contratto consigliato:</span> <Euro size={14} className="tw-inline" /> {costoContrattoAnnuale.toFixed(2)} ({mesi} mesi)</div>
-                      {includiGestione && (
-                        <div className="tw-text-sm"><span className="tw-font-semibold">Gestione amministrativa:</span> <Euro size={14} className="tw-inline" /> {gaLordaAnnuale.toFixed(2)} ({mesi} mesi - imponibile €{gaNetta.toFixed(2)}/mese + IVA €{ivaGestioneMensile.toFixed(2)}/mese)</div>
-                      )}
-                      <div className="tw-text-sm"><span className="tw-font-semibold">Attivazione contratto:</span> <Euro size={14} className="tw-inline" /> {attivazione.toFixed(2)} (una tantum)</div>
-                      <div className="tw-text-sm"><span className="tw-font-semibold">Consulenza specialistica:</span> <Euro size={14} className="tw-inline" /> {consulenza.toFixed(2)} (imponibile €500,00 + IVA 22% €110,00)</div>
-                      <div className="tw-text-sm tw-font-semibold tw-text-slate-700 tw-mt-1">Totale una tantum (pagato subito): <Euro size={14} className="tw-inline" /> {totaleUnaTantum.toFixed(2)}</div>
-                    </>
-                  );
-                })()}
-              </div>
-              <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={includiGestione}
-                  onChange={e => setIncludiGestione(e.target.checked)}
-                  className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]"
-                />
-                <span className="tw-font-medium">Includi gestione amministrativa</span>
+          <div className="tw-bg-white tw-rounded-2xl tw-p-6 tw-w-full tw-max-w-3xl tw-max-h-[90vh] tw-overflow-y-auto tw-shadow-xl">
+            <h2 className="tw-text-lg tw-font-bold tw-mb-1 tw-flex tw-items-center tw-gap-2 tw-text-slate-800"><Euro size={20} /> Genera preventivo — simulatore CCNL 2026</h2>
+            <p className="tw-text-xs tw-text-slate-500 tw-mb-4">Il PDF del preventivo sarà allegato al contratto d'incarico inviato al paziente insieme all'informativa GDPR per la firma di accettazione.</p>
+            <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-3 tw-gap-3 tw-mb-4">
+              <label className="tw-flex tw-flex-col tw-gap-1">
+                <span className="tw-text-sm tw-font-medium">Tipo di contratto</span>
+                <select
+                  value={simContratto}
+                  onChange={e => {
+                    const t = TIPI_CONTRATTO_SIM.find(x => x.value === e.target.value) || TIPI_CONTRATTO_SIM[0];
+                    setSimContratto(t.value);
+                    if (t.livelli.length > 0 && !t.livelli.includes(simLivello)) setSimLivello(t.livelli[0]);
+                    setSimRisultato(null);
+                  }}
+                  className="tw-border tw-rounded tw-p-2"
+                >
+                  {TIPI_CONTRATTO_SIM.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
               </label>
-              {includiGestione && (
+              {simTipoCorrente.livelli.length > 0 ? (
                 <label className="tw-flex tw-flex-col tw-gap-1">
-                  <span className="tw-text-sm tw-font-medium">Gestione amministrativa mensile (imponibile, IVA 22% aggiunta in automatico)</span>
-                  <input type="number" step="0.01" value={gestioneAmministrativa} onChange={e => setGestioneAmministrativa(e.target.value)} className="tw-border tw-rounded tw-p-2" />
+                  <span className="tw-text-sm tw-font-medium">Livello CCNL</span>
+                  <select value={simLivello} onChange={e => { setSimLivello(e.target.value); setSimRisultato(null); }} className="tw-border tw-rounded tw-p-2">
+                    {simTipoCorrente.livelli.map(l => (
+                      <option key={l} value={l}>{l} — {LIVELLI_DESCRIZIONI[l]}</option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <div className="tw-flex tw-items-end tw-text-sm tw-text-slate-500 tw-pb-2">Livello unico (presenza notturna)</div>
+              )}
+              <label className="tw-flex tw-flex-col tw-gap-1">
+                <span className="tw-text-sm tw-font-medium">Durata</span>
+                <div className="tw-flex tw-gap-2">
+                  <button type="button" onClick={() => { setSimDeterminato(false); setSimRisultato(null); }} className={`tw-flex-1 tw-border tw-rounded tw-p-2 tw-text-sm tw-font-semibold ${!simDeterminato ? 'tw-bg-emerald-50 tw-border-emerald-400 tw-text-emerald-800' : 'tw-bg-white tw-text-slate-500'}`}>Indeterminato</button>
+                  <button type="button" onClick={() => { setSimDeterminato(true); setSimRisultato(null); }} className={`tw-flex-1 tw-border tw-rounded tw-p-2 tw-text-sm tw-font-semibold ${simDeterminato ? 'tw-bg-emerald-50 tw-border-emerald-400 tw-text-emerald-800' : 'tw-bg-white tw-text-slate-500'}`}>Determinato</button>
+                </div>
+              </label>
+              {simIsOrario && (
+                <label className="tw-flex tw-flex-col tw-gap-1">
+                  <span className="tw-text-sm tw-font-medium">Ore a settimana</span>
+                  <input type="number" min="1" max="40" value={simOre} onChange={e => { setSimOre(e.target.value); setSimRisultato(null); }} className="tw-border tw-rounded tw-p-2" />
                 </label>
               )}
-              <label className="tw-block">
-                <span className="tw-text-sm tw-font-medium">Note preventivo</span>
-                <textarea value={quoteNote} onChange={e => setQuoteNote(e.target.value)} rows={2} className="tw-w-full tw-border tw-rounded tw-p-2" />
+              <label className="tw-flex tw-flex-col tw-gap-1">
+                <span className="tw-text-sm tw-font-medium">{simIsOrario ? 'Paga oraria (€/h)' : 'Paga mensile (€/mese)'}</span>
+                <input type="number" step="0.01" min="0" value={simPagaCustom} onChange={e => { setSimPagaCustom(e.target.value); setSimRisultato(null); }} className="tw-border tw-rounded tw-p-2" placeholder="Minimo CCNL" />
+              </label>
+              {(simLivello === 'CS' || simLivello === 'DS' || simLivello === 'B' || simLivello === 'BS') && simContratto !== 'sostituzione' && simContratto !== 'presenza_notturna' && (
+                <div className="tw-flex tw-flex-col tw-gap-2 md:tw-col-span-2">
+                  <span className="tw-text-xs tw-font-bold tw-text-slate-500 tw-uppercase">Indennità</span>
+                  {(simLivello === 'CS' || simLivello === 'DS') && (
+                    <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-bg-slate-50 tw-border tw-rounded tw-p-2">
+                      <input type="checkbox" checked={simPiuAutosuff} onChange={e => { setSimPiuAutosuff(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+                      <span>Più persone non autosufficienti</span>
+                    </label>
+                  )}
+                  {simLivello === 'BS' && (
+                    <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-bg-slate-50 tw-border tw-rounded tw-p-2">
+                      <input type="checkbox" checked={simBabysitter} onChange={e => { setSimBabysitter(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+                      <span>Babysitter fino al 6° anno</span>
+                    </label>
+                  )}
+                  {(simLivello === 'B' || simLivello === 'BS' || simLivello === 'CS') && (
+                    <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-bg-slate-50 tw-border tw-rounded tw-p-2">
+                      <input type="checkbox" checked={simCertUni} onChange={e => { setSimCertUni(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+                      <span>Certificato UNI 11766</span>
+                    </label>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="tw-flex tw-items-center tw-gap-3 tw-flex-wrap tw-mb-4">
+              <Button size="sm" variant="secondary" onClick={calcolaSimulazione} disabled={simLoading || (simIsOrario && !(Number(simOre) > 0))}>
+                {simLoading ? 'Calcolo...' : 'Anteprima costo mensile'}
+              </Button>
+              {simRisultato && (
+                <div className="tw-text-sm tw-font-bold tw-text-slate-700">
+                  Costo mensile: <span className="tw-text-rose-700">€{simRisultato.totaleCostoMensile.toFixed(2).replace('.', ',')}</span>
+                  <span className="tw-text-xs tw-font-normal tw-text-slate-500 tw-ml-2">{simRisultato.contrattoLabel} · {simRisultato.livelloLabel}</span>
+                </div>
+              )}
+              {simErr && <span className="tw-text-red-600 tw-text-sm">{simErr}</span>}
+            </div>
+
+            <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-3 tw-gap-3 tw-mb-4 tw-p-3 tw-bg-slate-50 tw-rounded-xl">
+              <label className="tw-flex tw-flex-col tw-gap-1">
+                <span className="tw-text-sm tw-font-medium">Quota CAF mensile (€)</span>
+                <input type="number" step="0.01" min="0" value={prevCaf} onChange={e => setPrevCaf(e.target.value)} className="tw-border tw-rounded tw-p-2" />
+              </label>
+              <label className="tw-flex tw-flex-col tw-gap-1">
+                <span className="tw-text-sm tw-font-medium">Corrispettivo contratto (€)</span>
+                <input type="number" step="0.01" min="0" value={prevImporto} onChange={e => setPrevImporto(e.target.value)} className="tw-border tw-rounded tw-p-2" />
+                <span className="tw-text-xs tw-text-slate-400">Importo riportato nel contratto d'incarico</span>
+              </label>
+              <label className="tw-flex tw-flex-col tw-gap-1">
+                <span className="tw-text-sm tw-font-medium">Email destinatario firma</span>
+                <input type="email" value={prevEmail} onChange={e => setPrevEmail(e.target.value)} className="tw-border tw-rounded tw-p-2" placeholder="paziente@email.it" />
               </label>
             </div>
+            <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-mb-4">
+              <input type="checkbox" checked={prevInvia} onChange={e => setPrevInvia(e.target.checked)} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+              <span className="tw-font-medium">Invia subito al paziente contratto + GDPR + preventivo per la firma</span>
+            </label>
+
             <div className="tw-flex tw-justify-end tw-gap-2">
               <Button size="sm" variant="secondary" onClick={() => setSelectedQuote(null)}>Annulla</Button>
-              <Button size="sm" onClick={() => generaPreventivo(selectedQuote)} disabled={saving}>
-                {saving ? 'Generazione...' : 'Genera preventivo'}
+              <Button size="sm" onClick={() => generaPreventivoContratto(selectedQuote)} disabled={prevLoading || (prevInvia && !prevEmail)}>
+                {prevLoading ? 'Generazione...' : prevInvia ? 'Genera e invia per firma' : 'Genera preventivo + contratto'}
               </Button>
             </div>
           </div>

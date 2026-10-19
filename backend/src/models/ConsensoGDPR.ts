@@ -56,6 +56,10 @@ export interface IConsensoGDPR extends Document {
 
   // HTML/PDF firmato (per firma da contratto)
   htmlFirmato?: string;
+
+  // Contesto di raccolta (es. 'intermediazione' per consensi da contratto intermediazione badanti)
+  contesto?: string;
+  contrattoId?: string;
   
   // Revoca (diritto all'oblio)
   revocato: boolean;
@@ -121,6 +125,8 @@ const consensoSchema = new Schema<IConsensoGDPR>(
     dataInvio: { type: Date },
     firmaImg: { type: String },
     htmlFirmato: { type: String },
+    contesto: { type: String, trim: true, index: true },
+    contrattoId: { type: String, index: true },
     
     revocato: { type: Boolean, default: false },
     dataRevoca: { type: Date },

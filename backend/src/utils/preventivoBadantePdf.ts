@@ -22,11 +22,9 @@ export interface PreventivoPdfOpts {
   cafMensile?: number;     // quota CAF sanitario mensile (default 150)
 }
 
-export function generaPreventivoBadantePdf(res: Response, sim: SimulazioneCosto, opts: PreventivoPdfOpts = {}) {
+// Costruisce il documento PDFKit del preventivo (non chiuso: chiama doc.end() chi lo usa)
+function creaDocPreventivo(sim: SimulazioneCosto, opts: PreventivoPdfOpts = {}) {
   const doc = new PDFDocument({ size: 'A4', margin: 0, bufferPages: true });
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="preventivo-assistente-familiare.pdf"`);
-  doc.pipe(res);
 
   const W = 595.28;
   const margin = 50;
@@ -86,17 +84,30 @@ export function generaPreventivoBadantePdf(res: Response, sim: SimulazioneCosto,
   const colTot = margin + contentW * 0.82;
   const rowPad = 6;
 
-  const drawRow = (cells: { desc: string[]; ore?: string; retr?: string; tot?: string; bold?: boolean; fill?: string }, lineAfter = true) => {
-    const descH = Math.max(...cells.desc.map(t => doc.heightOfString(t, { width: colOre - colDesc - 12 })));
-    const h = descH + rowPad * 2;
+  const drawRow = (cells: { desc: string[]; ore?: string; retr?: string; tot?: string; totLabel?: string; bold?: boolean; fill?: string }, lineAfter = true) => {
+    const descW = colOre - colDesc - 12;
+    doc.font(cells.bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(9);
+    // altezza reale della descrizione: somma delle altezze di ogni linea + interlinea
+    const descHeights = cells.desc.map(t => doc.heightOfString(t, { width: descW }));
+    const descH = descHeights.reduce((a, b) => a + b, 0) + (cells.desc.length - 1) * 4;
+    const totH = cells.totLabel ? 24 : 0;
+    const h = Math.max(descH, 12, totH) + rowPad * 2;
     if (cells.fill) {
       doc.save().rect(colDesc, y, contentW, h).fill(cells.fill).restore();
     }
-    doc.font(cells.bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(9).fillColor('#000');
-    cells.desc.forEach((t, i) => doc.text(t, colDesc + 8, y + rowPad + i * 12, { width: colOre - colDesc - 12 }));
+    doc.fillColor('#000');
+    let dy = y + rowPad;
+    cells.desc.forEach((t, i) => { doc.text(t, colDesc + 8, dy, { width: descW }); dy += descHeights[i] + 4; });
     if (cells.ore) doc.text(cells.ore, colOre, y + rowPad, { width: colRetr - colOre - 8 });
     if (cells.retr) doc.text(cells.retr, colRetr, y + rowPad, { width: colTot - colRetr - 8 });
-    if (cells.tot) doc.text(cells.tot, colTot, y + rowPad, { width: margin + contentW - colTot, align: 'right' });
+    if (cells.tot) {
+      doc.font(cells.bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(9)
+        .text(cells.tot, colTot, y + rowPad, { width: margin + contentW - colTot, align: 'right' });
+      if (cells.totLabel) {
+        doc.font('Helvetica').fontSize(7.5).fillColor('#444')
+          .text(cells.totLabel, colTot, y + rowPad + 12, { width: margin + contentW - colTot, align: 'right' });
+      }
+    }
     y += h;
     if (lineAfter) doc.moveTo(colDesc, y).lineTo(colDesc + contentW, y).lineWidth(0.6).strokeColor('#000').stroke();
   };
@@ -115,27 +126,29 @@ export function generaPreventivoBadantePdf(res: Response, sim: SimulazioneCosto,
     desc: ['Costo mensile Assistente Familiare'],
     ore: `${Math.round(sim.oreMensili)}h`,
     retr: `${fmt(sim.retribuzioneOrariaTotale)}/h`,
-    tot: fmt(sim.retribuzioneLordaMensile),
+    tot: `${fmt(sim.retribuzioneLordaMensile)} €`,
+    totLabel: 'Lordo',
   });
 
   // 2) Netto mensile
   drawRow({
     desc: ['Netto mensile Assistente Familiare'],
-    tot: fmt(sim.retribuzioneNetta),
+    tot: `${fmt(sim.retribuzioneNetta)} €`,
+    totLabel: 'Netto',
   });
 
   // 3) Trattenute
   drawRow({
     desc: ['TRATTENUTE', 'Contributi', 'T.F.R', 'Tredicesima'],
-    retr: fmt(contributiTotali),
-    tot: fmt(contributiTotali),
+    retr: `${fmt(contributiTotali)} €`,
+    tot: `${fmt(contributiTotali)} €`,
   });
 
   // 4) CAF sanitario
   drawRow({
     desc: ['CAF SANITARIO - Pratiche di assunzione e comunicazioni obbligatorie - Elaborazione buste paga e adempimenti mensili - Assistenza fiscale e consulenza CAF sanitario - Gestione Operatore Domiciliare'],
-    retr: fmt(cafQuota),
-    tot: fmt(cafQuota),
+    retr: `${fmt(cafQuota)} €`,
+    tot: `${fmt(cafQuota)} €`,
   });
 
   // chiusura tabella
@@ -167,19 +180,45 @@ export function generaPreventivoBadantePdf(res: Response, sim: SimulazioneCosto,
 
   // ── Dettaglio rapporto simulato (box informativo) ──
   y = doc.y + 22;
-  doc.save().roundedRect(margin, y, contentW, 52, 6).fill('#f7f4f2').restore();
+  const boxH = 52;
+  const footerTop = 742; // logo + ROMA occupano ~742-800
+  if (y + boxH > footerTop - 10) {
+    doc.addPage();
+    y = 60;
+  }
+  doc.save().roundedRect(margin, y, contentW, boxH, 6).fill('#f7f4f2').restore();
   doc.font('Helvetica-Bold').fontSize(8.5).fillColor(brand)
     .text('RAPPORTO SIMULATO', margin + 12, y + 8);
   doc.font('Helvetica').fontSize(8.5).fillColor('#333')
     .text(`${sim.contrattoLabel} · ${sim.livelloLabel} · ${sim.oreSettimanali} ore a settimana · Paga minima CCNL 2026: ${fmt(sim.pagaBaseCcnl)} €/${sim.pagaUnitaria === 'ora' ? 'ora' : 'mese'}`, margin + 12, y + 22, { width: contentW - 24 });
   doc.text(`Retribuzione oraria effettiva ${fmt(sim.retribuzioneOrariaEffettiva)} €/h · Ferie maturate ${fmt(sim.ferieMensiliOre)} ore/mese${sim.vittoAlloggioGiorno ? ` · Vitto e alloggio in natura ${fmt(sim.vittoAlloggioGiorno)} €/g` : ''}`, margin + 12, y + 34, { width: contentW - 24 });
-  y += 52;
+  y += boxH;
 
   // ── Footer: logo RSD + ROMA ──
-  const footerY = 780;
-  if (hasImg(rsd)) doc.image(rsd, W / 2 - 32, footerY - 40, { width: 64 });
+  if (hasImg(rsd)) doc.image(rsd, W / 2 - 32, footerTop, { width: 64 });
   doc.font('Times-Bold').fontSize(13).fillColor('#000')
-    .text('ROMA', margin, footerY + 8, { width: contentW, align: 'center', characterSpacing: 2 });
+    .text('ROMA', margin, footerTop + 46, { width: contentW, align: 'center', characterSpacing: 2 });
 
+  return doc;
+}
+
+// Streaming diretto sulla response HTTP
+export function generaPreventivoBadantePdf(res: Response, sim: SimulazioneCosto, opts: PreventivoPdfOpts = {}) {
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="preventivo-assistente-familiare.pdf"`);
+  const doc = creaDocPreventivo(sim, opts);
+  doc.pipe(res);
   doc.end();
+}
+
+// Variante Buffer: usata per archiviare il preventivo e allegarlo all'email di firma
+export function generaPreventivoBadantePdfBuffer(sim: SimulazioneCosto, opts: PreventivoPdfOpts = {}): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const doc = creaDocPreventivo(sim, opts);
+    const chunks: Buffer[] = [];
+    doc.on('data', (c: Buffer) => chunks.push(c));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+    doc.end();
+  });
 }

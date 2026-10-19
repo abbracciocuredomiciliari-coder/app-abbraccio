@@ -1,12 +1,16 @@
 import { Router, Request, Response } from 'express';
+import crypto from 'crypto';
 import BadanteIntermediazione from '../models/BadanteIntermediazione';
 import DocumentoFatturazione from '../models/DocumentoFatturazione';
 import Patient from '../models/Patient';
+import ContrattoPaziente from '../models/ContrattoPaziente';
+import ConsensoGDPR from '../models/ConsensoGDPR';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { auditLog } from '../middleware/audit';
 import { simulaCostoBadante, CONTRATTI_SIM } from '../utils/costoBadante';
-import { generaPreventivoBadantePdf } from '../utils/preventivoBadantePdf';
+import { generaPreventivoBadantePdf, generaPreventivoBadantePdfBuffer } from '../utils/preventivoBadantePdf';
+import { inviaEmailContrattoPaziente } from '../utils/contrattoInvio';
 
 const TARIFFE_BADANTI = {
   orario_non_convivente: {
@@ -147,6 +151,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
     const richieste = await BadanteIntermediazione.find(filtro)
       .populate('patient', 'firstName lastName codiceFiscale email tipoGestione')
       .populate('preventivoId', 'numero stato totale totaleMensileStimato')
+      .populate('contrattoId', 'stato email dataFirma allegatoFileName token nome')
       .populate('fatturaId', 'numero stato totale')
       .populate('fattureGestione', 'numero stato totale data')
       .sort({ createdAt: -1 });
@@ -213,6 +218,38 @@ router.post('/simula-costo/pdf', authenticateToken, async (req: Request, res: Re
     });
   } catch (error: any) {
     return res.status(400).json({ message: error.message || 'Errore nella generazione del PDF' });
+  }
+});
+
+// GET /api/badanti-intermediazione/archivio/contratti — archivio "Preventivo + Contratto" intermediazione
+router.get('/archivio/contratti', authenticateToken, authorizeRole(...RUOLI_GESTIONE), async (req: Request, res: Response) => {
+  try {
+    const richieste = await BadanteIntermediazione.find({ contrattoId: { $ne: null } })
+      .populate('patient', 'firstName lastName codiceFiscale email')
+      .populate('contrattoId', 'stato email dataFirma allegatoFileName token nome importo consensoGdprId')
+      .select('-simulazione')
+      .sort({ createdAt: -1 });
+    return res.json(richieste);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore caricamento archivio contratti', error: error.message });
+  }
+});
+
+// GET /api/badanti-intermediazione/archivio/gdpr — archivio GDPR dedicato all'intermediazione
+router.get('/archivio/gdpr', authenticateToken, authorizeRole(...RUOLI_GESTIONE), async (req: Request, res: Response) => {
+  try {
+    const consensi = await ConsensoGDPR.find({ contesto: 'intermediazione' })
+      .select('patientId pazienteAnonimoId nomeFirmatario cognomeFirmatario codiceFiscaleFirmatario dataFirma luogoFirma versioneInformativa firmato revocato dataRevoca contrattoId ipAddress')
+      .sort({ dataFirma: -1 })
+      .lean();
+    // Arricchisce con nome paziente leggibile
+    const ids = [...new Set(consensi.map((c: any) => c.patientId).filter(Boolean))];
+    const pazienti = await Patient.find({ _id: { $in: ids } }).select('firstName lastName').lean();
+    const map = new Map(pazienti.map((p: any) => [String(p._id), p]));
+    const out = consensi.map((c: any) => ({ ...c, patient: map.get(String(c.patientId)) || null }));
+    return res.json(out);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore caricamento archivio GDPR', error: error.message });
   }
 });
 
@@ -305,49 +342,89 @@ router.patch('/:id/stato', authenticateToken, authorizeRole(...RUOLI_GESTIONE), 
   }
 });
 
-// POST /api/badanti-intermediazione/:id/preventivo — genera preventivo
+// POST /api/badanti-intermediazione/:id/preventivo — genera il preventivo reale dal simulatore costi
+// (PDF brandizzato) e lo associa al contratto d'incarico da inviare al paziente con
+// contratto + informativa GDPR per la firma di accettazione.
 router.post('/:id/preventivo', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('badanti_intermediazione', 'CREATE'), async (req: AuthRequest, res: Response) => {
   try {
-    const richiesta = await BadanteIntermediazione.findById(req.params.id);
+    const richiesta = await BadanteIntermediazione.findById(req.params.id).populate('patient', 'firstName lastName codiceFiscale email');
     if (!richiesta) return res.status(404).json({ message: 'Richiesta non trovata' });
-    if (richiesta.preventivoId) return res.status(400).json({ message: 'Preventivo già generato' });
-    if (!richiesta.mesiContratto) return res.status(400).json({ message: 'Mesi contratto obbligatori' });
+    if (richiesta.contrattoId) return res.status(400).json({ message: 'Contratto/preventivo già generato' });
 
-    const { gestioneAmministrativa, dataPrestazione, note } = req.body;
-    const ga = Number(gestioneAmministrativa) >= 0 ? Number(gestioneAmministrativa) : (Number(richiesta.gestioneAmministrativa) || 0);
-    const { prestazioni, totaleUnaTantum, totaleMensileStimato } = calcolaPrestazioni(richiesta, ga);
-    const mesi = Number(richiesta.mesiContratto) || 12;
-    const user = req.user as { name?: string; email?: string } | undefined;
-    const numero = await generaNumero('preventivo');
+    const {
+      contrattoTipo, livello, oreSettimanali, tempoDeterminato, pagaPersonalizzata,
+      indennitaPiuAutosuff, certificazioneUni, indennitaBabysitter,
+      cafMensile, importo, email, inviaEmail: inviaEmailFlag,
+    } = req.body || {};
 
-    const preventivo = await DocumentoFatturazione.create({
-      numero,
-      tipo: 'preventivo',
+    // ── 1) Validazione input simulatore ──
+    const tipiValidi = CONTRATTI_SIM.map(c => c.value);
+    if (!contrattoTipo || !tipiValidi.includes(contrattoTipo)) {
+      return res.status(400).json({ message: `contrattoTipo deve essere uno tra: ${tipiValidi.join(', ')}` });
+    }
+    const orario = contrattoTipo === 'non_convivente' || contrattoTipo === 'sostituzione';
+    if (orario && !(Number(oreSettimanali) > 0)) {
+      return res.status(400).json({ message: 'Ore settimanali obbligatorie per i contratti ad orario' });
+    }
+
+    const simInput = {
+      contrattoTipo,
+      livello,
+      oreSettimanali: oreSettimanali ? Number(oreSettimanali) : undefined,
+      tempoDeterminato: !!tempoDeterminato,
+      pagaPersonalizzata: pagaPersonalizzata ? Number(pagaPersonalizzata) : undefined,
+      indennitaPiuAutosuff: !!indennitaPiuAutosuff,
+      certificazioneUni: !!certificazioneUni,
+      indennitaBabysitter: !!indennitaBabysitter,
+    };
+    const sim = simulaCostoBadante(simInput as any);
+
+    const paziente: any = richiesta.patient;
+    if (!paziente) return res.status(404).json({ message: 'Paziente della richiesta non trovato' });
+    const intestatario = `${paziente.firstName || ''} ${paziente.lastName || ''}`.trim();
+
+    // ── 2) Genera il PDF preventivo reale dal simulatore ──
+    const pdfBuffer = await generaPreventivoBadantePdfBuffer(sim, {
+      intestatario,
+      cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : 150,
+    });
+    const pdfFileName = `preventivo-intermediazione-${intestatario.replace(/\s+/g, '-').toLowerCase() || 'paziente'}.pdf`;
+
+    // ── 3) Crea il contratto d'incarico con il PDF allegato (contratto + GDPR + firma) ──
+    const contratto = await ContrattoPaziente.create({
       patient: richiesta.patient,
-      riferimentoTipo: 'badante',
-      riferimentoId: richiesta._id,
-      prestazioni,
-      totale: totaleUnaTantum,
-      totaleLabel: 'TOTALE UNA TANTUM',
-      totaleMensileStimato,
-      totaleMensileLabel: `COSTO MENSILE A CARICO FAMIGLIA (x ${mesi} mesi)`,
-      data: new Date(),
-      dataPrestazione: dataPrestazione ? new Date(dataPrestazione) : undefined,
+      profilo: 'Assistente familiare',
+      importo: Number(importo) > 0 ? Number(importo) : 610,
+      token: crypto.randomBytes(32).toString('hex'),
+      email: email || paziente.email || undefined,
+      nome: intestatario,
       stato: 'emesso',
-      note: note || richiesta.note,
-      creatoDa: user?.name || user?.email || 'Sistema',
+      richiestaId: richiesta._id,
+      contesto: 'intermediazione',
+      allegatoFileName: pdfFileName,
+      allegatoContentType: 'application/pdf',
+      allegatoData: pdfBuffer,
     });
 
-    richiesta.preventivoId = preventivo._id as any;
+    // ── 4) Collega il contratto alla richiesta ──
+    richiesta.contrattoId = contratto._id as any;
     richiesta.stato = 'preventivo_emesso';
-    if (ga !== Number(richiesta.gestioneAmministrativa)) {
-      richiesta.gestioneAmministrativa = ga;
-    }
+    richiesta.simulazione = { ...simInput, totaleCostoMensile: sim.totaleCostoMensile, retribuzioneNetta: sim.retribuzioneNetta, cafMensile: Number(cafMensile) || 150 };
+    richiesta.costoMensile = Math.round(sim.totaleCostoMensile * 100) / 100;
+    richiesta.preventivoPdfFileName = pdfFileName;
     await richiesta.save();
 
-    const popolato = await DocumentoFatturazione.findById(preventivo._id).populate('patient', 'firstName lastName codiceFiscale address email');
-    return res.status(201).json({ preventivo: popolato, richiesta });
+    // ── 5) Invio opzionale: contratto + GDPR + preventivo al paziente per la firma ──
+    const emailDest = (email || paziente.email || '').trim();
+    let emailInviata = false;
+    if (inviaEmailFlag && emailDest) {
+      await inviaEmailContrattoPaziente(String(contratto._id), emailDest, req);
+      emailInviata = true;
+    }
+
+    return res.status(201).json({ contratto, richiesta, emailInviata });
   } catch (error: any) {
+    console.error('[Intermediazione preventivo] Errore:', error);
     return res.status(500).json({ message: 'Errore nella generazione del preventivo', error: error.message });
   }
 });
