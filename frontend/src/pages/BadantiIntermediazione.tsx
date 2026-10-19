@@ -77,6 +77,73 @@ const TIPI_CONTRATTO_SIM = [
   { value: 'sostituzione', label: 'Sostituzione', livelli: ['CS', 'DS'], orario: true },
 ];
 
+// ── Editor parametri CCNL/INPS: spec dei campi editabili ──
+const LIVELLI_ALL = ['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS'];
+const getPath = (obj: any, path: string) => path.split('.').reduce((o: any, k: string) => o?.[k], obj);
+function setPath(obj: any, path: string, v: any) {
+  const keys = path.split('.');
+  const clone: any = Array.isArray(obj) ? [...obj] : { ...obj };
+  let cur = clone;
+  for (let i = 0; i < keys.length - 1; i++) {
+    cur[keys[i]] = typeof cur[keys[i]] === 'object' && cur[keys[i]] !== null ? { ...cur[keys[i]] } : {};
+    cur = cur[keys[i]];
+  }
+  cur[keys[keys.length - 1]] = v;
+  return clone;
+}
+const livelli = (base: string, lista: string[] = LIVELLI_ALL) => lista.map(l => ({ path: `${base}.${l}`, label: l }));
+const fasciaInps = (base: string, f: string, conLimite: boolean) => [
+  { path: `${base}.${f}.totale`, label: `${f} totale` },
+  { path: `${base}.${f}.quotaLavoratore`, label: `${f} lavorat.` },
+  ...(conLimite ? [{ path: `${base}.${f}.limite`, label: `${f} limite €/h` }] : []),
+];
+const SEZIONI_TARIFFE: { titolo: string; campi: { path: string; label: string }[] }[] = [
+  { titolo: 'Paga convivente full-time (€/mese) — Tab. A', campi: livelli('pagaConvivente') },
+  { titolo: 'Convivente part-time 30h (€/mese) — Tab. B', campi: livelli('pagaPartTime', ['B', 'BS', 'C']) },
+  { titolo: 'Non convivente (€/ora) — Tab. C', campi: livelli('pagaOraria') },
+  { titolo: 'Assistenza notturna (€/mese) — Tab. D', campi: livelli('pagaNotturna', ['BS', 'CS', 'DS']) },
+  { titolo: 'Presenza notturna (€/mese) — Tab. E', campi: [{ path: 'pagaPresenzaNotturna', label: 'Livello unico' }] },
+  { titolo: 'Sostituzione riposo (€/ora) — Tab. G', campi: livelli('pagaSostituzione', ['CS', 'DS']) },
+  {
+    titolo: 'Indennità',
+    campi: [
+      { path: 'indennitaPiuAutosuffMensile', label: 'Più non autosuff. €/mese' },
+      { path: 'indennitaPiuAutosuffOraria', label: 'Più non autosuff. €/h' },
+      { path: 'indennitaUni11766Mensile', label: 'UNI 11766 €/mese' },
+      { path: 'indennitaBabysitterMensile', label: 'Babysitter conv. €/mese' },
+      { path: 'indennitaBabysitterPartTime', label: 'Babysitter PT €/mese' },
+      { path: 'indennitaBabysitterOraria', label: 'Babysitter €/h' },
+    ],
+  },
+  {
+    titolo: 'Parametri generali',
+    campi: [
+      { path: 'vittoAlloggioGiorno', label: 'Vitto+alloggio €/g' },
+      { path: 'giorniVittoMese', label: 'Gg vitto/mese' },
+      { path: 'settimaneMesi', label: 'Settimane→mese' },
+      { path: 'oreConviventeFull', label: 'Ore conv. full' },
+      { path: 'orePartTime', label: 'Ore part-time' },
+      { path: 'ferieGiorniAnno', label: 'Ferie gg/anno' },
+      { path: 'cafMensileDefault', label: 'CAF sanitario €/mese' },
+    ],
+  },
+  {
+    titolo: 'Cassa.Colf (€/ora)',
+    campi: [
+      { path: 'cassaColfDatoreOrario', label: 'Datore €/h' },
+      { path: 'cassaColfLavoratoreOrario', label: 'Lavoratore €/h' },
+    ],
+  },
+  {
+    titolo: 'INPS indeterminato (contributi €/ora per fascia)',
+    campi: [...fasciaInps('inpsIndeterminato', 'fascia1', true), ...fasciaInps('inpsIndeterminato', 'fascia2', true), ...fasciaInps('inpsIndeterminato', 'fascia3', false), ...fasciaInps('inpsIndeterminato', 'sopra24h', false)],
+  },
+  {
+    titolo: 'INPS determinato (+1,40%)',
+    campi: [...fasciaInps('inpsDeterminato', 'fascia1', true), ...fasciaInps('inpsDeterminato', 'fascia2', true), ...fasciaInps('inpsDeterminato', 'fascia3', false), ...fasciaInps('inpsDeterminato', 'sopra24h', false)],
+  },
+];
+
 interface ContrattoCollegato {
   _id: string;
   stato: 'emesso' | 'firmato';
@@ -163,10 +230,17 @@ export default function BadantiIntermediazione() {
   const [simBabysitter, setSimBabysitter] = useState(false);
   const [simPagaCustom, setSimPagaCustom] = useState('');
   const [simIntestatario, setSimIntestatario] = useState('');
+  const [simCaf, setSimCaf] = useState('150');
   const [simPdfLoading, setSimPdfLoading] = useState(false);
   const [simRisultato, setSimRisultato] = useState<SimulazioneCosto | null>(null);
   const [simLoading, setSimLoading] = useState(false);
   const [simErr, setSimErr] = useState('');
+
+  // Parametri CCNL/INPS (editor annuale tariffe)
+  const [showTariffe, setShowTariffe] = useState(false);
+  const [tariffe, setTariffe] = useState<any>(null);
+  const [tariffeMeta, setTariffeMeta] = useState<{ personalizzato: boolean; aggiornatoIl?: string | null; aggiornatoDa?: string | null }>({ personalizzato: false });
+  const [tariffeSaving, setTariffeSaving] = useState(false);
 
   const simTipoCorrente = TIPI_CONTRATTO_SIM.find(t => t.value === simContratto) || TIPI_CONTRATTO_SIM[1];
   const simIsOrario = simTipoCorrente.orario;
@@ -175,7 +249,48 @@ export default function BadantiIntermediazione() {
 
   const isGestione = user?.role === 'admin' || user?.role === 'coordinator' || user?.role === 'direttore';
 
-  useEffect(() => { caricaDati(); caricaPazienti(); }, []);
+  useEffect(() => { caricaDati(); caricaPazienti(); caricaTariffe(); }, []);
+
+  async function caricaTariffe() {
+    try {
+      const res = await api.get('/badanti-intermediazione/tariffe-ccnl');
+      setTariffe(res.data?.parametri || null);
+      setTariffeMeta({ personalizzato: !!res.data?.personalizzato, aggiornatoIl: res.data?.aggiornatoIl, aggiornatoDa: res.data?.aggiornatoDa });
+      if (res.data?.parametri?.cafMensileDefault != null) {
+        setSimCaf(String(res.data.parametri.cafMensileDefault));
+        setPrevCaf(String(res.data.parametri.cafMensileDefault));
+      }
+    } catch { /* tariffe opzionali: restano i default */ }
+  }
+
+  async function salvaTariffe() {
+    if (!tariffe) return;
+    try {
+      setTariffeSaving(true);
+      const res = await api.put('/badanti-intermediazione/tariffe-ccnl', { parametri: tariffe });
+      setTariffe(res.data?.parametri || tariffe);
+      setTariffeMeta(m => ({ ...m, personalizzato: true, aggiornatoIl: new Date().toISOString() }));
+      alert('Tariffe CCNL salvate: il simulatore e i preventivi PDF useranno i nuovi valori.');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore salvataggio tariffe');
+    } finally {
+      setTariffeSaving(false);
+    }
+  }
+
+  async function resetTariffe() {
+    if (!confirm('Ripristinare tutti i minimi ufficiali CCNL/INPS presenti nel sistema?')) return;
+    try {
+      setTariffeSaving(true);
+      const res = await api.post('/badanti-intermediazione/tariffe-ccnl/reset');
+      setTariffe(res.data?.parametri || null);
+      setTariffeMeta({ personalizzato: false });
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore reset tariffe');
+    } finally {
+      setTariffeSaving(false);
+    }
+  }
 
   // All'apertura del modale preventivo: inizializza il simulatore dai dati della richiesta
   useEffect(() => {
@@ -252,6 +367,7 @@ export default function BadantiIntermediazione() {
         indennitaBabysitter: simBabysitter,
         pagaPersonalizzata: simPagaCustom ? Number(simPagaCustom) : undefined,
         intestatario: simIntestatario || undefined,
+        cafMensile: Number(simCaf) >= 0 ? Number(simCaf) : undefined,
       }, { responseType: 'blob' });
       const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const a = document.createElement('a');
@@ -565,6 +681,11 @@ export default function BadantiIntermediazione() {
                 <span className="tw-text-xs tw-text-slate-400">Vuoto = minimo contrattuale CCNL 2026</span>
               </label>
               <label className="tw-flex tw-flex-col tw-gap-1">
+                <span className="tw-text-sm tw-font-medium">Quota CAF sanitario (€/mese)</span>
+                <input type="number" step="0.01" min="0" value={simCaf} onChange={e => setSimCaf(e.target.value)} className="tw-border tw-rounded tw-p-2" />
+                <span className="tw-text-xs tw-text-slate-400">Voce stampata sul PDF preventivo</span>
+              </label>
+              <label className="tw-flex tw-flex-col tw-gap-1">
                 <span className="tw-text-sm tw-font-medium">Intestatario preventivo (opzionale)</span>
                 <input type="text" value={simIntestatario} onChange={e => setSimIntestatario(e.target.value)} className="tw-border tw-rounded tw-p-2" placeholder="Es. Famiglia Rossi" />
               </label>
@@ -619,6 +740,61 @@ export default function BadantiIntermediazione() {
                   </div>
                 </div>
                 <p className="tw-text-xs tw-text-slate-400 tw-m-0">Stima informativa basata sul CCNL lavoro domestico e contributi INPS 2026. Non sostituisce la consulenza paghe.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Parametri CCNL / INPS — aggiornamento annuale tariffe ── */}
+        {isGestione && tariffe && (
+          <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
+            <button
+              onClick={() => setShowTariffe(s => !s)}
+              className="tw-w-full tw-flex tw-justify-between tw-items-center tw-text-left"
+            >
+              <h2 className="tw-text-lg tw-font-semibold tw-flex tw-items-center tw-gap-2 tw-text-slate-700">
+                <Euro size={20} /> Parametri CCNL / INPS
+                <span className={`tw-text-xs tw-font-bold ${tariffeMeta.personalizzato ? 'tw-text-amber-600' : 'tw-text-slate-400'}`}>
+                  {tariffeMeta.personalizzato ? 'Tariffe personalizzate' : 'Minimi ufficiali'}
+                  {tariffeMeta.aggiornatoIl ? ` · agg. ${new Date(tariffeMeta.aggiornatoIl).toLocaleDateString('it-IT')}${tariffeMeta.aggiornatoDa ? ` da ${tariffeMeta.aggiornatoDa}` : ''}` : ''}
+                </span>
+              </h2>
+              {showTariffe ? <X size={18} /> : <Plus size={18} />}
+            </button>
+
+            {showTariffe && (
+              <div className="tw-mt-4 tw-space-y-5">
+                <p className="tw-text-xs tw-text-slate-500">
+                  Aggiorna qui i minimi retributivi, le indennità e i contributi quando escono le nuove tabelle CCNL/INPS.
+                  I valori si applicano subito al simulatore, al PDF preventivo e al preventivo reale da firmare.
+                </p>
+                {SEZIONI_TARIFFE.map(s => (
+                  <div key={s.titolo}>
+                    <h3 className="tw-text-xs tw-font-bold tw-text-slate-500 tw-uppercase tw-mb-2">{s.titolo}</h3>
+                    <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-4 lg:tw-grid-cols-6 tw-gap-2">
+                      {s.campi.map(c => (
+                        <label key={c.path} className="tw-flex tw-flex-col tw-gap-0.5">
+                          <span className="tw-text-[11px] tw-text-slate-500">{c.label}</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={getPath(tariffe, c.path) ?? ''}
+                            onChange={e => setTariffe((t: any) => setPath(t, c.path, e.target.value === '' ? undefined : Number(e.target.value)))}
+                            className="tw-border tw-rounded tw-p-1.5 tw-text-sm"
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <div className="tw-flex tw-justify-end tw-gap-2 tw-flex-wrap">
+                  <Button size="sm" variant="secondary" onClick={resetTariffe} disabled={tariffeSaving}>
+                    Ripristina minimi ufficiali
+                  </Button>
+                  <Button size="sm" onClick={salvaTariffe} disabled={tariffeSaving}>
+                    {tariffeSaving ? 'Salvataggio...' : 'Salva tariffe'}
+                  </Button>
+                </div>
               </div>
             )}
           </div>

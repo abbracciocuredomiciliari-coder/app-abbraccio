@@ -5,10 +5,11 @@ import DocumentoFatturazione from '../models/DocumentoFatturazione';
 import Patient from '../models/Patient';
 import ContrattoPaziente from '../models/ContrattoPaziente';
 import ConsensoGDPR from '../models/ConsensoGDPR';
+import TariffaCcnl from '../models/TariffaCcnl';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { auditLog } from '../middleware/audit';
-import { simulaCostoBadante, CONTRATTI_SIM } from '../utils/costoBadante';
+import { simulaCostoBadante, CONTRATTI_SIM, PARAMETRI_CCN_2026, ParametriCcnl } from '../utils/costoBadante';
 import { generaPreventivoBadantePdf, generaPreventivoBadantePdfBuffer } from '../utils/preventivoBadantePdf';
 import { inviaEmailContrattoPaziente } from '../utils/contrattoInvio';
 
@@ -102,6 +103,34 @@ const router = Router();
 
 const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
 
+// ─── Tariffe CCNL/INPS: merge delle override salvate su DB sopra i default 2026 ──
+// Accetta solo chiavi presenti nei default e solo valori numerici: chiavi
+// sconosciute o non numeriche vengono ignorate (i default restano). Così il
+// motore può aggiungere parametri nuovi senza rompere i record esistenti.
+function mergeParametri(override: any): ParametriCcnl {
+  const merge = (def: any, ovr: any): any => {
+    if (typeof def === 'number') {
+      const n = Number(ovr);
+      return Number.isFinite(n) ? n : def;
+    }
+    if (typeof def !== 'object' || def === null) return def;
+    const out: any = { ...def };
+    if (ovr && typeof ovr === 'object') {
+      for (const k of Object.keys(def)) {
+        if (k in ovr) out[k] = merge(def[k], ovr[k]);
+      }
+    }
+    return out;
+  };
+  if (!override || typeof override !== 'object') return PARAMETRI_CCN_2026;
+  return merge(PARAMETRI_CCN_2026, override);
+}
+
+async function caricaParametri(): Promise<ParametriCcnl> {
+  const doc = await TariffaCcnl.findOne({ key: 'ccnl' }).lean();
+  return mergeParametri(doc?.parametri);
+}
+
 // ─── Numerazione progressiva per preventivi/fatture ────────────────────────────
 // Le fatture della Intermediazioni usano una serie dedicata FATT-CF con
 // progressivo autonomo, distaccato dalla fatturazione dei pazienti privati.
@@ -174,6 +203,7 @@ router.post('/simula-costo', authenticateToken, async (req: Request, res: Respon
     if (orario && !(Number(oreSettimanali) > 0)) {
       return res.status(400).json({ message: 'Ore settimanali obbligatorie per i contratti ad orario' });
     }
+    const P = await caricaParametri();
     const risultato = simulaCostoBadante({
       contrattoTipo,
       livello,
@@ -183,7 +213,7 @@ router.post('/simula-costo', authenticateToken, async (req: Request, res: Respon
       indennitaPiuAutosuff: !!indennitaPiuAutosuff,
       certificazioneUni: !!certificazioneUni,
       indennitaBabysitter: !!indennitaBabysitter,
-    });
+    }, P);
     return res.json(risultato);
   } catch (error: any) {
     return res.status(400).json({ message: error.message || 'Errore nel calcolo del costo' });
@@ -202,6 +232,7 @@ router.post('/simula-costo/pdf', authenticateToken, async (req: Request, res: Re
     if (orario && !(Number(oreSettimanali) > 0)) {
       return res.status(400).json({ message: 'Ore settimanali obbligatorie per i contratti ad orario' });
     }
+    const P = await caricaParametri();
     const risultato = simulaCostoBadante({
       contrattoTipo,
       livello,
@@ -211,13 +242,54 @@ router.post('/simula-costo/pdf', authenticateToken, async (req: Request, res: Re
       indennitaPiuAutosuff: !!indennitaPiuAutosuff,
       certificazioneUni: !!certificazioneUni,
       indennitaBabysitter: !!indennitaBabysitter,
-    });
+    }, P);
     return generaPreventivoBadantePdf(res, risultato, {
       intestatario: intestatario ? String(intestatario).slice(0, 120) : undefined,
-      cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : 150,
+      cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : P.cafMensileDefault,
     });
   } catch (error: any) {
     return res.status(400).json({ message: error.message || 'Errore nella generazione del PDF' });
+  }
+});
+
+// GET /api/badanti-intermediazione/tariffe-ccnl — parametri CCNL/INPS attivi (default + override DB)
+router.get('/tariffe-ccnl', authenticateToken, async (_req: Request, res: Response) => {
+  try {
+    const doc = await TariffaCcnl.findOne({ key: 'ccnl' }).lean();
+    return res.json({
+      parametri: mergeParametri(doc?.parametri),
+      personalizzato: !!doc,
+      aggiornatoIl: doc?.aggiornatoIl || null,
+      aggiornatoDa: doc?.aggiornatoDa || null,
+    });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore caricamento tariffe', error: error.message });
+  }
+});
+
+// PUT /api/badanti-intermediazione/tariffe-ccnl — aggiorna le tariffe (salva solo i valori validi)
+router.put('/tariffe-ccnl', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('badanti_intermediazione', 'UPDATE'), async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user as { name?: string; email?: string } | undefined;
+    const parametri = mergeParametri(req.body?.parametri);
+    await TariffaCcnl.updateOne(
+      { key: 'ccnl' },
+      { $set: { parametri, aggiornatoDa: user?.name || user?.email || 'Sistema', aggiornatoIl: new Date() } },
+      { upsert: true }
+    );
+    return res.json({ message: 'Tariffe CCNL aggiornate', parametri });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore salvataggio tariffe', error: error.message });
+  }
+});
+
+// POST /api/badanti-intermediazione/tariffe-ccnl/reset — ripristina i minimi ufficiali nel codice
+router.post('/tariffe-ccnl/reset', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('badanti_intermediazione', 'UPDATE'), async (_req: AuthRequest, res: Response) => {
+  try {
+    await TariffaCcnl.deleteOne({ key: 'ccnl' });
+    return res.json({ message: 'Tariffe ripristinate ai minimi ufficiali', parametri: PARAMETRI_CCN_2026 });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore reset tariffe', error: error.message });
   }
 });
 
@@ -367,6 +439,7 @@ router.post('/:id/preventivo', authenticateToken, authorizeRole(...RUOLI_GESTION
       return res.status(400).json({ message: 'Ore settimanali obbligatorie per i contratti ad orario' });
     }
 
+    const P = await caricaParametri();
     const simInput = {
       contrattoTipo,
       livello,
@@ -377,7 +450,7 @@ router.post('/:id/preventivo', authenticateToken, authorizeRole(...RUOLI_GESTION
       certificazioneUni: !!certificazioneUni,
       indennitaBabysitter: !!indennitaBabysitter,
     };
-    const sim = simulaCostoBadante(simInput as any);
+    const sim = simulaCostoBadante(simInput as any, P);
 
     const paziente: any = richiesta.patient;
     if (!paziente) return res.status(404).json({ message: 'Paziente della richiesta non trovato' });
@@ -386,7 +459,7 @@ router.post('/:id/preventivo', authenticateToken, authorizeRole(...RUOLI_GESTION
     // ── 2) Genera il PDF preventivo reale dal simulatore ──
     const pdfBuffer = await generaPreventivoBadantePdfBuffer(sim, {
       intestatario,
-      cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : 150,
+      cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : P.cafMensileDefault,
     });
     const pdfFileName = `preventivo-intermediazione-${intestatario.replace(/\s+/g, '-').toLowerCase() || 'paziente'}.pdf`;
 

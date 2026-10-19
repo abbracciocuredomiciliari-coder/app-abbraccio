@@ -32,89 +32,84 @@ export const CONTRATTI_SIM: { value: ContrattoSim; label: string; livelli: Livel
   { value: 'sostituzione', label: 'Sostituzione (giorni di riposo)', livelli: ['CS', 'DS'] },
 ];
 
-// Tabella A — conviventi full-time, 54h/sett (valori MENSILI 2026)
-// D/DS includono l'indennità di funzione 207,69 € prevista dal CCNL.
-export const PAGA_CONVIVENTE_2026: Record<LivelloCcnl, number> = {
-  A: 908.10,
-  AS: 958.55,
-  B: 983.16,
-  BS: 1053.39,
-  C: 1123.63,
-  CS: 1193.84,
-  D: 1612.20,  // 1.404,51 + 207,69 indennità di funzione
-  DS: 1682.42, // 1.474,73 + 207,69 indennità di funzione
-};
+// ─── Parametri CCNL/INPS (aggiornabili annualmente da UI → salvati su DB) ─────
+// Struttura dei parametri del simulatore. I valori di default sono i minimi 2026
+// (accordo 11/02/2026); l'editor "Parametri CCNL" nella pagina Intermediazioni
+// permette di aggiornarli senza redeploy (modello TariffaCcnl).
 
-// Tabella B — conviventi part-time 30h (valori MENSILI 2026)
-export const PAGA_PARTTIME_2026: Partial<Record<LivelloCcnl, number>> = {
-  B: 702.25,
-  BS: 737.39,
-  C: 814.60,
-};
+export interface FasciaInps { totale: number; quotaLavoratore: number; limite?: number; }
+export interface TabelleInps { fascia1: FasciaInps; fascia2: FasciaInps; fascia3: FasciaInps; sopra24h: FasciaInps; }
 
-// Tabella C — non conviventi (valori ORARI 2026)
-export const PAGA_ORARIA_2026: Record<LivelloCcnl, number> = {
-  A: 6.51,
-  AS: 6.76,
-  B: 7.01,
-  BS: 7.45,
-  C: 7.86,
-  CS: 8.30,
-  D: 9.57,
-  DS: 9.97,
-};
+export interface ParametriCcnl {
+  // Minimi retributivi per tipo di contratto (€/mese o €/ora)
+  pagaConvivente: Record<LivelloCcnl, number>;                 // Tabella A — 54h/sett
+  pagaPartTime: Partial<Record<LivelloCcnl, number>>;          // Tabella B — 30h
+  pagaOraria: Record<LivelloCcnl, number>;                     // Tabella C — non conviventi
+  pagaNotturna: Partial<Record<LivelloCcnl, number>>;          // Tabella D — assistenza notturna
+  pagaPresenzaNotturna: number;                                // Tabella E — livello unico
+  pagaSostituzione: Partial<Record<LivelloCcnl, number>>;      // Tabella G — riposo settim.
+  // Indennità
+  indennitaPiuAutosuffMensile: number;  // Tabella I — CS/DS più non autosuff.
+  indennitaPiuAutosuffOraria: number;   // Tabella I oraria
+  indennitaUni11766Mensile: number;     // Tabella L — B/BS/CS certificato UNI 11766
+  indennitaBabysitterMensile: number;   // Tabella H — convivente full
+  indennitaBabysitterPartTime: number;  // Tabella H — part-time
+  indennitaBabysitterOraria: number;    // Tabella H — non convivente oraria
+  // Parametri generali
+  vittoAlloggioGiorno: number;   // vitto+alloggio in natura €/giorno
+  giorniVittoMese: number;       // giorni vitto/mese (base TFR/13a)
+  settimaneMesi: number;         // convenzione INPS 52,03/12 → 40h = 173,34 ore/mese
+  oreConviventeFull: number;     // ore sett. convivente full-time
+  orePartTime: number;           // ore sett. part-time
+  ferieGiorniAnno: number;       // giorni ferie/anno
+  // Cassa.Colf €/ora retribuita
+  cassaColfDatoreOrario: number;
+  cassaColfLavoratoreOrario: number;
+  // Contributi INPS orari per fascia (indeterminato / determinato +1,40%)
+  inpsIndeterminato: TabelleInps;
+  inpsDeterminato: TabelleInps;
+  // Quota CAF sanitario di default stampata sul preventivo
+  cafMensileDefault: number;
+}
 
-// Tabella D — assistenza notturna (valori MENSILI 2026)
-export const PAGA_NOTTURNA_2026: Partial<Record<LivelloCcnl, number>> = {
-  BS: 1211.38, // autosufficienti
-  CS: 1372.91, // non autosufficienti
-  DS: 1695.99, // non autosufficienti
-};
-
-// Tabella E — presenza notturna, livello unico (mensile 2026)
-export const PAGA_PRESENZA_NOTTURNA_2026 = 811.09;
-
-// Tabella G — sostituzione giorni di riposo, non conviventi (valori ORARI 2026)
-export const PAGA_SOSTITUZIONE_2026: Partial<Record<LivelloCcnl, number>> = {
-  CS: 8.91,
-  DS: 10.75,
-};
-
-// Indennità 2026
-export const INDENNITA_PIU_AUTOSUFF_MENSILE = 119.66; // Tabella I - CS/DS più non autosuff.
-export const INDENNITA_PIU_AUTOSUFF_ORARIA = 0.70;    // Tabella I oraria
-export const INDENNITA_UNI11766_MENSILE = 30.27;      // Tabella L - B/BS/CS certificato UNI 11766
-
-// Indennità babysitter BS (< 6 anni, Tabella H)
-export const INDENNITA_BABYSITTER_MENSILE = 138.54;   // convivente full
-export const INDENNITA_BABYSITTER_PARTTIME = 97.06;   // convivente part-time
-export const INDENNITA_BABYSITTER_ORARIA = 0.84;      // non convivente oraria
-
-export const VITTO_ALLOGGIO_GIORNO_2026 = 6.66;
-export const GIORNI_VITTO_MESE = 26;                  // vitto in natura: 26 gg/mese (base TFR/13a)
-export const SETTIMANE_MESI = 4.3334;                 // convenzione INPS (52,03/12): 40h→173,34 ore/mese
-export const ORE_CONVIVENTE_FULL = 54;
-export const ORE_PARTTIME = 30;
-export const FERIE_GIORNI_ANNO = 26;
-
-// Cassa.Colf (contributo assistenza contrattuale, per ora retribuita)
-export const CASSA_COLF_DATORE_ORARIO = 0.04;
-export const CASSA_COLF_LAVORATORE_ORARIO = 0.02;
-
-// Contributi orari INPS 2026 — tempo INDETERMINATO (con quota CUAF)
-const INPS_2026_INDETERMINATO = {
-  fascia1: { totale: 1.70, quotaLavoratore: 0.43, limite: 9.61 },
-  fascia2: { totale: 1.92, quotaLavoratore: 0.48, limite: 11.70 },
-  fascia3: { totale: 2.34, quotaLavoratore: 0.59 },
-  sopra24h: { totale: 1.24, quotaLavoratore: 0.31 },
-};
-
-// Contributi orari INPS 2026 — tempo DETERMINATO (+ addizionale 1,40%)
-const INPS_2026_DETERMINATO = {
-  fascia1: { totale: 1.82, quotaLavoratore: 0.43, limite: 9.61 },
-  fascia2: { totale: 2.05, quotaLavoratore: 0.48, limite: 11.70 },
-  fascia3: { totale: 2.50, quotaLavoratore: 0.59 },
-  sopra24h: { totale: 1.32, quotaLavoratore: 0.31 },
+export const PARAMETRI_CCN_2026: ParametriCcnl = {
+  // Tabella A — conviventi full-time (mensili). D/DS includono indennità di funzione 207,69 €.
+  pagaConvivente: { A: 908.10, AS: 958.55, B: 983.16, BS: 1053.39, C: 1123.63, CS: 1193.84, D: 1612.20, DS: 1682.42 },
+  // Tabella B — conviventi part-time 30h (mensili)
+  pagaPartTime: { B: 702.25, BS: 737.39, C: 814.60 },
+  // Tabella C — non conviventi (orari)
+  pagaOraria: { A: 6.51, AS: 6.76, B: 7.01, BS: 7.45, C: 7.86, CS: 8.30, D: 9.57, DS: 9.97 },
+  // Tabella D — assistenza notturna (mensili)
+  pagaNotturna: { BS: 1211.38, CS: 1372.91, DS: 1695.99 },
+  pagaPresenzaNotturna: 811.09,
+  pagaSostituzione: { CS: 8.91, DS: 10.75 },
+  indennitaPiuAutosuffMensile: 119.66,
+  indennitaPiuAutosuffOraria: 0.70,
+  indennitaUni11766Mensile: 30.27,
+  indennitaBabysitterMensile: 138.54,
+  indennitaBabysitterPartTime: 97.06,
+  indennitaBabysitterOraria: 0.84,
+  vittoAlloggioGiorno: 6.66,
+  giorniVittoMese: 26,
+  settimaneMesi: 4.3334,
+  oreConviventeFull: 54,
+  orePartTime: 30,
+  ferieGiorniAnno: 26,
+  cassaColfDatoreOrario: 0.04,
+  cassaColfLavoratoreOrario: 0.02,
+  inpsIndeterminato: {
+    fascia1: { totale: 1.70, quotaLavoratore: 0.43, limite: 9.61 },
+    fascia2: { totale: 1.92, quotaLavoratore: 0.48, limite: 11.70 },
+    fascia3: { totale: 2.34, quotaLavoratore: 0.59 },
+    sopra24h: { totale: 1.24, quotaLavoratore: 0.31 },
+  },
+  inpsDeterminato: {
+    fascia1: { totale: 1.82, quotaLavoratore: 0.43, limite: 9.61 },
+    fascia2: { totale: 2.05, quotaLavoratore: 0.48, limite: 11.70 },
+    fascia3: { totale: 2.50, quotaLavoratore: 0.59 },
+    sopra24h: { totale: 1.32, quotaLavoratore: 0.31 },
+  },
+  cafMensileDefault: 150,
 };
 
 function r2(n: number) { return Math.round(n * 100) / 100; }
@@ -162,15 +157,16 @@ export interface SimulazioneCosto {
   vittoAlloggioMensileNatura: number; // in natura: solo base TFR/13a, non nel totale
 }
 
-function contribOrario(effettiva: number, oreSett: number, determinato: boolean) {
-  const t = determinato ? INPS_2026_DETERMINATO : INPS_2026_INDETERMINATO;
+function contribOrario(effettiva: number, oreSett: number, determinato: boolean, P: ParametriCcnl) {
+  const t = determinato ? P.inpsDeterminato : P.inpsIndeterminato;
   if (oreSett > 24) return t.sopra24h;
-  if (effettiva <= t.fascia1.limite) return t.fascia1;
-  if (effettiva <= t.fascia2.limite) return t.fascia2;
+  if (effettiva <= (t.fascia1.limite ?? Infinity)) return t.fascia1;
+  if (effettiva <= (t.fascia2.limite ?? Infinity)) return t.fascia2;
   return t.fascia3;
 }
 
-export function simulaCostoBadante(input: SimulazioneInput): SimulazioneCosto {
+export function simulaCostoBadante(input: SimulazioneInput, params: ParametriCcnl = PARAMETRI_CCN_2026): SimulazioneCosto {
+  const P = params;
   const tipo = input.contrattoTipo;
   const livello = input.livello as LivelloCcnl;
   const cfg = CONTRATTI_SIM.find(c => c.value === tipo);
@@ -185,35 +181,35 @@ export function simulaCostoBadante(input: SimulazioneInput): SimulazioneCosto {
 
   // ── Ore settimanali ──
   let oreSett: number;
-  if (tipo === 'convivente') oreSett = ORE_CONVIVENTE_FULL;
-  else if (tipo === 'convivente_part_time') oreSett = ORE_PARTTIME;
+  if (tipo === 'convivente') oreSett = P.oreConviventeFull;
+  else if (tipo === 'convivente_part_time') oreSett = P.orePartTime;
   else if (orario) oreSett = Math.max(1, Math.min(40, Number(input.oreSettimanali) || 0));
-  else oreSett = ORE_CONVIVENTE_FULL; // notturne: full convivente
-  const oreMensili = oreSett * SETTIMANE_MESI; // grezze: arrotondate solo in output
+  else oreSett = P.oreConviventeFull; // notturne: full convivente
+  const oreMensili = oreSett * P.settimaneMesi; // grezze: arrotondate solo in output
 
   // ── Paga base tabellare ──
   let pagaBase: number;
-  if (tipo === 'convivente') pagaBase = PAGA_CONVIVENTE_2026[livello];
-  else if (tipo === 'convivente_part_time') pagaBase = PAGA_PARTTIME_2026[livello] || 0;
-  else if (tipo === 'assistenza_notturna') pagaBase = PAGA_NOTTURNA_2026[livello] || 0;
-  else if (tipo === 'presenza_notturna') pagaBase = PAGA_PRESENZA_NOTTURNA_2026;
-  else if (tipo === 'sostituzione') pagaBase = PAGA_SOSTITUZIONE_2026[livello] || 0;
-  else pagaBase = PAGA_ORARIA_2026[livello];
+  if (tipo === 'convivente') pagaBase = P.pagaConvivente[livello];
+  else if (tipo === 'convivente_part_time') pagaBase = P.pagaPartTime[livello] || 0;
+  else if (tipo === 'assistenza_notturna') pagaBase = P.pagaNotturna[livello] || 0;
+  else if (tipo === 'presenza_notturna') pagaBase = P.pagaPresenzaNotturna;
+  else if (tipo === 'sostituzione') pagaBase = P.pagaSostituzione[livello] || 0;
+  else pagaBase = P.pagaOraria[livello];
 
   // ── Indennità applicabili ──
   let indennitaMensili = 0;
   let indennitaOraria = 0;
   if (input.indennitaPiuAutosuff && (livello === 'CS' || livello === 'DS') && tipo !== 'sostituzione') {
-    if (orario) indennitaOraria += INDENNITA_PIU_AUTOSUFF_ORARIA;
-    else indennitaMensili += INDENNITA_PIU_AUTOSUFF_MENSILE;
+    if (orario) indennitaOraria += P.indennitaPiuAutosuffOraria;
+    else indennitaMensili += P.indennitaPiuAutosuffMensile;
   }
   if (input.certificazioneUni && (livello === 'B' || livello === 'BS' || livello === 'CS')) {
-    indennitaMensili += INDENNITA_UNI11766_MENSILE;
+    indennitaMensili += P.indennitaUni11766Mensile;
   }
   if (input.indennitaBabysitter && livello === 'BS' && tipo !== 'sostituzione') {
-    if (orario) indennitaOraria += INDENNITA_BABYSITTER_ORARIA;
-    else if (tipo === 'convivente_part_time') indennitaMensili += INDENNITA_BABYSITTER_PARTTIME;
-    else indennitaMensili += INDENNITA_BABYSITTER_MENSILE;
+    if (orario) indennitaOraria += P.indennitaBabysitterOraria;
+    else if (tipo === 'convivente_part_time') indennitaMensili += P.indennitaBabysitterPartTime;
+    else indennitaMensili += P.indennitaBabysitterMensile;
   }
 
   // ── Retribuzione lorda mensile ──
@@ -232,21 +228,21 @@ export function simulaCostoBadante(input: SimulazioneInput): SimulazioneCosto {
   const retribuzioneOrariaTotale = retribuzioneLorda / oreMensili; // grezza per i calcoli
 
   // ── Vitto/alloggio in natura (conviventi): non costo in €, solo base TFR/13a ──
-  const vittoMensileNatura = conviventeTipo ? r2(VITTO_ALLOGGIO_GIORNO_2026 * GIORNI_VITTO_MESE) : 0;
-  const vittoOrario = conviventeTipo ? (VITTO_ALLOGGIO_GIORNO_2026 * 6) / oreSett : 0;
+  const vittoMensileNatura = conviventeTipo ? r2(P.vittoAlloggioGiorno * P.giorniVittoMese) : 0;
+  const vittoOrario = conviventeTipo ? (P.vittoAlloggioGiorno * 6) / oreSett : 0;
 
   // ── Retribuzione oraria effettiva (come il gestionale: oraria + vitto + 13a su paga) ──
   const retribuzioneOrariaEffettiva = r2(retribuzioneOrariaTotale + vittoOrario + retribuzioneOrariaTotale / 12);
 
   // ── Contributi INPS ──
-  const contrib = contribOrario(retribuzioneOrariaEffettiva, oreSett, determinato);
+  const contrib = contribOrario(retribuzioneOrariaEffettiva, oreSett, determinato, P);
   const contribInpsLavoratoreMensili = r2(contrib.quotaLavoratore * oreMensili);
   const contribInpsDatoreOrario = r2(contrib.totale - contrib.quotaLavoratore);
   const contribInpsDatoreMensili = r2(contribInpsDatoreOrario * oreMensili);
 
   // ── Cassa.Colf ──
-  const cassaColfLavoratoreMensili = r2(CASSA_COLF_LAVORATORE_ORARIO * oreMensili);
-  const cassaColfDatoreMensili = r2(CASSA_COLF_DATORE_ORARIO * oreMensili);
+  const cassaColfLavoratoreMensili = r2(P.cassaColfLavoratoreOrario * oreMensili);
+  const cassaColfDatoreMensili = r2(P.cassaColfDatoreOrario * oreMensili);
 
   // ── Netto lavoratore ──
   const retribuzioneNetta = r2(retribuzioneLorda - contribInpsLavoratoreMensili - cassaColfLavoratoreMensili);
@@ -261,7 +257,7 @@ export function simulaCostoBadante(input: SimulazioneInput): SimulazioneCosto {
     retribuzioneLorda + contribInpsDatoreMensili + cassaColfDatoreMensili + tfr + tredicesima
   );
 
-  const ferieMensiliOre = r2(oreSett * FERIE_GIORNI_ANNO / 6 / 12 * 10) / 10; // ore/mese
+  const ferieMensiliOre = r2(oreSett * P.ferieGiorniAnno / 6 / 12 * 10) / 10; // ore/mese
   const livelloLabel = tipo === 'presenza_notturna' ? 'Livello unico' : `Livello ${livello}`;
 
   return {
@@ -275,12 +271,12 @@ export function simulaCostoBadante(input: SimulazioneInput): SimulazioneCosto {
     indennitaMensili: r2(orario ? indennitaOraria * oreMensili : indennitaMensili),
     contribInpsLavoratoreOrario: contrib.quotaLavoratore,
     contribInpsLavoratoreMensili,
-    cassaColfLavoratoreOrario: CASSA_COLF_LAVORATORE_ORARIO,
+    cassaColfLavoratoreOrario: P.cassaColfLavoratoreOrario,
     cassaColfLavoratoreMensili,
     retribuzioneNetta,
     contribInpsDatoreOrario,
     contribInpsDatoreMensili,
-    cassaColfDatoreOrario: CASSA_COLF_DATORE_ORARIO,
+    cassaColfDatoreOrario: P.cassaColfDatoreOrario,
     cassaColfDatoreMensili,
     tfr,
     tredicesima,
@@ -289,7 +285,7 @@ export function simulaCostoBadante(input: SimulazioneInput): SimulazioneCosto {
     retribuzioneOrariaTotale: r2(retribuzioneOrariaTotale),
     retribuzioneOrariaEffettiva,
     ferieMensiliOre,
-    vittoAlloggioGiorno: conviventeTipo ? VITTO_ALLOGGIO_GIORNO_2026 : 0,
+    vittoAlloggioGiorno: conviventeTipo ? P.vittoAlloggioGiorno : 0,
     vittoAlloggioMensileNatura: vittoMensileNatura,
   };
 }
