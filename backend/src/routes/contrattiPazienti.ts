@@ -909,6 +909,87 @@ router.post('/firma/:token', async (req: Request, res: Response) => {
   }
 });
 
+// Numerazione fatture intermediazione: stessa serie FATT-CF usata in badantiIntermediazione.ts
+async function generaNumeroFatturaCf(): Promise<string> {
+  const anno = new Date().getFullYear();
+  const base = `FATT-CF-${anno}-`;
+  const esistenti = await DocumentoFatturazione.find({ numero: { $regex: `^${base}` } })
+    .select('numero')
+    .lean();
+  const maxProgressivo = esistenti.reduce((max: number, d: any) => {
+    const m = String(d.numero || '').match(/-(\d+)$/);
+    return m ? Math.max(max, parseInt(m[1], 10)) : max;
+  }, 0);
+  let progressivo = maxProgressivo + 1;
+  let numero = `${base}${String(progressivo).padStart(5, '0')}`;
+  while (await DocumentoFatturazione.exists({ numero })) {
+    progressivo++;
+    numero = `${base}${String(progressivo).padStart(5, '0')}`;
+  }
+  return numero;
+}
+
+// POST /api/contratti-pazienti/:id/fattura — fattura il corrispettivo del contratto
+// firmato (imponibile + IVA 22%). Funziona anche per contratti orfani: se la
+// richiesta esiste ancora viene marcata 'fatturata', altrimenti la fattura si
+// lega al contratto come riferimento.
+router.post('/:id/fattura', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('contratti_pazienti', 'CREATE'), async (req: AuthRequest, res: Response) => {
+  try {
+    const contratto = await ContrattoPaziente.findById(req.params.id);
+    if (!contratto) return res.status(404).json({ message: 'Contratto non trovato' });
+    if (contratto.stato !== 'firmato') {
+      return res.status(400).json({ message: 'Il contratto deve essere firmato prima di emettere fattura' });
+    }
+
+    const richiesta = contratto.richiestaId ? await BadanteIntermediazione.findById(contratto.richiestaId) : null;
+    if (richiesta?.fatturaId) return res.status(400).json({ message: 'Fattura già generata' });
+    const fatturaEsistente = await DocumentoFatturazione.findOne({ riferimentoTipo: 'badante', riferimentoId: contratto._id });
+    if (fatturaEsistente) return res.status(400).json({ message: 'Fattura già generata', fattura: fatturaEsistente });
+
+    const imponibile = Math.round(Number(contratto.importo || 0) * 100) / 100;
+    if (!(imponibile > 0)) return res.status(400).json({ message: 'Importo contratto non valido' });
+    const iva = Math.round(imponibile * 0.22 * 100) / 100;
+    const totale = Math.round((imponibile + iva) * 100) / 100;
+    const numero = await generaNumeroFatturaCf();
+    const user = req.user as { name?: string; email?: string } | undefined;
+
+    const fattura = await DocumentoFatturazione.create({
+      numero,
+      tipo: 'fattura',
+      patient: contratto.patient,
+      riferimentoTipo: 'badante',
+      riferimentoId: richiesta?._id || contratto._id,
+      prestazioni: [{
+        descrizione: `Corrispettivo per incarico di intermediazione e reclutamento ${contratto.profilo} — contratto firmato il ${contratto.dataFirma ? new Date(contratto.dataFirma).toLocaleDateString('it-IT') : '—'}`,
+        quantita: 1,
+        prezzoUnitario: imponibile,
+        importo: imponibile,
+        aliquotaIva: 22,
+        tipo: 'consulenza',
+      }],
+      imponibile,
+      totaleIva: iva,
+      totale,
+      data: new Date(),
+      stato: 'emesso',
+      creatoDa: user?.name || user?.email || 'Sistema',
+      firma: { token: '', firmato: false },
+    });
+
+    if (richiesta) {
+      richiesta.fatturaId = fattura._id as any;
+      richiesta.stato = 'fatturata';
+      await richiesta.save().catch(() => {});
+    }
+
+    const popolata = await DocumentoFatturazione.findById(fattura._id).populate('patient', 'firstName lastName codiceFiscale address email');
+    return res.status(201).json({ fattura: popolata });
+  } catch (error: any) {
+    console.error('[Contratti pazienti fattura] Errore:', error);
+    return res.status(500).json({ message: 'Errore nella generazione della fattura', error: error.message });
+  }
+});
+
 // DELETE /api/contratti-pazienti/:id — elimina un contratto dall'archivio
 // (es. duplicati o richieste firma non più valide). Elimina anche il ConsensoGDPR
 // collegato e sgancia la richiesta intermediazione, che torna 'aperta'.

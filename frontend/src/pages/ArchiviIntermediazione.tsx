@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/api';
-import { FileText, Download, Mail, Users, Eye, Trash2 } from 'lucide-react';
+import { FileText, Download, Mail, Users, Eye, Trash2, Receipt } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 interface ContrattoCollegato {
@@ -11,6 +11,7 @@ interface ContrattoCollegato {
   dataFirma?: string;
   allegatoFileName?: string;
   token?: string;
+  importo?: number;
 }
 
 interface RichiestaArchivio {
@@ -18,6 +19,8 @@ interface RichiestaArchivio {
   patient?: { firstName: string; lastName: string; codiceFiscale?: string; email?: string } | null;
   contrattoId?: ContrattoCollegato | string;
   preventivoPdfFileName?: string;
+  fatturaId?: string;
+  contrattoOrfano?: boolean;
   createdAt: string;
 }
 
@@ -103,6 +106,18 @@ export default function ArchiviIntermediazione() {
     }
   }
 
+  // Emette la fattura per il corrispettivo del contratto firmato (imponibile + IVA 22%)
+  async function fatturaContratto(contratto: ContrattoCollegato) {
+    if (!window.confirm(`Emettere la fattura per il contratto (imponibile € ${Number(contratto.importo || 0).toFixed(2)} + IVA 22%)?`)) return;
+    try {
+      await api.post(`/contratti-pazienti/${contratto._id}/fattura`);
+      alert('Fattura generata — la trovi in Gestione Fatturazione e Archivio Fatture');
+      await carica();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore generazione fattura');
+    }
+  }
+
   // Invia (o reinvia) contratto + GDPR + preventivo al paziente per la firma
   async function inviaFirmaContratto(contratto: ContrattoCollegato) {
     const email = window.prompt('Email del destinatario', contratto.email || '');
@@ -185,6 +200,11 @@ export default function ArchiviIntermediazione() {
                               <Button size="sm" variant="secondary" onClick={() => apriDocumentoFirmato(c._id, 'gdpr-firmato', 'GDPR firmato')}>
                                 <Eye size={14} className="tw-inline" /> GDPR firmato
                               </Button>
+                              {!r.fatturaId && (
+                                <Button size="sm" onClick={() => fatturaContratto(c)}>
+                                  <Receipt size={14} className="tw-inline" /> Fattura
+                                </Button>
+                              )}
                             </>
                           )}
                           {c && (
