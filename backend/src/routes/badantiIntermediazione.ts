@@ -5,6 +5,7 @@ import Patient from '../models/Patient';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { auditLog } from '../middleware/audit';
+import { simulaCostoBadante, PAGA_CCNL_CONVIVENTE, PAGA_CCNL_ORARIA } from '../utils/costoBadante';
 
 const TARIFFE_BADANTI = {
   orario_non_convivente: {
@@ -154,7 +155,38 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Errore nel caricamento delle richieste', error: error.message });
   }
 });
+// POST /api/badanti-intermediazione/simula-costo - calcolo completo costo badante CCNL
+// Replica il calcolatore esterno (doemploy): lorda + vitto/alloggio + contributi INPS + TFR + 13esima + ferie
+router.post('/simula-costo', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { contrattoTipo, livello, oreSettimanali, tempoDeterminato, pagaPersonalizzata, vittoAlloggio } = req.body || {};
+    if (!contrattoTipo || !CONTRATTI.includes(contrattoTipo)) {
+      return res.status(400).json({ message: "contrattoTipo deve essere 'orario_non_convivente' o 'convivente'" });
+    }
+    if (!livello || !LIVELLI.includes(livello)) {
+      return res.status(400).json({ message: 'Livello non valido' });
+    }
+    if (contrattoTipo === 'orario_non_convivente' && !(Number(oreSettimanali) > 0)) {
+      return res.status(400).json({ message: 'Ore settimanali obbligatorie per orario non convivente' });
+    }
+    const risultato = simulaCostoBadante({
+      contrattoTipo,
+      livello,
+      oreSettimanali: oreSettimanali ? Number(oreSettimanali) : undefined,
+      tempoDeterminato: !!tempoDeterminato,
+      pagaPersonalizzata: pagaPersonalizzata ? Number(pagaPersonalizzata) : undefined,
+      vittoAlloggio,
+    });
+    return res.json({
+      ...risultato,
+      pagaBaseCcnl: contrattoTipo === 'convivente' ? PAGA_CCNL_CONVIVENTE[livello as keyof typeof PAGA_CCNL_CONVIVENTE] : PAGA_CCNL_ORARIA[livello as keyof typeof PAGA_CCNL_ORARIA],
+    });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore nel calcolo del costo', error: error.message });
+  }
+});
 
+// 
 // GET /api/badanti-intermediazione/:id — dettaglio
 router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
   try {

@@ -40,6 +40,25 @@ const LIVELLI_DESCRIZIONI: Record<string, string> = {
   DS: 'Operatore super specializzato: coordinamento o massima qualifica',
 };
 
+interface SimulazioneCosto {
+  pagaOraria?: number;
+  retribuzioneLordaMensile: number;
+  vittoAlloggioMensile: number;
+  oreMensili: number;
+  retribuzioneOrariaEffettiva: number;
+  contributoOrarioDatore: number;
+  contributoOrarioLavoratore: number;
+  contributiDatoreMensili: number;
+  contributiLavoratoreMensili: number;
+  rateoTredicesima: number;
+  rateoFerie: number;
+  rateoTfr: number;
+  totaleCostoMensile: number;
+  nettoStimatoLavoratore: number;
+  pagaBaseCcnl?: number;
+  dettaglio: { voce: string; importo: number }[];
+}
+
 interface Badante {
   _id: string;
   patient: Patient | null; // null se il paziente è stato eliminato (populate orfano)
@@ -79,6 +98,18 @@ export default function BadantiIntermediazione() {
   const [quoteNote, setQuoteNote] = useState('');
   const [meseGestione, setMeseGestione] = useState('');
 
+  // ── Simulazione costo badante (calcolatore CCNL/INPS, stile doemploy) ──
+  const [showSim, setShowSim] = useState(false);
+  const [simContratto, setSimContratto] = useState<'orario_non_convivente' | 'convivente'>('convivente');
+  const [simLivello, setSimLivello] = useState('BS');
+  const [simOre, setSimOre] = useState('30');
+  const [simDeterminato, setSimDeterminato] = useState(false);
+  const [simVitto, setSimVitto] = useState(true);
+  const [simPagaCustom, setSimPagaCustom] = useState('');
+  const [simRisultato, setSimRisultato] = useState<SimulazioneCosto | null>(null);
+  const [simLoading, setSimLoading] = useState(false);
+  const [simErr, setSimErr] = useState('');
+
   const [selectedQuote, setSelectedQuote] = useState<string | null>(null);
 
   const isGestione = user?.role === 'admin' || user?.role === 'coordinator' || user?.role === 'direttore';
@@ -103,6 +134,27 @@ export default function BadantiIntermediazione() {
       alert(err?.response?.data?.message || 'Errore caricamento');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function calcolaSimulazione() {
+    try {
+      setSimLoading(true);
+      setSimErr('');
+      const res = await api.post('/badanti-intermediazione/simula-costo', {
+        contrattoTipo: simContratto,
+        livello: simLivello,
+        oreSettimanali: simContratto === 'orario_non_convivente' ? Number(simOre) : undefined,
+        tempoDeterminato: simDeterminato,
+        vittoAlloggio: simContratto === 'convivente' ? simVitto : false,
+        pagaPersonalizzata: simPagaCustom ? Number(simPagaCustom) : undefined,
+      });
+      setSimRisultato(res.data);
+    } catch (err: any) {
+      setSimErr(err?.response?.data?.message || 'Errore nel calcolo');
+      setSimRisultato(null);
+    } finally {
+      setSimLoading(false);
     }
   }
 
@@ -275,12 +327,112 @@ export default function BadantiIntermediazione() {
               <p className="tw-text-slate-500 tw-text-sm tw-m-0">Gestione richieste, preventivi e fatture — solo pazienti privati</p>
             </div>
           </div>
-          {isGestione && (
-            <Button onClick={() => setShowForm(s => !s)} className="tw-flex tw-items-center tw-gap-2">
-              {showForm ? <X size={18} /> : <Plus size={18} />} Nuova richiesta
+          <div className="tw-flex tw-items-center tw-gap-2 tw-flex-wrap">
+            <Button variant="secondary" onClick={() => setShowSim(s => !s)} className="tw-flex tw-items-center tw-gap-2">
+              <Euro size={18} /> {showSim ? 'Chiudi calcolo' : 'Simula costo'}
             </Button>
-          )}
+            {isGestione && (
+              <Button onClick={() => setShowForm(s => !s)} className="tw-flex tw-items-center tw-gap-2">
+                {showForm ? <X size={18} /> : <Plus size={18} />} Nuova richiesta
+              </Button>
+            )}
+          </div>
         </div>
+
+        {showSim && (
+          <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
+            <h2 className="tw-text-lg tw-font-semibold tw-mb-1 tw-text-slate-700 tw-flex tw-items-center tw-gap-2">
+              <Euro size={20} /> Simula costo badante — CCNL 2025
+            </h2>
+            <p className="tw-text-xs tw-text-slate-500 tw-mb-4">Stima completa: retribuzione lorda, vitto/alloggio, contributi INPS, TFR, tredicesima e ferie.</p>
+            <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-3 tw-gap-4 tw-mb-4">
+              <label className="tw-flex tw-flex-col tw-gap-1">
+                <span className="tw-text-sm tw-font-medium">Tipo contratto</span>
+                <select value={simContratto} onChange={e => { setSimContratto(e.target.value as any); setSimRisultato(null); }} className="tw-border tw-rounded tw-p-2">
+                  <option value="convivente">Convivente</option>
+                  <option value="orario_non_convivente">Ad orario non convivente</option>
+                </select>
+              </label>
+              <label className="tw-flex tw-flex-col tw-gap-1">
+                <span className="tw-text-sm tw-font-medium">Livello</span>
+                <select value={simLivello} onChange={e => { setSimLivello(e.target.value); setSimRisultato(null); }} className="tw-border tw-rounded tw-p-2">
+                  {['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS'].map(l => (
+                    <option key={l} value={l}>{l} — {LIVELLI_DESCRIZIONI[l]}</option>
+                  ))}
+                </select>
+              </label>
+              {simContratto === 'orario_non_convivente' && (
+                <label className="tw-flex tw-flex-col tw-gap-1">
+                  <span className="tw-text-sm tw-font-medium">Ore settimanali</span>
+                  <input type="number" min="1" max="60" value={simOre} onChange={e => { setSimOre(e.target.value); setSimRisultato(null); }} className="tw-border tw-rounded tw-p-2" />
+                </label>
+              )}
+              <label className="tw-flex tw-flex-col tw-gap-1">
+                <span className="tw-text-sm tw-font-medium">
+                  {simContratto === 'convivente' ? 'Paga mensile personalizzata (vuoto = minimo CCNL)' : 'Paga oraria personalizzata €/h (vuoto = minimo CCNL)'}
+                </span>
+                <input type="number" step="0.01" min="0" value={simPagaCustom} onChange={e => { setSimPagaCustom(e.target.value); setSimRisultato(null); }} className="tw-border tw-rounded tw-p-2" placeholder="Minimo CCNL" />
+              </label>
+              <div className="tw-flex tw-flex-col tw-gap-2 tw-justify-end">
+                <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer">
+                  <input type="checkbox" checked={simDeterminato} onChange={e => { setSimDeterminato(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+                  <span className="tw-font-medium">Tempo determinato (+1,40% contributi)</span>
+                </label>
+                {simContratto === 'convivente' && (
+                  <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer">
+                    <input type="checkbox" checked={simVitto} onChange={e => { setSimVitto(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+                    <span className="tw-font-medium">Vitto e alloggio in natura (€6,60/gg)</span>
+                  </label>
+                )}
+              </div>
+            </div>
+            <div className="tw-flex tw-justify-end tw-mb-4">
+              <Button onClick={calcolaSimulazione} disabled={simLoading || (simContratto === 'orario_non_convivente' && !(Number(simOre) > 0))} className="tw-flex tw-items-center tw-gap-2">
+                <Euro size={18} /> {simLoading ? 'Calcolo...' : 'Calcola costo'}
+              </Button>
+            </div>
+            {simErr && <div className="tw-text-red-600 tw-text-sm tw-mb-3">{simErr}</div>}
+            {simRisultato && (
+              <div className="tw-space-y-4">
+                <div className="tw-p-4 tw-bg-rose-50 tw-border-2 tw-border-rose-200 tw-rounded-xl tw-flex tw-justify-between tw-items-center tw-flex-wrap tw-gap-2">
+                  <div>
+                    <div className="tw-text-xs tw-uppercase tw-font-bold tw-text-rose-700 tw-tracking-wide">Costo mensile totale a carico della famiglia</div>
+                    <div className="tw-text-xs tw-text-rose-600 tw-mt-0.5">
+                      {simContratto === 'convivente' ? 'Convivente 54h/sett' : `${simOre}h/sett → ${simRisultato.oreMensili.toFixed(1)} ore/mese`} · Livello {simLivello}
+                      {simPagaCustom ? ' · paga personalizzata' : ` · minimo CCNL ${simRisultato.pagaOraria ? `€${simRisultato.pagaOraria.toFixed(2)}/h` : ''}`}
+                    </div>
+                  </div>
+                  <div className="tw-text-3xl tw-font-extrabold tw-text-rose-800">€{simRisultato.totaleCostoMensile.toFixed(2)}<span className="tw-text-sm tw-font-semibold">/mese</span></div>
+                </div>
+                <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-2 tw-gap-4">
+                  <div className="tw-p-4 tw-bg-slate-50 tw-rounded-xl">
+                    <div className="tw-text-xs tw-font-bold tw-text-slate-500 tw-uppercase tw-mb-2">Composizione costo mensile</div>
+                    {simRisultato.dettaglio.map((d, i) => (
+                      <div key={i} className="tw-flex tw-justify-between tw-text-sm tw-py-1 tw-border-b tw-border-slate-100 last:tw-border-0">
+                        <span className="tw-text-slate-600">{d.voce}</span>
+                        <span className="tw-font-semibold tw-text-slate-800">€{d.importo.toFixed(2)}</span>
+                      </div>
+                    ))}
+                    <div className="tw-flex tw-justify-between tw-text-sm tw-py-1.5 tw-mt-1 tw-border-t-2 tw-border-slate-200 tw-font-bold tw-text-slate-800">
+                      <span>Totale</span><span>€{simRisultato.totaleCostoMensile.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  <div className="tw-p-4 tw-bg-slate-50 tw-rounded-xl">
+                    <div className="tw-text-xs tw-font-bold tw-text-slate-500 tw-uppercase tw-mb-2">Dettaglio contributi e lavoratore</div>
+                    <div className="tw-flex tw-justify-between tw-text-sm tw-py-1"><span className="tw-text-slate-600">Retribuzione oraria effettiva (base contributi)</span><span className="tw-font-semibold">€{simRisultato.retribuzioneOrariaEffettiva.toFixed(2)}/h</span></div>
+                    <div className="tw-flex tw-justify-between tw-text-sm tw-py-1"><span className="tw-text-slate-600">Contributo orario INPS (totale)</span><span className="tw-font-semibold">€{simRisultato.contributoOrarioDatore.toFixed(2)}/h</span></div>
+                    <div className="tw-flex tw-justify-between tw-text-sm tw-py-1"><span className="tw-text-slate-600">— di cui a carico lavoratore</span><span className="tw-font-semibold">€{simRisultato.contributoOrarioLavoratore.toFixed(2)}/h</span></div>
+                    <div className="tw-flex tw-justify-between tw-text-sm tw-py-1"><span className="tw-text-slate-600">Contributi mensili trattenuti in busta</span><span className="tw-font-semibold">€{simRisultato.contributiLavoratoreMensili.toFixed(2)}</span></div>
+                    <div className="tw-flex tw-justify-between tw-text-sm tw-py-1.5 tw-mt-1 tw-border-t-2 tw-border-slate-200 tw-font-bold tw-text-emerald-700">
+                      <span>Netto stimato in busta paga lavoratore</span><span>€{simRisultato.nettoStimatoLavoratore.toFixed(2)}/mese</span>
+                    </div>
+                  </div>
+                </div>
+                <p className="tw-text-xs tw-text-slate-400 tw-m-0">Valori calcolati su minimi CCNL lavoro domestico e contributi INPS 2025. Stima indicativa, non sostituisce la consulenza paghe.</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {showForm && (
           <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
