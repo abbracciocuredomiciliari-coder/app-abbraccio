@@ -561,6 +561,8 @@ export default function BadantiIntermediazione() {
   }
 
   const richiestaAperta = richieste.find(r => r._id === selectedQuote);
+  // Contratti intermediazione firmati: badge di segnalazione sul menu ⚙
+  const firmatiCount = archivioContratti.filter((r: any) => r.contrattoId && typeof r.contrattoId === 'object' && r.contrattoId.stato === 'firmato').length;
 
   const statoBadge = (stato: string) => {
     const map: Record<string, string> = {
@@ -597,28 +599,46 @@ export default function BadantiIntermediazione() {
             <Button variant="secondary" onClick={() => setShowSim(s => !s)} className="tw-flex tw-items-center tw-gap-2">
               <Euro size={18} /> {showSim ? 'Chiudi calcolo' : 'Simula costo'}
             </Button>
-            {isAdmin && (
+            {isGestione && (
               <div className="tw-relative">
                 <button
                   onClick={() => setShowMenu(s => !s)}
                   title="Impostazioni"
-                  className="tw-p-2 tw-rounded-lg tw-border tw-border-slate-200 tw-text-slate-500 hover:tw-text-slate-800 hover:tw-bg-slate-50"
+                  className="tw-relative tw-p-2 tw-rounded-lg tw-border tw-border-slate-200 tw-text-slate-500 hover:tw-text-slate-800 hover:tw-bg-slate-50"
                 >
                   <Settings size={18} />
+                  {firmatiCount > 0 && (
+                    <span className="tw-absolute -tw-top-1.5 -tw-right-1.5 tw-min-w-[18px] tw-h-[18px] tw-px-1 tw-rounded-full tw-bg-red-600 tw-text-white tw-text-[10px] tw-font-bold tw-flex tw-items-center tw-justify-center">
+                      {firmatiCount}
+                    </span>
+                  )}
                 </button>
                 {showMenu && (
                   <>
                     <div className="tw-fixed tw-inset-0 tw-z-10" onClick={() => setShowMenu(false)} />
                     <div className="tw-absolute tw-right-0 tw-mt-2 tw-w-64 tw-bg-white tw-rounded-xl tw-border tw-border-slate-200 tw-shadow-lg tw-z-20 tw-p-1">
                       <button
-                        onClick={() => { setShowMenu(false); setShowTariffe(true); }}
+                        onClick={() => { setShowMenu(false); setShowArchivio(true); }}
                         className="tw-w-full tw-text-left tw-px-3 tw-py-2 tw-rounded-lg hover:tw-bg-slate-50 tw-text-sm tw-flex tw-items-center tw-gap-2"
                       >
-                        <Euro size={16} className="tw-text-amber-600" /> Tariffe CCNL / INPS
-                        <span className="tw-ml-auto tw-text-[10px] tw-font-bold tw-text-slate-400">
-                          {tariffeMeta.personalizzato ? 'personalizzate' : 'ufficiali'}
-                        </span>
+                        <FileText size={16} className="tw-text-rose-600" /> Archivi intermediazione
+                        {firmatiCount > 0 && (
+                          <span className="tw-ml-auto tw-text-[10px] tw-font-bold tw-text-white tw-bg-green-600 tw-rounded-full tw-px-1.5 tw-py-0.5">
+                            {firmatiCount} firmati
+                          </span>
+                        )}
                       </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => { setShowMenu(false); setShowTariffe(true); }}
+                          className="tw-w-full tw-text-left tw-px-3 tw-py-2 tw-rounded-lg hover:tw-bg-slate-50 tw-text-sm tw-flex tw-items-center tw-gap-2"
+                        >
+                          <Euro size={16} className="tw-text-amber-600" /> Tariffe CCNL / INPS
+                          <span className="tw-ml-auto tw-text-[10px] tw-font-bold tw-text-slate-400">
+                            {tariffeMeta.personalizzato ? 'personalizzate' : 'ufficiali'}
+                          </span>
+                        </button>
+                      )}
                     </div>
                   </>
                 )}
@@ -978,25 +998,21 @@ export default function BadantiIntermediazione() {
         </div>
       </div>
 
-      {/* ── Archivio "Preventivo + Contratto" e archivio GDPR intermediazione ── */}
-      {isGestione && (
-        <div className="tw-max-w-7xl tw-mx-auto tw-mt-6">
-          <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
-            <button
-              onClick={() => setShowArchivio(s => !s)}
-              className="tw-w-full tw-flex tw-justify-between tw-items-center tw-text-left"
-            >
+      {/* ── Modale Archivi intermediazione — accesso dal menu ⚙ ── */}
+      {showArchivio && (
+        <div className="tw-fixed tw-inset-0 tw-bg-black/40 tw-flex tw-items-center tw-justify-center tw-z-50 tw-p-4">
+          <div className="tw-bg-white tw-rounded-2xl tw-p-6 tw-w-full tw-max-w-5xl tw-max-h-[90vh] tw-overflow-y-auto tw-shadow-xl">
+            <div className="tw-flex tw-justify-between tw-items-start tw-mb-4">
               <h2 className="tw-text-lg tw-font-semibold tw-flex tw-items-center tw-gap-2 tw-text-slate-700">
                 <FileText size={20} /> Archivi intermediazione
                 <span className="tw-text-xs tw-font-bold tw-text-slate-500">
                   Contratti {archivioContratti.length} · GDPR {archivioGdpr.length}
+                  {firmatiCount > 0 ? ` · ${firmatiCount} firmati` : ''}
                 </span>
               </h2>
-              {showArchivio ? <X size={18} /> : <Plus size={18} />}
-            </button>
-
-            {showArchivio && (
-              <div className="tw-mt-4 tw-space-y-6">
+              <button onClick={() => setShowArchivio(false)} className="tw-p-1 tw-text-slate-400 hover:tw-text-slate-700"><X size={20} /></button>
+            </div>
+            <div className="tw-space-y-6">
                 <div>
                   <h3 className="tw-text-sm tw-font-bold tw-text-slate-600 tw-uppercase tw-mb-2">Archivio Preventivo + Contratto</h3>
                   {archivioContratti.length === 0 ? (
@@ -1087,8 +1103,7 @@ export default function BadantiIntermediazione() {
                     </div>
                   )}
                 </div>
-              </div>
-            )}
+            </div>
           </div>
         </div>
       )}

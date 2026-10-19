@@ -863,6 +863,30 @@ router.post('/firma/:token', async (req: Request, res: Response) => {
       );
     }
 
+    // Avviso email all'amministrazione: contratto + GDPR + preventivo firmati (flusso intermediazione)
+    if (contratto.richiestaId || contratto.contesto === 'intermediazione') {
+      const adminEmail = process.env.ADMIN_EMAIL || 'abbracciocuredomiciliari@gmail.com';
+      const frontendUrl = process.env.FRONTEND_URL || 'https://app-abbraccio-frontend-rw2c.vercel.app';
+      const nomePaz = `${paziente.firstName || ''} ${paziente.lastName || ''}`.trim() || 'Paziente';
+      await inviaEmail({
+        to: adminEmail,
+        subject: `✅ Contratto intermediazione firmato — ${nomePaz}`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+          <h2 style="color:#16a34a;margin-top:0;">✅ Contratto d'incarico firmato</h2>
+          <p>Il paziente ha firmato il <strong>contratto d'incarico</strong>, l'<strong>informativa GDPR</strong> e accettato il <strong>preventivo</strong> allegato.</p>
+          <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+            <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;width:150px;">Paziente:</td><td style="padding:8px;">${nomePaz}</td></tr>
+            <tr><td style="padding:8px;background:#f1f5f9;font-weight:bold;">Firmatario:</td><td style="padding:8px;">${nomeFirmatario} (${luogo})</td></tr>
+            <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;">Data firma:</td><td style="padding:8px;">${dataFirma.toLocaleDateString('it-IT')} ${dataFirma.toLocaleTimeString('it-IT')}</td></tr>
+            <tr><td style="padding:8px;background:#f1f5f9;font-weight:bold;">Profilo:</td><td style="padding:8px;">${contratto.profilo}</td></tr>
+            <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;">Importo contratto:</td><td style="padding:8px;">€ ${Number(contratto.importo || 0).toFixed(2).replace('.', ',')}</td></tr>
+          </table>
+          <a href="${frontendUrl}/badanti-intermediazione" style="display:inline-block;background:#1e4d8c;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">Apri Intermediazioni →</a>
+          <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari — email automatica</p>
+        </div>`,
+      });
+    }
+
     return res.json({ message: 'Contratto e consenso GDPR firmati e archiviati correttamente', consensoGdprId: consenso._id });
   } catch (error: any) {
     console.error('[Contratti pazienti firma] Errore:', error);
