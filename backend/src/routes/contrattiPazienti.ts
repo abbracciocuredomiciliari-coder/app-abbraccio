@@ -909,4 +909,36 @@ router.post('/firma/:token', async (req: Request, res: Response) => {
   }
 });
 
+// DELETE /api/contratti-pazienti/:id — elimina un contratto dall'archivio
+// (es. duplicati o richieste firma non più valide). Elimina anche il ConsensoGDPR
+// collegato e sgancia la richiesta intermediazione, che torna 'aperta'.
+router.delete('/:id', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('contratti_pazienti', 'DELETE'), async (req: AuthRequest, res: Response) => {
+  try {
+    const contratto = await ContrattoPaziente.findById(req.params.id);
+    if (!contratto) return res.status(404).json({ message: 'Contratto non trovato' });
+
+    // Elimina il consenso GDPR archiviato per questo contratto (se presente)
+    await ConsensoGDPR.deleteMany({ contrattoId: String(contratto._id) }).catch(() => {});
+    if (contratto.consensoGdprId) {
+      await ConsensoGDPR.deleteOne({ _id: contratto.consensoGdprId }).catch(() => {});
+    }
+
+    // Sgancia la richiesta intermediazione collegata: torna 'aperta' (rigenerabile)
+    await BadanteIntermediazione.updateMany(
+      { contrattoId: contratto._id, stato: { $in: ['preventivo_emesso', 'accettata'] } },
+      { $set: { contrattoId: null, stato: 'aperta' } }
+    );
+    await BadanteIntermediazione.updateMany(
+      { contrattoId: contratto._id },
+      { $set: { contrattoId: null } }
+    );
+
+    await ContrattoPaziente.deleteOne({ _id: contratto._id });
+    return res.json({ message: 'Contratto eliminato dall\'archivio' });
+  } catch (error: any) {
+    console.error('[Contratti pazienti delete] Errore:', error);
+    return res.status(500).json({ message: 'Errore eliminazione contratto', error: error.message });
+  }
+});
+
 export default router;

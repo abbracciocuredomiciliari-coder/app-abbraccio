@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/api';
-import { FileText, Download, Mail, Users, Eye } from 'lucide-react';
+import { FileText, Download, Mail, Users, Eye, Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 interface ContrattoCollegato {
@@ -84,6 +84,22 @@ export default function ArchiviIntermediazione() {
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (err: any) {
       alert(err?.response?.data?.message || `Errore apertura ${nome}`);
+    }
+  }
+
+  // Elimina un contratto dall'archivio (contratto + consenso GDPR collegato;
+  // la richiesta intermediazione torna 'aperta' se esiste ancora)
+  async function eliminaContratto(contratto: ContrattoCollegato) {
+    const firmato = contratto.stato === 'firmato';
+    const testo = firmato
+      ? 'Questo contratto è FIRMATO. Eliminandolo rimuoverai anche il consenso GDPR collegato e la richiesta tornerà modificabile. Continuare?'
+      : 'Eliminare questo contratto dall\'archivio? La richiesta tornerà senza contratto.';
+    if (!window.confirm(testo)) return;
+    try {
+      await api.delete(`/contratti-pazienti/${contratto._id}`);
+      await carica();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore eliminazione contratto');
     }
   }
 
@@ -179,6 +195,11 @@ export default function ArchiviIntermediazione() {
                           {c && c.stato !== 'firmato' && (
                             <Button size="sm" variant="secondary" onClick={() => inviaFirmaContratto(c)}>
                               <Mail size={14} className="tw-inline" /> Invia
+                            </Button>
+                          )}
+                          {c && (
+                            <Button size="sm" variant="secondary" className="tw-text-red-600" onClick={() => eliminaContratto(c)}>
+                              <Trash2 size={14} className="tw-inline" />
                             </Button>
                           )}
                         </td>

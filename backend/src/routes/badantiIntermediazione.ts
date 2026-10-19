@@ -741,12 +741,8 @@ router.delete('/:id', authenticateToken, authorizeRole('admin'), auditLog('badan
   try {
     const richiesta = await BadanteIntermediazione.findByIdAndDelete(req.params.id);
     if (!richiesta) return res.status(404).json({ message: 'Richiesta non trovata' });
-    // Se c'era un contratto non ancora firmato, eliminalo: il link firma non deve
-    // restare attivo per una richiesta che non esiste più. I firmati restano (prova legale)
-    // e compaiono comunque in archivio come contratti orfani.
-    if (richiesta.contrattoId) {
-      await ContrattoPaziente.deleteOne({ _id: richiesta.contrattoId, stato: { $ne: 'firmato' } }).catch(() => {});
-    }
+    // Il contratto/richiesta firma collegato NON viene eliminato: resta in archivio
+    // come contratto orfano (gestito da archivio/contratti) e può ancora essere firmato.
     return res.json({ message: 'Richiesta eliminata' });
   } catch (error: any) {
     return res.status(500).json({ message: "Errore nell'eliminazione", error: error.message });
