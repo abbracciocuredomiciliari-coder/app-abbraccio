@@ -5,7 +5,7 @@ import Patient from '../models/Patient';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { auditLog } from '../middleware/audit';
-import { simulaCostoBadante, PAGA_CCNL_CONVIVENTE, PAGA_CCNL_ORARIA } from '../utils/costoBadante';
+import { simulaCostoBadante, CONTRATTI_SIM } from '../utils/costoBadante';
 
 const TARIFFE_BADANTI = {
   orario_non_convivente: {
@@ -159,15 +159,14 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
 // Replica il calcolatore esterno (doemploy): lorda + vitto/alloggio + contributi INPS + TFR + 13esima + ferie
 router.post('/simula-costo', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const { contrattoTipo, livello, oreSettimanali, tempoDeterminato, pagaPersonalizzata, vittoAlloggio } = req.body || {};
-    if (!contrattoTipo || !CONTRATTI.includes(contrattoTipo)) {
-      return res.status(400).json({ message: "contrattoTipo deve essere 'orario_non_convivente' o 'convivente'" });
+    const { contrattoTipo, livello, oreSettimanali, tempoDeterminato, pagaPersonalizzata, indennitaPiuAutosuff, certificazioneUni } = req.body || {};
+    const tipiValidi = CONTRATTI_SIM.map(c => c.value);
+    if (!contrattoTipo || !tipiValidi.includes(contrattoTipo)) {
+      return res.status(400).json({ message: `contrattoTipo deve essere uno tra: ${tipiValidi.join(', ')}` });
     }
-    if (!livello || !LIVELLI.includes(livello)) {
-      return res.status(400).json({ message: 'Livello non valido' });
-    }
-    if (contrattoTipo === 'orario_non_convivente' && !(Number(oreSettimanali) > 0)) {
-      return res.status(400).json({ message: 'Ore settimanali obbligatorie per orario non convivente' });
+    const orario = contrattoTipo === 'non_convivente' || contrattoTipo === 'sostituzione';
+    if (orario && !(Number(oreSettimanali) > 0)) {
+      return res.status(400).json({ message: 'Ore settimanali obbligatorie per i contratti ad orario' });
     }
     const risultato = simulaCostoBadante({
       contrattoTipo,
@@ -175,18 +174,15 @@ router.post('/simula-costo', authenticateToken, async (req: Request, res: Respon
       oreSettimanali: oreSettimanali ? Number(oreSettimanali) : undefined,
       tempoDeterminato: !!tempoDeterminato,
       pagaPersonalizzata: pagaPersonalizzata ? Number(pagaPersonalizzata) : undefined,
-      vittoAlloggio,
+      indennitaPiuAutosuff: !!indennitaPiuAutosuff,
+      certificazioneUni: !!certificazioneUni,
     });
-    return res.json({
-      ...risultato,
-      pagaBaseCcnl: contrattoTipo === 'convivente' ? PAGA_CCNL_CONVIVENTE[livello as keyof typeof PAGA_CCNL_CONVIVENTE] : PAGA_CCNL_ORARIA[livello as keyof typeof PAGA_CCNL_ORARIA],
-    });
+    return res.json(risultato);
   } catch (error: any) {
-    return res.status(500).json({ message: 'Errore nel calcolo del costo', error: error.message });
+    return res.status(400).json({ message: error.message || 'Errore nel calcolo del costo' });
   }
 });
 
-// 
 // GET /api/badanti-intermediazione/:id — dettaglio
 router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
