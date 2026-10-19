@@ -1405,13 +1405,13 @@ function Patients() {
                     <>
                       <button
                         onClick={() => isConsulenza
-                          ? navigate(`/badanti-intermediazione?patientId=${patient._id}&nuovo=1`)
+                          ? navigate(`/badanti-intermediazione?patientId=${patient._id}`)
                           : apriPreventivoRapido(patient)}
                         className="tw-bg-amber-500 tw-text-white tw-whitespace-nowrap"
-                        title={isConsulenza ? 'Apri Intermediazioni per generare il preventivo di intermediazione badante' : 'Genera subito un preventivo per questo paziente, senza creare un piano di lavoro'}
+                        title={isConsulenza ? 'Apri Intermediazioni con la simulazione costo per questo paziente' : 'Genera subito un preventivo per questo paziente, senza creare un piano di lavoro'}
                       >
                         <FileText size={16} />
-                        Preventivo
+                        {isConsulenza ? 'Simula costo' : 'Preventivo'}
                       </button>
                       <button
                         onClick={() => segnaAccettato(patient)}

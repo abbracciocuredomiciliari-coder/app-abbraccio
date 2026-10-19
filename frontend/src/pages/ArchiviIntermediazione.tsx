@@ -1,0 +1,214 @@
+import { useEffect, useState } from 'react';
+import api from '../api/api';
+import { FileText, Download, Mail, Users } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+
+interface ContrattoCollegato {
+  _id: string;
+  stato: 'emesso' | 'firmato';
+  email?: string;
+  nome?: string;
+  dataFirma?: string;
+  allegatoFileName?: string;
+  token?: string;
+}
+
+interface RichiestaArchivio {
+  _id: string;
+  patient?: { firstName: string; lastName: string; codiceFiscale?: string; email?: string } | null;
+  contrattoId?: ContrattoCollegato | string;
+  preventivoPdfFileName?: string;
+  createdAt: string;
+}
+
+interface ConsensoGdprRow {
+  _id: string;
+  patient?: { firstName: string; lastName: string } | null;
+  nomeFirmatario?: string;
+  cognomeFirmatario?: string;
+  dataFirma?: string;
+  luogoFirma?: string;
+  versioneInformativa?: string;
+  revocato?: boolean;
+}
+
+export default function ArchiviIntermediazione() {
+  const [archivioContratti, setArchivioContratti] = useState<RichiestaArchivio[]>([]);
+  const [archivioGdpr, setArchivioGdpr] = useState<ConsensoGdprRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => { carica(); }, []);
+
+  async function carica() {
+    try {
+      setLoading(true);
+      const [ac, ag] = await Promise.all([
+        api.get('/badanti-intermediazione/archivio/contratti'),
+        api.get('/badanti-intermediazione/archivio/gdpr'),
+      ]);
+      setArchivioContratti(ac.data || []);
+      setArchivioGdpr(ag.data || []);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore caricamento archivi');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Contratti firmati = preventivi accettati: segnalazione principale
+  const firmatiCount = archivioContratti.filter(r =>
+    r.contrattoId && typeof r.contrattoId === 'object' && r.contrattoId.stato === 'firmato'
+  ).length;
+
+  // Scarica il PDF preventivo/costo allegato al contratto
+  async function scaricaPreventivoContratto(contratto: ContrattoCollegato) {
+    try {
+      const res = await api.get(`/contratti-pazienti/${contratto._id}/allegato`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = contratto.allegatoFileName || 'preventivo.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore download preventivo');
+    }
+  }
+
+  // Invia (o reinvia) contratto + GDPR + preventivo al paziente per la firma
+  async function inviaFirmaContratto(contratto: ContrattoCollegato) {
+    const email = window.prompt('Email del destinatario', contratto.email || '');
+    if (!email) return;
+    try {
+      await api.post(`/contratti-pazienti/${contratto._id}/invia-email`, { email });
+      alert('Email inviata');
+      await carica();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore invio');
+    }
+  }
+
+  if (loading) return (
+    <section className="tw-min-h-screen tw-flex tw-items-center tw-justify-center tw-bg-slate-50">
+      <div className="tw-bg-white tw-rounded-2xl tw-shadow-sm tw-border tw-border-slate-100 tw-p-10 tw-text-slate-500 tw-font-medium">⏳ Caricamento...</div>
+    </section>
+  );
+
+  return (
+    <section className="fade-in tw-bg-slate-50 tw-min-h-screen tw-p-4 md:tw-p-6">
+      <div className="tw-max-w-7xl tw-mx-auto tw-space-y-6">
+
+        <div className="tw-flex tw-justify-between tw-items-center tw-flex-wrap tw-gap-4 tw-bg-white tw-rounded-2xl tw-shadow-sm tw-border tw-border-slate-100 tw-p-5 md:tw-p-6">
+          <div className="tw-flex tw-items-center tw-gap-4">
+            <div className="tw-p-3 tw-rounded-xl tw-text-white tw-shadow-sm tw-bg-rose-600">
+              <FileText size={24} />
+            </div>
+            <div>
+              <h1 className="tw-text-2xl tw-font-bold tw-text-slate-800">Archivi intermediazione</h1>
+              <p className="tw-text-slate-500 tw-text-sm tw-m-0">
+                Contratti {archivioContratti.length} · GDPR {archivioGdpr.length}
+                {firmatiCount > 0 && <span className="tw-text-green-700 tw-font-bold"> · {firmatiCount} firmati</span>}
+              </p>
+            </div>
+          </div>
+          {firmatiCount > 0 && (
+            <span className="tw-inline-flex tw-items-center tw-gap-2 tw-px-3 tw-py-1.5 tw-rounded-full tw-bg-green-100 tw-text-green-800 tw-text-sm tw-font-bold">
+              <Users size={16} /> {firmatiCount} contratt{firmatiCount === 1 ? 'o firmato' : 'i firmati'} (contratto + GDPR + preventivo)
+            </span>
+          )}
+        </div>
+
+        <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
+          <h2 className="tw-text-sm tw-font-bold tw-text-slate-600 tw-uppercase tw-mb-3">Archivio Preventivo + Contratto</h2>
+          {archivioContratti.length === 0 ? (
+            <div className="tw-text-sm tw-text-slate-400">Nessun contratto generato.</div>
+          ) : (
+            <div className="tw-overflow-x-auto">
+              <table className="tw-w-full tw-text-sm">
+                <thead>
+                  <tr className="tw-text-left tw-text-xs tw-text-slate-500 tw-uppercase tw-border-b">
+                    <th className="tw-py-2 tw-pr-3">Paziente</th>
+                    <th className="tw-py-2 tw-pr-3">Documento</th>
+                    <th className="tw-py-2 tw-pr-3">Stato</th>
+                    <th className="tw-py-2 tw-pr-3">Email</th>
+                    <th className="tw-py-2">Azioni</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {archivioContratti.map(r => {
+                    const c = r.contrattoId && typeof r.contrattoId === 'object' ? r.contrattoId : undefined;
+                    const nomeP = r.patient ? `${r.patient.firstName} ${r.patient.lastName}` : '—';
+                    return (
+                      <tr key={r._id} className="tw-border-b tw-border-slate-100">
+                        <td className="tw-py-2 tw-pr-3 tw-font-medium tw-text-slate-700">{nomeP}</td>
+                        <td className="tw-py-2 tw-pr-3 tw-text-slate-500">{r.preventivoPdfFileName || c?.allegatoFileName || 'preventivo.pdf'}</td>
+                        <td className="tw-py-2 tw-pr-3">
+                          {c?.stato === 'firmato'
+                            ? <span className="tw-text-green-700 tw-font-semibold">Firmato{c.dataFirma ? ` ${new Date(c.dataFirma).toLocaleDateString('it-IT')}` : ''}</span>
+                            : <span className="tw-text-amber-600 tw-font-semibold">In attesa firma</span>}
+                        </td>
+                        <td className="tw-py-2 tw-pr-3 tw-text-slate-500">{c?.email || '—'}</td>
+                        <td className="tw-py-2 tw-flex tw-gap-2">
+                          {c && (
+                            <Button size="sm" variant="secondary" onClick={() => scaricaPreventivoContratto(c)}>
+                              <Download size={14} className="tw-inline" /> Preventivo
+                            </Button>
+                          )}
+                          {c && c.stato !== 'firmato' && (
+                            <Button size="sm" variant="secondary" onClick={() => inviaFirmaContratto(c)}>
+                              <Mail size={14} className="tw-inline" /> Invia
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
+          <h2 className="tw-text-sm tw-font-bold tw-text-slate-600 tw-uppercase tw-mb-3">Archivio GDPR Intermediazione</h2>
+          {archivioGdpr.length === 0 ? (
+            <div className="tw-text-sm tw-text-slate-400">Nessun consenso GDPR raccolto dall'intermediazione.</div>
+          ) : (
+            <div className="tw-overflow-x-auto">
+              <table className="tw-w-full tw-text-sm">
+                <thead>
+                  <tr className="tw-text-left tw-text-xs tw-text-slate-500 tw-uppercase tw-border-b">
+                    <th className="tw-py-2 tw-pr-3">Paziente</th>
+                    <th className="tw-py-2 tw-pr-3">Firmatario</th>
+                    <th className="tw-py-2 tw-pr-3">Data firma</th>
+                    <th className="tw-py-2 tw-pr-3">Luogo</th>
+                    <th className="tw-py-2 tw-pr-3">Versione</th>
+                    <th className="tw-py-2">Stato</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {archivioGdpr.map(g => (
+                    <tr key={g._id} className="tw-border-b tw-border-slate-100">
+                      <td className="tw-py-2 tw-pr-3 tw-font-medium tw-text-slate-700">
+                        {g.patient ? `${g.patient.firstName} ${g.patient.lastName}` : '—'}
+                      </td>
+                      <td className="tw-py-2 tw-pr-3">{`${g.nomeFirmatario || ''} ${g.cognomeFirmatario || ''}`.trim() || '—'}</td>
+                      <td className="tw-py-2 tw-pr-3">{g.dataFirma ? new Date(g.dataFirma).toLocaleDateString('it-IT') : '—'}</td>
+                      <td className="tw-py-2 tw-pr-3">{g.luogoFirma || '—'}</td>
+                      <td className="tw-py-2 tw-pr-3">{g.versioneInformativa || '—'}</td>
+                      <td className="tw-py-2">
+                        {g.revocato
+                          ? <span className="tw-text-red-600 tw-font-semibold">Revocato</span>
+                          : <span className="tw-text-green-700 tw-font-semibold">Valido</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}

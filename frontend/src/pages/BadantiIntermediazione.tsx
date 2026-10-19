@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { Users, FileText, Mail, Trash2, Receipt, Check, X, User, Briefcase, Euro, Download, Settings } from 'lucide-react';
@@ -189,25 +190,32 @@ interface Badante {
 
 export default function BadantiIntermediazione() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const patientIdDaUrl = searchParams.get('patientId') || '';
   const [richieste, setRichieste] = useState<Badante[]>([]);
+  const [pazienti, setPazienti] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [meseGestione, setMeseGestione] = useState('');
 
-  // Modale "Simula costo" → simulatore + contratto da inviare per firma
+  // Modale riga "Simula costo" → contratto da inviare per firma (richieste pre-esistenti)
   const [prevEmail, setPrevEmail] = useState('');
   const [prevImporto, setPrevImporto] = useState('610');
   const [prevCaf, setPrevCaf] = useState('150');
   const [prevInvia, setPrevInvia] = useState(true);
   const [prevLoading, setPrevLoading] = useState(false);
 
-  // Archivi dedicati all'intermediazione
-  const [archivioContratti, setArchivioContratti] = useState<Badante[]>([]);
-  const [archivioGdpr, setArchivioGdpr] = useState<ConsensoGdprRow[]>([]);
-  const [showArchivio, setShowArchivio] = useState(false);
-
   // ── Simulazione costo badante (calcolatore CCNL/INPS 2026, stile doemploy) ──
-  const [showSim, setShowSim] = useState(false);
+  const [showSim, setShowSim] = useState(!!patientIdDaUrl);
+
+  // Contratto d'incarico dal simulatore associato a un paziente
+  const [simPatient, setSimPatient] = useState(patientIdDaUrl);
+  const [simContractEmail, setSimContractEmail] = useState('');
+  const [simContractImporto, setSimContractImporto] = useState('610');
+  const [simContractInvia, setSimContractInvia] = useState(true);
+  const [simContractLoading, setSimContractLoading] = useState(false);
+  const [simContractMsg, setSimContractMsg] = useState('');
   const [simContratto, setSimContratto] = useState('convivente');
   const [simLivello, setSimLivello] = useState('BS');
   const [simOre, setSimOre] = useState('30');
@@ -238,7 +246,17 @@ export default function BadantiIntermediazione() {
   const isAdmin = user?.role === 'admin';
   const [showMenu, setShowMenu] = useState(false);
 
-  useEffect(() => { caricaDati(); caricaTariffe(); }, []);
+  useEffect(() => { caricaDati(); caricaPazienti(); caricaTariffe(); }, []);
+
+  async function caricaPazienti() {
+    try {
+      const res = await api.get('/patients?tipo=consulenza');
+      const elenco = res.data?.patients || res.data || [];
+      setPazienti(elenco as Patient[]);
+    } catch (err: any) {
+      console.error('Errore caricamento pazienti', err);
+    }
+  }
 
   async function caricaTariffe() {
     try {
@@ -303,16 +321,6 @@ export default function BadantiIntermediazione() {
       setLoading(true);
       const res = await api.get('/badanti-intermediazione');
       setRichieste(res.data || []);
-      if (isGestione) {
-        try {
-          const [ac, ag] = await Promise.all([
-            api.get('/badanti-intermediazione/archivio/contratti'),
-            api.get('/badanti-intermediazione/archivio/gdpr'),
-          ]);
-          setArchivioContratti(ac.data || []);
-          setArchivioGdpr(ag.data || []);
-        } catch { /* archivi opzionali: non bloccare la pagina */ }
-      }
     } catch (err: any) {
       console.error('Errore caricamento badanti', err);
       alert(err?.response?.data?.message || 'Errore caricamento');
@@ -369,6 +377,38 @@ export default function BadantiIntermediazione() {
       alert(err?.response?.data?.message || 'Errore nella generazione del PDF');
     } finally {
       setSimPdfLoading(false);
+    }
+  }
+
+  // Dal simulatore: associa il costo a un paziente e genera contratto + GDPR per la firma
+  async function generaContrattoDaSim() {
+    if (!simPatient) return alert('Seleziona un paziente');
+    try {
+      setSimContractLoading(true);
+      setSimContractMsg('');
+      const res = await api.post('/badanti-intermediazione/simula-costo/contratto', {
+        patient: simPatient,
+        contrattoTipo: simContratto,
+        livello: simLivello,
+        oreSettimanali: simIsOrario ? Number(simOre) : undefined,
+        tempoDeterminato: simDeterminato,
+        indennitaPiuAutosuff: simPiuAutosuff,
+        certificazioneUni: simCertUni,
+        indennitaBabysitter: simBabysitter,
+        pagaPersonalizzata: simPagaCustom ? Number(simPagaCustom) : undefined,
+        cafMensile: Number(simCaf) >= 0 ? Number(simCaf) : undefined,
+        importo: Number(simContractImporto) > 0 ? Number(simContractImporto) : 610,
+        email: simContractEmail || undefined,
+        inviaEmail: simContractInvia,
+      });
+      setSimContractMsg(res.data?.emailInviata
+        ? 'Contratto creato e inviato al paziente per la firma (contratto + GDPR + PDF costo).'
+        : 'Contratto creato: trovi la riga qui sotto per inviarlo per la firma.');
+      await caricaDati();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore generazione contratto');
+    } finally {
+      setSimContractLoading(false);
     }
   }
 
@@ -499,7 +539,7 @@ export default function BadantiIntermediazione() {
 
   const richiestaAperta = richieste.find(r => r._id === selectedQuote);
   // Contratti intermediazione firmati: badge di segnalazione sul menu ⚙
-  const firmatiCount = archivioContratti.filter((r: any) => r.contrattoId && typeof r.contrattoId === 'object' && r.contrattoId.stato === 'firmato').length;
+  const firmatiCount = richieste.filter((r: any) => r.contrattoId && typeof r.contrattoId === 'object' && r.contrattoId.stato === 'firmato').length;
 
   const statoBadge = (stato: string) => {
     const map: Record<string, string> = {
@@ -555,7 +595,7 @@ export default function BadantiIntermediazione() {
                     <div className="tw-fixed tw-inset-0 tw-z-10" onClick={() => setShowMenu(false)} />
                     <div className="tw-absolute tw-right-0 tw-mt-2 tw-w-64 tw-bg-white tw-rounded-xl tw-border tw-border-slate-200 tw-shadow-lg tw-z-20 tw-p-1">
                       <button
-                        onClick={() => { setShowMenu(false); setShowArchivio(true); }}
+                        onClick={() => { setShowMenu(false); navigate('/archivi-intermediazione'); }}
                         className="tw-w-full tw-text-left tw-px-3 tw-py-2 tw-rounded-lg hover:tw-bg-slate-50 tw-text-sm tw-flex tw-items-center tw-gap-2"
                       >
                         <FileText size={16} className="tw-text-rose-600" /> Archivi intermediazione
@@ -672,6 +712,50 @@ export default function BadantiIntermediazione() {
                 <input type="text" value={simIntestatario} onChange={e => setSimIntestatario(e.target.value)} className="tw-border tw-rounded tw-p-2" placeholder="Es. Famiglia Rossi" />
               </label>
             </div>
+            {isGestione && (
+              <div className="tw-mb-4 tw-p-3 tw-rounded-xl tw-bg-slate-50 tw-border tw-border-slate-100">
+                <h3 className="tw-text-xs tw-font-bold tw-text-slate-500 tw-uppercase tw-mb-2">Contratto d'incarico per firma paziente</h3>
+                <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-4 tw-gap-3">
+                  <label className="tw-flex tw-flex-col tw-gap-1">
+                    <span className="tw-text-sm tw-font-medium">Paziente</span>
+                    <select
+                      value={simPatient}
+                      onChange={e => {
+                        setSimPatient(e.target.value);
+                        setSimContractMsg('');
+                        const p = pazienti.find(x => x._id === e.target.value);
+                        if (p?.email) setSimContractEmail(p.email);
+                      }}
+                      className="tw-border tw-rounded tw-p-2"
+                    >
+                      <option value="">Seleziona paziente...</option>
+                      {pazienti.filter(Boolean).map(p => (
+                        <option key={p._id} value={p._id}>{p.firstName} {p.lastName}{p.codiceFiscale ? ` (${p.codiceFiscale})` : ''}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="tw-flex tw-flex-col tw-gap-1">
+                    <span className="tw-text-sm tw-font-medium">Email per firma</span>
+                    <input type="email" value={simContractEmail} onChange={e => setSimContractEmail(e.target.value)} className="tw-border tw-rounded tw-p-2" placeholder="paziente@email.it" />
+                  </label>
+                  <label className="tw-flex tw-flex-col tw-gap-1">
+                    <span className="tw-text-sm tw-font-medium">Corrispettivo contratto (€)</span>
+                    <input type="number" step="0.01" min="0" value={simContractImporto} onChange={e => setSimContractImporto(e.target.value)} className="tw-border tw-rounded tw-p-2" />
+                    <span className="tw-text-xs tw-text-slate-400">Imponibile — la fattura aggiunge IVA 22%</span>
+                  </label>
+                  <label className="tw-flex tw-items-end tw-gap-2 tw-text-sm tw-cursor-pointer tw-pb-2">
+                    <input type="checkbox" checked={simContractInvia} onChange={e => setSimContractInvia(e.target.checked)} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+                    <span className="tw-font-medium">Invia subito per firma</span>
+                  </label>
+                </div>
+                <div className="tw-flex tw-items-center tw-gap-3 tw-mt-3 tw-flex-wrap">
+                  <Button size="sm" onClick={generaContrattoDaSim} disabled={simContractLoading || !simPatient || (simContractInvia && !simContractEmail)}>
+                    {simContractLoading ? 'Generazione...' : 'Genera contratto + invia firma'}
+                  </Button>
+                  {simContractMsg && <span className="tw-text-sm tw-text-green-700 tw-font-medium">{simContractMsg}</span>}
+                </div>
+              </div>
+            )}
             <div className="tw-flex tw-justify-end tw-gap-2 tw-mb-4 tw-flex-wrap">
               <Button onClick={calcolaSimulazione} disabled={simLoading || (simIsOrario && !(Number(simOre) > 0))} className="tw-flex tw-items-center tw-gap-2">
                 <Euro size={18} /> {simLoading ? 'Calcolo...' : 'Calcola il costo mensile'}
@@ -849,116 +933,6 @@ export default function BadantiIntermediazione() {
           )}
         </div>
       </div>
-
-      {/* ── Modale Archivi intermediazione — accesso dal menu ⚙ ── */}
-      {showArchivio && (
-        <div className="tw-fixed tw-inset-0 tw-bg-black/40 tw-flex tw-items-center tw-justify-center tw-z-50 tw-p-4">
-          <div className="tw-bg-white tw-rounded-2xl tw-p-6 tw-w-full tw-max-w-5xl tw-max-h-[90vh] tw-overflow-y-auto tw-shadow-xl">
-            <div className="tw-flex tw-justify-between tw-items-start tw-mb-4">
-              <h2 className="tw-text-lg tw-font-semibold tw-flex tw-items-center tw-gap-2 tw-text-slate-700">
-                <FileText size={20} /> Archivi intermediazione
-                <span className="tw-text-xs tw-font-bold tw-text-slate-500">
-                  Contratti {archivioContratti.length} · GDPR {archivioGdpr.length}
-                  {firmatiCount > 0 ? ` · ${firmatiCount} firmati` : ''}
-                </span>
-              </h2>
-              <button onClick={() => setShowArchivio(false)} className="tw-p-1 tw-text-slate-400 hover:tw-text-slate-700"><X size={20} /></button>
-            </div>
-            <div className="tw-space-y-6">
-                <div>
-                  <h3 className="tw-text-sm tw-font-bold tw-text-slate-600 tw-uppercase tw-mb-2">Archivio Preventivo + Contratto</h3>
-                  {archivioContratti.length === 0 ? (
-                    <div className="tw-text-sm tw-text-slate-400">Nessun contratto generato.</div>
-                  ) : (
-                    <div className="tw-overflow-x-auto">
-                      <table className="tw-w-full tw-text-sm">
-                        <thead>
-                          <tr className="tw-text-left tw-text-xs tw-text-slate-500 tw-uppercase tw-border-b">
-                            <th className="tw-py-2 tw-pr-3">Paziente</th>
-                            <th className="tw-py-2 tw-pr-3">Documento</th>
-                            <th className="tw-py-2 tw-pr-3">Stato</th>
-                            <th className="tw-py-2 tw-pr-3">Email</th>
-                            <th className="tw-py-2">Azioni</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {archivioContratti.map(r => {
-                            const c = r.contrattoId && typeof r.contrattoId === 'object' ? r.contrattoId : undefined;
-                            const nomeP = r.patient ? `${r.patient.firstName} ${r.patient.lastName}` : '—';
-                            return (
-                              <tr key={r._id} className="tw-border-b tw-border-slate-100">
-                                <td className="tw-py-2 tw-pr-3 tw-font-medium tw-text-slate-700">{nomeP}</td>
-                                <td className="tw-py-2 tw-pr-3 tw-text-slate-500">{r.preventivoPdfFileName || c?.allegatoFileName || 'preventivo.pdf'}</td>
-                                <td className="tw-py-2 tw-pr-3">
-                                  {c?.stato === 'firmato'
-                                    ? <span className="tw-text-green-700 tw-font-semibold">Firmato{c.dataFirma ? ` ${new Date(c.dataFirma).toLocaleDateString('it-IT')}` : ''}</span>
-                                    : <span className="tw-text-amber-600 tw-font-semibold">In attesa firma</span>}
-                                </td>
-                                <td className="tw-py-2 tw-pr-3 tw-text-slate-500">{c?.email || '—'}</td>
-                                <td className="tw-py-2 tw-flex tw-gap-2">
-                                  {c && (
-                                    <Button size="sm" variant="secondary" onClick={() => scaricaPreventivoContratto(c)}>
-                                      <Download size={14} className="tw-inline" /> Preventivo
-                                    </Button>
-                                  )}
-                                  {c && c.stato !== 'firmato' && (
-                                    <Button size="sm" variant="secondary" onClick={() => inviaFirmaContratto(c)}>
-                                      <Mail size={14} className="tw-inline" /> Invia
-                                    </Button>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <h3 className="tw-text-sm tw-font-bold tw-text-slate-600 tw-uppercase tw-mb-2">Archivio GDPR Intermediazione</h3>
-                  {archivioGdpr.length === 0 ? (
-                    <div className="tw-text-sm tw-text-slate-400">Nessun consenso GDPR raccolto dall'intermediazione.</div>
-                  ) : (
-                    <div className="tw-overflow-x-auto">
-                      <table className="tw-w-full tw-text-sm">
-                        <thead>
-                          <tr className="tw-text-left tw-text-xs tw-text-slate-500 tw-uppercase tw-border-b">
-                            <th className="tw-py-2 tw-pr-3">Paziente</th>
-                            <th className="tw-py-2 tw-pr-3">Firmatario</th>
-                            <th className="tw-py-2 tw-pr-3">Data firma</th>
-                            <th className="tw-py-2 tw-pr-3">Luogo</th>
-                            <th className="tw-py-2 tw-pr-3">Versione</th>
-                            <th className="tw-py-2">Stato</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {archivioGdpr.map(g => (
-                            <tr key={g._id} className="tw-border-b tw-border-slate-100">
-                              <td className="tw-py-2 tw-pr-3 tw-font-medium tw-text-slate-700">
-                                {g.patient ? `${g.patient.firstName} ${g.patient.lastName}` : '—'}
-                              </td>
-                              <td className="tw-py-2 tw-pr-3">{`${g.nomeFirmatario || ''} ${g.cognomeFirmatario || ''}`.trim() || '—'}</td>
-                              <td className="tw-py-2 tw-pr-3">{g.dataFirma ? new Date(g.dataFirma).toLocaleDateString('it-IT') : '—'}</td>
-                              <td className="tw-py-2 tw-pr-3">{g.luogoFirma || '—'}</td>
-                              <td className="tw-py-2 tw-pr-3">{g.versioneInformativa || '—'}</td>
-                              <td className="tw-py-2">
-                                {g.revocato
-                                  ? <span className="tw-text-red-600 tw-font-semibold">Revocato</span>
-                                  : <span className="tw-text-green-700 tw-font-semibold">Valido</span>}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {selectedQuote && richiestaAperta && (
         <div className="tw-fixed tw-inset-0 tw-bg-black/40 tw-flex tw-items-center tw-justify-center tw-z-50 tw-p-4">

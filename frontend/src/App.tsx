@@ -53,6 +53,7 @@ const GestioneFatturazione = lazy(() => import('./pages/GestioneFatturazione'));
 const ArchivioFatture = lazy(() => import('./pages/ArchivioFatture'));
 const ArchivioPreventivi = lazy(() => import('./pages/ArchivioPreventivi'));
 const BadantiIntermediazione = lazy(() => import('./pages/BadantiIntermediazione'));
+const ArchiviIntermediazione = lazy(() => import('./pages/ArchiviIntermediazione'));
 const GestioneContratti = lazy(() => import('./pages/GestioneContratti'));
 const Tariffario = lazy(() => import('./pages/Tariffario'));
 const GestioneConsensiGDPR = lazy(() => import('./pages/GestioneConsensiGDPR'));
@@ -514,6 +515,10 @@ function AppShell() {
                 <ClipboardList size={18} />
                 Archivio Preventivi
               </Link>
+              <Link to="/archivi-intermediazione" className={isActive('/archivi-intermediazione') ? 'active' : ''}>
+                <Archive size={18} />
+                Archivi intermediazione
+              </Link>
 
               {/* — Sistema (solo admin) — */}
               {user.role === 'admin' && (
@@ -630,6 +635,7 @@ function AppShell() {
           <Route path="/archivio-fatture" element={<ProtectedRoute><ArchivioFatture /></ProtectedRoute>} />
           <Route path="/archivio-preventivi" element={<ProtectedRoute><ArchivioPreventivi /></ProtectedRoute>} />
           <Route path="/badanti-intermediazione" element={<ProtectedRoute><BadantiIntermediazione /></ProtectedRoute>} />
+          <Route path="/archivi-intermediazione" element={<ProtectedRoute><ArchiviIntermediazione /></ProtectedRoute>} />
           <Route path="/tariffario" element={<ProtectedRoute><Tariffario /></ProtectedRoute>} />
           <Route path="/gestione-contratti" element={<ProtectedRoute><GestioneContratti /></ProtectedRoute>} />
           {/* GDPR Compliance - Gestione Consensi */}

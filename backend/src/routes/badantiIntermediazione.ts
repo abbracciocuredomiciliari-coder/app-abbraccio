@@ -414,6 +414,90 @@ router.patch('/:id/stato', authenticateToken, authorizeRole(...RUOLI_GESTIONE), 
   }
 });
 
+// Valida l'input del simulatore costo (condiviso da /:id/preventivo e /simula-costo/contratto)
+function validaSimInput(body: any): string | null {
+  const tipiValidi = CONTRATTI_SIM.map((c: any) => c.value);
+  if (!body?.contrattoTipo || !tipiValidi.includes(body.contrattoTipo)) {
+    return `contrattoTipo deve essere uno tra: ${tipiValidi.join(', ')}`;
+  }
+  const orario = body.contrattoTipo === 'non_convivente' || body.contrattoTipo === 'sostituzione';
+  if (orario && !(Number(body.oreSettimanali) > 0)) {
+    return 'Ore settimanali obbligatorie per i contratti ad orario';
+  }
+  return null;
+}
+
+// Genera il PDF costo dal simulatore e crea il contratto d'incarico (allegato PDF + GDPR + firma).
+// Restituisce { errore: { status, message } } oppure { contratto, richiesta, emailInviata }.
+async function generaContrattoDaSimulazione(richiesta: any, body: any, req: Request): Promise<any> {
+  const erroreInput = validaSimInput(body);
+  if (erroreInput) return { errore: { status: 400, message: erroreInput } };
+
+  const {
+    contrattoTipo, livello, oreSettimanali, tempoDeterminato, pagaPersonalizzata,
+    indennitaPiuAutosuff, certificazioneUni, indennitaBabysitter,
+    cafMensile, importo, email, inviaEmail: inviaEmailFlag,
+  } = body || {};
+
+  const P = await caricaParametri();
+  const simInput = {
+    contrattoTipo,
+    livello,
+    oreSettimanali: oreSettimanali ? Number(oreSettimanali) : undefined,
+    tempoDeterminato: !!tempoDeterminato,
+    pagaPersonalizzata: pagaPersonalizzata ? Number(pagaPersonalizzata) : undefined,
+    indennitaPiuAutosuff: !!indennitaPiuAutosuff,
+    certificazioneUni: !!certificazioneUni,
+    indennitaBabysitter: !!indennitaBabysitter,
+  };
+  const sim = simulaCostoBadante(simInput as any, P);
+
+  const paziente: any = richiesta.patient;
+  if (!paziente) return { errore: { status: 404, message: 'Paziente della richiesta non trovato' } };
+  const intestatario = `${paziente.firstName || ''} ${paziente.lastName || ''}`.trim();
+
+  // Genera il PDF preventivo dal simulatore
+  const pdfBuffer = await generaPreventivoBadantePdfBuffer(sim, {
+    intestatario,
+    cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : P.cafMensileDefault,
+  });
+  const pdfFileName = `preventivo-intermediazione-${intestatario.replace(/\s+/g, '-').toLowerCase() || 'paziente'}.pdf`;
+
+  // Crea il contratto d'incarico con il PDF allegato (contratto + GDPR + firma)
+  const contratto = await ContrattoPaziente.create({
+    patient: paziente._id || paziente,
+    profilo: 'Assistente familiare',
+    importo: Number(importo) > 0 ? Number(importo) : 610,
+    token: crypto.randomBytes(32).toString('hex'),
+    email: email || paziente.email || undefined,
+    nome: intestatario,
+    stato: 'emesso',
+    richiestaId: richiesta._id,
+    contesto: 'intermediazione',
+    allegatoFileName: pdfFileName,
+    allegatoContentType: 'application/pdf',
+    allegatoData: pdfBuffer,
+  });
+
+  // Collega il contratto alla richiesta
+  richiesta.contrattoId = contratto._id as any;
+  richiesta.stato = 'preventivo_emesso';
+  richiesta.simulazione = { ...simInput, totaleCostoMensile: sim.totaleCostoMensile, retribuzioneNetta: sim.retribuzioneNetta, cafMensile: Number(cafMensile) || 150 };
+  richiesta.costoMensile = Math.round(sim.totaleCostoMensile * 100) / 100;
+  richiesta.preventivoPdfFileName = pdfFileName;
+  await richiesta.save();
+
+  // Invio opzionale: contratto + GDPR + preventivo al paziente per la firma
+  const emailDest = (email || paziente.email || '').trim();
+  let emailInviata = false;
+  if (inviaEmailFlag && emailDest) {
+    await inviaEmailContrattoPaziente(String(contratto._id), emailDest, req);
+    emailInviata = true;
+  }
+
+  return { contratto, richiesta, emailInviata };
+}
+
 // POST /api/badanti-intermediazione/:id/preventivo — genera il preventivo reale dal simulatore costi
 // (PDF brandizzato) e lo associa al contratto d'incarico da inviare al paziente con
 // contratto + informativa GDPR per la firma di accettazione.
@@ -423,82 +507,48 @@ router.post('/:id/preventivo', authenticateToken, authorizeRole(...RUOLI_GESTION
     if (!richiesta) return res.status(404).json({ message: 'Richiesta non trovata' });
     if (richiesta.contrattoId) return res.status(400).json({ message: 'Contratto/preventivo già generato' });
 
-    const {
-      contrattoTipo, livello, oreSettimanali, tempoDeterminato, pagaPersonalizzata,
-      indennitaPiuAutosuff, certificazioneUni, indennitaBabysitter,
-      cafMensile, importo, email, inviaEmail: inviaEmailFlag,
-    } = req.body || {};
-
-    // ── 1) Validazione input simulatore ──
-    const tipiValidi = CONTRATTI_SIM.map(c => c.value);
-    if (!contrattoTipo || !tipiValidi.includes(contrattoTipo)) {
-      return res.status(400).json({ message: `contrattoTipo deve essere uno tra: ${tipiValidi.join(', ')}` });
-    }
-    const orario = contrattoTipo === 'non_convivente' || contrattoTipo === 'sostituzione';
-    if (orario && !(Number(oreSettimanali) > 0)) {
-      return res.status(400).json({ message: 'Ore settimanali obbligatorie per i contratti ad orario' });
-    }
-
-    const P = await caricaParametri();
-    const simInput = {
-      contrattoTipo,
-      livello,
-      oreSettimanali: oreSettimanali ? Number(oreSettimanali) : undefined,
-      tempoDeterminato: !!tempoDeterminato,
-      pagaPersonalizzata: pagaPersonalizzata ? Number(pagaPersonalizzata) : undefined,
-      indennitaPiuAutosuff: !!indennitaPiuAutosuff,
-      certificazioneUni: !!certificazioneUni,
-      indennitaBabysitter: !!indennitaBabysitter,
-    };
-    const sim = simulaCostoBadante(simInput as any, P);
-
-    const paziente: any = richiesta.patient;
-    if (!paziente) return res.status(404).json({ message: 'Paziente della richiesta non trovato' });
-    const intestatario = `${paziente.firstName || ''} ${paziente.lastName || ''}`.trim();
-
-    // ── 2) Genera il PDF preventivo reale dal simulatore ──
-    const pdfBuffer = await generaPreventivoBadantePdfBuffer(sim, {
-      intestatario,
-      cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : P.cafMensileDefault,
-    });
-    const pdfFileName = `preventivo-intermediazione-${intestatario.replace(/\s+/g, '-').toLowerCase() || 'paziente'}.pdf`;
-
-    // ── 3) Crea il contratto d'incarico con il PDF allegato (contratto + GDPR + firma) ──
-    const contratto = await ContrattoPaziente.create({
-      patient: richiesta.patient,
-      profilo: 'Assistente familiare',
-      importo: Number(importo) > 0 ? Number(importo) : 610,
-      token: crypto.randomBytes(32).toString('hex'),
-      email: email || paziente.email || undefined,
-      nome: intestatario,
-      stato: 'emesso',
-      richiestaId: richiesta._id,
-      contesto: 'intermediazione',
-      allegatoFileName: pdfFileName,
-      allegatoContentType: 'application/pdf',
-      allegatoData: pdfBuffer,
-    });
-
-    // ── 4) Collega il contratto alla richiesta ──
-    richiesta.contrattoId = contratto._id as any;
-    richiesta.stato = 'preventivo_emesso';
-    richiesta.simulazione = { ...simInput, totaleCostoMensile: sim.totaleCostoMensile, retribuzioneNetta: sim.retribuzioneNetta, cafMensile: Number(cafMensile) || 150 };
-    richiesta.costoMensile = Math.round(sim.totaleCostoMensile * 100) / 100;
-    richiesta.preventivoPdfFileName = pdfFileName;
-    await richiesta.save();
-
-    // ── 5) Invio opzionale: contratto + GDPR + preventivo al paziente per la firma ──
-    const emailDest = (email || paziente.email || '').trim();
-    let emailInviata = false;
-    if (inviaEmailFlag && emailDest) {
-      await inviaEmailContrattoPaziente(String(contratto._id), emailDest, req);
-      emailInviata = true;
-    }
-
-    return res.status(201).json({ contratto, richiesta, emailInviata });
+    const out = await generaContrattoDaSimulazione(richiesta, req.body, req);
+    if (out.errore) return res.status(out.errore.status).json({ message: out.errore.message });
+    return res.status(201).json(out);
   } catch (error: any) {
     console.error('[Intermediazione preventivo] Errore:', error);
     return res.status(500).json({ message: 'Errore nella generazione del preventivo', error: error.message });
+  }
+});
+
+// POST /api/badanti-intermediazione/simula-costo/contratto — dal pannello "Simula costo":
+// associa la simulazione a un paziente e crea richiesta + contratto d'incarico
+// (PDF costo allegato + GDPR) da inviare per la firma, senza richiesta manuale.
+router.post('/simula-costo/contratto', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('badanti_intermediazione', 'CREATE'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { patient } = req.body || {};
+    if (!patient) return res.status(400).json({ message: 'Seleziona un paziente' });
+    const erroreInput = validaSimInput(req.body);
+    if (erroreInput) return res.status(400).json({ message: erroreInput });
+
+    const paziente = await Patient.findById(patient).select('firstName lastName codiceFiscale email tipoGestione').lean();
+    if (!paziente) return res.status(404).json({ message: 'Paziente non trovato' });
+
+    const user = req.user as { name?: string; email?: string } | undefined;
+    const richiesta = await BadanteIntermediazione.create({
+      patient: paziente._id,
+      contrattoTipo: req.body.contrattoTipo === 'non_convivente' ? 'orario_non_convivente' : 'convivente',
+      livello: ['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS'].includes(req.body.livello) ? req.body.livello : 'BS',
+      oreSettimanali: Number(req.body.oreSettimanali) > 0 ? Number(req.body.oreSettimanali) : undefined,
+      stato: 'aperta',
+      creatoDa: user?.name || user?.email || 'Sistema',
+    });
+    richiesta.patient = paziente as any;
+
+    const out = await generaContrattoDaSimulazione(richiesta, req.body, req);
+    if (out.errore) {
+      await BadanteIntermediazione.deleteOne({ _id: richiesta._id }).catch(() => {});
+      return res.status(out.errore.status).json({ message: out.errore.message });
+    }
+    return res.status(201).json(out);
+  } catch (error: any) {
+    console.error('[Intermediazione contratto da simulazione] Errore:', error);
+    return res.status(500).json({ message: 'Errore nella generazione del contratto', error: error.message });
   }
 });
 
