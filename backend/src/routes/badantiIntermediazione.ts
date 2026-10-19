@@ -6,6 +6,7 @@ import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { auditLog } from '../middleware/audit';
 import { simulaCostoBadante, CONTRATTI_SIM } from '../utils/costoBadante';
+import { generaPreventivoBadantePdf } from '../utils/preventivoBadantePdf';
 
 const TARIFFE_BADANTI = {
   orario_non_convivente: {
@@ -159,7 +160,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
 // Replica il calcolatore esterno (doemploy): lorda + vitto/alloggio + contributi INPS + TFR + 13esima + ferie
 router.post('/simula-costo', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const { contrattoTipo, livello, oreSettimanali, tempoDeterminato, pagaPersonalizzata, indennitaPiuAutosuff, certificazioneUni } = req.body || {};
+    const { contrattoTipo, livello, oreSettimanali, tempoDeterminato, pagaPersonalizzata, indennitaPiuAutosuff, certificazioneUni, indennitaBabysitter } = req.body || {};
     const tipiValidi = CONTRATTI_SIM.map(c => c.value);
     if (!contrattoTipo || !tipiValidi.includes(contrattoTipo)) {
       return res.status(400).json({ message: `contrattoTipo deve essere uno tra: ${tipiValidi.join(', ')}` });
@@ -176,10 +177,42 @@ router.post('/simula-costo', authenticateToken, async (req: Request, res: Respon
       pagaPersonalizzata: pagaPersonalizzata ? Number(pagaPersonalizzata) : undefined,
       indennitaPiuAutosuff: !!indennitaPiuAutosuff,
       certificazioneUni: !!certificazioneUni,
+      indennitaBabysitter: !!indennitaBabysitter,
     });
     return res.json(risultato);
   } catch (error: any) {
     return res.status(400).json({ message: error.message || 'Errore nel calcolo del costo' });
+  }
+});
+
+// POST /api/badanti-intermediazione/simula-costo/pdf — PDF preventivo brandizzato (template Abbraccio/RSD)
+router.post('/simula-costo/pdf', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { contrattoTipo, livello, oreSettimanali, tempoDeterminato, pagaPersonalizzata, indennitaPiuAutosuff, certificazioneUni, indennitaBabysitter, intestatario, cafMensile } = req.body || {};
+    const tipiValidi = CONTRATTI_SIM.map(c => c.value);
+    if (!contrattoTipo || !tipiValidi.includes(contrattoTipo)) {
+      return res.status(400).json({ message: `contrattoTipo deve essere uno tra: ${tipiValidi.join(', ')}` });
+    }
+    const orario = contrattoTipo === 'non_convivente' || contrattoTipo === 'sostituzione';
+    if (orario && !(Number(oreSettimanali) > 0)) {
+      return res.status(400).json({ message: 'Ore settimanali obbligatorie per i contratti ad orario' });
+    }
+    const risultato = simulaCostoBadante({
+      contrattoTipo,
+      livello,
+      oreSettimanali: oreSettimanali ? Number(oreSettimanali) : undefined,
+      tempoDeterminato: !!tempoDeterminato,
+      pagaPersonalizzata: pagaPersonalizzata ? Number(pagaPersonalizzata) : undefined,
+      indennitaPiuAutosuff: !!indennitaPiuAutosuff,
+      certificazioneUni: !!certificazioneUni,
+      indennitaBabysitter: !!indennitaBabysitter,
+    });
+    return generaPreventivoBadantePdf(res, risultato, {
+      intestatario: intestatario ? String(intestatario).slice(0, 120) : undefined,
+      cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : 150,
+    });
+  } catch (error: any) {
+    return res.status(400).json({ message: error.message || 'Errore nella generazione del PDF' });
   }
 });
 

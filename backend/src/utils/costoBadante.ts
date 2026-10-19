@@ -85,9 +85,14 @@ export const INDENNITA_PIU_AUTOSUFF_MENSILE = 119.66; // Tabella I - CS/DS più 
 export const INDENNITA_PIU_AUTOSUFF_ORARIA = 0.70;    // Tabella I oraria
 export const INDENNITA_UNI11766_MENSILE = 30.27;      // Tabella L - B/BS/CS certificato UNI 11766
 
+// Indennità babysitter BS (< 6 anni, Tabella H)
+export const INDENNITA_BABYSITTER_MENSILE = 138.54;   // convivente full
+export const INDENNITA_BABYSITTER_PARTTIME = 97.06;   // convivente part-time
+export const INDENNITA_BABYSITTER_ORARIA = 0.84;      // non convivente oraria
+
 export const VITTO_ALLOGGIO_GIORNO_2026 = 6.66;
 export const GIORNI_VITTO_MESE = 26;                  // vitto in natura: 26 gg/mese (base TFR/13a)
-export const SETTIMANE_MESI = 52 / 12;                // ~4,3333
+export const SETTIMANE_MESI = 4.3334;                 // convenzione INPS (52,03/12): 40h→173,34 ore/mese
 export const ORE_CONVIVENTE_FULL = 54;
 export const ORE_PARTTIME = 30;
 export const FERIE_GIORNI_ANNO = 26;
@@ -122,6 +127,7 @@ export interface SimulazioneInput {
   pagaPersonalizzata?: number;   // €/mese o €/ora a seconda del contratto
   indennitaPiuAutosuff?: boolean; // più persone non autosufficienti (CS/DS)
   certificazioneUni?: boolean;    // UNI 11766 (B/BS/CS)
+  indennitaBabysitter?: boolean;  // BS babysitter < 6 anni
 }
 
 export interface SimulazioneCosto {
@@ -182,7 +188,7 @@ export function simulaCostoBadante(input: SimulazioneInput): SimulazioneCosto {
   else if (tipo === 'convivente_part_time') oreSett = ORE_PARTTIME;
   else if (orario) oreSett = Math.max(1, Math.min(40, Number(input.oreSettimanali) || 0));
   else oreSett = ORE_CONVIVENTE_FULL; // notturne: full convivente
-  const oreMensili = r2(oreSett * SETTIMANE_MESI);
+  const oreMensili = oreSett * SETTIMANE_MESI; // grezze: arrotondate solo in output
 
   // ── Paga base tabellare ──
   let pagaBase: number;
@@ -203,12 +209,16 @@ export function simulaCostoBadante(input: SimulazioneInput): SimulazioneCosto {
   if (input.certificazioneUni && (livello === 'B' || livello === 'BS' || livello === 'CS')) {
     indennitaMensili += INDENNITA_UNI11766_MENSILE;
   }
+  if (input.indennitaBabysitter && livello === 'BS' && tipo !== 'sostituzione') {
+    if (orario) indennitaOraria += INDENNITA_BABYSITTER_ORARIA;
+    else if (tipo === 'convivente_part_time') indennitaMensili += INDENNITA_BABYSITTER_PARTTIME;
+    else indennitaMensili += INDENNITA_BABYSITTER_MENSILE;
+  }
 
   // ── Retribuzione lorda mensile ──
   let retribuzioneLorda: number;
-  let pagaOraria: number;
   if (orario) {
-    pagaOraria = input.pagaPersonalizzata && input.pagaPersonalizzata > 0
+    const pagaOraria = input.pagaPersonalizzata && input.pagaPersonalizzata > 0
       ? input.pagaPersonalizzata
       : pagaBase;
     retribuzioneLorda = r2(oreMensili * (pagaOraria + indennitaOraria));
@@ -217,9 +227,8 @@ export function simulaCostoBadante(input: SimulazioneInput): SimulazioneCosto {
       ? input.pagaPersonalizzata + indennitaMensili
       : pagaBase + indennitaMensili;
     retribuzioneLorda = r2(retribuzioneLorda);
-    pagaOraria = r2(retribuzioneLorda / oreMensili);
   }
-  const retribuzioneOrariaTotale = r2(retribuzioneLorda / oreMensili);
+  const retribuzioneOrariaTotale = retribuzioneLorda / oreMensili; // grezza per i calcoli
 
   // ── Vitto/alloggio in natura (conviventi): non costo in €, solo base TFR/13a ──
   const vittoMensileNatura = conviventeTipo ? r2(VITTO_ALLOGGIO_GIORNO_2026 * GIORNI_VITTO_MESE) : 0;
@@ -258,7 +267,7 @@ export function simulaCostoBadante(input: SimulazioneInput): SimulazioneCosto {
     contrattoLabel: cfg.label,
     livelloLabel,
     oreSettimanali: oreSett,
-    oreMensili,
+    oreMensili: r2(oreMensili),
     pagaBaseCcnl: pagaBase,
     pagaUnitaria: orario ? 'ora' : 'mese',
     retribuzioneLordaMensile: retribuzioneLorda,
@@ -276,7 +285,7 @@ export function simulaCostoBadante(input: SimulazioneInput): SimulazioneCosto {
     tredicesima,
     nettoComplessivo,
     totaleCostoMensile,
-    retribuzioneOrariaTotale,
+    retribuzioneOrariaTotale: r2(retribuzioneOrariaTotale),
     retribuzioneOrariaEffettiva,
     ferieMensiliOre,
     vittoAlloggioGiorno: conviventeTipo ? VITTO_ALLOGGIO_GIORNO_2026 : 0,

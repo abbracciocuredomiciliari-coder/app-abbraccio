@@ -124,7 +124,10 @@ export default function BadantiIntermediazione() {
   const [simDeterminato, setSimDeterminato] = useState(false);
   const [simPiuAutosuff, setSimPiuAutosuff] = useState(false);
   const [simCertUni, setSimCertUni] = useState(false);
+  const [simBabysitter, setSimBabysitter] = useState(false);
   const [simPagaCustom, setSimPagaCustom] = useState('');
+  const [simIntestatario, setSimIntestatario] = useState('');
+  const [simPdfLoading, setSimPdfLoading] = useState(false);
   const [simRisultato, setSimRisultato] = useState<SimulazioneCosto | null>(null);
   const [simLoading, setSimLoading] = useState(false);
   const [simErr, setSimErr] = useState('');
@@ -170,6 +173,7 @@ export default function BadantiIntermediazione() {
         tempoDeterminato: simDeterminato,
         indennitaPiuAutosuff: simPiuAutosuff,
         certificazioneUni: simCertUni,
+        indennitaBabysitter: simBabysitter,
         pagaPersonalizzata: simPagaCustom ? Number(simPagaCustom) : undefined,
       });
       setSimRisultato(res.data);
@@ -178,6 +182,33 @@ export default function BadantiIntermediazione() {
       setSimRisultato(null);
     } finally {
       setSimLoading(false);
+    }
+  }
+
+  async function scaricaPdfPreventivo() {
+    try {
+      setSimPdfLoading(true);
+      const res = await api.post('/badanti-intermediazione/simula-costo/pdf', {
+        contrattoTipo: simContratto,
+        livello: simLivello,
+        oreSettimanali: simIsOrario ? Number(simOre) : undefined,
+        tempoDeterminato: simDeterminato,
+        indennitaPiuAutosuff: simPiuAutosuff,
+        certificazioneUni: simCertUni,
+        indennitaBabysitter: simBabysitter,
+        pagaPersonalizzata: simPagaCustom ? Number(simPagaCustom) : undefined,
+        intestatario: simIntestatario || undefined,
+      }, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `preventivo-assistente-familiare${simIntestatario ? '-' + simIntestatario.replace(/\s+/g, '-').toLowerCase() : ''}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nella generazione del PDF');
+    } finally {
+      setSimPdfLoading(false);
     }
   }
 
@@ -412,6 +443,12 @@ export default function BadantiIntermediazione() {
                       <span>Addetto a più persone non autosufficienti</span>
                     </label>
                   )}
+                  {simLivello === 'BS' && (
+                    <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-bg-slate-50 tw-border tw-rounded tw-p-2.5">
+                      <input type="checkbox" checked={simBabysitter} onChange={e => { setSimBabysitter(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+                      <span>Babysitter fino al 6° anno di età del bambino</span>
+                    </label>
+                  )}
                   {(simLivello === 'B' || simLivello === 'BS' || simLivello === 'CS') && (
                     <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-bg-slate-50 tw-border tw-rounded tw-p-2.5">
                       <input type="checkbox" checked={simCertUni} onChange={e => { setSimCertUni(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
@@ -434,11 +471,20 @@ export default function BadantiIntermediazione() {
                 <input type="number" step="0.01" min="0" value={simPagaCustom} onChange={e => { setSimPagaCustom(e.target.value); setSimRisultato(null); }} className="tw-border tw-rounded tw-p-2" placeholder="Minimo CCNL" />
                 <span className="tw-text-xs tw-text-slate-400">Vuoto = minimo contrattuale CCNL 2026</span>
               </label>
+              <label className="tw-flex tw-flex-col tw-gap-1">
+                <span className="tw-text-sm tw-font-medium">Intestatario preventivo (opzionale)</span>
+                <input type="text" value={simIntestatario} onChange={e => setSimIntestatario(e.target.value)} className="tw-border tw-rounded tw-p-2" placeholder="Es. Famiglia Rossi" />
+              </label>
             </div>
-            <div className="tw-flex tw-justify-end tw-mb-4">
+            <div className="tw-flex tw-justify-end tw-gap-2 tw-mb-4 tw-flex-wrap">
               <Button onClick={calcolaSimulazione} disabled={simLoading || (simIsOrario && !(Number(simOre) > 0))} className="tw-flex tw-items-center tw-gap-2">
                 <Euro size={18} /> {simLoading ? 'Calcolo...' : 'Calcola il costo mensile'}
               </Button>
+              {simRisultato && (
+                <Button variant="secondary" onClick={scaricaPdfPreventivo} disabled={simPdfLoading} className="tw-flex tw-items-center tw-gap-2">
+                  <FileText size={18} /> {simPdfLoading ? 'Generazione...' : 'Scarica PDF preventivo'}
+                </Button>
+              )}
             </div>
             {simErr && <div className="tw-text-red-600 tw-text-sm tw-mb-3">{simErr}</div>}
             {simRisultato && (
