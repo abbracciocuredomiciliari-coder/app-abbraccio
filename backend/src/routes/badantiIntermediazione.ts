@@ -300,8 +300,27 @@ router.get('/archivio/contratti', authenticateToken, authorizeRole(...RUOLI_GEST
       .populate('patient', 'firstName lastName codiceFiscale email')
       .populate('contrattoId', 'stato email dataFirma allegatoFileName token nome importo consensoGdprId')
       .select('-simulazione')
-      .sort({ createdAt: -1 });
-    return res.json(richieste);
+      .sort({ createdAt: -1 })
+      .lean();
+    // Contratti orfani: la richiesta è stata eliminata ma il contratto esiste ancora
+    // (es. già firmato). Restano in archivio altrimenti un firmato sparirebbe dal portale.
+    const collegati = new Set(
+      richieste.map((r: any) => String(r.contrattoId?._id || r.contrattoId)).filter(Boolean)
+    );
+    const orfani = await ContrattoPaziente.find({ contesto: 'intermediazione' })
+      .populate('patient', 'firstName lastName codiceFiscale email')
+      .select('stato email dataFirma allegatoFileName token nome importo consensoGdprId patient data createdAt')
+      .lean();
+    const extra = orfani
+      .filter((c: any) => !collegati.has(String(c._id)))
+      .map((c: any) => ({
+        _id: c._id,
+        patient: c.patient,
+        contrattoId: c,
+        contrattoOrfano: true,
+        createdAt: c.createdAt || c.data,
+      }));
+    return res.json([...richieste, ...extra]);
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore caricamento archivio contratti', error: error.message });
   }
@@ -520,6 +539,7 @@ router.post('/:id/preventivo', authenticateToken, authorizeRole(...RUOLI_GESTION
 // associa la simulazione a un paziente e crea richiesta + contratto d'incarico
 // (PDF costo allegato + GDPR) da inviare per la firma, senza richiesta manuale.
 router.post('/simula-costo/contratto', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('badanti_intermediazione', 'CREATE'), async (req: AuthRequest, res: Response) => {
+  let richiesta: any = null;
   try {
     const { patient } = req.body || {};
     if (!patient) return res.status(400).json({ message: 'Seleziona un paziente' });
@@ -530,7 +550,7 @@ router.post('/simula-costo/contratto', authenticateToken, authorizeRole(...RUOLI
     if (!paziente) return res.status(404).json({ message: 'Paziente non trovato' });
 
     const user = req.user as { name?: string; email?: string } | undefined;
-    const richiesta = await BadanteIntermediazione.create({
+    richiesta = await BadanteIntermediazione.create({
       patient: paziente._id,
       contrattoTipo: req.body.contrattoTipo === 'non_convivente' ? 'orario_non_convivente' : 'convivente',
       livello: ['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS'].includes(req.body.livello) ? req.body.livello : 'BS',
@@ -547,6 +567,14 @@ router.post('/simula-costo/contratto', authenticateToken, authorizeRole(...RUOLI
     }
     return res.status(201).json(out);
   } catch (error: any) {
+    // Pulizia: se il contratto era già stato creato/linkato quando qualcosa è fallito
+    // dopo, elimina contratto e richiesta — niente orfani con link firma ancora attivi.
+    if (richiesta?.contrattoId) {
+      await ContrattoPaziente.deleteOne({ _id: richiesta.contrattoId }).catch(() => {});
+    }
+    if (richiesta?._id) {
+      await BadanteIntermediazione.deleteOne({ _id: richiesta._id }).catch(() => {});
+    }
     console.error('[Intermediazione contratto da simulazione] Errore:', error);
     return res.status(500).json({ message: 'Errore nella generazione del contratto', error: error.message });
   }
@@ -713,6 +741,12 @@ router.delete('/:id', authenticateToken, authorizeRole('admin'), auditLog('badan
   try {
     const richiesta = await BadanteIntermediazione.findByIdAndDelete(req.params.id);
     if (!richiesta) return res.status(404).json({ message: 'Richiesta non trovata' });
+    // Se c'era un contratto non ancora firmato, eliminalo: il link firma non deve
+    // restare attivo per una richiesta che non esiste più. I firmati restano (prova legale)
+    // e compaiono comunque in archivio come contratti orfani.
+    if (richiesta.contrattoId) {
+      await ContrattoPaziente.deleteOne({ _id: richiesta.contrattoId, stato: { $ne: 'firmato' } }).catch(() => {});
+    }
     return res.json({ message: 'Richiesta eliminata' });
   } catch (error: any) {
     return res.status(500).json({ message: "Errore nell'eliminazione", error: error.message });
