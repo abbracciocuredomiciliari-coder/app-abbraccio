@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/api';
-import { FileText, Download, Mail, Users } from 'lucide-react';
+import { FileText, Download, Mail, Users, Eye } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 interface ContrattoCollegato {
@@ -72,6 +72,18 @@ export default function ArchiviIntermediazione() {
       URL.revokeObjectURL(url);
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore download preventivo');
+    }
+  }
+
+  // Apre in una nuova scheda il documento HTML firmato (contratto o informativa GDPR)
+  async function apriDocumentoFirmato(contrattoId: string, tipo: 'pdf' | 'gdpr-firmato', nome: string) {
+    try {
+      const res = await api.get(`/contratti-pazienti/${contrattoId}/${tipo}`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'text/html' }));
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || `Errore apertura ${nome}`);
     }
   }
 
@@ -148,7 +160,17 @@ export default function ArchiviIntermediazione() {
                             : <span className="tw-text-amber-600 tw-font-semibold">In attesa firma</span>}
                         </td>
                         <td className="tw-py-2 tw-pr-3 tw-text-slate-500">{c?.email || '—'}</td>
-                        <td className="tw-py-2 tw-flex tw-gap-2">
+                        <td className="tw-py-2 tw-flex tw-gap-2 tw-flex-wrap">
+                          {c && c.stato === 'firmato' && (
+                            <>
+                              <Button size="sm" variant="secondary" onClick={() => apriDocumentoFirmato(c._id, 'pdf', 'contratto firmato')}>
+                                <Eye size={14} className="tw-inline" /> Contratto firmato
+                              </Button>
+                              <Button size="sm" variant="secondary" onClick={() => apriDocumentoFirmato(c._id, 'gdpr-firmato', 'GDPR firmato')}>
+                                <Eye size={14} className="tw-inline" /> GDPR firmato
+                              </Button>
+                            </>
+                          )}
                           {c && (
                             <Button size="sm" variant="secondary" onClick={() => scaricaPreventivoContratto(c)}>
                               <Download size={14} className="tw-inline" /> Preventivo

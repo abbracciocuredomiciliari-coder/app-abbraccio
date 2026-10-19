@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { Users, FileText, Mail, Trash2, Receipt, Check, X, User, Briefcase, Euro, Download, Settings } from 'lucide-react';
+import { Users, FileText, Mail, Trash2, Receipt, Check, X, User, Briefcase, Euro, Download, Settings, Eye } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 interface Patient {
@@ -465,6 +465,18 @@ export default function BadantiIntermediazione() {
     }
   }
 
+  // Apre in una nuova scheda il documento HTML firmato (contratto o informativa GDPR)
+  async function apriDocumentoFirmato(contrattoId: string, tipo: 'pdf' | 'gdpr-firmato', nome: string) {
+    try {
+      const res = await api.get(`/contratti-pazienti/${contrattoId}/${tipo}`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'text/html' }));
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || `Errore apertura ${nome}`);
+    }
+  }
+
   // Invia (o reinvia) contratto + GDPR + preventivo al paziente per la firma
   async function inviaFirmaContratto(contratto: ContrattoCollegato) {
     const email = window.prompt('Email del destinatario', contratto.email || '');
@@ -892,9 +904,17 @@ export default function BadantiIntermediazione() {
                                 </Button>
                               )}
                               {contratto.stato === 'firmato' && (
-                                <span className="tw-inline-flex tw-items-center tw-gap-1 tw-px-2 tw-py-1 tw-rounded tw-bg-green-100 tw-text-green-700 tw-text-xs tw-font-bold">
-                                  <Check size={14} /> Firmato{contratto.dataFirma ? ` il ${new Date(contratto.dataFirma).toLocaleDateString('it-IT')}` : ''}
-                                </span>
+                                <>
+                                  <span className="tw-inline-flex tw-items-center tw-gap-1 tw-px-2 tw-py-1 tw-rounded tw-bg-green-100 tw-text-green-700 tw-text-xs tw-font-bold">
+                                    <Check size={14} /> Firmato{contratto.dataFirma ? ` il ${new Date(contratto.dataFirma).toLocaleDateString('it-IT')}` : ''}
+                                  </span>
+                                  <Button size="sm" variant="secondary" onClick={() => apriDocumentoFirmato(contratto._id, 'pdf', 'contratto firmato')}>
+                                    <Eye size={14} className="tw-inline" /> Vedi firmato
+                                  </Button>
+                                  <Button size="sm" variant="secondary" onClick={() => apriDocumentoFirmato(contratto._id, 'gdpr-firmato', 'GDPR firmato')}>
+                                    <Eye size={14} className="tw-inline" /> GDPR firmato
+                                  </Button>
+                                </>
                               )}
                             </>
                           )}

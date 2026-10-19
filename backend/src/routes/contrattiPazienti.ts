@@ -617,6 +617,21 @@ router.get('/:id/pdf', authenticateToken, async (req: Request, res: Response) =>
   }
 });
 
+// GET /api/contratti-pazienti/:id/gdpr-firmato — HTML informativa GDPR firmata (stessa firma del contratto)
+router.get('/:id/gdpr-firmato', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const contratto = await ContrattoPaziente.findById(req.params.id).select('stato gdprHtmlFirmato');
+    if (!contratto) return res.status(404).json({ message: 'Contratto non trovato' });
+    if (contratto.stato !== 'firmato' || !contratto.gdprHtmlFirmato) {
+      return res.status(404).json({ message: 'GDPR firmato non disponibile' });
+    }
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.send(contratto.gdprHtmlFirmato);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore recupero GDPR firmato', error: error.message });
+  }
+});
+
 // GET /api/contratti-pazienti/firma/:token — verifica link firma (pubblico)
 router.get('/firma/:token', async (req: Request, res: Response) => {
   try {
