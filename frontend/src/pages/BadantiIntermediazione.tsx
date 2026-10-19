@@ -248,16 +248,19 @@ export default function BadantiIntermediazione() {
 
   useEffect(() => { caricaDati(); caricaPazienti(); caricaTariffe(); }, []);
 
+  // Precompila "Email per firma" dall'anagrafica del paziente selezionato
+  // (copre sia la preselezione da URL ?patientId= sia la selezione manuale in ritardo)
+  useEffect(() => {
+    if (!simPatient) return;
+    const p = pazienti.find(x => x._id === simPatient);
+    if (p?.email && !simContractEmail) setSimContractEmail(p.email);
+  }, [pazienti, simPatient]);
+
   async function caricaPazienti() {
     try {
       const res = await api.get('/patients?tipo=consulenza');
       const elenco = res.data?.patients || res.data || [];
       setPazienti(elenco as Patient[]);
-      // Paziente preselezionato da URL (es. Patients → Simula costo): precompila email firma dall'anagrafica
-      if (patientIdDaUrl) {
-        const p = (elenco as Patient[]).find((x: any) => x._id === patientIdDaUrl);
-        if (p?.email) setSimContractEmail(p.email);
-      }
     } catch (err: any) {
       console.error('Errore caricamento pazienti', err);
     }
