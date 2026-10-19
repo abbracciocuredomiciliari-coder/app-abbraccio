@@ -178,7 +178,8 @@ export function simulaCostoBadante(input: SimulazioneInput): SimulazioneCosto {
   if (cfg.livelli.length > 0 && (!livello || !cfg.livelli.includes(livello))) {
     throw new Error(`Livello non valido per ${cfg.label}`);
   }
-  const determinato = !!input.tempoDeterminato;
+  // Sostituzione: addizionale tempo determinato NON prevista (INPS circ. 9/2026)
+  const determinato = !!input.tempoDeterminato && tipo !== 'sostituzione';
   const orario = tipo === 'non_convivente' || tipo === 'sostituzione';
   const conviventeTipo = !orario;
 
