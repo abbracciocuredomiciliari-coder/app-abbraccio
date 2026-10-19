@@ -119,7 +119,10 @@ function creaDocPreventivo(sim: SimulazioneCosto, opts: PreventivoPdfOpts = {}) 
   const cafQuota = opts.cafMensile ?? 150;
   const contributiTotali = Math.round((sim.contribInpsLavoratoreMensili + sim.contribInpsDatoreMensili
     + sim.cassaColfLavoratoreMensili + sim.cassaColfDatoreMensili) * 100) / 100;
-  const totaleDocumento = Math.round((sim.retribuzioneNetta + contributiTotali + cafQuota) * 100) / 100;
+  // Accantonamenti mensili: TFR (base annua/13,5) + tredicesima (annua/12).
+  // Sono costo del datore maturato ogni mese, quindi entrano nel totale documento.
+  const accantonamenti = Math.round((sim.tfr + sim.tredicesima) * 100) / 100;
+  const totaleDocumento = Math.round((sim.retribuzioneNetta + contributiTotali + accantonamenti + cafQuota) * 100) / 100;
 
   // 1) Costo mensile (lordo)
   drawRow({
@@ -137,11 +140,25 @@ function creaDocPreventivo(sim: SimulazioneCosto, opts: PreventivoPdfOpts = {}) 
     totLabel: 'Netto',
   });
 
-  // 3) Trattenute
+  // 3) Contributi previdenziali (lavoratore + datore)
   drawRow({
-    desc: ['TRATTENUTE', 'Contributi', 'T.F.R', 'Tredicesima'],
+    desc: ['Contributi previdenziali e assistenziali INPS + Cassa.Colf (lavoratore + datore)'],
     retr: `${fmt(contributiTotali)} €`,
     tot: `${fmt(contributiTotali)} €`,
+  });
+
+  // 4) Accantonamento TFR mensile (maturato ogni mese, liquidato a fine rapporto)
+  drawRow({
+    desc: ['Accantonamento T.F.R. — quota mensile maturata (liquidato a fine rapporto)'],
+    retr: `${fmt(sim.tfr)} €`,
+    tot: `${fmt(sim.tfr)} €`,
+  });
+
+  // 5) Accantonamento tredicesima mensilità (maturata ogni mese, corrisposta a dicembre)
+  drawRow({
+    desc: ['Accantonamento tredicesima mensilità — quota mensile (corrisposta a dicembre)'],
+    retr: `${fmt(sim.tredicesima)} €`,
+    tot: `${fmt(sim.tredicesima)} €`,
   });
 
   // 4) CAF sanitario
