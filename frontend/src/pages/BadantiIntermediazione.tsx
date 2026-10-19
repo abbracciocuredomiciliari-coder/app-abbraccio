@@ -778,7 +778,7 @@ export default function BadantiIntermediazione() {
                               <Download size={14} className="tw-inline" /> PDF firmato
                             </Button>
                           )}
-                          {isGestione && preventivo?.stato === 'firmato' && !fattura && (
+                          {isGestione && (preventivo?.stato === 'firmato' || contratto?.stato === 'firmato') && !fattura && (
                             <Button size="sm" onClick={() => convertiInFattura(r._id)}>
                               <Receipt size={14} className="tw-inline" /> Fattura
                             </Button>

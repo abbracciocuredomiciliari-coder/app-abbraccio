@@ -429,13 +429,57 @@ router.post('/:id/preventivo', authenticateToken, authorizeRole(...RUOLI_GESTION
   }
 });
 
-// POST /api/badanti-intermediazione/:id/fattura — converte preventivo accettato in fattura (solo consulenza)
+// POST /api/badanti-intermediazione/:id/fattura — fattura la consulenza/incarico
+// Nuovo flusso: contratto firmato (contrattoId) → fattura del corrispettivo d'incarico.
+// Flusso legacy: preventivo DocumentoFatturazione firmato → fattura della sola voce consulenza.
 router.post('/:id/fattura', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('badanti_intermediazione', 'CREATE'), async (req: AuthRequest, res: Response) => {
   try {
     const richiesta = await BadanteIntermediazione.findById(req.params.id);
     if (!richiesta) return res.status(404).json({ message: 'Richiesta non trovata' });
-    if (!richiesta.preventivoId) return res.status(400).json({ message: 'Preventivo mancante' });
     if (richiesta.fatturaId) return res.status(400).json({ message: 'Fattura già generata' });
+
+    const user = req.user as { name?: string; email?: string } | undefined;
+
+    // ── Nuovo flusso: contratto firmato → fattura corrispettivo d'incarico ──
+    if (richiesta.contrattoId) {
+      const contratto = await ContrattoPaziente.findById(richiesta.contrattoId);
+      if (!contratto) return res.status(404).json({ message: 'Contratto non trovato' });
+      if (contratto.stato !== 'firmato') return res.status(400).json({ message: 'Il contratto deve essere firmato prima di emettere fattura' });
+
+      const totale = Math.round(Number(contratto.importo || 0) * 100) / 100;
+      if (!(totale > 0)) return res.status(400).json({ message: 'Importo contratto non valido' });
+      const numero = await generaNumero('fattura');
+
+      const fattura = await DocumentoFatturazione.create({
+        numero,
+        tipo: 'fattura',
+        patient: contratto.patient,
+        riferimentoTipo: 'badante',
+        riferimentoId: richiesta._id,
+        prestazioni: [{
+          descrizione: `Corrispettivo per incarico di intermediazione e reclutamento ${contratto.profilo} — contratto firmato il ${contratto.dataFirma ? new Date(contratto.dataFirma).toLocaleDateString('it-IT') : '—'}`,
+          quantita: 1,
+          prezzoUnitario: totale,
+          importo: totale,
+          tipo: 'consulenza',
+        }],
+        totale,
+        data: new Date(),
+        stato: 'emesso',
+        creatoDa: user?.name || user?.email || 'Sistema',
+        firma: { token: '', firmato: false },
+      });
+
+      richiesta.fatturaId = fattura._id as any;
+      richiesta.stato = 'fatturata';
+      await richiesta.save();
+
+      const popolata = await DocumentoFatturazione.findById(fattura._id).populate('patient', 'firstName lastName codiceFiscale address email');
+      return res.status(201).json({ fattura: popolata, richiesta });
+    }
+
+    // ── Flusso legacy: preventivo DocumentoFatturazione firmato ──
+    if (!richiesta.preventivoId) return res.status(400).json({ message: 'Preventivo o contratto mancante' });
 
     const preventivo = await DocumentoFatturazione.findById(richiesta.preventivoId);
     if (!preventivo) return res.status(404).json({ message: 'Preventivo non trovato' });
@@ -449,7 +493,6 @@ router.post('/:id/fattura', authenticateToken, authorizeRole(...RUOLI_GESTIONE),
       return res.status(400).json({ message: 'Nel preventivo non è presente la voce consulenza da fatturare' });
     }
     const numero = await generaNumero('fattura');
-    const user = req.user as { name?: string; email?: string } | undefined;
 
     const fattura = await DocumentoFatturazione.create({
       numero,
