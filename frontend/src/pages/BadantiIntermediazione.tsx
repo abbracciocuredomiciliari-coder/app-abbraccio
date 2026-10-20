@@ -388,6 +388,35 @@ export default function BadantiIntermediazione() {
     }
   }
 
+  // Invia SOLO il PDF del preventivo simulato via email (senza creare contratto)
+  async function inviaPdfPreventivo() {
+    const pazienteSel = pazienti.find(x => x._id === simPatient);
+    const emailDefault = simContractEmail || pazienteSel?.email || '';
+    const email = window.prompt('Email del destinatario', emailDefault);
+    if (!email || !email.trim()) return;
+    try {
+      setSimPdfLoading(true);
+      const res = await api.post('/badanti-intermediazione/simula-costo/pdf/email', {
+        contrattoTipo: simContratto,
+        livello: simLivello,
+        oreSettimanali: simIsOrario ? Number(simOre) : undefined,
+        tempoDeterminato: simDeterminato,
+        indennitaPiuAutosuff: simPiuAutosuff,
+        certificazioneUni: simCertUni,
+        indennitaBabysitter: simBabysitter,
+        pagaPersonalizzata: simPagaCustom ? Number(simPagaCustom) : undefined,
+        intestatario: simIntestatario || undefined,
+        cafMensile: Number(simCaf) >= 0 ? Number(simCaf) : undefined,
+        email: email.trim(),
+      });
+      alert(res.data?.message || 'Preventivo PDF inviato via email');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nell\'invio del PDF');
+    } finally {
+      setSimPdfLoading(false);
+    }
+  }
+
   // Dal simulatore: associa il costo a un paziente e genera contratto + GDPR per la firma
   async function generaContrattoDaSim() {
     if (!simPatient) return alert('Seleziona un paziente');
@@ -781,9 +810,14 @@ export default function BadantiIntermediazione() {
                 <Euro size={18} /> {simLoading ? 'Calcolo...' : 'Calcola il costo mensile'}
               </Button>
               {simRisultato && (
-                <Button variant="secondary" onClick={scaricaPdfPreventivo} disabled={simPdfLoading} className="tw-flex tw-items-center tw-gap-2">
-                  <FileText size={18} /> {simPdfLoading ? 'Generazione...' : 'Scarica PDF simulazione'}
-                </Button>
+                <>
+                  <Button variant="secondary" onClick={scaricaPdfPreventivo} disabled={simPdfLoading} className="tw-flex tw-items-center tw-gap-2">
+                    <FileText size={18} /> {simPdfLoading ? 'Generazione...' : 'Scarica PDF simulazione'}
+                  </Button>
+                  <Button variant="secondary" onClick={inviaPdfPreventivo} disabled={simPdfLoading} className="tw-flex tw-items-center tw-gap-2">
+                    <Mail size={18} /> {simPdfLoading ? 'Invio...' : 'Invia PDF via email'}
+                  </Button>
+                </>
               )}
             </div>
             {simErr && <div className="tw-text-red-600 tw-text-sm tw-mb-3">{simErr}</div>}

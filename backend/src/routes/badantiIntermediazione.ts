@@ -12,6 +12,7 @@ import { auditLog } from '../middleware/audit';
 import { simulaCostoBadante, CONTRATTI_SIM, PARAMETRI_CCN_2026, ParametriCcnl } from '../utils/costoBadante';
 import { generaPreventivoBadantePdf, generaPreventivoBadantePdfBuffer } from '../utils/preventivoBadantePdf';
 import { inviaEmailContrattoPaziente } from '../utils/contrattoInvio';
+import { inviaEmail } from '../utils/email';
 
 const TARIFFE_BADANTI = {
   orario_non_convivente: {
@@ -251,7 +252,57 @@ router.post('/simula-costo/pdf', authenticateToken, async (req: Request, res: Re
     return res.status(400).json({ message: error.message || 'Errore nella generazione del PDF' });
   }
 });
+// POST /api/badanti-intermediazione/simula-costo/pdf/email — invia SOLO il PDF
+// preventivo del simulatore come allegato email (senza creare contratto/richiesta)
+router.post('/simula-costo/pdf/email', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { contrattoTipo, livello, oreSettimanali, tempoDeterminato, pagaPersonalizzata, indennitaPiuAutosuff, certificazioneUni, indennitaBabysitter, intestatario, cafMensile, email } = req.body || {};
+    const emailDest = String(email || '').trim();
+    if (!emailDest) return res.status(400).json({ message: 'Email destinatario obbligatoria' });
+    const tipiValidi = CONTRATTI_SIM.map(c => c.value);
+    if (!contrattoTipo || !tipiValidi.includes(contrattoTipo)) {
+      return res.status(400).json({ message: `contrattoTipo deve essere uno tra: ${tipiValidi.join(', ')}` });
+    }
+    const orario = contrattoTipo === 'non_convivente' || contrattoTipo === 'sostituzione';
+    if (orario && !(Number(oreSettimanali) > 0)) {
+      return res.status(400).json({ message: 'Ore settimanali obbligatorie per i contratti ad orario' });
+    }
+    const P = await caricaParametri();
+    const risultato = simulaCostoBadante({
+      contrattoTipo,
+      livello,
+      oreSettimanali: oreSettimanali ? Number(oreSettimanali) : undefined,
+      tempoDeterminato: !!tempoDeterminato,
+      pagaPersonalizzata: pagaPersonalizzata ? Number(pagaPersonalizzata) : undefined,
+      indennitaPiuAutosuff: !!indennitaPiuAutosuff,
+      certificazioneUni: !!certificazioneUni,
+      indennitaBabysitter: !!indennitaBabysitter,
+    }, P);
+    const intestatarioPulito = intestatario ? String(intestatario).slice(0, 120) : '';
+    const pdfBuffer = await generaPreventivoBadantePdfBuffer(risultato, {
+      intestatario: intestatarioPulito || undefined,
+      cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : P.cafMensileDefault,
+    });
+    const fileName = `preventivo-assistente-familiare${intestatarioPulito ? '-' + intestatarioPulito.replace(/\s+/g, '-').toLowerCase() : ''}.pdf`;
+    const inviata = await inviaEmail({
+      to: emailDest,
+      subject: 'Preventivo Assistente Familiare — Abbraccio Cure Domiciliari',
+      html: `<p>Gentile ${intestatarioPulito || 'Cliente'},</p>
+        <p>in allegato il preventivo del costo mensile dell'assistente familiare, elaborato sui parametri CCNL del lavoro domestico.</p>
+        <p>Restiamo a disposizione per ogni chiarimento.</p>
+        <p><strong>Abbraccio Cure Domiciliari</strong></p>`,
+      attachments: [{ filename: fileName, content: pdfBuffer, contentType: 'application/pdf' }],
+    });
+    if (!inviata) {
+      return res.status(502).json({ message: `Email non inviata a ${emailDest}: il server SMTP ha rifiutato il messaggio o non è configurato` });
+    }
+    return res.json({ message: `Preventivo PDF inviato a ${emailDest}` });
+  } catch (error: any) {
+    return res.status(400).json({ message: error.message || 'Errore nell\'invio del PDF' });
+  }
+});
 
+// 
 // GET /api/badanti-intermediazione/tariffe-ccnl — parametri CCNL/INPS attivi (default + override DB)
 router.get('/tariffe-ccnl', authenticateToken, async (_req: Request, res: Response) => {
   try {
