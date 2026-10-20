@@ -119,10 +119,7 @@ function creaDocPreventivo(sim: SimulazioneCosto, opts: PreventivoPdfOpts = {}) 
   const cafQuota = opts.cafMensile ?? 150;
   const contributiTotali = Math.round((sim.contribInpsLavoratoreMensili + sim.contribInpsDatoreMensili
     + sim.cassaColfLavoratoreMensili + sim.cassaColfDatoreMensili) * 100) / 100;
-  // Accantonamenti mensili: TFR (base annua/13,5) + tredicesima (annua/12).
-  // Sono costo del datore maturato ogni mese, quindi entrano nel totale documento.
-  const accantonamenti = Math.round((sim.tfr + sim.tredicesima) * 100) / 100;
-  const totaleDocumento = Math.round((sim.retribuzioneNetta + contributiTotali + accantonamenti + cafQuota) * 100) / 100;
+  const totaleDocumento = Math.round((sim.retribuzioneNetta + contributiTotali + cafQuota) * 100) / 100;
 
   // 1) Costo mensile (lordo)
   drawRow({
@@ -140,25 +137,11 @@ function creaDocPreventivo(sim: SimulazioneCosto, opts: PreventivoPdfOpts = {}) 
     totLabel: 'Netto',
   });
 
-  // 3) Contributi previdenziali (lavoratore + datore)
+  // 3) Trattenute (contributi lavoratore + datore)
   drawRow({
-    desc: ['Contributi previdenziali e assistenziali INPS + Cassa.Colf (lavoratore + datore)'],
+    desc: ['TRATTENUTE', 'Contributi'],
     retr: `${fmt(contributiTotali)} €`,
     tot: `${fmt(contributiTotali)} €`,
-  });
-
-  // 4) Accantonamento TFR mensile (maturato ogni mese, liquidato a fine rapporto)
-  drawRow({
-    desc: ['Accantonamento T.F.R. — quota mensile maturata (liquidato a fine rapporto)'],
-    retr: `${fmt(sim.tfr)} €`,
-    tot: `${fmt(sim.tfr)} €`,
-  });
-
-  // 5) Accantonamento tredicesima mensilità (maturata ogni mese, corrisposta a dicembre)
-  drawRow({
-    desc: ['Accantonamento tredicesima mensilità — quota mensile (corrisposta a dicembre)'],
-    retr: `${fmt(sim.tredicesima)} €`,
-    tot: `${fmt(sim.tredicesima)} €`,
   });
 
   // 4) CAF sanitario
@@ -185,13 +168,9 @@ function creaDocPreventivo(sim: SimulazioneCosto, opts: PreventivoPdfOpts = {}) 
   doc.font('Helvetica').fontSize(8.5)
     .text('Il presente preventivo potrebbe essere soggetto a variazioni indipendenti dalla nostra volontà, in quanto: il rapporto di lavoro è regolato dal Contratto Collettivo Nazionale del Lavoro (CCNL) e dalle normative fiscali e previdenziali in continua evoluzione; le tariffe contrattuali, i contributi obbligatori e gli oneri di gestione possono subire aggiornamenti automatici stabiliti dagli enti competenti; la disponibilità delle risorse umane da ricercare (assistenti familiari, sostituzioni, figure assistenziali) può influire sulle tempistiche di attivazione del servizio e sulle relative condizioni economiche, in base al livello professionale, all’esperienza e alla reperibilità sul territorio.', margin, y, { width: contentW, align: 'left', lineGap: 2 });
   y = doc.y + 12;
-  doc.text('Inoltre, sono incluse nel seguente preventivo:', margin, y, { width: contentW });
-  y = doc.y + 6;
-  doc.text('Tredicesima mensilità (maturata mensilmente e corrisposta a dicembre)', margin, y, { width: contentW });
-  y = doc.y + 6;
-  doc.text('Trattamento di Fine Rapporto (TFR), maturato proporzionalmente al periodo di lavoro prestato.', margin, y, { width: contentW });
+  doc.text('Nella tariffa indicata NON sono compresi l\'accantonamento del Trattamento di Fine Rapporto (TFR) e la tredicesima mensilità: saranno stabiliti nella formulazione del contratto.', margin, y, { width: contentW, lineGap: 2 });
   y = doc.y + 14;
-  doc.text('Il TFR indicato in preventivo è puramente stimato. Sarà liquidato esclusivamente a fine rapporto e non può essere erogato o rateizzato mensilmente in busta paga. I contributi verranno versati trimestralmente.', margin, y, { width: contentW, lineGap: 2 });
+  doc.text('I contributi verranno versati trimestralmente.', margin, y, { width: contentW, lineGap: 2 });
   y = doc.y + 10;
   doc.text('P.s. I dati potrebbero essere soggetti a variazione', margin, y, { width: contentW });
 
