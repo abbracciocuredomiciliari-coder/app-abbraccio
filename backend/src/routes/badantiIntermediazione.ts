@@ -9,7 +9,7 @@ import TariffaCcnl from '../models/TariffaCcnl';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { auditLog } from '../middleware/audit';
-import { simulaCostoBadante, CONTRATTI_SIM, PARAMETRI_CCN_2026, ParametriCcnl } from '../utils/costoBadante';
+import { simulaCostoBadante, CONTRATTI_SIM, PARAMETRI_CCN_2026, ParametriCcnl, mergeParametri, caricaParametri } from '../utils/costoBadante';
 import { generaPreventivoBadantePdf, generaPreventivoBadantePdfBuffer } from '../utils/preventivoBadantePdf';
 import { inviaEmailContrattoPaziente } from '../utils/contrattoInvio';
 import { inviaEmail } from '../utils/email';
@@ -104,33 +104,7 @@ const router = Router();
 
 const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
 
-// ─── Tariffe CCNL/INPS: merge delle override salvate su DB sopra i default 2026 ──
-// Accetta solo chiavi presenti nei default e solo valori numerici: chiavi
-// sconosciute o non numeriche vengono ignorate (i default restano). Così il
-// motore può aggiungere parametri nuovi senza rompere i record esistenti.
-function mergeParametri(override: any): ParametriCcnl {
-  const merge = (def: any, ovr: any): any => {
-    if (typeof def === 'number') {
-      const n = Number(ovr);
-      return Number.isFinite(n) ? n : def;
-    }
-    if (typeof def !== 'object' || def === null) return def;
-    const out: any = { ...def };
-    if (ovr && typeof ovr === 'object') {
-      for (const k of Object.keys(def)) {
-        if (k in ovr) out[k] = merge(def[k], ovr[k]);
-      }
-    }
-    return out;
-  };
-  if (!override || typeof override !== 'object') return PARAMETRI_CCN_2026;
-  return merge(PARAMETRI_CCN_2026, override);
-}
-
-async function caricaParametri(): Promise<ParametriCcnl> {
-  const doc = await TariffaCcnl.findOne({ key: 'ccnl' }).lean();
-  return mergeParametri(doc?.parametri);
-}
+// mergeParametri/caricaParametri spostati in utils/costoBadanti.ts (condivisi con la landing pubblica)
 
 // ─── Numerazione progressiva per preventivi/fatture ────────────────────────────
 // Le fatture della Intermediazioni usano una serie dedicata FATT-CF con
@@ -526,10 +500,14 @@ async function generaContrattoDaSimulazione(richiesta: any, body: any, req: Requ
   if (!paziente) return { errore: { status: 404, message: 'Paziente della richiesta non trovato' } };
   const intestatario = `${paziente.firstName || ''} ${paziente.lastName || ''}`.trim();
 
-  // Genera il PDF preventivo dal simulatore
+  // Genera il PDF preventivo dal simulatore — il CAF della richiesta
+  // (es. valorizzato dalla landing pubblica) vince sul default dei parametri
+  const cafDaRichiesta = Number((richiesta as any).simulazione?.cafMensile);
   const pdfBuffer = await generaPreventivoBadantePdfBuffer(sim, {
     intestatario,
-    cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : P.cafMensileDefault,
+    cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0
+      ? Number(cafMensile)
+      : (Number.isFinite(cafDaRichiesta) && cafDaRichiesta >= 0 ? cafDaRichiesta : P.cafMensileDefault),
   });
   const pdfFileName = `preventivo-intermediazione-${intestatario.replace(/\s+/g, '-').toLowerCase() || 'paziente'}.pdf`;
 
@@ -552,7 +530,7 @@ async function generaContrattoDaSimulazione(richiesta: any, body: any, req: Requ
   // Collega il contratto alla richiesta
   richiesta.contrattoId = contratto._id as any;
   richiesta.stato = 'preventivo_emesso';
-  richiesta.simulazione = { ...simInput, totaleCostoMensile: sim.totaleCostoMensile, retribuzioneNetta: sim.retribuzioneNetta, cafMensile: Number(cafMensile) || 150 };
+  richiesta.simulazione = { ...simInput, totaleCostoMensile: sim.totaleCostoMensile, retribuzioneNetta: sim.retribuzioneNetta, cafMensile: Number(cafMensile) >= 0 ? Number(cafMensile) : (Number.isFinite(cafDaRichiesta) ? cafDaRichiesta : P.cafMensileDefault) };
   richiesta.costoMensile = Math.round(sim.totaleCostoMensile * 100) / 100;
   richiesta.preventivoPdfFileName = pdfFileName;
   await richiesta.save();

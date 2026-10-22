@@ -16,6 +16,7 @@ export interface IBadanteIntermediazione extends Document {
   preventivoPdfFileName?: string;             // nome file PDF preventivo generato
   fatturaId?: Types.ObjectId;
   fattureGestione?: Types.ObjectId[];
+  richiestaPrenotazioneId?: Types.ObjectId; // richiesta collegata (es. da landing pubblica)
   creatoDa: string;
   createdAt: Date;
   updatedAt: Date;
@@ -38,6 +39,7 @@ const badanteIntermediazioneSchema = new Schema<IBadanteIntermediazione>(
     preventivoPdfFileName: { type: String, trim: true },
     fatturaId: { type: Schema.Types.ObjectId, ref: 'DocumentoFatturazione' },
     fattureGestione: [{ type: Schema.Types.ObjectId, ref: 'DocumentoFatturazione' }],
+    richiestaPrenotazioneId: { type: Schema.Types.ObjectId, ref: 'RichiestaPrenotazione' },
     creatoDa: { type: String, required: true },
   },
   { timestamps: true }

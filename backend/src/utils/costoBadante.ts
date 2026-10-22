@@ -1,3 +1,5 @@
+import TariffaCcnl from '../models/TariffaCcnl';
+
 // ─── Calcolo costo badante CCNL lavoro domestico 2026 ─────────────────────────
 // Replica il calcolatore esterno (doemploy.app/calcolo-costo-mensile): dato tipo
 // di contratto, livello CCNL e ore, produce il costo mensile completo a carico
@@ -288,4 +290,33 @@ export function simulaCostoBadante(input: SimulazioneInput, params: ParametriCcn
     vittoAlloggioGiorno: conviventeTipo ? P.vittoAlloggioGiorno : 0,
     vittoAlloggioMensileNatura: vittoMensileNatura,
   };
+}
+
+// ─── Tariffe CCNL/INPS: merge delle override salvate su DB sopra i default ────
+// Accetta solo chiavi presenti nei default e solo valori numerici: chiavi
+// sconosciute o non numeriche vengono ignorate (i default restano). Così il
+// motore può aggiungere parametri nuovi senza rompere i record esistenti.
+export function mergeParametri(override: any): ParametriCcnl {
+  const merge = (def: any, ovr: any): any => {
+    if (typeof def === 'number') {
+      const n = Number(ovr);
+      return Number.isFinite(n) ? n : def;
+    }
+    if (typeof def !== 'object' || def === null) return def;
+    const out: any = { ...def };
+    if (ovr && typeof ovr === 'object') {
+      for (const k of Object.keys(def)) {
+        if (k in ovr) out[k] = merge(def[k], ovr[k]);
+      }
+    }
+    return out;
+  };
+  if (!override || typeof override !== 'object') return PARAMETRI_CCN_2026;
+  return merge(PARAMETRI_CCN_2026, override);
+}
+
+// Parametri attivi = default 2026 + eventuali override salvati su DB
+export async function caricaParametri(): Promise<ParametriCcnl> {
+  const doc = await TariffaCcnl.findOne({ key: 'ccnl' }).lean();
+  return mergeParametri(doc?.parametri);
 }
