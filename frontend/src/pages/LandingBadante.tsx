@@ -92,7 +92,7 @@ export default function LandingBadante() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const utm: Record<string, string> = {};
-    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid'].forEach(k => {
+    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid', 'gad_source', 'msclkid'].forEach(k => {
       const v = params.get(k);
       if (v) utm[k] = v;
     });
