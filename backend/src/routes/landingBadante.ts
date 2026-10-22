@@ -153,7 +153,7 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
       richiedenteTelefono: String(telefono).trim(),
       pazienteId: paziente._id,
       pazienteNome: `${paziente.firstName} ${paziente.lastName}`,
-      pazienteIndirizzo: paziente.address,
+      pazienteIndirizzo: 'Da definire', // non copiare paziente.address: in memoria e' cifrato (pre-save encrypt)
       pazienteTelefono: String(telefono).trim(),
       tipoServizio: 'intermediazione',
       tipoSpecifico: `Preventivo ${sim.contrattoLabel} ${sim.livelloLabel} — ${sim.oreSettimanali}h/sett`,
