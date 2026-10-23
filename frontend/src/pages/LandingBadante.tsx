@@ -102,7 +102,6 @@ export default function LandingBadante() {
   const [sim, setSim] = useState<Simulazione | null>(null);
   const [previewError, setPreviewError] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [nome, setNome] = useState('');
   const [telefono, setTelefono] = useState('');
@@ -165,29 +164,35 @@ export default function LandingBadante() {
     escludiTfrTredicesima: escludiTfr,
   });
 
-  // ─── Calcolo preventivo live (debounce) — stesso motore del gestionale ──────
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      try {
-        setPreviewLoading(true);
-        setPreviewError('');
-        const res = await axios.post(`${API_BASE}/landing-badante/preview`, simBody());
-        setSim(res.data);
-      } catch (err: any) {
-        setSim(null);
-        setPreviewError(err?.response?.data?.message || 'Controlla i dati inseriti');
-      } finally {
-        setPreviewLoading(false);
-      }
-    }, 400);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [contrattoTipo, livello, oreSettimanali, tempoDeterminato, piuAutosuff, certificazioneUni, babysitter]);
+  // ─── Calcolo preventivo — solo su richiesta con "Genera preventivo" ─────────
+  // Qualunque modifica ai parametri azzera il risultato: il preventivo mostrato
+  // corrisponde sempre esattamente ai parametri attuali.
+  const invalida = () => setSim(null);
+
+  async function genera() {
+    try {
+      setPreviewLoading(true);
+      setPreviewError('');
+      const res = await axios.post(`${API_BASE}/landing-badante/preview`, simBody());
+      setSim(res.data);
+      tracciaPixel('ViewContent', { content_name: 'Preventivo badante generato' });
+    } catch (err: any) {
+      setSim(null);
+      setPreviewError(err?.response?.data?.message || 'Controlla i dati inseriti');
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
 
   async function inviaRichiesta(e: FormEvent) {
     e.preventDefault();
     if (!nome.trim() || !telefono.trim()) {
       setSendError('Inserisci nome e numero di telefono.');
+      return;
+    }
+    if (!sim) {
+      setSendError('Genera prima il preventivo con il pulsante "Genera preventivo".');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     try {
@@ -282,7 +287,7 @@ export default function LandingBadante() {
             <div style={{ display: 'grid', gap: '14px', padding: '22px 24px 24px' }}>
               <div>
                 <span style={label}>Tipo di contratto <InfoNote text="La forma del rapporto di lavoro: a ore (non convivente), convivente full-time o part-time, assistenza o presenza notturna, oppure sostituzione nei giorni di riposo della badante principale." /></span>
-                <select value={contrattoTipo} onChange={e => setContrattoTipo(e.target.value)} style={input}>
+                <select value={contrattoTipo} onChange={e => { setContrattoTipo(e.target.value); invalida(); }} style={input}>
                   {CONTRATTI.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
               </div>
@@ -290,7 +295,7 @@ export default function LandingBadante() {
               {livelliDisponibili.length > 0 && (
                 <div>
                   <span style={label}>Livello CCNL <InfoNote text="Il livello stabilisce mansioni e paga minima secondo il CCNL: da A (mansioni di base) a DS (assistenza a persone non autosufficienti, massima qualifica). Se hai dubbi, B e BS sono i livelli più usati per la badante." /></span>
-                  <select value={livello} onChange={e => setLivello(e.target.value)} style={input}>
+                  <select value={livello} onChange={e => { setLivello(e.target.value); invalida(); }} style={input}>
                     {livelliDisponibili.map(l => <option key={l} value={l}>{l} — {LIVELLI_DESC[l]}</option>)}
                   </select>
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{LIVELLI_DESC[livello]}</span>
@@ -304,7 +309,7 @@ export default function LandingBadante() {
                         const item = LEGENDA_LIVELLI[l];
                         const attivo = l === livello;
                         return (
-                          <button key={l} type="button" onClick={() => setLivello(l)}
+                          <button key={l} type="button" onClick={() => { setLivello(l); invalida(); }}
                             style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', width: '100%', textAlign: 'left', border: 'none', borderBottom: '1px solid #fff7ed', padding: '9px 12px', cursor: 'pointer', background: attivo ? '#ffedd5' : '#fff', fontFamily: 'inherit' }}>
                             <span style={{ flexShrink: 0, background: item.colore, color: '#fff', fontWeight: 800, fontSize: '0.72rem', borderRadius: '6px', padding: '3px 7px', minWidth: '28px', textAlign: 'center', marginTop: '1px' }}>{l}</span>
                             <span>
@@ -324,35 +329,35 @@ export default function LandingBadante() {
               {contratto.ore && (
                 <div>
                   <span style={label}>Ore settimanali <InfoNote text="Le ore di lavoro settimanali concordate: determinano la paga mensile, i contributi e gli accantonamenti." /></span>
-                  <input type="number" min="1" max="40" value={oreSettimanali} onChange={e => setOreSettimanali(e.target.value)} style={input} />
+                  <input type="number" min="1" max="40" value={oreSettimanali} onChange={e => { setOreSettimanali(e.target.value); invalida(); }} style={input} />
                 </div>
               )}
 
               <div style={{ display: 'grid', gap: '8px', background: '#fdf4ff', border: '1px solid #e9d5ff', borderRadius: '10px', padding: '12px 14px' }}>
                 {contrattoTipo !== 'sostituzione' && (
                   <label style={check}>
-                    <input type="checkbox" checked={tempoDeterminato} onChange={e => setTempoDeterminato(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#ea580c' }} />
+                    <input type="checkbox" checked={tempoDeterminato} onChange={e => { setTempoDeterminato(e.target.checked); invalida(); }} style={{ width: '16px', height: '16px', accentColor: '#ea580c' }} />
                     Contratto a tempo determinato (+ contributi)
                     <InfoNote text="I contratti a tempo determinato prevedono un'aliquota contributiva INPS leggermente maggiorata." />
                   </label>
                 )}
                 {(livello === 'CS' || livello === 'DS') && contrattoTipo !== 'sostituzione' && (
                   <label style={check}>
-                    <input type="checkbox" checked={piuAutosuff} onChange={e => setPiuAutosuff(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#ea580c' }} />
+                    <input type="checkbox" checked={piuAutosuff} onChange={e => { setPiuAutosuff(e.target.checked); invalida(); }} style={{ width: '16px', height: '16px', accentColor: '#ea580c' }} />
                     Più persone non autosufficienti (indennità)
                     <InfoNote text="Indennità prevista dal CCNL quando il lavoratore assiste più di una persona non autosufficiente nella stessa abitazione." />
                   </label>
                 )}
                 {['B', 'BS', 'CS'].includes(livello) && (
                   <label style={check}>
-                    <input type="checkbox" checked={certificazioneUni} onChange={e => setCertificazioneUni(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#ea580c' }} />
+                    <input type="checkbox" checked={certificazioneUni} onChange={e => { setCertificazioneUni(e.target.checked); invalida(); }} style={{ width: '16px', height: '16px', accentColor: '#ea580c' }} />
                     Certificazione UNI 11766
                     <InfoNote text="Maggiorazione prevista per il personale in possesso della certificazione UNI 11766 sulla qualità delle prestazioni socio-assistenziali." />
                   </label>
                 )}
                 {livello === 'BS' && contrattoTipo !== 'sostituzione' && (
                   <label style={check}>
-                    <input type="checkbox" checked={babysitter} onChange={e => setBabysitter(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#ea580c' }} />
+                    <input type="checkbox" checked={babysitter} onChange={e => { setBabysitter(e.target.checked); invalida(); }} style={{ width: '16px', height: '16px', accentColor: '#ea580c' }} />
                     Babysitter bambini &lt; 6 anni
                     <InfoNote text="Indennità aggiuntiva se la badante di livello BS accudisce anche bambini sotto i 6 anni." />
                   </label>
@@ -369,11 +374,16 @@ export default function LandingBadante() {
                   <span style={{ fontSize: '0.78rem', color: '#0369a1' }}>pratiche amministrative e assistenza fiscale</span>
                 </div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginTop: '10px' }}>
-                  <input type="checkbox" checked={escludiTfr} onChange={e => setEscludiTfr(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#ea580c' }} />
+                  <input type="checkbox" checked={escludiTfr} onChange={e => { setEscludiTfr(e.target.checked); invalida(); }} style={{ width: '16px', height: '16px', accentColor: '#ea580c' }} />
                   Escludi TFR e tredicesima dal preventivo
                   <InfoNote text="Spunta per vedere il preventivo senza gli accantonamenti mensili di TFR e tredicesima. Restano comunque dovuti per legge e saranno stabiliti nel contratto." />
                 </label>
               </div>
+
+              <button type="button" onClick={genera} disabled={previewLoading}
+                style={{ marginTop: '4px', width: '100%', padding: '14px', border: 'none', borderRadius: '10px', background: previewLoading ? '#fdba74' : 'linear-gradient(135deg,#c2410c,#ea580c)', color: '#fff', fontWeight: 800, fontSize: '1rem', cursor: previewLoading ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 14px rgba(234,88,12,.30)' }}>
+                <Calculator size={18} /> {previewLoading ? 'Calcolo in corso...' : sim ? 'Rigenera preventivo' : 'Genera preventivo'}
+              </button>
             </div>
           </div>
 
@@ -430,7 +440,14 @@ export default function LandingBadante() {
               </>
             )}
             {!sim && !previewLoading && !previewError && (
-              <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>Compila il calcolatore per vedere il preventivo.</p>
+              <div style={{ textAlign: 'center', padding: '26px 10px', color: '#94a3b8' }}>
+                <Calculator size={34} color="#fdba74" style={{ margin: '0 auto 10px' }} />
+                <p style={{ fontSize: '0.88rem', margin: 0, lineHeight: 1.55 }}>
+                  Nessun preventivo ancora.<br />
+                  Imposta i parametri e premi <strong style={{ color: '#c2410c' }}>«Genera preventivo»</strong>:<br />
+                  se modifichi qualcosa dovrai rigenerarlo.
+                </p>
+              </div>
             )}
           </div>
         </div>
