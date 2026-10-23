@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, FormEvent } from 'react';
 import axios from 'axios';
-import { Calculator, CheckCircle, Send, Euro, FileText, Users } from 'lucide-react';
+import { Calculator, CheckCircle, Send, Euro, FileText, Users, Info } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api';
 const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '';
@@ -50,6 +50,30 @@ function tracciaPixel(evento: string, dati?: Record<string, any>) {
   try {
     if (window.fbq) window.fbq('track', evento, dati);
   } catch { /* pixel non disponibile */ }
+}
+
+// Icona "i" accanto alle voci del calcolatore: al tocco mostra la spiegazione
+// (funziona anche su mobile, dove il tooltip del title non si vede).
+function InfoNote({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(o => !o); }}
+        title={text}
+        aria-label="Cosa significa questa voce"
+        style={{ border: 'none', background: 'none', padding: '0 0 0 6px', cursor: 'pointer', color: '#0284c7', display: 'inline-flex', alignItems: 'center', verticalAlign: 'middle' }}
+      >
+        <Info size={15} />
+      </button>
+      {open && (
+        <div style={{ fontWeight: 400, fontSize: '0.76rem', color: '#0c4a6e', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '8px 10px', marginTop: '5px', lineHeight: 1.45 }}>
+          {text}
+        </div>
+      )}
+    </>
+  );
 }
 
 export default function LandingBadante() {
@@ -234,13 +258,17 @@ export default function LandingBadante() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: '20px', alignItems: 'start' }}>
           {/* Calcolatore */}
-          <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #ffedd5', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: '24px' }}>
-            <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', color: '#1e293b', margin: '0 0 18px' }}>
-              <Calculator size={20} color="#c2410c" /> Calcolatore CCNL
-            </h2>
-            <div style={{ display: 'grid', gap: '14px' }}>
+          <div style={{ background: 'linear-gradient(165deg,#fff7ed 0%,#ffffff 55%)', borderRadius: '16px', border: '1px solid #fdba74', boxShadow: '0 8px 24px rgba(194,65,12,.10)', overflow: 'hidden' }}>
+            <div style={{ background: 'linear-gradient(90deg,#c2410c,#ea580c)', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Calculator size={20} color="#fff" />
               <div>
-                <span style={label}>Tipo di contratto</span>
+                <h2 style={{ fontSize: '1.05rem', color: '#fff', margin: 0, fontWeight: 800 }}>Calcolatore CCNL</h2>
+                <div style={{ fontSize: '0.72rem', color: '#ffedd5' }}>tariffe minime Contratto Collettivo Nazionale 2026</div>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gap: '14px', padding: '22px 24px 24px' }}>
+              <div>
+                <span style={label}>Tipo di contratto <InfoNote text="La forma del rapporto di lavoro: a ore (non convivente), convivente full-time o part-time, assistenza o presenza notturna, oppure sostituzione nei giorni di riposo della badante principale." /></span>
                 <select value={contrattoTipo} onChange={e => setContrattoTipo(e.target.value)} style={input}>
                   {CONTRATTI.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
@@ -248,7 +276,7 @@ export default function LandingBadante() {
 
               {livelliDisponibili.length > 0 && (
                 <div>
-                  <span style={label}>Livello CCNL</span>
+                  <span style={label}>Livello CCNL <InfoNote text="Il livello stabilisce mansioni e paga minima secondo il CCNL: da A (mansioni di base) a DS (assistenza a persone non autosufficienti, massima qualifica). Se hai dubbi, B e BS sono i livelli più usati per la badante." /></span>
                   <select value={livello} onChange={e => setLivello(e.target.value)} style={input}>
                     {livelliDisponibili.map(l => <option key={l} value={l}>{l} — {LIVELLI_DESC[l]}</option>)}
                   </select>
@@ -258,47 +286,55 @@ export default function LandingBadante() {
 
               {contratto.ore && (
                 <div>
-                  <span style={label}>Ore settimanali</span>
+                  <span style={label}>Ore settimanali <InfoNote text="Le ore di lavoro settimanali concordate: determinano la paga mensile, i contributi e gli accantonamenti." /></span>
                   <input type="number" min="1" max="40" value={oreSettimanali} onChange={e => setOreSettimanali(e.target.value)} style={input} />
                 </div>
               )}
 
-              <div style={{ display: 'grid', gap: '8px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px 14px' }}>
+              <div style={{ display: 'grid', gap: '8px', background: '#fdf4ff', border: '1px solid #e9d5ff', borderRadius: '10px', padding: '12px 14px' }}>
                 {contrattoTipo !== 'sostituzione' && (
                   <label style={check}>
-                    <input type="checkbox" checked={tempoDeterminato} onChange={e => setTempoDeterminato(e.target.checked)} style={{ width: '16px', height: '16px' }} />
+                    <input type="checkbox" checked={tempoDeterminato} onChange={e => setTempoDeterminato(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#ea580c' }} />
                     Contratto a tempo determinato (+ contributi)
+                    <InfoNote text="I contratti a tempo determinato prevedono un'aliquota contributiva INPS leggermente maggiorata." />
                   </label>
                 )}
                 {(livello === 'CS' || livello === 'DS') && contrattoTipo !== 'sostituzione' && (
                   <label style={check}>
-                    <input type="checkbox" checked={piuAutosuff} onChange={e => setPiuAutosuff(e.target.checked)} style={{ width: '16px', height: '16px' }} />
+                    <input type="checkbox" checked={piuAutosuff} onChange={e => setPiuAutosuff(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#ea580c' }} />
                     Più persone non autosufficienti (indennità)
+                    <InfoNote text="Indennità prevista dal CCNL quando il lavoratore assiste più di una persona non autosufficiente nella stessa abitazione." />
                   </label>
                 )}
                 {['B', 'BS', 'CS'].includes(livello) && (
                   <label style={check}>
-                    <input type="checkbox" checked={certificazioneUni} onChange={e => setCertificazioneUni(e.target.checked)} style={{ width: '16px', height: '16px' }} />
+                    <input type="checkbox" checked={certificazioneUni} onChange={e => setCertificazioneUni(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#ea580c' }} />
                     Certificazione UNI 11766
+                    <InfoNote text="Maggiorazione prevista per il personale in possesso della certificazione UNI 11766 sulla qualità delle prestazioni socio-assistenziali." />
                   </label>
                 )}
                 {livello === 'BS' && contrattoTipo !== 'sostituzione' && (
                   <label style={check}>
-                    <input type="checkbox" checked={babysitter} onChange={e => setBabysitter(e.target.checked)} style={{ width: '16px', height: '16px' }} />
+                    <input type="checkbox" checked={babysitter} onChange={e => setBabysitter(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#ea580c' }} />
                     Babysitter bambini &lt; 6 anni
+                    <InfoNote text="Indennità aggiuntiva se la badante di livello BS accudisce anche bambini sotto i 6 anni." />
                   </label>
                 )}
               </div>
 
               <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '10px', padding: '12px 14px' }}>
-                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0c4a6e' }}>Gestione CAF sanitario inclusa</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0c4a6e' }}>
+                  Gestione CAF sanitario inclusa
+                  <InfoNote text="Quota mensile fissa: comprende pratiche di assunzione, comunicazioni obbligatorie, elaborazione delle buste paga e assistenza fiscale. Ci pensiamo noi." />
+                </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
                   <span style={{ background: '#fff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '7px 12px', fontWeight: 700, color: '#0c4a6e' }}>€ {CAF_QUOTA.toFixed(2)}/mese</span>
                   <span style={{ fontSize: '0.78rem', color: '#0369a1' }}>pratiche amministrative e assistenza fiscale</span>
                 </div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginTop: '10px' }}>
-                  <input type="checkbox" checked={escludiTfr} onChange={e => setEscludiTfr(e.target.checked)} style={{ width: '16px', height: '16px' }} />
+                  <input type="checkbox" checked={escludiTfr} onChange={e => setEscludiTfr(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#ea580c' }} />
                   Escludi TFR e tredicesima dal preventivo
+                  <InfoNote text="Spunta per vedere il preventivo senza gli accantonamenti mensili di TFR e tredicesima. Restano comunque dovuti per legge e saranno stabiliti nel contratto." />
                 </label>
               </div>
             </div>
@@ -351,6 +387,9 @@ export default function LandingBadante() {
                   </div>
                   <div style={{ fontSize: '0.75rem', opacity: 0.85 }}>{escludiTfr ? 'TFR e tredicesima saranno stabiliti nel contratto' : 'TFR e tredicesima inclusi come accantonamento mensile'} · ferie ≈ {sim.ferieMensiliOre}h/mese</div>
                 </div>
+                <p style={{ fontSize: '0.75rem', color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '9px 11px', marginTop: '12px', lineHeight: 1.5 }}>
+                  ⚠️ <strong>Tariffe indicative.</strong> L'importo può subire variazioni in base alle condizioni domiciliari e assistenziali specifiche: la tariffa definitiva viene confermata dopo il colloquio conoscitivo, senza impegno.
+                </p>
               </>
             )}
             {!sim && !previewLoading && !previewError && (
@@ -364,7 +403,10 @@ export default function LandingBadante() {
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem', color: '#1e293b', margin: '0 0 6px' }}>
             <Send size={20} color="#c2410c" /> Richiedi appuntamento o maggiori informazioni
           </h2>
-          <p style={{ color: '#64748b', fontSize: '0.88rem', margin: '0 0 18px' }}>
+          <p style={{ color: '#475569', fontSize: '0.9rem', margin: '0 0 6px', lineHeight: 1.55 }}>
+            <strong>Siamo a tua disposizione.</strong> Compila il modulo: verifichiamo la disponibilità di una lavoratrice o un lavoratore nella tua zona e ti confermiamo la tariffa calcolata — <strong>senza impegno</strong>.
+          </p>
+          <p style={{ color: '#64748b', fontSize: '0.82rem', margin: '0 0 18px' }}>
             Inviando il modulo registreremo il tuo preventivo e ti ricontatteremo noi.
           </p>
           <form onSubmit={inviaRichiesta}>

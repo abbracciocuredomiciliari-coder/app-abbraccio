@@ -129,6 +129,8 @@ function AppShell() {
 
   const isActive = (path: string) => location.pathname === path;
   const isFirma = location.pathname.startsWith('/firma-');
+  // Landing pubblica campagne: solo calcolatore e modulo, niente menu di login
+  const isLanding = location.pathname === '/badante';
   const operatore = user && !isPrivilegiato(user.role);
 
   // Chiudi il menu mobile a ogni cambio pagina
@@ -150,6 +152,7 @@ function AppShell() {
   return (
     <div className="app-shell">
       {/* Barra superiore mobile con hamburger */}
+      {!isLanding && (
       <header className="mobile-topbar">
         {!isFirma && (
           <button type="button" className="hamburger" onClick={() => setMenuOpen(true)} aria-label="Apri menu">
@@ -162,11 +165,12 @@ function AppShell() {
           <img src="/logo.png" alt="Abbraccio Cure Domiciliari" className="mobile-topbar-logo" />
         )}
       </header>
+      )}
 
       {/* Overlay scuro quando il menu mobile è aperto */}
-      {!isFirma && menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} />}
+      {!isFirma && !isLanding && menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} />}
 
-      {!isFirma && (
+      {!isFirma && !isLanding && (
         <aside className={`sidebar${menuOpen ? ' open' : ''}`}>
         <button type="button" className="sidebar-close" onClick={() => setMenuOpen(false)} aria-label="Chiudi menu">
           <X size={22} />
@@ -552,9 +556,9 @@ function AppShell() {
         )}
       </aside>
       )}
-      <main className="content">
+      <main className={isLanding ? 'content content--bare' : 'content'}>
         {/* Breadcrumb Navigation */}
-        <Breadcrumb />
+        {!isLanding && <Breadcrumb />}
         
         <Suspense fallback={<LoadingScreen />}>
         <Routes>

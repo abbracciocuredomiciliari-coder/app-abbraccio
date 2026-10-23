@@ -301,6 +301,13 @@ body {
   background: var(--gray-50);
 }
 
+/* Landing pubblica campagne: pagina a tutta larghezza senza chrome dell'app */
+.content--bare {
+  margin-left: 0;
+  padding: 0;
+  background: transparent;
+}
+
 section {
   max-width: 980px;
   margin: 0 auto;
