@@ -257,6 +257,12 @@ export default function LandingBadante() {
             <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '1.05rem', lineHeight: 1.1 }}>Abbraccio Cure Domiciliari</div>
             <div style={{ fontSize: '0.75rem', color: '#c2410c', fontWeight: 600 }}>Badanti · Colf · Assistenti Familiari</div>
           </div>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', background: '#f6f9ff', border: '1px solid #dfe9fb', borderRadius: '10px', padding: '6px 12px' }}>
+            <span style={{ fontSize: '0.66rem', color: '#64748b', lineHeight: 1.25, textAlign: 'right' }}>
+              in collaborazione con<br /><strong style={{ color: '#1e40af', fontSize: '0.7rem' }}>Salus Group</strong>
+            </span>
+            <img src="/images/logo-salus.png" alt="Salus Group" style={{ height: '34px', width: 'auto', display: 'block' }} />
+          </div>
         </div>
       </header>
 
@@ -272,6 +278,13 @@ export default function LandingBadante() {
           <p style={{ color: '#64748b', maxWidth: '640px', margin: '0 auto', lineHeight: 1.6 }}>
             Simulazione completa sui minimi CCNL 2026: retribuzione, contributi INPS, Cassa.Colf, TFR e tredicesima. In 2 minuti sai quanto costa davvero.
           </p>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', background: '#fff', border: '1px solid #dfe9fb', borderRadius: '14px', padding: '10px 18px', marginTop: '18px', boxShadow: '0 2px 10px rgba(16,42,80,.06)' }}>
+            <img src="/images/logo-salus.png" alt="Salus Group - Divisione Datoriale Casimpresa" style={{ height: '42px', width: 'auto', display: 'block' }} />
+            <span style={{ fontSize: '0.8rem', color: '#64748b', lineHeight: 1.45, textAlign: 'left' }}>
+              <strong style={{ color: '#1e40af', display: 'block', fontSize: '0.85rem' }}>Servizio in partnership con Salus Group</strong>
+              Divisione Datoriale Casimpresa — selezione di personale domestico qualificato e referenziato.
+            </span>
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: '20px', alignItems: 'start' }}>
@@ -495,7 +508,7 @@ export default function LandingBadante() {
         </div>
 
         <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.75rem', marginTop: '26px' }}>
-          Abbraccio Cure Domiciliari · Via di S. Maria Ausiliatrice 4/B, Roma · 06 01905242
+          Abbraccio Cure Domiciliari · Via di S. Maria Ausiliatrice 4/B, Roma · 06 01905242 · In partnership con <strong>Salus Group</strong> — Divisione Datoriale Casimpresa
         </p>
       </main>
     </div>
