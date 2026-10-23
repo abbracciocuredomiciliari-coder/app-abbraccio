@@ -26,6 +26,18 @@ const LIVELLI_DESC: Record<string, string> = {
   DS: 'Operatore super specializzato: coordinamento o massima qualifica',
 };
 
+// Legenda completa delle categorie CCNL per aiutare la scelta nel preventivo
+const LEGENDA_LIVELLI: Record<string, { titolo: string; desc: string; colore: string }> = {
+  A:  { titolo: 'Operatore generico', desc: 'Pulizie, stiro, compagnia e piccoli aiuti a persone autosufficienti. Nessuna assistenza alla persona.', colore: '#64748b' },
+  AS: { titolo: 'Operatore generico qualificato', desc: 'Come il livello A ma con qualifica o maggiore esperienza; può anche seguire bambini sopra i 6 anni.', colore: '#64748b' },
+  B:  { titolo: 'Assistente a persona autosufficiente', desc: 'Badante/colf per anziani autosufficienti: compagnia, preparazione pasti, gestione della casa. Tra i livelli più usati per la badante convivente.', colore: '#0369a1' },
+  BS: { titolo: 'Assistente qualificato', desc: 'Assistenza a persone con autonomia ridotta, baby sitter di bambini sotto i 6 anni o cuoco di famiglia. Il livello più richiesto per le badanti conviventi.', colore: '#0369a1' },
+  C:  { titolo: 'Assistente a persona NON autosufficiente (a ore)', desc: 'Igiene personale, pasti, mobilità e vigilanza a domicilio a ore, senza convivenza.', colore: '#c2410c' },
+  CS: { titolo: 'Assistente non autosufficienti qualificato', desc: 'Come il livello C ma con formazione specifica: demenze, patologie complesse, uso di ausili.', colore: '#c2410c' },
+  D:  { titolo: 'Badante convivente per NON autosufficienti', desc: 'Assistenza continuativa in convivenza a persona non autosufficiente.', colore: '#7c3aed' },
+  DS: { titolo: 'Badante convivente specializzata', desc: 'Come il livello D con diploma o certificazione assistenziale: per i casi più complessi.', colore: '#7c3aed' },
+};
+
 interface Simulazione {
   contrattoLabel: string;
   livelloLabel: string;
@@ -85,6 +97,7 @@ export default function LandingBadante() {
   const [certificazioneUni, setCertificazioneUni] = useState(false);
   const [babysitter, setBabysitter] = useState(false);
   const [escludiTfr, setEscludiTfr] = useState(false);
+  const [showLegenda, setShowLegenda] = useState(false);
 
   const [sim, setSim] = useState<Simulazione | null>(null);
   const [previewError, setPreviewError] = useState('');
@@ -281,6 +294,30 @@ export default function LandingBadante() {
                     {livelliDisponibili.map(l => <option key={l} value={l}>{l} — {LIVELLI_DESC[l]}</option>)}
                   </select>
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{LIVELLI_DESC[livello]}</span>
+                  <button type="button" onClick={() => setShowLegenda(o => !o)}
+                    style={{ marginTop: '6px', border: 'none', background: 'none', padding: 0, cursor: 'pointer', color: '#c2410c', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                    <Info size={14} /> {showLegenda ? 'Nascondi la legenda delle categorie' : 'Come scegliere? Legenda delle categorie CCNL'}
+                  </button>
+                  {showLegenda && (
+                    <div style={{ marginTop: '8px', background: '#fff', border: '1px solid #fed7aa', borderRadius: '10px', overflow: 'hidden' }}>
+                      {livelliDisponibili.map(l => {
+                        const item = LEGENDA_LIVELLI[l];
+                        const attivo = l === livello;
+                        return (
+                          <button key={l} type="button" onClick={() => setLivello(l)}
+                            style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', width: '100%', textAlign: 'left', border: 'none', borderBottom: '1px solid #fff7ed', padding: '9px 12px', cursor: 'pointer', background: attivo ? '#ffedd5' : '#fff', fontFamily: 'inherit' }}>
+                            <span style={{ flexShrink: 0, background: item.colore, color: '#fff', fontWeight: 800, fontSize: '0.72rem', borderRadius: '6px', padding: '3px 7px', minWidth: '28px', textAlign: 'center', marginTop: '1px' }}>{l}</span>
+                            <span>
+                              <span style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>
+                                {item.titolo} {attivo && <span style={{ color: '#c2410c' }}>· selezionato</span>}
+                              </span>
+                              <span style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', lineHeight: 1.4 }}>{item.desc}</span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 
