@@ -198,7 +198,7 @@ router.post('/simula-costo', authenticateToken, async (req: Request, res: Respon
 // POST /api/badanti-intermediazione/simula-costo/pdf — PDF preventivo brandizzato (template Abbraccio/RSD)
 router.post('/simula-costo/pdf', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const { contrattoTipo, livello, oreSettimanali, tempoDeterminato, pagaPersonalizzata, indennitaPiuAutosuff, certificazioneUni, indennitaBabysitter, intestatario, cafMensile, includiTfrTredicesima } = req.body || {};
+    const { contrattoTipo, livello, oreSettimanali, tempoDeterminato, pagaPersonalizzata, indennitaPiuAutosuff, certificazioneUni, indennitaBabysitter, intestatario, cafMensile, escludiTfrTredicesima } = req.body || {};
     const tipiValidi = CONTRATTI_SIM.map(c => c.value);
     if (!contrattoTipo || !tipiValidi.includes(contrattoTipo)) {
       return res.status(400).json({ message: `contrattoTipo deve essere uno tra: ${tipiValidi.join(', ')}` });
@@ -221,7 +221,7 @@ router.post('/simula-costo/pdf', authenticateToken, async (req: Request, res: Re
     return generaPreventivoBadantePdf(res, risultato, {
       intestatario: intestatario ? String(intestatario).slice(0, 120) : undefined,
       cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : P.cafMensileDefault,
-      includiTfrTredicesima: !!includiTfrTredicesima,
+      escludiTfrTredicesima: !!escludiTfrTredicesima,
     });
   } catch (error: any) {
     return res.status(400).json({ message: error.message || 'Errore nella generazione del PDF' });
@@ -231,7 +231,7 @@ router.post('/simula-costo/pdf', authenticateToken, async (req: Request, res: Re
 // preventivo del simulatore come allegato email (senza creare contratto/richiesta)
 router.post('/simula-costo/pdf/email', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const { contrattoTipo, livello, oreSettimanali, tempoDeterminato, pagaPersonalizzata, indennitaPiuAutosuff, certificazioneUni, indennitaBabysitter, intestatario, cafMensile, email, includiTfrTredicesima } = req.body || {};
+    const { contrattoTipo, livello, oreSettimanali, tempoDeterminato, pagaPersonalizzata, indennitaPiuAutosuff, certificazioneUni, indennitaBabysitter, intestatario, cafMensile, email, escludiTfrTredicesima } = req.body || {};
     const emailDest = String(email || '').trim();
     if (!emailDest) return res.status(400).json({ message: 'Email destinatario obbligatoria' });
     const tipiValidi = CONTRATTI_SIM.map(c => c.value);
@@ -257,7 +257,7 @@ router.post('/simula-costo/pdf/email', authenticateToken, async (req: Request, r
     const pdfBuffer = await generaPreventivoBadantePdfBuffer(risultato, {
       intestatario: intestatarioPulito || undefined,
       cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : P.cafMensileDefault,
-      includiTfrTredicesima: !!includiTfrTredicesima,
+      escludiTfrTredicesima: !!escludiTfrTredicesima,
     });
     const fileName = `preventivo-assistente-familiare${intestatarioPulito ? '-' + intestatarioPulito.replace(/\s+/g, '-').toLowerCase() : ''}.pdf`;
     const inviata = await inviaEmail({
@@ -482,7 +482,7 @@ async function generaContrattoDaSimulazione(richiesta: any, body: any, req: Requ
   const {
     contrattoTipo, livello, oreSettimanali, tempoDeterminato, pagaPersonalizzata,
     indennitaPiuAutosuff, certificazioneUni, indennitaBabysitter,
-    cafMensile, importo, email, inviaEmail: inviaEmailFlag, includiTfrTredicesima,
+    cafMensile, importo, email, inviaEmail: inviaEmailFlag, escludiTfrTredicesima,
   } = body || {};
 
   const P = await caricaParametri();
@@ -505,15 +505,15 @@ async function generaContrattoDaSimulazione(richiesta: any, body: any, req: Requ
   // Genera il PDF preventivo dal simulatore — il CAF della richiesta
   // (es. valorizzato dalla landing pubblica) vince sul default dei parametri
   const cafDaRichiesta = Number((richiesta as any).simulazione?.cafMensile);
-  const tfrTredicesimaFlag = includiTfrTredicesima !== undefined
-    ? !!includiTfrTredicesima
-    : !!(richiesta as any).simulazione?.includiTfrTredicesima;
+  const tfrTredicesimaFlag = escludiTfrTredicesima !== undefined
+    ? !!escludiTfrTredicesima
+    : !!(richiesta as any).simulazione?.escludiTfrTredicesima;
   const pdfBuffer = await generaPreventivoBadantePdfBuffer(sim, {
     intestatario,
     cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0
       ? Number(cafMensile)
       : (Number.isFinite(cafDaRichiesta) && cafDaRichiesta >= 0 ? cafDaRichiesta : P.cafMensileDefault),
-    includiTfrTredicesima: tfrTredicesimaFlag,
+    escludiTfrTredicesima: tfrTredicesimaFlag,
   });
   const pdfFileName = `preventivo-intermediazione-${intestatario.replace(/\s+/g, '-').toLowerCase() || 'paziente'}.pdf`;
 
@@ -536,7 +536,7 @@ async function generaContrattoDaSimulazione(richiesta: any, body: any, req: Requ
   // Collega il contratto alla richiesta
   richiesta.contrattoId = contratto._id as any;
   richiesta.stato = 'preventivo_emesso';
-  richiesta.simulazione = { ...simInput, totaleCostoMensile: sim.totaleCostoMensile, retribuzioneNetta: sim.retribuzioneNetta, cafMensile: Number(cafMensile) >= 0 ? Number(cafMensile) : (Number.isFinite(cafDaRichiesta) ? cafDaRichiesta : P.cafMensileDefault), includiTfrTredicesima: tfrTredicesimaFlag };
+  richiesta.simulazione = { ...simInput, totaleCostoMensile: sim.totaleCostoMensile, retribuzioneNetta: sim.retribuzioneNetta, cafMensile: Number(cafMensile) >= 0 ? Number(cafMensile) : (Number.isFinite(cafDaRichiesta) ? cafDaRichiesta : P.cafMensileDefault), escludiTfrTredicesima: tfrTredicesimaFlag };
   richiesta.costoMensile = Math.round(sim.totaleCostoMensile * 100) / 100;
   richiesta.preventivoPdfFileName = pdfFileName;
   await richiesta.save();

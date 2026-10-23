@@ -20,7 +20,7 @@ const fmt = (n: number) =>
 export interface PreventivoPdfOpts {
   intestatario?: string;   // nome cliente/famiglia (opzionale)
   cafMensile?: number;     // quota CAF sanitario mensile (default 150)
-  includiTfrTredicesima?: boolean; // true = voci TFR/13esima in tabella e nel TOTALE
+  escludiTfrTredicesima?: boolean; // true = omette le voci TFR/13esima (default: incluse)
 }
 
 // Costruisce il documento PDFKit del preventivo (non chiuso: chiama doc.end() chi lo usa)
@@ -118,7 +118,7 @@ function creaDocPreventivo(sim: SimulazioneCosto, opts: PreventivoPdfOpts = {}) 
   drawRow({ desc: ['DESCRIZIONE'], ore: 'ORE MENSILI', retr: 'RETRIBUZIONE', tot: 'TOTALE', bold: true, fill: '#f3e6ec' });
 
   const cafQuota = opts.cafMensile ?? 150;
-  const conAccantonamenti = !!opts.includiTfrTredicesima;
+  const conAccantonamenti = !opts.escludiTfrTredicesima;
   const contributiTotali = Math.round((sim.contribInpsLavoratoreMensili + sim.contribInpsDatoreMensili
     + sim.cassaColfLavoratoreMensili + sim.cassaColfDatoreMensili) * 100) / 100;
   const totaleDocumento = Math.round((sim.retribuzioneNetta + contributiTotali + cafQuota

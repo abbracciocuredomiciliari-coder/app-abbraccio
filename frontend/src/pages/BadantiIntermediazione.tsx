@@ -203,6 +203,7 @@ export default function BadantiIntermediazione() {
   const [prevEmail, setPrevEmail] = useState('');
   const [prevImporto, setPrevImporto] = useState('610');
   const [prevCaf, setPrevCaf] = useState('150');
+  const [prevEscludiTfr, setPrevEscludiTfr] = useState(false);
   const [prevInvia, setPrevInvia] = useState(true);
   const [prevLoading, setPrevLoading] = useState(false);
 
@@ -226,7 +227,7 @@ export default function BadantiIntermediazione() {
   const [simPagaCustom, setSimPagaCustom] = useState('');
   const [simIntestatario, setSimIntestatario] = useState('');
   const [simCaf, setSimCaf] = useState('150');
-  const [simTfrTredicesima, setSimTfrTredicesima] = useState(false);
+  const [simEscludiTfr, setSimEscludiTfr] = useState(false);
   const [simPdfLoading, setSimPdfLoading] = useState(false);
   const [simRisultato, setSimRisultato] = useState<SimulazioneCosto | null>(null);
   const [simLoading, setSimLoading] = useState(false);
@@ -375,7 +376,7 @@ export default function BadantiIntermediazione() {
         pagaPersonalizzata: simPagaCustom ? Number(simPagaCustom) : undefined,
         intestatario: simIntestatario || undefined,
         cafMensile: Number(simCaf) >= 0 ? Number(simCaf) : undefined,
-        includiTfrTredicesima: simTfrTredicesima,
+        escludiTfrTredicesima: simEscludiTfr,
       }, { responseType: 'blob' });
       const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const a = document.createElement('a');
@@ -409,7 +410,7 @@ export default function BadantiIntermediazione() {
         pagaPersonalizzata: simPagaCustom ? Number(simPagaCustom) : undefined,
         intestatario: simIntestatario || undefined,
         cafMensile: Number(simCaf) >= 0 ? Number(simCaf) : undefined,
-        includiTfrTredicesima: simTfrTredicesima,
+        escludiTfrTredicesima: simEscludiTfr,
         email: email.trim(),
       });
       alert(res.data?.message || 'Preventivo PDF inviato via email');
@@ -437,7 +438,7 @@ export default function BadantiIntermediazione() {
         indennitaBabysitter: simBabysitter,
         pagaPersonalizzata: simPagaCustom ? Number(simPagaCustom) : undefined,
         cafMensile: Number(simCaf) >= 0 ? Number(simCaf) : undefined,
-        includiTfrTredicesima: simTfrTredicesima,
+        escludiTfrTredicesima: simEscludiTfr,
         importo: Number(simContractImporto) > 0 ? Number(simContractImporto) : 610,
         email: simContractEmail || undefined,
         inviaEmail: simContractInvia,
@@ -467,6 +468,7 @@ export default function BadantiIntermediazione() {
         indennitaBabysitter: simBabysitter,
         pagaPersonalizzata: simPagaCustom ? Number(simPagaCustom) : undefined,
         cafMensile: Number(prevCaf) >= 0 ? Number(prevCaf) : 150,
+        escludiTfrTredicesima: prevEscludiTfr,
         importo: Number(prevImporto) > 0 ? Number(prevImporto) : 610,
         email: prevEmail || undefined,
         inviaEmail: prevInvia,
@@ -761,8 +763,8 @@ export default function BadantiIntermediazione() {
                 <span className="tw-text-xs tw-text-slate-400">Voce stampata sul PDF preventivo</span>
               </label>
               <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-pt-6">
-                <input type="checkbox" checked={simTfrTredicesima} onChange={e => setSimTfrTredicesima(e.target.checked)} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
-                <span className="tw-font-medium">Includi TFR e tredicesima nel PDF</span>
+                <input type="checkbox" checked={simEscludiTfr} onChange={e => setSimEscludiTfr(e.target.checked)} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+                <span className="tw-font-medium">Escludi TFR e tredicesima dal PDF</span>
               </label>
               <label className="tw-flex tw-flex-col tw-gap-1">
                 <span className="tw-text-sm tw-font-medium">Intestatario preventivo (opzionale)</span>
@@ -931,7 +933,10 @@ export default function BadantiIntermediazione() {
                       {(isGestione || contratto) && (
                         <div className="tw-flex tw-gap-2 tw-flex-wrap tw-items-center tw-justify-end tw-border-t tw-border-slate-100 tw-mt-3 tw-pt-3">
                           {isGestione && !contratto && (
-                            <Button size="sm" onClick={() => setSelectedQuote(isOpen ? null : r._id)}>
+                            <Button size="sm" onClick={() => {
+                              setSelectedQuote(isOpen ? null : r._id);
+                              if (!isOpen) setPrevEscludiTfr(!!(r as any).simulazione?.escludiTfrTredicesima);
+                            }}>
                               {isOpen ? 'Chiudi' : 'Simula costo'}
                             </Button>
                           )}
@@ -1107,6 +1112,10 @@ export default function BadantiIntermediazione() {
                 <input type="email" value={prevEmail} onChange={e => setPrevEmail(e.target.value)} className="tw-border tw-rounded tw-p-2" placeholder="paziente@email.it" />
               </label>
             </div>
+            <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-mb-2">
+              <input type="checkbox" checked={prevEscludiTfr} onChange={e => setPrevEscludiTfr(e.target.checked)} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+              <span className="tw-font-medium">Escludi TFR e tredicesima dal PDF preventivo</span>
+            </label>
             <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-mb-4">
               <input type="checkbox" checked={prevInvia} onChange={e => setPrevInvia(e.target.checked)} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
               <span className="tw-font-medium">Invia subito al paziente contratto + GDPR + preventivo per la firma</span>

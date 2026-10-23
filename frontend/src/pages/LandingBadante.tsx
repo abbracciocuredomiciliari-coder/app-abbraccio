@@ -4,7 +4,7 @@ import { Calculator, CheckCircle, Send, Euro, FileText, Users } from 'lucide-rea
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api';
 const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '';
-const CAF_DEFAULT = '50';
+const CAF_QUOTA = 50; // quota fissa CAF sanitario sulla landing pubblica (non modificabile)
 
 const CONTRATTI: { value: string; label: string; livelli: string[]; ore: boolean }[] = [
   { value: 'non_convivente', label: 'Non convivente (a ore)', livelli: ['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS'], ore: true },
@@ -61,8 +61,7 @@ export default function LandingBadante() {
   const [certificazioneUni, setCertificazioneUni] = useState(false);
   const [babysitter, setBabysitter] = useState(false);
   const [includiCaf, setIncludiCaf] = useState(true);
-  const [cafImporto, setCafImporto] = useState(CAF_DEFAULT);
-  const [includiTfr, setIncludiTfr] = useState(false);
+  const [escludiTfr, setEscludiTfr] = useState(false);
 
   const [sim, setSim] = useState<Simulazione | null>(null);
   const [previewError, setPreviewError] = useState('');
@@ -126,8 +125,8 @@ export default function LandingBadante() {
     indennitaPiuAutosuff: piuAutosuff,
     certificazioneUni,
     indennitaBabysitter: babysitter,
-    cafMensile: includiCaf ? (Number(cafImporto) >= 0 ? Number(cafImporto) : 50) : 0,
-    includiTfrTredicesima: includiTfr,
+    cafMensile: includiCaf ? CAF_QUOTA : 0,
+    escludiTfrTredicesima: escludiTfr,
   });
 
   // ─── Calcolo preventivo live (debounce) — stesso motore del gestionale ──────
@@ -147,7 +146,7 @@ export default function LandingBadante() {
       }
     }, 400);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [contrattoTipo, livello, oreSettimanali, tempoDeterminato, piuAutosuff, certificazioneUni, babysitter, includiCaf, cafImporto]);
+  }, [contrattoTipo, livello, oreSettimanali, tempoDeterminato, piuAutosuff, certificazioneUni, babysitter, includiCaf]);
 
   async function inviaRichiesta(e: FormEvent) {
     e.preventDefault();
@@ -197,7 +196,7 @@ export default function LandingBadante() {
           </p>
           {sim && (
             <p style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '10px', padding: '12px', color: '#9a3412', fontSize: '0.9rem' }}>
-              Il tuo preventivo di <strong>{euro(sim.totaleCostoMensile + sim.cafMensile - (includiTfr ? 0 : sim.tfr + sim.tredicesima))}/mese</strong> è stato registrato.
+              Il tuo preventivo di <strong>{euro(sim.totaleCostoMensile + sim.cafMensile - (escludiTfr ? sim.tfr + sim.tredicesima : 0))}/mese</strong> è stato registrato.
             </p>
           )}
         </div>
@@ -299,14 +298,13 @@ export default function LandingBadante() {
                 </label>
                 {includiCaf && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-                    <input type="number" min="0" value={cafImporto} onChange={e => setCafImporto(e.target.value)}
-                      style={{ ...input, width: '100px', padding: '7px 10px' }} />
-                    <span style={{ fontSize: '0.78rem', color: '#0369a1' }}>€/mese — pratiche amministrative e assistenza fiscale</span>
+                    <span style={{ background: '#fff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '7px 12px', fontWeight: 700, color: '#0c4a6e' }}>€ {CAF_QUOTA.toFixed(2)}/mese</span>
+                    <span style={{ fontSize: '0.78rem', color: '#0369a1' }}>pratiche amministrative e assistenza fiscale</span>
                   </div>
                 )}
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginTop: '10px' }}>
-                  <input type="checkbox" checked={includiTfr} onChange={e => setIncludiTfr(e.target.checked)} style={{ width: '16px', height: '16px' }} />
-                  Includi TFR e tredicesima nel preventivo
+                  <input type="checkbox" checked={escludiTfr} onChange={e => setEscludiTfr(e.target.checked)} style={{ width: '16px', height: '16px' }} />
+                  Escludi TFR e tredicesima dal preventivo
                 </label>
               </div>
             </div>
@@ -330,7 +328,7 @@ export default function LandingBadante() {
                       ['Retribuzione lorda mensile', sim.retribuzioneLordaMensile],
                       ['Contributi INPS (datore)', sim.contribInpsDatoreMensili],
                       ['Cassa.Colf (datore)', sim.cassaColfDatoreMensili],
-                      ...(includiTfr ? [['Accantonamento TFR', sim.tfr], ['Accantonamento 13esima', sim.tredicesima]] : []),
+                      ...(!escludiTfr ? [['Accantonamento TFR', sim.tfr], ['Accantonamento 13esima', sim.tredicesima]] : []),
                     ].map(([l, v], i) => (
                       <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
                         <td style={{ padding: '8px 6px 8px 0', color: '#475569' }}>{l}</td>
@@ -355,9 +353,9 @@ export default function LandingBadante() {
                 <div style={{ background: 'linear-gradient(135deg,#c2410c,#ea580c)', borderRadius: '12px', padding: '16px 18px', marginTop: '14px', color: '#fff' }}>
                   <div style={{ fontSize: '0.78rem', fontWeight: 600, opacity: 0.9 }}>COSTO MENSILE TOTALE A CARICO FAMIGLIA</div>
                   <div style={{ fontSize: '1.6rem', fontWeight: 800, lineHeight: 1.2 }}>
-                    {euro(sim.totaleCostoMensile + sim.cafMensile - (includiTfr ? 0 : sim.tfr + sim.tredicesima))}<span style={{ fontSize: '0.9rem', fontWeight: 600 }}>/mese</span>
+                    {euro(sim.totaleCostoMensile + sim.cafMensile - (escludiTfr ? sim.tfr + sim.tredicesima : 0))}<span style={{ fontSize: '0.9rem', fontWeight: 600 }}>/mese</span>
                   </div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.85 }}>{includiTfr ? 'TFR e tredicesima inclusi come accantonamento mensile' : 'TFR e tredicesima saranno stabiliti nel contratto'} · ferie ≈ {sim.ferieMensiliOre}h/mese</div>
+                  <div style={{ fontSize: '0.75rem', opacity: 0.85 }}>{escludiTfr ? 'TFR e tredicesima saranno stabiliti nel contratto' : 'TFR e tredicesima inclusi come accantonamento mensile'} · ferie ≈ {sim.ferieMensiliOre}h/mese</div>
                 </div>
               </>
             )}
