@@ -226,6 +226,7 @@ export default function BadantiIntermediazione() {
   const [simPagaCustom, setSimPagaCustom] = useState('');
   const [simIntestatario, setSimIntestatario] = useState('');
   const [simCaf, setSimCaf] = useState('150');
+  const [simTfrTredicesima, setSimTfrTredicesima] = useState(false);
   const [simPdfLoading, setSimPdfLoading] = useState(false);
   const [simRisultato, setSimRisultato] = useState<SimulazioneCosto | null>(null);
   const [simLoading, setSimLoading] = useState(false);
@@ -374,6 +375,7 @@ export default function BadantiIntermediazione() {
         pagaPersonalizzata: simPagaCustom ? Number(simPagaCustom) : undefined,
         intestatario: simIntestatario || undefined,
         cafMensile: Number(simCaf) >= 0 ? Number(simCaf) : undefined,
+        includiTfrTredicesima: simTfrTredicesima,
       }, { responseType: 'blob' });
       const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const a = document.createElement('a');
@@ -407,6 +409,7 @@ export default function BadantiIntermediazione() {
         pagaPersonalizzata: simPagaCustom ? Number(simPagaCustom) : undefined,
         intestatario: simIntestatario || undefined,
         cafMensile: Number(simCaf) >= 0 ? Number(simCaf) : undefined,
+        includiTfrTredicesima: simTfrTredicesima,
         email: email.trim(),
       });
       alert(res.data?.message || 'Preventivo PDF inviato via email');
@@ -434,6 +437,7 @@ export default function BadantiIntermediazione() {
         indennitaBabysitter: simBabysitter,
         pagaPersonalizzata: simPagaCustom ? Number(simPagaCustom) : undefined,
         cafMensile: Number(simCaf) >= 0 ? Number(simCaf) : undefined,
+        includiTfrTredicesima: simTfrTredicesima,
         importo: Number(simContractImporto) > 0 ? Number(simContractImporto) : 610,
         email: simContractEmail || undefined,
         inviaEmail: simContractInvia,
@@ -755,6 +759,10 @@ export default function BadantiIntermediazione() {
                 <span className="tw-text-sm tw-font-medium">Quota CAF sanitario (€/mese)</span>
                 <input type="number" step="0.01" min="0" value={simCaf} onChange={e => setSimCaf(e.target.value)} className="tw-border tw-rounded tw-p-2" />
                 <span className="tw-text-xs tw-text-slate-400">Voce stampata sul PDF preventivo</span>
+              </label>
+              <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-pt-6">
+                <input type="checkbox" checked={simTfrTredicesima} onChange={e => setSimTfrTredicesima(e.target.checked)} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+                <span className="tw-font-medium">Includi TFR e tredicesima nel PDF</span>
               </label>
               <label className="tw-flex tw-flex-col tw-gap-1">
                 <span className="tw-text-sm tw-font-medium">Intestatario preventivo (opzionale)</span>

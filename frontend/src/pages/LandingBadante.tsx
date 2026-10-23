@@ -62,6 +62,7 @@ export default function LandingBadante() {
   const [babysitter, setBabysitter] = useState(false);
   const [includiCaf, setIncludiCaf] = useState(true);
   const [cafImporto, setCafImporto] = useState(CAF_DEFAULT);
+  const [includiTfr, setIncludiTfr] = useState(false);
 
   const [sim, setSim] = useState<Simulazione | null>(null);
   const [previewError, setPreviewError] = useState('');
@@ -126,6 +127,7 @@ export default function LandingBadante() {
     certificazioneUni,
     indennitaBabysitter: babysitter,
     cafMensile: includiCaf ? (Number(cafImporto) >= 0 ? Number(cafImporto) : 50) : 0,
+    includiTfrTredicesima: includiTfr,
   });
 
   // ─── Calcolo preventivo live (debounce) — stesso motore del gestionale ──────
@@ -195,7 +197,7 @@ export default function LandingBadante() {
           </p>
           {sim && (
             <p style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '10px', padding: '12px', color: '#9a3412', fontSize: '0.9rem' }}>
-              Il tuo preventivo di <strong>{euro(sim.totaleCostoMensile + sim.cafMensile)}/mese</strong> è stato registrato.
+              Il tuo preventivo di <strong>{euro(sim.totaleCostoMensile + sim.cafMensile - (includiTfr ? 0 : sim.tfr + sim.tredicesima))}/mese</strong> è stato registrato.
             </p>
           )}
         </div>
@@ -302,6 +304,10 @@ export default function LandingBadante() {
                     <span style={{ fontSize: '0.78rem', color: '#0369a1' }}>€/mese — pratiche amministrative e assistenza fiscale</span>
                   </div>
                 )}
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginTop: '10px' }}>
+                  <input type="checkbox" checked={includiTfr} onChange={e => setIncludiTfr(e.target.checked)} style={{ width: '16px', height: '16px' }} />
+                  Includi TFR e tredicesima nel preventivo
+                </label>
               </div>
             </div>
           </div>
@@ -324,8 +330,7 @@ export default function LandingBadante() {
                       ['Retribuzione lorda mensile', sim.retribuzioneLordaMensile],
                       ['Contributi INPS (datore)', sim.contribInpsDatoreMensili],
                       ['Cassa.Colf (datore)', sim.cassaColfDatoreMensili],
-                      ['Accantonamento TFR', sim.tfr],
-                      ['Accantonamento 13esima', sim.tredicesima],
+                      ...(includiTfr ? [['Accantonamento TFR', sim.tfr], ['Accantonamento 13esima', sim.tredicesima]] : []),
                     ].map(([l, v], i) => (
                       <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
                         <td style={{ padding: '8px 6px 8px 0', color: '#475569' }}>{l}</td>
@@ -350,9 +355,9 @@ export default function LandingBadante() {
                 <div style={{ background: 'linear-gradient(135deg,#c2410c,#ea580c)', borderRadius: '12px', padding: '16px 18px', marginTop: '14px', color: '#fff' }}>
                   <div style={{ fontSize: '0.78rem', fontWeight: 600, opacity: 0.9 }}>COSTO MENSILE TOTALE A CARICO FAMIGLIA</div>
                   <div style={{ fontSize: '1.6rem', fontWeight: 800, lineHeight: 1.2 }}>
-                    {euro(sim.totaleCostoMensile + sim.cafMensile)}<span style={{ fontSize: '0.9rem', fontWeight: 600 }}>/mese</span>
+                    {euro(sim.totaleCostoMensile + sim.cafMensile - (includiTfr ? 0 : sim.tfr + sim.tredicesima))}<span style={{ fontSize: '0.9rem', fontWeight: 600 }}>/mese</span>
                   </div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.85 }}>TFR e tredicesima saranno stabiliti nel contratto · ferie ≈ {sim.ferieMensiliOre}h/mese</div>
+                  <div style={{ fontSize: '0.75rem', opacity: 0.85 }}>{includiTfr ? 'TFR e tredicesima inclusi come accantonamento mensile' : 'TFR e tredicesima saranno stabiliti nel contratto'} · ferie ≈ {sim.ferieMensiliOre}h/mese</div>
                 </div>
               </>
             )}

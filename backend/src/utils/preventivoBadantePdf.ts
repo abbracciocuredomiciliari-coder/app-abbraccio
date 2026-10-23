@@ -20,6 +20,7 @@ const fmt = (n: number) =>
 export interface PreventivoPdfOpts {
   intestatario?: string;   // nome cliente/famiglia (opzionale)
   cafMensile?: number;     // quota CAF sanitario mensile (default 150)
+  includiTfrTredicesima?: boolean; // true = voci TFR/13esima in tabella e nel TOTALE
 }
 
 // Costruisce il documento PDFKit del preventivo (non chiuso: chiama doc.end() chi lo usa)
@@ -117,9 +118,11 @@ function creaDocPreventivo(sim: SimulazioneCosto, opts: PreventivoPdfOpts = {}) 
   drawRow({ desc: ['DESCRIZIONE'], ore: 'ORE MENSILI', retr: 'RETRIBUZIONE', tot: 'TOTALE', bold: true, fill: '#f3e6ec' });
 
   const cafQuota = opts.cafMensile ?? 150;
+  const conAccantonamenti = !!opts.includiTfrTredicesima;
   const contributiTotali = Math.round((sim.contribInpsLavoratoreMensili + sim.contribInpsDatoreMensili
     + sim.cassaColfLavoratoreMensili + sim.cassaColfDatoreMensili) * 100) / 100;
-  const totaleDocumento = Math.round((sim.retribuzioneNetta + contributiTotali + cafQuota) * 100) / 100;
+  const totaleDocumento = Math.round((sim.retribuzioneNetta + contributiTotali + cafQuota
+    + (conAccantonamenti ? sim.tfr + sim.tredicesima : 0)) * 100) / 100;
 
   // 1) Costo mensile (lordo)
   drawRow({
@@ -144,12 +147,28 @@ function creaDocPreventivo(sim: SimulazioneCosto, opts: PreventivoPdfOpts = {}) 
     tot: `${fmt(contributiTotali)} €`,
   });
 
-  // 4) CAF sanitario
-  drawRow({
-    desc: ['CAF SANITARIO - Pratiche di assunzione e comunicazioni obbligatorie - Elaborazione buste paga e adempimenti mensili - Assistenza fiscale e consulenza CAF sanitario - Gestione Operatore Domiciliare'],
-    retr: `${fmt(cafQuota)} €`,
-    tot: `${fmt(cafQuota)} €`,
-  });
+  // 3b) Accantonamenti TFR e tredicesima (opzionali, su richiesta)
+  if (conAccantonamenti) {
+    drawRow({
+      desc: ['ACCANTONAMENTO TFR', 'Trattamento di Fine Rapporto'],
+      retr: `${fmt(sim.tfr)} €`,
+      tot: `${fmt(sim.tfr)} €`,
+    });
+    drawRow({
+      desc: ['ACCANTONAMENTO TREDICESIMA', 'Tredicesima mensilità'],
+      retr: `${fmt(sim.tredicesima)} €`,
+      tot: `${fmt(sim.tredicesima)} €`,
+    });
+  }
+
+  // 4) CAF sanitario — la voce si omette se la quota e' 0 (es. rimossa dalla landing)
+  if (cafQuota > 0) {
+    drawRow({
+      desc: ['CAF SANITARIO - Pratiche di assunzione e comunicazioni obbligatorie - Elaborazione buste paga e adempimenti mensili - Assistenza fiscale e consulenza CAF sanitario - Gestione Operatore Domiciliare'],
+      retr: `${fmt(cafQuota)} €`,
+      tot: `${fmt(cafQuota)} €`,
+    });
+  }
 
   // chiusura tabella
   doc.moveTo(colDesc, y).lineTo(colDesc + contentW, y).lineWidth(1).stroke();
@@ -168,7 +187,9 @@ function creaDocPreventivo(sim: SimulazioneCosto, opts: PreventivoPdfOpts = {}) 
   doc.font('Helvetica').fontSize(8.5)
     .text('Il presente preventivo potrebbe essere soggetto a variazioni indipendenti dalla nostra volontà, in quanto: il rapporto di lavoro è regolato dal Contratto Collettivo Nazionale del Lavoro (CCNL) e dalle normative fiscali e previdenziali in continua evoluzione; le tariffe contrattuali, i contributi obbligatori e gli oneri di gestione possono subire aggiornamenti automatici stabiliti dagli enti competenti; la disponibilità delle risorse umane da ricercare (assistenti familiari, sostituzioni, figure assistenziali) può influire sulle tempistiche di attivazione del servizio e sulle relative condizioni economiche, in base al livello professionale, all’esperienza e alla reperibilità sul territorio.', margin, y, { width: contentW, align: 'left', lineGap: 2 });
   y = doc.y + 12;
-  doc.text('Nella tariffa indicata NON sono compresi l\'accantonamento del Trattamento di Fine Rapporto (TFR) e la tredicesima mensilità: saranno stabiliti nella formulazione del contratto.', margin, y, { width: contentW, lineGap: 2 });
+  doc.text(conAccantonamenti
+    ? 'Nella tariffa indicata sono compresi, a titolo di accantonamento mensile, il Trattamento di Fine Rapporto (TFR) e la tredicesima mensilità: le modalità di corresponsione saranno stabilite nella formulazione del contratto.'
+    : 'Nella tariffa indicata NON sono compresi l\'accantonamento del Trattamento di Fine Rapporto (TFR) e la tredicesima mensilità: saranno stabiliti nella formulazione del contratto.', margin, y, { width: contentW, lineGap: 2 });
   y = doc.y + 14;
   doc.text('I contributi verranno versati trimestralmente.', margin, y, { width: contentW, lineGap: 2 });
   y = doc.y + 10;

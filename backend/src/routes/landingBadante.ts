@@ -142,6 +142,7 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
         totaleCostoMensile: sim.totaleCostoMensile,
         retribuzioneNetta: sim.retribuzioneNetta,
         cafMensile,
+        includiTfrTredicesima: !!req.body.includiTfrTredicesima,
       },
       creatoDa: 'Landing pubblica',
     });
