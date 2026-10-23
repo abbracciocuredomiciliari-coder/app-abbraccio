@@ -49,10 +49,10 @@ function validaSimulazione(body: any): { error?: string; input?: SimulazioneInpu
   };
 }
 
-// CAF sanitario sulla landing: quota fissa 50 €/mese — il client puo' solo
-// includerla o escluderla (0), non modificarne l'importo.
-function cafDaBody(body: any): number {
-  return Number(body?.cafMensile) === 0 ? 0 : CAF_LANDING_DEFAULT;
+// CAF sanitario sulla landing: quota fissa 50 €/mese, non modificabile
+// dal client — qualunque valore inviato viene ignorato.
+function cafDaBody(_body: any): number {
+  return CAF_LANDING_DEFAULT;
 }
 
 // ─── POST /api/landing-badante/preview — calcolo costo mensile, senza salvare ──

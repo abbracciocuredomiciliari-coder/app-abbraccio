@@ -60,7 +60,6 @@ export default function LandingBadante() {
   const [piuAutosuff, setPiuAutosuff] = useState(false);
   const [certificazioneUni, setCertificazioneUni] = useState(false);
   const [babysitter, setBabysitter] = useState(false);
-  const [includiCaf, setIncludiCaf] = useState(true);
   const [escludiTfr, setEscludiTfr] = useState(false);
 
   const [sim, setSim] = useState<Simulazione | null>(null);
@@ -125,7 +124,7 @@ export default function LandingBadante() {
     indennitaPiuAutosuff: piuAutosuff,
     certificazioneUni,
     indennitaBabysitter: babysitter,
-    cafMensile: includiCaf ? CAF_QUOTA : 0,
+    cafMensile: CAF_QUOTA,
     escludiTfrTredicesima: escludiTfr,
   });
 
@@ -146,7 +145,7 @@ export default function LandingBadante() {
       }
     }, 400);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [contrattoTipo, livello, oreSettimanali, tempoDeterminato, piuAutosuff, certificazioneUni, babysitter, includiCaf]);
+  }, [contrattoTipo, livello, oreSettimanali, tempoDeterminato, piuAutosuff, certificazioneUni, babysitter]);
 
   async function inviaRichiesta(e: FormEvent) {
     e.preventDefault();
@@ -292,16 +291,11 @@ export default function LandingBadante() {
               </div>
 
               <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '10px', padding: '12px 14px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600, color: '#0c4a6e' }}>
-                  <input type="checkbox" checked={includiCaf} onChange={e => setIncludiCaf(e.target.checked)} style={{ width: '16px', height: '16px' }} />
-                  Gestione CAF sanitario
-                </label>
-                {includiCaf && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-                    <span style={{ background: '#fff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '7px 12px', fontWeight: 700, color: '#0c4a6e' }}>€ {CAF_QUOTA.toFixed(2)}/mese</span>
-                    <span style={{ fontSize: '0.78rem', color: '#0369a1' }}>pratiche amministrative e assistenza fiscale</span>
-                  </div>
-                )}
+                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0c4a6e' }}>Gestione CAF sanitario inclusa</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+                  <span style={{ background: '#fff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '7px 12px', fontWeight: 700, color: '#0c4a6e' }}>€ {CAF_QUOTA.toFixed(2)}/mese</span>
+                  <span style={{ fontSize: '0.78rem', color: '#0369a1' }}>pratiche amministrative e assistenza fiscale</span>
+                </div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginTop: '10px' }}>
                   <input type="checkbox" checked={escludiTfr} onChange={e => setEscludiTfr(e.target.checked)} style={{ width: '16px', height: '16px' }} />
                   Escludi TFR e tredicesima dal preventivo
