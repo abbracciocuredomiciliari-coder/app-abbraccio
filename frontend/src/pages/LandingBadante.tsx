@@ -445,7 +445,7 @@ export default function LandingBadante() {
                   <div style={{ fontSize: '1.6rem', fontWeight: 800, lineHeight: 1.2 }}>
                     {euro(sim.totaleCostoMensile + sim.cafMensile - (escludiTfr ? sim.tfr + sim.tredicesima : 0))}<span style={{ fontSize: '0.9rem', fontWeight: 600 }}>/mese</span>
                   </div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.85 }}>{escludiTfr ? 'TFR e tredicesima saranno stabiliti nel contratto' : 'TFR e tredicesima inclusi come accantonamento mensile'} · ferie ≈ {sim.ferieMensiliOre}h/mese</div>
+                  <div style={{ fontSize: '0.75rem', opacity: 0.85 }}>{escludiTfr ? 'TFR e tredicesima saranno stabiliti nel contratto' : 'TFR e tredicesima inclusi come accantonamento mensile'} · ferie ≈ {(Math.round(sim.ferieMensiliOre * 10) / 10).toLocaleString('it-IT')}h/mese</div>
                 </div>
                 <p style={{ fontSize: '0.75rem', color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '9px 11px', marginTop: '12px', lineHeight: 1.5 }}>
                   ⚠️ <strong>Tariffe indicative.</strong> L'importo può subire variazioni in base alle condizioni domiciliari e assistenziali specifiche: la tariffa definitiva viene confermata dopo il colloquio conoscitivo, senza impegno.
