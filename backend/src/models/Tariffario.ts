@@ -10,6 +10,10 @@ export interface ITariffario extends Document {
   ordine: number;
   aggiornatoDa?: string;
   isEsameStrumentale?: boolean;
+  // Prezzo promozionale: se attivo, il calcolatore pubblico applica prezzoPromo
+  // ed evidenzia la promozione mostrando il prezzo di listino barrato.
+  promoAttiva?: boolean;
+  prezzoPromo?: number;
 }
 
 const tariffarioSchema = new Schema<ITariffario>(
@@ -27,6 +31,8 @@ const tariffarioSchema = new Schema<ITariffario>(
     ordine: { type: Number, default: 0 },
     aggiornatoDa: { type: String, trim: true },
     isEsameStrumentale: { type: Boolean, default: false },
+    promoAttiva: { type: Boolean, default: false },
+    prezzoPromo: { type: Number },
   },
   { timestamps: true }
 );

@@ -61,17 +61,23 @@ interface RigaPreventivo {
   unitaMisura?: string;
   note?: string;
   quantita: number;
-  prezzoUnitario: number;
-  prezzoListino: number;      // prezzo del Tariffario al momento del calcolo
-  prezzoModificato: boolean;  // true se l'utente ha variato il prezzo rispetto al listino
+  prezzoUnitario: number;   // prezzo applicato (promo se attiva, altrimenti listino)
+  prezzoListino: number;    // prezzo di listino al momento del calcolo
+  promo: boolean;           // true se e' stato applicato il prezzo promozionale
   importo: number;
 }
 
-const PREZZO_MAX = 10000;
+// Prezzo effettivo di una voce: promo se attiva e valida, altrimenti listino.
+function prezzoEffettivo(voce: any): { prezzo: number; promo: boolean } {
+  const p = Number(voce.prezzoPromo);
+  if (voce.promoAttiva && Number.isFinite(p) && p > 0 && p < voce.prezzo) return { prezzo: p, promo: true };
+  return { prezzo: voce.prezzo, promo: false };
+}
 
-// Ricalcola le righe lato server a partire dagli id del listino. Il prezzo di
-// default e' quello del Tariffario; il calcolatore puo' variarlo riga per riga
-// (es. trattative, materiali, km): la variazione viene tracciata nel preventivo.
+// Ricalcola le righe lato server a partire dagli id del listino: il client
+// invia solo id + quantita', i prezzi vengono SEMPRE dal Tariffario (non sono
+// modificabili dal calcolatore pubblico). Una variazione di listino vale da
+// subito per i nuovi preventivi; quelli gia' emessi conservano i loro prezzi.
 async function costruisciRighe(body: any): Promise<{ error?: string; righe?: RigaPreventivo[] }> {
   const voci = Array.isArray(body?.voci) ? body.voci : [];
   if (voci.length === 0) return { error: 'Seleziona almeno una prestazione' };
@@ -83,10 +89,7 @@ async function costruisciRighe(body: any): Promise<{ error?: string; righe?: Rig
     const voce: any = listino.find((l: any) => String(l._id) === String(v?.id));
     if (!voce) continue;
     const q = Math.min(Math.max(Math.round(Number(v?.quantita) || 1), 1), 999);
-    const override = Number(v?.prezzoUnitario);
-    const prezzo = Number.isFinite(override) && override > 0 && override <= PREZZO_MAX
-      ? Math.round(override * 100) / 100
-      : voce.prezzo;
+    const { prezzo, promo } = prezzoEffettivo(voce);
     righe.push({
       voceId: String(voce._id),
       categoria: voce.categoria,
@@ -96,7 +99,7 @@ async function costruisciRighe(body: any): Promise<{ error?: string; righe?: Rig
       quantita: q,
       prezzoUnitario: prezzo,
       prezzoListino: voce.prezzo,
-      prezzoModificato: prezzo !== voce.prezzo,
+      promo,
       importo: Math.round(q * prezzo * 100) / 100,
     });
   }
@@ -119,16 +122,23 @@ router.get('/listino', rateLimitByIP(120, 15 * 60 * 1000), async (_req: Request,
   try {
     const voci = await Tariffario.find({ attivo: true, prezzo: { $gt: 0 } })
       .sort({ categoria: 1, ordine: 1, nome: 1 })
-      .select('categoria nome prezzo unitaMisura note')
+      .select('categoria nome prezzo unitaMisura note promoAttiva prezzoPromo')
       .lean();
     const categorie = Object.entries(CATEGORIE_LISTINO)
       .sort((a, b) => a[1].ordine - b[1].ordine)
       .map(([key, meta]) => ({
         key,
         ...meta,
-        voci: voci.filter((v: any) => v.categoria === key).map((v: any) => ({
-          id: String(v._id), nome: v.nome, prezzo: v.prezzo, unitaMisura: v.unitaMisura || null, note: v.note || null,
-        })),
+        voci: voci.filter((v: any) => v.categoria === key).map((v: any) => {
+          const { prezzo, promo } = prezzoEffettivo(v);
+          return {
+            id: String(v._id), nome: v.nome,
+            prezzo,                              // prezzo da applicare (promo se attiva)
+            prezzoListino: v.prezzo,             // listino: mostrato barrato solo se promo
+            promo,
+            unitaMisura: v.unitaMisura || null, note: v.note || null,
+          };
+        }),
       }))
       .filter(c => c.voci.length > 0);
     return res.json({ categorie });
@@ -168,9 +178,9 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
       ? Object.entries(utm).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join('&').slice(0, 500)
       : '';
     const messaggioPulito = messaggio ? String(messaggio).trim().slice(0, 1000) : '';
-    const modificate = righe!.filter(r => r.prezzoModificato);
-    const notaPrezzi = modificate.length
-      ? ` — PREZZI VARIATI rispetto al listino: ${modificate.map(r => `${r.descrizione} €${r.prezzoUnitario.toFixed(2)} (listino €${r.prezzoListino.toFixed(2)})`).join('; ')}`
+    const inPromo = righe!.filter(r => r.promo);
+    const notaPrezzi = inPromo.length
+      ? ` — PREZZI PROMOZIONALI applicati: ${inPromo.map(r => `${r.descrizione} €${r.prezzoUnitario.toFixed(2)} (listino €${r.prezzoListino.toFixed(2)})`).join('; ')}`
       : '';
     const notaBase = `Preventivo generato dal calcolatore pubblico /preventivo${utmString ? ` — UTM: ${utmString}` : ''}${notaPrezzi}`;
 
@@ -197,7 +207,7 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
       patient: paziente._id,
       riferimentoTipo: 'landing',
       prestazioni: righe!.map(r => ({
-        descrizione: `${r.unitaMisura ? `${r.descrizione} (${r.unitaMisura})` : r.descrizione}${r.prezzoModificato ? ` — prezzo listino €${r.prezzoListino.toFixed(2)}` : ''}`,
+        descrizione: `${r.unitaMisura ? `${r.descrizione} (${r.unitaMisura})` : r.descrizione}${r.promo ? ` — PROMO (listino €${r.prezzoListino.toFixed(2)})` : ''}`,
         quantita: r.quantita,
         prezzoUnitario: r.prezzoUnitario,
         importo: r.importo,
@@ -242,7 +252,7 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
     try {
       const adminEmail = process.env.ADMIN_EMAIL || 'abbracciocuredomiciliari@gmail.com';
       const frontendUrl = process.env.FRONTEND_URL || 'https://app.abbracciocuredomiciliari.it';
-      const righeHtml = righe!.map((r, i) => `<tr><td style="padding:6px;background:${i % 2 ? '#fff' : '#f8fafc'};">${esc(r.descrizione)}${r.unitaMisura ? ` <span style="color:#64748b">(${esc(r.unitaMisura)})</span>` : ''}</td><td style="padding:6px;text-align:center;">${r.quantita}</td><td style="padding:6px;text-align:right;">€${r.prezzoUnitario.toFixed(2)}${r.prezzoModificato ? `<br><span style="color:#b45309;font-size:0.75rem;">⚠ listino €${r.prezzoListino.toFixed(2)}</span>` : ''}</td><td style="padding:6px;text-align:right;font-weight:bold;">€${r.importo.toFixed(2)}</td></tr>`).join('');
+      const righeHtml = righe!.map((r, i) => `<tr><td style="padding:6px;background:${i % 2 ? '#fff' : '#f8fafc'};">${esc(r.descrizione)}${r.unitaMisura ? ` <span style="color:#64748b">(${esc(r.unitaMisura)})</span>` : ''}</td><td style="padding:6px;text-align:center;">${r.quantita}</td><td style="padding:6px;text-align:right;">€${r.prezzoUnitario.toFixed(2)}${r.promo ? `<br><span style="color:#b91c1c;font-size:0.75rem;">PROMO · listino <s>€${r.prezzoListino.toFixed(2)}</s></span>` : ''}</td><td style="padding:6px;text-align:right;font-weight:bold;">€${r.importo.toFixed(2)}</td></tr>`).join('');
       await inviaEmail({
         to: adminEmail,
         subject: `🩺 Nuovo preventivo ${numero} dal calcolatore online — ${nome}`,
@@ -251,7 +261,7 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
           <p style="background:#eff6ff;padding:12px;border-radius:6px;border-left:4px solid #1e4d8c;">
             <strong>Azione richiesta:</strong> ricontattare il richiedente. Paziente in accettazione e preventivo <strong>${numero}</strong> già creati nella Gestione Privata.
           </p>
-          ${modificate.length ? `<p style="background:#fffbeb;padding:12px;border-radius:6px;border-left:4px solid #f59e0b;color:#92400e;"><strong>⚠ Attenzione:</strong> ${modificate.length} ${modificate.length === 1 ? 'prezzo è stato variato' : 'prezzi sono stati variati'} rispetto al listino dal calcolatore (dettaglio in tabella).</p>` : ''}
+          ${inPromo.length ? `<p style="background:#fef2f2;padding:12px;border-radius:6px;border-left:4px solid #dc2626;color:#991b1b;"><strong>🏷 Promozione:</strong> ${inPromo.length} ${inPromo.length === 1 ? 'prestazione a prezzo promozionale' : 'prestazioni a prezzo promozionale'} (dettaglio in tabella).</p>` : ''}
           <table style="width:100%;border-collapse:collapse;margin:16px 0;">
             <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;width:150px;">Nome:</td><td style="padding:8px;">${esc(nome)}</td></tr>
             <tr><td style="padding:8px;background:#eff6ff;font-weight:bold;">Telefono:</td><td style="padding:8px;">${esc(telefono)}</td></tr>

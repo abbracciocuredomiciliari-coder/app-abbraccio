@@ -14,6 +14,8 @@ interface VoceTariffario {
   attivo: boolean;
   ordine: number;
   isEsameStrumentale?: boolean;
+  promoAttiva?: boolean;
+  prezzoPromo?: number;
 }
 
 const CATEGORIE: { value: VoceTariffario['categoria']; label: string; color: string }[] = [
@@ -78,6 +80,18 @@ export default function Tariffario() {
 
   const toggleAttivo = async (v: VoceTariffario) => {
     try { await api.put(`/tariffario/${v._id}`, { attivo: !v.attivo }); await carica(); } catch { /***/ }
+  };
+
+  // Prezzo promozionale: spunta + importo. Il calcolatore pubblico applica la
+  // promo evidenziandola con il listino barrato; senza promo mostra solo il listino.
+  const [promoEditId, setPromoEditId] = useState<string | null>(null);
+  const [promoPrezzo, setPromoPrezzo] = useState<number>(0);
+  const attivaPromo = async (v: VoceTariffario) => {
+    if (!(promoPrezzo > 0) || promoPrezzo >= v.prezzo) { alert('Il prezzo promozionale deve essere maggiore di 0 e inferiore al prezzo di listino.'); return; }
+    try { await api.put(`/tariffario/${v._id}`, { promoAttiva: true, prezzoPromo: promoPrezzo }); setPromoEditId(null); await carica(); } catch { alert('Errore salvataggio promozione'); }
+  };
+  const disattivaPromo = async (v: VoceTariffario) => {
+    try { await api.put(`/tariffario/${v._id}`, { promoAttiva: false }); await carica(); } catch { alert('Errore'); }
   };
 
   const eliminaVoce = async (id: string) => {
@@ -146,6 +160,7 @@ export default function Tariffario() {
                     <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: '0.82rem', color: '#64748b' }}>Prestazione</th>
                     <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: '0.82rem', color: '#64748b' }}>Unità</th>
                     <th style={{ textAlign: 'right', padding: '10px 14px', fontSize: '0.82rem', color: '#64748b' }}>Prezzo</th>
+                    <th style={{ textAlign: 'center', padding: '10px 14px', fontSize: '0.82rem', color: '#64748b' }} title="Prezzo promozionale mostrato nel calcolatore pubblico con il listino barrato">🏷 Promo</th>
                     {puoGestire && <th style={{ padding: '10px 14px' }} />}
                   </tr>
                 </thead>
@@ -156,6 +171,7 @@ export default function Tariffario() {
                         <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{v.nome}</div>
                         {v.note && <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{v.note}</div>}
                         {!v.attivo && <span style={{ fontSize: '0.72rem', color: '#dc2626', fontWeight: 700 }}>DISATTIVATA</span>}
+                        {v.attivo && v.promoAttiva && v.prezzoPromo && <span style={{ fontSize: '0.72rem', color: '#b91c1c', fontWeight: 700 }}>🏷 IN PROMOZIONE nel calcolatore online</span>}
                       </td>
                       <td style={{ padding: '10px 14px', fontSize: '0.85rem', color: '#64748b' }}>{v.unitaMisura || '—'}</td>
                       <td style={{ padding: '10px 14px', textAlign: 'right' }}>
@@ -178,6 +194,26 @@ export default function Tariffario() {
                           >
                             {formatEuro(v.prezzo)}
                           </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                        {promoEditId === v._id ? (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            <input type="number" step="0.01" autoFocus value={promoPrezzo} onChange={e => setPromoPrezzo(Number(e.target.value))} placeholder="€ promo"
+                              style={{ width: '84px', padding: '6px', borderRadius: '6px', border: '1px solid #dc2626', textAlign: 'right' }} />
+                            <button onClick={() => attivaPromo(v)} title="Attiva promozione" style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer', color: '#16a34a' }}><Check size={14} /></button>
+                            <button onClick={() => setPromoEditId(null)} style={{ background: '#fee2e2', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer', color: '#dc2626' }}><X size={14} /></button>
+                          </div>
+                        ) : v.promoAttiva && v.prezzoPromo ? (
+                          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: puoGestire ? 'pointer' : 'default' }} title="Promozione attiva: clic per disattivare">
+                            <input type="checkbox" checked readOnly={!puoGestire} onChange={() => puoGestire && disattivaPromo(v)} style={{ accentColor: '#dc2626' }} />
+                            <span style={{ background: '#fee2e2', color: '#b91c1c', fontWeight: 800, fontSize: '0.8rem', padding: '2px 8px', borderRadius: '10px' }}>{formatEuro(v.prezzoPromo)}</span>
+                          </label>
+                        ) : (
+                          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: puoGestire ? 'pointer' : 'default', color: '#94a3b8', fontSize: '0.78rem' }} title="Spunta per impostare un prezzo promozionale">
+                            <input type="checkbox" checked={false} readOnly={!puoGestire} onChange={() => { if (puoGestire) { setPromoEditId(v._id); setPromoPrezzo(Math.round(v.prezzo * 0.9 * 100) / 100); } }} style={{ accentColor: '#dc2626' }} />
+                            promo
+                          </label>
                         )}
                       </td>
                       {puoGestire && (
