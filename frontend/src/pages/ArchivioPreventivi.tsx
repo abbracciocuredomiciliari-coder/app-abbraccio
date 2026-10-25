@@ -224,8 +224,11 @@ export default function ArchivioPreventivi() {
                             <td style={{ padding: '8px', fontWeight: 600 }}>{prev.numero}</td>
                             <td style={{ padding: '8px' }}>{prev.patient?.firstName} {prev.patient?.lastName}</td>
                             <td style={{ padding: '8px' }}>{formatData(prev.data)}</td>
-                            <td style={{ padding: '8px', fontSize: '0.82rem', color: '#475569', maxWidth: '320px' }} title={prev.prestazioni.map(p => `${p.descrizione} ×${p.quantita}`).join(', ')}>
-                              {prev.prestazioni.slice(0, 2).map(p => `${p.descrizione} ×${p.quantita}`).join(', ')}{prev.prestazioni.length > 2 ? ` +${prev.prestazioni.length - 2}` : ''}
+                            <td style={{ padding: '8px', fontSize: '0.82rem', color: '#475569', maxWidth: '320px' }} title={prev.prestazioni.map(p => `${p.descrizione} ×${p.quantita} a €${p.prezzoUnitario}`).join('\n')}>
+                              {prev.prestazioni.slice(0, 2).map(p => `${p.descrizione.replace(/ — prezzo listino.*$/, '')} ×${p.quantita}`).join(', ')}{prev.prestazioni.length > 2 ? ` +${prev.prestazioni.length - 2}` : ''}
+                              {prev.prestazioni.some(p => /prezzo listino/.test(p.descrizione)) && (
+                                <span title="Uno o più prezzi variati rispetto al listino" style={{ marginLeft: '6px', background: '#fef3c7', color: '#92400e', borderRadius: '10px', padding: '1px 7px', fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' }}>⚠ prezzo variato</span>
+                              )}
                             </td>
                             <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#166534' }}>{formatEuro(prev.totale)}</td>
                             <td style={{ padding: '8px', textAlign: 'center' }}>

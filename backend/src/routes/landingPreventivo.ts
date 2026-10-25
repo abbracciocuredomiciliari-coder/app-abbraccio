@@ -62,11 +62,16 @@ interface RigaPreventivo {
   note?: string;
   quantita: number;
   prezzoUnitario: number;
+  prezzoListino: number;      // prezzo del Tariffario al momento del calcolo
+  prezzoModificato: boolean;  // true se l'utente ha variato il prezzo rispetto al listino
   importo: number;
 }
 
-// Ricalcola le righe lato server a partire dagli id del listino: il client
-// invia solo id + quantita', i prezzi vengono sempre dal Tariffario.
+const PREZZO_MAX = 10000;
+
+// Ricalcola le righe lato server a partire dagli id del listino. Il prezzo di
+// default e' quello del Tariffario; il calcolatore puo' variarlo riga per riga
+// (es. trattative, materiali, km): la variazione viene tracciata nel preventivo.
 async function costruisciRighe(body: any): Promise<{ error?: string; righe?: RigaPreventivo[] }> {
   const voci = Array.isArray(body?.voci) ? body.voci : [];
   if (voci.length === 0) return { error: 'Seleziona almeno una prestazione' };
@@ -78,6 +83,10 @@ async function costruisciRighe(body: any): Promise<{ error?: string; righe?: Rig
     const voce: any = listino.find((l: any) => String(l._id) === String(v?.id));
     if (!voce) continue;
     const q = Math.min(Math.max(Math.round(Number(v?.quantita) || 1), 1), 999);
+    const override = Number(v?.prezzoUnitario);
+    const prezzo = Number.isFinite(override) && override > 0 && override <= PREZZO_MAX
+      ? Math.round(override * 100) / 100
+      : voce.prezzo;
     righe.push({
       voceId: String(voce._id),
       categoria: voce.categoria,
@@ -85,8 +94,10 @@ async function costruisciRighe(body: any): Promise<{ error?: string; righe?: Rig
       unitaMisura: voce.unitaMisura || undefined,
       note: voce.note || undefined,
       quantita: q,
-      prezzoUnitario: voce.prezzo,
-      importo: Math.round(q * voce.prezzo * 100) / 100,
+      prezzoUnitario: prezzo,
+      prezzoListino: voce.prezzo,
+      prezzoModificato: prezzo !== voce.prezzo,
+      importo: Math.round(q * prezzo * 100) / 100,
     });
   }
   if (righe.length === 0) return { error: 'Nessuna prestazione valida selezionata' };
@@ -157,7 +168,11 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
       ? Object.entries(utm).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join('&').slice(0, 500)
       : '';
     const messaggioPulito = messaggio ? String(messaggio).trim().slice(0, 1000) : '';
-    const notaBase = `Preventivo generato dal calcolatore pubblico /preventivo${utmString ? ` — UTM: ${utmString}` : ''}`;
+    const modificate = righe!.filter(r => r.prezzoModificato);
+    const notaPrezzi = modificate.length
+      ? ` — PREZZI VARIATI rispetto al listino: ${modificate.map(r => `${r.descrizione} €${r.prezzoUnitario.toFixed(2)} (listino €${r.prezzoListino.toFixed(2)})`).join('; ')}`
+      : '';
+    const notaBase = `Preventivo generato dal calcolatore pubblico /preventivo${utmString ? ` — UTM: ${utmString}` : ''}${notaPrezzi}`;
 
     // 1) Paziente privato in accettazione (lead): compare nella Gestione Privata
     const partiNome = String(nome).trim().split(/\s+/);
@@ -182,7 +197,7 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
       patient: paziente._id,
       riferimentoTipo: 'landing',
       prestazioni: righe!.map(r => ({
-        descrizione: r.unitaMisura ? `${r.descrizione} (${r.unitaMisura})` : r.descrizione,
+        descrizione: `${r.unitaMisura ? `${r.descrizione} (${r.unitaMisura})` : r.descrizione}${r.prezzoModificato ? ` — prezzo listino €${r.prezzoListino.toFixed(2)}` : ''}`,
         quantita: r.quantita,
         prezzoUnitario: r.prezzoUnitario,
         importo: r.importo,
@@ -227,7 +242,7 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
     try {
       const adminEmail = process.env.ADMIN_EMAIL || 'abbracciocuredomiciliari@gmail.com';
       const frontendUrl = process.env.FRONTEND_URL || 'https://app.abbracciocuredomiciliari.it';
-      const righeHtml = righe!.map((r, i) => `<tr><td style="padding:6px;background:${i % 2 ? '#fff' : '#f8fafc'};">${esc(r.descrizione)}${r.unitaMisura ? ` <span style="color:#64748b">(${esc(r.unitaMisura)})</span>` : ''}</td><td style="padding:6px;text-align:center;">${r.quantita}</td><td style="padding:6px;text-align:right;">€${r.prezzoUnitario.toFixed(2)}</td><td style="padding:6px;text-align:right;font-weight:bold;">€${r.importo.toFixed(2)}</td></tr>`).join('');
+      const righeHtml = righe!.map((r, i) => `<tr><td style="padding:6px;background:${i % 2 ? '#fff' : '#f8fafc'};">${esc(r.descrizione)}${r.unitaMisura ? ` <span style="color:#64748b">(${esc(r.unitaMisura)})</span>` : ''}</td><td style="padding:6px;text-align:center;">${r.quantita}</td><td style="padding:6px;text-align:right;">€${r.prezzoUnitario.toFixed(2)}${r.prezzoModificato ? `<br><span style="color:#b45309;font-size:0.75rem;">⚠ listino €${r.prezzoListino.toFixed(2)}</span>` : ''}</td><td style="padding:6px;text-align:right;font-weight:bold;">€${r.importo.toFixed(2)}</td></tr>`).join('');
       await inviaEmail({
         to: adminEmail,
         subject: `🩺 Nuovo preventivo ${numero} dal calcolatore online — ${nome}`,
@@ -236,6 +251,7 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
           <p style="background:#eff6ff;padding:12px;border-radius:6px;border-left:4px solid #1e4d8c;">
             <strong>Azione richiesta:</strong> ricontattare il richiedente. Paziente in accettazione e preventivo <strong>${numero}</strong> già creati nella Gestione Privata.
           </p>
+          ${modificate.length ? `<p style="background:#fffbeb;padding:12px;border-radius:6px;border-left:4px solid #f59e0b;color:#92400e;"><strong>⚠ Attenzione:</strong> ${modificate.length} ${modificate.length === 1 ? 'prezzo è stato variato' : 'prezzi sono stati variati'} rispetto al listino dal calcolatore (dettaglio in tabella).</p>` : ''}
           <table style="width:100%;border-collapse:collapse;margin:16px 0;">
             <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;width:150px;">Nome:</td><td style="padding:8px;">${esc(nome)}</td></tr>
             <tr><td style="padding:8px;background:#eff6ff;font-weight:bold;">Telefono:</td><td style="padding:8px;">${esc(telefono)}</td></tr>

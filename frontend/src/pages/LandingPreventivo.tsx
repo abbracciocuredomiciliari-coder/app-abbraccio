@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, FormEvent } from 'react';
 import axios from 'axios';
-import { Calculator, CheckCircle, Send, FileText, Info, Plus, Minus, Trash2, Phone, MessageCircle, Stethoscope } from 'lucide-react';
+import { Calculator, CheckCircle, Send, FileText, Info, Plus, Minus, Trash2, Phone, MessageCircle, Stethoscope, RotateCcw } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api';
 const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '';
@@ -10,7 +10,8 @@ const WHATSAPP = '393514175117';
 
 interface VoceListino { id: string; nome: string; prezzo: number; unitaMisura: string | null; note: string | null }
 interface CategoriaListino { key: string; label: string; descrizione: string; ordine: number; voci: VoceListino[] }
-interface Riga { voceId: string; categoria: string; descrizione: string; unitaMisura?: string; note?: string; quantita: number; prezzoUnitario: number; importo: number }
+interface Riga { voceId: string; categoria: string; descrizione: string; unitaMisura?: string; note?: string; quantita: number; prezzoUnitario: number; prezzoListino: number; prezzoModificato: boolean; importo: number }
+interface Sel { quantita: number; prezzo: string } // prezzo come stringa per permettere la digitazione
 interface Preventivo { righe: Riga[]; totale: number }
 
 declare global {
@@ -47,7 +48,7 @@ export default function LandingPreventivo() {
   const [categorie, setCategorie] = useState<CategoriaListino[]>([]);
   const [listinoErr, setListinoErr] = useState('');
   const [categoriaAttiva, setCategoriaAttiva] = useState('');
-  const [selezione, setSelezione] = useState<Record<string, number>>({}); // voceId -> quantita
+  const [selezione, setSelezione] = useState<Record<string, Sel>>({}); // voceId -> { quantita, prezzo }
   const [showLegenda, setShowLegenda] = useState(false);
 
   const [prev, setPrev] = useState<Preventivo | null>(null);
@@ -101,7 +102,11 @@ export default function LandingPreventivo() {
     tracciaPixel('PageView');
   }, []);
 
-  const vociBody = () => Object.entries(selezione).filter(([, q]) => q > 0).map(([id, quantita]) => ({ id, quantita }));
+  const tutteVoci = categorie.flatMap(c => c.voci);
+  const prezzoNum = (s: string) => { const n = Number(String(s).replace(',', '.')); return Number.isFinite(n) && n > 0 ? n : 0; };
+  const vociBody = () => Object.entries(selezione)
+    .filter(([, s]) => s.quantita > 0)
+    .map(([id, s]) => ({ id, quantita: s.quantita, prezzoUnitario: prezzoNum(s.prezzo) || undefined }));
   const numSelezionate = vociBody().length;
 
   // Qualunque modifica alla selezione azzera il preventivo: va rigenerato
@@ -109,10 +114,20 @@ export default function LandingPreventivo() {
   const setQta = (id: string, q: number) => {
     setSelezione(s => {
       const n = { ...s };
-      if (q <= 0) delete n[id]; else n[id] = Math.min(q, 999);
+      if (q <= 0) { delete n[id]; return n; }
+      const listino = tutteVoci.find(v => v.id === id)?.prezzo ?? 0;
+      n[id] = { quantita: Math.min(q, 999), prezzo: n[id]?.prezzo ?? String(listino) };
       return n;
     });
     invalida();
+  };
+  const setPrezzo = (id: string, prezzo: string) => {
+    setSelezione(s => s[id] ? { ...s, [id]: { ...s[id], prezzo } } : s);
+    invalida();
+  };
+  const resetPrezzo = (id: string) => {
+    const listino = tutteVoci.find(v => v.id === id)?.prezzo ?? 0;
+    setPrezzo(id, String(listino));
   };
 
   async function genera() {
@@ -158,7 +173,7 @@ export default function LandingPreventivo() {
 
   // Testo del preventivo da condividere su WhatsApp
   const testoWhatsApp = () => {
-    const righe = prev ? prev.righe.map(r => `• ${r.descrizione}${r.unitaMisura ? ` (${r.unitaMisura})` : ''} x${r.quantita} = ${euro(r.importo)}`).join('\n') : '';
+    const righe = prev ? prev.righe.map(r => `• ${r.descrizione}${r.unitaMisura ? ` (${r.unitaMisura})` : ''} x${r.quantita} a ${euro(r.prezzoUnitario)} = ${euro(r.importo)}`).join('\n') : '';
     const intro = nome.trim() ? `Buongiorno, sono ${nome.trim()}.` : 'Buongiorno,';
     const corpo = prev
       ? `${intro} ho calcolato questo preventivo sul vostro sito:\n${righe}\nTOTALE: ${euro(prev.totale)}\n\nVorrei maggiori informazioni e confermare disponibilità e tariffa nella mia zona.${messaggio.trim() ? `\n\nMessaggio: ${messaggio.trim()}` : ''}`
@@ -271,28 +286,45 @@ export default function LandingPreventivo() {
                   {catCorrente && (
                     <div style={{ background: '#fff', border: '1px solid #dbeafe', borderRadius: '10px', overflow: 'hidden' }}>
                       <div style={{ padding: '8px 12px', background: '#f8fafc', fontSize: '0.75rem', fontWeight: 700, color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
-                        <span>Prestazione</span><span>Prezzo · Quantità</span>
+                        <span>Prestazione</span><span>Quantità · Prezzo <InfoNote text="Il prezzo proposto è quello del listino ufficiale. Puoi modificarlo riga per riga (es. accordi particolari, materiali, chilometri): la variazione resta tracciata nel preventivo. Il tasto ↺ ripristina il prezzo di listino." /></span>
                       </div>
-                      <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
+                      <div style={{ maxHeight: '340px', overflowY: 'auto' }}>
                         {catCorrente.voci.map(v => {
-                          const q = selezione[v.id] || 0;
+                          const s = selezione[v.id];
+                          const q = s?.quantita || 0;
+                          const modificato = !!s && prezzoNum(s.prezzo) !== v.prezzo;
                           return (
-                            <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 12px', borderBottom: '1px solid #f1f5f9', background: q > 0 ? '#eff6ff' : '#fff' }}>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>{v.nome}</div>
-                                <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                                  {euro(v.prezzo)}{v.unitaMisura ? ` / ${v.unitaMisura}` : ''}{v.note ? ` · ${v.note}` : ''}
+                            <div key={v.id} style={{ padding: '9px 12px', borderBottom: '1px solid #f1f5f9', background: q > 0 ? '#eff6ff' : '#fff' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>{v.nome}</div>
+                                  <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                                    listino {euro(v.prezzo)}{v.unitaMisura ? ` / ${v.unitaMisura}` : ''}{v.note ? ` · ${v.note}` : ''}
+                                  </div>
                                 </div>
+                                {q === 0 ? (
+                                  <button type="button" onClick={() => setQta(v.id, 1)} style={{ border: '1px solid #1e4d8c', background: '#fff', color: '#1e4d8c', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                                    <Plus size={14} /> Aggiungi
+                                  </button>
+                                ) : (
+                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                                    <button type="button" onClick={() => setQta(v.id, q - 1)} style={{ border: '1px solid #cbd5e1', background: '#fff', borderRadius: '6px', width: '28px', height: '28px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={13} /></button>
+                                    <input type="number" min={1} max={999} value={q} onChange={e => setQta(v.id, Number(e.target.value) || 1)} style={{ width: '46px', textAlign: 'center', padding: '5px 2px', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 700 }} />
+                                    <button type="button" onClick={() => setQta(v.id, q + 1)} style={{ border: '1px solid #cbd5e1', background: '#fff', borderRadius: '6px', width: '28px', height: '28px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={13} /></button>
+                                  </div>
+                                )}
                               </div>
-                              {q === 0 ? (
-                                <button type="button" onClick={() => setQta(v.id, 1)} style={{ border: '1px solid #1e4d8c', background: '#fff', color: '#1e4d8c', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                                  <Plus size={14} /> Aggiungi
-                                </button>
-                              ) : (
-                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                                  <button type="button" onClick={() => setQta(v.id, q - 1)} style={{ border: '1px solid #cbd5e1', background: '#fff', borderRadius: '6px', width: '28px', height: '28px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={13} /></button>
-                                  <input type="number" min={1} max={999} value={q} onChange={e => setQta(v.id, Number(e.target.value) || 1)} style={{ width: '46px', textAlign: 'center', padding: '5px 2px', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 700 }} />
-                                  <button type="button" onClick={() => setQta(v.id, q + 1)} style={{ border: '1px solid #cbd5e1', background: '#fff', borderRadius: '6px', width: '28px', height: '28px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={13} /></button>
+                              {q > 0 && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px', justifyContent: 'flex-end' }}>
+                                  <span style={{ fontSize: '0.72rem', color: modificato ? '#b45309' : '#64748b', fontWeight: 600 }}>{modificato ? '⚠ prezzo variato' : 'prezzo unitario'}</span>
+                                  <div style={{ display: 'inline-flex', alignItems: 'center', border: `1px solid ${modificato ? '#f59e0b' : '#cbd5e1'}`, borderRadius: '6px', background: '#fff', overflow: 'hidden' }}>
+                                    <span style={{ padding: '0 6px', color: '#64748b', fontSize: '0.8rem' }}>€</span>
+                                    <input type="number" min={0.01} step={0.5} value={s.prezzo} onChange={e => setPrezzo(v.id, e.target.value)} style={{ width: '70px', textAlign: 'right', padding: '5px 6px', border: 'none', fontWeight: 700, color: modificato ? '#b45309' : '#1e293b', outline: 'none' }} />
+                                  </div>
+                                  {modificato && (
+                                    <button type="button" onClick={() => resetPrezzo(v.id)} title="Ripristina prezzo di listino" style={{ border: '1px solid #cbd5e1', background: '#fff', borderRadius: '6px', width: '28px', height: '28px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#1e4d8c' }}><RotateCcw size={13} /></button>
+                                  )}
+                                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', minWidth: '70px', textAlign: 'right' }}>= {euro(q * prezzoNum(s.prezzo))}</span>
                                 </div>
                               )}
                             </div>
@@ -309,13 +341,17 @@ export default function LandingPreventivo() {
                         Prestazioni selezionate ({numSelezionate})
                         <InfoNote text="La quantità indica quanti accessi, ore o esami vuoi preventivare. Es. 'Assistenza OSS x 20' = 20 ore; 'Medicazioni x 5' = 5 accessi." />
                       </div>
-                      {categorie.flatMap(c => c.voci).filter(v => selezione[v.id] > 0).map(v => (
-                        <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#334155', padding: '3px 0' }}>
-                          <span style={{ flex: 1 }}>{v.nome} <strong>× {selezione[v.id]}</strong></span>
-                          <span style={{ fontWeight: 600 }}>{euro(v.prezzo * selezione[v.id])}</span>
-                          <button type="button" onClick={() => setQta(v.id, 0)} title="Rimuovi" style={{ border: 'none', background: 'none', color: '#dc2626', cursor: 'pointer', padding: '2px' }}><Trash2 size={14} /></button>
-                        </div>
-                      ))}
+                      {tutteVoci.filter(v => selezione[v.id]?.quantita > 0).map(v => {
+                        const s = selezione[v.id];
+                        const p = prezzoNum(s.prezzo);
+                        return (
+                          <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#334155', padding: '3px 0' }}>
+                            <span style={{ flex: 1 }}>{v.nome} <strong>× {s.quantita}</strong> a {euro(p)}{p !== v.prezzo && <span style={{ color: '#b45309', fontWeight: 700 }}> ⚠</span>}</span>
+                            <span style={{ fontWeight: 600 }}>{euro(p * s.quantita)}</span>
+                            <button type="button" onClick={() => setQta(v.id, 0)} title="Rimuovi" style={{ border: 'none', background: 'none', color: '#dc2626', cursor: 'pointer', padding: '2px' }}><Trash2 size={14} /></button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 
@@ -343,7 +379,7 @@ export default function LandingPreventivo() {
                       <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
                         <td style={{ padding: '8px 6px 8px 0', color: '#475569' }}>
                           {r.descrizione}{r.unitaMisura ? <span style={{ color: '#94a3b8' }}> ({r.unitaMisura})</span> : ''}
-                          <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{r.quantita} × {euro(r.prezzoUnitario)}{r.note ? ` · ${r.note}` : ''}</div>
+                          <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{r.quantita} × {euro(r.prezzoUnitario)}{r.prezzoModificato && <span style={{ color: '#b45309', fontWeight: 600 }}> (listino {euro(r.prezzoListino)})</span>}{r.note ? ` · ${r.note}` : ''}</div>
                         </td>
                         <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap', verticalAlign: 'top' }}>{euro(r.importo)}</td>
                       </tr>
