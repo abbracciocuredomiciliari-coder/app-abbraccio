@@ -14,7 +14,7 @@ export interface IDocumentoFatturazione extends Document {
   numero: string; // es. PREV-2026-00001 / FATT-2026-00001
   tipo: 'preventivo' | 'fattura';
   patient: Types.ObjectId;
-  riferimentoTipo?: 'workplan' | 'prelievo' | 'esame_strumentale' | 'badante';
+  riferimentoTipo?: 'workplan' | 'prelievo' | 'esame_strumentale' | 'badante' | 'landing'; // landing = preventivo generato dal calcolatore pubblico
   riferimentoId?: Types.ObjectId;
   prestazioni: IVocePrestazione[];
   totale: number;
@@ -61,7 +61,7 @@ const documentoFatturazioneSchema = new Schema<IDocumentoFatturazione>(
     numero: { type: String, required: true, unique: true },
     tipo: { type: String, required: true, enum: ['preventivo', 'fattura'] },
     patient: { type: Schema.Types.ObjectId, ref: 'Patient', required: true },
-    riferimentoTipo: { type: String, enum: ['workplan', 'prelievo', 'esame_strumentale', 'badante'] },
+    riferimentoTipo: { type: String, enum: ['workplan', 'prelievo', 'esame_strumentale', 'badante', 'landing'] },
     riferimentoId: { type: Schema.Types.ObjectId },
     prestazioni: { type: [vocePrestazioneSchema], required: true },
     totale: { type: Number, required: true, default: 0 },

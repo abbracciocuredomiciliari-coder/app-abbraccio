@@ -70,6 +70,7 @@ const GestioneRichieste = lazy(() => import('./pages/GestioneRichieste'));
 const PortalePaziente = lazy(() => import('./pages/PortalePaziente'));
 const RichiestaServizio = lazy(() => import('./pages/RichiestaServizio'));
 const LandingBadante = lazy(() => import('./pages/LandingBadante'));
+const LandingPreventivo = lazy(() => import('./pages/LandingPreventivo'));
 const RichiestaAssistenza = lazy(() => import('./pages/RichiestaAssistenza'));
 const VerbaliEquipe = lazy(() => import('./pages/VerbaliEquipeRiunioni'));
 const SchedaServizio = lazy(() => import('./pages/SchedaServizio'));
@@ -130,7 +131,7 @@ function AppShell() {
   const isActive = (path: string) => location.pathname === path;
   const isFirma = location.pathname.startsWith('/firma-');
   // Landing pubblica campagne: solo calcolatore e modulo, niente menu di login
-  const isLanding = location.pathname === '/badante';
+  const isLanding = location.pathname === '/badante' || location.pathname === '/preventivo';
   const operatore = user && !isPrivilegiato(user.role);
 
   // Chiudi il menu mobile a ogni cambio pagina
@@ -567,6 +568,7 @@ function AppShell() {
           <Route path="/richiesta-servizio" element={<RichiestaServizio />} />
           <Route path="/richiesta-assistenza" element={<RichiestaAssistenza />} />
           <Route path="/badante" element={<LandingBadante />} />
+          <Route path="/preventivo" element={<LandingPreventivo />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/firma-contratto" element={<FirmaContratto />} />

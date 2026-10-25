@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState, FormEvent } from 'react';
 import axios from 'axios';
-import { Calculator, CheckCircle, Send, Euro, FileText, Users, Info } from 'lucide-react';
+import { Calculator, CheckCircle, Send, Euro, FileText, Users, Info, Phone, MessageCircle } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api';
 const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '';
 const CAF_QUOTA = 50; // quota fissa CAF sanitario sulla landing pubblica (non modificabile)
+const TELEFONO = '0601905242';
+const TELEFONO_LABEL = '06 01905242';
+const WHATSAPP = '393514175117';
 
 const CONTRATTI: { value: string; label: string; livelli: string[]; ore: boolean }[] = [
   { value: 'non_convivente', label: 'Non convivente (a ore)', livelli: ['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS'], ore: true },
@@ -225,6 +228,18 @@ export default function LandingBadante() {
   };
   const euro = (n: number) => `€ ${Number(n || 0).toFixed(2)}`;
   const check: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', color: '#475569', fontWeight: 600 };
+  const btnWa: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 16px', borderRadius: '10px', background: '#25d366', color: '#fff', fontWeight: 800, textDecoration: 'none', fontSize: '0.95rem' };
+  const btnTel: React.CSSProperties = { ...btnWa, background: '#1e4d8c' };
+
+  // Testo del preventivo da condividere su WhatsApp (richiesta + eventuale messaggio)
+  const totaleAttuale = sim ? sim.totaleCostoMensile + sim.cafMensile - (escludiTfr ? sim.tfr + sim.tredicesima : 0) : 0;
+  const testoWhatsApp = () => {
+    const intro = nome.trim() ? `Buongiorno, sono ${nome.trim()}.` : 'Buongiorno,';
+    const corpo = sim
+      ? `${intro} ho calcolato questo preventivo sul vostro sito:\n• ${sim.contrattoLabel} — livello ${sim.livelloLabel}, ${sim.oreSettimanali}h/sett\n• Costo mensile famiglia: ${euro(totaleAttuale)}/mese (${escludiTfr ? 'TFR e 13ª esclusi' : 'TFR e 13ª inclusi'}, CAF sanitario ${euro(sim.cafMensile)})\n• Netto lavoratore: ${euro(sim.retribuzioneNetta)}/mese\n\nVorrei sapere se avete disponibilità di una badante nella mia zona e confermare la tariffa, senza impegno.${messaggio.trim() ? `\n\nMessaggio: ${messaggio.trim()}` : ''}`
+      : `${intro} vorrei informazioni sul servizio di intermediazione badanti e colf e un preventivo.${messaggio.trim() ? `\n\nMessaggio: ${messaggio.trim()}` : ''}`;
+    return `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(corpo)}`;
+  };
 
   if (sent) {
     return (
@@ -240,6 +255,10 @@ export default function LandingBadante() {
               Il tuo preventivo di <strong>{euro(sim.totaleCostoMensile + sim.cafMensile - (escludiTfr ? sim.tfr + sim.tredicesima : 0))}/mese</strong> è stato registrato.
             </p>
           )}
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '18px' }}>
+            <a href={testoWhatsApp()} target="_blank" rel="noopener" style={btnWa}><MessageCircle size={18} /> Scrivici su WhatsApp</a>
+            <a href={`tel:${TELEFONO}`} style={btnTel}><Phone size={18} /> Chiama {TELEFONO_LABEL}</a>
+          </div>
         </div>
       </div>
     );
@@ -257,11 +276,15 @@ export default function LandingBadante() {
             <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '1.05rem', lineHeight: 1.1 }}>Abbraccio Cure Domiciliari</div>
             <div style={{ fontSize: '0.75rem', color: '#c2410c', fontWeight: 600 }}>Badanti · Colf · Assistenti Familiari</div>
           </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', background: '#f6f9ff', border: '1px solid #dfe9fb', borderRadius: '10px', padding: '6px 12px' }}>
-            <span style={{ fontSize: '0.66rem', color: '#64748b', lineHeight: 1.25, textAlign: 'right' }}>
-              in collaborazione con<br /><strong style={{ color: '#1e40af', fontSize: '0.7rem' }}>Salus Group</strong>
-            </span>
-            <img src="/images/logo-salus.png" alt="Salus Group" style={{ height: '34px', width: 'auto', display: 'block' }} />
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <a href={`tel:${TELEFONO}`} style={{ ...btnTel, padding: '8px 12px', fontSize: '0.82rem' }}><Phone size={15} /> <span className="landing-hide-mobile">{TELEFONO_LABEL}</span></a>
+            <a href={testoWhatsApp()} target="_blank" rel="noopener" style={{ ...btnWa, padding: '8px 12px', fontSize: '0.82rem' }}><MessageCircle size={15} /> <span className="landing-hide-mobile">WhatsApp</span></a>
+            <div className="landing-hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f6f9ff', border: '1px solid #dfe9fb', borderRadius: '10px', padding: '6px 12px' }}>
+              <span style={{ fontSize: '0.66rem', color: '#64748b', lineHeight: 1.25, textAlign: 'right' }}>
+                in collaborazione con<br /><strong style={{ color: '#1e40af', fontSize: '0.7rem' }}>Salus Group</strong>
+              </span>
+              <img src="/images/logo-salus.png" alt="Salus Group" style={{ height: '34px', width: 'auto', display: 'block' }} />
+            </div>
           </div>
         </div>
       </header>
@@ -450,6 +473,10 @@ export default function LandingBadante() {
                 <p style={{ fontSize: '0.75rem', color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '9px 11px', marginTop: '12px', lineHeight: 1.5 }}>
                   ⚠️ <strong>Tariffe indicative.</strong> L'importo può subire variazioni in base alle condizioni domiciliari e assistenziali specifiche: la tariffa definitiva viene confermata dopo il colloquio conoscitivo, senza impegno.
                 </p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '12px' }}>
+                  <a href={testoWhatsApp()} target="_blank" rel="noopener" style={btnWa}><MessageCircle size={17} /> Invia su WhatsApp</a>
+                  <a href={`tel:${TELEFONO}`} style={btnTel}><Phone size={17} /> Telefona</a>
+                </div>
               </>
             )}
             {!sim && !previewLoading && !previewError && (
@@ -474,7 +501,7 @@ export default function LandingBadante() {
             <strong>Siamo a tua disposizione.</strong> Compila il modulo: verifichiamo la disponibilità di una lavoratrice o un lavoratore nella tua zona e ti confermiamo la tariffa calcolata — <strong>senza impegno</strong>.
           </p>
           <p style={{ color: '#64748b', fontSize: '0.82rem', margin: '0 0 18px' }}>
-            Inviando il modulo registreremo il tuo preventivo e ti ricontatteremo noi.
+            Inviando il modulo registreremo il tuo preventivo e ti ricontatteremo noi. Preferisci parlare subito? <a href={`tel:${TELEFONO}`} style={{ color: '#1e4d8c', fontWeight: 700 }}>Chiama {TELEFONO_LABEL}</a> o <a href={testoWhatsApp()} target="_blank" rel="noopener" style={{ color: '#16a34a', fontWeight: 700 }}>scrivici su WhatsApp</a>.
           </p>
           <form onSubmit={inviaRichiesta}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '14px' }}>
@@ -504,6 +531,10 @@ export default function LandingBadante() {
               }}>
               <Euro size={18} /> {sending ? 'Invio in corso...' : 'Invia richiesta con il tuo preventivo'}
             </button>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px' }}>
+              <a href={testoWhatsApp()} target="_blank" rel="noopener" style={btnWa}><MessageCircle size={17} /> Invia su WhatsApp</a>
+              <a href={`tel:${TELEFONO}`} style={btnTel}><Phone size={17} /> Telefona {TELEFONO_LABEL}</a>
+            </div>
           </form>
         </div>
 
@@ -511,6 +542,7 @@ export default function LandingBadante() {
           Abbraccio Cure Domiciliari · Via di S. Maria Ausiliatrice 4/B, Roma · 06 01905242 · In partnership con <strong>Salus Group</strong> — Divisione Datoriale Casimpresa
         </p>
       </main>
+      <style>{`@media (max-width: 640px) { .landing-hide-mobile { display: none !important; } }`}</style>
     </div>
   );
 }

@@ -16,7 +16,7 @@ const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
 // ─── Numerazione progressiva per tipo + anno ───────────────────────────────────
 // Le fatture dell'area Intermediazioni usano una serie dedicata (FATT-CF),
 // con progressivo autonomo rispetto alla fatturazione generale.
-async function generaNumero(tipo: 'preventivo' | 'fattura', consulenza = false): Promise<string> {
+export async function generaNumero(tipo: 'preventivo' | 'fattura', consulenza = false): Promise<string> {
   const anno = new Date().getFullYear();
   const prefisso = consulenza
     ? (tipo === 'preventivo' ? 'PREV-CF' : 'FATT-CF')

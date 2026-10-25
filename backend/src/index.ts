@@ -51,6 +51,7 @@ import tariffarioRouter, { seedTariffarioSeVuoto, migraEsamiStrumentaliTariffari
 import fatturazioneDocumentiRouter from './routes/fatturazioneDocumenti';
 import badantiIntermediazioneRouter from './routes/badantiIntermediazione';
 import landingBadanteRouter from './routes/landingBadante';
+import landingPreventivoRouter from './routes/landingPreventivo';
 import ritenuteAccontoRouter from './routes/ritenuteAcconto';
 import shopRouter, { seedShopAdmin } from './routes/shop';
 
@@ -203,6 +204,7 @@ app.use('/api/tariffario', tariffarioRouter);
 app.use('/api/fatturazione-documenti', fatturazioneDocumentiRouter);
 app.use('/api/badanti-intermediazione', badantiIntermediazioneRouter);
 app.use('/api/landing-badante', landingBadanteRouter);
+app.use('/api/landing-preventivo', landingPreventivoRouter);
 app.use('/api/ritenute-acconto', ritenuteAccontoRouter);
 // Shop Abbraccio: pubblico (prodotti/ordini/recensioni) + admin shop con JWT separato
 app.use('/api/shop', shopRouter);
