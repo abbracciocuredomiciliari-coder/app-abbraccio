@@ -27,6 +27,7 @@ import {
   Pencil,
   MapPin,
   User,
+  Calculator,
 } from 'lucide-react';
 import FirmaCanvas from '../components/FirmaCanvas';
 import { ChatWidget } from '../components/ChatWidget';
@@ -40,6 +41,7 @@ import { Modal } from '../components/ui/Modal';
 import { Loading } from '../components/ui/Loading';
 import { Dropdown } from '../components/ui/Dropdown';
 import MappaZona from '../components/MappaZona';
+import CalcolatorePreventivoListino, { RisultatoCalcolatore } from '../components/CalcolatorePreventivoListino';
 
 // Assicura che API_BASE_URL termini sempre con /api
 const _rawBasePatients = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
@@ -140,9 +142,10 @@ function Patients() {
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [preventivoRapidoPaziente, setPreventivoRapidoPaziente] = useState<Patient | null>(null);
-  const [preventivoRapidoRighe, setPreventivoRapidoRighe] = useState<{ descrizione: string; quantita: number; prezzoUnitario: number; aliquotaIva: number; tariffarioId: string }[]>([
+  const [preventivoRapidoRighe, setPreventivoRapidoRighe] = useState<{ descrizione: string; quantita: number; prezzoUnitario: number; aliquotaIva: number; tariffarioId: string; tipo?: string }[]>([
     { descrizione: '', quantita: 1, prezzoUnitario: 0, aliquotaIva: 0, tariffarioId: '' },
   ]);
+  const [preventivoRapidoCalc, setPreventivoRapidoCalc] = useState(false);
   const [preventivoRapidoData, setPreventivoRapidoData] = useState('');
   const [preventivoRapidoNote, setPreventivoRapidoNote] = useState('');
   const [preventivoRapidoCF, setPreventivoRapidoCF] = useState('');
@@ -415,6 +418,7 @@ function Patients() {
   const apriPreventivoRapido = async (patient: Patient) => {
     setPreventivoRapidoPaziente(patient);
     setPreventivoRapidoRighe([{ descrizione: '', quantita: 1, prezzoUnitario: 0, aliquotaIva: 0, tariffarioId: '' }]);
+    setPreventivoRapidoCalc(false);
     setPreventivoRapidoData(new Date().toISOString().split('T')[0]);
     setPreventivoRapidoNote('');
     setPreventivoRapidoCF(patient.codiceFiscale || '');
@@ -429,8 +433,22 @@ function Patients() {
 
   const chiudiPreventivoRapido = () => {
     setPreventivoRapidoPaziente(null);
+    setPreventivoRapidoCalc(false);
     setPreventivoRapidoError('');
     setPreventivoRapidoLoading(false);
+  };
+
+  // Il calcolatore dal listino (stessa UI della landing pubblica) riempie le righe
+  const applicaCalcolatorePreventivoRapido = (r: RisultatoCalcolatore) => {
+    setPreventivoRapidoRighe(r.prestazioni.map(p => ({
+      descrizione: p.descrizione,
+      quantita: p.quantita,
+      prezzoUnitario: p.prezzoUnitario,
+      aliquotaIva: p.aliquotaIva ?? 0,
+      tariffarioId: '',
+      tipo: p.tipo,
+    })));
+    setPreventivoRapidoCalc(false);
   };
 
   const aggiornaRigaPreventivoRapido = (i: number, field: 'descrizione' | 'quantita' | 'prezzoUnitario' | 'aliquotaIva', value: string | number) => {
@@ -460,7 +478,7 @@ function Patients() {
   const generaPreventivoRapido = async (e: FormEvent) => {
     e.preventDefault();
     if (!preventivoRapidoPaziente) return;
-    const righeValide = preventivoRapidoRighe.filter(r => r.descrizione.trim() && (Number(r.prezzoUnitario) || 0) > 0);
+    const righeValide = preventivoRapidoRighe.filter(r => r.descrizione.trim() && (Number(r.prezzoUnitario) || 0) !== 0);
     if (righeValide.length === 0) {
       setPreventivoRapidoError('Inserisci almeno una prestazione con descrizione e importo.');
       return;
@@ -484,6 +502,7 @@ function Patients() {
           quantita: Number(r.quantita) || 1,
           prezzoUnitario: Number(r.prezzoUnitario) || 0,
           aliquotaIva: Number(r.aliquotaIva) || 0,
+          tipo: r.tipo || undefined,
         })),
       });
       setSuccess('✅ Preventivo generato! Lo trovi in Gestione Fatturazione.');
@@ -1399,6 +1418,16 @@ function Patients() {
                     >
                       <UserPlus size={16} />
                       Riattiva
+                    </button>
+                  )}
+                  {!patient.inAccettazione && !patient.terminato && !isConsulenza && (user?.role === 'admin' || user?.role === 'coordinator') && (
+                    <button
+                      onClick={() => apriPreventivoRapido(patient)}
+                      className="tw-bg-blue-700 tw-text-white tw-whitespace-nowrap"
+                      title="Genera un preventivo per questo paziente, anche con il calcolatore dal listino"
+                    >
+                      <Calculator size={16} />
+                      Preventivo
                     </button>
                   )}
                   {patient.inAccettazione && !patient.terminato && (user?.role === 'admin' || user?.role === 'coordinator') && (
@@ -2470,7 +2499,7 @@ function Patients() {
       {/* ═══ MODAL PREVENTIVO RAPIDO (senza piano di lavoro) ═══ */}
       {preventivoRapidoPaziente && (
         <div className="tw-fixed tw-inset-0 tw-z-50 tw-bg-black/60 tw-flex tw-items-start tw-justify-center tw-p-4 tw-overflow-y-auto" onClick={chiudiPreventivoRapido}>
-          <div className="tw-bg-white tw-rounded-2xl tw-shadow-2xl tw-w-full tw-max-w-[640px] tw-my-10 tw-p-6" onClick={e => e.stopPropagation()}>
+          <div className={`tw-bg-white tw-rounded-2xl tw-shadow-2xl tw-w-full ${preventivoRapidoCalc ? 'tw-max-w-[920px]' : 'tw-max-w-[640px]'} tw-my-10 tw-p-6`} onClick={e => e.stopPropagation()}>
             <h3 className="tw-m-0 tw-mb-1 tw-text-brand tw-text-lg tw-font-bold">
               📄 Nuovo preventivo
             </h3>
@@ -2499,6 +2528,26 @@ function Patients() {
                   />
                 </div>
               </div>
+
+              {/* Calcolatore dal listino (stessa UI della landing pubblica /preventivo) */}
+              <button
+                type="button"
+                onClick={() => setPreventivoRapidoCalc(o => !o)}
+                className="tw-w-full tw-mb-4 tw-py-2.5 tw-rounded-lg tw-font-bold tw-border-0 tw-flex tw-items-center tw-justify-center tw-gap-2 tw-cursor-pointer"
+                style={{ background: preventivoRapidoCalc ? '#dbeafe' : 'linear-gradient(135deg,#1e3a8a,#1e4d8c)', color: preventivoRapidoCalc ? '#1e3a8a' : '#fff' }}
+              >
+                <Calculator size={17} />
+                {preventivoRapidoCalc ? 'Chiudi il calcolatore' : '🧮 Apri il calcolatore dal listino'}
+              </button>
+              {preventivoRapidoCalc && (
+                <div className="tw-mb-4">
+                  <CalcolatorePreventivoListino
+                    onConferma={applicaCalcolatorePreventivoRapido}
+                    onChiudi={() => setPreventivoRapidoCalc(false)}
+                    labelConferma="Usa questo preventivo nelle righe"
+                  />
+                </div>
+              )}
 
               <div className="tw-mb-4">
                 <label className="tw-block tw-text-sm tw-font-semibold tw-mb-2">Prestazioni</label>

@@ -9,7 +9,7 @@ import ContrattoPaziente from '../models/ContrattoPaziente';
 import Staff from '../models/Staff';
 import { authenticateToken } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
-import { inviaEmailNuovaRichiestaPrenotazione, inviaEmailConfermaPrenotazione } from '../utils/email';
+import { inviaEmailNuovaRichiestaPrenotazione, inviaEmailConfermaPrenotazione, inviaEmailConfermaRichiesta } from '../utils/email';
 
 const router = Router();
 
@@ -80,6 +80,28 @@ router.post('/pubblica', async (req: Request, res: Response) => {
       await notificaAdminNuovaRichiesta(richiesta);
     } catch (emailError) {
       console.error('Errore invio notifica email:', emailError);
+    }
+
+    // Conferma ricezione al richiedente (non blocca se fallisce)
+    if (richiedenteEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(richiedenteEmail))) {
+      const labelServizio: Record<string, string> = {
+        prelievo: 'Prelievo', esame_strumentale: 'Esame strumentale', prestazione: 'Prestazione sanitaria',
+        psicologia: 'Terapia psicologica', assistenza: 'Assistenza domiciliare', medico: 'Visita medica',
+        visita_specialistica: 'Visita specialistica', riabilitazione: 'Riabilitazione', ambulanza: 'Servizio ambulanza',
+        intermediazione: 'Badante / Colf / Assistente familiare', telemedicina: 'Telemedicina',
+      };
+      inviaEmailConfermaRichiesta({
+        to: String(richiedenteEmail).trim().toLowerCase(),
+        nome: String(richiedenteNome).trim(),
+        oggettoRichiesta: 'richiesta di assistenza / prestazione a domicilio',
+        dettagli: [
+          { label: 'Servizio', valore: labelServizio[tipoServizio] || String(tipoServizio) },
+          ...(tipoSpecifico ? [{ label: 'Tipo', valore: String(tipoSpecifico) }] : []),
+          { label: 'Paziente', valore: String(pazienteNome) },
+          { label: 'Data preferita', valore: new Date(dataPreferita).toLocaleDateString('it-IT') + (orarioPreferito ? ` ore ${orarioPreferito}` : '') },
+        ],
+        note: 'Il nostro staff verificherà la disponibilità e ti contatterà per confermare l\'appuntamento.',
+      }).catch(e => console.warn('⚠️ Errore conferma richiesta pubblica:', e?.message || e));
     }
 
     return res.status(201).json({ message: 'Richiesta inviata con successo', id: richiesta._id });

@@ -130,8 +130,8 @@ function AppShell() {
 
   const isActive = (path: string) => location.pathname === path;
   const isFirma = location.pathname.startsWith('/firma-');
-  // Landing pubblica campagne: solo calcolatore e modulo, niente menu di login
-  const isLanding = location.pathname === '/badante' || location.pathname === '/preventivo';
+  // Landing pubbliche e link esterni del sito: pagina dedicata senza menu/login
+  const isLanding = ['/badante', '/preventivo', '/register', '/richiesta-servizio', '/richiesta-assistenza'].includes(location.pathname);
   const operatore = user && !isPrivilegiato(user.role);
 
   // Chiudi il menu mobile a ogni cambio pagina

@@ -95,6 +95,42 @@ export async function inviaEmail(options: {
   return invia(options.to, options.subject, options.html, options.attachments, options.from, options.fromEmail);
 }
 
+// ─── Conferma al richiedente — "richiesta ricevuta, in attesa di elaborazione" ─
+export async function inviaEmailConfermaRichiesta(options: {
+  to: string;
+  nome: string;
+  oggettoRichiesta: string;                        // es. "richiesta di prestazione sanitaria"
+  dettagli?: { label: string; valore: string }[];  // riepilogo facoltativo
+  note?: string;                                   // riga extra facoltativa
+}) {
+  const { to, nome, oggettoRichiesta, dettagli, note } = options;
+  if (!to) return false;
+  const righe = (dettagli || [])
+    .map((d, i) => `<tr><td style="padding:7px 10px;background:${i % 2 ? '#fff' : '#f8fafc'};font-weight:bold;width:150px;">${d.label}</td><td style="padding:7px 10px;background:${i % 2 ? '#fff' : '#f8fafc'};">${d.valore}</td></tr>`)
+    .join('');
+  return invia(
+    to,
+    '✅ Abbiamo ricevuto la tua richiesta — Abbraccio Cure Domiciliari',
+    `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+      <div style="text-align:center;border-bottom:2px solid #1e4d8c;padding-bottom:14px;margin-bottom:18px;">
+        <h2 style="color:#1e4d8c;margin:0;font-size:1.25rem;">✅ Richiesta ricevuta</h2>
+        <p style="color:#6b7280;font-size:0.85rem;margin:4px 0 0;">Abbraccio Cure Domiciliari</p>
+      </div>
+      <p>Ciao <strong>${nome}</strong>,</p>
+      <p>confermiamo di aver ricevuto la tua <strong>${oggettoRichiesta}</strong>.</p>
+      <p style="background:#fef3c7;padding:12px;border-radius:6px;border-left:4px solid #f59e0b;">
+        <strong>⏳ In attesa di elaborazione:</strong> la tua richiesta è in coda di lavorazione.
+        Il nostro staff la esaminerà e ti ricontatterà al più presto per l'accettazione e i dettagli.
+      </p>
+      ${righe ? `<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:0.9rem;">${righe}</table>` : ''}
+      ${note ? `<p style="font-size:0.88rem;color:#475569;">${note}</p>` : ''}
+      <p style="font-size:0.85rem;color:#64748b;">Per urgenze puoi chiamarci al <strong>06 01905242</strong> o scriverci su WhatsApp al <strong>351 4175117</strong>.</p>
+      <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0;"/>
+      <p style="margin:0;font-size:12px;color:#888;">Abbraccio Cure Domiciliari — Via di S. Maria Ausiliatrice 4/B, Roma</p>
+    </div>`
+  );
+}
+
 // ─── Notifica admin — nuova registrazione ─────────────────────────────────────
 export async function inviaEmailNotificaAdmin(
   nomeUtente: string,

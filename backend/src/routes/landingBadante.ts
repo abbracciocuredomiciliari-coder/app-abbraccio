@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import BadanteIntermediazione from '../models/BadanteIntermediazione';
 import Patient from '../models/Patient';
 import RichiestaPrenotazione from '../models/RichiestaPrenotazione';
-import { inviaEmail } from '../utils/email';
+import { inviaEmail, inviaEmailConfermaRichiesta } from '../utils/email';
 import { rateLimitByIP } from '../middleware/rateLimit';
 import {
   simulaCostoBadante,
@@ -207,6 +207,21 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
       emailNotifica = true;
     } catch (emailErr) {
       console.error('⚠️ Errore invio notifica landing badante:', emailErr);
+    }
+
+    // 5) Conferma ricezione al richiedente (se ha lasciato l'email)
+    if (emailPulita) {
+      inviaEmailConfermaRichiesta({
+        to: emailPulita,
+        nome: String(nome).trim(),
+        oggettoRichiesta: 'richiesta di preventivo per badante / assistente familiare',
+        dettagli: [
+          { label: 'Contratto', valore: `${sim.contrattoLabel} — ${sim.livelloLabel}` },
+          { label: 'Ore settimanali', valore: `${sim.oreSettimanali} h` },
+          { label: 'Costo mensile stimato', valore: `€${sim.totaleCostoMensile.toFixed(2)}` },
+        ],
+        note: 'Verificheremo la disponibilità del personale nella tua zona e ti confermeremo la tariffa calcolata.',
+      }).catch(e => console.warn('⚠️ Errore conferma landing badante:', e?.message || e));
     }
 
     return res.status(201).json({

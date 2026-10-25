@@ -237,16 +237,17 @@ function Register() {
 
   if (success) {
     return (
-      <section>
-        <h2>Registrazione</h2>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#eff6ff,#ffffff 55%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
         <div style={{
-          background: 'rgba(5,150,105,0.08)',
+          background: '#fff',
           border: '2px solid #059669',
-          borderRadius: '10px',
-          padding: '28px 24px',
+          borderRadius: '14px',
+          padding: '32px 28px',
           maxWidth: '480px',
           textAlign: 'center',
+          boxShadow: '0 8px 30px rgba(0,0,0,.08)',
         }}>
+          <img src="/logo.png" alt="Abbraccio Cure Domiciliari" style={{ height: '48px', width: 'auto', display: 'block', margin: '0 auto 14px' }} />
           <div style={{ fontSize: '3rem', marginBottom: '12px' }}>✅</div>
           <h3 style={{ color: '#059669', margin: '0 0 12px' }}>Richiesta inviata con successo!</h3>
           <p style={{ color: '#374151', lineHeight: '1.6', margin: 0 }}>{success}</p>
@@ -254,7 +255,7 @@ function Register() {
             Puoi chiudere questa pagina. Verrai contattato dall'amministratore.
           </p>
         </div>
-      </section>
+      </div>
     );
   }
 
@@ -267,7 +268,18 @@ function Register() {
   ];
 
   return (
-    <section>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#eff6ff,#ffffff 55%)', padding: '0 0 40px' }}>
+      {/* Header pubblico (pagina aperta da link esterno, senza menu) */}
+      <header style={{ background: '#fff', borderBottom: '1px solid #dbeafe', padding: '14px 20px' }}>
+        <div style={{ maxWidth: '680px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <img src="/logo.png" alt="Abbraccio Cure Domiciliari" style={{ height: '44px', width: 'auto', display: 'block' }} />
+          <div>
+            <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '1rem', lineHeight: 1.15 }}>Abbraccio Cure Domiciliari</div>
+            <div style={{ fontSize: '0.75rem', color: '#1e4d8c', fontWeight: 600 }}>Candidatura nuovo operatore</div>
+          </div>
+        </div>
+      </header>
+    <section style={{ marginTop: '20px' }}>
       <h2>Registrazione Operatore</h2>
       <p style={{ color: 'var(--gray-500)', marginBottom: '20px', fontSize: '0.95rem' }}>
         Compila tutti gli step per richiedere l'accesso. I documenti sono facoltativi ma consigliati.
@@ -503,6 +515,7 @@ function Register() {
       </form>
 
     </section>
+    </div>
   );
 }
 

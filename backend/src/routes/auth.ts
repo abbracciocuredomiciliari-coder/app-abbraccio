@@ -11,7 +11,7 @@ import Staff from '../models/Staff';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { getStaffByUser } from '../utils/staffHelper';
-import { inviaEmail, inviaEmailNotificaAdmin, inviaEmailResetPassword } from '../utils/email';
+import { inviaEmail, inviaEmailNotificaAdmin, inviaEmailResetPassword, inviaEmailConfermaRichiesta } from '../utils/email';
 import { compilaTestoContratto, generaPdfContratto } from './contratto';
 
 const router = Router();
@@ -110,6 +110,19 @@ router.post('/register', registerLimiter, async (req: Request, res: Response) =>
       // Invia notifica email all'admin (fire-and-forget, non blocca la risposta)
       inviaEmailNotificaAdmin(user.name, user.email, user.professione || '').catch(emailErr => {
         console.warn('⚠️ Errore invio email notifica admin (registrazione completata comunque):', emailErr?.message || emailErr);
+      });
+      // Conferma al richiedente (fire-and-forget)
+      inviaEmailConfermaRichiesta({
+        to: user.email,
+        nome: user.name,
+        oggettoRichiesta: 'richiesta di registrazione come operatore',
+        dettagli: [
+          { label: 'Profilo', valore: user.professione || 'Operatore' },
+          { label: 'Email account', valore: user.email },
+        ],
+        note: 'Il tuo account sarà attivato dopo l\'approvazione dell\'amministratore: riceverai una comunicazione quando potrai accedere.',
+      }).catch(emailErr => {
+        console.warn('⚠️ Errore invio conferma registrazione:', emailErr?.message || emailErr);
       });
 
       return res.status(201).json({
@@ -238,6 +251,19 @@ router.post('/register-completo', registerLimiter, upload.fields([
     // Invia notifica email all'admin (fire-and-forget, non blocca la risposta)
     inviaEmailNotificaAdmin(user.name, user.email, user.professione || '').catch(emailErr => {
       console.warn('⚠️ Errore invio email notifica admin (registrazione completata comunque):', emailErr?.message || emailErr);
+    });
+    // Conferma al candidato (fire-and-forget)
+    inviaEmailConfermaRichiesta({
+      to: user.email,
+      nome: user.name,
+      oggettoRichiesta: 'richiesta di registrazione come operatore',
+      dettagli: [
+        { label: 'Profilo', valore: user.professione || 'Operatore' },
+        { label: 'Email account', valore: user.email },
+      ],
+      note: 'Il tuo account sarà attivato dopo l\'approvazione dell\'amministratore: riceverai una comunicazione quando potrai accedere.',
+    }).catch(emailErr => {
+      console.warn('⚠️ Errore invio conferma registrazione:', emailErr?.message || emailErr);
     });
 
     return res.status(201).json({

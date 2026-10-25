@@ -2,7 +2,8 @@ import { FormEvent, useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { Syringe, HeartPulse, ClipboardList, Plus, X, ChevronLeft, ChevronRight, Calendar, Clock, User, CheckCircle, Trash2, ChevronDown, ChevronUp, UserCheck, Eye, TestTube2, Bandage, Activity, CalendarDays, Users, Copy, Search, Download, Mail, Pencil, FileText } from 'lucide-react';
+import { Syringe, HeartPulse, ClipboardList, Plus, X, ChevronLeft, ChevronRight, Calendar, Clock, User, CheckCircle, Trash2, ChevronDown, ChevronUp, UserCheck, Eye, TestTube2, Bandage, Activity, CalendarDays, Users, Copy, Search, Download, Mail, Pencil, FileText, Calculator } from 'lucide-react';
+import CalcolatorePreventivoListino, { RisultatoCalcolatore } from '../components/CalcolatorePreventivoListino';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function getDaysInMonth(y: number, m: number) { return new Date(y, m + 1, 0).getDate(); }
 function getFirstDayOfMonth(y: number, m: number) { const d = new Date(y, m, 1).getDay(); return d === 0 ? 6 : d - 1; }
@@ -428,6 +429,8 @@ export default function CentroPrenotazioni() {
     const [docTipo, setDocTipo] = useState<'preventivo' | 'fattura'>('preventivo');
     const [docSaving, setDocSaving] = useState(false);
     const [docCreato, setDocCreato] = useState<any>(null);
+    const [calcPiano, setCalcPiano] = useState<Piano | null>(null);
+    const [calcSaving, setCalcSaving] = useState(false);
     const [emailDoc, setEmailDoc] = useState<any>(null);
     const [emailDestinatario, setEmailDestinatario] = useState('');
     const [emailNome, setEmailNome] = useState('');
@@ -483,6 +486,20 @@ export default function CentroPrenotazioni() {
             setErrPiano(err.response?.data?.message || 'Errore nella rigenerazione del preventivo');
         }
         setRigenerandoDoc(false);
+    };
+    // Calcolatore dal listino: riscrive il preventivo collegato al piano con le voci scelte
+    const applicaCalcolatorePiano = async (r: RisultatoCalcolatore) => {
+        if (!calcPiano) return;
+        setCalcSaving(true);
+        try {
+            await rigeneraPreventivoDoc(calcPiano._id, calcPiano.patient?._id, r.prestazioni.map(p => ({ descrizione: p.descrizione, quantita: p.quantita, prezzoUnitario: p.prezzoUnitario, tipo: p.tipo })), calcPiano.date);
+            setCalcPiano(null);
+            setOkPiano(`✅ Preventivo aggiornato dal calcolatore — totale €${r.totale.toFixed(2)}`);
+            setTimeout(() => setOkPiano(''), 5000);
+        } catch (err: any) {
+            setErrPiano(err.response?.data?.message || 'Errore nell\'aggiornamento del preventivo');
+        }
+        setCalcSaving(false);
     };
     const apriModificaPiano = (w: Piano) => {
         setEditingPiano(w);
@@ -1221,8 +1238,27 @@ export default function CentroPrenotazioni() {
               <button className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border tw-border-slate-200 tw-bg-white tw-cursor-pointer tw-text-slate-700 tw-font-semibold hover:tw-bg-slate-50" onClick={() => setDettaglioPiano(null)}>Chiudi</button>
               <button className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border tw-border-sky-200 tw-bg-sky-50 tw-cursor-pointer tw-text-sky-700 tw-font-semibold hover:tw-bg-sky-100 tw-flex tw-items-center tw-gap-1.5" onClick={() => copiaLink(dettaglioPiano._id)}>{copiedId === dettaglioPiano._id ? <CheckCircle size={14}/> : <Copy size={14}/>} Copia link</button>
               {puoGestire && <button className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border-0 tw-bg-violet-600 hover:tw-bg-violet-700 tw-text-white tw-cursor-pointer tw-font-semibold tw-flex tw-items-center tw-gap-1.5" onClick={rigeneraPreventivoDaDettaglio} disabled={rigenerandoDoc}><FileText size={14}/>{rigenerandoDoc ? '...' : 'Rigenera preventivo'}</button>}
+              {puoGestire && <button className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border-0 tw-bg-blue-800 hover:tw-bg-blue-900 tw-text-white tw-cursor-pointer tw-font-semibold tw-flex tw-items-center tw-gap-1.5" onClick={() => { const w = dettaglioPiano; setDettaglioPiano(null); setCalcPiano(w); }}><Calculator size={14}/> Calcolatore listino</button>}
               {puoGestire && <button className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border-0 tw-bg-amber-500 hover:tw-bg-amber-600 tw-text-white tw-cursor-pointer tw-font-semibold tw-flex tw-items-center tw-gap-1.5" onClick={() => { const w = dettaglioPiano; setDettaglioPiano(null); apriModificaPiano(w); }}><Pencil size={14}/> Modifica piano</button>}
             </div>
+          </div>
+        </div>)}
+
+      {/* ══ MODAL CALCOLATORE PREVENTIVO DAL LISTINO ═════════════════════════ */}
+      {calcPiano && (<div className="modal-overlay tw-fixed tw-inset-0 tw-bg-black/50 tw-backdrop-blur-sm tw-flex tw-items-start tw-justify-center tw-z-[1150] tw-py-8 tw-px-4 tw-overflow-y-auto" onClick={() => !calcSaving && setCalcPiano(null)}>
+          <div className="modal-content tw-max-w-[860px] tw-w-full tw-bg-white tw-rounded-2xl tw-shadow-2xl tw-p-6 tw-max-h-[calc(100vh_-_64px)] tw-overflow-y-auto tw-box-border" onClick={e => e.stopPropagation()}>
+            <div className="tw-flex tw-justify-between tw-items-center tw-mb-4">
+              <h3 className="tw-m-0 tw-text-blue-900 tw-flex tw-items-center tw-gap-2 tw-font-bold tw-text-lg"><Calculator size={20}/>Preventivo da listino — {calcPiano.patient?.firstName} {calcPiano.patient?.lastName}</h3>
+              <button className="tw-bg-transparent tw-border-0 tw-cursor-pointer tw-text-slate-500 hover:tw-text-slate-700" onClick={() => setCalcPiano(null)} disabled={calcSaving}><X size={22}/></button>
+            </div>
+            <p className="tw-text-sm tw-text-slate-500 tw-mb-4">
+              Scegli le prestazioni dal listino come nel calcolatore pubblico: il preventivo collegato all'incarico «{calcPiano.task}» verrà creato o aggiornato con queste voci.
+            </p>
+            <CalcolatorePreventivoListino
+              onConferma={applicaCalcolatorePiano}
+              onChiudi={() => setCalcPiano(null)}
+              labelConferma={calcSaving ? 'Salvataggio...' : 'Salva nel preventivo dell\u2019incarico'}
+            />
           </div>
         </div>)}
 

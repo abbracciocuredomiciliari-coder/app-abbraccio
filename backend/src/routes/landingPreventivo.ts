@@ -3,7 +3,7 @@ import Tariffario from '../models/Tariffario';
 import Patient from '../models/Patient';
 import DocumentoFatturazione from '../models/DocumentoFatturazione';
 import RichiestaPrenotazione, { TipoServizio } from '../models/RichiestaPrenotazione';
-import { inviaEmail } from '../utils/email';
+import { inviaEmail, inviaEmailConfermaRichiesta } from '../utils/email';
 import { rateLimitByIP } from '../middleware/rateLimit';
 import { generaNumero } from './fatturazioneDocumenti';
 
@@ -307,6 +307,22 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
       emailNotifica = true;
     } catch (emailErr) {
       console.error('⚠️ Errore invio notifica landing preventivo:', emailErr);
+    }
+
+    // 5) Conferma ricezione al richiedente (se ha lasciato l'email)
+    if (emailPulita) {
+      inviaEmailConfermaRichiesta({
+        to: emailPulita,
+        nome: String(nome).trim(),
+        oggettoRichiesta: 'richiesta di preventivo per prestazioni a domicilio',
+        dettagli: [
+          { label: 'Preventivo', valore: numero },
+          { label: 'Prestazioni', valore: String(righe!.length) },
+          ...(totali.scontoApplicato ? [{ label: 'Sconto più servizi', valore: `-${totali.scontoPerc}% (-€${totali.sconto.toFixed(2)})` }] : []),
+          { label: 'Totale stimato', valore: `€${tot.toFixed(2)}` },
+        ],
+        note: 'Il preventivo è registrato nel nostro sistema: ti ricontatteremo per confermare disponibilità e tariffa nella tua zona.',
+      }).catch(e => console.warn('⚠️ Errore conferma landing preventivo:', e?.message || e));
     }
 
     return res.status(201).json({
