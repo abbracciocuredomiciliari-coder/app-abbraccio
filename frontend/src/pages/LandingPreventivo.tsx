@@ -14,6 +14,31 @@ interface Riga { voceId: string; categoria: string; descrizione: string; unitaMi
 interface Preventivo { righe: Riga[]; subtotale: number; scontoPerc: number; sconto: number; totale: number; scontoApplicato: boolean; minServiziPerSconto: number }
 const SCONTO_PERC = 5; // sconto "più servizi": allineato al server
 
+// Preselezione da link del sito (?servizio=<slug pagina>): categoria da aprire
+// e, se univoca, la voce di listino da aggiungere gia' al preventivo.
+// `voce` e' una regex sul nome della voce, cosi' regge piccoli rinomini del listino.
+const PRESELEZIONE: Record<string, { cat: string; voce?: RegExp; label: string }> = {
+  'holter-pressorio':         { cat: 'prestazioni_infermieristiche', voce: /holter\s*pressorio/i, label: 'Holter pressorio' },
+  'holter-ecg':               { cat: 'prestazioni_infermieristiche', voce: /holter\s*(cardiaco|ecg)/i, label: 'Holter ECG' },
+  'apnee-sonno':              { cat: 'prestazioni_infermieristiche', voce: /polisonn/i, label: 'Polisonnografia (apnee del sonno)' },
+  'screening-cardiaci':       { cat: 'prestazioni_infermieristiche', voce: /^ecg$/i, label: 'ECG' },
+  'saturimetria-spirometria': { cat: 'prestazioni_infermieristiche', voce: /spirometria/i, label: 'Spirometria' },
+  'emogasanalisi':            { cat: 'prestazioni_infermieristiche', voce: /emogas/i, label: 'Emogasanalisi' },
+  'prelievi-ematici':         { cat: 'prelievi', voce: /prelievo\s*ematico/i, label: 'Prelievo ematico' },
+  'rx-domiciliare':           { cat: 'radiologia', label: 'Radiologia a domicilio' },
+  'ecografia-domiciliare':    { cat: 'ecografia', label: 'Ecografia a domicilio' },
+  'esami-strumentali':        { cat: 'prestazioni_infermieristiche', label: 'Esami strumentali' },
+  'infermiere-a-domicilio':   { cat: 'prestazioni_infermieristiche', label: 'Assistenza infermieristica' },
+  'cure-pazienti-cronici':    { cat: 'prestazioni_infermieristiche', label: 'Cure pazienti cronici' },
+  'cure-palliative':          { cat: 'prestazioni_infermieristiche', label: 'Cure palliative' },
+  'fisioterapia-a-domicilio': { cat: 'riabilitazione', voce: /fisioterap/i, label: 'Fisioterapia' },
+  'assistenza-anziani':       { cat: 'assistenza_domiciliare', voce: /assistenza\s*oss/i, label: 'Assistenza OSS' },
+  'assistenza-notturna':      { cat: 'assistenza_domiciliare', voce: /^assistenza\s*notturna/i, label: 'Assistenza notturna' },
+  'servizio-ambulanza':       { cat: 'trasporto', label: 'Trasporto in ambulanza' },
+  'visite-specialistiche':    { cat: 'visite_mediche', label: 'Visite specialistiche' },
+  'psicologia-a-domicilio':   { cat: 'visite_mediche', voce: /psicolog/i, label: 'Colloquio psicologico' },
+};
+
 declare global {
   interface Window { fbq?: (...args: any[]) => void; }
 }
@@ -49,6 +74,7 @@ export default function LandingPreventivo() {
   const [listinoErr, setListinoErr] = useState('');
   const [categoriaAttiva, setCategoriaAttiva] = useState('');
   const [selezione, setSelezione] = useState<Record<string, number>>({}); // voceId -> quantita
+  const [preselezione, setPreselezione] = useState<{ label: string; voceNome?: string } | null>(null);
   const [showLegenda, setShowLegenda] = useState(false);
 
   const [prev, setPrev] = useState<Preventivo | null>(null);
@@ -72,7 +98,20 @@ export default function LandingPreventivo() {
       .then(res => {
         const cats: CategoriaListino[] = res.data?.categorie || [];
         setCategorie(cats);
-        if (cats.length > 0) setCategoriaAttiva(cats[0].key);
+        if (cats.length === 0) return;
+        // Arrivo da una pagina servizio del sito: apri la categoria giusta e,
+        // se la voce e' univoca, aggiungila gia' al preventivo (quantita' 1).
+        const slug = new URLSearchParams(window.location.search).get('servizio') || '';
+        const pre = PRESELEZIONE[slug];
+        const cat = pre ? cats.find(c => c.key === pre.cat) : undefined;
+        if (pre && cat) {
+          setCategoriaAttiva(cat.key);
+          const voce = pre.voce ? cat.voci.find(v => pre.voce!.test(v.nome)) : undefined;
+          if (voce) setSelezione({ [voce.id]: 1 });
+          setPreselezione({ label: pre.label, voceNome: voce?.nome });
+        } else {
+          setCategoriaAttiva(cats[0].key);
+        }
       })
       .catch(() => setListinoErr('Listino non disponibile al momento. Riprova tra poco o chiamaci.'));
   }, []);
@@ -251,6 +290,17 @@ export default function LandingPreventivo() {
               </div>
             </div>
             <div style={{ display: 'grid', gap: '14px', padding: '22px 24px 24px' }}>
+              {preselezione && (
+                <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '10px', padding: '10px 12px', fontSize: '0.82rem', color: '#065f46', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                  <Stethoscope size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <span>
+                    Stai calcolando il preventivo per <strong>{preselezione.label}</strong>.
+                    {preselezione.voceNome
+                      ? <> La prestazione <strong>«{preselezione.voceNome}»</strong> è già nel preventivo: regola la quantità o aggiungi altri servizi (sconto {SCONTO_PERC}% dal secondo).</>
+                      : <> Scegli qui sotto la prestazione specifica dal listino.</>}
+                  </span>
+                </div>
+              )}
               {listinoErr && <p style={{ color: '#dc2626', fontSize: '0.88rem', margin: 0 }}>{listinoErr}</p>}
               {!listinoErr && categorie.length === 0 && <p style={{ color: '#94a3b8', fontSize: '0.88rem', margin: 0 }}>⏳ Caricamento listino...</p>}
 
