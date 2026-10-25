@@ -204,7 +204,17 @@ interface VoceTariffario {
     attivo: boolean;
     isEsameStrumentale?: boolean;
 }
-const CATEGORIE_TARIFFARIO_LABEL: Record<string, string> = { prestazioni_infermieristiche: '💉 Infermieristiche', assistenza_trasporto: '🚑 Assistenza/Trasporto', radiologia: '🩻 Radiologia', ecografia: '🔊 Ecografie' };
+const CATEGORIE_TARIFFARIO_LABEL: Record<string, string> = {
+    prestazioni_infermieristiche: '💉 Prestazioni Infermieristiche',
+    esami_strumentali: '📟 Esami Strumentali',
+    assistenza_domiciliare: '🏠 Assistenza Domiciliare (OSS)',
+    visite_mediche: '🩺 Visite Mediche',
+    prelievi: '🩸 Prelievi',
+    riabilitazione: '🤸 Riabilitazione',
+    ecografia: '🔊 Ecografie / Ecocolordoppler',
+    radiologia: '🩻 Radiologia (RX)',
+    trasporto: '🚑 Trasporto',
+};
 // ─── Mini-Calendario ──────────────────────────────────────────────────────────
 function Cal({ anno, mese, sel, onDay, onPrev, onNext, dots }: {
     anno: number;
@@ -1160,8 +1170,8 @@ export default function CentroPrenotazioni() {
                     }
                 }}>
                       <option value="">— Seleziona dal listino (opzionale) —</option>
-                      {(['prestazioni_infermieristiche', 'assistenza_trasporto', 'radiologia', 'ecografia'] as const).map(cat => {
-                    const voci = tariffario.filter(v => v.categoria === cat && !v.isEsameStrumentale);
+                      {Object.keys(CATEGORIE_TARIFFARIO_LABEL).map(cat => {
+                    const voci = tariffario.filter(v => v.categoria === cat);
                     if (voci.length === 0)
                         return null;
                     return (<optgroup key={cat} label={CATEGORIE_TARIFFARIO_LABEL[cat]}>

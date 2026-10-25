@@ -115,6 +115,7 @@ export default function LandingBadante() {
   const [sendError, setSendError] = useState('');
 
   const utmRef = useRef<Record<string, string>>({});
+  const formRef = useRef<HTMLDivElement | null>(null);
 
   const contratto = CONTRATTI.find(c => c.value === contrattoTipo) || CONTRATTI[0];
   const livelliDisponibili = contratto.livelli;
@@ -153,6 +154,10 @@ export default function LandingBadante() {
       } catch { /* ignorato */ }
     }
     tracciaPixel('PageView');
+    // Link diretto al modulo contatti (?modulo=1): scroll alla sezione richiesta
+    if (params.get('modulo')) {
+      setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400);
+    }
   }, []);
 
   const simBody = () => ({
@@ -493,7 +498,7 @@ export default function LandingBadante() {
         </div>
 
         {/* Modulo richiesta */}
-        <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #ffedd5', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: '26px', marginTop: '24px' }}>
+        <div ref={formRef} style={{ background: '#fff', borderRadius: '16px', border: '1px solid #ffedd5', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: '26px', marginTop: '24px' }}>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem', color: '#1e293b', margin: '0 0 6px' }}>
             <Send size={20} color="#c2410c" /> Richiedi appuntamento o maggiori informazioni
           </h2>
