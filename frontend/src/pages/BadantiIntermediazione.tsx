@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { Users, FileText, Mail, Trash2, Receipt, Check, X, User, Briefcase, Euro, Download, Settings, Eye } from 'lucide-react';
+import { Users, FileText, Mail, Trash2, Receipt, Check, X, User, Briefcase, Euro, Download, Settings, Eye, MessageCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 interface Patient {
@@ -389,6 +389,30 @@ export default function BadantiIntermediazione() {
     } finally {
       setSimPdfLoading(false);
     }
+  }
+
+  // Condivide su WhatsApp il riepilogo del preventivo simulato.
+  // wa.me non può allegare file: il testo riporta i dati chiave e rimanda al PDF.
+  function inviaWhatsAppPreventivo() {
+    if (!simRisultato) return;
+    const tel = window.prompt('Numero WhatsApp del destinatario (lascia vuoto per scegliere il contatto in WhatsApp)', '');
+    if (tel === null) return;
+    const euro = (n: number) => `€ ${n.toFixed(2)}`;
+    const caf = Number(simCaf) >= 0 ? Number(simCaf) : 0;
+    const totaleFamiglia = simRisultato.totaleCostoMensile + caf - (simEscludiTfr ? simRisultato.tfr + simRisultato.tredicesima : 0);
+    const testo = [
+      '🧾 Preventivo assistente familiare — Abbraccio Cure Domiciliari',
+      ...(simIntestatario.trim() ? [`Intestatario: ${simIntestatario.trim()}`] : []),
+      '',
+      `• ${simRisultato.contrattoLabel} — livello ${simRisultato.livelloLabel}, ${simRisultato.oreSettimanali}h/sett`,
+      `• Costo mensile famiglia: ${euro(totaleFamiglia)}/mese (${simEscludiTfr ? 'TFR e 13ª esclusi' : 'TFR e 13ª inclusi'}, CAF sanitario ${euro(caf)})`,
+      `• Netto lavoratore: ${euro(simRisultato.retribuzioneNetta)}/mese`,
+      '',
+      'Stima basata su CCNL lavoro domestico e contributi INPS 2026. Il preventivo completo in PDF viene inviato a parte.',
+    ].join('\n');
+    const numero = tel.replace(/[^\d]/g, '');
+    const wa = numero ? `https://wa.me/${numero.startsWith('39') ? numero : `39${numero}`}` : 'https://wa.me/';
+    window.open(`${wa}?text=${encodeURIComponent(testo)}`, '_blank');
   }
 
   // Invia SOLO il PDF del preventivo simulato via email (senza creare contratto)
@@ -826,6 +850,9 @@ export default function BadantiIntermediazione() {
                   </Button>
                   <Button variant="secondary" onClick={inviaPdfPreventivo} disabled={simPdfLoading} className="tw-flex tw-items-center tw-gap-2">
                     <Mail size={18} /> {simPdfLoading ? 'Invio...' : 'Invia PDF via email'}
+                  </Button>
+                  <Button variant="secondary" onClick={inviaWhatsAppPreventivo} className="tw-flex tw-items-center tw-gap-2" style={{ backgroundColor: '#25d366', color: '#fff', border: 'none' }}>
+                    <MessageCircle size={18} /> Invia su WhatsApp
                   </Button>
                 </>
               )}
