@@ -22,7 +22,7 @@ const CATEGORIE: { value: VoceTariffario['categoria']; label: string; color: str
   { value: 'prestazioni_infermieristiche', label: '💉 Prestazioni Infermieristiche', color: '#0369a1' },
   { value: 'esami_strumentali', label: '📟 Esami Strumentali', color: '#0f766e' },
   { value: 'prelievi', label: '🩸 Prelievi', color: '#be123c' },
-  { value: 'assistenza_domiciliare', label: '🏠 Assistenza Domiciliare', color: '#7c3aed' },
+  { value: 'assistenza_domiciliare', label: '🏠 Assistenza OSS', color: '#7c3aed' },
   { value: 'trasporto', label: '🚑 Trasporto', color: '#ea580c' },
   { value: 'radiologia', label: '🩻 Radiologia (RX)', color: '#b45309' },
   { value: 'ecografia', label: '🔊 Ecografie / Ecocolordoppler', color: '#059669' },

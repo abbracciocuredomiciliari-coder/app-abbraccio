@@ -23,7 +23,7 @@ const esc = (s: any) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&l
 export const CATEGORIE_LISTINO: Record<string, { label: string; descrizione: string; ordine: number }> = {
   prestazioni_infermieristiche: { label: 'Prestazioni infermieristiche', descrizione: 'Accessi infermieristici a domicilio: medicazioni, iniezioni, cateteri, flebo, anche assistenza infermieristica a ore e notturna.', ordine: 1 },
   esami_strumentali: { label: 'Esami strumentali', descrizione: 'ECG, emogasanalisi (EGA), holter pressorio e cardiaco, polisonnigrafia e spirometria a domicilio con referto.', ordine: 2 },
-  assistenza_domiciliare: { label: 'Assistenza domiciliare (OSS)', descrizione: 'Assistenza alla persona a ore: OSS, igiene personale, bagno a letto e assistenza notturna.', ordine: 3 },
+  assistenza_domiciliare: { label: 'Assistenza OSS', descrizione: 'Assistenza alla persona a ore: OSS, igiene personale, bagno a letto e assistenza notturna.', ordine: 3 },
   visite_mediche: { label: 'Visite mediche specialistiche', descrizione: 'Visita dello specialista direttamente a casa del paziente.', ordine: 4 },
   prelievi: { label: 'Prelievi', descrizione: 'Prelievo ematico e raccolta campioni a domicilio con consegna al laboratorio.', ordine: 5 },
   riabilitazione: { label: 'Riabilitazione', descrizione: 'Fisioterapia, logopedia e terapie riabilitative a domicilio, a ora.', ordine: 6 },

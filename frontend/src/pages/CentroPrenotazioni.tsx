@@ -207,7 +207,7 @@ interface VoceTariffario {
 const CATEGORIE_TARIFFARIO_LABEL: Record<string, string> = {
     prestazioni_infermieristiche: '💉 Prestazioni Infermieristiche',
     esami_strumentali: '📟 Esami Strumentali',
-    assistenza_domiciliare: '🏠 Assistenza Domiciliare (OSS)',
+    assistenza_domiciliare: '🏠 Assistenza OSS',
     visite_mediche: '🩺 Visite Mediche',
     prelievi: '🩸 Prelievi',
     riabilitazione: '🤸 Riabilitazione',

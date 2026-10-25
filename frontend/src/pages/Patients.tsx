@@ -156,7 +156,7 @@ function Patients() {
     prestazioni_infermieristiche: '💉 Prestazioni Infermieristiche',
     esami_strumentali: '📟 Esami Strumentali',
     prelievi: '🩸 Prelievi',
-    assistenza_domiciliare: '🏠 Assistenza Domiciliare',
+    assistenza_domiciliare: '🏠 Assistenza OSS',
     trasporto: '🚑 Trasporto',
     radiologia: '🩻 Radiologia (RX)',
     ecografia: '🔊 Ecografie / Ecocolordoppler',
