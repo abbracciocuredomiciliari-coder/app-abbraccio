@@ -9,11 +9,12 @@ const router = Router();
 
 const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
 
-const NOMI_ESAMI_STRUMENTALI = ['ECG', 'Holter cardiaco', 'Holter pressorio', 'Spirometria', 'Polisonnigrafo', 'Polisonnografia'];
+const NOMI_ESAMI_STRUMENTALI = ['ECG', 'Holter cardiaco', 'Holter pressorio', 'Spirometria', 'Polisonnigrafo', 'Polisonnografia', 'Elettroencefalogramma', 'EGA', 'Emogasanalisi', 'Emogasanalisi arteriosa', 'Emogasanalisi arteriosa (EGA)'];
 
 function calcolaIsEsameStrumentale(categoria: string, nome: string): boolean {
   return categoria === 'radiologia' ||
     categoria === 'ecografia' ||
+    categoria === 'esami_strumentali' ||
     NOMI_ESAMI_STRUMENTALI.includes(nome.trim());
 }
 
@@ -59,7 +60,7 @@ export async function migraEsamiStrumentaliTariffario() {
   }
 }
 
-const NOMI_ASSISTENZA_TRASPORTO = ['Bagno a letto', 'Assistenza OSS', 'Assistenza notturna (notte h21–h07)', 'Assistenza infermieristica', 'Assistenza infermieristica notturna (h21–h07)'];
+const NOMI_ASSISTENZA_TRASPORTO = ['Bagno a letto', 'Assistenza OSS', 'Assistenza notturna (notte h21–h07)'];
 const VOCI_ASSISTENZA_SEED = TARIFFARIO_SEED.filter(v => v.categoria === 'assistenza_domiciliare' && NOMI_ASSISTENZA_TRASPORTO.includes(v.nome));
 
 export async function migraVociAssistenzaTariffario() {
@@ -115,7 +116,8 @@ export async function seedVociTariffarioMancanti() {
 // Storicamente "assistenza_trasporto" mischiava assistenza oraria (OSS/infermieristica)
 // con il vero trasporto in ambulanza, e i prelievi stavano dentro "prestazioni_infermieristiche".
 // Questa migrazione idempotente separa le tre cose in categorie dedicate e coerenti.
-const NOMI_SOLO_ASSISTENZA = ['Bagno a letto', 'Assistenza OSS', 'Assistenza notturna (notte h21–h07)', 'Assistenza infermieristica', 'Assistenza infermieristica notturna (h21–h07)'];
+const NOMI_SOLO_ASSISTENZA = ['Bagno a letto', 'Assistenza OSS', 'Assistenza notturna (notte h21–h07)'];
+const NOMI_INFERMIERISTICA_ORARIA = ['Assistenza infermieristica', 'Assistenza infermieristica notturna (h21–h07)'];
 const NOMI_SOLO_TRASPORTO = ['Ambulanza percorso urbano andata', 'Ambulanza andata e ritorno', 'Extraurbano', 'Urgenza (in 2h)'];
 const NOMI_PRELIEVI = ['Prelievo ematico ed esame urine (consegnato)', 'Raccolta urine sterile con cateterismo estemporaneo'];
 
@@ -144,6 +146,42 @@ export async function separaCategorieTariffario() {
     }
   } catch (err) {
     console.error('Errore separazione categorie tariffario:', err);
+  }
+}
+
+// ─── Categoria dedicata "Esami strumentali" + assistenza infermieristica oraria ─
+// ECG/EGA/Holter/Polisonnigrafia/Spirometria stanno nella propria categoria
+// (separati dalle prestazioni infermieristiche), mentre l'assistenza
+// infermieristica a ore e notturna torna sotto Prestazioni Infermieristiche.
+export async function migraCategorieCalcolatore() {
+  try {
+    const rEsami = await Tariffario.updateMany(
+      { nome: { $in: NOMI_ESAMI_STRUMENTALI }, categoria: { $ne: 'esami_strumentali' } },
+      { $set: { categoria: 'esami_strumentali', isEsameStrumentale: true } }
+    );
+    const rInf = await Tariffario.updateMany(
+      { nome: { $in: NOMI_INFERMIERISTICA_ORARIA }, categoria: { $ne: 'prestazioni_infermieristiche' } },
+      { $set: { categoria: 'prestazioni_infermieristiche', isEsameStrumentale: false } }
+    );
+    if (rEsami.modifiedCount > 0 || rInf.modifiedCount > 0) {
+      console.log(`✅ Tariffario: esami strumentali ${rEsami.modifiedCount}, assistenza infermieristica oraria ${rInf.modifiedCount}.`);
+    }
+    // EGA: la voce non esisteva nel listino — la creiamo se assente
+    const ega = await Tariffario.findOne({ nome: /emogas|^ega$/i }).select('_id').lean();
+    if (!ega) {
+      await Tariffario.create({
+        categoria: 'esami_strumentali',
+        nome: 'Emogasanalisi arteriosa (EGA)',
+        prezzo: 120,
+        attivo: true,
+        ordine: 30,
+        isEsameStrumentale: true,
+        note: 'Emogasanalisi arteriosa a domicilio',
+      });
+      console.log('✅ Tariffario: creata voce Emogasanalisi arteriosa (EGA).');
+    }
+  } catch (err) {
+    console.error('Errore migrazione categorie calcolatore:', err);
   }
 }
 

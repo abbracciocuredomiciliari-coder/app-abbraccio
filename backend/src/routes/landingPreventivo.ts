@@ -21,20 +21,22 @@ const esc = (s: any) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&l
 // ═════════════════════════════════════════════════════════════════════════════
 
 export const CATEGORIE_LISTINO: Record<string, { label: string; descrizione: string; ordine: number }> = {
-  prestazioni_infermieristiche: { label: 'Prestazioni infermieristiche', descrizione: 'Accessi infermieristici a domicilio: medicazioni, iniezioni, cateteri, flebo, ECG e altro.', ordine: 1 },
-  assistenza_domiciliare: { label: 'Assistenza domiciliare (OSS)', descrizione: 'Assistenza alla persona a ore: OSS, igiene, bagno a letto, assistenza notturna e infermieristica oraria.', ordine: 2 },
-  visite_mediche: { label: 'Visite mediche specialistiche', descrizione: 'Visita dello specialista direttamente a casa del paziente.', ordine: 3 },
-  prelievi: { label: 'Prelievi', descrizione: 'Prelievo ematico e raccolta campioni a domicilio con consegna al laboratorio.', ordine: 4 },
-  riabilitazione: { label: 'Riabilitazione', descrizione: 'Fisioterapia, logopedia e terapie riabilitative a domicilio, a ora.', ordine: 5 },
-  ecografia: { label: 'Ecografie ed ecocolordoppler', descrizione: 'Esami ecografici eseguiti a domicilio con referto.', ordine: 6 },
-  radiologia: { label: 'Radiologia (RX) a domicilio', descrizione: 'Radiografie a domicilio con apparecchiatura portatile e referto.', ordine: 7 },
-  trasporto: { label: 'Trasporto in ambulanza', descrizione: 'Trasporto sanitario per visite, dimissioni e trasferimenti.', ordine: 8 },
+  prestazioni_infermieristiche: { label: 'Prestazioni infermieristiche', descrizione: 'Accessi infermieristici a domicilio: medicazioni, iniezioni, cateteri, flebo, anche assistenza infermieristica a ore e notturna.', ordine: 1 },
+  esami_strumentali: { label: 'Esami strumentali', descrizione: 'ECG, emogasanalisi (EGA), holter pressorio e cardiaco, polisonnigrafia e spirometria a domicilio con referto.', ordine: 2 },
+  assistenza_domiciliare: { label: 'Assistenza domiciliare (OSS)', descrizione: 'Assistenza alla persona a ore: OSS, igiene personale, bagno a letto e assistenza notturna.', ordine: 3 },
+  visite_mediche: { label: 'Visite mediche specialistiche', descrizione: 'Visita dello specialista direttamente a casa del paziente.', ordine: 4 },
+  prelievi: { label: 'Prelievi', descrizione: 'Prelievo ematico e raccolta campioni a domicilio con consegna al laboratorio.', ordine: 5 },
+  riabilitazione: { label: 'Riabilitazione', descrizione: 'Fisioterapia, logopedia e terapie riabilitative a domicilio, a ora.', ordine: 6 },
+  ecografia: { label: 'Ecografie ed ecocolordoppler', descrizione: 'Esami ecografici eseguiti a domicilio con referto.', ordine: 7 },
+  radiologia: { label: 'Radiologia (RX) a domicilio', descrizione: 'Radiografie a domicilio con apparecchiatura portatile e referto.', ordine: 8 },
+  trasporto: { label: 'Trasporto in ambulanza', descrizione: 'Trasporto sanitario per visite, dimissioni e trasferimenti.', ordine: 9 },
 };
 
 // Categoria Patient.categoriaPrivata e tipoServizio della richiesta derivati
 // dalla categoria di listino prevalente nel preventivo.
 const MAPPA_CATEGORIA_PAZIENTE: Record<string, string> = {
   prestazioni_infermieristiche: 'assistenza_domiciliare',
+  esami_strumentali: 'diagnostica',
   assistenza_domiciliare: 'assistenza_domiciliare',
   visite_mediche: 'visite_mediche',
   prelievi: 'prelievi',
@@ -45,6 +47,7 @@ const MAPPA_CATEGORIA_PAZIENTE: Record<string, string> = {
 };
 const MAPPA_TIPO_SERVIZIO: Record<string, TipoServizio> = {
   prestazioni_infermieristiche: 'prestazione',
+  esami_strumentali: 'esame_strumentale',
   assistenza_domiciliare: 'assistenza',
   visite_mediche: 'visita_specialistica',
   prelievi: 'prelievo',
@@ -88,12 +91,17 @@ async function costruisciRighe(body: any): Promise<{ error?: string; righe?: Rig
   for (const v of voci) {
     const voce: any = listino.find((l: any) => String(l._id) === String(v?.id));
     if (!voce) continue;
-    const q = Math.min(Math.max(Math.round(Number(v?.quantita) || 1), 1), 999);
+    const unita = Math.min(Math.max(Math.round(Number(v?.quantita) || 1), 1), 999);
+    // Servizi orari (OSS, infermieristica, riabilitazione): la quantità è
+    // ore/giorno e si può moltiplicare per il numero di giorni richiesti.
+    const isOraria = voce.unitaMisura === 'ora';
+    const giorni = isOraria ? Math.min(Math.max(Math.round(Number(v?.giorni) || 1), 1), 365) : 1;
+    const q = unita * giorni;
     const { prezzo, promo } = prezzoEffettivo(voce);
     righe.push({
       voceId: String(voce._id),
       categoria: voce.categoria,
-      descrizione: voce.nome,
+      descrizione: giorni > 1 ? `${voce.nome} — ${unita} ore/giorno × ${giorni} giorni` : voce.nome,
       unitaMisura: voce.unitaMisura || undefined,
       note: voce.note || undefined,
       quantita: q,

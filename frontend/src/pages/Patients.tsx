@@ -154,6 +154,7 @@ function Patients() {
   const [tariffarioVoci, setTariffarioVoci] = useState<{ _id: string; categoria: string; nome: string; prezzo: number }[]>([]);
   const TARIFFARIO_CATEGORIE_LABEL: Record<string, string> = {
     prestazioni_infermieristiche: '💉 Prestazioni Infermieristiche',
+    esami_strumentali: '📟 Esami Strumentali',
     prelievi: '🩸 Prelievi',
     assistenza_domiciliare: '🏠 Assistenza Domiciliare',
     trasporto: '🚑 Trasporto',

@@ -18,16 +18,16 @@ const SCONTO_PERC = 5; // sconto "più servizi": allineato al server
 // e, se univoca, la voce di listino da aggiungere gia' al preventivo.
 // `voce` e' una regex sul nome della voce, cosi' regge piccoli rinomini del listino.
 const PRESELEZIONE: Record<string, { cat: string; voce?: RegExp; label: string }> = {
-  'holter-pressorio':         { cat: 'prestazioni_infermieristiche', voce: /holter\s*pressorio/i, label: 'Holter pressorio' },
-  'holter-ecg':               { cat: 'prestazioni_infermieristiche', voce: /holter\s*(cardiaco|ecg)/i, label: 'Holter ECG' },
-  'apnee-sonno':              { cat: 'prestazioni_infermieristiche', voce: /polisonn/i, label: 'Polisonnografia (apnee del sonno)' },
-  'screening-cardiaci':       { cat: 'prestazioni_infermieristiche', voce: /^ecg$/i, label: 'ECG' },
-  'saturimetria-spirometria': { cat: 'prestazioni_infermieristiche', voce: /spirometria/i, label: 'Spirometria' },
-  'emogasanalisi':            { cat: 'prestazioni_infermieristiche', voce: /emogas/i, label: 'Emogasanalisi' },
+  'holter-pressorio':         { cat: 'esami_strumentali', voce: /holter\s*pressorio/i, label: 'Holter pressorio' },
+  'holter-ecg':               { cat: 'esami_strumentali', voce: /holter\s*(cardiaco|ecg)/i, label: 'Holter ECG' },
+  'apnee-sonno':              { cat: 'esami_strumentali', voce: /polisonn/i, label: 'Polisonnografia (apnee del sonno)' },
+  'screening-cardiaci':       { cat: 'esami_strumentali', voce: /^ecg$/i, label: 'ECG' },
+  'saturimetria-spirometria': { cat: 'esami_strumentali', voce: /spirometria/i, label: 'Spirometria' },
+  'emogasanalisi':            { cat: 'esami_strumentali', voce: /emogas|^ega$/i, label: 'Emogasanalisi' },
   'prelievi-ematici':         { cat: 'prelievi', voce: /prelievo\s*ematico/i, label: 'Prelievo ematico' },
   'rx-domiciliare':           { cat: 'radiologia', label: 'Radiologia a domicilio' },
   'ecografia-domiciliare':    { cat: 'ecografia', label: 'Ecografia a domicilio' },
-  'esami-strumentali':        { cat: 'prestazioni_infermieristiche', label: 'Esami strumentali' },
+  'esami-strumentali':        { cat: 'esami_strumentali', label: 'Esami strumentali' },
   'infermiere-a-domicilio':   { cat: 'prestazioni_infermieristiche', label: 'Assistenza infermieristica' },
   'cure-pazienti-cronici':    { cat: 'prestazioni_infermieristiche', label: 'Cure pazienti cronici' },
   'cure-palliative':          { cat: 'prestazioni_infermieristiche', label: 'Cure palliative' },
@@ -73,7 +73,8 @@ export default function LandingPreventivo() {
   const [categorie, setCategorie] = useState<CategoriaListino[]>([]);
   const [listinoErr, setListinoErr] = useState('');
   const [categoriaAttiva, setCategoriaAttiva] = useState('');
-  const [selezione, setSelezione] = useState<Record<string, number>>({}); // voceId -> quantita
+  const [selezione, setSelezione] = useState<Record<string, number>>({}); // voceId -> quantita (ore/giorno per i servizi orari)
+  const [giorniVoci, setGiorniVoci] = useState<Record<string, number>>({}); // voceId -> giorni (solo servizi orari)
   const [preselezione, setPreselezione] = useState<{ label: string; voceNome?: string } | null>(null);
   const [showLegenda, setShowLegenda] = useState(false);
 
@@ -142,7 +143,8 @@ export default function LandingPreventivo() {
   }, []);
 
   const tutteVoci = categorie.flatMap(c => c.voci);
-  const vociBody = () => Object.entries(selezione).filter(([, q]) => q > 0).map(([id, quantita]) => ({ id, quantita }));
+  const isOraria = (v: VoceListino) => v.unitaMisura === 'ora';
+  const vociBody = () => Object.entries(selezione).filter(([, q]) => q > 0).map(([id, quantita]) => ({ id, quantita, giorni: giorniVoci[id] || 1 }));
   const numSelezionate = vociBody().length;
 
   // Qualunque modifica alla selezione azzera il preventivo: va rigenerato
@@ -151,6 +153,14 @@ export default function LandingPreventivo() {
     setSelezione(s => {
       const n = { ...s };
       if (q <= 0) delete n[id]; else n[id] = Math.min(q, 999);
+      return n;
+    });
+    invalida();
+  };
+  const setGiorniVoce = (id: string, g: number) => {
+    setGiorniVoci(s => {
+      const n = { ...s };
+      if (g <= 1) delete n[id]; else n[id] = Math.min(g, 365);
       return n;
     });
     invalida();
@@ -219,6 +229,8 @@ export default function LandingPreventivo() {
 
   const input: React.CSSProperties = { width: '100%', padding: '11px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', fontFamily: 'inherit' };
   const label: React.CSSProperties = { display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#475569', marginBottom: '5px' };
+  // Menu a tendina categoria: evidenziato e leggibile
+  const selectCat: React.CSSProperties = { ...input, padding: '14px 16px', fontSize: '1.05rem', fontWeight: 800, color: '#1e3a8a', background: 'linear-gradient(180deg,#dbeafe,#eff6ff)', border: '2px solid #3b82f6', borderRadius: '12px', boxShadow: '0 3px 10px rgba(30,77,140,.18)', cursor: 'pointer' };
   const btnWa: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 16px', borderRadius: '10px', background: '#25d366', color: '#fff', fontWeight: 800, textDecoration: 'none', fontSize: '0.95rem', border: 'none', cursor: 'pointer' };
   const btnTel: React.CSSProperties = { ...btnWa, background: '#1e4d8c' };
 
@@ -307,8 +319,8 @@ export default function LandingPreventivo() {
               {categorie.length > 0 && (
                 <>
                   <div>
-                    <span style={label}>Tipo di prestazione <InfoNote text="Scegli la categoria: ogni categoria raggruppa le prestazioni del nostro listino. Puoi aggiungere prestazioni da più categorie allo stesso preventivo." /></span>
-                    <select value={categoriaAttiva} onChange={e => setCategoriaAttiva(e.target.value)} style={input}>
+                    <span style={{ ...label, fontSize: '1rem', color: '#1e4d8c', fontWeight: 800, marginBottom: '8px', display: 'flex', alignItems: 'center' }}>📋 SCEGLI IL TIPO DI PRESTAZIONE <InfoNote text="Scegli la categoria: ogni categoria raggruppa le prestazioni del nostro listino. Puoi aggiungere prestazioni da più categorie allo stesso preventivo." /></span>
+                    <select value={categoriaAttiva} onChange={e => setCategoriaAttiva(e.target.value)} style={selectCat}>
                       {categorie.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
                     </select>
                     {catCorrente && <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{catCorrente.descrizione}</span>}
@@ -341,8 +353,9 @@ export default function LandingPreventivo() {
                       <div style={{ maxHeight: '340px', overflowY: 'auto' }}>
                         {catCorrente.voci.map(v => {
                           const q = selezione[v.id] || 0;
+                          const gg = giorniVoci[v.id] || 1;
                           return (
-                            <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 12px', borderBottom: '1px solid #f1f5f9', background: q > 0 ? '#eff6ff' : v.promo ? '#fff7f7' : '#fff' }}>
+                            <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 12px', borderBottom: '1px solid #f1f5f9', background: q > 0 ? '#eff6ff' : v.promo ? '#fff7f7' : '#fff', flexWrap: 'wrap' }}>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>{v.nome}</div>
                                 <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
@@ -360,6 +373,15 @@ export default function LandingPreventivo() {
                                   <button type="button" onClick={() => setQta(v.id, q + 1)} style={{ border: '1px solid #cbd5e1', background: '#fff', borderRadius: '6px', width: '28px', height: '28px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={13} /></button>
                                 </div>
                               )}
+                              {isOraria(v) && q > 0 && (
+                                <div style={{ flexBasis: '100%', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#475569', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '6px 9px' }}>
+                                  <span><strong>{q}</strong> ore/giorno</span>
+                                  <span>per</span>
+                                  <input type="number" min={1} max={365} value={gg} onChange={e => setGiorniVoce(v.id, Number(e.target.value) || 1)} style={{ width: '48px', textAlign: 'center', padding: '3px 2px', border: '1px solid #93c5fd', borderRadius: '6px', fontWeight: 800, fontSize: '0.78rem', color: '#1e4d8c' }} />
+                                  <span>giorni</span>
+                                  <span style={{ marginLeft: 'auto', color: '#1e4d8c', fontWeight: 800 }}>= {q * gg} ore totali · {euro(v.prezzo * q * gg)}</span>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
@@ -372,20 +394,28 @@ export default function LandingPreventivo() {
                     <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '10px', padding: '10px 12px' }}>
                       <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0c4a6e', marginBottom: '6px' }}>
                         Prestazioni selezionate ({numSelezionate})
-                        <InfoNote text="La quantità indica quanti accessi, ore o esami vuoi preventivare. Es. 'Assistenza OSS x 20' = 20 ore; 'Medicazioni x 5' = 5 accessi. Puoi combinare prestazioni di categorie diverse in un unico preventivo." />
+                        <InfoNote text="La quantità indica quanti accessi, ore/giorno o esami vuoi preventivare. Per i servizi a ore (OSS, infermieristica) indichi anche per quanti giorni: es. 4 ore/giorno per 5 giorni = 20 ore totali. Puoi combinare prestazioni di categorie diverse in un unico preventivo." />
                       </div>
                       <div style={{ fontSize: '0.76rem', fontWeight: 700, padding: '6px 9px', borderRadius: '8px', marginBottom: '8px', background: numSelezionate >= 2 ? '#dcfce7' : '#fef9c3', color: numSelezionate >= 2 ? '#166534' : '#854d0e' }}>
                         {numSelezionate >= 2
                           ? `🎉 Sconto ${SCONTO_PERC}% "più servizi" applicato al preventivo`
                           : `💡 Aggiungi un altro servizio e ottieni il ${SCONTO_PERC}% di sconto sul totale`}
                       </div>
-                      {tutteVoci.filter(v => selezione[v.id] > 0).map(v => (
-                        <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#334155', padding: '3px 0' }}>
-                          <span style={{ flex: 1 }}>{v.nome} <strong>× {selezione[v.id]}</strong>{v.promo && <span style={{ color: '#b91c1c', fontWeight: 800, fontSize: '0.7rem' }}> PROMO</span>}</span>
-                          <span style={{ fontWeight: 600 }}>{euro(v.prezzo * selezione[v.id])}</span>
-                          <button type="button" onClick={() => setQta(v.id, 0)} title="Rimuovi" style={{ border: 'none', background: 'none', color: '#dc2626', cursor: 'pointer', padding: '2px' }}><Trash2 size={14} /></button>
-                        </div>
-                      ))}
+                      {tutteVoci.filter(v => selezione[v.id] > 0).map(v => {
+                        const gg = isOraria(v) ? (giorniVoci[v.id] || 1) : 1;
+                        return (
+                          <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#334155', padding: '3px 0' }}>
+                            <span style={{ flex: 1 }}>{v.nome}{' '}
+                              {gg > 1
+                                ? <strong>× {selezione[v.id]} ore/gg · {gg} giorni</strong>
+                                : <strong>× {selezione[v.id]}</strong>}
+                              {v.promo && <span style={{ color: '#b91c1c', fontWeight: 800, fontSize: '0.7rem' }}> PROMO</span>}
+                            </span>
+                            <span style={{ fontWeight: 600 }}>{euro(v.prezzo * selezione[v.id] * gg)}</span>
+                            <button type="button" onClick={() => setQta(v.id, 0)} title="Rimuovi" style={{ border: 'none', background: 'none', color: '#dc2626', cursor: 'pointer', padding: '2px' }}><Trash2 size={14} /></button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 

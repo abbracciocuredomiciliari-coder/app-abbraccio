@@ -62,6 +62,7 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
   const [listinoErr, setListinoErr] = useState('');
   const [categoriaAttiva, setCategoriaAttiva] = useState('');
   const [selezione, setSelezione] = useState<Record<string, number>>({});
+  const [giorniVoci, setGiorniVoci] = useState<Record<string, number>>({});
   const [prezziCustom, setPrezziCustom] = useState<Record<string, number>>({});
   const [showLegenda, setShowLegenda] = useState(false);
   const [applicaSconto, setApplicaSconto] = useState(true);
@@ -81,7 +82,8 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
   }, []);
 
   const tutteVoci = categorie.flatMap(c => c.voci);
-  const vociBody = () => Object.entries(selezione).filter(([, q]) => q > 0).map(([id, quantita]) => ({ id, quantita }));
+  const isOraria = (v: VoceListino) => v.unitaMisura === 'ora';
+  const vociBody = () => Object.entries(selezione).filter(([, q]) => q > 0).map(([id, quantita]) => ({ id, quantita, giorni: giorniVoci[id] || 1 }));
   const numSelezionate = vociBody().length;
 
   const invalida = () => setPrev(null);
@@ -89,6 +91,14 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
     setSelezione(s => {
       const n = { ...s };
       if (q <= 0) delete n[id]; else n[id] = Math.min(q, 999);
+      return n;
+    });
+    invalida();
+  };
+  const setGiorniVoce = (id: string, g: number) => {
+    setGiorniVoci(s => {
+      const n = { ...s };
+      if (g <= 1) delete n[id]; else n[id] = Math.min(g, 365);
       return n;
     });
     invalida();
@@ -168,6 +178,8 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
 
   const input: React.CSSProperties = { width: '100%', padding: '11px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', fontFamily: 'inherit' };
   const label: React.CSSProperties = { display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#475569', marginBottom: '5px' };
+  // Menu a tendina categoria: evidenziato e leggibile
+  const selectCat: React.CSSProperties = { ...input, padding: '14px 16px', fontSize: '1.05rem', fontWeight: 800, color: '#1e3a8a', background: 'linear-gradient(180deg,#dbeafe,#eff6ff)', border: '2px solid #3b82f6', borderRadius: '12px', boxShadow: '0 3px 10px rgba(30,77,140,.18)', cursor: 'pointer' };
 
   const catCorrente = categorie.find(c => c.key === categoriaAttiva);
 
@@ -190,8 +202,8 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
             {categorie.length > 0 && (
               <>
                 <div>
-                  <span style={label}>Tipo di prestazione <InfoNote text="Scegli la categoria: ogni categoria raggruppa le prestazioni del listino. Puoi aggiungere prestazioni da più categorie allo stesso preventivo." /></span>
-                  <select value={categoriaAttiva} onChange={e => setCategoriaAttiva(e.target.value)} style={input}>
+                  <span style={{ ...label, fontSize: '1rem', color: '#1e4d8c', fontWeight: 800, marginBottom: '8px', display: 'flex', alignItems: 'center' }}>📋 SCEGLI IL TIPO DI PRESTAZIONE <InfoNote text="Scegli la categoria: ogni categoria raggruppa le prestazioni del listino. Puoi aggiungere prestazioni da più categorie allo stesso preventivo." /></span>
+                  <select value={categoriaAttiva} onChange={e => setCategoriaAttiva(e.target.value)} style={selectCat}>
                     {categorie.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
                   </select>
                   {catCorrente && <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{catCorrente.descrizione}</span>}
@@ -224,8 +236,9 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
                     <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                       {catCorrente.voci.map(v => {
                         const q = selezione[v.id] || 0;
+                        const gg = giorniVoci[v.id] || 1;
                         return (
-                          <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderBottom: '1px solid #f1f5f9', background: q > 0 ? '#eff6ff' : v.promo ? '#fff7f7' : '#fff' }}>
+                          <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderBottom: '1px solid #f1f5f9', background: q > 0 ? '#eff6ff' : v.promo ? '#fff7f7' : '#fff', flexWrap: 'wrap' }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>{v.nome}</div>
                               <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
@@ -241,6 +254,15 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
                                 <button type="button" onClick={() => setQta(v.id, q - 1)} style={{ border: '1px solid #cbd5e1', background: '#fff', borderRadius: '6px', width: '28px', height: '28px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={13} /></button>
                                 <input type="number" min={1} max={999} value={q} onChange={e => setQta(v.id, Number(e.target.value) || 1)} style={{ width: '46px', textAlign: 'center', padding: '5px 2px', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 700 }} />
                                 <button type="button" onClick={() => setQta(v.id, q + 1)} style={{ border: '1px solid #cbd5e1', background: '#fff', borderRadius: '6px', width: '28px', height: '28px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={13} /></button>
+                              </div>
+                            )}
+                            {isOraria(v) && q > 0 && (
+                              <div style={{ flexBasis: '100%', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#475569', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '6px 9px' }}>
+                                <span><strong>{q}</strong> ore/giorno</span>
+                                <span>per</span>
+                                <input type="number" min={1} max={365} value={gg} onChange={e => setGiorniVoce(v.id, Number(e.target.value) || 1)} style={{ width: '48px', textAlign: 'center', padding: '3px 2px', border: '1px solid #93c5fd', borderRadius: '6px', fontWeight: 800, fontSize: '0.78rem', color: '#1e4d8c' }} />
+                                <span>giorni</span>
+                                <span style={{ marginLeft: 'auto', color: '#1e4d8c', fontWeight: 800 }}>= {q * gg} ore totali · {euro(prezzoEff(v) * q * gg)}</span>
                               </div>
                             )}
                           </div>
@@ -264,9 +286,12 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
                     {tutteVoci.filter(v => selezione[v.id] > 0).map(v => {
                       const custom = prezziCustom[v.id];
                       const variato = custom != null && custom > 0 && Math.abs(custom - v.prezzo) > 0.004;
+                      const gg = isOraria(v) ? (giorniVoci[v.id] || 1) : 1;
                       return (
                         <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#334155', padding: '3px 0', flexWrap: 'wrap' }}>
-                          <span style={{ flex: 1, minWidth: '120px' }}>{v.nome} <strong>× {selezione[v.id]}</strong>{v.promo && <span style={{ color: '#b91c1c', fontWeight: 800, fontSize: '0.7rem' }}> PROMO</span>}{variato && <span style={{ color: '#b45309', fontWeight: 800, fontSize: '0.68rem' }}> · prezzo variato</span>}</span>
+                          <span style={{ flex: 1, minWidth: '120px' }}>{v.nome}{' '}
+                            {gg > 1 ? <strong>× {selezione[v.id]} ore/gg · {gg} giorni</strong> : <strong>× {selezione[v.id]}</strong>}
+                            {v.promo && <span style={{ color: '#b91c1c', fontWeight: 800, fontSize: '0.7rem' }}> PROMO</span>}{variato && <span style={{ color: '#b45309', fontWeight: 800, fontSize: '0.68rem' }}> · prezzo variato</span>}</span>
                           {prezziModificabili && (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
                               <span style={{ fontSize: '0.7rem', color: '#64748b' }}>€/u</span>
@@ -280,7 +305,7 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
                               )}
                             </span>
                           )}
-                          <span style={{ fontWeight: 600 }}>{euro(prezzoEff(v) * selezione[v.id])}</span>
+                          <span style={{ fontWeight: 600 }}>{euro(prezzoEff(v) * selezione[v.id] * gg)}</span>
                           <button type="button" onClick={() => { setQta(v.id, 0); setPrezzoCustom(v.id, null); }} title="Rimuovi" style={{ border: 'none', background: 'none', color: '#dc2626', cursor: 'pointer', padding: '2px' }}><Trash2 size={14} /></button>
                         </div>
                       );

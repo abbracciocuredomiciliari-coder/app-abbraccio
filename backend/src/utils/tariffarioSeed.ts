@@ -1,5 +1,5 @@
 export interface VoceTariffarioSeed {
-  categoria: 'prestazioni_infermieristiche' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'radiologia' | 'ecografia' | 'visite_mediche' | 'riabilitazione';
+  categoria: 'prestazioni_infermieristiche' | 'prelievi' | 'assistenza_domiciliare' | 'trasporto' | 'radiologia' | 'ecografia' | 'visite_mediche' | 'riabilitazione' | 'esami_strumentali';
   nome: string;
   prezzo: number;
   unitaMisura?: string;
@@ -30,11 +30,16 @@ export const TARIFFARIO_SEED: VoceTariffarioSeed[] = [
   { categoria: 'prestazioni_infermieristiche', nome: 'Gestione stomie/nefrostomie', prezzo: 50, ordine: 17 },
   { categoria: 'prestazioni_infermieristiche', nome: 'Medicazione PICC/Midline/CVC', prezzo: 50, note: '+ materiale', ordine: 18 },
   { categoria: 'prestazioni_infermieristiche', nome: 'Aspirazione secrezioni', prezzo: 50, ordine: 19 },
-  { categoria: 'prestazioni_infermieristiche', nome: 'ECG', prezzo: 60, ordine: 20 },
-  { categoria: 'prestazioni_infermieristiche', nome: 'Holter cardiaco', prezzo: 120, ordine: 21 },
-  { categoria: 'prestazioni_infermieristiche', nome: 'Holter pressorio', prezzo: 120, ordine: 22 },
-  { categoria: 'prestazioni_infermieristiche', nome: 'Spirometria', prezzo: 100, ordine: 23 },
-  { categoria: 'prestazioni_infermieristiche', nome: 'Polisonnigrafo', prezzo: 180, ordine: 24 },
+  { categoria: 'prestazioni_infermieristiche', nome: 'Assistenza infermieristica', prezzo: 35, unitaMisura: 'ora', ordine: 20 },
+  { categoria: 'prestazioni_infermieristiche', nome: 'Assistenza infermieristica notturna (h21–h07)', prezzo: 40, unitaMisura: 'ora', note: 'Intera notte forfait € 250,00', ordine: 21 },
+
+  // ─── Esami strumentali ────────────────────────────────────────────────────────
+  { categoria: 'esami_strumentali', nome: 'ECG', prezzo: 60, ordine: 1 },
+  { categoria: 'esami_strumentali', nome: 'Emogasanalisi arteriosa (EGA)', prezzo: 120, note: 'Emogasanalisi arteriosa a domicilio', ordine: 2 },
+  { categoria: 'esami_strumentali', nome: 'Holter cardiaco', prezzo: 120, ordine: 3 },
+  { categoria: 'esami_strumentali', nome: 'Holter pressorio', prezzo: 120, ordine: 4 },
+  { categoria: 'esami_strumentali', nome: 'Spirometria', prezzo: 100, ordine: 5 },
+  { categoria: 'esami_strumentali', nome: 'Polisonnigrafo', prezzo: 180, ordine: 6 },
 
   // ─── Prelievi ───────────────────────────────────────────────────────────────
   { categoria: 'prelievi', nome: 'Prelievo ematico ed esame urine (consegnato)', prezzo: 25, ordine: 1 },
@@ -44,8 +49,6 @@ export const TARIFFARIO_SEED: VoceTariffarioSeed[] = [
   { categoria: 'assistenza_domiciliare', nome: 'Bagno a letto', prezzo: 45, ordine: 1 },
   { categoria: 'assistenza_domiciliare', nome: 'Assistenza OSS', prezzo: 23, unitaMisura: 'ora', ordine: 2 },
   { categoria: 'assistenza_domiciliare', nome: 'Assistenza notturna (notte h21–h07)', prezzo: 25, unitaMisura: 'ora', note: 'Intera notte forfait € 200,00', ordine: 3 },
-  { categoria: 'assistenza_domiciliare', nome: 'Assistenza infermieristica', prezzo: 35, unitaMisura: 'ora', ordine: 4 },
-  { categoria: 'assistenza_domiciliare', nome: 'Assistenza infermieristica notturna (h21–h07)', prezzo: 40, unitaMisura: 'ora', note: 'Intera notte forfait € 250,00', ordine: 5 },
 
   // ─── Trasporto ──────────────────────────────────────────────────────────────
   { categoria: 'trasporto', nome: 'Ambulanza percorso urbano andata', prezzo: 150, note: 'Tratta urbana', ordine: 1 },
