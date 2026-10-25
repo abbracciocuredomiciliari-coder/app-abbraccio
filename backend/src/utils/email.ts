@@ -62,7 +62,7 @@ async function invia(
   }
   try {
     const resolvedFromEmail = fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
-    const displayName = fromName || process.env.FROM_NAME || 'App Abbraccio';
+    const displayName = fromName || process.env.FROM_NAME || 'Abbraccio Cure Domiciliari';
     const info = await transporter.sendMail({
       from: `"${displayName}" <${resolvedFromEmail}>`,
       to,
