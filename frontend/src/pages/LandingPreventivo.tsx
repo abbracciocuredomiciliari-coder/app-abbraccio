@@ -11,7 +11,8 @@ const WHATSAPP = '393514175117';
 interface VoceListino { id: string; nome: string; prezzo: number; prezzoListino: number; promo: boolean; unitaMisura: string | null; note: string | null }
 interface CategoriaListino { key: string; label: string; descrizione: string; ordine: number; voci: VoceListino[] }
 interface Riga { voceId: string; categoria: string; descrizione: string; unitaMisura?: string; note?: string; quantita: number; prezzoUnitario: number; prezzoListino: number; promo: boolean; importo: number }
-interface Preventivo { righe: Riga[]; totale: number }
+interface Preventivo { righe: Riga[]; subtotale: number; scontoPerc: number; sconto: number; totale: number; scontoApplicato: boolean; minServiziPerSconto: number }
+const SCONTO_PERC = 5; // sconto "più servizi": allineato al server
 
 declare global {
   interface Window { fbq?: (...args: any[]) => void; }
@@ -169,9 +170,10 @@ export default function LandingPreventivo() {
   // Testo del preventivo da condividere su WhatsApp
   const testoWhatsApp = () => {
     const righe = prev ? prev.righe.map(r => `• ${r.descrizione}${r.unitaMisura ? ` (${r.unitaMisura})` : ''} x${r.quantita} a ${euro(r.prezzoUnitario)}${r.promo ? ' (PROMO)' : ''} = ${euro(r.importo)}`).join('\n') : '';
+    const scontoTxt = prev?.scontoApplicato ? `\nSubtotale: ${euro(prev.subtotale)}\nSconto più servizi ${prev.scontoPerc}%: -${euro(prev.sconto)}` : '';
     const intro = nome.trim() ? `Buongiorno, sono ${nome.trim()}.` : 'Buongiorno,';
     const corpo = prev
-      ? `${intro} ho calcolato questo preventivo sul vostro sito:\n${righe}\nTOTALE: ${euro(prev.totale)}\n\nVorrei maggiori informazioni e confermare disponibilità e tariffa nella mia zona.${messaggio.trim() ? `\n\nMessaggio: ${messaggio.trim()}` : ''}`
+      ? `${intro} ho calcolato questo preventivo sul vostro sito:\n${righe}${scontoTxt}\nTOTALE: ${euro(prev.totale)}\n\nVorrei maggiori informazioni e confermare disponibilità e tariffa nella mia zona.${messaggio.trim() ? `\n\nMessaggio: ${messaggio.trim()}` : ''}`
       : `${intro} vorrei informazioni sulle vostre prestazioni a domicilio e un preventivo.${messaggio.trim() ? `\n\nMessaggio: ${messaggio.trim()}` : ''}`;
     return `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(corpo)}`;
   };
@@ -233,6 +235,9 @@ export default function LandingPreventivo() {
           <p style={{ color: '#64748b', maxWidth: '640px', margin: '0 auto', lineHeight: 1.6 }}>
             Accessi infermieristici, assistenza OSS, visite specialistiche, prelievi, fisioterapia ed esami direttamente a casa tua, a Roma e provincia. Scegli le prestazioni dal nostro listino e genera il preventivo in 1 minuto.
           </p>
+          <span style={{ display: 'inline-block', marginTop: '12px', background: '#dcfce7', color: '#166534', padding: '6px 14px', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 700 }}>
+            🎉 Combina 2 o più servizi nello stesso preventivo: sconto {SCONTO_PERC}% automatico
+          </span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: '20px', alignItems: 'start' }}>
@@ -317,7 +322,12 @@ export default function LandingPreventivo() {
                     <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '10px', padding: '10px 12px' }}>
                       <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0c4a6e', marginBottom: '6px' }}>
                         Prestazioni selezionate ({numSelezionate})
-                        <InfoNote text="La quantità indica quanti accessi, ore o esami vuoi preventivare. Es. 'Assistenza OSS x 20' = 20 ore; 'Medicazioni x 5' = 5 accessi." />
+                        <InfoNote text="La quantità indica quanti accessi, ore o esami vuoi preventivare. Es. 'Assistenza OSS x 20' = 20 ore; 'Medicazioni x 5' = 5 accessi. Puoi combinare prestazioni di categorie diverse in un unico preventivo." />
+                      </div>
+                      <div style={{ fontSize: '0.76rem', fontWeight: 700, padding: '6px 9px', borderRadius: '8px', marginBottom: '8px', background: numSelezionate >= 2 ? '#dcfce7' : '#fef9c3', color: numSelezionate >= 2 ? '#166534' : '#854d0e' }}>
+                        {numSelezionate >= 2
+                          ? `🎉 Sconto ${SCONTO_PERC}% "più servizi" applicato al preventivo`
+                          : `💡 Aggiungi un altro servizio e ottieni il ${SCONTO_PERC}% di sconto sul totale`}
                       </div>
                       {tutteVoci.filter(v => selezione[v.id] > 0).map(v => (
                         <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#334155', padding: '3px 0' }}>
@@ -360,12 +370,34 @@ export default function LandingPreventivo() {
                         <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap', verticalAlign: 'top' }}>{euro(r.importo)}</td>
                       </tr>
                     ))}
+                    {prev.scontoApplicato && (
+                      <>
+                        <tr style={{ borderTop: '2px solid #e2e8f0' }}>
+                          <td style={{ padding: '8px 6px 4px 0', color: '#64748b' }}>Subtotale</td>
+                          <td style={{ padding: '8px 0 4px', textAlign: 'right', color: '#64748b', whiteSpace: 'nowrap' }}>{euro(prev.subtotale)}</td>
+                        </tr>
+                        <tr style={{ background: '#f0fdf4' }}>
+                          <td style={{ padding: '6px 6px 6px 4px', color: '#166534', fontWeight: 700 }}>
+                            🎉 Sconto più servizi {prev.scontoPerc}%
+                            <div style={{ fontSize: '0.7rem', fontWeight: 500, color: '#15803d' }}>{prev.righe.length} prestazioni in un unico preventivo</div>
+                          </td>
+                          <td style={{ padding: '6px 4px 6px 0', textAlign: 'right', color: '#166534', fontWeight: 800, whiteSpace: 'nowrap' }}>-{euro(prev.sconto)}</td>
+                        </tr>
+                      </>
+                    )}
                   </tbody>
                 </table>
                 <div style={{ background: 'linear-gradient(135deg,#1e3a8a,#1e4d8c)', borderRadius: '12px', padding: '16px 18px', marginTop: '14px', color: '#fff' }}>
                   <div style={{ fontSize: '0.78rem', fontWeight: 600, opacity: 0.9 }}>TOTALE PREVENTIVO</div>
-                  <div style={{ fontSize: '1.6rem', fontWeight: 800, lineHeight: 1.2 }}>{euro(prev.totale)}</div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.85 }}>{prev.righe.length} {prev.righe.length === 1 ? 'prestazione' : 'prestazioni'} · prestazioni sanitarie esenti IVA</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 800, lineHeight: 1.2 }}>{euro(prev.totale)}</div>
+                    {prev.scontoApplicato && <div style={{ fontSize: '0.95rem', textDecoration: 'line-through', opacity: 0.7 }}>{euro(prev.subtotale)}</div>}
+                    {prev.scontoApplicato && <span style={{ background: '#16a34a', color: '#fff', fontSize: '0.72rem', fontWeight: 800, padding: '2px 8px', borderRadius: '999px' }}>-{prev.scontoPerc}%</span>}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', opacity: 0.85 }}>
+                    {prev.righe.length} {prev.righe.length === 1 ? 'prestazione' : 'prestazioni'} · prestazioni sanitarie esenti IVA
+                    {!prev.scontoApplicato && <> · <strong>aggiungi un altro servizio per il {SCONTO_PERC}% di sconto</strong></>}
+                  </div>
                 </div>
                 <p style={{ fontSize: '0.75rem', color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '9px 11px', marginTop: '12px', lineHeight: 1.5 }}>
                   ⚠️ <strong>Tariffe indicative.</strong> L'importo può subire variazioni in base alle condizioni domiciliari e assistenziali specifiche (distanza, orari, materiali, urgenza): la tariffa definitiva viene confermata dopo il contatto, senza impegno.

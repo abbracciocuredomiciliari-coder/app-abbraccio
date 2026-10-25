@@ -107,8 +107,18 @@ async function costruisciRighe(body: any): Promise<{ error?: string; righe?: Rig
   return { righe };
 }
 
-function totale(righe: RigaPreventivo[]) {
-  return Math.round(righe.reduce((a, r) => a + r.importo, 0) * 100) / 100;
+// Sconto "più servizi": 5% sul totale quando il preventivo contiene almeno
+// due prestazioni diverse. Calcolato solo lato server e mostrato all'utente.
+export const SCONTO_PIU_SERVIZI_PERC = 5;
+const MIN_SERVIZI_PER_SCONTO = 2;
+
+interface Totali { subtotale: number; scontoPerc: number; sconto: number; totale: number; scontoApplicato: boolean }
+
+function calcolaTotali(righe: RigaPreventivo[]): Totali {
+  const subtotale = Math.round(righe.reduce((a, r) => a + r.importo, 0) * 100) / 100;
+  const scontoApplicato = righe.length >= MIN_SERVIZI_PER_SCONTO;
+  const sconto = scontoApplicato ? Math.round(subtotale * SCONTO_PIU_SERVIZI_PERC) / 100 : 0;
+  return { subtotale, scontoPerc: scontoApplicato ? SCONTO_PIU_SERVIZI_PERC : 0, sconto, totale: Math.round((subtotale - sconto) * 100) / 100, scontoApplicato };
 }
 
 function categoriaPrevalente(righe: RigaPreventivo[]): string {
@@ -152,7 +162,7 @@ router.post('/preview', rateLimitByIP(120, 15 * 60 * 1000), async (req: Request,
   try {
     const { error, righe } = await costruisciRighe(req.body);
     if (error) return res.status(400).json({ message: error });
-    return res.json({ righe, totale: totale(righe!) });
+    return res.json({ righe, ...calcolaTotali(righe!), minServiziPerSconto: MIN_SERVIZI_PER_SCONTO });
   } catch (error: any) {
     return res.status(400).json({ message: error.message || 'Errore nel calcolo del preventivo' });
   }
@@ -171,7 +181,8 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
 
     const { error, righe } = await costruisciRighe(req.body);
     if (error) return res.status(400).json({ message: error });
-    const tot = totale(righe!);
+    const totali = calcolaTotali(righe!);
+    const tot = totali.totale;
     const catPrev = categoriaPrevalente(righe!);
 
     const utmString = utm && typeof utm === 'object'
@@ -182,7 +193,8 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
     const notaPrezzi = inPromo.length
       ? ` — PREZZI PROMOZIONALI applicati: ${inPromo.map(r => `${r.descrizione} €${r.prezzoUnitario.toFixed(2)} (listino €${r.prezzoListino.toFixed(2)})`).join('; ')}`
       : '';
-    const notaBase = `Preventivo generato dal calcolatore pubblico /preventivo${utmString ? ` — UTM: ${utmString}` : ''}${notaPrezzi}`;
+    const notaSconto = totali.scontoApplicato ? ` — SCONTO PIÙ SERVIZI ${totali.scontoPerc}%: -€${totali.sconto.toFixed(2)} su €${totali.subtotale.toFixed(2)}` : '';
+    const notaBase = `Preventivo generato dal calcolatore pubblico /preventivo${utmString ? ` — UTM: ${utmString}` : ''}${notaPrezzi}${notaSconto}`;
 
     // 1) Paziente privato in accettazione (lead): compare nella Gestione Privata
     const partiNome = String(nome).trim().split(/\s+/);
@@ -206,14 +218,25 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
       tipo: 'preventivo',
       patient: paziente._id,
       riferimentoTipo: 'landing',
-      prestazioni: righe!.map(r => ({
-        descrizione: `${r.unitaMisura ? `${r.descrizione} (${r.unitaMisura})` : r.descrizione}${r.promo ? ` — PROMO (listino €${r.prezzoListino.toFixed(2)})` : ''}`,
-        quantita: r.quantita,
-        prezzoUnitario: r.prezzoUnitario,
-        importo: r.importo,
-        tipo: r.categoria,
-        aliquotaIva: 0,
-      })),
+      prestazioni: [
+        ...righe!.map(r => ({
+          descrizione: `${r.unitaMisura ? `${r.descrizione} (${r.unitaMisura})` : r.descrizione}${r.promo ? ` — PROMO (listino €${r.prezzoListino.toFixed(2)})` : ''}`,
+          quantita: r.quantita,
+          prezzoUnitario: r.prezzoUnitario,
+          importo: r.importo,
+          tipo: r.categoria,
+          aliquotaIva: 0,
+        })),
+        // riga sconto (negativa) cosi' PDF e totale documento restano coerenti
+        ...(totali.scontoApplicato ? [{
+          descrizione: `Sconto più servizi ${totali.scontoPerc}% (${righe!.length} prestazioni)`,
+          quantita: 1,
+          prezzoUnitario: -totali.sconto,
+          importo: -totali.sconto,
+          tipo: 'sconto',
+          aliquotaIva: 0,
+        }] : []),
+      ],
       imponibile: tot,
       totaleIva: 0,
       totale: tot,
@@ -273,6 +296,8 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
           <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
             <tr style="background:#1e4d8c;color:#fff;"><th style="padding:6px;text-align:left;">Prestazione</th><th style="padding:6px;">Q.tà</th><th style="padding:6px;text-align:right;">Prezzo</th><th style="padding:6px;text-align:right;">Importo</th></tr>
             ${righeHtml}
+            ${totali.scontoApplicato ? `<tr><td colspan="3" style="padding:6px;text-align:right;color:#64748b;">Subtotale</td><td style="padding:6px;text-align:right;">€${totali.subtotale.toFixed(2)}</td></tr>
+            <tr><td colspan="3" style="padding:6px;text-align:right;color:#166534;font-weight:bold;">Sconto più servizi ${totali.scontoPerc}%</td><td style="padding:6px;text-align:right;color:#166534;font-weight:bold;">-€${totali.sconto.toFixed(2)}</td></tr>` : ''}
             <tr><td colspan="3" style="padding:8px;text-align:right;font-weight:bold;">TOTALE</td><td style="padding:8px;text-align:right;font-weight:bold;font-size:1.05rem;color:#166534;">€${tot.toFixed(2)}</td></tr>
           </table>
           <a href="${frontendUrl}/archivio-preventivi" style="display:inline-block;margin-top:16px;background:#1e4d8c;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:bold;">Apri Archivio Preventivi →</a>
@@ -287,7 +312,7 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
     return res.status(201).json({
       message: 'Richiesta inviata con successo',
       emailNotifica,
-      preventivo: { numero, totale: tot, righe: righe!.length, richiestaId: richiesta._id },
+      preventivo: { numero, totale: tot, subtotale: totali.subtotale, sconto: totali.sconto, scontoPerc: totali.scontoPerc, righe: righe!.length, richiestaId: richiesta._id },
     });
   } catch (error: any) {
     console.error('[Landing preventivo] Errore:', error);
