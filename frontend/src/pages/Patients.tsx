@@ -2545,6 +2545,7 @@ function Patients() {
                     onConferma={applicaCalcolatorePreventivoRapido}
                     onChiudi={() => setPreventivoRapidoCalc(false)}
                     labelConferma="Usa questo preventivo nelle righe"
+                    prezziModificabili
                   />
                 </div>
               )}

@@ -52,6 +52,7 @@ const ReportConsegne = lazy(() => import('./pages/ReportConsegne'));
 const GestioneFatturazione = lazy(() => import('./pages/GestioneFatturazione'));
 const ArchivioFatture = lazy(() => import('./pages/ArchivioFatture'));
 const ArchivioPreventivi = lazy(() => import('./pages/ArchivioPreventivi'));
+const PreventivoVeloce = lazy(() => import('./pages/PreventivoVeloce'));
 const BadantiIntermediazione = lazy(() => import('./pages/BadantiIntermediazione'));
 const ArchiviIntermediazione = lazy(() => import('./pages/ArchiviIntermediazione'));
 const GestioneContratti = lazy(() => import('./pages/GestioneContratti'));
@@ -110,6 +111,7 @@ import {
   CalendarCheck,
   MessageCircle,
   Video,
+  Calculator,
 } from 'lucide-react';
 
 // Ruoli con accesso completo (admin/coordinamento/direzione)
@@ -448,6 +450,12 @@ function AppShell() {
                 Archivio Preventivi
               </Link>
               {!isConvenzione && (
+                <Link to="/preventivo-veloce" className={isActive('/preventivo-veloce') ? 'active' : ''}>
+                  <Calculator size={18} />
+                  Preventivo veloce
+                </Link>
+              )}
+              {!isConvenzione && (
                 <Link to="/tariffario" className={isActive('/tariffario') ? 'active' : ''}>
                   <Tag size={18} />
                   Tariffario
@@ -642,6 +650,7 @@ function AppShell() {
           <Route path="/gestione-ritenute" element={<ProtectedRoute><GestioneRitenute /></ProtectedRoute>} />
           <Route path="/archivio-fatture" element={<ProtectedRoute><ArchivioFatture /></ProtectedRoute>} />
           <Route path="/archivio-preventivi" element={<ProtectedRoute><ArchivioPreventivi /></ProtectedRoute>} />
+          <Route path="/preventivo-veloce" element={<ProtectedRoute><PreventivoVeloce /></ProtectedRoute>} />
           <Route path="/badanti-intermediazione" element={<ProtectedRoute><BadantiIntermediazione /></ProtectedRoute>} />
           <Route path="/archivi-intermediazione" element={<ProtectedRoute><ArchiviIntermediazione /></ProtectedRoute>} />
           <Route path="/tariffario" element={<ProtectedRoute><Tariffario /></ProtectedRoute>} />

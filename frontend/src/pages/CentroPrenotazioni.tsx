@@ -1258,6 +1258,7 @@ export default function CentroPrenotazioni() {
               onConferma={applicaCalcolatorePiano}
               onChiudi={() => setCalcPiano(null)}
               labelConferma={calcSaving ? 'Salvataggio...' : 'Salva nel preventivo dell\u2019incarico'}
+              prezziModificabili
             />
           </div>
         </div>)}

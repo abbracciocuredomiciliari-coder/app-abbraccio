@@ -6,7 +6,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocure
 
 interface VoceListino { id: string; nome: string; prezzo: number; prezzoListino: number; promo: boolean; unitaMisura: string | null; note: string | null }
 interface CategoriaListino { key: string; label: string; descrizione: string; ordine: number; voci: VoceListino[] }
-interface Riga { voceId: string; categoria: string; descrizione: string; unitaMisura?: string; note?: string; quantita: number; prezzoUnitario: number; prezzoListino: number; promo: boolean; importo: number }
+interface Riga { voceId: string; categoria: string; descrizione: string; unitaMisura?: string; note?: string; quantita: number; prezzoUnitario: number; prezzoListino: number; promo: boolean; importo: number; variato?: boolean; variatoDa?: number }
 interface Preventivo { righe: Riga[]; subtotale: number; scontoPerc: number; sconto: number; totale: number; scontoApplicato: boolean }
 const SCONTO_PERC = 5; // sconto "più servizi": allineato al server
 
@@ -50,15 +50,19 @@ const euro = (n: number) => `€ ${Number(n || 0).toFixed(2).replace('.', ',')}`
 // /preventivo, ma riusabile dentro l'area riservata (Pazienti, Accettazione,
 // Centro Prenotazioni). I prezzi e i totali sono calcolati dal server.
 // ═════════════════════════════════════════════════════════════════════════════
-export default function CalcolatorePreventivoListino({ onConferma, onChiudi, labelConferma }: {
+export default function CalcolatorePreventivoListino({ onConferma, onChiudi, labelConferma, prezziModificabili }: {
   onConferma: (r: RisultatoCalcolatore) => void;
   onChiudi?: () => void;
   labelConferma?: string;
+  /** Solo area riservata (Gestione Privata): consente di variare il prezzo
+      unitario rispetto al listino. I link pubblici non devono mai passarlo. */
+  prezziModificabili?: boolean;
 }) {
   const [categorie, setCategorie] = useState<CategoriaListino[]>([]);
   const [listinoErr, setListinoErr] = useState('');
   const [categoriaAttiva, setCategoriaAttiva] = useState('');
   const [selezione, setSelezione] = useState<Record<string, number>>({});
+  const [prezziCustom, setPrezziCustom] = useState<Record<string, number>>({});
   const [showLegenda, setShowLegenda] = useState(false);
   const [applicaSconto, setApplicaSconto] = useState(true);
 
@@ -89,6 +93,18 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
     });
     invalida();
   };
+  const setPrezzoCustom = (id: string, p: number | null) => {
+    setPrezziCustom(c => {
+      const n = { ...c };
+      if (p == null || !(p > 0)) delete n[id]; else n[id] = Math.min(p, 10000);
+      return n;
+    });
+    invalida();
+  };
+  const prezzoEff = (v: VoceListino) => {
+    const c = prezziCustom[v.id];
+    return c != null && c > 0 ? c : v.prezzo;
+  };
 
   const Prezzo = ({ v, suffisso }: { v: VoceListino; suffisso?: string }) => v.promo ? (
     <>
@@ -104,7 +120,20 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
       setPreviewLoading(true);
       setPreviewError('');
       const res = await axios.post(`${API_BASE}/landing-preventivo/preview`, { voci: vociBody() });
-      setPrev(res.data);
+      const data = res.data as Preventivo;
+      // Prezzi variati (solo area riservata): il server resta la fonte per
+      // descrizioni/quantità/listino, il prezzo custom viene applicato qui.
+      const righe = data.righe.map(r => {
+        const c = prezziCustom[r.voceId];
+        const custom = c != null && c > 0 ? Math.min(c, 10000) : null;
+        const variato = custom != null && Math.abs(custom - r.prezzoUnitario) > 0.004;
+        const prezzo = variato ? custom : r.prezzoUnitario;
+        return { ...r, prezzoUnitario: prezzo, variato, variatoDa: variato ? r.prezzoUnitario : undefined, importo: Math.round(r.quantita * prezzo * 100) / 100 };
+      });
+      const subtotale = Math.round(righe.reduce((a, r) => a + r.importo, 0) * 100) / 100;
+      const scontoApplicato = data.scontoApplicato;
+      const sconto = scontoApplicato ? Math.round(subtotale * (data.scontoPerc / 100) * 100) / 100 : 0;
+      setPrev({ ...data, righe, subtotale, sconto, totale: Math.round((subtotale - sconto) * 100) / 100 });
     } catch (err: any) {
       setPrev(null);
       setPreviewError(err?.response?.data?.message || 'Controlla le prestazioni selezionate');
@@ -119,7 +148,7 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
   function conferma() {
     if (!prev) return;
     const prestazioni: RigaDocumento[] = prev.righe.map(r => ({
-      descrizione: `${r.descrizione}${r.unitaMisura ? ` (${r.unitaMisura})` : ''}${r.promo ? ` — PROMO (listino €${r.prezzoListino.toFixed(2)})` : ''}`,
+      descrizione: `${r.descrizione}${r.unitaMisura ? ` (${r.unitaMisura})` : ''}${r.variato ? ` — prezzo variato (listino €${(r.variatoDa ?? r.prezzoListino).toFixed(2)})` : r.promo ? ` — PROMO (listino €${r.prezzoListino.toFixed(2)})` : ''}`,
       quantita: r.quantita,
       prezzoUnitario: r.prezzoUnitario,
       tipo: r.categoria,
@@ -232,13 +261,30 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
                         ? `🎉 Sconto ${SCONTO_PERC}% "più servizi" disponibile`
                         : `💡 Aggiungi un altro servizio per lo sconto ${SCONTO_PERC}%`}
                     </div>
-                    {tutteVoci.filter(v => selezione[v.id] > 0).map(v => (
-                      <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#334155', padding: '3px 0' }}>
-                        <span style={{ flex: 1 }}>{v.nome} <strong>× {selezione[v.id]}</strong>{v.promo && <span style={{ color: '#b91c1c', fontWeight: 800, fontSize: '0.7rem' }}> PROMO</span>}</span>
-                        <span style={{ fontWeight: 600 }}>{euro(v.prezzo * selezione[v.id])}</span>
-                        <button type="button" onClick={() => setQta(v.id, 0)} title="Rimuovi" style={{ border: 'none', background: 'none', color: '#dc2626', cursor: 'pointer', padding: '2px' }}><Trash2 size={14} /></button>
-                      </div>
-                    ))}
+                    {tutteVoci.filter(v => selezione[v.id] > 0).map(v => {
+                      const custom = prezziCustom[v.id];
+                      const variato = custom != null && custom > 0 && Math.abs(custom - v.prezzo) > 0.004;
+                      return (
+                        <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#334155', padding: '3px 0', flexWrap: 'wrap' }}>
+                          <span style={{ flex: 1, minWidth: '120px' }}>{v.nome} <strong>× {selezione[v.id]}</strong>{v.promo && <span style={{ color: '#b91c1c', fontWeight: 800, fontSize: '0.7rem' }}> PROMO</span>}{variato && <span style={{ color: '#b45309', fontWeight: 800, fontSize: '0.68rem' }}> · prezzo variato</span>}</span>
+                          {prezziModificabili && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                              <span style={{ fontSize: '0.7rem', color: '#64748b' }}>€/u</span>
+                              <input type="number" min={0.01} step={0.5} value={custom ?? ''} placeholder={v.prezzo.toFixed(2)}
+                                onChange={e => setPrezzoCustom(v.id, e.target.value === '' ? null : Number(e.target.value))}
+                                title={`Prezzo listino: ${euro(v.prezzo)}${v.promo ? ` (promo, listino ${euro(v.prezzoListino)})` : ''}`}
+                                style={{ width: '64px', textAlign: 'right', padding: '3px 4px', border: `1px solid ${variato ? '#f59e0b' : '#cbd5e1'}`, borderRadius: '6px', fontWeight: 700, fontSize: '0.78rem', background: variato ? '#fffbeb' : '#fff' }} />
+                              {variato && (
+                                <button type="button" onClick={() => setPrezzoCustom(v.id, null)} title="Ripristina prezzo listino"
+                                  style={{ border: 'none', background: 'none', color: '#b45309', cursor: 'pointer', padding: '1px', fontSize: '0.85rem', lineHeight: 1 }}>↺</button>
+                              )}
+                            </span>
+                          )}
+                          <span style={{ fontWeight: 600 }}>{euro(prezzoEff(v) * selezione[v.id])}</span>
+                          <button type="button" onClick={() => { setQta(v.id, 0); setPrezzoCustom(v.id, null); }} title="Rimuovi" style={{ border: 'none', background: 'none', color: '#dc2626', cursor: 'pointer', padding: '2px' }}><Trash2 size={14} /></button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -267,7 +313,7 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
                       <td style={{ padding: '7px 6px 7px 0', color: '#475569' }}>
                         {r.descrizione}{r.unitaMisura ? <span style={{ color: '#94a3b8' }}> ({r.unitaMisura})</span> : ''}
                         <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                          {r.quantita} × {r.promo ? <><span style={{ textDecoration: 'line-through' }}>{euro(r.prezzoListino)}</span> <span style={{ color: '#b91c1c', fontWeight: 800 }}>{euro(r.prezzoUnitario)} PROMO</span></> : euro(r.prezzoUnitario)}
+                          {r.quantita} × {r.variato ? <><span style={{ textDecoration: 'line-through' }}>{euro(r.variatoDa ?? r.prezzoListino)}</span> <span style={{ color: '#b45309', fontWeight: 800 }}>{euro(r.prezzoUnitario)} variato</span></> : r.promo ? <><span style={{ textDecoration: 'line-through' }}>{euro(r.prezzoListino)}</span> <span style={{ color: '#b91c1c', fontWeight: 800 }}>{euro(r.prezzoUnitario)} PROMO</span></> : euro(r.prezzoUnitario)}
                         </div>
                       </td>
                       <td style={{ padding: '7px 0', textAlign: 'right', fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap', verticalAlign: 'top' }}>{euro(r.importo)}</td>
