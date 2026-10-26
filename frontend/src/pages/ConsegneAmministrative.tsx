@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { ClipboardList, Plus, Bell, UserCheck, Hourglass, CheckCircle, RotateCcw, Trash2, MessageSquare, AlertTriangle, Calendar } from 'lucide-react';
+import { ClipboardList, Plus, Bell, UserCheck, Hourglass, CheckCircle, RotateCcw, Trash2, MessageSquare, AlertTriangle, Calendar, Smartphone } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { DictationMicButton } from '../components/DictationMicButton';
 
@@ -24,6 +24,7 @@ interface Consegna {
   riferimento?: string;
   stato: Stato;
   autoreNome: string;
+  origine?: 'interna' | 'esterna';
   presaInCaricoDaNome?: string;
   presaInCaricoIl?: string;
   gestitaDaNome?: string;
@@ -161,6 +162,18 @@ export default function ConsegneAmministrative() {
         </Button>
       </div>
 
+      {/* Link pubblico per il personale esterno */}
+      <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2 tw-bg-blue-50 tw-border tw-border-dashed tw-border-blue-300 tw-rounded-xl tw-px-4 tw-py-2.5 tw-mb-5 tw-text-sm">
+        <Smartphone size={16} className="tw-text-blue-700" />
+        <span className="tw-text-slate-600">Link per chi lavora fuori (senza entrare nel gestionale):</span>
+        <code className="tw-bg-white tw-border tw-border-blue-200 tw-rounded tw-px-2 tw-py-0.5 tw-text-blue-800 tw-font-semibold">/scrivi-consegna</code>
+        <button type="button"
+          onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/scrivi-consegna`); alert('Link copiato: condividilo su WhatsApp con il personale esterno.'); }}
+          className="tw-text-blue-700 tw-font-bold tw-bg-transparent tw-border-0 tw-cursor-pointer hover:tw-underline">
+          📋 Copia link
+        </button>
+      </div>
+
       {aperte.length > 0 && (
         <div className="tw-flex tw-items-center tw-gap-2 tw-bg-red-50 tw-border tw-border-red-200 tw-text-red-700 tw-rounded-xl tw-px-4 tw-py-3 tw-mb-5 tw-font-bold tw-text-sm">
           <Bell size={18} /> {aperte.length} consegn{aperte.length === 1 ? 'a aperta' : 'e aperte'} da gestire — {consegne.filter(c => c.stato === 'da_gestire').length} nuov{consegne.filter(c => c.stato === 'da_gestire').length === 1 ? 'a' : 'e'}
@@ -246,6 +259,7 @@ export default function ConsegneAmministrative() {
                     <div className="tw-flex-1 tw-min-w-[220px]">
                       <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2 tw-mb-1">
                         <strong className="tw-text-slate-800">{c.titolo}</strong>
+                        {c.origine === 'esterna' && <span className="tw-text-xs tw-font-bold tw-text-blue-600 tw-bg-blue-50 tw-border tw-border-blue-200 tw-rounded-full tw-px-2 tw-py-0.5">🌐 da remoto</span>}
                         {c.priorita === 'urgente' && <span className="tw-text-xs tw-font-bold tw-text-red-600 tw-flex tw-items-center tw-gap-1"><AlertTriangle size={13} />URGENTE</span>}
                       </div>
                       <div className="tw-flex tw-flex-wrap tw-gap-2 tw-text-xs tw-text-slate-500">

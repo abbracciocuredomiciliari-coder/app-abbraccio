@@ -31,8 +31,9 @@ export interface IConsegnaAmministrativa extends Document {
   dataGiornata?: Date;          // per tipo 'giornata': giorno lavorativo di riferimento
   riferimento?: string;         // per tipo 'pratica': es. nome paziente / pratica
   stato: StatoConsegna;
-  autoreId: Types.ObjectId;
+  autoreId?: Types.ObjectId;   // assente per consegne inviate dal link pubblico
   autoreNome: string;
+  origine?: 'interna' | 'esterna';
   presaInCaricoDaId?: Types.ObjectId;
   presaInCaricoDaNome?: string;
   presaInCaricoIl?: Date;
@@ -64,8 +65,9 @@ const ConsegnaAmministrativaSchema = new Schema<IConsegnaAmministrativa>({
     default: 'da_gestire',
     index: true,
   },
-  autoreId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  autoreId: { type: Schema.Types.ObjectId, ref: 'User' },
   autoreNome: { type: String, required: true },
+  origine: { type: String, enum: ['interna', 'esterna'], default: 'interna' },
   presaInCaricoDaId: { type: Schema.Types.ObjectId, ref: 'User' },
   presaInCaricoDaNome: { type: String },
   presaInCaricoIl: { type: Date },
