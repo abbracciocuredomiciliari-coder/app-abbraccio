@@ -29,8 +29,49 @@ async function main() {
     .toArray();
   const gestioneById = Object.fromEntries(patients.map(p => [String(p._id), p.tipoGestione]));
 
+  // ── Contratti inviati (firma.email/updatedAt su contrattopazientes) ─────────
+  const contratti = await db.collection('contrattopazientes')
+    .find({ email: { $exists: true, $ne: '' } })
+    .toArray();
+  console.log(`📜 Contratti con email destinatario registrata: ${contratti.length}`);
+
+  const contrattoPatientIds = [...new Set(contratti.map(c => String(c.patient)))];
+  const contrattoPatients = await db.collection('patients')
+    .find({ _id: { $in: contrattoPatientIds.map(id => new ObjectId(id)) } }, { projection: { tipoGestione: 1, firstName: 1, lastName: 1 } })
+    .toArray();
+  const contrattoPazById = Object.fromEntries(contrattoPatients.map(p => [String(p._id), p]));
+
   const rows = [];
   let skipped = 0;
+  for (const c of contratti) {
+    const paz = contrattoPazById[String(c.patient)] || {};
+    const nomePaz = `${paz.firstName || ''} ${paz.lastName || ''}`.trim();
+    const subject = `Contratto d'incarico e GDPR ${c.profilo} — Abbraccio Cure Domiciliari`;
+    // 'data' è la data di generazione del contratto (richiesta utente: ora di generazione)
+    const when = c.data ? new Date(c.data) : new Date(c.updatedAt || c.createdAt);
+    const key = `${c.email}|${subject}|${when.getTime()}`;
+    if (seen.has(key)) { skipped++; continue; }
+    seen.add(key);
+
+    const isConsulenza = c.contesto === 'intermediazione' || !!c.richiestaId || paz.tipoGestione === 'consulenza';
+    const allegati = [`CONTRATTO-${c.profilo.toUpperCase().replace(/\s+/g, '-')}.pdf`, 'INFORMATIVA-GDPR.pdf'];
+    if (c.allegatoFileName) allegati.push(c.allegatoFileName);
+    rows.push({
+      to: c.email,
+      subject,
+      tipo: 'contratto',
+      area: isConsulenza ? 'intermediazione' : 'privato',
+      riferimento: nomePaz || undefined,
+      allegati,
+      inviataDaNome: 'storico',
+      esito: 'inviata',
+      storico: true,
+      dataStimata: true, // i contratti non tracciano l'ora esatta dell'invio — mostriamo la data di generazione
+      createdAt: when,
+      updatedAt: when,
+    });
+  }
+
   for (const doc of docs) {
     const label = doc.tipo === 'fattura' ? 'Fattura' : 'Preventivo';
     const subject = `${label} ${doc.numero} — Abbraccio Cure Domiciliari`;

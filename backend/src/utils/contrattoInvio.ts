@@ -108,10 +108,16 @@ export async function inviaEmailContrattoPaziente(contrattoId: string, email: st
     });
   }
 
+  const nomePaziente = `${pazienteNorm?.firstName || ''} ${pazienteNorm?.lastName || ''}`.trim();
   return await inviaEmail({
     to: email,
     subject: `Contratto d'incarico e GDPR ${contratto.profilo} — Abbraccio Cure Domiciliari`,
     html,
     attachments,
+    log: {
+      tipo: 'contratto',
+      area: contratto.contesto === 'intermediazione' || contratto.richiestaId ? 'intermediazione' : 'privato',
+      riferimento: nomePaziente || undefined,
+    },
   });
 }
