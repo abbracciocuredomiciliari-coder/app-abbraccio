@@ -3,6 +3,7 @@ import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { ClipboardList, Plus, Bell, UserCheck, Hourglass, CheckCircle, RotateCcw, Trash2, MessageSquare, AlertTriangle, Calendar } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { DictationMicButton } from '../components/DictationMicButton';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // CONSEGNE AMMINISTRATIVE — bacheca condivisa tra ufficio e personale esterno.
@@ -203,7 +204,10 @@ export default function ConsegneAmministrative() {
             </div>
           </div>
           <div className="tw-mb-3">
-            <span style={label}>Consegna *</span>
+            <div className="tw-flex tw-items-center tw-justify-between tw-mb-1">
+              <span style={{ ...label, marginBottom: 0 }}>Consegna *</span>
+              <DictationMicButton onTranscribed={t => setTesto(prev => (prev.trim() ? `${prev.trim()} ${t}` : t))} />
+            </div>
             <textarea style={{ ...input, minHeight: '90px', resize: 'vertical' }} value={testo} onChange={e => setTesto(e.target.value)}
               placeholder="Scrivi la consegna: cosa è stato fatto, cosa resta da fare, a chi è rivolta…" />
           </div>
