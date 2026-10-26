@@ -24,6 +24,8 @@ interface EmailLogItem {
   rettificata?: boolean;
   rettificaDaNome?: string;
   rettificaIl?: string;
+  storico?: boolean;
+  dataStimata?: boolean;
   createdAt: string;
 }
 
@@ -180,6 +182,7 @@ export default function ArchivioEmail() {
                     <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2 tw-mb-0.5">
                       <span className="tw-text-sm tw-font-bold tw-text-slate-800">{e.subject}</span>
                       {e.rettificata && <span className="tw-text-xs tw-font-bold tw-text-red-600 tw-bg-red-50 tw-border tw-border-red-200 tw-rounded-full tw-px-2 tw-py-0.5">↩️ RETTIFICATA</span>}
+                      {e.storico && <span className="tw-text-xs tw-font-bold tw-text-amber-700 tw-bg-amber-50 tw-border tw-border-amber-200 tw-rounded-full tw-px-2 tw-py-0.5" title={e.dataStimata ? 'Ricostruita dallo storico documenti — data approssimata' : 'Ricostruita dallo storico documenti'}>📜 STORICO{e.dataStimata ? ' (data stimata)' : ''}</span>}
                     </div>
                     <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2 tw-text-xs tw-text-slate-500">
                       <span>a <strong>{e.to}</strong></span>
