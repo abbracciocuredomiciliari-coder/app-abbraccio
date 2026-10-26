@@ -55,6 +55,20 @@ const fmtData = (d?: string) => d
   ? new Date(d).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   : '';
 
+// Chiave giornata: le consegne "giornata" vanno sotto la loro data giornata,
+// le altre sotto il giorno in cui sono state scritte.
+const dayKey = (c: Consegna) => (c.dataGiornata || c.createdAt).slice(0, 10);
+
+const dayLabel = (key: string) => {
+  const d = new Date(`${key}T12:00:00`);
+  const oggi = new Date().toISOString().slice(0, 10);
+  const ieri = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const domani = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  const data = d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const tag = key === oggi ? ' — OGGI' : key === ieri ? ' — IERI' : key === domani ? ' — DOMANI' : '';
+  return `${data}${tag}`;
+};
+
 export default function ConsegneAmministrative() {
   const { user } = useAuth();
   const isGestione = !!user && ['admin', 'coordinator', 'direttore'].includes(user.role);
@@ -87,6 +101,18 @@ export default function ConsegneAmministrative() {
   const aperte = consegne.filter(c => c.stato !== 'gestita');
   const gestite = consegne.filter(c => c.stato === 'gestita');
   const visibili = mostraGestite ? consegne : aperte;
+
+  // Raggruppamento per giornata: giorni più recenti in cima.
+  const giorni: { key: string; items: Consegna[] }[] = [];
+  const byDay = new Map<string, Consegna[]>();
+  visibili.forEach(c => {
+    const k = dayKey(c);
+    if (!byDay.has(k)) byDay.set(k, []);
+    byDay.get(k)!.push(c);
+  });
+  [...byDay.keys()].sort((a, b) => b.localeCompare(a)).forEach(k => {
+    giorni.push({ key: k, items: byDay.get(k)! });
+  });
 
   const crea = async () => {
     if (!titolo.trim() || !testo.trim()) { alert('Inserisci titolo e testo della consegna.'); return; }
@@ -248,8 +274,28 @@ export default function ConsegneAmministrative() {
           {mostraGestite ? 'Nessuna consegna registrata.' : 'Nessuna consegna aperta: tutto gestito. ✅'}
         </div>
       ) : (
-        <div className="tw-flex tw-flex-col tw-gap-3">
-          {visibili.map(c => {
+        <div className="tw-flex tw-flex-col tw-gap-5">
+          {giorni.map(g => {
+            const aperteGiorno = g.items.filter(c => c.stato !== 'gestita').length;
+            const oggi = g.key === new Date().toISOString().slice(0, 10);
+            return (
+            <div key={g.key}>
+              <div className={`tw-flex tw-items-center tw-gap-2 tw-mb-2.5 tw-px-1 tw-py-1.5 tw-border-b-2 ${oggi ? 'tw-border-blue-500' : 'tw-border-slate-200'}`}>
+                <Calendar size={17} className={oggi ? 'tw-text-blue-700' : 'tw-text-slate-500'} />
+                <h3 className={`tw-m-0 tw-text-sm tw-font-extrabold tw-capitalize ${oggi ? 'tw-text-blue-800' : 'tw-text-slate-600'}`}>
+                  {dayLabel(g.key)}
+                </h3>
+                <span className="tw-text-xs tw-font-bold tw-text-slate-400 tw-bg-slate-100 tw-rounded-full tw-px-2 tw-py-0.5">
+                  {g.items.length} consegn{g.items.length === 1 ? 'a' : 'e'}
+                </span>
+                {aperteGiorno > 0 && (
+                  <span className="tw-text-xs tw-font-bold tw-text-red-600 tw-bg-red-50 tw-border tw-border-red-200 tw-rounded-full tw-px-2 tw-py-0.5">
+                    {aperteGiorno} da gestire
+                  </span>
+                )}
+              </div>
+              <div className="tw-flex tw-flex-col tw-gap-3">
+          {g.items.map(c => {
             const st = STATO_STYLE[c.stato];
             const aperta = apertaId === c._id;
             return (
@@ -335,6 +381,10 @@ export default function ConsegneAmministrative() {
                   )}
                 </div>
               </div>
+            );
+          })}
+              </div>
+            </div>
             );
           })}
         </div>
