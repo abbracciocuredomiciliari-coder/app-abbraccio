@@ -8,8 +8,8 @@ const euro = (n: number) => `€ ${Number(n || 0).toFixed(2).replace('.', ',')}`
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Preventivo veloce — calcola un preventivo dal listino SENZA creare paziente
-// né documento. Solo nome + cognome: si genera un PDF bozza da mostrare,
-// stampare, inviare via email o condividere su WhatsApp.
+// né documento. Nome/cognome facoltativi: basta l'email per l'invio o il
+// telefono per WhatsApp. Si genera un PDF bozza da mostrare o stampare.
 // Disponibile solo nell'area riservata Gestione Privata (prezzi modificabili).
 // ═════════════════════════════════════════════════════════════════════════════
 export default function PreventivoVeloce() {
@@ -82,9 +82,10 @@ export default function PreventivoVeloce() {
     const righe = risultato.prestazioni
       .map(p => `• ${p.descrizione} — ${euro(p.prezzoUnitario * p.quantita)}`)
       .join('\n');
+    const nomeCliente = `${nome} ${cognome}`.trim();
     const testo = [
       `🧾 Preventivo Abbraccio Cure Domiciliari`,
-      `${`${nome} ${cognome}`.trim()}`,
+      ...(nomeCliente ? [nomeCliente] : []),
       '',
       righe,
       '',
@@ -107,7 +108,7 @@ export default function PreventivoVeloce() {
           <Calculator size={26} /> Preventivo veloce — senza anagrafica
         </h1>
         <p className="tw-text-slate-500 tw-text-sm tw-mt-1.5 tw-mb-0">
-          Calcola un preventivo dal listino senza creare il paziente: inserisci nome e cognome, poi visualizza/scarica il PDF o invialo via email o WhatsApp. I prezzi possono essere variati (solo area riservata).
+          Calcola un preventivo dal listino senza creare il paziente: nome e cognome sono facoltativi, basta l'email per l'invio email o il numero di telefono per WhatsApp. I prezzi possono essere variati (solo area riservata).
         </p>
       </div>
 
@@ -124,15 +125,15 @@ export default function PreventivoVeloce() {
           </h2>
           <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-2 tw-gap-3 tw-mb-3">
             <div>
-              <span style={label}>Nome *</span>
+              <span style={label}>Nome (opzionale)</span>
               <input style={input} value={nome} onChange={e => setNome(e.target.value)} placeholder="Es. Maria" />
             </div>
             <div>
-              <span style={label}>Cognome *</span>
+              <span style={label}>Cognome (opzionale)</span>
               <input style={input} value={cognome} onChange={e => setCognome(e.target.value)} placeholder="Es. Rossi" />
             </div>
             <div>
-              <span style={label}>Email (per l'invio)</span>
+              <span style={label}>Email (necessaria per invio email)</span>
               <input style={input} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="cliente@email.it" />
             </div>
             <div>
@@ -148,19 +149,19 @@ export default function PreventivoVeloce() {
           )}
 
           <div className="tw-flex tw-flex-wrap tw-gap-2.5">
-            <button type="button" onClick={() => generaPdf(true)} disabled={busy !== null || !nome.trim() || !cognome.trim()}
+            <button type="button" onClick={() => generaPdf(true)} disabled={busy !== null}
               className="tw-flex tw-items-center tw-gap-1.5 tw-px-4 tw-py-2.5 tw-rounded-lg tw-border tw-border-blue-600 tw-bg-white tw-text-blue-800 tw-font-bold tw-cursor-pointer disabled:tw-opacity-50">
               <Eye size={17} /> Visualizza / stampa PDF
             </button>
-            <button type="button" onClick={() => generaPdf(false)} disabled={busy !== null || !nome.trim() || !cognome.trim()}
+            <button type="button" onClick={() => generaPdf(false)} disabled={busy !== null}
               className="tw-flex tw-items-center tw-gap-1.5 tw-px-4 tw-py-2.5 tw-rounded-lg tw-border tw-border-slate-300 tw-bg-white tw-text-slate-700 tw-font-bold tw-cursor-pointer disabled:tw-opacity-50">
               <Printer size={17} /> {busy === 'pdf' ? 'Generazione...' : 'Scarica PDF'}
             </button>
-            <button type="button" onClick={inviaEmail} disabled={busy !== null || !nome.trim() || !cognome.trim() || !email.trim()}
+            <button type="button" onClick={inviaEmail} disabled={busy !== null || !email.trim()}
               className="tw-flex tw-items-center tw-gap-1.5 tw-px-4 tw-py-2.5 tw-rounded-lg tw-border-0 tw-bg-blue-700 tw-text-white tw-font-bold tw-cursor-pointer disabled:tw-opacity-50">
               <Mail size={17} /> {busy === 'email' ? 'Invio...' : 'Invia via email'}
             </button>
-            <button type="button" onClick={apriWhatsApp} disabled={!nome.trim() || !cognome.trim()}
+            <button type="button" onClick={apriWhatsApp} disabled={busy !== null}
               className="tw-flex tw-items-center tw-gap-1.5 tw-px-4 tw-py-2.5 tw-rounded-lg tw-border-0 tw-text-white tw-font-bold tw-cursor-pointer disabled:tw-opacity-50" style={{ background: '#25d366' }}>
               <MessageCircle size={17} /> WhatsApp
             </button>
