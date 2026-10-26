@@ -8,6 +8,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoadingScreen from './components/LoadingScreen';
 import Breadcrumb from './components/Breadcrumb';
 import { ChatBadge } from './components/ChatBadge';
+import { ConsegneBadge } from './components/ConsegneBadge';
 
 // Eager load per pagine leggere (login, dashboard)
 import Login from './pages/Login';
@@ -53,6 +54,7 @@ const GestioneFatturazione = lazy(() => import('./pages/GestioneFatturazione'));
 const ArchivioFatture = lazy(() => import('./pages/ArchivioFatture'));
 const ArchivioPreventivi = lazy(() => import('./pages/ArchivioPreventivi'));
 const PreventivoVeloce = lazy(() => import('./pages/PreventivoVeloce'));
+const ConsegneAmministrative = lazy(() => import('./pages/ConsegneAmministrative'));
 const BadantiIntermediazione = lazy(() => import('./pages/BadantiIntermediazione'));
 const ArchiviIntermediazione = lazy(() => import('./pages/ArchiviIntermediazione'));
 const GestioneContratti = lazy(() => import('./pages/GestioneContratti'));
@@ -292,6 +294,11 @@ function AppShell() {
                 Chat coordinatore
                 <ChatBadge />
               </Link>
+              <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
+                <ClipboardList size={18} />
+                Consegne
+                <ConsegneBadge />
+              </Link>
               <Link to="/piani-lavorativi" className={isActive('/piani-lavorativi') ? 'active' : ''}>
                 <Calendar size={18} />
                 Piani lavorativi
@@ -336,6 +343,11 @@ function AppShell() {
                 <MessageCircle size={18} />
                 Chat operatore
                 <ChatBadge />
+              </Link>
+              <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
+                <ClipboardList size={18} />
+                Consegne
+                <ConsegneBadge />
               </Link>
               <Link to="/verbali-equipe" className={isActive('/verbali-equipe') ? 'active' : ''}>
                 <Users size={18} />
@@ -499,6 +511,11 @@ function AppShell() {
                 <Users size={18} />
                 Intermediazioni
               </Link>
+              <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
+                <ClipboardList size={18} />
+                Consegne
+                <ConsegneBadge />
+              </Link>
               <Link to="/patients" className={isActive('/patients') ? 'active' : ''}>
                 <UserCircle size={18} />
                 Pazienti intermediazioni
@@ -612,6 +629,7 @@ function AppShell() {
           <Route path="/scheda-servizio" element={<SchedaServizio />} />
 
           {/* Route condivise (tutti gli utenti autenticati) */}
+          <Route path="/consegne" element={<ProtectedRoute><ConsegneAmministrative /></ProtectedRoute>} />
           <Route path="/protocolli-procedure" element={<ProtectedRoute><ProtocolliProcedure /></ProtectedRoute>} />
           {/* Redirect vecchie URL protocolli/procedure → pagina unificata */}
           <Route path="/protocolli" element={<Navigate to="/protocolli-procedure" replace />} />

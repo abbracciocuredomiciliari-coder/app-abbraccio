@@ -94,6 +94,9 @@ function Dashboard() {
   // Nuove richieste in attesa (prenotazioni sito + registrazioni pazienti + schede servizi)
   const [richiesteInAttesa, setRichiesteInAttesa] = useState(0);
 
+  // Consegne amministrative aperte (condivise tra aree: bacheca ufficio ↔ esterno)
+  const [consegne, setConsegne] = useState({ aperte: 0, daGestire: 0 });
+
   const caricaScadenzePai = async () => {
     try {
       const res = await api.get('/patients/scadenze-pai');
@@ -117,6 +120,10 @@ function Dashboard() {
           isPrivilegiato ? caricaNuoviAccettati() : Promise.resolve(),
         ]);
         setCounts(dashRes.data);
+        try {
+          const consegneRes = await api.get('/consegne-amministrative/conteggio');
+          setConsegne({ aperte: consegneRes.data.aperte || 0, daGestire: consegneRes.data.daGestire || 0 });
+        } catch { /* non bloccante */ }
         try {
           const unreadRes = await api.get('/messages/unread-count');
           setUnreadChat(unreadRes.data || { general: 0, patient: 0, total: 0 });
@@ -221,6 +228,17 @@ function Dashboard() {
       bgColor: 'rgba(100, 116, 139, 0.08)',
       link: '/patients',
     },
+    {
+      title: consegne.aperte > 0 ? 'Consegne da gestire' : 'Consegne',
+      subtitle: consegne.aperte > 0
+        ? `${consegne.daGestire} nuove · ${consegne.aperte} aperte totali`
+        : 'Nessuna consegna aperta',
+      value: consegne.aperte,
+      icon: ClipboardList,
+      color: consegne.aperte > 0 ? '#d97706' : '#0d9488',
+      bgColor: consegne.aperte > 0 ? 'rgba(217, 119, 6, 0.1)' : 'rgba(13, 148, 136, 0.1)',
+      link: '/consegne',
+    },
     ...(isConsulenza ? [] : [
     {
       title: 'Incarichi attivi',
@@ -255,6 +273,16 @@ function Dashboard() {
   ];
 
   const alertCards = [
+    consegne.daGestire > 0 && {
+      title: `${consegne.daGestire} ${consegne.daGestire === 1 ? 'nuova consegna' : 'nuove consegne'} da gestire`,
+      desc: 'Ci sono consegne amministrative registrate dall\'équipe in attesa di essere prese in carico.',
+      icon: ClipboardList,
+      color: '#d97706',
+      bgColor: 'rgba(217, 119, 6, 0.08)',
+      border: '#fcd34d',
+      link: '/consegne',
+      btnLabel: 'Apri le consegne →',
+    },
     !isConsulenza && counts.operatoriSenzaZonaCount > 0 && {
       title: 'Operatori senza zona',
       desc: `${counts.operatoriSenzaZonaCount} operatori non hanno impostato il domicilio di partenza e non vengono trovati nell\'assegnazione geografica.`,
