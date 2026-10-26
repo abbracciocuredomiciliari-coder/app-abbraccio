@@ -119,6 +119,7 @@ router.post('/email', authenticateToken, authorizeRole(...RUOLI_GESTIONE), audit
         <p style="margin-top:20px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari — Via di S. Maria Ausiliatrice 4/B, Roma</p>
       </div>`,
       attachments: [{ filename: `PREVENTIVO-${nomeCliente.replace(/\s+/g, '_')}.pdf`, content: buffer, contentType: 'application/pdf' }],
+      log: { tipo: 'preventivo_veloce', area: 'privato', riferimento: nomeCliente, inviataDaNome: (req as any).user?.name },
     });
     return res.json({ inviata, destinatario });
   } catch (error: any) {

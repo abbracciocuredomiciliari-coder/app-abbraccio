@@ -56,6 +56,7 @@ const ArchivioPreventivi = lazy(() => import('./pages/ArchivioPreventivi'));
 const PreventivoVeloce = lazy(() => import('./pages/PreventivoVeloce'));
 const ConsegneAmministrative = lazy(() => import('./pages/ConsegneAmministrative'));
 const ConsegnaEsterna = lazy(() => import('./pages/ConsegnaEsterna'));
+const ArchivioEmail = lazy(() => import('./pages/ArchivioEmail'));
 const BadantiIntermediazione = lazy(() => import('./pages/BadantiIntermediazione'));
 const ArchiviIntermediazione = lazy(() => import('./pages/ArchiviIntermediazione'));
 const GestioneContratti = lazy(() => import('./pages/GestioneContratti'));
@@ -88,6 +89,7 @@ import {
   UserPlus,
   ClipboardList,
   FileText,
+  Mail,
   Calendar,
   Stethoscope,
   LogOut,
@@ -478,6 +480,10 @@ function AppShell() {
                 <FileText size={18} />
                 Contratti operatori
               </Link>
+              <Link to="/archivio-email" className={isActive('/archivio-email') ? 'active' : ''}>
+                <Mail size={18} />
+                Archivio Email
+              </Link>
 
               {/* — Sistema (solo admin) — */}
               {user.role === 'admin' && (
@@ -550,6 +556,10 @@ function AppShell() {
               <Link to="/archivi-intermediazione" className={isActive('/archivi-intermediazione') ? 'active' : ''}>
                 <Archive size={18} />
                 Archivi intermediazione
+              </Link>
+              <Link to="/archivio-email" className={isActive('/archivio-email') ? 'active' : ''}>
+                <Mail size={18} />
+                Archivio Email
               </Link>
 
               {/* — Sistema (solo admin) — */}
@@ -632,6 +642,7 @@ function AppShell() {
 
           {/* Route condivise (tutti gli utenti autenticati) */}
           <Route path="/consegne" element={<ProtectedRoute><ConsegneAmministrative /></ProtectedRoute>} />
+          <Route path="/archivio-email" element={<ProtectedRoute><ArchivioEmail /></ProtectedRoute>} />
           <Route path="/protocolli-procedure" element={<ProtectedRoute><ProtocolliProcedure /></ProtectedRoute>} />
           {/* Redirect vecchie URL protocolli/procedure → pagina unificata */}
           <Route path="/protocolli" element={<Navigate to="/protocolli-procedure" replace />} />

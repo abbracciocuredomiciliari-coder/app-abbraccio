@@ -312,6 +312,7 @@ router.post('/firma/:token', async (req: Request, res: Response) => {
         subject: `Copia ${label} ${doc.numero} — Abbraccio Cure Domiciliari`,
         html,
         attachments: [{ filename, content: signedBuffer, contentType: 'application/pdf' }],
+        log: { tipo: doc.tipo, area: isDocConsulenza(doc) ? 'intermediazione' : 'privato', riferimento: doc.numero },
       });
       if (!copiaInviata) console.warn(`⚠️ Copia firmata ${doc.numero} NON inviata a ${doc.firma.email} — SMTP non disponibile`);
     }
@@ -336,6 +337,7 @@ router.post('/firma/:token', async (req: Request, res: Response) => {
         to: operatoreEmail,
         subject: `Contratto arrivato — ${label} ${doc.numero} firmato`,
         html,
+        log: { tipo: 'notifica_firma', area: isDocConsulenza(doc) ? 'intermediazione' : 'privato', riferimento: doc.numero },
       });
     }
 
@@ -394,7 +396,7 @@ router.post('/firma/:token/rifiuta', async (req: Request, res: Response) => {
 
     for (const to of destinatari) {
       try {
-        await inviaEmail({ to, subject: `Preventivo ${doc.numero} rifiutato — ${nomePaziente}`, html });
+        await inviaEmail({ to, subject: `Preventivo ${doc.numero} rifiutato — ${nomePaziente}`, html, log: { tipo: 'notifica_rifiuto', area: isDocConsulenza(doc) ? 'intermediazione' : 'privato', riferimento: doc.numero } });
       } catch (emailErr) {
         console.warn('⚠️ Errore invio notifica rifiuto preventivo:', emailErr);
       }
@@ -503,6 +505,7 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
       subject: `${label} ${doc.numero} — Abbraccio Cure Domiciliari`,
       html,
       attachments: [{ filename, content: buffer, contentType: 'application/pdf' }],
+      log: { tipo: doc.tipo, area: isDocConsulenza(doc) ? 'intermediazione' : 'privato', riferimento: doc.numero, inviataDaNome: (req as any).user?.name },
     });
     if (!inviata) {
       return res.status(502).json({
@@ -549,6 +552,7 @@ router.post('/:id/rinvia-email', authenticateToken, authorizeRole(...RUOLI_GESTI
       subject: `Copia ${label} ${doc.numero} — Abbraccio Cure Domiciliari`,
       html,
       attachments: [{ filename, content: buffer, contentType: 'application/pdf' }],
+      log: { tipo: doc.tipo, area: isDocConsulenza(doc) ? 'intermediazione' : 'privato', riferimento: doc.numero, inviataDaNome: (req as any).user?.name },
     });
     if (!inviata) {
       return res.status(502).json({

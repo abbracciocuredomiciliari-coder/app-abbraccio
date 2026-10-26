@@ -889,6 +889,7 @@ router.post('/firma/:token', async (req: Request, res: Response) => {
       await inviaEmail({
         to: adminEmail,
         subject: `✅ Contratto intermediazione firmato — ${nomePaz}`,
+        log: { tipo: 'notifica_firma', area: 'intermediazione', riferimento: nomePaz },
         html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
           <h2 style="color:#16a34a;margin-top:0;">✅ Contratto d'incarico firmato</h2>
           <p>Il paziente ha firmato il <strong>contratto d'incarico</strong>, l'<strong>informativa GDPR</strong> e accettato il <strong>preventivo</strong> allegato.</p>

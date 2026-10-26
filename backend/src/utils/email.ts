@@ -1,4 +1,31 @@
 import nodemailer from 'nodemailer';
+import EmailLog from '../models/EmailLog';
+
+// Metadati opzionali per l'archivio email (chi/ dove/ cosa)
+export interface EmailLogMeta {
+  tipo?: string;                                // 'preventivo' | 'fattura' | 'contratto' | 'rettifica' | 'conferma' …
+  area?: 'privato' | 'intermediazione' | 'generale';
+  riferimento?: string;                         // es. numero documento / nome paziente
+  inviataDaNome?: string;                       // utente che ha scatenato l'invio
+}
+
+// Scrive il record nell'archivio senza mai bloccare l'invio
+function registraEmailLog(to: string, subject: string, esito: 'inviata' | 'fallita', extra: { errore?: string; messageId?: string; allegati?: string[] }, meta?: EmailLogMeta) {
+  try {
+    EmailLog.create({
+      to,
+      subject,
+      tipo: meta?.tipo || 'generica',
+      area: meta?.area || 'generale',
+      riferimento: meta?.riferimento,
+      allegati: extra.allegati,
+      inviataDaNome: meta?.inviataDaNome,
+      esito,
+      errore: extra.errore,
+      messageId: extra.messageId,
+    }).catch(err => console.error('[EmailLog] salvataggio fallito:', err?.message));
+  } catch { /* noop — il log non deve mai rompere l'invio */ }
+}
 
 // ─── Crea il transporter SMTP (configurazione standard — compatibile con Brevo/Gmail/altri) ──
 function getTransporter() {
@@ -53,11 +80,14 @@ async function invia(
   html: string,
   attachments?: { filename: string; path?: string; content?: Buffer; contentType?: string }[],
   fromName?: string,
-  fromEmail?: string
+  fromEmail?: string,
+  logMeta?: EmailLogMeta
 ): Promise<boolean> {
+  const allegati = (attachments || []).map(a => a.filename);
   const transporter = getTransporter();
   if (!transporter) {
     console.warn(`⚠️ Email non inviata a ${to} — SMTP non configurato`);
+    registraEmailLog(to, subject, 'fallita', { errore: 'SMTP non configurato', allegati }, logMeta);
     return false;
   }
   try {
@@ -71,12 +101,14 @@ async function invia(
       attachments,
     });
     console.log(`✅ Email inviata a ${to} — messageId: ${info.messageId}`);
+    registraEmailLog(to, subject, 'inviata', { messageId: info.messageId, allegati }, logMeta);
     return true;
   } catch (err: any) {
     console.error(`❌ Errore invio email a ${to}:`, err?.message || err);
     if (err?.code) console.error(`   Codice: ${err.code}`);
     if (err?.response) console.error(`   Risposta SMTP: ${err.response}`);
     if (err?.responseCode) console.error(`   Codice risposta: ${err.responseCode}`);
+    registraEmailLog(to, subject, 'fallita', { errore: err?.message || 'errore SMTP', allegati }, logMeta);
     return false;
   }
 }
@@ -91,8 +123,9 @@ export async function inviaEmail(options: {
   from?: string;
   fromEmail?: string;
   attachments?: { filename: string; path?: string; content?: Buffer; contentType?: string }[];
+  log?: EmailLogMeta;
 }): Promise<boolean> {
-  return invia(options.to, options.subject, options.html, options.attachments, options.from, options.fromEmail);
+  return invia(options.to, options.subject, options.html, options.attachments, options.from, options.fromEmail, options.log);
 }
 
 // ─── Conferma al richiedente — "richiesta ricevuta, in attesa di elaborazione" ─

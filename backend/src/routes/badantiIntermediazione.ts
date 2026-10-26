@@ -268,6 +268,7 @@ router.post('/simula-costo/pdf/email', authenticateToken, async (req: Request, r
         <p>Restiamo a disposizione per ogni chiarimento.</p>
         <p><strong>Abbraccio Cure Domiciliari</strong></p>`,
       attachments: [{ filename: fileName, content: pdfBuffer, contentType: 'application/pdf' }],
+      log: { tipo: 'preventivo_badante', area: 'intermediazione', riferimento: intestatarioPulito || undefined },
     });
     if (!inviata) {
       return res.status(502).json({ message: `Email non inviata a ${emailDest}: il server SMTP ha rifiutato il messaggio o non è configurato` });
