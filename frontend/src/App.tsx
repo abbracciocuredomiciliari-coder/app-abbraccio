@@ -482,7 +482,7 @@ function AppShell() {
               </Link>
               <Link to="/archivio-email" className={isActive('/archivio-email') ? 'active' : ''}>
                 <Mail size={18} />
-                Archivio Email
+                Email inviate
               </Link>
 
               {/* — Sistema (solo admin) — */}
@@ -559,7 +559,7 @@ function AppShell() {
               </Link>
               <Link to="/archivio-email" className={isActive('/archivio-email') ? 'active' : ''}>
                 <Mail size={18} />
-                Archivio Email
+                Email inviate
               </Link>
 
               {/* — Sistema (solo admin) — */}

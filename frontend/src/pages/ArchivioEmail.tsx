@@ -104,7 +104,7 @@ export default function ArchivioEmail() {
     <div className="page-container tw-p-5">
       <div className="tw-mb-5">
         <h1 className="tw-flex tw-items-center tw-gap-2 tw-text-blue-900 tw-m-0 tw-text-2xl tw-font-extrabold">
-          <Mail size={26} /> Archivio email inviate
+          <Mail size={26} /> Email inviate
         </h1>
         <p className="tw-text-slate-500 tw-text-sm tw-mt-1.5 tw-mb-0">
           Registro progressivo di tutte le email inviate dal gestionale (Gestione Privata e Intermediazioni). Un'email inviata non si può cancellare: se è partita per errore usa <strong>Rettifica</strong> per chiedere al destinatario di ignorarla.
