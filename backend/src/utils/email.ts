@@ -1,5 +1,7 @@
 import nodemailer from 'nodemailer';
+import fs from 'fs';
 import EmailLog from '../models/EmailLog';
+import EmailAllegato from '../models/EmailAllegato';
 
 // Metadati opzionali per l'archivio email (chi/ dove/ cosa)
 export interface EmailLogMeta {
@@ -9,9 +11,22 @@ export interface EmailLogMeta {
   inviataDaNome?: string;                       // utente che ha scatenato l'invio
 }
 
-// Scrive il record nell'archivio senza mai bloccare l'invio
-function registraEmailLog(to: string, subject: string, esito: 'inviata' | 'fallita', extra: { errore?: string; messageId?: string; allegati?: string[] }, meta?: EmailLogMeta) {
+const MAX_ALLEGATO_BYTES = 14 * 1024 * 1024; // limite doc MongoDB 16MB — margine di sicurezza
+
+// Scrive il record nell'archivio senza mai bloccare l'invio; conserva anche il
+// contenuto degli allegati in EmailAllegato così restano scaricabili.
+function registraEmailLog(to: string, subject: string, esito: 'inviata' | 'fallita', extra: { errore?: string; messageId?: string; allegati?: string[] }, meta?: EmailLogMeta, files?: { filename: string; path?: string; content?: Buffer; contentType?: string }[]) {
   try {
+    const salvabili = (files || [])
+      .map(f => {
+        try {
+          const data = f.content || (f.path ? fs.readFileSync(f.path) : undefined);
+          if (!data || data.length > MAX_ALLEGATO_BYTES) return null;
+          return { filename: f.filename, contentType: f.contentType, size: data.length, data };
+        } catch { return null; }
+      })
+      .filter(Boolean) as { filename: string; contentType?: string; size: number; data: Buffer }[];
+
     EmailLog.create({
       to,
       subject,
@@ -19,10 +34,16 @@ function registraEmailLog(to: string, subject: string, esito: 'inviata' | 'falli
       area: meta?.area || 'generale',
       riferimento: meta?.riferimento,
       allegati: extra.allegati,
+      allegatiSalvati: salvabili.length,
       inviataDaNome: meta?.inviataDaNome,
       esito,
       errore: extra.errore,
       messageId: extra.messageId,
+    }).then(log => {
+      if (salvabili.length) {
+        EmailAllegato.insertMany(salvabili.map(a => ({ ...a, emailLogId: log._id })))
+          .catch(err => console.error('[EmailAllegato] salvataggio fallito:', err?.message));
+      }
     }).catch(err => console.error('[EmailLog] salvataggio fallito:', err?.message));
   } catch { /* noop — il log non deve mai rompere l'invio */ }
 }
@@ -87,7 +108,7 @@ async function invia(
   const transporter = getTransporter();
   if (!transporter) {
     console.warn(`⚠️ Email non inviata a ${to} — SMTP non configurato`);
-    registraEmailLog(to, subject, 'fallita', { errore: 'SMTP non configurato', allegati }, logMeta);
+    registraEmailLog(to, subject, 'fallita', { errore: 'SMTP non configurato', allegati }, logMeta, attachments);
     return false;
   }
   try {
@@ -101,14 +122,14 @@ async function invia(
       attachments,
     });
     console.log(`✅ Email inviata a ${to} — messageId: ${info.messageId}`);
-    registraEmailLog(to, subject, 'inviata', { messageId: info.messageId, allegati }, logMeta);
+    registraEmailLog(to, subject, 'inviata', { messageId: info.messageId, allegati }, logMeta, attachments);
     return true;
   } catch (err: any) {
     console.error(`❌ Errore invio email a ${to}:`, err?.message || err);
     if (err?.code) console.error(`   Codice: ${err.code}`);
     if (err?.response) console.error(`   Risposta SMTP: ${err.response}`);
     if (err?.responseCode) console.error(`   Codice risposta: ${err.responseCode}`);
-    registraEmailLog(to, subject, 'fallita', { errore: err?.message || 'errore SMTP', allegati }, logMeta);
+    registraEmailLog(to, subject, 'fallita', { errore: err?.message || 'errore SMTP', allegati }, logMeta, attachments);
     return false;
   }
 }

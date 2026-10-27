@@ -59,6 +59,23 @@ export default function ArchivioEmail() {
   const [rettificaTesto, setRettificaTesto] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ tipo: 'ok' | 'err'; testo: string } | null>(null);
+  const [loadingAllegato, setLoadingAllegato] = useState<string | null>(null);
+
+  const apriAllegato = async (e: EmailLogItem, index: number) => {
+    const key = `${e._id}-${index}`;
+    setLoadingAllegato(key);
+    try {
+      const res = await api.get(`/archivio-email/${e._id}/allegato/${index}`, { responseType: 'blob' });
+      const blob = res.data as Blob;
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch {
+      setMsg({ tipo: 'err', testo: 'Allegato non disponibile per questa email (inviata prima della conservazione allegati).' });
+    } finally {
+      setLoadingAllegato(null);
+    }
+  };
 
   const carica = async () => {
     try {
@@ -190,7 +207,20 @@ export default function ArchivioEmail() {
                       {e.inviataDaNome && <span>· da {e.inviataDaNome}</span>}
                       {e.riferimento && <span>· rif: {e.riferimento}</span>}
                       {e.allegati && e.allegati.length > 0 && (
-                        <span className="tw-flex tw-items-center tw-gap-1"><Paperclip size={11} />{e.allegati.join(', ')}</span>
+                        <span className="tw-flex tw-items-center tw-gap-1.5 tw-flex-wrap">
+                          <Paperclip size={11} />
+                          {e.allegati.map((nome, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => apriAllegato(e, i)}
+                              disabled={loadingAllegato === `${e._id}-${i}`}
+                              title="Visualizza / scarica l'allegato inviato"
+                              className="tw-text-blue-700 tw-bg-blue-50 tw-border tw-border-blue-200 tw-rounded tw-px-1.5 tw-py-0.5 tw-font-semibold tw-cursor-pointer hover:tw-bg-blue-100 tw-underline disabled:tw-opacity-50">
+                              {loadingAllegato === `${e._id}-${i}` ? '⏳' : '📄'} {nome}
+                            </button>
+                          ))}
+                        </span>
                       )}
                       {e.rettificata && e.rettificaIl && <span className="tw-text-red-500">· rettificata il {fmtData(e.rettificaIl)}{e.rettificaDaNome ? ` da ${e.rettificaDaNome}` : ''}</span>}
                     </div>
