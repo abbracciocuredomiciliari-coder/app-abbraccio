@@ -29,15 +29,17 @@ interface Fattura {
   stato: 'emesso' | 'firmato' | 'annullato';
 }
 
+// Livelli CCNL lavoro domestico: indicano le MANSIONI, non la convivenza
+// (la convivenza la decide il tipo di contratto). Fonte: CCNL art. 16.
 const LIVELLI_DESCRIZIONI: Record<string, string> = {
-  A: 'Operatore base: assistenza minima e piccoli compiti domestici',
-  AS: 'Operatore base super: base con qualifica/anzianità superiore',
-  B: 'Badante/colf convivente: assistenza giornaliera in convivenza',
-  BS: 'Badante convivente super: maggiore autonomia e qualifica',
-  C: 'Badante non convivente: assistenza a non autosufficienti',
-  CS: 'Badante non convivente super: profilo specializzato',
-  D: 'Operatore specializzato: assistenza notturna, turni o profili complessi',
-  DS: 'Operatore super specializzato: coordinamento o massima qualifica',
+  A: 'Colf/pulizie e mansioni domestiche — senza assistenza alla persona',
+  AS: 'Assistenza a persone autosufficienti — anche babysitter oltre 6 anni',
+  B: 'Assistenza a persone autosufficienti e collaborazione in casa',
+  BS: 'Assistenza a persone non autosufficienti — anche babysitter sotto 6 anni',
+  C: 'Mansioni qualificate senza assistenza (custode, autista, cameriere)',
+  CS: 'Assistenza a non autosufficienti con formazione — badante qualificata',
+  D: 'Direttore di casa / amministratore — profilo direttivo, non badante',
+  DS: 'Assistenza a non autosufficienti con diploma — badante specializzata',
 };
 
 interface SimulazioneCosto {

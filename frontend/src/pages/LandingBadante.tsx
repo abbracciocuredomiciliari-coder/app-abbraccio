@@ -18,27 +18,29 @@ const CONTRATTI: { value: string; label: string; livelli: string[]; ore: boolean
   { value: 'sostituzione', label: 'Sostituzione (giorni di riposo)', livelli: ['CS', 'DS'], ore: true },
 ];
 
+// Livelli CCNL lavoro domestico: indicano le MANSIONI, non la convivenza
+// (la convivenza la decide il tipo di contratto). Fonte: CCNL art. 16.
 const LIVELLI_DESC: Record<string, string> = {
-  A: 'Operatore base: assistenza minima e piccoli compiti domestici',
-  AS: 'Operatore base super: base con qualifica/anzianità superiore',
-  B: 'Badante/colf convivente: assistenza giornaliera in convivenza',
-  BS: 'Badante convivente super: maggiore autonomia e qualifica',
-  C: 'Badante non convivente: assistenza a non autosufficienti',
-  CS: 'Badante non convivente super: profilo specializzato',
-  D: 'Operatore specializzato: assistenza notturna, turni o profili complessi',
-  DS: 'Operatore super specializzato: coordinamento o massima qualifica',
+  A: 'Colf/pulizie e mansioni domestiche — senza assistenza alla persona',
+  AS: 'Assistenza a persone autosufficienti — anche babysitter oltre 6 anni',
+  B: 'Assistenza a persone autosufficienti e collaborazione in casa',
+  BS: 'Assistenza a persone non autosufficienti — anche babysitter sotto 6 anni',
+  C: 'Mansioni qualificate senza assistenza (custode, autista, cameriere)',
+  CS: 'Assistenza a non autosufficienti con formazione — badante qualificata',
+  D: 'Direttore di casa / amministratore — profilo direttivo, non badante',
+  DS: 'Assistenza a non autosufficienti con diploma — badante specializzata',
 };
 
 // Legenda completa delle categorie CCNL per aiutare la scelta nel preventivo
 const LEGENDA_LIVELLI: Record<string, { titolo: string; desc: string; colore: string }> = {
   A:  { titolo: 'Operatore generico', desc: 'Pulizie, stiro, compagnia e piccoli aiuti a persone autosufficienti. Nessuna assistenza alla persona.', colore: '#64748b' },
   AS: { titolo: 'Operatore generico qualificato', desc: 'Come il livello A ma con qualifica o maggiore esperienza; può anche seguire bambini sopra i 6 anni.', colore: '#64748b' },
-  B:  { titolo: 'Assistente a persona autosufficiente', desc: 'Badante/colf per anziani autosufficienti: compagnia, preparazione pasti, gestione della casa. Tra i livelli più usati per la badante convivente.', colore: '#0369a1' },
-  BS: { titolo: 'Assistente qualificato', desc: 'Assistenza a persone con autonomia ridotta, baby sitter di bambini sotto i 6 anni o cuoco di famiglia. Il livello più richiesto per le badanti conviventi.', colore: '#0369a1' },
-  C:  { titolo: 'Assistente a persona NON autosufficiente (a ore)', desc: 'Igiene personale, pasti, mobilità e vigilanza a domicilio a ore, senza convivenza.', colore: '#c2410c' },
-  CS: { titolo: 'Assistente non autosufficienti qualificato', desc: 'Come il livello C ma con formazione specifica: demenze, patologie complesse, uso di ausili.', colore: '#c2410c' },
-  D:  { titolo: 'Badante convivente per NON autosufficienti', desc: 'Assistenza continuativa in convivenza a persona non autosufficiente.', colore: '#7c3aed' },
-  DS: { titolo: 'Badante convivente specializzata', desc: 'Come il livello D con diploma o certificazione assistenziale: per i casi più complessi.', colore: '#7c3aed' },
+  B:  { titolo: 'Assistente a persona autosufficiente', desc: 'Badante/colf per anziani autosufficienti: compagnia, preparazione pasti, gestione della casa. Tra i livelli più usati per la badante.', colore: '#0369a1' },
+  BS: { titolo: 'Assistente a persona non autosufficiente', desc: 'Assistenza a persone non autosufficienti senza formazione specifica, babysitter di bambini sotto i 6 anni o cuoco di famiglia.', colore: '#0369a1' },
+  C:  { titolo: 'Mansioni qualificate senza assistenza', desc: 'Custode con formazione, cameriere personale, autista, operaio qualificato: il livello C non copre l\'assistenza alla persona.', colore: '#c2410c' },
+  CS: { titolo: 'Assistente non autosufficienti qualificato', desc: 'Assistenza a persone non autosufficienti con formazione specifica: demenze, patologie complesse, uso di ausili. La badante qualificata per casi impegnativi.', colore: '#c2410c' },
+  D:  { titolo: 'Direttore di casa / amministratore', desc: 'Coordina il personale domestico e i beni di famiglia: profilo direttivo, non è un livello da badante.', colore: '#7c3aed' },
+  DS: { titolo: 'Badante specializzata (diplomata)', desc: 'Assistenza a persone non autosufficienti con diploma o certificazione professionale: il livello più alto per i casi più complessi.', colore: '#7c3aed' },
 };
 
 interface Simulazione {
@@ -335,7 +337,7 @@ export default function LandingBadante() {
 
               {livelliDisponibili.length > 0 && (
                 <div>
-                  <span style={label}>Livello CCNL <InfoNote text="Il livello stabilisce mansioni e paga minima secondo il CCNL: da A (mansioni di base) a DS (assistenza a persone non autosufficienti, massima qualifica). Se hai dubbi, B e BS sono i livelli più usati per la badante." /></span>
+                  <span style={label}>Livello CCNL <InfoNote text="Il livello stabilisce le mansioni e la paga minima secondo il CCNL — la convivenza la decide il tipo di contratto, non il livello. Per la badante: B/BS per assistenza ad autosufficienti o non autosufficienti senza formazione, CS/DS per non autosufficienti con formazione o diploma." /></span>
                   <select value={livello} onChange={e => { setLivello(e.target.value); invalida(); }} style={input}>
                     {livelliDisponibili.map(l => <option key={l} value={l}>{l} — {LIVELLI_DESC[l]}</option>)}
                   </select>
