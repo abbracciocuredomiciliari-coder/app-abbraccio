@@ -313,7 +313,7 @@ router.post('/login', loginLimiter, async (req: Request, res: Response) => {
     // Ruoli privilegiati accedono sempre a entrambe le aree.
     const RUOLI_PRIVILEGIATI = ['admin', 'coordinator', 'direttore'];
     const privilegiato = RUOLI_PRIVILEGIATI.includes(user.role);
-    let modalitaAbilitata: 'entrambi' | 'privato' | 'convenzione' = 'entrambi';
+    let modalitaAbilitata: 'entrambi' | 'privato' | 'convenzione' | 'intermediazione' = 'entrambi';
     if (!privilegiato) {
       const staff = await getStaffByUser(String(user._id), user.email);
       modalitaAbilitata = staff?.modalitaAbilitata || 'entrambi';

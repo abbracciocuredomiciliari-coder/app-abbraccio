@@ -2,7 +2,7 @@ import { Document, Schema, model, Types } from 'mongoose';
 import { encrypt, decrypt } from '../utils/encryption';
 
 // Categorie di ruolo
-export type StaffCategory = 'infermieristico' | 'oss' | 'riabilitativo' | 'medico' | 'sociale' | 'coordinamento' | 'direzione' | 'privato' | 'osa' | 'assistente-familiare' | 'badante';
+export type StaffCategory = 'infermieristico' | 'oss' | 'riabilitativo' | 'medico' | 'sociale' | 'coordinamento' | 'direzione' | 'privato' | 'osa' | 'assistente-familiare' | 'badante' | 'colf';
 
 export interface IStaff extends Document {
   firstName: string;
@@ -21,7 +21,8 @@ export interface IStaff extends Document {
   dataFineCollaborazione?: Date;
   note?: string;
   userId?: Types.ObjectId; // collegamento con l'account di login (User)
-  modalitaAbilitata: 'entrambi' | 'privato' | 'convenzione';
+  modalitaAbilitata: 'entrambi' | 'privato' | 'convenzione' | 'intermediazione';
+  areaIntermediazione?: boolean; // personale iscritto dal modulo Intermediazioni (badante/colf/assistente familiare)
 
   // === ZONA DI LAVORO ===
   domicilioPartenza?: string;       // Indirizzo testo
@@ -38,7 +39,7 @@ const staffSchema = new Schema<IStaff>(
     category: {
       type: String,
       required: true,
-      enum: ['infermieristico', 'oss', 'riabilitativo', 'medico', 'sociale', 'coordinamento', 'direzione', 'privato', 'osa', 'assistente-familiare', 'badante'],
+      enum: ['infermieristico', 'oss', 'riabilitativo', 'medico', 'sociale', 'coordinamento', 'direzione', 'privato', 'osa', 'assistente-familiare', 'badante', 'colf'],
       default: 'infermieristico'
     },
     phone: { type: String, trim: true },
@@ -60,9 +61,10 @@ const staffSchema = new Schema<IStaff>(
     },
     modalitaAbilitata: {
       type: String,
-      enum: ['entrambi', 'privato', 'convenzione'],
+      enum: ['entrambi', 'privato', 'convenzione', 'intermediazione'],
       default: 'entrambi',
     },
+    areaIntermediazione: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

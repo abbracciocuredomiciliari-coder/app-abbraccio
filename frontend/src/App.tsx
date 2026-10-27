@@ -56,6 +56,7 @@ const ArchivioPreventivi = lazy(() => import('./pages/ArchivioPreventivi'));
 const PreventivoVeloce = lazy(() => import('./pages/PreventivoVeloce'));
 const ConsegneAmministrative = lazy(() => import('./pages/ConsegneAmministrative'));
 const ConsegnaEsterna = lazy(() => import('./pages/ConsegnaEsterna'));
+const IscrizioneIntermediazione = lazy(() => import('./pages/IscrizioneIntermediazione'));
 const ArchivioEmail = lazy(() => import('./pages/ArchivioEmail'));
 const BadantiIntermediazione = lazy(() => import('./pages/BadantiIntermediazione'));
 const ArchiviIntermediazione = lazy(() => import('./pages/ArchiviIntermediazione'));
@@ -138,7 +139,7 @@ function AppShell() {
   const isActive = (path: string) => location.pathname === path;
   const isFirma = location.pathname.startsWith('/firma-');
   // Landing pubbliche e link esterni del sito: pagina dedicata senza menu/login
-  const isLanding = ['/badante', '/preventivo', '/register', '/richiesta-servizio', '/richiesta-assistenza', '/scrivi-consegna'].includes(location.pathname);
+  const isLanding = ['/badante', '/preventivo', '/register', '/richiesta-servizio', '/richiesta-assistenza', '/scrivi-consegna', '/iscriviti-intermediazione'].includes(location.pathname);
   const operatore = user && !isPrivilegiato(user.role);
 
   // Chiudi il menu mobile a ogni cambio pagina
@@ -604,6 +605,7 @@ function AppShell() {
           <Route path="/richiesta-servizio" element={<RichiestaServizio />} />
           <Route path="/richiesta-assistenza" element={<RichiestaAssistenza />} />
           <Route path="/scrivi-consegna" element={<ConsegnaEsterna />} />
+          <Route path="/iscriviti-intermediazione" element={<IscrizioneIntermediazione />} />
           <Route path="/badante" element={<LandingBadante />} />
           <Route path="/preventivo" element={<LandingPreventivo />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

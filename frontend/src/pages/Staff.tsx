@@ -38,13 +38,13 @@ interface StaffMember {
   lastName: string;
   email: string;
   role: string;
-  category: 'infermieristico' | 'oss' | 'riabilitativo' | 'medico' | 'sociale' | 'coordinamento' | 'direzione' | 'privato' | 'osa' | 'assistente-familiare' | 'badante';
+  category: 'infermieristico' | 'oss' | 'riabilitativo' | 'medico' | 'sociale' | 'coordinamento' | 'direzione' | 'privato' | 'osa' | 'assistente-familiare' | 'badante' | 'colf';
   phone?: string;
   active: boolean;
   dataInizioCollaborazione?: string;
   dataFineCollaborazione?: string;
   note?: string;
-  modalitaAbilitata?: 'entrambi' | 'privato' | 'convenzione';
+  modalitaAbilitata?: 'entrambi' | 'privato' | 'convenzione' | 'intermediazione';
   domicilioPartenza?: string;
   raggioAzioneKm?: number;
   domicilioCoords?: { lat: number; lng: number };
@@ -73,6 +73,7 @@ const categories = [
   { value: 'osa', label: 'OSA - Operatore Socio Assistenziale', color: '#06b6d4' },
   { value: 'assistente-familiare', label: 'Assistente familiare', color: '#f59e0b' },
   { value: 'badante', label: 'Badante', color: '#ec4899' },
+  { value: 'colf', label: 'Colf', color: '#f97316' },
 ];
 
 const rolesByCategory: Record<string, string[]> = {
@@ -87,6 +88,7 @@ const rolesByCategory: Record<string, string[]> = {
   osa: ['OSA - Operatore Socio Assistenziale'],
   'assistente-familiare': ['Assistente familiare'],
   badante: ['Badante'],
+  colf: ['Colf'],
 };
 
 const documentTypes = [
@@ -118,12 +120,12 @@ function Staff() {
     phone: '',
     dataInizioCollaborazione: new Date().toISOString().split('T')[0],
     note: '',
-    modalitaAbilitata: 'entrambi' as 'entrambi' | 'privato' | 'convenzione',
+    modalitaAbilitata: 'entrambi' as 'entrambi' | 'privato' | 'convenzione' | 'intermediazione',
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [staffInModifica, setStaffInModifica] = useState<StaffMember | null>(null);
-  const [modificaForm, setModificaForm] = useState({ firstName: '', lastName: '', email: '', phone: '', role: '', category: 'infermieristico' as StaffMember['category'], note: '', modalitaAbilitata: 'entrambi' as 'entrambi' | 'privato' | 'convenzione' });
+  const [modificaForm, setModificaForm] = useState({ firstName: '', lastName: '', email: '', phone: '', role: '', category: 'infermieristico' as StaffMember['category'], note: '', modalitaAbilitata: 'entrambi' as 'entrambi' | 'privato' | 'convenzione' | 'intermediazione' });
   const [salvataggioModifica, setSalvataggioModifica] = useState(false);
 
   // Document management state
@@ -208,9 +210,9 @@ function Staff() {
     }
   };
 
-  const categoriePrivate = ['privato', 'osa', 'assistente-familiare', 'badante'];
+  const categoriePrivate = ['privato', 'osa', 'assistente-familiare', 'badante', 'colf'];
   // Area Intermediazioni: solo personale domestico/familiare (colf, badanti, assistenti familiari, osa)
-  const categorieConsulenza = ['privato', 'osa', 'assistente-familiare', 'badante'];
+  const categorieConsulenza = ['privato', 'osa', 'assistente-familiare', 'badante', 'colf'];
 
   // In area Intermediazioni il nuovo personale è sempre di tipo familiare e abilitato al privato
   useEffect(() => {
@@ -233,8 +235,8 @@ function Staff() {
         !categoriePrivate.includes(s.category)
       );
     } else {
-      // In Gestione Privata: nasconde lo staff abilitato solo alla convenzione SIAT
-      filtered = filtered.filter(s => s.modalitaAbilitata !== 'convenzione');
+      // In Gestione Privata: nasconde lo staff abilitato solo alla convenzione SIAT o solo alle Intermediazioni
+      filtered = filtered.filter(s => s.modalitaAbilitata !== 'convenzione' && s.modalitaAbilitata !== 'intermediazione');
     }
 
     if (selectedCategory) {
@@ -299,7 +301,7 @@ function Staff() {
     const { name, value } = event.target;
     setFormData(prev => {
       const next = { ...prev, [name]: value };
-      if (name === 'modalitaAbilitata' && value === 'convenzione' && ['privato','osa','assistente-familiare','badante'].includes(prev.category)) {
+      if (name === 'modalitaAbilitata' && value === 'convenzione' && ['privato','osa','assistente-familiare','badante','colf'].includes(prev.category)) {
         next.category = 'infermieristico';
         next.role = '';
       }
@@ -774,7 +776,7 @@ function Staff() {
                   .filter(cat =>
                     isConsulenza
                       ? categorieConsulenza.includes(cat.value)
-                      : (!['privato','osa','assistente-familiare','badante'].includes(cat.value) || (!isConvenzione && formData.modalitaAbilitata !== 'convenzione'))
+                      : (!['privato','osa','assistente-familiare','badante','colf'].includes(cat.value) || (!isConvenzione && formData.modalitaAbilitata !== 'convenzione'))
                   )
                   .map(cat => (
                     <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -825,7 +827,7 @@ function Staff() {
               >
                 <option value="entrambi">Entrambe (Privato + Convenzione)</option>
                 <option value="privato">Solo Pazienti Privati</option>
-                <option value="convenzione">Solo Pazienti Convenzione SIAT</option>
+                <option value="convenzione">Solo Pazienti Convenzione SIAT</option><option value="intermediazione">Solo Intermediazioni</option>
               </select>
             </label>
           )}
@@ -974,7 +976,7 @@ function Staff() {
                       <select
                         value={staff.modalitaAbilitata || 'entrambi'}
                         onChange={async (e) => {
-                          const val = e.target.value as 'entrambi' | 'privato' | 'convenzione';
+                          const val = e.target.value as 'entrambi' | 'privato' | 'convenzione' | 'intermediazione';
                           try {
                             await api.put(`/staff/${staff._id}`, { modalitaAbilitata: val });
                             loadStaff();
@@ -985,7 +987,7 @@ function Staff() {
                       >
                         <option value="entrambi">🔓 Entrambi</option>
                         <option value="privato">👤 Solo Privati</option>
-                        <option value="convenzione">🏥 Solo SIAT</option>
+                        <option value="convenzione">🏥 Solo SIAT</option><option value="intermediazione">🤝 Solo Intermediazioni</option>
                       </select>
                     )}
                     {canEdit && staff.active && (
@@ -1087,17 +1089,17 @@ function Staff() {
           <label>Email di accesso *<input type="email" required value={modificaForm.email} onChange={e => setModificaForm(f => ({ ...f, email: e.target.value }))} /></label>
           <label>Telefono<input type="tel" value={modificaForm.phone} onChange={e => setModificaForm(f => ({ ...f, phone: e.target.value }))} /></label>
           <div className="tw-grid tw-grid-cols-2 tw-gap-3">
-            <label>Categoria<select value={modificaForm.category} onChange={e => setModificaForm(f => ({ ...f, category: e.target.value as StaffMember['category'], role: rolesByCategory[e.target.value]?.includes(f.role) ? f.role : '' }))}>{categories.filter(c => !['privato','osa','assistente-familiare','badante'].includes(c.value) || (!isConvenzione && modificaForm.modalitaAbilitata !== 'convenzione')).map(category => <option key={category.value} value={category.value}>{category.label}</option>)}</select></label>
+            <label>Categoria<select value={modificaForm.category} onChange={e => setModificaForm(f => ({ ...f, category: e.target.value as StaffMember['category'], role: rolesByCategory[e.target.value]?.includes(f.role) ? f.role : '' }))}>{categories.filter(c => !['privato','osa','assistente-familiare','badante','colf'].includes(c.value) || (!isConvenzione && modificaForm.modalitaAbilitata !== 'convenzione')).map(category => <option key={category.value} value={category.value}>{category.label}</option>)}</select></label>
             <label>Ruolo *<select required value={modificaForm.role} onChange={e => setModificaForm(f => ({ ...f, role: e.target.value }))}><option value="">Seleziona ruolo</option>{rolesByCategory[modificaForm.category].map(role => <option key={role} value={role}>{role}</option>)}</select></label>
           </div>
           <label>Modalità abilitata<select value={modificaForm.modalitaAbilitata} onChange={e => setModificaForm(f => {
-              const next = { ...f, modalitaAbilitata: e.target.value as 'entrambi' | 'privato' | 'convenzione' };
-              if (e.target.value === 'convenzione' && ['privato','osa','assistente-familiare','badante'].includes(f.category)) {
+              const next = { ...f, modalitaAbilitata: e.target.value as 'entrambi' | 'privato' | 'convenzione' | 'intermediazione' };
+              if (e.target.value === 'convenzione' && ['privato','osa','assistente-familiare','badante','colf'].includes(f.category)) {
                 next.category = 'infermieristico';
                 next.role = '';
               }
               return next;
-            })}><option value="entrambi">Entrambi</option><option value="privato">Solo privati</option><option value="convenzione">Solo SIAT</option></select></label>
+            })}><option value="entrambi">Entrambi</option><option value="privato">Solo privati</option><option value="convenzione">Solo SIAT</option><option value="intermediazione">Solo Intermediazioni</option></select></label>
           <label>Note<textarea value={modificaForm.note} onChange={e => setModificaForm(f => ({ ...f, note: e.target.value }))} rows={3} /></label>
           <p className="tw-m-0 tw-text-slate-500 tw-text-[0.85rem]">La modifica dell’email aggiorna anche l’account di accesso dell’operatore.</p>
           <div className="tw-flex tw-justify-end tw-gap-2.5"><Button type="button" variant="secondary" onClick={() => setStaffInModifica(null)}>Annulla</Button><Button type="submit" disabled={salvataggioModifica}>{salvataggioModifica ? 'Salvataggio...' : 'Salva modifiche'}</Button></div>

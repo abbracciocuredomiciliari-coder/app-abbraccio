@@ -29,6 +29,7 @@ interface OperatoreInZona {
   domicilioCoords?: { lat: number; lng: number };
   raggioAzioneKm?: number;
   modalitaAbilitata: string;
+  areaIntermediazione?: boolean;
   distanzaKm: number;
 }
 
@@ -208,9 +209,11 @@ export default function AssegnazionePAI() {
   };
 
   // ─── Filtra operatori per figura selezionata ──────────────────────────────
-  const operatoriVisualizzati = figuraFiltro.length === 0
+  const operatoriVisualizzati = (figuraFiltro.length === 0
     ? operatoriInZona
-    : operatoriInZona.filter(op => figuraFiltro.includes(op.role.toLowerCase()));
+    : operatoriInZona.filter(op => figuraFiltro.includes(op.role.toLowerCase())))
+    // In modalità intermediazione: prima gli operatori iscritti dal modulo dedicato
+    .slice().sort((a, b) => Number(b.areaIntermediazione || false) - Number(a.areaIntermediazione || false));
 
   // ─── Marker mappa ──────────────────────────────────────────────────────────
   const markersOperatori = operatoriVisualizzati
@@ -407,13 +410,14 @@ export default function AssegnazionePAI() {
                       textAlign: 'left', padding: '10px 12px', borderRadius: '8px', cursor: 'pointer',
                       background: operatoreSelezionato?._id === op._id ? '#f0fdf4' : '#f8fafc',
                       border: `1px solid ${operatoreSelezionato?._id === op._id ? '#059669' : '#e2e8f0'}`,
-                      borderLeft: `4px solid ${COLORI_CATEGORIA[op.category] || '#059669'}`,
+                      borderLeft: `4px solid ${op.areaIntermediazione ? '#ea580c' : (COLORI_CATEGORIA[op.category] || '#059669')}`,
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between' }}>
                       <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e293b' }}>
-                        <span style={{ display: 'inline-block', width: '20px', height: '20px', borderRadius: '50%', background: COLORI_CATEGORIA[op.category] || '#059669', color: 'white', fontSize: '0.7rem', textAlign: 'center', lineHeight: '20px', marginRight: '6px' }}>{i + 1}</span>
+                        <span style={{ display: 'inline-block', width: '20px', height: '20px', borderRadius: '50%', background: op.areaIntermediazione ? '#ea580c' : (COLORI_CATEGORIA[op.category] || '#059669'), color: 'white', fontSize: '0.7rem', textAlign: 'center', lineHeight: '20px', marginRight: '6px' }}>{i + 1}</span>
                         {op.firstName} {op.lastName}
+                        {op.areaIntermediazione && <span style={{ marginLeft: '6px', fontSize: '0.68rem', fontWeight: 800, color: '#ea580c', background: '#ffedd5', border: '1px solid #fdba74', borderRadius: '999px', padding: '1px 7px', verticalAlign: '1px' }}>🤝 INTERMEDIAZIONE</span>}
                       </div>
                       <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#059669', whiteSpace: 'nowrap' }}>📍 {op.distanzaKm} km</span>
                     </div>

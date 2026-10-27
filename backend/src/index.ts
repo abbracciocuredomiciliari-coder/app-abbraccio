@@ -50,6 +50,7 @@ import telemedicinaRouter from './routes/telemedicina';
 import tariffarioRouter, { seedTariffarioSeVuoto, migraEsamiStrumentaliTariffario, migraVociAssistenzaTariffario, separaCategorieTariffario, seedVociTariffarioMancanti, migraCategorieCalcolatore } from './routes/tariffario';
 import consegneAmministrativeRouter from './routes/consegneAmministrative';
 import archivioEmailRouter from './routes/archivioEmail';
+import candidatiIntermediazioneRouter from './routes/candidatiIntermediazione';
 import fatturazioneDocumentiRouter from './routes/fatturazioneDocumenti';
 import badantiIntermediazioneRouter from './routes/badantiIntermediazione';
 import landingBadanteRouter from './routes/landingBadante';
@@ -212,6 +213,7 @@ app.use('/api/landing-preventivo', landingPreventivoRouter);
 app.use('/api/preventivo-veloce', preventivoVeloceRouter);
 app.use('/api/consegne-amministrative', consegneAmministrativeRouter);
 app.use('/api/archivio-email', archivioEmailRouter);
+app.use('/api/candidati-intermediazione', candidatiIntermediazioneRouter);
 app.use('/api/ritenute-acconto', ritenuteAccontoRouter);
 // Shop Abbraccio: pubblico (prodotti/ordini/recensioni) + admin shop con JWT separato
 app.use('/api/shop', shopRouter);

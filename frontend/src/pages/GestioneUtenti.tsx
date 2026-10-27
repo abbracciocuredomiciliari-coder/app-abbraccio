@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/api';
 import { Button } from '../components/ui/Button';
+import CandidatureIntermediazione from '../components/CandidatureIntermediazione';
 
 interface Utente {
   _id: string;
@@ -363,6 +364,9 @@ function GestioneUtenti() {
         <p style={{ color: 'var(--gray-500)', marginBottom: '24px', fontSize: '0.95rem' }}>
           Approva o rifiuta le richieste di registrazione e gestisci gli accessi all'app.
         </p>
+
+        {/* ── Candidature Intermediazioni (badanti/colf/assistenti familiari) ── */}
+        <CandidatureIntermediazione onToast={mostraToast} />
 
         {/* Filtri */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>

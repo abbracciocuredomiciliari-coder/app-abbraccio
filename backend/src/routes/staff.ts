@@ -38,13 +38,16 @@ router.get('/zona', authenticateToken, authorizeRole('admin', 'coordinator', 'di
     if (tipoGestione === 'privato') query.modalitaAbilitata = { $in: ['privato', 'entrambi'] };
     if (tipoGestione === 'convenzione') query.modalitaAbilitata = { $in: ['convenzione', 'entrambi'] };
     if (tipoGestione === 'consulenza') {
-      // Intermediazioni: solo personale domestico/familiare
-      query.modalitaAbilitata = { $in: ['privato', 'entrambi'] };
-      query.category = { $in: ['privato', 'osa', 'assistente-familiare', 'badante', 'sociale'] };
+      // Intermediazioni: personale iscritto dal modulo intermediazione
+      // (modalitaAbilitata='intermediazione') + personale domestico esistente
+      query.$or = [
+        { modalitaAbilitata: 'intermediazione' },
+        { modalitaAbilitata: { $in: ['privato', 'entrambi'] }, category: { $in: ['privato', 'osa', 'assistente-familiare', 'badante', 'colf', 'sociale'] } },
+      ];
     }
 
     const tuttiStaff = await Staff.find(query).select(
-      'firstName lastName role category domicilioPartenza domicilioCoords raggioAzioneKm modalitaAbilitata active'
+      'firstName lastName role category domicilioPartenza domicilioCoords raggioAzioneKm modalitaAbilitata areaIntermediazione active'
     );
 
     const inZona = tuttiStaff.filter(s => {
@@ -69,7 +72,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
     const { category, active } = req.query;
     const query: any = {};
     
-    if (category && ['infermieristico', 'oss', 'riabilitativo', 'medico', 'coordinamento', 'direzione', 'privato', 'osa', 'assistente-familiare', 'badante'].includes(category as string)) {
+    if (category && ['infermieristico', 'oss', 'riabilitativo', 'medico', 'coordinamento', 'direzione', 'privato', 'osa', 'assistente-familiare', 'badante', 'colf'].includes(category as string)) {
       query.category = category;
     }
     
@@ -92,11 +95,11 @@ router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async
     return res.status(400).json({ message: 'I campi nome, cognome, email e ruolo sono obbligatori' });
   }
 
-  if (!category || !['infermieristico', 'oss', 'riabilitativo', 'medico', 'coordinamento', 'direzione', 'privato', 'osa', 'assistente-familiare', 'badante'].includes(category)) {
+  if (!category || !['infermieristico', 'oss', 'riabilitativo', 'medico', 'coordinamento', 'direzione', 'privato', 'osa', 'assistente-familiare', 'badante', 'colf'].includes(category)) {
     return res.status(400).json({ message: 'Categoria non valida. Usare: infermieristico, oss, riabilitativo, medico, coordinamento, direzione' });
   }
 
-  if (['privato','osa','assistente-familiare','badante'].includes(category) && modalitaAbilitata === 'convenzione') {
+  if (['privato','osa','assistente-familiare','badante','colf'].includes(category) && modalitaAbilitata === 'convenzione') {
     return res.status(400).json({ message: 'La categoria selezionata non può essere abilitata solo per la convenzione SIAT' });
   }
 
@@ -146,18 +149,18 @@ router.put('/:staffId', authenticateToken, authorizeRole('admin', 'coordinator')
       updateData.email = normalizedEmail;
     }
 
-    if (['privato','osa','assistente-familiare','badante'].includes(updateData.category) && modalitaAbilitata === 'convenzione') {
+    if (['privato','osa','assistente-familiare','badante','colf'].includes(updateData.category) && modalitaAbilitata === 'convenzione') {
       return res.status(400).json({ message: 'La categoria selezionata non può essere abilitata solo per la convenzione SIAT' });
     }
 
     if (role) updateData.role = role;
-    if (category && ['infermieristico', 'oss', 'riabilitativo', 'medico', 'coordinamento', 'direzione', 'privato', 'osa', 'assistente-familiare', 'badante'].includes(category)) {
+    if (category && ['infermieristico', 'oss', 'riabilitativo', 'medico', 'coordinamento', 'direzione', 'privato', 'osa', 'assistente-familiare', 'badante', 'colf'].includes(category)) {
       updateData.category = category;
     }
     const phonePlain = phone !== undefined ? phone.trim() : undefined;
     if (phone !== undefined) updateData.phone = phonePlain ? encrypt(phonePlain) : undefined;
     if (note !== undefined) updateData.note = note.trim();
-    if (modalitaAbilitata && ['entrambi', 'privato', 'convenzione'].includes(modalitaAbilitata)) {
+    if (modalitaAbilitata && ['entrambi', 'privato', 'convenzione', 'intermediazione'].includes(modalitaAbilitata)) {
       updateData.modalitaAbilitata = modalitaAbilitata;
     }
     if (domicilioPartenza !== undefined) updateData.domicilioPartenza = domicilioPartenza.trim();
