@@ -95,6 +95,17 @@ export default function PreventivoVeloce() {
     ].join('\n');
     const tel = telefono.replace(/[^\d]/g, '');
     const numero = tel ? (tel.startsWith('39') ? tel : `39${tel}`) : WA_NUMERO;
+    // Archivia l'invio (senza paziente): resta traccia in Archivio Preventivi
+    api.post('/preventivi-inviati', {
+      area: 'privato',
+      tipo: 'preventivo_veloce',
+      canale: 'whatsapp',
+      nomeCliente: nomeCliente || undefined,
+      telefono: tel || undefined,
+      prestazioni: risultato.prestazioni,
+      totale: risultato.totale,
+      testoInviato: testo,
+    }).catch(() => { /* l'archiviazione non blocca l'invio WhatsApp */ });
     window.open(`https://wa.me/${numero}?text=${encodeURIComponent(testo)}`, '_blank');
   };
 

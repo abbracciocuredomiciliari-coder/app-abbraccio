@@ -6,6 +6,7 @@ import Patient from '../models/Patient';
 import ContrattoPaziente from '../models/ContrattoPaziente';
 import ConsensoGDPR from '../models/ConsensoGDPR';
 import TariffaCcnl from '../models/TariffaCcnl';
+import PreventivoInviato from '../models/PreventivoInviato';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { auditLog } from '../middleware/audit';
@@ -273,6 +274,27 @@ router.post('/simula-costo/pdf/email', authenticateToken, async (req: Request, r
     if (!inviata) {
       return res.status(502).json({ message: `Email non inviata a ${emailDest}: il server SMTP ha rifiutato il messaggio o non è configurato` });
     }
+    // Archivia l'invio: anche senza paziente resta traccia del costo mandato
+    try {
+      const esclTfr = !!escludiTfrTredicesima;
+      const caf = cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : P.cafMensileDefault;
+      const totaleFamiglia = Math.round((risultato.totaleCostoMensile + caf - (esclTfr ? risultato.tfr + risultato.tredicesima : 0)) * 100) / 100;
+      await PreventivoInviato.create({
+        area: 'intermediazione',
+        tipo: 'costo_badante',
+        canale: 'email',
+        nomeCliente: intestatarioPulito || undefined,
+        email: emailDest,
+        totale: totaleFamiglia,
+        simulazione: {
+          input: { contrattoTipo, livello, oreSettimanali, tempoDeterminato: !!tempoDeterminato, pagaPersonalizzata: pagaPersonalizzata ? Number(pagaPersonalizzata) : undefined, indennitaPiuAutosuff: !!indennitaPiuAutosuff, certificazioneUni: !!certificazioneUni, indennitaBabysitter: !!indennitaBabysitter },
+          risultato,
+          cafMensile: caf,
+          escludiTfrTredicesima: esclTfr,
+        },
+        inviatoDa: (req as any).user?.name,
+      });
+    } catch (e) { console.error('[Intermediazione] Archiviazione invio PDF fallita:', e); }
     return res.json({ message: `Preventivo PDF inviato a ${emailDest}` });
   } catch (error: any) {
     return res.status(400).json({ message: error.message || 'Errore nell\'invio del PDF' });

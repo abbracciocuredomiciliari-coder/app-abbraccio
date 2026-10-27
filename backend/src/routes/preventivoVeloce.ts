@@ -4,6 +4,7 @@ import { authorizeRole } from '../middleware/roles';
 import { auditLog } from '../middleware/audit';
 import { inviaEmail } from '../utils/email';
 import { generaDocumentoPDF } from '../utils/fatturazionePdf';
+import PreventivoInviato from '../models/PreventivoInviato';
 
 const router = Router();
 const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
@@ -121,6 +122,21 @@ router.post('/email', authenticateToken, authorizeRole(...RUOLI_GESTIONE), audit
       attachments: [{ filename: `PREVENTIVO-${nomeCliente.replace(/\s+/g, '_')}.pdf`, content: buffer, contentType: 'application/pdf' }],
       log: { tipo: 'preventivo_veloce', area: 'privato', riferimento: nomeCliente, inviataDaNome: (req as any).user?.name },
     });
+    if (inviata) {
+      // Archivia: anche senza paziente deve restare traccia di cosa è stato inviato
+      try {
+        await PreventivoInviato.create({
+          area: 'privato',
+          tipo: 'preventivo_veloce',
+          canale: 'email',
+          nomeCliente,
+          email: destinatario,
+          prestazioni: doc.prestazioni,
+          totale: doc.totale,
+          inviatoDa: (req as any).user?.name,
+        });
+      } catch (e) { console.error('[Preventivo veloce] Archiviazione invio fallita:', e); }
+    }
     return res.json({ inviata, destinatario });
   } catch (error: any) {
     console.error('[Preventivo veloce email] Errore:', error);

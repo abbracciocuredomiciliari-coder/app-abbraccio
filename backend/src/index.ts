@@ -56,6 +56,7 @@ import badantiIntermediazioneRouter from './routes/badantiIntermediazione';
 import landingBadanteRouter from './routes/landingBadante';
 import landingPreventivoRouter from './routes/landingPreventivo';
 import preventivoVeloceRouter from './routes/preventivoVeloce';
+import preventiviInviatiRouter from './routes/preventiviInviati';
 import ritenuteAccontoRouter from './routes/ritenuteAcconto';
 import shopRouter, { seedShopAdmin } from './routes/shop';
 
@@ -211,6 +212,7 @@ app.use('/api/badanti-intermediazione', badantiIntermediazioneRouter);
 app.use('/api/landing-badante', landingBadanteRouter);
 app.use('/api/landing-preventivo', landingPreventivoRouter);
 app.use('/api/preventivo-veloce', preventivoVeloceRouter);
+app.use('/api/preventivi-inviati', preventiviInviatiRouter);
 app.use('/api/consegne-amministrative', consegneAmministrativeRouter);
 app.use('/api/archivio-email', archivioEmailRouter);
 app.use('/api/candidati-intermediazione', candidatiIntermediazioneRouter);

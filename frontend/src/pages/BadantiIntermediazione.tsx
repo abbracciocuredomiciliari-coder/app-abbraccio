@@ -204,7 +204,7 @@ export default function BadantiIntermediazione() {
   const [prevImporto, setPrevImporto] = useState('610');
   const [prevCaf, setPrevCaf] = useState('150');
   const [prevEscludiTfr, setPrevEscludiTfr] = useState(false);
-  const [prevInvia, setPrevInvia] = useState(true);
+  const [prevInvia, setPrevInvia] = useState(false);
   const [prevLoading, setPrevLoading] = useState(false);
 
   // ── Simulazione costo badante (calcolatore CCNL/INPS 2026, stile doemploy) ──
@@ -214,7 +214,7 @@ export default function BadantiIntermediazione() {
   const [simPatient, setSimPatient] = useState(patientIdDaUrl);
   const [simContractEmail, setSimContractEmail] = useState('');
   const [simContractImporto, setSimContractImporto] = useState('610');
-  const [simContractInvia, setSimContractInvia] = useState(true);
+  const [simContractInvia, setSimContractInvia] = useState(false);
   const [simContractLoading, setSimContractLoading] = useState(false);
   const [simContractMsg, setSimContractMsg] = useState('');
   const [simContratto, setSimContratto] = useState('convivente');
@@ -412,6 +412,31 @@ export default function BadantiIntermediazione() {
     ].join('\n');
     const numero = tel.replace(/[^\d]/g, '');
     const wa = numero ? `https://wa.me/${numero.startsWith('39') ? numero : `39${numero}`}` : 'https://wa.me/';
+    // Archivia l'invio (senza paziente): resta traccia in Archivi intermediazione
+    api.post('/preventivi-inviati', {
+      area: 'intermediazione',
+      tipo: 'costo_badante',
+      canale: 'whatsapp',
+      nomeCliente: simIntestatario.trim() || undefined,
+      telefono: numero || undefined,
+      totale: Math.round(totaleFamiglia * 100) / 100,
+      testoInviato: testo,
+      simulazione: {
+        input: {
+          contrattoTipo: simContratto,
+          livello: simLivello,
+          oreSettimanali: simIsOrario ? Number(simOre) : undefined,
+          tempoDeterminato: simDeterminato,
+          indennitaPiuAutosuff: simPiuAutosuff,
+          certificazioneUni: simCertUni,
+          indennitaBabysitter: simBabysitter,
+          pagaPersonalizzata: simPagaCustom ? Number(simPagaCustom) : undefined,
+        },
+        risultato: simRisultato,
+        cafMensile: caf,
+        escludiTfrTredicesima: simEscludiTfr,
+      },
+    }).catch(() => { /* l'archiviazione non blocca l'invio WhatsApp */ });
     window.open(`${wa}?text=${encodeURIComponent(testo)}`, '_blank');
   }
 
@@ -833,7 +858,7 @@ export default function BadantiIntermediazione() {
                 </div>
                 <div className="tw-flex tw-items-center tw-gap-3 tw-mt-3 tw-flex-wrap">
                   <Button size="sm" onClick={generaContrattoDaSim} disabled={simContractLoading || !simPatient || (simContractInvia && !simContractEmail)}>
-                    {simContractLoading ? 'Generazione...' : 'Genera contratto + invia firma'}
+                    {simContractLoading ? 'Generazione...' : simContractInvia ? 'Genera contratto + invia firma' : 'Genera contratto'}
                   </Button>
                   {simContractMsg && <span className="tw-text-sm tw-text-green-700 tw-font-medium">{simContractMsg}</span>}
                 </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
-import { FileText, Download, Mail, Users, Eye, Trash2, Receipt } from 'lucide-react';
+import { FileText, Download, Mail, Users, Eye, Trash2, Receipt, Send } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 interface ContrattoCollegato {
@@ -35,9 +36,28 @@ interface ConsensoGdprRow {
   revocato?: boolean;
 }
 
+interface PreventivoInviato {
+  _id: string;
+  tipo: 'preventivo_veloce' | 'costo_badante';
+  canale: 'whatsapp' | 'email';
+  nomeCliente?: string;
+  email?: string;
+  telefono?: string;
+  totale?: number;
+  inviatoDa?: string;
+  createdAt: string;
+  simulazione?: {
+    risultato?: { contrattoLabel?: string; livelloLabel?: string; oreSettimanali?: number };
+    cafMensile?: number;
+    escludiTfrTredicesima?: boolean;
+  };
+}
+
 export default function ArchiviIntermediazione() {
+  const { user } = useAuth();
   const [archivioContratti, setArchivioContratti] = useState<RichiestaArchivio[]>([]);
   const [archivioGdpr, setArchivioGdpr] = useState<ConsensoGdprRow[]>([]);
+  const [inviati, setInviati] = useState<PreventivoInviato[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { carica(); }, []);
@@ -45,12 +65,14 @@ export default function ArchiviIntermediazione() {
   async function carica() {
     try {
       setLoading(true);
-      const [ac, ag] = await Promise.all([
+      const [ac, ag, ai] = await Promise.all([
         api.get('/badanti-intermediazione/archivio/contratti'),
         api.get('/badanti-intermediazione/archivio/gdpr'),
+        api.get('/preventivi-inviati', { params: { area: 'intermediazione' } }),
       ]);
       setArchivioContratti(ac.data || []);
       setArchivioGdpr(ag.data || []);
+      setInviati(ai.data || []);
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore caricamento archivi');
     } finally {
@@ -130,6 +152,38 @@ export default function ArchiviIntermediazione() {
       alert(err?.response?.data?.message || 'Errore invio');
     }
   }
+
+  // Rigenera e mostra/scarica il PDF del costo inviato senza paziente
+  async function pdfInviato(inv: PreventivoInviato, apri: boolean) {
+    try {
+      const res = await api.get(`/preventivi-inviati/${inv._id}/pdf`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      if (apri) {
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      } else {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `preventivo-${(inv.nomeCliente || 'inviato').replace(/\s+/g, '-').toLowerCase()}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nella rigenerazione del PDF');
+    }
+  }
+
+  async function eliminaInviato(inv: PreventivoInviato) {
+    if (!window.confirm(`Eliminare questo invio archiviato${inv.nomeCliente ? ` (${inv.nomeCliente})` : ''}?`)) return;
+    try {
+      await api.delete(`/preventivi-inviati/${inv._id}`);
+      await carica();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore eliminazione');
+    }
+  }
+
+  const euro = (n?: number) => `€ ${Number(n || 0).toFixed(2)}`;
 
   if (loading) return (
     <section className="tw-min-h-screen tw-flex tw-items-center tw-justify-center tw-bg-slate-50">
@@ -266,6 +320,76 @@ export default function ArchiviIntermediazione() {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
+          <h2 className="tw-text-sm tw-font-bold tw-text-slate-600 tw-uppercase tw-mb-1 tw-flex tw-items-center tw-gap-2">
+            <Send size={16} /> Costi preventivi inviati senza paziente
+          </h2>
+          <p className="tw-text-xs tw-text-slate-400 tw-mb-3 tw-mt-0">
+            Costi del simulatore inviati via WhatsApp o email senza creare il paziente: se il cliente accetta, qui ritrovi cosa gli era stato mandato.
+          </p>
+          {inviati.length === 0 ? (
+            <div className="tw-text-sm tw-text-slate-400">Nessun costo inviato senza paziente.</div>
+          ) : (
+            <div className="tw-overflow-x-auto">
+              <table className="tw-w-full tw-text-sm">
+                <thead>
+                  <tr className="tw-text-left tw-text-xs tw-text-slate-500 tw-uppercase tw-border-b">
+                    <th className="tw-py-2 tw-pr-3">Data</th>
+                    <th className="tw-py-2 tw-pr-3">Cliente</th>
+                    <th className="tw-py-2 tw-pr-3">Contatto</th>
+                    <th className="tw-py-2 tw-pr-3">Canale</th>
+                    <th className="tw-py-2 tw-pr-3">Riepilogo</th>
+                    <th className="tw-py-2 tw-pr-3 tw-text-right">Totale/mese</th>
+                    <th className="tw-py-2">Azioni</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inviati.map(inv => {
+                    const sim = inv.simulazione?.risultato;
+                    return (
+                      <tr key={inv._id} className="tw-border-b tw-border-slate-100">
+                        <td className="tw-py-2 tw-pr-3 tw-whitespace-nowrap tw-text-slate-600">
+                          {new Date(inv.createdAt).toLocaleDateString('it-IT')}
+                          {inv.inviatoDa && <div className="tw-text-[11px] tw-text-slate-400">da {inv.inviatoDa}</div>}
+                        </td>
+                        <td className="tw-py-2 tw-pr-3 tw-font-medium tw-text-slate-700">{inv.nomeCliente || '—'}</td>
+                        <td className="tw-py-2 tw-pr-3 tw-text-slate-500 tw-text-xs">
+                          {inv.email && <div>✉️ {inv.email}</div>}
+                          {inv.telefono && <div>📞 {inv.telefono}</div>}
+                          {!inv.email && !inv.telefono && '—'}
+                        </td>
+                        <td className="tw-py-2 tw-pr-3">
+                          <span className={`tw-inline-block tw-px-2 tw-py-0.5 tw-rounded-full tw-text-[11px] tw-font-bold ${inv.canale === 'whatsapp' ? 'tw-bg-green-100 tw-text-green-700' : 'tw-bg-blue-100 tw-text-blue-700'}`}>
+                            {inv.canale === 'whatsapp' ? '💬 WhatsApp' : '✉️ Email'}
+                          </span>
+                        </td>
+                        <td className="tw-py-2 tw-pr-3 tw-text-slate-500 tw-text-xs">
+                          {sim ? `${sim.contrattoLabel || ''} — ${sim.livelloLabel || ''}${sim.oreSettimanali ? `, ${sim.oreSettimanali}h/sett` : ''}` : '—'}
+                          {inv.simulazione?.escludiTfrTredicesima && <div className="tw-text-[11px] tw-text-slate-400">TFR/13ª esclusi{inv.simulazione.cafMensile !== undefined ? ` · CAF ${euro(inv.simulazione.cafMensile)}` : ''}</div>}
+                        </td>
+                        <td className="tw-py-2 tw-pr-3 tw-text-right tw-font-bold tw-text-emerald-700">{inv.totale !== undefined ? euro(inv.totale) : '—'}</td>
+                        <td className="tw-py-2 tw-flex tw-gap-2 tw-flex-wrap">
+                          <Button size="sm" variant="secondary" onClick={() => pdfInviato(inv, true)}>
+                            <Eye size={14} className="tw-inline" /> PDF
+                          </Button>
+                          <Button size="sm" variant="secondary" onClick={() => pdfInviato(inv, false)}>
+                            <Download size={14} className="tw-inline" />
+                          </Button>
+                          {user?.role === 'admin' && (
+                            <Button size="sm" variant="secondary" className="tw-text-red-600" onClick={() => eliminaInviato(inv)}>
+                              <Trash2 size={14} className="tw-inline" />
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

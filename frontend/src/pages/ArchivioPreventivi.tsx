@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
 import api from '../api/api';
-import { ClipboardList, ChevronUp, ChevronDown, Eye, Download, Trash2, FileText, Mail, Globe } from 'lucide-react';
+import { ClipboardList, ChevronUp, ChevronDown, Eye, Download, Trash2, FileText, Mail, Globe, Send } from 'lucide-react';
 
 interface Patient {
   _id: string;
@@ -59,13 +59,28 @@ function badgeStato(doc: DocumentoFatturazione) {
   return { testo: '✅ Emesso', bg: '#fef3c7', color: '#92400e' };
 }
 
+interface PreventivoInviato {
+  _id: string;
+  tipo: 'preventivo_veloce' | 'costo_badante';
+  canale: 'whatsapp' | 'email';
+  nomeCliente?: string;
+  email?: string;
+  telefono?: string;
+  prestazioni: { descrizione: string; quantita: number; prezzoUnitario: number; importo: number }[];
+  totale?: number;
+  inviatoDa?: string;
+  createdAt: string;
+}
+
 export default function ArchivioPreventivi() {
   const { user } = useAuth();
   const { isConvenzione, isConsulenza } = useModalita();
   const [documenti, setDocumenti] = useState<DocumentoFatturazione[]>([]);
+  const [inviati, setInviati] = useState<PreventivoInviato[]>([]);
   const [loading, setLoading] = useState(true);
   const [showArchivio, setShowArchivio] = useState(true);
   const [showOnline, setShowOnline] = useState(true);
+  const [showInviati, setShowInviati] = useState(true);
   const [ricerca, setRicerca] = useState('');
 
   const filtraRicerca = (d: DocumentoFatturazione) => {
@@ -93,8 +108,12 @@ export default function ArchivioPreventivi() {
   const caricaDocumenti = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/fatturazione-documenti', { params: { area: isConsulenza ? 'consulenza' : 'gestionale' } });
-      setDocumenti(res.data);
+      const [docRes, invRes] = await Promise.all([
+        api.get('/fatturazione-documenti', { params: { area: isConsulenza ? 'consulenza' : 'gestionale' } }),
+        isConsulenza ? Promise.resolve({ data: [] }) : api.get('/preventivi-inviati', { params: { area: 'privato' } }),
+      ]);
+      setDocumenti(docRes.data);
+      setInviati(invRes.data || []);
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore nel caricamento dei documenti');
     } finally {
@@ -158,6 +177,38 @@ export default function ArchivioPreventivi() {
     if (!confirm(`Eliminare definitivamente il preventivo ${doc.numero}?\n\nQuesta azione non può essere annullata.`)) return;
     try {
       await api.delete(`/fatturazione-documenti/${doc._id}`);
+      await caricaDocumenti();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nella eliminazione');
+    }
+  };
+
+  const pdfInviato = async (inv: PreventivoInviato, apri: boolean) => {
+    try {
+      const res = await api.get(`/preventivi-inviati/${inv._id}/pdf`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      if (apri) {
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      } else {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `PREVENTIVO-${(inv.nomeCliente || 'bozza').replace(/\s+/g, '_')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nella rigenerazione del PDF');
+    }
+  };
+
+  const eliminaInviato = async (inv: PreventivoInviato) => {
+    if (!confirm(`Eliminare questo invio archiviato${inv.nomeCliente ? ` (${inv.nomeCliente})` : ''}?`)) return;
+    try {
+      await api.delete(`/preventivi-inviati/${inv._id}`);
       await caricaDocumenti();
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore nella eliminazione');
@@ -247,6 +298,76 @@ export default function ArchivioPreventivi() {
                           </tr>
                         );
                       })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+        )}
+
+        {/* ── Preventivi veloci inviati via WhatsApp/email senza paziente ── */}
+        {!isConsulenza && (
+        <div style={{ background: 'white', borderRadius: '12px', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #fde68a', borderLeft: '4px solid #d97706' }}>
+          <div onClick={() => setShowInviati(!showInviati)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#92400e' }}>
+              <Send size={20} />Preventivi veloci inviati (senza paziente)
+              <span style={{ background: '#fef3c7', color: '#92400e', borderRadius: '20px', padding: '2px 10px', fontSize: '0.8rem' }}>{inviati.length}</span>
+            </h3>
+            {showInviati ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </div>
+          {showInviati && (
+            <>
+              <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '10px 0 0' }}>
+                Inviati da <strong>Preventivo veloce</strong> via WhatsApp o email senza creare il paziente: se il cliente accetta, qui ritrovi cosa gli è stato mandato.
+              </p>
+              {inviati.length === 0 ? (
+                <p style={{ color: '#9ca3af', marginTop: '14px', marginBottom: 0 }}>Nessun preventivo inviato senza paziente.</p>
+              ) : (
+                <div style={{ overflowX: 'auto', marginTop: '14px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
+                        <th style={{ textAlign: 'left', padding: '8px' }}>Data</th>
+                        <th style={{ textAlign: 'left', padding: '8px' }}>Cliente</th>
+                        <th style={{ textAlign: 'left', padding: '8px' }}>Contatto</th>
+                        <th style={{ textAlign: 'center', padding: '8px' }}>Canale</th>
+                        <th style={{ textAlign: 'left', padding: '8px' }}>Prestazioni</th>
+                        <th style={{ textAlign: 'right', padding: '8px' }}>Totale</th>
+                        <th style={{ padding: '8px' }} />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {inviati.map(inv => (
+                        <tr key={inv._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '8px', whiteSpace: 'nowrap' }}>{formatData(inv.createdAt)}</td>
+                          <td style={{ padding: '8px', fontWeight: 600 }}>{inv.nomeCliente || '—'}</td>
+                          <td style={{ padding: '8px', fontSize: '0.82rem', color: '#475569' }}>
+                            {inv.email && <div>✉️ {inv.email}</div>}
+                            {inv.telefono && <div>📞 {inv.telefono}</div>}
+                            {!inv.email && !inv.telefono && '—'}
+                          </td>
+                          <td style={{ padding: '8px', textAlign: 'center' }}>
+                            <span style={{ padding: '3px 10px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap', background: inv.canale === 'whatsapp' ? '#dcfce7' : '#dbeafe', color: inv.canale === 'whatsapp' ? '#166534' : '#1e40af' }}>
+                              {inv.canale === 'whatsapp' ? '💬 WhatsApp' : '✉️ Email'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '8px', fontSize: '0.82rem', color: '#475569', maxWidth: '300px' }} title={(inv.prestazioni || []).map(p => `${p.descrizione} ×${p.quantita} a €${p.prezzoUnitario}`).join('\n')}>
+                            {(inv.prestazioni || []).slice(0, 2).map(p => `${p.descrizione} ×${p.quantita}`).join(', ')}{(inv.prestazioni || []).length > 2 ? ` +${inv.prestazioni.length - 2}` : ''}
+                          </td>
+                          <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#166534' }}>{inv.totale !== undefined ? formatEuro(inv.totale) : '—'}</td>
+                          <td style={{ padding: '8px' }}>
+                            <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                              <button onClick={() => pdfInviato(inv, true)} title="Visualizza PDF inviato" style={{ background: '#f0f9ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0ea5e9' }}><Eye size={14} /></button>
+                              <button onClick={() => pdfInviato(inv, false)} title="Scarica PDF" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Download size={14} /></button>
+                              {user?.role === 'admin' && (
+                                <button onClick={() => eliminaInviato(inv)} title="Elimina" style={{ background: '#fee2e2', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#b91c1c' }}><Trash2 size={14} /></button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
