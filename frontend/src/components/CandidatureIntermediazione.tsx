@@ -93,6 +93,10 @@ export default function CandidatureIntermediazione({ onToast }: { onToast: (msg:
   const filtrati = candidati.filter(c => filtro === 'tutti' ? true : c.stato === filtro);
   const nAttesa = candidati.filter(c => c.stato === 'in_attesa').length;
 
+  const linkIscrizione = `${window.location.origin}/iscriviti-intermediazione`;
+  const msgIscrizione = `Iscriviti come operatore Abbraccio (badante, colf, assistente familiare): ${linkIscrizione}`;
+  const shareBtn: React.CSSProperties = { background: 'none', border: 'none', color: '#1e4d8c', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem', padding: 0 };
+
   return (
     <div style={{ marginBottom: '28px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '14px', padding: '18px' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '12px' }}>
@@ -105,13 +109,23 @@ export default function CandidatureIntermediazione({ onToast }: { onToast: (msg:
             Iscrizioni rapide dal link esterno — accettate finiscono in <strong>Personale Intermediazioni</strong> e nella mappa (solo badanti/colf/assistenti familiari).
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#57534e', background: '#fff', border: '1px dashed #fdba74', borderRadius: '8px', padding: '6px 10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.8rem', color: '#57534e', background: '#fff', border: '1px dashed #fdba74', borderRadius: '8px', padding: '6px 10px' }}>
           <Smartphone size={14} />
           <code style={{ color: '#1e4d8c', fontWeight: 700 }}>/iscriviti-intermediazione</code>
           <button type="button"
-            onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/iscriviti-intermediazione`); onToast('Link copiato — condividilo su WhatsApp.', 'ok'); }}
-            style={{ background: 'none', border: 'none', color: '#1e4d8c', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem', padding: 0 }}>
-            📋 Copia link
+            onClick={() => { navigator.clipboard?.writeText(linkIscrizione); onToast('Link copiato negli appunti.', 'ok'); }}
+            style={shareBtn}>
+            📋 Copia
+          </button>
+          <button type="button"
+            onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(msgIscrizione)}`, '_blank')}
+            style={{ ...shareBtn, color: '#15803d' }}>
+            💬 WhatsApp
+          </button>
+          <button type="button"
+            onClick={() => { window.location.href = `mailto:?subject=${encodeURIComponent('Iscrizione operatore Abbraccio')}&body=${encodeURIComponent(msgIscrizione)}`; }}
+            style={shareBtn}>
+            ✉️ Email
           </button>
         </div>
       </div>

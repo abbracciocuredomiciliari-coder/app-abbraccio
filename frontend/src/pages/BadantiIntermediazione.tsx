@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { Users, FileText, Mail, Trash2, Receipt, Check, X, User, Briefcase, Euro, Download, Settings, Eye, MessageCircle, UserPlus } from 'lucide-react';
+import { Users, FileText, Mail, Trash2, Receipt, Check, X, User, Briefcase, Euro, Download, Settings, Eye, MessageCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 interface Patient {
@@ -652,12 +652,6 @@ export default function BadantiIntermediazione() {
             </div>
           </div>
           <div className="tw-flex tw-items-center tw-gap-2 tw-flex-wrap">
-            <button
-              onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/iscriviti-intermediazione`); alert('Link copiato: condividilo a chi vuole iscriversi come badante/colf/assistente familiare.'); }}
-              title="Copia il link pubblico di iscrizione operatori"
-              className="tw-flex tw-items-center tw-gap-2 tw-bg-orange-50 tw-text-orange-700 tw-border tw-border-orange-200 tw-rounded-lg tw-px-3 tw-py-2 tw-text-sm tw-font-bold tw-cursor-pointer hover:tw-bg-orange-100">
-              <UserPlus size={18} /> Link iscrizione operatori
-            </button>
             <Button variant="secondary" onClick={() => setShowSim(s => !s)} className="tw-flex tw-items-center tw-gap-2">
               <Euro size={18} /> {showSim ? 'Chiudi calcolo' : 'Simula costo'}
             </Button>
