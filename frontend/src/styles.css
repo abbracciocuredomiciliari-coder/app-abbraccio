@@ -295,6 +295,7 @@ body {
 
 .content {
   flex: 1;
+  min-width: 0;
   margin-left: var(--sidebar-width);
   padding: 28px 32px;
   min-height: 100vh;
