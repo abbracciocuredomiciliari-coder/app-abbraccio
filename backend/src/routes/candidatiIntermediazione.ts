@@ -26,9 +26,11 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 const RUOLO_LABEL: Record<string, string> = {
   badante: 'Badante', colf: 'Colf', assistente_familiare: 'Assistente familiare',
+  oss: 'OSS', infermiere: 'Infermiere', medico: 'Medico', fisioterapista: 'Fisioterapista',
 };
 const RUOLO_TO_CATEGORY: Record<string, string> = {
   badante: 'badante', colf: 'colf', assistente_familiare: 'assistente-familiare',
+  oss: 'oss', infermiere: 'infermieristico', medico: 'medico', fisioterapista: 'riabilitativo',
 };
 
 const s = (v: any) => String(v ?? '').trim();
@@ -45,7 +47,7 @@ router.post('/pubblica', rateLimitByIP(10, 60 * 60 * 1000), upload.single('docum
       return res.status(400).json({ message: 'Nome e cognome sono necessari per la candidatura.' });
     }
     if (!RUOLO_LABEL[ruolo]) {
-      return res.status(400).json({ message: 'Ruolo non valido (badante, colf o assistente familiare).' });
+      return res.status(400).json({ message: 'Ruolo non valido.' });
     }
 
     let documentoPath: string | undefined;
@@ -71,6 +73,7 @@ router.post('/pubblica', rateLimitByIP(10, 60 * 60 * 1000), upload.single('docum
       nome,
       cognome,
       ruolo,
+      albo: s(body.albo) || undefined,
       nazionalita: s(body.nazionalita) || undefined,
       dataNascita: body.dataNascita ? new Date(body.dataNascita) : undefined,
       extraUe: b(body.extraUe),
@@ -103,6 +106,7 @@ router.post('/pubblica', rateLimitByIP(10, 60 * 60 * 1000), upload.single('docum
       ['Nazionalità', s(body.nazionalita) || '—'],
       ['Telefono', s(body.telefono) || '—'],
       ['Email', s(body.email) || '—'],
+      ['Ordine/Albo', s(body.albo) || '—'],
       ['Zona interesse', [s(body.cittaInteresse), s(body.regioneInteresse)].filter(Boolean).join(', ') || '—'],
       ['Disponibilità', s(body.disponibilita) || '—'],
       ['Documento allegato', documentoNome || 'nessuno'],
@@ -197,6 +201,7 @@ router.patch('/:id/accetta', authenticateToken, authorizeRole(...RUOLI_GESTIONE)
       c.extraUe ? `Permesso di soggiorno: ${c.permessoSoggiorno || 'da verificare'}` : '',
       c.disponibilita ? `Disponibilità: ${c.disponibilita}${c.disponibilita === 'h24' && c.residenzaPressoFamiglia ? ' (residente presso famiglia)' : ''}` : '',
       c.certificato ? 'Lavoratore certificato' : '',
+      c.albo ? `Ordine/Albo: ${c.albo}` : '',
       [c.cittaInteresse, c.regioneInteresse].filter(Boolean).length ? `Zona di interesse: ${[c.cittaInteresse, c.regioneInteresse].filter(Boolean).join(', ')}` : '',
     ].filter(Boolean).join(' | ');
 
@@ -213,7 +218,7 @@ router.patch('/:id/accetta', authenticateToken, authorizeRole(...RUOLI_GESTIONE)
       note: noteStaff || undefined,
       modalitaAbilitata: 'intermediazione',
       areaIntermediazione: true,
-      professionista: !!c.certificato,
+      professionista: !!c.certificato || ['oss', 'infermiere', 'medico', 'fisioterapista'].includes(c.ruolo),
     });
 
     c.stato = 'accettato';

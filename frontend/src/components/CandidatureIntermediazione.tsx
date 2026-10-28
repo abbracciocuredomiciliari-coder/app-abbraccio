@@ -13,7 +13,8 @@ interface Candidato {
   _id: string;
   nome: string;
   cognome: string;
-  ruolo: 'badante' | 'colf' | 'assistente_familiare';
+  ruolo: 'badante' | 'colf' | 'assistente_familiare' | 'oss' | 'infermiere' | 'medico' | 'fisioterapista';
+  albo?: string;
   nazionalita?: string;
   dataNascita?: string;
   extraUe?: boolean;
@@ -35,7 +36,7 @@ interface Candidato {
   createdAt: string;
 }
 
-const RUOLO_LABEL: Record<string, string> = { badante: '🧓 Badante', colf: '🧹 Colf', assistente_familiare: '👨‍👩‍👧 Assistente familiare' };
+const RUOLO_LABEL: Record<string, string> = { badante: '🧓 Badante', colf: '🧹 Colf', assistente_familiare: '👨‍👩‍👧 Assistente familiare', oss: '🩺 OSS', infermiere: '💉 Infermiere', medico: '👨‍⚕️ Medico', fisioterapista: '🦴 Fisioterapista' };
 const PERMESSO_LABEL: Record<string, string> = { valido: '✅ Permesso valido', in_scadenza: '⏳ In scadenza/rinnovo', documenti_validi: '📄 Documenti validi', assente: '⚠️ Nessun documento valido' };
 const DISP_LABEL: Record<string, string> = { diurno: '☀️ Diurno', notturno: '🌙 Solo notturno', h24: '🕐 h24' };
 
@@ -188,6 +189,7 @@ export default function CandidatureIntermediazione({ onToast }: { onToast: (msg:
                     {c.dataNascita && <span><strong>Nato/a:</strong> {fmtData(c.dataNascita)}</span>}
                     {c.email && <span><strong>Email:</strong> {c.email}</span>}
                     {c.codiceFiscale && <span><strong>CF:</strong> {c.codiceFiscale}</span>}
+                    {c.albo && <span><strong>Ordine/Albo:</strong> {c.albo}</span>}
                     {(c.cittaResidenza || c.regioneResidenza) && <span><strong>Residenza:</strong> {[c.cittaResidenza, c.regioneResidenza].filter(Boolean).join(', ')}</span>}
                     {c.esperienze && <span style={{ gridColumn: '1/-1' }}><strong>Esperienze:</strong> {c.esperienze}</span>}
                     {c.note && <span style={{ gridColumn: '1/-1' }}><strong>Note:</strong> {c.note}</span>}

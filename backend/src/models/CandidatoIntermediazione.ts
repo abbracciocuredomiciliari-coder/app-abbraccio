@@ -9,13 +9,14 @@ import { Document, Schema, model, Types } from 'mongoose';
 // e nella mappa di assegnazione dedicata). Nessun contratto/firma richiesto.
 // ═══════════════════════════════════════════════════════════════════════════
 
-export type RuoloCandidato = 'badante' | 'colf' | 'assistente_familiare';
+export type RuoloCandidato = 'badante' | 'colf' | 'assistente_familiare' | 'oss' | 'infermiere' | 'medico' | 'fisioterapista';
 export type StatoCandidato = 'in_attesa' | 'accettato' | 'rifiutato';
 
 export interface ICandidatoIntermediazione extends Document {
   nome: string;
   cognome: string;
   ruolo: RuoloCandidato;
+  albo?: string;                   // ordine/albo professionale (sanitari)
   nazionalita?: string;
   dataNascita?: Date;
   extraUe?: boolean;                  // true = non italiana né europea → serve permesso
@@ -46,7 +47,8 @@ const schema = new Schema<ICandidatoIntermediazione>(
   {
     nome: { type: String, required: true, trim: true },
     cognome: { type: String, required: true, trim: true },
-    ruolo: { type: String, enum: ['badante', 'colf', 'assistente_familiare'], required: true },
+    ruolo: { type: String, enum: ['badante', 'colf', 'assistente_familiare', 'oss', 'infermiere', 'medico', 'fisioterapista'], required: true },
+  albo: { type: String, trim: true },
     nazionalita: { type: String, trim: true },
     dataNascita: { type: Date },
     extraUe: { type: Boolean, default: false },

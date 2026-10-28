@@ -2,15 +2,31 @@ import { useEffect, useRef, useState } from 'react';
 import { Mic, Square, Camera, Paperclip, CheckCircle, Phone, MessageCircle } from 'lucide-react';
 
 // ═════════════════════════════════════════════════════════════════════════════
-// ISCRIZIONE INTERMEDIAZIONE — modulo pubblico semplificato per badanti, colf
-// e assistenti familiari. Link esterno senza login né menu. Tutti i campi
-// opzionali tranne nome, cognome e ruolo. Branding Abbraccio + Salus Group.
+// ISCRIZIONE INTERMEDIAZIONE — modulo pubblico semplificato per operatori:
+// badanti, colf, assistenti familiari, OSS, infermieri, medici e
+// fisioterapisti. Link esterno senza login né menu. Tutti i campi opzionali
+// tranne nome, cognome e ruolo. Branding Abbraccio + Salus Group.
 // ═════════════════════════════════════════════════════════════════════════════
 
 const API_BASE = (import.meta as any).env?.VITE_API_URL || 'https://api.abbracciocuredomiciliari.it/api';
 const TELEFONO = '0601905242';
 const TELEFONO_LABEL = '06 01905242';
 const WHATSAPP = '393514175117';
+
+const RUOLI: [string, string][] = [
+  ['badante', '🧓 Badante'],
+  ['colf', '🧹 Colf'],
+  ['assistente_familiare', '👨‍👩‍👧 Assistente familiare'],
+  ['oss', '🩺 OSS (Operatore Socio-Sanitario)'],
+  ['infermiere', '💉 Infermiere'],
+  ['medico', '👨‍⚕️ Medico'],
+  ['fisioterapista', '🦴 Fisioterapista'],
+];
+const RUOLI_SANITARI = ['oss', 'infermiere', 'medico', 'fisioterapista'];
+const RUOLO_LABEL: Record<string, string> = {
+  badante: 'badante', colf: 'colf', assistente_familiare: 'assistente familiare',
+  oss: 'OSS', infermiere: 'infermiere', medico: 'medico', fisioterapista: 'fisioterapista',
+};
 
 const REGIONI = [
   'Abruzzo', 'Basilicata', 'Calabria', 'Campania', 'Emilia-Romagna', 'Friuli-Venezia Giulia',
@@ -66,6 +82,7 @@ export default function IscrizioneIntermediazione() {
   const [nome, setNome] = useState('');
   const [cognome, setCognome] = useState('');
   const [ruolo, setRuolo] = useState('badante');
+  const [albo, setAlbo] = useState('');
   const [nazionalita, setNazionalita] = useState('');
   const [dataNascita, setDataNascita] = useState('');
   const [extraUe, setExtraUe] = useState(false);
@@ -86,7 +103,7 @@ export default function IscrizioneIntermediazione() {
   const fileRef = useRef<HTMLInputElement>(null);
   const fotoRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { document.title = 'Iscriviti come badante o colf — Abbraccio Cure Domiciliari'; }, []);
+  useEffect(() => { document.title = 'Iscriviti come operatore — Abbraccio Cure Domiciliari'; }, []);
 
   const appendi = (setter: React.Dispatch<React.SetStateAction<string>>) =>
     (t: string) => setter(prev => (prev.trim() ? `${prev.trim()} ${t}` : t));
@@ -104,6 +121,7 @@ export default function IscrizioneIntermediazione() {
       fd.append('nome', nome.trim());
       fd.append('cognome', cognome.trim());
       fd.append('ruolo', ruolo);
+      if (albo.trim()) fd.append('albo', albo.trim());
       if (nazionalita.trim()) fd.append('nazionalita', nazionalita.trim());
       if (dataNascita) fd.append('dataNascita', dataNascita);
       fd.append('extraUe', String(extraUe));
@@ -141,7 +159,7 @@ export default function IscrizioneIntermediazione() {
           <CheckCircle size={56} color="#16a34a" style={{ margin: '0 auto 12px' }} />
           <h1 style={{ color: '#1e3a5f', fontSize: '1.4rem', margin: '0 0 8px' }}>Iscrizione inviata!</h1>
           <p style={{ color: '#475569', lineHeight: 1.6, margin: '0 0 18px' }}>
-            Grazie <strong>{nome}</strong>. La tua candidatura come <strong>{ruolo === 'badante' ? 'badante' : ruolo === 'colf' ? 'colf' : 'assistente familiare'}</strong> è in attesa di valutazione.
+            Grazie <strong>{nome}</strong>. La tua candidatura come <strong>{RUOLO_LABEL[ruolo] || ruolo}</strong> è in attesa di valutazione.
             Ti ricontatteremo al più presto{telefono ? ` al numero ${telefono}` : ''}.
           </p>
           <p style={{ color: '#64748b', fontSize: '0.85rem' }}>
@@ -160,7 +178,7 @@ export default function IscrizioneIntermediazione() {
           <img src="/logo.png" alt="Abbraccio" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
           <div>
             <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '1.05rem', lineHeight: 1.1 }}>Abbraccio Cure Domiciliari</div>
-            <div style={{ fontSize: '0.75rem', color: '#c2410c', fontWeight: 600 }}>Badanti · Colf · Assistenti Familiari</div>
+            <div style={{ fontSize: '0.75rem', color: '#c2410c', fontWeight: 600 }}>Badanti · Colf · Operatori Sanitari</div>
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', background: '#f6f9ff', border: '1px solid #dfe9fb', borderRadius: '10px', padding: '5px 10px' }}>
             <span style={{ fontSize: '0.62rem', color: '#64748b', lineHeight: 1.25, textAlign: 'right' }}>
@@ -174,7 +192,7 @@ export default function IscrizioneIntermediazione() {
       <main style={{ maxWidth: '640px', margin: '0 auto', padding: '20px 14px 60px' }}>
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <h1 style={{ color: '#1e293b', fontSize: 'clamp(1.3rem,4vw,1.7rem)', margin: '6px 0', fontWeight: 800 }}>
-            Iscriviti come badante, colf o assistente familiare
+            Iscriviti come operatore — assistenza e sanità
           </h1>
           <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>
             Modulo veloce: compila quello che puoi, niente di complicato. Ti ricontattiamo noi.
@@ -197,11 +215,15 @@ export default function IscrizioneIntermediazione() {
           <div style={{ marginBottom: '10px' }}>
             <span style={label}>Cosa vuoi fare</span>
             <select style={input} value={ruolo} onChange={e => setRuolo(e.target.value)}>
-              <option value="badante">🧓 Badante</option>
-              <option value="colf">🧹 Colf</option>
-              <option value="assistente_familiare">👨‍👩‍👧 Assistente familiare</option>
+              {RUOLI.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
           </div>
+          {RUOLI_SANITARI.includes(ruolo) && (
+            <div style={{ marginBottom: '10px' }}>
+              <span style={label}>Ordine / Albo di appartenenza <span style={{ fontWeight: 400, color: '#94a3b8' }}>(es. FNOPI, Ordine Medici)</span></span>
+              <input style={input} value={albo} onChange={e => setAlbo(e.target.value)} placeholder="Es. FNOPI n. 123456" />
+            </div>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div><span style={label}>Telefono</span><input style={input} type="tel" value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="333 1234567" /></div>
             <div><span style={label}>Email</span><input style={input} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="nome@email.it" /></div>
