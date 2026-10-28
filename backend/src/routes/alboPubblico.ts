@@ -12,12 +12,14 @@ import Staff from '../models/Staff';
 
 const router = Router();
 
+// Solo figure assistenziali visibili in pubblico: esclusi ruoli interni
+// (direzione, coordinamento, privato) che non sono operatori erogatori
 const CAT_LABEL: Record<string, string> = {
   badante: 'Badante', colf: 'Colf', 'assistente-familiare': 'Assistente familiare',
   oss: 'OSS', infermieristico: 'Infermiere', medico: 'Medico',
   riabilitativo: 'Fisioterapista', sociale: 'Operatore sociale', osa: 'OSA',
-  coordinamento: 'Coordinatore', direzione: 'Direzione', privato: 'Privato',
 };
+const CAT_AMMESSE = Object.keys(CAT_LABEL);
 
 // Offset deterministico ~1-2 km per id, stessa direzione/distanza a ogni chiamata
 const jitter = (id: string) => {
@@ -32,6 +34,7 @@ router.get('/mappa', async (_req: Request, res: Response) => {
   try {
     const staff = await Staff.find({
       active: { $ne: false },
+      category: { $in: CAT_AMMESSE },
       'domicilioCoords.lat': { $exists: true, $ne: null },
       'domicilioCoords.lng': { $exists: true, $ne: null },
     }).select('domicilioCoords category').lean();
