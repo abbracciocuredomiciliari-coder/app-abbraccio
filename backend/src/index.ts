@@ -52,6 +52,7 @@ import consegneAmministrativeRouter from './routes/consegneAmministrative';
 import archivioEmailRouter from './routes/archivioEmail';
 import candidatiIntermediazioneRouter from './routes/candidatiIntermediazione';
 import areaFamigliaRouter from './routes/areaFamiglia';
+import alboPubblicoRouter from './routes/alboPubblico';
 import fatturazioneDocumentiRouter from './routes/fatturazioneDocumenti';
 import badantiIntermediazioneRouter from './routes/badantiIntermediazione';
 import landingBadanteRouter from './routes/landingBadante';
@@ -218,6 +219,7 @@ app.use('/api/consegne-amministrative', consegneAmministrativeRouter);
 app.use('/api/archivio-email', archivioEmailRouter);
 app.use('/api/candidati-intermediazione', candidatiIntermediazioneRouter);
 app.use('/api/area-famiglia', areaFamigliaRouter);
+app.use('/api/albo', alboPubblicoRouter);
 app.use('/api/ritenute-acconto', ritenuteAccontoRouter);
 // Shop Abbraccio: pubblico (prodotti/ordini/recensioni) + admin shop con JWT separato
 app.use('/api/shop', shopRouter);
