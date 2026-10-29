@@ -23,6 +23,15 @@ type Colloquio = {
   promemoriaInviatoIl?: string; creatoDaNome: string;
 };
 type StaffOption = { _id: string; firstName: string; lastName: string; email: string; phone?: string; category?: string; role?: string; modalitaAbilitata?: string; areaIntermediazione?: boolean };
+
+// Figure del personale — filtro nella scelta partecipanti
+const CATEGORIA_LABEL: Record<string, string> = {
+  badante: 'Badante', colf: 'Colf', 'assistente-familiare': 'Assistente familiare', osa: 'OSA',
+  oss: 'OSS', infermieristico: 'Infermiere', riabilitativo: 'Fisioterapista/Riabilitativo', medico: 'Medico',
+  sociale: 'Assistente sociale', privato: 'Privato', coordinamento: 'Coordinamento', direzione: 'Direzione',
+};
+const CATEGORIE_DOMESTICHE = ['badante', 'colf', 'assistente-familiare', 'osa'];
+const isIntermediazione = (s: StaffOption) => s.areaIntermediazione || s.modalitaAbilitata === 'intermediazione';
 type NuovoPartecipante = { nome: string; email: string; telefono: string; ruolo: string; staffId?: string };
 
 const managers = ['admin', 'coordinator', 'direttore'];
@@ -53,6 +62,9 @@ export default function RiunioniColloquio() {
   const [form, setForm] = useState({ titolo: '', dataRiunione: new Date().toISOString().slice(0, 16), ordineDelGiorno: '', modalita: 'video' as 'video' | 'presenza' | 'telefono', linkCollegamento: '' });
   const [partecipanti, setPartecipanti] = useState<NuovoPartecipante[]>([]);
   const [esterno, setEsterno] = useState<NuovoPartecipante>({ nome: '', email: '', telefono: '', ruolo: 'famiglia' });
+  const [filtroArea, setFiltroArea] = useState<'tutte' | 'intermediazione' | 'privata'>('tutte');
+  const [filtroFigura, setFiltroFigura] = useState('');
+  const [cercaStaff, setCercaStaff] = useState('');
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(true);
@@ -78,17 +90,28 @@ export default function RiunioniColloquio() {
   useEffect(() => {
     if (!isManager) return;
     api.get('/staff', { params: { active: 'true' } })
-      .then(r => setStaff((r.data || []).filter((s: StaffOption) => s.areaIntermediazione || s.modalitaAbilitata === 'intermediazione')))
+      .then(r => setStaff(r.data || []))
       .catch(() => setStaff([]));
   }, [isManager]);
 
   useEffect(() => { if (!recording) return; const t = window.setInterval(() => setSeconds(s => s + 1), 1000); return () => window.clearInterval(t); }, [recording]);
   useEffect(() => () => streamsRef.current.forEach(s => s.getTracks().forEach(t => t.stop())), []);
 
+  const figureDisponibili = [...new Set(staff.map(s => s.category).filter(Boolean))] as string[];
+  const staffFiltrati = staff.filter(s => {
+    if (filtroArea === 'intermediazione' && !isIntermediazione(s)) return false;
+    if (filtroArea === 'privata' && isIntermediazione(s)) return false;
+    if (filtroFigura && s.category !== filtroFigura) return false;
+    const q = cercaStaff.trim().toLowerCase();
+    if (q && !`${s.firstName} ${s.lastName} ${s.email}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
   const aggiungiStaff = (s: StaffOption, aggiungi: boolean) => {
     const nome = `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.email;
+    const ruolo = CATEGORIE_DOMESTICHE.includes(s.category || '') ? 'badante' : 'operatore';
     setPartecipanti(prev => aggiungi
-      ? [...prev, { nome, email: s.email, telefono: s.phone || '', ruolo: 'badante', staffId: s._id }]
+      ? [...prev, { nome, email: s.email, telefono: s.phone || '', ruolo, staffId: s._id }]
       : prev.filter(p => p.staffId !== s._id));
   };
   const aggiungiEsterno = () => {
@@ -299,12 +322,24 @@ export default function RiunioniColloquio() {
           {form.modalita === 'presenza' && <input placeholder="Luogo del colloquio (indirizzo)" value={form.linkCollegamento} onChange={e => setForm({ ...form, linkCollegamento: e.target.value })} className="tw-p-[9px]" />}
           {form.modalita === 'telefono' && <input placeholder="Numero da chiamare (facoltativo)" value={form.linkCollegamento} onChange={e => setForm({ ...form, linkCollegamento: e.target.value })} className="tw-p-[9px]" />}
 
-          <strong>Personale intermediazioni (badanti/colf)</strong>
-          <div className="tw-max-h-[160px] tw-overflow-y-auto tw-bg-white tw-p-2">
-            {staff.length === 0 && <p className="tw-text-slate-500 tw-text-sm">Nessun membro del personale intermediazioni — aggiungi sotto a mano.</p>}
-            {staff.map(s => (
+          <strong>Personale e operatori ({staffFiltrati.length} di {staff.length})</strong>
+          <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-3 tw-gap-2">
+            <select value={filtroArea} onChange={e => setFiltroArea(e.target.value as any)} className="tw-p-[9px]">
+              <option value="tutte">📂 Tutte le aree</option>
+              <option value="intermediazione">🤝 Solo Intermediazioni</option>
+              <option value="privata">👤 Solo Gestione privata/convenzione</option>
+            </select>
+            <select value={filtroFigura} onChange={e => setFiltroFigura(e.target.value)} className="tw-p-[9px]">
+              <option value="">👥 Tutte le figure</option>
+              {figureDisponibili.map(cat => <option key={cat} value={cat}>{CATEGORIA_LABEL[cat] || cat}</option>)}
+            </select>
+            <input placeholder="🔍 Cerca per nome o email…" value={cercaStaff} onChange={e => setCercaStaff(e.target.value)} className="tw-p-[9px]" />
+          </div>
+          <div className="tw-max-h-[180px] tw-overflow-y-auto tw-bg-white tw-p-2">
+            {staffFiltrati.length === 0 && <p className="tw-text-slate-500 tw-text-sm">Nessun operatore con questi filtri — modifica i filtri o aggiungi sotto a mano.</p>}
+            {staffFiltrati.map(s => (
               <label key={s._id} className="tw-block tw-p-1 tw-cursor-pointer">
-                <input type="checkbox" checked={partecipanti.some(p => p.staffId === s._id)} onChange={e => aggiungiStaff(s, e.target.checked)} /> {s.firstName} {s.lastName} — {s.role || s.category} ({s.email})
+                <input type="checkbox" checked={partecipanti.some(p => p.staffId === s._id)} onChange={e => aggiungiStaff(s, e.target.checked)} /> {s.firstName} {s.lastName} — <em>{CATEGORIA_LABEL[s.category || ''] || s.role || s.category}</em>{isIntermediazione(s) ? ' · 🤝' : ''} ({s.email})
               </label>
             ))}
           </div>
