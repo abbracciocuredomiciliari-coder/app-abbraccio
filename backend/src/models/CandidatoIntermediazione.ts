@@ -39,6 +39,7 @@ export interface ICandidatoIntermediazione extends Document {
   stato: StatoCandidato;
   staffId?: Types.ObjectId;           // Staff creato all'accettazione
   noteAdmin?: string;
+  richiesteDati?: { at: Date; campi: string[]; canale: 'email' | 'whatsapp' }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -71,6 +72,7 @@ const schema = new Schema<ICandidatoIntermediazione>(
     stato: { type: String, enum: ['in_attesa', 'accettato', 'rifiutato'], default: 'in_attesa', index: true },
     staffId: { type: Schema.Types.ObjectId, ref: 'Staff' },
     noteAdmin: { type: String, trim: true },
+    richiesteDati: [{ at: { type: Date, default: Date.now }, campi: [{ type: String }], canale: { type: String, enum: ['email', 'whatsapp'] } }],
   },
   { timestamps: true }
 );

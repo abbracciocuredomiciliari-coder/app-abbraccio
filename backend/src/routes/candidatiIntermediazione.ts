@@ -185,6 +185,47 @@ router.get('/:id/documento', authenticateToken, authorizeRole(...RUOLI_GESTIONE)
   }
 });
 
+// ─── POST /:id/richiedi-dati — chiede al candidato i dati mancanti ─────────
+// canale 'email' → invia vera email aziendale (archiviata in EmailLog);
+// canale 'whatsapp' → registra soltanto la richiesta (il messaggio parte
+// dal gestionale via wa.me lato client, non esiste API WhatsApp).
+router.post('/:id/richiedi-dati', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('candidati_intermediazione', 'UPDATE'), async (req: Request, res: Response) => {
+  try {
+    const c = await CandidatoIntermediazione.findById(req.params.id);
+    if (!c) return res.status(404).json({ message: 'Candidato non trovato' });
+    const campi = (Array.isArray(req.body?.campi) ? req.body.campi : []).map(s).filter(Boolean).slice(0, 12);
+    if (!campi.length) return res.status(400).json({ message: 'Indica almeno un dato da richiedere' });
+    const canale = req.body?.canale === 'email' ? 'email' : 'whatsapp';
+
+    if (canale === 'email') {
+      if (!c.email) return res.status(400).json({ message: 'Il candidato non ha lasciato un indirizzo email' });
+      const ruoloLabel = RUOLO_LABEL[c.ruolo] || c.ruolo;
+      await inviaEmail({
+        to: c.email,
+        subject: `Abbraccio — completa la tua iscrizione: dati mancanti`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+          <h2 style="color:#1e4d8c;margin-top:0;">Completa la tua iscrizione</h2>
+          <p>Ciao ${c.nome},</p>
+          <p>grazie per la tua iscrizione come <strong>${ruoloLabel}</strong> alla rete Abbraccio Cure Domiciliari. Per valutare la tua candidatura ci mancano ancora questi dati:</p>
+          <ul style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 14px 14px 34px;line-height:1.8;">
+            ${campi.map((f: string) => `<li>${f}</li>`).join('')}
+          </ul>
+          <p>Puoi rispondere <strong>direttamente a questa email</strong> con i dati mancanti — per il documento basta allegare una foto o un PDF.</p>
+          <p style="color:#64748b;font-size:13px;">Grazie,<br><strong>Abbraccio Cure Domiciliari</strong><br>Tel. 06 01905242</p>
+        </div>`,
+        log: { tipo: 'richiesta_dati', area: 'intermediazione', riferimento: `${c.nome} ${c.cognome}` },
+      });
+    }
+
+    c.richiesteDati = [...(c.richiesteDati || []), { at: new Date(), campi, canale } as any];
+    await c.save();
+    return res.json({ message: canale === 'email' ? `Email di richiesta inviata a ${c.email}` : 'Richiesta registrata' });
+  } catch (error: any) {
+    console.error('[Candidati intermediazione] Errore richiesta dati:', error);
+    return res.status(500).json({ message: 'Errore invio richiesta dati', error: error.message });
+  }
+});
+
 // ─── PATCH /:id/accetta — crea Staff intermediazione ────────────────────────
 router.patch('/:id/accetta', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('candidati_intermediazione', 'UPDATE'), async (req: Request, res: Response) => {
   try {
