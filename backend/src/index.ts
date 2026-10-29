@@ -51,6 +51,8 @@ import tariffarioRouter, { seedTariffarioSeVuoto, migraEsamiStrumentaliTariffari
 import consegneAmministrativeRouter from './routes/consegneAmministrative';
 import archivioEmailRouter from './routes/archivioEmail';
 import candidatiIntermediazioneRouter from './routes/candidatiIntermediazione';
+import colloquiIntermediazioneRouter from './routes/colloquiIntermediazione';
+import { avviaPromemoriaColloqui } from './utils/promemoriaColloqui';
 import areaFamigliaRouter from './routes/areaFamiglia';
 import alboPubblicoRouter from './routes/alboPubblico';
 import fatturazioneDocumentiRouter from './routes/fatturazioneDocumenti';
@@ -157,6 +159,7 @@ const proteggiUploads = (req: Request, res: Response, next: NextFunction) => {
 };
 
 connectDB();
+avviaPromemoriaColloqui();
 seedShopAdmin();
 seedTariffarioSeVuoto();
 migraEsamiStrumentaliTariffario();
@@ -218,6 +221,7 @@ app.use('/api/preventivi-inviati', preventiviInviatiRouter);
 app.use('/api/consegne-amministrative', consegneAmministrativeRouter);
 app.use('/api/archivio-email', archivioEmailRouter);
 app.use('/api/candidati-intermediazione', candidatiIntermediazioneRouter);
+app.use('/api/colloqui-intermediazione', colloquiIntermediazioneRouter);
 app.use('/api/area-famiglia', areaFamigliaRouter);
 app.use('/api/albo', alboPubblicoRouter);
 app.use('/api/ritenute-acconto', ritenuteAccontoRouter);

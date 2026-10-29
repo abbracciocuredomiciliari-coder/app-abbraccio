@@ -61,6 +61,8 @@ const AreaFamiglia = lazy(() => import('./pages/AreaFamiglia'));
 const ArchivioEmail = lazy(() => import('./pages/ArchivioEmail'));
 const BadantiIntermediazione = lazy(() => import('./pages/BadantiIntermediazione'));
 const ArchiviIntermediazione = lazy(() => import('./pages/ArchiviIntermediazione'));
+const RiunioniColloquio = lazy(() => import('./pages/RiunioniColloquio'));
+const ColloquioPubblico = lazy(() => import('./pages/ColloquioPubblico'));
 const GestioneContratti = lazy(() => import('./pages/GestioneContratti'));
 const Tariffario = lazy(() => import('./pages/Tariffario'));
 const GestioneConsensiGDPR = lazy(() => import('./pages/GestioneConsensiGDPR'));
@@ -140,7 +142,7 @@ function AppShell() {
   const isActive = (path: string) => location.pathname === path;
   const isFirma = location.pathname.startsWith('/firma-');
   // Landing pubbliche e link esterni del sito: pagina dedicata senza menu/login
-  const isLanding = ['/badante', '/preventivo', '/register', '/richiesta-servizio', '/richiesta-assistenza', '/scrivi-consegna', '/iscriviti-intermediazione', '/area-famiglia'].includes(location.pathname);
+  const isLanding = ['/badante', '/preventivo', '/register', '/richiesta-servizio', '/richiesta-assistenza', '/scrivi-consegna', '/iscriviti-intermediazione', '/area-famiglia', '/colloquio'].includes(location.pathname);
   const operatore = user && !isPrivilegiato(user.role);
 
   // Chiudi il menu mobile a ogni cambio pagina
@@ -520,6 +522,10 @@ function AppShell() {
                 <Users size={18} />
                 Intermediazioni
               </Link>
+              <Link to="/riunioni-colloquio" className={isActive('/riunioni-colloquio') ? 'active' : ''}>
+                <Video size={18} />
+                Riunioni Colloquio
+              </Link>
               <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <ClipboardList size={18} />
                 Consegne
@@ -607,6 +613,7 @@ function AppShell() {
           <Route path="/richiesta-assistenza" element={<RichiestaAssistenza />} />
           <Route path="/scrivi-consegna" element={<ConsegnaEsterna />} />
           <Route path="/iscriviti-intermediazione" element={<IscrizioneIntermediazione />} />
+          <Route path="/colloquio" element={<ColloquioPubblico />} />
           <Route path="/area-famiglia" element={<AreaFamiglia />} />
           <Route path="/badante" element={<LandingBadante />} />
           <Route path="/preventivo" element={<LandingPreventivo />} />
@@ -688,6 +695,8 @@ function AppShell() {
           <Route path="/preventivo-veloce" element={<ProtectedRoute><PreventivoVeloce /></ProtectedRoute>} />
           <Route path="/badanti-intermediazione" element={<ProtectedRoute><BadantiIntermediazione /></ProtectedRoute>} />
           <Route path="/archivi-intermediazione" element={<ProtectedRoute><ArchiviIntermediazione /></ProtectedRoute>} />
+          <Route path="/riunioni-colloquio" element={<ProtectedRoute><RiunioniColloquio /></ProtectedRoute>} />
+          <Route path="/riunioni-colloquio/:id" element={<ProtectedRoute><RiunioniColloquio /></ProtectedRoute>} />
           <Route path="/tariffario" element={<ProtectedRoute><Tariffario /></ProtectedRoute>} />
           <Route path="/gestione-contratti" element={<ProtectedRoute><GestioneContratti /></ProtectedRoute>} />
           {/* GDPR Compliance - Gestione Consensi */}
