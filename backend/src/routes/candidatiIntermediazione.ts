@@ -235,6 +235,33 @@ router.patch('/:id/accetta', authenticateToken, authorizeRole(...RUOLI_GESTIONE)
 
     // Staff.email è required+unique: se il candidato non l'ha data uso un placeholder tecnico
     const emailStaff = c.email || `candidato.${String(c._id)}@intermediazione.local`;
+
+    // Email già nel personale → niente duplicati: se è la stessa persona la
+    // candidatura viene collegata allo staff esistente (abilitando anche le
+    // Intermediazioni se serve); se è un'altra persona, errore chiaro.
+    const esistente = await Staff.findOne({ email: emailStaff });
+    if (esistente) {
+      const stessaPersona =
+        (esistente.firstName || '').toLowerCase().trim() === c.nome.toLowerCase().trim() &&
+        (esistente.lastName || '').toLowerCase().trim() === c.cognome.toLowerCase().trim();
+      if (!stessaPersona) {
+        return res.status(409).json({ message: `L'email ${emailStaff} è già registrata nel personale a nome di ${esistente.firstName} ${esistente.lastName}. Se è la stessa persona chiedi al candidato un'email diversa, altrimenti rifiuta la candidatura.` });
+      }
+      const giaIntermediazione = esistente.areaIntermediazione || ['intermediazione', 'entrambi'].includes(esistente.modalitaAbilitata);
+      if (!giaIntermediazione) {
+        esistente.areaIntermediazione = true;
+        esistente.modalitaAbilitata = 'entrambi';
+        await esistente.save();
+      }
+      c.stato = 'accettato';
+      c.staffId = esistente._id as any;
+      if (req.body?.nota) c.noteAdmin = s(req.body.nota);
+      await c.save();
+      return res.json({ message: giaIntermediazione
+        ? `${c.nome} ${c.cognome} era già nel Personale Intermediazioni — candidatura collegata`
+        : `${c.nome} ${c.cognome} era già nel personale — abilitato/a anche alle Intermediazioni`, staffId: esistente._id });
+    }
+
     const noteStaff = [
       c.esperienze ? `Esperienze: ${c.esperienze}` : '',
       c.note ? `Note: ${c.note}` : '',
@@ -269,6 +296,9 @@ router.patch('/:id/accetta', authenticateToken, authorizeRole(...RUOLI_GESTIONE)
     return res.json({ message: `${c.nome} ${c.cognome} accettato/a — ora in Personale Intermediazioni`, staffId: staff._id });
   } catch (error: any) {
     console.error('[Candidati intermediazione] Errore accettazione:', error);
+    if (error?.code === 11000 && error?.keyPattern?.email) {
+      return res.status(409).json({ message: `Email già presente nel personale: ${error.keyValue?.email}. Verifica con "Richiedi dati" o rifiuta.` });
+    }
     return res.status(500).json({ message: 'Errore accettazione', error: error.message });
   }
 });
