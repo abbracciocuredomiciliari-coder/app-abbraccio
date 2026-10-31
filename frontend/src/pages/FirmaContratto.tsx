@@ -59,7 +59,7 @@ export default function FirmaContratto() {
       <div className="tw-bg-white tw-rounded-2xl tw-p-9 tw-px-8 tw-max-w-[560px] tw-w-full" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
         {/* Header */}
         <div className="tw-text-center tw-mb-6">
-          <h1 className="tw-m-0 tw-text-[1.3rem] tw-text-teal-700 tw-font-bold">Portale Firma Digitale</h1>
+          <h1 className="tw-m-0 tw-text-[1.3rem] tw-text-teal-700 tw-font-bold">Abbraccio Cure Domiciliari</h1>
           <p className="tw-mt-1 tw-mb-0 tw-text-slate-500 tw-text-[0.9rem]">Firma digitale contratto</p>
         </div>
 

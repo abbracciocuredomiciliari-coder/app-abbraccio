@@ -43,7 +43,7 @@ export default function FirmaVerbaleEsterno() {
   if (!verbale) return null;
 
   return <main className={cardClass}>
-    <p className="tw-m-0 tw-text-teal-700 tw-font-bold">PORTALE FIRMA DIGITALE</p>
+    <p className="tw-m-0 tw-text-teal-700 tw-font-bold">ABBRACCIO CURE DOMICILIARI</p>
     <h1 className="tw-text-teal-800">Firma verbale riunione</h1>
     <p>Ciao <strong>{verbale.partecipante.nome}</strong>, leggi il verbale e firma nello spazio sottostante.</p>
     <section className="tw-p-4 tw-bg-teal-50 tw-rounded-lg tw-my-5">

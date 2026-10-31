@@ -177,11 +177,7 @@ function AppShell() {
             <Menu size={24} />
           </button>
         )}
-        {isFirma ? (
-          <span style={{ color: '#fff', fontWeight: 700, fontSize: '1rem' }}>Portale Firma</span>
-        ) : (
-          <img src="/logo.png" alt="Abbraccio Cure Domiciliari" className="mobile-topbar-logo" />
-        )}
+        <img src="/logo.png" alt="Abbraccio Cure Domiciliari" className="mobile-topbar-logo" />
       </header>
       )}
 
@@ -194,11 +190,7 @@ function AppShell() {
           <X size={22} />
         </button>
         <div style={{ padding: '16px 12px 8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.15)', marginBottom: '8px' }}>
-          {isFirma ? (
-            <h2 style={{ color: '#fff', margin: 0, fontSize: '1.1rem' }}>Portale Firma</h2>
-          ) : (
-            <img src="/logo.png" alt="Abbraccio Cure Domiciliari" style={{ width: '100%', maxWidth: '160px', height: 'auto', display: 'block', margin: '0 auto' }} />
-          )}
+          <img src="/logo.png" alt="Abbraccio Cure Domiciliari" style={{ width: '100%', maxWidth: '160px', height: 'auto', display: 'block', margin: '0 auto' }} />
           {/* Pulsante switch modalità */}
           {user && (
             <button

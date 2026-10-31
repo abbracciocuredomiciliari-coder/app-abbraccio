@@ -76,7 +76,7 @@ export default function FirmaContrattoPaziente() {
     <div className="tw-min-h-screen tw-bg-slate-50 tw-flex tw-items-center tw-justify-center tw-p-5">
       <div className="tw-bg-white tw-rounded-2xl tw-p-8 tw-px-6 tw-max-w-[560px] tw-w-full" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
         <div className="tw-text-center tw-mb-6">
-          <h1 className="tw-m-0 tw-text-[1.3rem] tw-text-brand tw-font-bold">Portale Firma Contratto e Consenso</h1>
+          <h1 className="tw-m-0 tw-text-[1.3rem] tw-text-brand tw-font-bold">Abbraccio Cure Domiciliari</h1>
           <p className="tw-mt-1 tw-mb-0 tw-text-slate-500 tw-text-[0.9rem]">Firma digitale contratto d'incarico e informativa GDPR</p>
         </div>
 
