@@ -9,6 +9,7 @@ import LoadingScreen from './components/LoadingScreen';
 import Breadcrumb from './components/Breadcrumb';
 import { ChatBadge } from './components/ChatBadge';
 import { ConsegneBadge } from './components/ConsegneBadge';
+import { EmailRicevuteBadge } from './components/EmailRicevuteBadge';
 
 // Eager load per pagine leggere (login, dashboard)
 import Login from './pages/Login';
@@ -482,9 +483,10 @@ function AppShell() {
                 <FileText size={18} />
                 Contratti operatori
               </Link>
-              <Link to="/archivio-email" className={isActive('/archivio-email') ? 'active' : ''}>
+              <Link to="/archivio-email" className={isActive('/archivio-email') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <Mail size={18} />
                 Email inviate
+                <EmailRicevuteBadge />
               </Link>
 
               {/* — Sistema (solo admin) — */}
@@ -563,9 +565,10 @@ function AppShell() {
                 <Archive size={18} />
                 Archivi intermediazione
               </Link>
-              <Link to="/archivio-email" className={isActive('/archivio-email') ? 'active' : ''}>
+              <Link to="/archivio-email" className={isActive('/archivio-email') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <Mail size={18} />
                 Email inviate
+                <EmailRicevuteBadge />
               </Link>
 
               {/* — Sistema (solo admin) — */}

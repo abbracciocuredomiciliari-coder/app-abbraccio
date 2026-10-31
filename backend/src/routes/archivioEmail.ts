@@ -218,8 +218,9 @@ router.get('/ricevute', authenticateToken, authorizeRole(...RUOLI_GESTIONE), asy
         query.data.$lte = al;
       }
     }
+    const limit = Math.min(Math.max(1, parseInt(String(req.query.limit || '400'), 10) || 400), 400);
     const [email, totale, nonLette] = await Promise.all([
-      EmailRicevuta.find(query).select('-testo -html -allegati.data').sort({ data: -1 }).limit(400).lean(),
+      EmailRicevuta.find(query).select('-testo -html -allegati.data').sort({ data: -1 }).limit(limit).lean(),
       EmailRicevuta.countDocuments(query),
       EmailRicevuta.countDocuments({ letta: false }),
     ]);
@@ -237,6 +238,17 @@ router.post('/ricevute/sync', authenticateToken, authorizeRole(...RUOLI_GESTIONE
     return res.json(risultato);
   } catch (error: any) {
     return res.status(500).json({ ok: false, message: 'Errore sincronizzazione', error: error.message });
+  }
+});
+
+// GET /api/archivio-email/ricevute/non-lette — solo conteggio (badge menu/dashboard)
+// NB: registrata PRIMA di /ricevute/:id altrimenti "non-lette" verrebbe letto come id.
+router.get('/ricevute/non-lette', authenticateToken, authorizeRole(...RUOLI_GESTIONE), async (_req: AuthRequest, res: Response) => {
+  try {
+    const nonLette = await EmailRicevuta.countDocuments({ letta: false });
+    return res.json({ nonLette });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore', error: error.message });
   }
 });
 

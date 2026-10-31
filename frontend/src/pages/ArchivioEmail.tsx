@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { Mail, Search, RotateCcw, Paperclip, CheckCircle, AlertTriangle, X, Send, Inbox, RefreshCw, MailOpen } from 'lucide-react';
 import { Button } from '../components/ui/Button';
@@ -74,8 +75,9 @@ export default function ArchivioEmail() {
   const [msg, setMsg] = useState<{ tipo: 'ok' | 'err'; testo: string } | null>(null);
   const [loadingAllegato, setLoadingAllegato] = useState<string | null>(null);
 
-  // Tab ricevute
-  const [tab, setTab] = useState<'inviate' | 'ricevute'>('inviate');
+  // Tab ricevute (apribile via /archivio-email?tab=ricevute)
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState<'inviate' | 'ricevute'>(searchParams.get('tab') === 'ricevute' ? 'ricevute' : 'inviate');
   const [ricevute, setRicevute] = useState<EmailRicevutaItem[]>([]);
   const [totaleRicevute, setTotaleRicevute] = useState(0);
   const [nonLette, setNonLette] = useState(0);

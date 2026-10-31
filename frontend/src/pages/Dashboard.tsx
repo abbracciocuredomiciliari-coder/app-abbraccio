@@ -3,7 +3,7 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
-import { Users, Activity, CheckCircle, ClipboardList, MapPin, AlertTriangle, Bell, Eye, MessageCircle } from 'lucide-react';
+import { Users, Activity, CheckCircle, ClipboardList, MapPin, AlertTriangle, Bell, Eye, MessageCircle, Inbox } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Loading } from '../components/ui/Loading';
 import { Badge } from '../components/ui/Badge';
@@ -97,6 +97,10 @@ function Dashboard() {
   // Consegne amministrative aperte (condivise tra aree: bacheca ufficio ↔ esterno)
   const [consegne, setConsegne] = useState({ aperte: 0, daGestire: 0 });
 
+  // Email ricevute non lette sulla casella aziendale (condivisa tra aree)
+  const [emailNonLette, setEmailNonLette] = useState(0);
+  const [ultimeRicevute, setUltimeRicevute] = useState<{ _id: string; from: { nome?: string; email: string }; subject: string; data: string }[]>([]);
+
   const caricaScadenzePai = async () => {
     try {
       const res = await api.get('/patients/scadenze-pai');
@@ -128,6 +132,13 @@ function Dashboard() {
           const unreadRes = await api.get('/messages/unread-count');
           setUnreadChat(unreadRes.data || { general: 0, patient: 0, total: 0 });
         } catch { /* non bloccante */ }
+        if (isPrivilegiato) {
+          try {
+            const mailRes = await api.get('/archivio-email/ricevute', { params: { letta: 'non-lette', limit: 5 } });
+            setEmailNonLette(mailRes.data?.nonLette || 0);
+            setUltimeRicevute(mailRes.data?.email || []);
+          } catch { /* non bloccante */ }
+        }
         if (isPrivilegiato) {
           try {
             const assignmentsRes = await api.get(`/workplan/assignment-status${tipoQuery}`);
@@ -385,6 +396,25 @@ function Dashboard() {
             </div>
           </div>
           <span className="tw-flex-shrink-0 tw-rounded-full tw-bg-sky-500 tw-text-white tw-font-extrabold tw-text-sm tw-px-3 tw-py-1">{richiesteInAttesa}</span>
+        </div>
+      )}
+
+      {/* Banner nuove email ricevute — casella aziendale condivisa */}
+      {isPrivilegiato && emailNonLette > 0 && (
+        <div
+          onClick={() => navigate('/archivio-email?tab=ricevute')}
+          className="tw-flex tw-items-center tw-gap-3 tw-mb-5 tw-cursor-pointer tw-rounded-xl tw-border-2 tw-border-blue-400 tw-bg-blue-400/10 tw-px-4 tw-py-3 hover:tw-bg-blue-400/20 tw-transition-colors"
+        >
+          <Inbox size={22} color="#2563eb" className="tw-flex-shrink-0" />
+          <div className="tw-flex-1">
+            <div className="tw-font-bold tw-text-blue-800 tw-text-sm">
+              📥 {emailNonLette} {emailNonLette === 1 ? 'nuova email ricevuta' : 'nuove email ricevute'} sulla casella aziendale
+            </div>
+            <div className="tw-text-blue-700 tw-text-xs tw-mt-0.5">
+              {ultimeRicevute.slice(0, 3).map(e => e.from.nome || e.from.email).join(' · ')}{emailNonLette > 3 ? ` e altre ${emailNonLette - 3}` : ''} — clicca per leggerle in Archivio Email
+            </div>
+          </div>
+          <span className="tw-flex-shrink-0 tw-rounded-full tw-bg-blue-500 tw-text-white tw-font-extrabold tw-text-sm tw-px-3 tw-py-1">{emailNonLette}</span>
         </div>
       )}
 
