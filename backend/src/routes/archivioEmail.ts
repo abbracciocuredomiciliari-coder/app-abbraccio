@@ -6,7 +6,9 @@ import EmailLog from '../models/EmailLog';
 import EmailAllegato from '../models/EmailAllegato';
 import DocumentoFatturazione from '../models/DocumentoFatturazione';
 import ContrattoPaziente from '../models/ContrattoPaziente';
+import EmailRicevuta from '../models/EmailRicevuta';
 import { inviaEmail } from '../utils/email';
+import { sincronizzaEmailRicevute, marcaFlagLettaSuServer } from '../utils/imapSync';
 import { generaDocumentoPDF } from '../utils/fatturazionePdf';
 import { generaContrattoPazientePDF, generaGdprPDF } from '../utils/contrattoPazientePdf';
 import { normalizzaPaziente } from '../utils/contrattoInvio';
@@ -189,6 +191,93 @@ router.post('/rettifica', authenticateToken, authorizeRole(...RUOLI_GESTIONE), a
   } catch (error: any) {
     console.error('[ArchivioEmail rettifica] Errore:', error);
     return res.status(500).json({ message: 'Errore invio rettifica', error: error.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EMAIL RICEVUTE — messaggi scaricati via IMAP dalla casella aziendale.
+// Stesso archivio visivo delle inviate, tab separata.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// GET /api/archivio-email/ricevute — lista (senza corpo) con filtri
+router.get('/ricevute', authenticateToken, authorizeRole(...RUOLI_GESTIONE), async (req: AuthRequest, res: Response) => {
+  try {
+    const query: any = {};
+    if (req.query.letta === 'lette') query.letta = true;
+    if (req.query.letta === 'non-lette') query.letta = false;
+    if (req.query.q) {
+      const rx = new RegExp(String(req.query.q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      query.$or = [{ 'from.email': rx }, { 'from.nome': rx }, { subject: rx }];
+    }
+    if (req.query.dal || req.query.al) {
+      query.data = {};
+      if (req.query.dal) query.data.$gte = new Date(String(req.query.dal));
+      if (req.query.al) {
+        const al = new Date(String(req.query.al));
+        al.setHours(23, 59, 59, 999);
+        query.data.$lte = al;
+      }
+    }
+    const [email, totale, nonLette] = await Promise.all([
+      EmailRicevuta.find(query).select('-testo -html -allegati.data').sort({ data: -1 }).limit(400).lean(),
+      EmailRicevuta.countDocuments(query),
+      EmailRicevuta.countDocuments({ letta: false }),
+    ]);
+    return res.json({ email, totale, nonLette });
+  } catch (error: any) {
+    console.error('[ArchivioEmail ricevute] Errore:', error);
+    return res.status(500).json({ message: 'Errore nel recupero email ricevute', error: error.message });
+  }
+});
+
+// POST /api/archivio-email/ricevute/sync — forza sincronizzazione IMAP
+router.post('/ricevute/sync', authenticateToken, authorizeRole(...RUOLI_GESTIONE), async (_req: AuthRequest, res: Response) => {
+  try {
+    const risultato = await sincronizzaEmailRicevute();
+    return res.json(risultato);
+  } catch (error: any) {
+    return res.status(500).json({ ok: false, message: 'Errore sincronizzazione', error: error.message });
+  }
+});
+
+// GET /api/archivio-email/ricevute/:id — corpo completo
+router.get('/ricevute/:id', authenticateToken, authorizeRole(...RUOLI_GESTIONE), async (req: AuthRequest, res: Response) => {
+  try {
+    const email = await EmailRicevuta.findById(req.params.id).select('-allegati.data').lean();
+    if (!email) return res.status(404).json({ message: 'Email non trovata' });
+    return res.json(email);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore', error: error.message });
+  }
+});
+
+// GET /api/archivio-email/ricevute/:id/allegato/:index
+router.get('/ricevute/:id/allegato/:index', authenticateToken, authorizeRole(...RUOLI_GESTIONE), async (req: AuthRequest, res: Response) => {
+  try {
+    const email = await EmailRicevuta.findById(req.params.id).lean();
+    if (!email) return res.status(404).json({ message: 'Email non trovata' });
+    const idx = Math.max(0, parseInt(req.params.index || '0', 10) || 0);
+    const a = email.allegati?.[idx];
+    if (!a || !a.data) return res.status(404).json({ message: 'Allegato non conservato (troppo grande)' });
+    res.setHeader('Content-Type', a.contentType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${a.filename.replace(/"/g, '')}"`);
+    return res.send(a.data);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore scaricamento allegato', error: error.message });
+  }
+});
+
+// POST /api/archivio-email/ricevute/:id/letta — segna letta/non letta (anche sul server IMAP)
+router.post('/ricevute/:id/letta', authenticateToken, authorizeRole(...RUOLI_GESTIONE), async (req: AuthRequest, res: Response) => {
+  try {
+    const letta = req.body?.letta !== false;
+    const email = await EmailRicevuta.findByIdAndUpdate(req.params.id, { letta }, { new: true });
+    if (!email) return res.status(404).json({ message: 'Email non trovata' });
+    // Best effort: allinea il flag \Seen sulla casella
+    marcaFlagLettaSuServer(email.uid, letta).catch(() => {});
+    return res.json({ ok: true, letta });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore', error: error.message });
   }
 });
 

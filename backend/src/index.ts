@@ -53,6 +53,7 @@ import archivioEmailRouter from './routes/archivioEmail';
 import candidatiIntermediazioneRouter from './routes/candidatiIntermediazione';
 import colloquiIntermediazioneRouter from './routes/colloquiIntermediazione';
 import { avviaPromemoriaColloqui } from './utils/promemoriaColloqui';
+import { avviaImapSync } from './utils/imapSync';
 import areaFamigliaRouter from './routes/areaFamiglia';
 import alboPubblicoRouter from './routes/alboPubblico';
 import fatturazioneDocumentiRouter from './routes/fatturazioneDocumenti';
@@ -160,6 +161,7 @@ const proteggiUploads = (req: Request, res: Response, next: NextFunction) => {
 
 connectDB();
 avviaPromemoriaColloqui();
+avviaImapSync();
 seedShopAdmin();
 seedTariffarioSeVuoto();
 migraEsamiStrumentaliTariffario();
