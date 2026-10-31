@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, FormEvent } from 'react';
 import axios from 'axios';
 import { Calculator, CheckCircle, Send, Euro, FileText, Users, Info, Phone, MessageCircle } from 'lucide-react';
+import { TornaAlSito } from '../components/TornaAlSito';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api';
 const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '';
@@ -266,6 +267,7 @@ export default function LandingBadante() {
             <a href={testoWhatsApp()} target="_blank" rel="noopener" style={btnWa}><MessageCircle size={18} /> Scrivici su WhatsApp</a>
             <a href={`tel:${TELEFONO}`} style={btnTel}><Phone size={18} /> Chiama {TELEFONO_LABEL}</a>
           </div>
+          <div style={{ marginTop: '16px' }}><TornaAlSito color="#c2410c" /></div>
         </div>
       </div>
     );
@@ -276,6 +278,7 @@ export default function LandingBadante() {
       {/* Header */}
       <header style={{ background: '#fff', borderBottom: '1px solid #ffedd5', padding: '14px 20px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: '1080px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <TornaAlSito color="#c2410c" />
           <div style={{ background: '#c2410c', borderRadius: '10px', padding: '8px', display: 'flex' }}>
             <Users size={22} color="#fff" />
           </div>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Mic, Square, Camera, Paperclip, CheckCircle, Phone, MessageCircle } from 'lucide-react';
+import { TornaAlSito } from '../components/TornaAlSito';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // ISCRIZIONE INTERMEDIAZIONE — modulo pubblico semplificato per operatori:
@@ -175,6 +176,7 @@ export default function IscrizioneIntermediazione() {
       {/* Header Abbraccio + Salus */}
       <header style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '12px 16px' }}>
         <div style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <TornaAlSito />
           <img src="/logo.png" alt="Abbraccio" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
           <div>
             <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '1.05rem', lineHeight: 1.1 }}>Abbraccio Cure Domiciliari</div>

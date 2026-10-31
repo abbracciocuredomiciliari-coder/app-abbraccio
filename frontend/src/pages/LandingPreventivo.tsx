@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, FormEvent } from 'react';
 import axios from 'axios';
 import { Calculator, CheckCircle, Send, FileText, Info, Plus, Minus, Trash2, Phone, MessageCircle, Stethoscope, Tag } from 'lucide-react';
+import { TornaAlSito } from '../components/TornaAlSito';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api';
 const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '';
@@ -252,6 +253,7 @@ export default function LandingPreventivo() {
             <a href={testoWhatsApp()} target="_blank" rel="noopener" style={btnWa}><MessageCircle size={18} /> Scrivici su WhatsApp</a>
             <a href={`tel:${TELEFONO}`} style={btnTel}><Phone size={18} /> Chiama {TELEFONO_LABEL}</a>
           </div>
+          <div style={{ marginTop: '16px' }}><TornaAlSito /></div>
         </div>
       </div>
     );
@@ -262,6 +264,7 @@ export default function LandingPreventivo() {
       {/* Header — solo brand Abbraccio */}
       <header style={{ background: '#fff', borderBottom: '1px solid #dbeafe', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: '1080px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <TornaAlSito />
           <img src="/logo.png" alt="Abbraccio Cure Domiciliari" style={{ height: '46px', width: 'auto', display: 'block' }} />
           <div>
             <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '1.05rem', lineHeight: 1.1 }}>Abbraccio Cure Domiciliari</div>

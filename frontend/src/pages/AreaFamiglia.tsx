@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, Phone, MessageCircle, LogOut, FileText, CalendarClock, ClipboardList, KeyRound } from 'lucide-react';
+import { TornaAlSito } from '../components/TornaAlSito';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // AREA RISERVATA FAMIGLIE — accesso senza password: email + codice OTP a 6
@@ -101,6 +102,7 @@ export default function AreaFamiglia() {
   const Header = (
     <header style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '12px 16px' }}>
       <div style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <TornaAlSito color="#0f766e" />
         <img src="/logo.png" alt="Abbraccio" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
         <div>
           <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '1.05rem', lineHeight: 1.1 }}>Abbraccio Cure Domiciliari</div>

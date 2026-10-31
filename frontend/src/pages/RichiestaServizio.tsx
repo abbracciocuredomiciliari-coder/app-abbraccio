@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { Syringe, HeartPulse, Activity, CheckCircle, ChevronLeft, ChevronRight, Send, UserPlus, Calendar } from 'lucide-react';
+import { TornaAlSito } from '../components/TornaAlSito';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api';
 
@@ -204,9 +205,9 @@ export default function RichiestaServizio() {
               ? 'La richiesta di registrazione del paziente è stata ricevuta. L\'amministratore la elaborerà e il paziente comparirà nella lista appena approvata.'
               : 'La tua richiesta è stata ricevuta. Il nostro staff la elaborerà al più presto e ti contatteremo per confermare l\'appuntamento.'}
           </p>
-          <Link to="/login" style={{ display: 'inline-block', background: '#1e3a5f', color: 'white', padding: '12px 28px', borderRadius: '10px', textDecoration: 'none', fontWeight: '700' }}>
-            Torna alla pagina iniziale
-          </Link>
+          <a href="https://www.abbracciocuredomiciliari.it" style={{ display: 'inline-block', background: '#1e3a5f', color: 'white', padding: '12px 28px', borderRadius: '10px', textDecoration: 'none', fontWeight: '700' }}>
+            Torna al sito
+          </a>
         </div>
       </div>
     );
@@ -215,6 +216,8 @@ export default function RichiestaServizio() {
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)', padding: '30px 16px' }}>
       <div style={{ maxWidth: '580px', margin: '0 auto' }}>
+
+        <div style={{ marginBottom: '14px' }}><TornaAlSito color="#fff" /></div>
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>

@@ -2,6 +2,7 @@ import { useState, FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { HeartPulse, CheckCircle, AlertCircle, ArrowLeft, User, Phone, Mail, MapPin, Calendar, FileText, Stethoscope, Activity, UserPlus } from 'lucide-react';
 import axios from 'axios';
+import { TornaAlSito } from '../components/TornaAlSito';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api';
 
@@ -95,9 +96,9 @@ export default function RichiestaAssistenza() {
             Il nostro staff la valuterà e vi contatterà entro <strong>24-48 ore</strong> per organizzare la prima visita e attivare il piano di assistenza.
           </p>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#1e3a5f', color: 'white', padding: '12px 24px', borderRadius: '10px', textDecoration: 'none', fontWeight: '700' }}>
-              <ArrowLeft size={18} /> Torna alla home
-            </Link>
+            <a href="https://www.abbracciocuredomiciliari.it" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#1e3a5f', color: 'white', padding: '12px 24px', borderRadius: '10px', textDecoration: 'none', fontWeight: '700' }}>
+              <ArrowLeft size={18} /> Torna al sito
+            </a>
           </div>
         </div>
       </div>
@@ -142,6 +143,8 @@ export default function RichiestaAssistenza() {
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)', padding: '24px 16px' }}>
       <div style={{ maxWidth: '680px', margin: '0 auto' }}>
+
+        <div style={{ marginBottom: '14px' }}><TornaAlSito color="#fff" /></div>
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
