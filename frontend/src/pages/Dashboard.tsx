@@ -240,14 +240,14 @@ function Dashboard() {
       link: '/patients',
     },
     {
-      title: consegne.aperte > 0 ? 'Consegne da gestire' : 'Consegne',
+      title: consegne.daGestire > 0 ? 'Consegne da gestire' : 'Consegne',
       subtitle: consegne.aperte > 0
-        ? `${consegne.daGestire} nuove · ${consegne.aperte} aperte totali`
+        ? `${consegne.daGestire} da prendere in carico · ${consegne.aperte} aperte totali`
         : 'Nessuna consegna aperta',
-      value: consegne.aperte,
+      value: consegne.daGestire,
       icon: ClipboardList,
-      color: consegne.aperte > 0 ? '#d97706' : '#0d9488',
-      bgColor: consegne.aperte > 0 ? 'rgba(217, 119, 6, 0.1)' : 'rgba(13, 148, 136, 0.1)',
+      color: consegne.daGestire > 0 ? '#d97706' : '#0d9488',
+      bgColor: consegne.daGestire > 0 ? 'rgba(217, 119, 6, 0.1)' : 'rgba(13, 148, 136, 0.1)',
       link: '/consegne',
     },
     ...(isConsulenza ? [] : [

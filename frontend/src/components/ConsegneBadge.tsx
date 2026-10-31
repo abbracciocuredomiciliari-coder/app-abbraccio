@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import api from '../api/api';
 
-// Badge conteggio consegne amministrative NON gestite (promemoria sul menu).
+// Badge conteggio consegne amministrative DA GESTIRE (non ancora prese in
+// carico): scende a ogni presa in carico e sparisce quando sono tutte prese.
 export function ConsegneBadge() {
   const [count, setCount] = useState(0);
 
@@ -10,7 +11,7 @@ export function ConsegneBadge() {
     const fetchCount = async () => {
       try {
         const res = await api.get('/consegne-amministrative/conteggio');
-        if (mounted) setCount(res.data.aperte || 0);
+        if (mounted) setCount(res.data.daGestire || 0);
       } catch {
         // ignora errori silenziosamente
       }
