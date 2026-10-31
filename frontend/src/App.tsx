@@ -485,7 +485,7 @@ function AppShell() {
               </Link>
               <Link to="/archivio-email" className={isActive('/archivio-email') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <Mail size={18} />
-                Email inviate
+                Email gestione
                 <EmailRicevuteBadge />
               </Link>
 
@@ -567,7 +567,7 @@ function AppShell() {
               </Link>
               <Link to="/archivio-email" className={isActive('/archivio-email') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <Mail size={18} />
-                Email inviate
+                Email gestione
                 <EmailRicevuteBadge />
               </Link>
 
