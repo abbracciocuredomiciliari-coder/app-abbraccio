@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
-import { FileText, Download, Mail, Users, Eye, Trash2, Receipt, Send } from 'lucide-react';
+import { FileText, Download, Mail, Users, Eye, Trash2, Receipt, Send, MessageCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 interface ContrattoCollegato {
@@ -180,6 +180,41 @@ export default function ArchiviIntermediazione() {
       await carica();
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore eliminazione');
+    }
+  }
+
+  // Reinvia lo STESSO preventivo via email: il server rigenera il PDF identico
+  // e lo allega; il nuovo invio viene ri-archiviato come record separato.
+  async function reinviaEmailInviato(inv: PreventivoInviato) {
+    const email = window.prompt('Email del destinatario', inv.email || '');
+    if (!email || !email.trim()) return;
+    try {
+      const res = await api.post(`/preventivi-inviati/${inv._id}/reinvia`, { email: email.trim() });
+      alert(res.data?.inviata ? `✅ Preventivo reinviato a ${res.data.destinatario}` : 'Invio email non riuscito');
+      await carica();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nel reinvio');
+    }
+  }
+
+  // Reinvia su WhatsApp lo stesso testo archiviato (wa.me non può allegare il PDF)
+  async function reinviaWhatsAppInviato(inv: PreventivoInviato) {
+    const tel = window.prompt('Numero WhatsApp del destinatario', inv.telefono || '');
+    if (tel === null || !tel.trim()) return;
+    const numero = tel.replace(/[^\d]/g, '');
+    try {
+      const { data } = await api.get(`/preventivi-inviati/${inv._id}/testo`);
+      const testo = data?.testoInviato || `🧾 Preventivo Abbraccio Cure Domiciliari${inv.totale ? ` — totale € ${Number(inv.totale).toFixed(2)}` : ''}. Il documento PDF completo viene inviato a parte.`;
+      const wa = numero ? `https://wa.me/${numero.startsWith('39') ? numero : `39${numero}`}` : 'https://wa.me/';
+      api.post('/preventivi-inviati', {
+        area: 'intermediazione', tipo: inv.tipo, canale: 'whatsapp',
+        nomeCliente: inv.nomeCliente, telefono: numero || undefined,
+        totale: inv.totale, testoInviato: testo, simulazione: inv.simulazione,
+      }).catch(() => {});
+      window.open(`${wa}?text=${encodeURIComponent(testo)}`, '_blank');
+      setTimeout(carica, 1500);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore reinvio WhatsApp');
     }
   }
 
@@ -380,6 +415,12 @@ export default function ArchiviIntermediazione() {
                           </Button>
                           <Button size="sm" variant="secondary" onClick={() => pdfInviato(inv, false)}>
                             <Download size={14} className="tw-inline" />
+                          </Button>
+                          <Button size="sm" variant="secondary" onClick={() => reinviaEmailInviato(inv)}>
+                            <Mail size={14} className="tw-inline" /> Reinvia
+                          </Button>
+                          <Button size="sm" variant="secondary" onClick={() => reinviaWhatsAppInviato(inv)} className="tw-text-green-700">
+                            <MessageCircle size={14} className="tw-inline" />
                           </Button>
                           {user?.role === 'admin' && (
                             <Button size="sm" variant="secondary" className="tw-text-red-600" onClick={() => eliminaInviato(inv)}>
