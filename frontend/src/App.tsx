@@ -148,16 +148,22 @@ function AppShell() {
   // Chiudi il menu mobile a ogni cambio pagina
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
-  // Register service worker for PWA
+  // Register service worker for PWA — con aggiornamento automatico:
+  // quando una nuova versione del SW prende il controllo ricarica la pagina
+  // (evita che gli utenti restino su bundle vecchi in cache).
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js')
+      let reloaded = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloaded) return;
+        reloaded = true;
+        window.location.reload();
+      });
+      navigator.serviceWorker.register('/service-worker.js', { updateViaCache: 'none' })
         .then((registration) => {
-          console.log('SW registered:', registration);
+          registration.update();
         })
-        .catch((error) => {
-          console.log('SW registration failed:', error);
-        });
+        .catch(() => {});
     }
   }, []);
 
