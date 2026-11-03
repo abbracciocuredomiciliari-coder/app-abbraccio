@@ -12,6 +12,7 @@ export interface IBadanteIntermediazione extends Document {
   stato: 'aperta' | 'preventivo_emesso' | 'accettata' | 'fatturata' | 'annullata';
   preventivoId?: Types.ObjectId;
   contrattoId?: Types.ObjectId;              // contratto d'incarico collegato (firma paziente)
+  richiestaPrenotazioneId?: Types.ObjectId;
   simulazione?: any;                          // input simulatore usato per il preventivo PDF
   preventivoPdfFileName?: string;             // nome file PDF preventivo generato
   fatturaId?: Types.ObjectId;
@@ -34,6 +35,7 @@ const badanteIntermediazioneSchema = new Schema<IBadanteIntermediazione>(
     stato: { type: String, enum: ['aperta', 'preventivo_emesso', 'accettata', 'fatturata', 'annullata'], default: 'aperta' },
     preventivoId: { type: Schema.Types.ObjectId, ref: 'DocumentoFatturazione' },
     contrattoId: { type: Schema.Types.ObjectId, ref: 'ContrattoPaziente' },
+    richiestaPrenotazioneId: { type: Schema.Types.ObjectId, ref: 'RichiestaPrenotazione' },
     simulazione: { type: Schema.Types.Mixed },
     preventivoPdfFileName: { type: String, trim: true },
     fatturaId: { type: Schema.Types.ObjectId, ref: 'DocumentoFatturazione' },

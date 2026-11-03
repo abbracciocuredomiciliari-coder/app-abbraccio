@@ -5,6 +5,8 @@ export interface ITariffario extends Document {
   nome: string;
   prezzo: number;
   unitaMisura?: string; // es. "1 tratto", "cad", "ora"
+  promoAttiva?: boolean;
+  prezzoPromo?: number;
   note?: string;
   attivo: boolean;
   ordine: number;
@@ -22,6 +24,8 @@ const tariffarioSchema = new Schema<ITariffario>(
     nome: { type: String, required: true, trim: true },
     prezzo: { type: Number, required: true, default: 0 },
     unitaMisura: { type: String, trim: true },
+    promoAttiva: { type: Boolean, default: false },
+    prezzoPromo: { type: Number },
     note: { type: String, trim: true },
     attivo: { type: Boolean, default: true },
     ordine: { type: Number, default: 0 },

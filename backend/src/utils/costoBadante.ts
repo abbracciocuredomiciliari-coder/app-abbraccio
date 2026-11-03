@@ -13,6 +13,8 @@
 // - Cassa.Colf: 0,06 €/h (0,04 datore + 0,02 lavoratore)
 // - Vitto e alloggio in natura 2026: 6,66 €/giorno (2,33+2,33+2,00)
 
+import TariffaCcnl from '../models/TariffaCcnl';
+
 export type ContrattoSim =
   | 'non_convivente'
   | 'convivente'
@@ -140,6 +142,23 @@ export function quotaCafDefault(tipo: ContrattoSim, oreSettimanali?: number, P: 
     return ore > 0 && ore < 30 ? P.cafPerTipo.non_convivente_sotto30 : P.cafPerTipo.non_convivente;
   }
   return (P.cafPerTipo as Record<string, number>)[tipo] ?? P.cafMensileDefault;
+}
+
+// Merge profondo dei parametri salvati su DB sui default (max 3 livelli di chiavi).
+// I campi aggiunti in futuro dal codice restano valorizzati anche sui doc più vecchi.
+function mergeDeep(base: any, override: any, depth = 0): any {
+  if (override === undefined || override === null || depth >= 3) return override !== undefined ? override : base;
+  if (typeof base !== 'object' || base === null || Array.isArray(base)) return override;
+  if (typeof override !== 'object' || Array.isArray(override)) return override;
+  const out: any = { ...base };
+  for (const k of Object.keys(override)) out[k] = mergeDeep(base[k], override[k], depth + 1);
+  return out;
+}
+
+// Carica i parametri CCNL/INPS dal DB (TariffaCcnl singleton) mergiati sui default.
+export async function caricaParametri(): Promise<ParametriCcnl> {
+  const doc = await TariffaCcnl.findOne({ key: 'ccnl' }).lean();
+  return mergeDeep(PARAMETRI_CCN_2026, doc?.parametri);
 }
 
 function r2(n: number) { return Math.round(n * 100) / 100; }

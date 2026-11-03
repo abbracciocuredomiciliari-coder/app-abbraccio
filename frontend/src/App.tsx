@@ -22,6 +22,8 @@ const FirmaVerbaleEsterno = lazy(() => import('./pages/FirmaVerbaleEsterno'));
 const FirmaDocumento = lazy(() => import('./pages/FirmaDocumento'));
 const FirmaRitenuta = lazy(() => import('./pages/FirmaRitenuta'));
 const FirmaConsenso = lazy(() => import('./pages/FirmaConsenso'));
+const LandingBadante = lazy(() => import('./pages/LandingBadante'));
+const LandingPreventivo = lazy(() => import('./pages/LandingPreventivo'));
 const GestioneRitenute = lazy(() => import('./pages/GestioneRitenute'));
 
 // Lazy load per pagine pesanti
@@ -127,7 +129,7 @@ function AppShell() {
   const { toasts, removeToast } = useToast();
 
   const isActive = (path: string) => location.pathname === path;
-  const isFirma = location.pathname.startsWith('/firma-');
+  const isFirma = location.pathname.startsWith('/firma-') || location.pathname === '/badante' || location.pathname === '/preventivo';
   const operatore = user && !isPrivilegiato(user.role);
 
   // Chiudi il menu mobile a ogni cambio pagina
@@ -561,6 +563,8 @@ function AppShell() {
           <Route path="/register" element={<Register />} />
           <Route path="/richiesta-servizio" element={<RichiestaServizio />} />
           <Route path="/richiesta-assistenza" element={<RichiestaAssistenza />} />
+          <Route path="/badante" element={<LandingBadante />} />
+          <Route path="/preventivo" element={<LandingPreventivo />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/firma-contratto" element={<FirmaContratto />} />
