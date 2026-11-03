@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { Phone, Send, Calculator, CheckCircle } from 'lucide-react';
+import Abbraccino from '../components/Abbraccino';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api';
 const TEL = '06 01905242';
@@ -56,26 +57,29 @@ export default function LandingBadante() {
 
   const tipo = TIPI_CONTRATTO.find(t => t.value === contratto) || TIPI_CONTRATTO[1];
 
-  const inputBody = () => ({
-    contrattoTipo: contratto,
-    livello,
-    oreSettimanali: tipo.orario ? Number(ore) : undefined,
+  const inputBody = (ovr?: any) => {
+    const cEff = ovr?.contrattoTipo || contratto;
+    const tipoEff = TIPI_CONTRATTO.find(t => t.value === cEff) || TIPI_CONTRATTO[1];
+    return {
+    contrattoTipo: cEff,
+    livello: ovr?.livello || livello,
+    oreSettimanali: tipoEff.orario ? Number(ovr?.oreSettimanali ?? ore) : undefined,
     tempoDeterminato: determinato,
     indennitaPiuAutosuff: piuAutosuff,
     certificazioneUni: certUni,
     indennitaBabysitter: babysitter,
     escludiTfrTredicesima: escludiTfr,
-  });
+  };}
 
   const costoFamiglia = useMemo(() => {
     if (!sim) return 0;
     return sim.totaleCostoMensile + (sim.cafMensile || 0) - (escludiTfr ? sim.tfr + sim.tredicesima : 0);
   }, [sim, escludiTfr]);
 
-  async function calcola() {
+  async function calcola(ovr?: any) {
     setLoading(true); setErr('');
     try {
-      const res = await axios.post(`${API_BASE}/landing-badante/preview`, inputBody());
+      const res = await axios.post(`${API_BASE}/landing-badante/preview`, inputBody(ovr));
       setSim(res.data);
     } catch (e: any) {
       setErr(e?.response?.data?.message || 'Errore nel calcolo');
@@ -256,6 +260,12 @@ export default function LandingBadante() {
           Abbraccio Cure Domiciliari · <a href={`tel:${TEL_HREF}`} style={{ color: '#c2410c' }}>{TEL}</a> · Intermediazione badanti, colf e assistenti familiari — Roma e provincia
         </p>
       </div>
+      <Abbraccino tipo="badante" contesto={{ contratto, livello, oreSettimanali: ore }} onSuggerimento={(s: any) => {
+        if (s.contrattoTipo) setContratto(s.contrattoTipo);
+        if (s.livello) setLivello(s.livello);
+        if (s.oreSettimanali) setOre(String(s.oreSettimanali));
+        calcola(s);
+      }} />
     </div>
   );
 }

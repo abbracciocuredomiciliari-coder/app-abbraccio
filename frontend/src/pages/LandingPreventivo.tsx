@@ -4,6 +4,7 @@ import {
   Phone, Calculator, Plus, Trash2, Send, Minus,
   CheckCircle, MessageCircle, ShieldCheck, HelpCircle, FileText, Tag,
 } from 'lucide-react';
+import Abbraccino from '../components/Abbraccino';
 
 const API = 'https://api.abbracciocuredomiciliari.it/api';
 const TEL_HREF = '0601905242';
@@ -433,6 +434,13 @@ export default function LandingPreventivo() {
           Abbraccio Cure Domiciliari S.R.L.S. · Via di S. Maria Ausiliatrice 4/B, Roma · {TEL} · Prestazioni sanitarie a domicilio a Roma e provincia
         </p>
       </main>
+      <Abbraccino tipo="preventivo" contesto={{ voci: categorie.flatMap((c: any) => (c.voci || []).map((v: any) => ({ id: v.id, descrizione: v.descrizione, prezzo: v.prezzo, categoria: c.nome }))) }} onSuggerimento={(s: any) => {
+        if (Array.isArray(s?.voci)) setSel(prev => {
+          const o = { ...prev };
+          s.voci.forEach((v: any) => { if (v?.id && v.quantita > 0) o[String(v.id)] = v.quantita; });
+          return o;
+        });
+      }} />
     </div>
   );
 }

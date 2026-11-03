@@ -59,6 +59,7 @@ import preventiviInviatiRouter from './routes/preventiviInviati';
 import preventivoVeloceRouter from './routes/preventivoVeloce';
 import landingBadanteRouter from './routes/landingBadante';
 import landingPreventivoRouter from './routes/landingPreventivo';
+import abbraccinoRouter from './routes/abbraccino';
 import badantiIntermediazioneRouter from './routes/badantiIntermediazione';
 import ritenuteAccontoRouter from './routes/ritenuteAcconto';
 import shopRouter, { seedShopAdmin } from './routes/shop';
@@ -220,6 +221,7 @@ app.use('/api/preventivi-inviati', preventiviInviatiRouter);
 app.use('/api/preventivo-veloce', preventivoVeloceRouter);
 app.use('/api/landing-badante', landingBadanteRouter);
 app.use('/api/landing-preventivo', landingPreventivoRouter);
+app.use('/api/abbraccino', abbraccinoRouter);
 app.use('/api/badanti-intermediazione', badantiIntermediazioneRouter);
 app.use('/api/ritenute-acconto', ritenuteAccontoRouter);
 // Shop Abbraccio: pubblico (prodotti/ordini/recensioni) + admin shop con JWT separato
