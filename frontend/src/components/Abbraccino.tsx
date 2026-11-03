@@ -6,19 +6,7 @@ const API = 'https://api.abbracciocuredomiciliari.it/api';
 
 // Cuoricino oro con braccia bianche che si abbraccia
 function CuoricinoIcon({ size = 30 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
-      {/* cuore oro */}
-      <path d="M32 54 C12 41 7 27 15 18 C21 11 30 14 32 22 C34 14 43 11 49 18 C57 27 52 41 32 54Z" fill="#F2B52A" stroke="#d9a012" strokeWidth="1.5" />
-      {/* braccio sinistro che abbraccia */}
-      <path d="M9 40 C15 48 23 53 31 55" stroke="#ffffff" strokeWidth="6" fill="none" strokeLinecap="round" />
-      {/* braccio destro che abbraccia */}
-      <path d="M55 40 C49 48 41 53 33 55" stroke="#ffffff" strokeWidth="6" fill="none" strokeLinecap="round" />
-      {/* manine */}
-      <circle cx="11" cy="37" r="4.5" fill="#ffffff" />
-      <circle cx="53" cy="37" r="4.5" fill="#ffffff" />
-    </svg>
-  );
+  return <img src="/abbraccino.jpg" alt="Abbraccino" width={size} height={size} style={{ borderRadius: '50%', objectFit: 'cover', display: 'block' }} />;
 }
 
 interface Props {
@@ -94,13 +82,13 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
       {/* etichetta sopra il pulsante */}
       {!open && (
         <button onClick={() => setOpen(true)}
-          style={{ position: 'fixed', bottom: 86, right: 14, zIndex: 9999, background: '#fff', color: '#1e4d8c', border: '1.5px solid #dbeafe', borderRadius: 999, padding: '7px 14px', fontSize: '0.78rem', fontWeight: 700, boxShadow: '0 4px 14px rgba(0,0,0,.12)', cursor: 'pointer', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
-          Sono Abbraccino, clicca per aiuto
+          style={{ position: 'fixed', bottom: 76, right: 14, zIndex: 9999, background: '#fff', color: '#1e4d8c', border: '1.5px solid #dbeafe', borderRadius: 999, padding: '7px 14px', fontSize: '0.78rem', fontWeight: 700, boxShadow: '0 4px 14px rgba(0,0,0,.12)', cursor: 'pointer', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
+          Chiedi aiuto
         </button>
       )}
       <button onClick={() => setOpen(o => !o)} aria-label="Chiedi ad Abbraccino"
-        style={{ position: 'fixed', bottom: 18, right: 18, width: 62, height: 62, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#1e3a5f,#1e4d8c)', cursor: 'pointer', boxShadow: '0 6px 22px rgba(30,77,140,.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {open ? <X size={26} color="#fff" /> : <CuoricinoIcon size={38} />}
+        style={{ position: 'fixed', bottom: 18, right: 18, width: 62, height: 62, borderRadius: '50%', border: 'none', background: '#fff', cursor: 'pointer', boxShadow: '0 6px 22px rgba(30,77,140,.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 4, boxSizing: 'border-box' }}>
+        {open ? <X size={26} color="#fff" /> : <CuoricinoIcon size={52} />}
       </button>
       {open && (
         <div style={{ position: 'fixed', bottom: 90, right: 14, width: 'min(360px, calc(100vw - 28px))', maxHeight: '70vh', background: '#fff', borderRadius: 18, boxShadow: '0 10px 40px rgba(0,0,0,.22)', zIndex: 9999, display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #dbeafe', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
