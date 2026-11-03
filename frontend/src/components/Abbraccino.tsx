@@ -4,7 +4,6 @@ import { Send, X, Mic } from 'lucide-react';
 
 const API = 'https://api.abbracciocuredomiciliari.it/api';
 
-// Cuoricino oro con braccia bianche che si abbraccia
 function CuoricinoIcon({ size = 30 }: { size?: number }) {
   return <img src="/abbraccino.jpg" alt="Abbraccino" width={size} height={size} style={{ borderRadius: '50%', objectFit: 'cover', display: 'block' }} />;
 }
@@ -77,23 +76,42 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
     } finally { setBusy(false); }
   }
 
+  const pillTop: React.CSSProperties = { background: '#fff', color: '#1e4d8c', border: '1.5px solid #dbeafe', borderRadius: 999, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 800, boxShadow: '0 3px 10px rgba(0,0,0,.10)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' };
+  const pillBtm: React.CSSProperties = { ...pillTop, background: 'linear-gradient(135deg,#1e3a5f,#1e4d8c)', color: '#fff', border: 'none', padding: '5px 14px' };
+
   return (
     <>
-      {/* etichetta sopra il pulsante */}
+      <style>{`
+        @keyframes abHeartBeat { 0%,100%{transform:scale(1)} 14%{transform:scale(1.18)} 28%{transform:scale(1)} 42%{transform:scale(1.18)} 70%{transform:scale(1)} }
+        @keyframes abGlow { 0%,100%{box-shadow:0 4px 16px rgba(242,181,42,.3), 0 0 0 0 rgba(242,181,42,.45)} 50%{box-shadow:0 4px 20px rgba(242,181,42,.7), 0 0 0 10px rgba(242,181,42,0)} }
+        .ab-fab { animation: abGlow 1.8s ease-in-out infinite; }
+        .ab-heart { display:block; animation: abHeartBeat 1.8s ease-in-out infinite; transform-origin:center; }
+      `}</style>
+
+      {/* colonna: etichetta sopra / icona / etichetta sotto — centrata */}
       {!open && (
-        <button onClick={() => setOpen(true)}
-          style={{ position: 'fixed', bottom: 76, right: 14, zIndex: 9999, background: '#fff', color: '#1e4d8c', border: '1.5px solid #dbeafe', borderRadius: 999, padding: '7px 14px', fontSize: '0.78rem', fontWeight: 700, boxShadow: '0 4px 14px rgba(0,0,0,.12)', cursor: 'pointer', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
-          Chiedi aiuto
+        <div style={{ position: 'fixed', right: 14, bottom: 6, zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+          <button onClick={() => setOpen(true)} style={pillTop}>Sono Abbraccino</button>
+          <button onClick={() => setOpen(true)} aria-label="Chiedi ad Abbraccino" className="ab-fab"
+            style={{ width: 62, height: 62, borderRadius: '50%', border: 'none', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 5, boxSizing: 'border-box' }}>
+            <span className="ab-heart"><CuoricinoIcon size={50} /></span>
+          </button>
+          <button onClick={() => setOpen(true)} style={pillBtm}>Chiedi aiuto</button>
+        </div>
+      )}
+
+      {/* pulsante chiudi */}
+      {open && (
+        <button onClick={() => setOpen(false)} aria-label="Chiudi"
+          style={{ position: 'fixed', bottom: 18, right: 18, width: 62, height: 62, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#1e3a5f,#1e4d8c)', color: '#fff', cursor: 'pointer', boxShadow: '0 6px 22px rgba(30,77,140,.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <X size={26} />
         </button>
       )}
-      <button onClick={() => setOpen(o => !o)} aria-label="Chiedi ad Abbraccino"
-        style={{ position: 'fixed', bottom: 18, right: 18, width: 62, height: 62, borderRadius: '50%', border: 'none', background: '#fff', cursor: 'pointer', boxShadow: '0 6px 22px rgba(30,77,140,.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 4, boxSizing: 'border-box' }}>
-        {open ? <X size={26} color="#fff" /> : <CuoricinoIcon size={52} />}
-      </button>
+
       {open && (
         <div style={{ position: 'fixed', bottom: 90, right: 14, width: 'min(360px, calc(100vw - 28px))', maxHeight: '70vh', background: '#fff', borderRadius: 18, boxShadow: '0 10px 40px rgba(0,0,0,.22)', zIndex: 9999, display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #dbeafe', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
           <div style={{ background: 'linear-gradient(135deg,#1e3a5f,#1e4d8c)', color: '#fff', padding: '12px 16px', fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <CuoricinoIcon size={26} /> Abbraccino — assistente preventivi
+            <CuoricinoIcon size={26} /> Abbraccino — assistente
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8, minHeight: 200, maxHeight: '48vh' }}>
             {msgs.map((m, i) => (
@@ -109,7 +127,7 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
               style={{ flex: 1, padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: 999, fontSize: '0.88rem', fontFamily: 'inherit' }} />
             {SR && (
               <button type="button" onClick={toggleMic} aria-label="Parla con Abbraccino"
-                style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: listening ? '#dc2626' : '#e2e8f0', color: listening ? '#fff' : '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, animation: listening ? 'micPulse 1.2s infinite' : 'none' }}>
+                style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: listening ? '#dc2626' : '#e2e8f0', color: listening ? '#fff' : '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, animation: listening ? 'abHeartBeat 1.2s infinite' : 'none' }}>
                 <Mic size={17} />
               </button>
             )}
@@ -118,7 +136,6 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
               <Send size={16} />
             </button>
           </form>
-          <style>{`@keyframes micPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,.4); } 50% { box-shadow: 0 0 0 8px rgba(220,38,38,0); } }`}</style>
         </div>
       )}
     </>
