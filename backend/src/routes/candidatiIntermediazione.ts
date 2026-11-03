@@ -261,8 +261,8 @@ router.patch('/:id/accetta', auth_1.authenticateToken, (0, roles_1.authorizeRole
             cittaResidenza: c.cittaResidenza || c.cittaInteresse,
             indirizzoResidenza: [c.cittaResidenza, c.regioneResidenza].filter(Boolean).join(', ') || undefined,
             note: noteStaff || undefined,
-            modalitaAbilitata: 'intermediazione',
-            areaIntermediazione: true,
+            modalitaAbilitata: SANITARI_PRIVATA.includes(c.ruolo) ? 'privato' : 'intermediazione',
+            areaIntermediazione: !SANITARI_PRIVATA.includes(c.ruolo),
             professionista: !!c.certificato || ['oss', 'infermiere', 'medico', 'fisioterapista'].includes(c.ruolo),
         });
         c.stato = 'accettato';

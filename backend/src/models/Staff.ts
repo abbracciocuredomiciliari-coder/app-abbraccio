@@ -21,7 +21,8 @@ export interface IStaff extends Document {
   dataFineCollaborazione?: Date;
   note?: string;
   userId?: Types.ObjectId; // collegamento con l'account di login (User)
-  modalitaAbilitata: 'entrambi' | 'privato' | 'convenzione';
+  areaIntermediazione?: boolean;
+  modalitaAbilitata: 'entrambi' | 'privato' | 'convenzione' | 'intermediazione';
 
   // === ZONA DI LAVORO ===
   domicilioPartenza?: string;       // Indirizzo testo
@@ -58,9 +59,10 @@ const staffSchema = new Schema<IStaff>(
       lat: { type: Number },
       lng: { type: Number },
     },
+    areaIntermediazione: { type: Boolean, default: false },
     modalitaAbilitata: {
       type: String,
-      enum: ['entrambi', 'privato', 'convenzione'],
+      enum: ['entrambi', 'privato', 'convenzione', 'intermediazione'],
       default: 'entrambi',
     },
   },
@@ -72,13 +74,13 @@ staffSchema.index({ userId: 1 });
 staffSchema.index({ email: 1, active: 1 });
 
 staffSchema.pre('save', function (next) {
-  if (this.isModified('phone') && this.phone) this.phone = encrypt(this.phone);
+  if (this.isModified('phone') && (this as any).phone) (this as any).phone = encrypt((this as any).phone);
   next();
 });
 
 staffSchema.set('toJSON', {
   transform: function (_doc, ret) {
-    if (ret.phone) ret.phone = decrypt(ret.phone);
+    if ((ret as any).phone) (ret as any).phone = decrypt((ret as any).phone);
     return ret;
   },
 });

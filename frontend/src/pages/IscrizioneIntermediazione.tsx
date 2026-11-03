@@ -89,8 +89,8 @@ export default function IscrizioneIntermediazione() {
 
         <div style={{ textAlign: 'center', marginBottom: 22 }}>
           <img src="/logo.png" alt="Abbraccio Cure Domiciliari" style={{ height: 52 }} onError={e => ((e.target as HTMLImageElement).style.display = 'none')} />
-          <h1 style={{ margin: '10px 0 4px', color: '#1e293b', fontSize: 'clamp(1.4rem,4vw,1.9rem)', fontWeight: 800 }}>Iscriviti come operatore</h1>
-          <p style={{ margin: 0, color: '#64748b', fontSize: '0.92rem' }}>Badanti · Colf · Operatori Sanitari — lavora con Abbraccio Cure Domiciliari</p>
+          <h1 style={{ margin: '10px 0 4px', color: '#1e293b', fontSize: 'clamp(1.4rem,4vw,1.9rem)', fontWeight: 800 }}>Registrati come operatore Abbraccio</h1>
+          <p style={{ margin: 0, color: '#64748b', fontSize: '0.92rem' }}>Badanti · Colf · Assistenti familiari · Operatori sanitari — entra nel team Abbraccio</p>
           <p style={{ margin: '8px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>In partnership con <strong>Salus Group</strong></p>
         </div>
 
