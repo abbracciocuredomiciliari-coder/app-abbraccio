@@ -194,7 +194,7 @@ export default function LandingPreventivo() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#eff6ff,#ffffff 55%)', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
-      <style>{`@media (max-width: 640px) { .landing-hide-mobile { display: none; } }`}</style>
+      <style>{`@media (max-width: 640px) { .landing-hide-mobile { display: none; } .prev-sticky { position: static !important; } .prev-grid { grid-template-columns: 1fr !important; } .prev-btn-2col { grid-template-columns: 1fr !important; } .prev-card-pad { padding: 14px 14px 16px !important; } .prev-hero { padding: 12px 14px !important; } .prev-list { max-height: 300px !important; } }`}</style>
 
       <header style={{ background: '#fff', borderBottom: '1px solid #dbeafe', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: 1080, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -218,7 +218,7 @@ export default function LandingPreventivo() {
           <span style={{ display: 'inline-block', marginTop: 12, background: '#dcfce7', color: '#166534', padding: '6px 14px', borderRadius: 999, fontSize: '0.8rem', fontWeight: 700 }}>🎉 Combina 2 o più servizi nello stesso preventivo: sconto {SCONTO}% automatico</span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 20, alignItems: 'start' }}>
+        <div className="prev-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 20, alignItems: 'start' }}>
 
           {/* ── Colonna calcolatore ── */}
           <div style={{ background: 'linear-gradient(165deg,#eff6ff 0%,#ffffff 55%)', borderRadius: 16, border: '1px solid #93c5fd', boxShadow: '0 8px 24px rgba(30,77,140,.10)', overflow: 'hidden' }}>
@@ -229,7 +229,7 @@ export default function LandingPreventivo() {
                 <div style={{ fontSize: '0.72rem', color: '#dbeafe' }}>listino ufficiale Abbraccio Cure Domiciliari</div>
               </div>
             </div>
-            <div style={{ display: 'grid', gap: 14, padding: '22px 24px 24px' }}>
+            <div className="prev-card-pad" style={{ display: 'grid', gap: 14, padding: '22px 24px 24px' }}>
 
               {presel && (
                 <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 10, padding: '10px 12px', fontSize: '0.82rem', color: '#065f46', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
@@ -275,7 +275,7 @@ export default function LandingPreventivo() {
                       <span>Prestazione</span>
                       <span>Prezzo · Quantità <Hint text="I prezzi sono quelli del listino ufficiale Abbraccio. Le prestazioni contrassegnate PROMO hanno un prezzo promozionale: il listino è mostrato barrato. La quantità indica accessi, ore o esami." /></span>
                     </div>
-                    <div style={{ maxHeight: 340, overflowY: 'auto' }}>
+                    <div className="prev-list" style={{ maxHeight: 340, overflowY: 'auto' }}>
                       {cat.voci.map(v => {
                         const q = sel[v.id] || 0;
                         return (
@@ -334,7 +334,7 @@ export default function LandingPreventivo() {
           </div>
 
           {/* ── Colonna preventivo ── */}
-          <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #dbeafe', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: 24, position: 'sticky', top: 80 }}>
+          <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #dbeafe', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: 24, position: 'sticky', top: 80 }} className="prev-sticky">
             <h2 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '1.05rem', color: '#1e293b', margin: '0 0 14px' }}><FileText size={20} color="#1e4d8c" /> Il tuo preventivo</h2>
             {loading && <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>⏳ Calcolo in corso...</p>}
             {err && <p style={{ color: '#dc2626', fontSize: '0.88rem' }}>{err}</p>}
@@ -385,7 +385,7 @@ export default function LandingPreventivo() {
                 <p style={{ fontSize: '0.75rem', color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '9px 11px', marginTop: 12, lineHeight: 1.5 }}>
                   ⚠️ <strong>Tariffe indicative.</strong> L'importo può subire variazioni in base alle condizioni domiciliari e assistenziali specifiche (distanza, orari, materiali, urgenza): la tariffa definitiva viene confermata dopo il contatto, senza impegno.
                 </p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12 }}>
+                <div className="prev-btn-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12 }}>
                   <a href={waUrl()} target="_blank" rel="noopener" style={btnWa}><MessageCircle size={17} /> Invia su WhatsApp</a>
                   <a href={`tel:${TEL_HREF}`} style={btnBlu}><Phone size={17} /> Telefona</a>
                 </div>
@@ -423,7 +423,7 @@ export default function LandingPreventivo() {
               style={{ marginTop: 14, width: '100%', padding: 14, border: 'none', borderRadius: 10, background: sending ? '#93c5fd' : 'linear-gradient(135deg,#1e3a8a,#1e4d8c)', color: '#fff', fontWeight: 800, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit' }}>
               <Send size={18} /> {sending ? 'Invio in corso...' : 'Invia richiesta con il tuo preventivo'}
             </button>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
+            <div className="prev-btn-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
               <a href={waUrl()} target="_blank" rel="noopener" style={btnWa}><MessageCircle size={17} /> Invia su WhatsApp</a>
               <a href={`tel:${TEL_HREF}`} style={btnBlu}><Phone size={17} /> Telefona {TEL}</a>
             </div>
