@@ -1,6 +1,6 @@
 // @ts-nocheck
 import express from 'express';
-import { rateLimitByIP } from '../utils/rateLimit';
+import { rateLimitByIP } from '../middleware/rateLimit';
 
 const router = express.Router();
 
