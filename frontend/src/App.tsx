@@ -24,6 +24,14 @@ const FirmaRitenuta = lazy(() => import('./pages/FirmaRitenuta'));
 const FirmaConsenso = lazy(() => import('./pages/FirmaConsenso'));
 const LandingBadante = lazy(() => import('./pages/LandingBadante'));
 const LandingPreventivo = lazy(() => import('./pages/LandingPreventivo'));
+const LandingIscrizione = lazy(() => import('./pages/IscrizioneIntermediazione'));
+const AreaFamiglia = lazy(() => import('./pages/AreaFamiglia'));
+const ColloquioPubblico = lazy(() => import('./pages/ColloquioPubblico'));
+const ConsegnaEsterna = lazy(() => import('./pages/ConsegnaEsterna'));
+const ConsegneAmministrative = lazy(() => import('./pages/ConsegneAmministrative'));
+const RiunioniColloquio = lazy(() => import('./pages/RiunioniColloquio'));
+const PreventivoVeloce = lazy(() => import('./pages/PreventivoVeloce'));
+const ArchivioEmail = lazy(() => import('./pages/ArchivioEmail'));
 const GestioneRitenute = lazy(() => import('./pages/GestioneRitenute'));
 
 // Lazy load per pagine pesanti
@@ -129,7 +137,7 @@ function AppShell() {
   const { toasts, removeToast } = useToast();
 
   const isActive = (path: string) => location.pathname === path;
-  const isFirma = location.pathname.startsWith('/firma-') || location.pathname === '/badante' || location.pathname === '/preventivo';
+  const isFirma = location.pathname.startsWith('/firma-') || location.pathname === '/badante' || location.pathname === '/preventivo' || location.pathname === '/iscriviti-intermediazione' || location.pathname === '/area-famiglia' || location.pathname === '/colloquio' || location.pathname === '/scrivi-consegna';
   const operatore = user && !isPrivilegiato(user.role);
 
   // Chiudi il menu mobile a ogni cambio pagina
@@ -565,6 +573,15 @@ function AppShell() {
           <Route path="/richiesta-assistenza" element={<RichiestaAssistenza />} />
           <Route path="/badante" element={<LandingBadante />} />
           <Route path="/preventivo" element={<LandingPreventivo />} />
+          <Route path="/iscriviti-intermediazione" element={<LandingIscrizione />} />
+          <Route path="/area-famiglia" element={<AreaFamiglia />} />
+          <Route path="/colloquio" element={<ColloquioPubblico />} />
+          <Route path="/scrivi-consegna" element={<ConsegnaEsterna />} />
+          <Route path="/consegne" element={<ProtectedRoute><ConsegneAmministrative /></ProtectedRoute>} />
+          <Route path="/riunioni-colloquio" element={<ProtectedRoute><RiunioniColloquio /></ProtectedRoute>} />
+          <Route path="/riunioni-colloquio/:id" element={<ProtectedRoute><RiunioniColloquio /></ProtectedRoute>} />
+          <Route path="/preventivo-veloce" element={<ProtectedRoute><PreventivoVeloce /></ProtectedRoute>} />
+          <Route path="/archivio-email" element={<ProtectedRoute><ArchivioEmail /></ProtectedRoute>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/firma-contratto" element={<FirmaContratto />} />
