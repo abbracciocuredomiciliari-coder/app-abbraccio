@@ -1,8 +1,25 @@
 import { useRef, useState, useEffect } from 'react';
 import axios from 'axios';
-import { Send, X } from 'lucide-react';
+import { Send, X, Mic } from 'lucide-react';
 
 const API = 'https://api.abbracciocuredomiciliari.it/api';
+
+// Cuoricino oro con braccia bianche che si abbraccia
+function CuoricinoIcon({ size = 30 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
+      {/* cuore oro */}
+      <path d="M32 54 C12 41 7 27 15 18 C21 11 30 14 32 22 C34 14 43 11 49 18 C57 27 52 41 32 54Z" fill="#F2B52A" stroke="#d9a012" strokeWidth="1.5" />
+      {/* braccio sinistro che abbraccia */}
+      <path d="M9 40 C15 48 23 53 31 55" stroke="#ffffff" strokeWidth="6" fill="none" strokeLinecap="round" />
+      {/* braccio destro che abbraccia */}
+      <path d="M55 40 C49 48 41 53 33 55" stroke="#ffffff" strokeWidth="6" fill="none" strokeLinecap="round" />
+      {/* manine */}
+      <circle cx="11" cy="37" r="4.5" fill="#ffffff" />
+      <circle cx="53" cy="37" r="4.5" fill="#ffffff" />
+    </svg>
+  );
+}
 
 interface Props {
   tipo: 'badante' | 'preventivo';
@@ -16,17 +33,41 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
     {
       who: 'bot',
       text: tipo === 'badante'
-        ? 'Ciao! Sono Abbraccino 🤖 Raccontami la tua situazione — es. "mamma anziana non autosufficiente, serve una badante che abita con lei" — e ti preparo il calcolo del costo!'
-        : 'Ciao! Sono Abbraccino 🤖 Dimmi cosa serve — es. "devo fare un esame del sangue e una visita medica a domicilio" — e ti aggiungo le prestazioni al preventivo!',
+        ? 'Ciao! Sono Abbraccino 💛 Raccontami la tua situazione — es. "mamma anziana non autosufficiente, serve una badante che abita con lei" — e ti preparo il calcolo del costo!'
+        : 'Ciao! Sono Abbraccino 💛 Dimmi cosa serve — es. "devo fare un esame del sangue e una visita medica a domicilio" — e ti aggiungo le prestazioni al preventivo!',
     },
   ]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
+  const [listening, setListening] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const recRef = useRef<any>(null);
   const contestoRef = useRef<any>(contesto);
   contestoRef.current = contesto;
 
+  const SR = typeof window !== 'undefined' && ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, open]);
+
+  function toggleMic() {
+    if (!SR) return;
+    if (listening) { recRef.current?.stop(); return; }
+    try {
+      const r = new SR();
+      r.lang = 'it-IT';
+      r.interimResults = false;
+      r.maxAlternatives = 1;
+      r.onresult = (e: any) => {
+        const t = e.results[0][0].transcript;
+        setInput(s => (s ? s + ' ' + t : t));
+      };
+      r.onend = () => setListening(false);
+      r.onerror = () => setListening(false);
+      recRef.current = r;
+      setListening(true);
+      r.start();
+    } catch { setListening(false); }
+  }
 
   async function invia(e?: React.FormEvent) {
     e?.preventDefault();
@@ -50,15 +91,21 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
 
   return (
     <>
+      {/* etichetta sopra il pulsante */}
+      {!open && (
+        <button onClick={() => setOpen(true)}
+          style={{ position: 'fixed', bottom: 86, right: 14, zIndex: 9999, background: '#fff', color: '#1e4d8c', border: '1.5px solid #dbeafe', borderRadius: 999, padding: '7px 14px', fontSize: '0.78rem', fontWeight: 700, boxShadow: '0 4px 14px rgba(0,0,0,.12)', cursor: 'pointer', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
+          Sono Abbraccino, clicca per aiuto
+        </button>
+      )}
       <button onClick={() => setOpen(o => !o)} aria-label="Chiedi ad Abbraccino"
-        style={{ position: 'fixed', bottom: 18, right: 18, width: 62, height: 62, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#1e3a5f,#1e4d8c)', color: '#fff', fontSize: 28, cursor: 'pointer', boxShadow: '0 6px 22px rgba(30,77,140,.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {open ? <X size={26} /> : '🤖'}
+        style={{ position: 'fixed', bottom: 18, right: 18, width: 62, height: 62, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#1e3a5f,#1e4d8c)', cursor: 'pointer', boxShadow: '0 6px 22px rgba(30,77,140,.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {open ? <X size={26} color="#fff" /> : <CuoricinoIcon size={38} />}
       </button>
       {open && (
         <div style={{ position: 'fixed', bottom: 90, right: 14, width: 'min(360px, calc(100vw - 28px))', maxHeight: '70vh', background: '#fff', borderRadius: 18, boxShadow: '0 10px 40px rgba(0,0,0,.22)', zIndex: 9999, display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #dbeafe', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
-          <div style={{ background: 'linear-gradient(135deg,#1e3a5f,#1e4d8c)', color: '#fff', padding: '12px 16px', fontWeight: 800, fontSize: '0.95rem' }}>
-            🤖 Abbraccino — assistente preventivi
-            <div style={{ fontWeight: 400, fontSize: '0.72rem', opacity: 0.85 }}>Raccontami cosa ti serve, ci penso io a compilare</div>
+          <div style={{ background: 'linear-gradient(135deg,#1e3a5f,#1e4d8c)', color: '#fff', padding: '12px 16px', fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <CuoricinoIcon size={26} /> Abbraccino — assistente preventivi
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8, minHeight: 200, maxHeight: '48vh' }}>
             {msgs.map((m, i) => (
@@ -70,13 +117,20 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
             <div ref={bottomRef} />
           </div>
           <form onSubmit={invia} style={{ display: 'flex', gap: 8, padding: 10, borderTop: '1px solid #e2e8f0' }}>
-            <input value={input} onChange={e => setInput(e.target.value)} placeholder="Scrivi cosa ti serve…"
+            <input value={input} onChange={e => setInput(e.target.value)} placeholder={listening ? 'Ti ascolto…' : 'Scrivi o detta cosa ti serve…'}
               style={{ flex: 1, padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: 999, fontSize: '0.88rem', fontFamily: 'inherit' }} />
+            {SR && (
+              <button type="button" onClick={toggleMic} aria-label="Parla con Abbraccino"
+                style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: listening ? '#dc2626' : '#e2e8f0', color: listening ? '#fff' : '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, animation: listening ? 'micPulse 1.2s infinite' : 'none' }}>
+                <Mic size={17} />
+              </button>
+            )}
             <button type="submit" disabled={busy || !input.trim()}
               style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: '#1e4d8c', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Send size={16} />
             </button>
           </form>
+          <style>{`@keyframes micPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,.4); } 50% { box-shadow: 0 0 0 8px rgba(220,38,38,0); } }`}</style>
         </div>
       )}
     </>
