@@ -15,7 +15,7 @@ export default function ConsegneAmministrative() {
   const [notaPer, setNotaPer] = useState<string | null>(null);
   const [nota, setNota] = useState('');
 
-  const carica = () => api.get('/consegne-amministrative', { params: soloAperte ? { stato: 'aperta' } : {} })
+  const carica = () => api.get('/consegne-amministrative', { params: soloAperte ? { aperte: '1' } : {} })
     .then(r => setLista(r.data.consegne || r.data || [])).catch(() => setErr('Errore caricamento'));
   useEffect(() => { carica(); }, [soloAperte]);
 
@@ -29,7 +29,7 @@ export default function ConsegneAmministrative() {
   }
 
   const setStato = (id: string, accetta: boolean) =>
-    api.patch(`/consegne-amministrative/${id}/stato`, { accetta }).then(carica).catch(() => setErr('Errore aggiornamento'));
+    api.patch(`/consegne-amministrative/${id}/stato`, { stato: accetta ? 'gestita' : 'da_gestire' }).then(carica).catch(() => setErr('Errore aggiornamento'));
   const elimina = (id: string) => { if (confirm('Eliminare questa consegna?')) api.delete(`/consegne-amministrative/${id}`).then(carica); };
   const aggiungiNota = (id: string) => {
     if (!nota.trim()) return;
