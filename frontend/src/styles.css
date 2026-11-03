@@ -926,11 +926,27 @@ div[style*="border:1px solid #e5e7eb"] {
   }
 
   /* Contenuto a tutta larghezza, sotto la topbar */
-  .content { margin-left: 0; padding: 16px; padding-top: 72px; }
+  .content { margin-left: 0; padding: 16px; padding-top: 72px; overflow-x: hidden; overflow-x: clip; }
   section { max-width: 100%; }
   section.wide, .section-wide { max-width: 100%; }
   .dashboard-grid { grid-template-columns: 1fr 1fr; }
   .login-form { padding: 24px; }
+
+  /* Tabelle piu' larghe dello schermo: scroll orizzontale interno
+     invece di far scorrere tutta la pagina */
+  .content table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Nessun elemento puo' superare la larghezza del viewport */
+  .content input, .content select, .content textarea,
+  .content img, .content canvas, .content iframe, .content video {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
 }
 
 @media (max-width: 480px) {

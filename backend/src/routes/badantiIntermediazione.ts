@@ -9,7 +9,7 @@ import TariffaCcnl from '../models/TariffaCcnl';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { auditLog } from '../middleware/audit';
-import { simulaCostoBadante, CONTRATTI_SIM, PARAMETRI_CCN_2026, ParametriCcnl } from '../utils/costoBadante';
+import { simulaCostoBadante, CONTRATTI_SIM, PARAMETRI_CCN_2026, ParametriCcnl, quotaCafDefault } from '../utils/costoBadante';
 import { generaPreventivoBadantePdf, generaPreventivoBadantePdfBuffer } from '../utils/preventivoBadantePdf';
 import { inviaEmailContrattoPaziente } from '../utils/contrattoInvio';
 import { inviaEmail } from '../utils/email';
@@ -215,7 +215,7 @@ router.post('/simula-costo', authenticateToken, async (req: Request, res: Respon
       certificazioneUni: !!certificazioneUni,
       indennitaBabysitter: !!indennitaBabysitter,
     }, P);
-    return res.json(risultato);
+    return res.json({ ...risultato, cafMensileSuggerito: quotaCafDefault(contrattoTipo, oreSettimanali, P) });
   } catch (error: any) {
     return res.status(400).json({ message: error.message || 'Errore nel calcolo del costo' });
   }
@@ -246,7 +246,7 @@ router.post('/simula-costo/pdf', authenticateToken, async (req: Request, res: Re
     }, P);
     return generaPreventivoBadantePdf(res, risultato, {
       intestatario: intestatario ? String(intestatario).slice(0, 120) : undefined,
-      cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : P.cafMensileDefault,
+      cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : quotaCafDefault(contrattoTipo, oreSettimanali, P),
     });
   } catch (error: any) {
     return res.status(400).json({ message: error.message || 'Errore nella generazione del PDF' });
@@ -281,7 +281,7 @@ router.post('/simula-costo/pdf/email', authenticateToken, async (req: Request, r
     const intestatarioPulito = intestatario ? String(intestatario).slice(0, 120) : '';
     const pdfBuffer = await generaPreventivoBadantePdfBuffer(risultato, {
       intestatario: intestatarioPulito || undefined,
-      cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : P.cafMensileDefault,
+      cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : quotaCafDefault(contrattoTipo, oreSettimanali, P),
     });
     const fileName = `preventivo-assistente-familiare${intestatarioPulito ? '-' + intestatarioPulito.replace(/\s+/g, '-').toLowerCase() : ''}.pdf`;
     const inviata = await inviaEmail({
@@ -527,9 +527,12 @@ async function generaContrattoDaSimulazione(richiesta: any, body: any, req: Requ
   const intestatario = `${paziente.firstName || ''} ${paziente.lastName || ''}`.trim();
 
   // Genera il PDF preventivo dal simulatore
+  const cafEffettivo = cafMensile !== undefined && Number(cafMensile) >= 0
+    ? Number(cafMensile)
+    : quotaCafDefault(contrattoTipo, oreSettimanali, P);
   const pdfBuffer = await generaPreventivoBadantePdfBuffer(sim, {
     intestatario,
-    cafMensile: cafMensile !== undefined && Number(cafMensile) >= 0 ? Number(cafMensile) : P.cafMensileDefault,
+    cafMensile: cafEffettivo,
   });
   const pdfFileName = `preventivo-intermediazione-${intestatario.replace(/\s+/g, '-').toLowerCase() || 'paziente'}.pdf`;
 
@@ -552,7 +555,7 @@ async function generaContrattoDaSimulazione(richiesta: any, body: any, req: Requ
   // Collega il contratto alla richiesta
   richiesta.contrattoId = contratto._id as any;
   richiesta.stato = 'preventivo_emesso';
-  richiesta.simulazione = { ...simInput, totaleCostoMensile: sim.totaleCostoMensile, retribuzioneNetta: sim.retribuzioneNetta, cafMensile: Number(cafMensile) || 150 };
+  richiesta.simulazione = { ...simInput, totaleCostoMensile: sim.totaleCostoMensile, retribuzioneNetta: sim.retribuzioneNetta, cafMensile: cafEffettivo };
   richiesta.costoMensile = Math.round(sim.totaleCostoMensile * 100) / 100;
   richiesta.preventivoPdfFileName = pdfFileName;
   await richiesta.save();

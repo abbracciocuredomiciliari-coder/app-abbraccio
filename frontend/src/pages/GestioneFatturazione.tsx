@@ -1276,11 +1276,11 @@ const [preventivoIva, setPreventivoIva] = useState(0);
             <form onSubmit={salvaVoci}>
               <div style={{ marginBottom: '16px' }}>
                 {editPrestazioni.map((p, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '10px', alignItems: 'flex-end' }}>
-                    <input type="text" required value={p.descrizione} onChange={e => aggiornaVoce(i, 'descrizione', e.target.value)} placeholder="Descrizione" style={{ flex: 2, padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }} />
-                    <input type="number" min={0.01} step={0.01} required value={p.quantita} onChange={e => aggiornaVoce(i, 'quantita', Number(e.target.value))} style={{ width: '80px', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }} />
-                    <input type="number" min={0} step={0.01} required value={p.prezzoUnitario} onChange={e => aggiornaVoce(i, 'prezzoUnitario', Number(e.target.value))} style={{ width: '100px', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }} />
-                    <select value={Number(p.aliquotaIva) || 0} onChange={e => aggiornaVoce(i, 'aliquotaIva', Number(e.target.value))} style={{ width: '92px', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }}>
+                  <div key={i} style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px', alignItems: 'flex-end' }}>
+                    <input type="text" required value={p.descrizione} onChange={e => aggiornaVoce(i, 'descrizione', e.target.value)} placeholder="Descrizione" style={{ flex: '2 1 100%', minWidth: 0, padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }} />
+                    <input type="number" min={0.01} step={0.01} required value={p.quantita} onChange={e => aggiornaVoce(i, 'quantita', Number(e.target.value))} title="Quantità" style={{ flex: '1 1 60px', minWidth: 0, padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }} />
+                    <input type="number" min={0} step={0.01} required value={p.prezzoUnitario} onChange={e => aggiornaVoce(i, 'prezzoUnitario', Number(e.target.value))} title="Prezzo unitario" style={{ flex: '1 1 80px', minWidth: 0, padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }} />
+                    <select value={Number(p.aliquotaIva) || 0} onChange={e => aggiornaVoce(i, 'aliquotaIva', Number(e.target.value))} title="IVA" style={{ flex: '1 1 90px', minWidth: 0, padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }}>
                       <option value={0}>Esente</option>
                       <option value={4}>IVA 4%</option>
                       <option value={5}>IVA 5%</option>

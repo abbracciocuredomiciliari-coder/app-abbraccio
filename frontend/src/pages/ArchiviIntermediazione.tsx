@@ -72,7 +72,7 @@ export default function ArchiviIntermediazione() {
       a.href = url;
       a.download = contratto.allegatoFileName || 'preventivo.pdf';
       a.click();
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore download preventivo');
     }
