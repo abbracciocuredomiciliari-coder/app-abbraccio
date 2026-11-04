@@ -262,13 +262,13 @@ export default function LandingPreventivo() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#eff6ff,#ffffff 55%)', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
-      <style>{`@media (max-width: 640px) { .landing-hide-mobile { display: none; } .prev-sticky { position: static !important; } .prev-grid { grid-template-columns: 1fr !important; } .prev-btn-2col { grid-template-columns: 1fr !important; } .prev-card-pad { padding: 14px 14px 16px !important; } .prev-hero { padding: 12px 14px !important; } .prev-list { max-height: 300px !important; overflow-y: auto !important; } }`}</style>
+      <style>{`@media (max-width: 640px) { .landing-hide-mobile { display: none; } .prev-sticky { position: static !important; } .prev-grid { grid-template-columns: 1fr !important; } .prev-btn-2col { grid-template-columns: 1fr !important; } .prev-card-pad { padding: 14px 14px 16px !important; } .prev-hero { padding: 12px 14px !important; } .prev-list { max-height: 300px !important; overflow-y: auto !important; } .prev-table { font-size: 0.78rem !important; } .prev-table td { padding: 4px 3px !important; word-break: break-word; } }`}</style>
       {/* Header — solo brand Abbraccio */}
       <header style={{ background: '#fff', borderBottom: '1px solid #dbeafe', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: '1080px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <TornaAlSito />
           <img src="/logo.png" alt="Abbraccio Cure Domiciliari" style={{ height: '46px', width: 'auto', display: 'block' }} />
-          <div>
+          <div className="landing-hide-mobile">
             <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '1.05rem', lineHeight: 1.1 }}>Abbraccio Cure Domiciliari</div>
             <div style={{ fontSize: '0.75rem', color: '#1e4d8c', fontWeight: 600 }}>Infermieri · OSS · Visite mediche · Esami a domicilio</div>
           </div>
@@ -296,7 +296,7 @@ export default function LandingPreventivo() {
           </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: '20px', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(320px,100%),1fr))', gap: '20px', alignItems: 'start' }}>
           {/* Calcolatore */}
           <div style={{ background: 'linear-gradient(165deg,#eff6ff 0%,#ffffff 55%)', borderRadius: '16px', border: '1px solid #93c5fd', boxShadow: '0 8px 24px rgba(30,77,140,.10)', overflow: 'hidden' }}>
             <div style={{ background: 'linear-gradient(90deg,#1e3a8a,#1e4d8c)', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -306,7 +306,7 @@ export default function LandingPreventivo() {
                 <div style={{ fontSize: '0.72rem', color: '#dbeafe' }}>listino ufficiale Abbraccio Cure Domiciliari</div>
               </div>
             </div>
-            <div style={{ display: 'grid', gap: '14px', padding: '22px 24px 24px' }}>
+            <div className="prev-card-pad" style={{ display: 'grid', gap: '14px', padding: '22px 24px 24px' }}>
               {preselezione && (
                 <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '10px', padding: '10px 12px', fontSize: '0.82rem', color: '#065f46', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                   <Stethoscope size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
@@ -442,7 +442,7 @@ export default function LandingPreventivo() {
             {previewError && <p style={{ color: '#dc2626', fontSize: '0.88rem' }}>{previewError}</p>}
             {prev && !previewError && (
               <>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <table className="prev-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                   <tbody>
                     {prev.righe.map((r, i) => (
                       <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
@@ -522,7 +522,7 @@ export default function LandingPreventivo() {
             Inviando il modulo registreremo il tuo preventivo e ti ricontatteremo noi. Preferisci parlare subito? <a href={`tel:${TELEFONO}`} style={{ color: '#1e4d8c', fontWeight: 700 }}>Chiama {TELEFONO_LABEL}</a> o <a href={testoWhatsApp()} target="_blank" rel="noopener" style={{ color: '#16a34a', fontWeight: 700 }}>scrivici su WhatsApp</a>.
           </p>
           <form onSubmit={inviaRichiesta}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(220px,100%),1fr))', gap: '14px' }}>
               <div>
                 <span style={label}>Nome e cognome *</span>
                 <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Mario Rossi" required style={input} />

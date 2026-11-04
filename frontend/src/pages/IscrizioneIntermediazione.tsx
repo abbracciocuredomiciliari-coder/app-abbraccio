@@ -173,12 +173,13 @@ export default function IscrizioneIntermediazione() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f0f6ff', fontFamily: 'system-ui, sans-serif' }}>
+      <style>{`@media (max-width: 640px) { .isc-hide-mobile { display: none !important; } .isc-2col { grid-template-columns: 1fr !important; } }`}</style>
       {/* Header Abbraccio + Salus */}
       <header style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '12px 16px' }}>
         <div style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <TornaAlSito />
           <img src="/logo.png" alt="Abbraccio" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
-          <div>
+          <div className="isc-hide-mobile">
             <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '1.05rem', lineHeight: 1.1 }}>Abbraccio Cure Domiciliari</div>
             <div style={{ fontSize: '0.75rem', color: '#c2410c', fontWeight: 600 }}>Badanti · Colf · Operatori Sanitari</div>
           </div>
@@ -210,7 +211,7 @@ export default function IscrizioneIntermediazione() {
         {/* Identità */}
         <div style={card}>
           <h2 style={cardTitle}>👤 Chi sei</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+          <div className="isc-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
             <div><span style={label}>Nome</span><input style={input} value={nome} onChange={e => setNome(e.target.value)} placeholder="Mario" /></div>
             <div><span style={label}>Cognome</span><input style={input} value={cognome} onChange={e => setCognome(e.target.value)} placeholder="Rossi" /></div>
           </div>
@@ -226,7 +227,7 @@ export default function IscrizioneIntermediazione() {
               <input style={input} value={albo} onChange={e => setAlbo(e.target.value)} placeholder="Es. FNOPI n. 123456" />
             </div>
           )}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div className="isc-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div><span style={label}>Telefono</span><input style={input} type="tel" value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="333 1234567" /></div>
             <div><span style={label}>Email</span><input style={input} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="nome@email.it" /></div>
           </div>
@@ -235,7 +236,7 @@ export default function IscrizioneIntermediazione() {
         {/* Origine e documenti */}
         <div style={card}>
           <h2 style={cardTitle}>🌍 Origine e documenti</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+          <div className="isc-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
             <div><span style={label}>Nazionalità</span><input style={input} value={nazionalita} onChange={e => setNazionalita(e.target.value)} placeholder="Es. Ucraina" /></div>
             <div><span style={label}>Data di nascita</span><input style={input} type="date" value={dataNascita} onChange={e => setDataNascita(e.target.value)} /></div>
           </div>
@@ -264,7 +265,7 @@ export default function IscrizioneIntermediazione() {
         {/* Zona e disponibilità */}
         <div style={card}>
           <h2 style={cardTitle}>📍 Dove vivi e dove vorresti lavorare</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+          <div className="isc-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
             <div>
               <span style={label}>Regione dove abiti</span>
               <select style={input} value={regioneResidenza} onChange={e => setRegioneResidenza(e.target.value)}>
@@ -274,7 +275,7 @@ export default function IscrizioneIntermediazione() {
             </div>
             <div><span style={label}>Città</span><input style={input} value={cittaResidenza} onChange={e => setCittaResidenza(e.target.value)} placeholder="Es. Roma" /></div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+          <div className="isc-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
             <div>
               <span style={label}>Regione dove ti interessa lavorare</span>
               <select style={input} value={regioneInteresse} onChange={e => setRegioneInteresse(e.target.value)}>

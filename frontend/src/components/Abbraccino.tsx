@@ -91,12 +91,12 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
       {/* colonna: etichetta sopra / icona / etichetta sotto — centrata */}
       {!open && (
         <div style={{ position: 'fixed', right: 14, bottom: 6, zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-          <button onClick={() => setOpen(true)} style={pillTop}>Sono Abbraccino</button>
+          <button onClick={() => setOpen(true)} style={pillTop}>Sono Abbraccino 💛</button>
           <button onClick={() => setOpen(true)} aria-label="Chiedi ad Abbraccino" className="ab-fab"
             style={{ width: 62, height: 62, borderRadius: '50%', border: 'none', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 5, boxSizing: 'border-box' }}>
             <span className="ab-heart"><CuoricinoIcon size={50} /></span>
           </button>
-          <button onClick={() => setOpen(true)} style={pillBtm}>Chiedi aiuto</button>
+          <button onClick={() => setOpen(true)} style={pillBtm}>Chiedimi un aiutino</button>
         </div>
       )}
 

@@ -283,7 +283,7 @@ export default function LandingBadante() {
           <div style={{ background: '#c2410c', borderRadius: '10px', padding: '8px', display: 'flex' }}>
             <Users size={22} color="#fff" />
           </div>
-          <div>
+          <div className="landing-hide-mobile">
             <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '1.05rem', lineHeight: 1.1 }}>Abbraccio Cure Domiciliari</div>
             <div style={{ fontSize: '0.75rem', color: '#c2410c', fontWeight: 600 }}>Badanti · Colf · Assistenti Familiari</div>
           </div>
@@ -321,7 +321,7 @@ export default function LandingBadante() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: '20px', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(320px,100%),1fr))', gap: '20px', alignItems: 'start' }}>
           {/* Calcolatore */}
           <div style={{ background: 'linear-gradient(165deg,#fff7ed 0%,#ffffff 55%)', borderRadius: '16px', border: '1px solid #fdba74', boxShadow: '0 8px 24px rgba(194,65,12,.10)', overflow: 'hidden' }}>
             <div style={{ background: 'linear-gradient(90deg,#c2410c,#ea580c)', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -331,7 +331,7 @@ export default function LandingBadante() {
                 <div style={{ fontSize: '0.72rem', color: '#ffedd5' }}>tariffe minime Contratto Collettivo Nazionale 2026</div>
               </div>
             </div>
-            <div style={{ display: 'grid', gap: '14px', padding: '22px 24px 24px' }}>
+            <div className="bad-card-pad" style={{ display: 'grid', gap: '14px', padding: '22px 24px 24px' }}>
               <div>
                 <span style={label}>Tipo di contratto <InfoNote text="La forma del rapporto di lavoro: a ore (non convivente), convivente full-time o part-time, assistenza o presenza notturna, oppure sostituzione nei giorni di riposo della badante principale." /></span>
                 <select value={contrattoTipo} onChange={e => { setContrattoTipo(e.target.value); invalida(); }} style={input}>
@@ -446,7 +446,7 @@ export default function LandingBadante() {
                 <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '10px' }}>
                   {sim.contrattoLabel} · {sim.livelloLabel} · {sim.oreSettimanali}h/sett ({sim.oreMensili}h/mese)
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <table className="bad-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                   <tbody>
                     {[
                       ['Retribuzione lorda mensile', sim.retribuzioneLordaMensile],
@@ -515,7 +515,7 @@ export default function LandingBadante() {
             Inviando il modulo registreremo il tuo preventivo e ti ricontatteremo noi. Preferisci parlare subito? <a href={`tel:${TELEFONO}`} style={{ color: '#1e4d8c', fontWeight: 700 }}>Chiama {TELEFONO_LABEL}</a> o <a href={testoWhatsApp()} target="_blank" rel="noopener" style={{ color: '#16a34a', fontWeight: 700 }}>scrivici su WhatsApp</a>.
           </p>
           <form onSubmit={inviaRichiesta}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(220px,100%),1fr))', gap: '14px' }}>
               <div>
                 <span style={label}>Nome e cognome *</span>
                 <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Mario Rossi" required style={input} />
@@ -553,7 +553,7 @@ export default function LandingBadante() {
           Abbraccio Cure Domiciliari · Via di S. Maria Ausiliatrice 4/B, Roma · 06 01905242 · In partnership con <strong>Salus Group</strong> — Divisione Datoriale Casimpresa
         </p>
       </main>
-      <style>{`@media (max-width: 640px) { .landing-hide-mobile { display: none !important; } .bad-sticky { position: static !important; } .bad-card-pad { padding: 14px 14px 16px !important; } }`}</style>
+      <style>{`@media (max-width: 640px) { .landing-hide-mobile { display: none !important; } .bad-sticky { position: static !important; } .bad-card-pad { padding: 14px 14px 16px !important; } .bad-table { font-size: 0.78rem !important; } .bad-table td { padding: 4px 3px !important; word-break: break-word; } }`}</style>
       <Abbraccino tipo="badante" contesto={{ contrattoTipo, livello, oreSettimanali }} onSuggerimento={(s: any) => {
         if (s?.contrattoTipo) setContrattoTipo(s.contrattoTipo);
         if (s?.livello) setLivello(s.livello);
