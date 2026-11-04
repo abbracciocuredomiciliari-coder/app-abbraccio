@@ -113,9 +113,14 @@ router.post('/chat', rateLimitByIP(20, 10 * 60 * 1000), async (req: any, res: an
     }
     let contestoStr: string;
     if (tipo === 'sito') {
-      contestoStr = JSON.stringify({ voci, pagina: contesto.pagina });
+      // Forma compatta ("Categoria: voce €X; voce €X") — il JSON di oggetti
+      // costa ~5K token a richiesta e fa saltare il rate-limit Groq.
+      const perCat: Record<string, string[]> = {};
+      (voci || []).forEach((v: any) => { (perCat[v.categoria || 'Servizi'] = perCat[v.categoria || 'Servizi'] || []).push(`${v.descrizione} €${v.prezzo}`); });
+      const listinoTxt = Object.entries(perCat).map(([c, vs]) => `${c}: ${vs.join('; ')}`).join('\n');
+      contestoStr = `\nPAGINA: ${String(contesto.pagina || '').slice(0, 120)}\n${listinoTxt}`;
     } else if (tipo === 'preventivo') {
-      contestoStr = JSON.stringify(voci || []);
+      contestoStr = JSON.stringify((voci || []).map((v: any) => ({ id: v.id, descrizione: v.descrizione, prezzo: v.prezzo })));
     } else {
       let tariffe: any;
       try { tariffe = await tariffeCcnl(); } catch { tariffe = undefined; }
@@ -128,22 +133,37 @@ router.post('/chat', rateLimitByIP(20, 10 * 60 * 1000), async (req: any, res: an
       });
     }
 
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 45000);
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      signal: ctrl.signal,
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` },
-      body: JSON.stringify({
-        model: LLM_MODEL,
-        temperature: 0.4,
-        response_format: { type: 'json_object' },
-        messages: [
-          { role: 'system', content: (tipo === 'sito' ? PROMPT_SITO : tipo === 'preventivo' ? PROMPT_PREVENTIVO : PROMPT_BADANTE) + contestoStr },
-          { role: 'user', content: messaggio },
-        ],
-      }),
-    }).finally(() => clearTimeout(t));
+    const systemMsg = (tipo === 'sito' ? PROMPT_SITO : tipo === 'preventivo' ? PROMPT_PREVENTIVO : PROMPT_BADANTE) + contestoStr;
+    const chiamaGroq = async () => {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 45000);
+      try {
+        return await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          signal: ctrl.signal,
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` },
+          body: JSON.stringify({
+            model: LLM_MODEL,
+            temperature: 0.4,
+            response_format: { type: 'json_object' },
+            messages: [
+              { role: 'system', content: systemMsg },
+              { role: 'user', content: messaggio },
+            ],
+          }),
+        });
+      } finally { clearTimeout(t); }
+    };
+    let groqRes = await chiamaGroq();
+    // Rate-limit Groq (free tier 8K token/min): riprova una volta dopo
+    // l'attesa indicata nell'errore invece di fallire subito.
+    if (groqRes.status === 429) {
+      const txt = await groqRes.text().catch(() => '');
+      const waitSec = Math.min(Math.max(parseFloat(txt.match(/try again in ([\d.]+)s/i)?.[1] || '3') || 3, 2), 25);
+      await new Promise(r => setTimeout(r, waitSec * 1000));
+      groqRes = await chiamaGroq();
+      if (!groqRes.ok) console.error('[Abbraccino] Errore Groq:', groqRes.status, txt.slice(0, 300));
+    }
 
     if (!groqRes.ok) {
       const txt = await groqRes.text().catch(() => '');
