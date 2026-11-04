@@ -21,4 +21,4 @@ const tariffaCcnlSchema = new Schema<ITariffaCcnl>(
   { timestamps: true }
 );
 
-export default model<ITariffaCcnl>('TariffaCcnl', tariffaCcnlSchema);
+export default model<ITariffaCcnl>('TariffaCcnl', tariffaCcnlSchema)   

@@ -1410,7 +1410,7 @@ function Patients() {
                     </div>
                   )}
                 </div>
-                <div className="tw-flex tw-gap-2 tw-flex-shrink-0 tw-items-center">
+                <div className="tw-flex tw-flex-wrap tw-gap-2 tw-items-center">
                   {patient.terminato && (user?.role === 'admin' || user?.role === 'coordinator') && (
                     <button
                       onClick={() => riattivaPaziente(patient)}
@@ -2508,7 +2508,7 @@ function Patients() {
               {preventivoRapidoPaziente.firstName} {preventivoRapidoPaziente.lastName} — generato subito, senza creare un piano di lavoro
             </p>
             <form onSubmit={generaPreventivoRapido}>
-              <div className="tw-flex tw-gap-3 tw-mb-4">
+              <div className="tw-flex tw-flex-col sm:tw-flex-row tw-gap-3 tw-mb-4">
                 <div className="tw-flex-1">
                   <label className="tw-block tw-text-sm tw-font-semibold tw-mb-1.5">Data prestazione</label>
                   <input
@@ -2559,7 +2559,7 @@ function Patients() {
                     <select
                       value={riga.tariffarioId}
                       onChange={e => selezionaTariffarioRiga(i, e.target.value)}
-                      className="tw-flex-[2] tw-p-2 tw-rounded-lg tw-border tw-border-slate-300 tw-bg-white"
+                      className="tw-w-full tw-p-2 tw-rounded-lg tw-border tw-border-slate-300 tw-bg-white"
                       title="Carica dal tariffario"
                     >
                       <option value="">— Scegli dal tariffario (opzionale) —</option>
@@ -2587,13 +2587,13 @@ function Patients() {
                       })()}
                     </select>
                   </div>
-                  <div className="tw-flex tw-gap-2 tw-items-start">
+                  <div className="tw-flex tw-flex-wrap tw-gap-2 tw-items-start">
                     <input
                       type="text"
                       value={riga.descrizione}
                       onChange={e => aggiornaRigaPreventivoRapido(i, 'descrizione', e.target.value)}
                       placeholder="Descrizione prestazione"
-                      className="tw-flex-[2] tw-p-2 tw-rounded-lg tw-border tw-border-slate-300"
+                      className="tw-w-full sm:tw-w-auto sm:tw-flex-[2] tw-p-2 tw-rounded-lg tw-border tw-border-slate-300"
                     />
                     <input
                       type="number"
@@ -2602,7 +2602,7 @@ function Patients() {
                       value={riga.quantita}
                       onChange={e => aggiornaRigaPreventivoRapido(i, 'quantita', Number(e.target.value))}
                       title="Quantità"
-                      className="tw-w-[64px] tw-p-2 tw-rounded-lg tw-border tw-border-slate-300"
+                      className="tw-flex-1 sm:tw-flex-none sm:tw-w-[64px] tw-p-2 tw-rounded-lg tw-border tw-border-slate-300"
                     />
                     <input
                       type="number"
@@ -2612,13 +2612,13 @@ function Patients() {
                       onChange={e => aggiornaRigaPreventivoRapido(i, 'prezzoUnitario', Number(e.target.value))}
                       placeholder="€"
                       title="Prezzo unitario"
-                      className="tw-w-[90px] tw-p-2 tw-rounded-lg tw-border tw-border-slate-300"
+                      className="tw-flex-1 sm:tw-flex-none sm:tw-w-[90px] tw-p-2 tw-rounded-lg tw-border tw-border-slate-300"
                     />
                     <select
                       value={riga.aliquotaIva}
                       onChange={e => aggiornaRigaPreventivoRapido(i, 'aliquotaIva', Number(e.target.value))}
                       title="IVA"
-                      className="tw-w-[92px] tw-p-2 tw-rounded-lg tw-border tw-border-slate-300"
+                      className="tw-flex-1 sm:tw-flex-none sm:tw-w-[92px] tw-p-2 tw-rounded-lg tw-border tw-border-slate-300"
                     >
                       <option value={0}>Esente</option>
                       <option value={4}>IVA 4%</option>

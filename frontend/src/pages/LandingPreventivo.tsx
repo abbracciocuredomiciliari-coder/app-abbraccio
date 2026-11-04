@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, FormEvent } from 'react';
 import axios from 'axios';
 import { Calculator, CheckCircle, Send, FileText, Info, Plus, Minus, Trash2, Phone, MessageCircle, Stethoscope, Tag } from 'lucide-react';
 import { TornaAlSito } from '../components/TornaAlSito';
+import Abbraccino from '../components/Abbraccino';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api';
 const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '';
@@ -261,6 +262,7 @@ export default function LandingPreventivo() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#eff6ff,#ffffff 55%)', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
+      <style>{`@media (max-width: 640px) { .landing-hide-mobile { display: none; } .prev-sticky { position: static !important; } .prev-grid { grid-template-columns: 1fr !important; } .prev-btn-2col { grid-template-columns: 1fr !important; } .prev-card-pad { padding: 14px 14px 16px !important; } .prev-hero { padding: 12px 14px !important; } .prev-list { max-height: 300px !important; overflow-y: auto !important; } }`}</style>
       {/* Header — solo brand Abbraccio */}
       <header style={{ background: '#fff', borderBottom: '1px solid #dbeafe', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: '1080px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -432,7 +434,7 @@ export default function LandingPreventivo() {
           </div>
 
           {/* Preventivo */}
-          <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #dbeafe', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: '24px', position: 'sticky', top: '80px' }}>
+          <div className="prev-sticky prev-card-pad" style={{ background: '#fff', borderRadius: '16px', border: '1px solid #dbeafe', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: '24px', position: 'sticky', top: '80px' }}>
             <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', color: '#1e293b', margin: '0 0 14px' }}>
               <FileText size={20} color="#1e4d8c" /> Il tuo preventivo
             </h2>
@@ -485,7 +487,7 @@ export default function LandingPreventivo() {
                 <p style={{ fontSize: '0.75rem', color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '9px 11px', marginTop: '12px', lineHeight: 1.5 }}>
                   ⚠️ <strong>Tariffe indicative.</strong> L'importo può subire variazioni in base alle condizioni domiciliari e assistenziali specifiche (distanza, orari, materiali, urgenza): la tariffa definitiva viene confermata dopo il contatto, senza impegno.
                 </p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '12px' }}>
+                <div className="prev-btn-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '12px' }}>
                   <a href={testoWhatsApp()} target="_blank" rel="noopener" style={btnWa}><MessageCircle size={17} /> Invia su WhatsApp</a>
                   <a href={`tel:${TELEFONO}`} style={btnTel}><Phone size={17} /> Telefona</a>
                 </div>
@@ -543,7 +545,7 @@ export default function LandingPreventivo() {
               style={{ marginTop: '18px', width: '100%', padding: '14px', border: 'none', borderRadius: '10px', background: sending ? '#93c5fd' : 'linear-gradient(135deg,#1e3a8a,#1e4d8c)', color: '#fff', fontWeight: 800, fontSize: '1rem', cursor: sending ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               <Send size={18} /> {sending ? 'Invio in corso...' : 'Invia richiesta con il tuo preventivo'}
             </button>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px' }}>
+            <div className="prev-btn-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px' }}>
               <a href={testoWhatsApp()} target="_blank" rel="noopener" style={btnWa}><MessageCircle size={17} /> Invia su WhatsApp</a>
               <a href={`tel:${TELEFONO}`} style={btnTel}><Phone size={17} /> Telefona {TELEFONO_LABEL}</a>
             </div>
@@ -554,7 +556,13 @@ export default function LandingPreventivo() {
           Abbraccio Cure Domiciliari S.R.L.S. · Via di S. Maria Ausiliatrice 4/B, Roma · {TELEFONO_LABEL} · Prestazioni sanitarie a domicilio a Roma e provincia
         </p>
       </main>
-      <style>{`@media (max-width: 640px) { .landing-hide-mobile { display: none; } }`}</style>
+      <Abbraccino tipo="preventivo" contesto={{ voci: categorie.flatMap(c => (c.voci || []).map(v => ({ id: v.id, descrizione: v.nome, prezzo: v.prezzo, categoria: c.label }))) }} onSuggerimento={(s: any) => {
+        if (Array.isArray(s?.voci)) setSelezione(prev => {
+          const o = { ...prev };
+          s.voci.forEach((v: any) => { if (v?.id && v.quantita > 0) o[String(v.id)] = v.quantita; });
+          return o;
+        });
+      }} />
     </div>
   );
 }

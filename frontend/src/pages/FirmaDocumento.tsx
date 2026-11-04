@@ -138,6 +138,23 @@ export default function FirmaDocumento() {
           </div>
         )}
 
+        {stato === 'firmato' && doc?.tipo === 'preventivo' && (
+          <div className="tw-mt-4 tw-p-4 tw-bg-blue-50 tw-rounded-xl tw-border tw-border-blue-200 tw-text-left">
+            <div className="tw-text-sm tw-font-bold tw-text-blue-800 tw-mb-2">Estremi per il pagamento con bonifico bancario</div>
+            <div className="tw-text-sm tw-text-blue-900 tw-leading-relaxed">
+              Intestatario: <strong>ABBRACCIO CURE DOMICILIARI S.R.L.S.</strong><br />
+              Banca: UniCredit<br />
+              IBAN: <strong>IT20 B020 0805 1130 0010 7454 488</strong><br />
+              BIC/SWIFT: UNCRITM1722<br />
+              Causale: Preventivo n. {doc.numero}<br />
+              Importo da pagare: <strong>{formatEuro(doc.totale)}</strong>
+            </div>
+            <p className="tw-text-xs tw-text-blue-700 tw-mt-2 tw-mb-0">
+              Gli stessi estremi sono riportati nel preventivo firmato e nell'email di conferma.
+            </p>
+          </div>
+        )}
+
         {stato === 'rifiutato' && (
           <div className="tw-text-center tw-p-5 tw-bg-red-50 tw-rounded-xl tw-border tw-border-red-200">
             <div className="tw-text-[2.5rem] tw-mb-3">🚫</div>

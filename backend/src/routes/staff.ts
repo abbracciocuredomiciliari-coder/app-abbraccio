@@ -34,7 +34,9 @@ router.get('/zona', authenticateToken, authorizeRole('admin', 'coordinator', 'di
       return res.status(400).json({ message: 'lat e lng sono obbligatori' });
     }
 
-    const query: any = { active: true, 'domicilioCoords.lat': { $exists: true } };
+    const tutti = req.query.tutti === '1' || req.query.tutti === 'true';
+    const query: any = { active: true };
+    if (!tutti) query['domicilioCoords.lat'] = { $exists: true };
     if (tipoGestione === 'privato') query.modalitaAbilitata = { $in: ['privato', 'entrambi'] };
     if (tipoGestione === 'convenzione') query.modalitaAbilitata = { $in: ['convenzione', 'entrambi'] };
     if (tipoGestione === 'consulenza') {
@@ -50,17 +52,20 @@ router.get('/zona', authenticateToken, authorizeRole('admin', 'coordinator', 'di
       'firstName lastName role category domicilioPartenza domicilioCoords raggioAzioneKm modalitaAbilitata areaIntermediazione active'
     );
 
-    const inZona = tuttiStaff.filter(s => {
-      if (!s.domicilioCoords?.lat || !s.domicilioCoords?.lng) return false;
-      const dist = haversineKm(s.domicilioCoords.lat, s.domicilioCoords.lng, lat, lng);
-      return dist <= (s.raggioAzioneKm || 10);
-    }).map(s => ({
-      ...s.toObject(),
-      distanzaKm: Math.round(haversineKm(s.domicilioCoords!.lat, s.domicilioCoords!.lng, lat, lng) * 10) / 10,
-    }));
+    const conCoords = tuttiStaff
+      .filter(s => s.domicilioCoords?.lat && s.domicilioCoords?.lng)
+      .map(s => {
+        const dist = haversineKm(s.domicilioCoords!.lat, s.domicilioCoords!.lng, lat, lng);
+        return { ...s.toObject(), distanzaKm: Math.round(dist * 10) / 10, inZona: dist <= (s.raggioAzioneKm || 10) };
+      })
+      .filter(s => tutti || s.inZona)
+      .sort((a, b) => a.distanzaKm - b.distanzaKm);
 
-    inZona.sort((a, b) => a.distanzaKm - b.distanzaKm);
-    return res.json(inZona);
+    if (!tutti) return res.json(conCoords);
+    const senzaCoords = tuttiStaff
+      .filter(s => !s.domicilioCoords?.lat || !s.domicilioCoords?.lng)
+      .map(s => ({ ...s.toObject(), distanzaKm: null, inZona: false }));
+    return res.json([...conCoords, ...senzaCoords]);
   } catch (error) {
     return res.status(500).json({ message: 'Errore ricerca zona', error });
   }

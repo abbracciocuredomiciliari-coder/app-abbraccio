@@ -467,6 +467,10 @@ function AppShell() {
                 <ClipboardList size={18} />
                 Archivio Preventivi
               </Link>
+              <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''}>
+                <FileText size={18} />
+                Consegne
+              </Link>
               {!isConvenzione && (
                 <Link to="/preventivo-veloce" className={isActive('/preventivo-veloce') ? 'active' : ''}>
                   <Calculator size={18} />
@@ -560,6 +564,10 @@ function AppShell() {
               <Link to="/archivio-preventivi" className={isActive('/archivio-preventivi') ? 'active' : ''}>
                 <ClipboardList size={18} />
                 Archivio Preventivi
+              </Link>
+              <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''}>
+                <FileText size={18} />
+                Consegne
               </Link>
               <Link to="/archivi-intermediazione" className={isActive('/archivi-intermediazione') ? 'active' : ''}>
                 <Archive size={18} />

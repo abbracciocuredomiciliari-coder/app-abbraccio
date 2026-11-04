@@ -72,6 +72,16 @@ export interface ParametriCcnl {
   inpsDeterminato: TabelleInps;
   // Quota CAF sanitario di default stampata sul preventivo
   cafMensileDefault: number;
+  // Quote CAF sanitario €/mese per tipo di contratto (listino intermediazione)
+  cafPerTipo: {
+    convivente: number;
+    assistenza_notturna: number;
+    presenza_notturna: number;
+    convivente_part_time: number;
+    non_convivente: number;          // >= 30 ore settimanali
+    non_convivente_sotto30: number;  // < 30 ore settimanali
+    sostituzione: number;
+  };
 }
 
 export const PARAMETRI_CCN_2026: ParametriCcnl = {
@@ -111,8 +121,28 @@ export const PARAMETRI_CCN_2026: ParametriCcnl = {
     fascia3: { totale: 2.50, quotaLavoratore: 0.59 },
     sopra24h: { totale: 1.32, quotaLavoratore: 0.31 },
   },
-  cafMensileDefault: 150,
+  cafMensileDefault: 100,
+  cafPerTipo: {
+    convivente: 100,
+    assistenza_notturna: 100,
+    presenza_notturna: 100,
+    convivente_part_time: 75,
+    non_convivente: 75,
+    non_convivente_sotto30: 50,
+    sostituzione: 50,
+  },
 };
+
+// Quota CAF sanitario suggerita per il preventivo in base al tipo di contratto.
+// Sostituisce il vecchio default unico: conviventi e notturni 100, part-time 75,
+// non convivente 75 (50 sotto le 30 ore), sostituzione 50.
+export function quotaCafDefault(tipo: ContrattoSim, oreSettimanali?: number, P: ParametriCcnl = PARAMETRI_CCN_2026): number {
+  if (tipo === 'non_convivente') {
+    const ore = Number(oreSettimanali) || 0;
+    return ore > 0 && ore < 30 ? P.cafPerTipo.non_convivente_sotto30 : P.cafPerTipo.non_convivente;
+  }
+  return (P.cafPerTipo as Record<string, number>)[tipo] ?? P.cafMensileDefault;
+}
 
 function r2(n: number) { return Math.round(n * 100) / 100; }
 

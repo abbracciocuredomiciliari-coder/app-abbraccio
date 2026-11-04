@@ -29,8 +29,8 @@ interface OperatoreInZona {
   domicilioCoords?: { lat: number; lng: number };
   raggioAzioneKm?: number;
   modalitaAbilitata: string;
-  areaIntermediazione?: boolean;
-  distanzaKm: number;
+  distanzaKm: number | null;
+  inZona?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -140,7 +140,7 @@ export default function AssegnazionePAI() {
       setLoadingZona(true);
       try {
         const res = await api.get('/staff/zona', {
-          params: { lat: coords.lat, lng: coords.lng, tipoGestione: tipoGestioneQuery }
+          params: { lat: coords.lat, lng: coords.lng, tipoGestione: tipoGestioneQuery, tutti: '1' }
         });
         setOperatoriInZona(res.data || []);
       } catch { setOperatoriInZona([]); }
@@ -168,7 +168,7 @@ export default function AssegnazionePAI() {
     setLoadingZona(true);
     try {
       const res = await api.get('/staff/zona', {
-        params: { lat: coords.lat, lng: coords.lng, tipoGestione: tipoGestioneQuery },
+        params: { lat: coords.lat, lng: coords.lng, tipoGestione: tipoGestioneQuery, tutti: '1' },
       });
       setOperatoriInZona(res.data || []);
     } catch { setOperatoriInZona([]); }
@@ -209,11 +209,9 @@ export default function AssegnazionePAI() {
   };
 
   // ─── Filtra operatori per figura selezionata ──────────────────────────────
-  const operatoriVisualizzati = (figuraFiltro.length === 0
+  const operatoriVisualizzati = figuraFiltro.length === 0
     ? operatoriInZona
-    : operatoriInZona.filter(op => figuraFiltro.includes(op.role.toLowerCase())))
-    // In modalità intermediazione: prima gli operatori iscritti dal modulo dedicato
-    .slice().sort((a, b) => Number(b.areaIntermediazione || false) - Number(a.areaIntermediazione || false));
+    : operatoriInZona.filter(op => figuraFiltro.includes(op.role.toLowerCase()));
 
   // ─── Marker mappa ──────────────────────────────────────────────────────────
   const markersOperatori = operatoriVisualizzati
@@ -224,7 +222,7 @@ export default function AssegnazionePAI() {
       label: `${o.firstName} ${o.lastName}`,
       sublabel: `${o.role} — ${o.raggioAzioneKm ?? 10} km`,
       colore: operatoreSelezionato?._id === o._id ? '#dc2626' : (COLORI_CATEGORIA[o.category] || '#059669'),
-      distanzaKm: o.distanzaKm,
+      distanzaKm: o.distanzaKm ?? undefined,
     }));
 
   // ─── Guard ruolo ───────────────────────────────────────────────────────────
@@ -259,7 +257,8 @@ export default function AssegnazionePAI() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: '20px', alignItems: 'start' }}>
+      <style>{`.assegna-grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}@media(max-width:860px){.assegna-grid{grid-template-columns:1fr !important}}`}</style>
+      <div className="assegna-grid">
 
         {/* ═══ COLONNA SINISTRA: ricerca + lista ════════════════════════════ */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -410,16 +409,15 @@ export default function AssegnazionePAI() {
                       textAlign: 'left', padding: '10px 12px', borderRadius: '8px', cursor: 'pointer',
                       background: operatoreSelezionato?._id === op._id ? '#f0fdf4' : '#f8fafc',
                       border: `1px solid ${operatoreSelezionato?._id === op._id ? '#059669' : '#e2e8f0'}`,
-                      borderLeft: `4px solid ${op.areaIntermediazione ? '#ea580c' : (COLORI_CATEGORIA[op.category] || '#059669')}`,
+                      borderLeft: `4px solid ${COLORI_CATEGORIA[op.category] || '#059669'}`,
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between' }}>
                       <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e293b' }}>
-                        <span style={{ display: 'inline-block', width: '20px', height: '20px', borderRadius: '50%', background: op.areaIntermediazione ? '#ea580c' : (COLORI_CATEGORIA[op.category] || '#059669'), color: 'white', fontSize: '0.7rem', textAlign: 'center', lineHeight: '20px', marginRight: '6px' }}>{i + 1}</span>
+                        <span style={{ display: 'inline-block', width: '20px', height: '20px', borderRadius: '50%', background: COLORI_CATEGORIA[op.category] || '#059669', color: 'white', fontSize: '0.7rem', textAlign: 'center', lineHeight: '20px', marginRight: '6px' }}>{i + 1}</span>
                         {op.firstName} {op.lastName}
-                        {op.areaIntermediazione && <span style={{ marginLeft: '6px', fontSize: '0.68rem', fontWeight: 800, color: '#ea580c', background: '#ffedd5', border: '1px solid #fdba74', borderRadius: '999px', padding: '1px 7px', verticalAlign: '1px' }}>🤝 INTERMEDIAZIONE</span>}
                       </div>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#059669', whiteSpace: 'nowrap' }}>📍 {op.distanzaKm} km</span>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: op.inZona === false ? '#94a3b8' : '#059669', whiteSpace: 'nowrap' }}>{op.distanzaKm != null ? '📍 ' + op.distanzaKm + ' km' : '📍 —'}{op.inZona === false ? ' · fuori zona' : ''}</span>
                     </div>
                     <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px', marginLeft: '26px' }}>
                       {op.role} · raggio {op.raggioAzioneKm ?? 10} km
@@ -477,7 +475,7 @@ export default function AssegnazionePAI() {
                       ? { lat: indirizzoCoords.lat, lng: indirizzoCoords.lng, label: indirizzo }
                       : undefined
                 }
-                altezza={420}
+                altezza={typeof window !== 'undefined' && window.innerWidth < 640 ? 260 : 420}
                 readonly
               />
             </Suspense>
@@ -494,7 +492,7 @@ export default function AssegnazionePAI() {
                 {pazienteSelezionato.firstName} {pazienteSelezionato.lastName}
                 {' → '}
                 <strong>{operatoreSelezionato ? `${operatoreSelezionato.firstName} ${operatoreSelezionato.lastName}` : 'Nessun operatore assegnato'}</strong>
-                {operatoreSelezionato && ` (📍 ${operatoreSelezionato.distanzaKm} km)`}
+                {operatoreSelezionato?.distanzaKm != null && ` (📍 ${operatoreSelezionato.distanzaKm} km)`}
                 {' '}
                 {operatoreSelezionato && (
                   <button type="button" onClick={() => setOperatoreSelezionato(null)} style={{ fontSize: '0.75rem', background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer', textDecoration: 'underline' }}>Rimuovi operatore</button>

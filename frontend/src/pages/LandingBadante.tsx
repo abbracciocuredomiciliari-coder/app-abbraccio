@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, FormEvent } from 'react';
 import axios from 'axios';
 import { Calculator, CheckCircle, Send, Euro, FileText, Users, Info, Phone, MessageCircle } from 'lucide-react';
 import { TornaAlSito } from '../components/TornaAlSito';
+import Abbraccino from '../components/Abbraccino';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api';
 const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '';
@@ -434,7 +435,7 @@ export default function LandingBadante() {
           </div>
 
           {/* Preventivo */}
-          <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #ffedd5', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: '24px', position: 'sticky', top: '80px' }}>
+          <div className="bad-sticky bad-card-pad" style={{ background: '#fff', borderRadius: '16px', border: '1px solid #ffedd5', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: '24px', position: 'sticky', top: '80px' }}>
             <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', color: '#1e293b', margin: '0 0 14px' }}>
               <FileText size={20} color="#c2410c" /> Il tuo preventivo
             </h2>
@@ -552,7 +553,13 @@ export default function LandingBadante() {
           Abbraccio Cure Domiciliari · Via di S. Maria Ausiliatrice 4/B, Roma · 06 01905242 · In partnership con <strong>Salus Group</strong> — Divisione Datoriale Casimpresa
         </p>
       </main>
-      <style>{`@media (max-width: 640px) { .landing-hide-mobile { display: none !important; } }`}</style>
+      <style>{`@media (max-width: 640px) { .landing-hide-mobile { display: none !important; } .bad-sticky { position: static !important; } .bad-card-pad { padding: 14px 14px 16px !important; } }`}</style>
+      <Abbraccino tipo="badante" contesto={{ contrattoTipo, livello, oreSettimanali }} onSuggerimento={(s: any) => {
+        if (s?.contrattoTipo) setContrattoTipo(s.contrattoTipo);
+        if (s?.livello) setLivello(s.livello);
+        if (s?.oreSettimanali != null) setOreSettimanali(String(s.oreSettimanali));
+        setTimeout(genera, 400);
+      }} />
     </div>
   );
 }

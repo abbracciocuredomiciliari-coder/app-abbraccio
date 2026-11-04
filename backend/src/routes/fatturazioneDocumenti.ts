@@ -5,7 +5,7 @@ import User from '../models/User';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { auditLog } from '../middleware/audit';
-import { generaDocumentoPDF } from '../utils/fatturazionePdf';
+import { generaDocumentoPDF, BANCA } from '../utils/fatturazionePdf';
 import { inviaEmail } from '../utils/email';
 import crypto from 'crypto';
 
@@ -299,11 +299,24 @@ router.post('/firma/:token', async (req: Request, res: Response) => {
     const filename = `${label.toUpperCase()}-${doc.numero}-firmato.pdf`;
     const nomeDestinatario = doc.firma?.nome || 'Cliente';
 
+    // Estremi per il pagamento con bonifico: inviati al cliente dopo la firma del preventivo
+    const bloccoPagamento = doc.tipo === 'preventivo' ? `
+      <div style="margin:16px 0;padding:16px;background:#eff6ff;border-left:4px solid #1e4d8c;border-radius:6px;">
+        <strong>Estremi per il pagamento con bonifico bancario</strong><br/>
+        Intestatario: <strong>${BANCA.intestatario}</strong><br/>
+        Banca: ${BANCA.istituto}<br/>
+        IBAN: <strong>${BANCA.iban}</strong><br/>
+        BIC/SWIFT: ${BANCA.bic}<br/>
+        Causale: Preventivo n. ${doc.numero}<br/>
+        Importo da pagare: <strong>€${Number(doc.totale).toFixed(2)}</strong>
+      </div>` : '';
+
     if (doc.firma?.email) {
       const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
         <h2 style="color:#1e4d8c;margin-top:0;">${label} ${doc.numero}</h2>
         <p>Gentile <strong>${nomeDestinatario}</strong>,</p>
         <p>in allegato trovi la copia del <strong>${label.toLowerCase()}</strong> n. ${doc.numero} del ${new Date(doc.data).toLocaleDateString('it-IT')}.</p>
+        ${bloccoPagamento}
         <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari S.R.L.S.</p>
       </div>`;
 

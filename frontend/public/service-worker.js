@@ -56,6 +56,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // manifest, icone e index.html: network-first (evitano icone app obsolete)
+  const url = event.request.url;
+  if (url.endsWith('manifest.json') || url.includes('/icon-') || url.includes('apple-touch-icon') || url.endsWith('/index.html')) {
+    event.respondWith(fetch(event.request).then(r => {
+      const copy = r.clone();
+      caches.open(CACHE_NAME).then(c => c.put(event.request, copy));
+      return r;
+    }).catch(() => caches.match(event.request)));
+    return;
+  }
+
   // Static assets: cache-first strategy
   event.respondWith(
     caches.match(event.request).then((response) => {

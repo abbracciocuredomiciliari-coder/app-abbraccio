@@ -32,6 +32,8 @@ const RUOLO_TO_CATEGORY: Record<string, string> = {
   badante: 'badante', colf: 'colf', assistente_familiare: 'assistente-familiare',
   oss: 'oss', infermiere: 'infermieristico', medico: 'medico', fisioterapista: 'riabilitativo',
 };
+// Figure sanitarie: all'accettazione vanno in Gestione Privata (non Intermediazioni)
+const SANITARI_PRIVATA = ['oss', 'infermiere', 'medico', 'fisioterapista'];
 
 const s = (v: any) => String(v ?? '').trim();
 const b = (v: any) => v === true || v === 'true' || v === '1' || v === 'on';
@@ -284,8 +286,8 @@ router.patch('/:id/accetta', authenticateToken, authorizeRole(...RUOLI_GESTIONE)
       cittaResidenza: c.cittaResidenza || c.cittaInteresse,
       indirizzoResidenza: [c.cittaResidenza, c.regioneResidenza].filter(Boolean).join(', ') || undefined,
       note: noteStaff || undefined,
-      modalitaAbilitata: 'intermediazione',
-      areaIntermediazione: true,
+      modalitaAbilitata: SANITARI_PRIVATA.includes(c.ruolo) ? 'privato' : 'intermediazione',
+      areaIntermediazione: !SANITARI_PRIVATA.includes(c.ruolo),
       professionista: !!c.certificato || ['oss', 'infermiere', 'medico', 'fisioterapista'].includes(c.ruolo),
     });
 

@@ -13,6 +13,15 @@ const AZIENDA = {
   amministratore: process.env.AZIENDA_AMMINISTRATORE || 'SCHEMBRI SIMONA',
 };
 
+// Coordinate bancarie per il pagamento del preventivo con bonifico.
+// Stampate sul PDF preventivo e riportate nell'email inviata dopo la firma.
+export const BANCA = {
+  intestatario: process.env.BANCA_INTESTATARIO || 'ABBRACCIO CURE DOMICILIARI S.R.L.S.',
+  istituto: process.env.BANCA_ISTITUTO || 'UniCredit',
+  iban: process.env.BANCA_IBAN || 'IT20 B020 0805 1130 0010 7454 488',
+  bic: process.env.BANCA_BIC || 'UNCRITM1722',
+};
+
 function formatEuro(n: number) {
   return `€ ${(Number(n) || 0).toFixed(2).replace('.', ',')}`;
 }
@@ -251,6 +260,30 @@ export function generaDocumentoPDF(doc: any): Promise<Buffer> {
           50, noteY, { width: 500, lineGap: 1 }
         );
         noteY += 34;
+      }
+
+      // ─── Coordinate bancarie per il pagamento (solo preventivo)
+      if (doc.tipo === 'preventivo') {
+        const importoDaPagare = Number(doc.totale) || totaleLordo;
+        const payH = 88;
+        if (noteY + payH > 740) {
+          pdf.addPage();
+          noteY = 50;
+        }
+        pdf.rect(50, noteY, 500, payH).fillAndStroke('#eff6ff', '#1e4d8c');
+        pdf.font('Helvetica-Bold').fontSize(10).fillColor('#1e4d8c')
+          .text('PAGAMENTO CON BONIFICO BANCARIO', 62, noteY + 9);
+        pdf.font('Helvetica').fontSize(9).fillColor('#1e3a5f');
+        pdf.text(`Intestatario: ${BANCA.intestatario}`, 62, noteY + 27, { width: 330 });
+        pdf.text(`Banca: ${BANCA.istituto}`, 62, noteY + 41, { width: 330 });
+        pdf.text(`IBAN: ${BANCA.iban}`, 62, noteY + 55, { width: 330 });
+        pdf.text(`BIC/SWIFT: ${BANCA.bic}`, 62, noteY + 69, { width: 330 });
+        pdf.text(`Causale: Preventivo n. ${doc.numero || '-'}`, 400, noteY + 27, { width: 140 });
+        pdf.font('Helvetica-Bold').fontSize(9).fillColor('#166534')
+          .text('Importo da pagare:', 400, noteY + 51, { width: 140 });
+        pdf.font('Helvetica-Bold').fontSize(14).fillColor('#166534')
+          .text(formatEuro(importoDaPagare), 400, noteY + 63, { width: 140 });
+        noteY += payH + 14;
       }
 
       if (doc.note) {

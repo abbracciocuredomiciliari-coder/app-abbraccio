@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { Users, FileText, Mail, Trash2, Receipt, Check, X, User, Briefcase, Euro, Download, Settings, Eye, MessageCircle } from 'lucide-react';
+import { Users, FileText, Mail, Trash2, Receipt, Check, X, User, Briefcase, Euro, Download, Settings, Eye, MessageCircle, Share2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 interface Patient {
@@ -79,6 +79,27 @@ const TIPI_CONTRATTO_SIM = [
   { value: 'sostituzione', label: 'Sostituzione', livelli: ['CS', 'DS'], orario: true },
 ];
 
+// Quota CAF sanitario €/mese suggerita per tipo di contratto (listino intermediazione).
+// Specchia quotaCafDefault del backend; gli override arrivano da tariffe.cafPerTipo.
+const CAF_PER_TIPO_DEFAULT: Record<string, number> = {
+  convivente: 100,
+  assistenza_notturna: 100,
+  presenza_notturna: 100,
+  convivente_part_time: 75,
+  non_convivente: 75,
+  non_convivente_sotto30: 50,
+  sostituzione: 50,
+};
+
+function cafSuggerito(tipo: string, oreSettimanali: string | number | undefined, tariffe?: any): number {
+  const tab = { ...CAF_PER_TIPO_DEFAULT, ...(tariffe?.cafPerTipo || {}) };
+  if (tipo === 'non_convivente') {
+    const ore = Number(oreSettimanali) || 0;
+    return ore > 0 && ore < 30 ? tab.non_convivente_sotto30 : tab.non_convivente;
+  }
+  return tab[tipo] ?? 100;
+}
+
 // ── Editor parametri CCNL/INPS: spec dei campi editabili ──
 const LIVELLI_ALL = ['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS'];
 const getPath = (obj: any, path: string) => path.split('.').reduce((o: any, k: string) => o?.[k], obj);
@@ -127,6 +148,18 @@ const SEZIONI_TARIFFE: { titolo: string; campi: { path: string; label: string }[
       { path: 'orePartTime', label: 'Ore part-time' },
       { path: 'ferieGiorniAnno', label: 'Ferie gg/anno' },
       { path: 'cafMensileDefault', label: 'CAF sanitario €/mese' },
+    ],
+  },
+  {
+    titolo: 'Quote CAF sanitario per contratto (€/mese)',
+    campi: [
+      { path: 'cafPerTipo.convivente', label: 'Convivente' },
+      { path: 'cafPerTipo.assistenza_notturna', label: 'Assist. notturna' },
+      { path: 'cafPerTipo.presenza_notturna', label: 'Presenza notturna' },
+      { path: 'cafPerTipo.convivente_part_time', label: 'Part-time' },
+      { path: 'cafPerTipo.non_convivente', label: 'Non conv. ≥30h' },
+      { path: 'cafPerTipo.non_convivente_sotto30', label: 'Non conv. <30h' },
+      { path: 'cafPerTipo.sostituzione', label: 'Sostituzione' },
     ],
   },
   {
@@ -204,9 +237,9 @@ export default function BadantiIntermediazione() {
   // Modale riga "Simula costo" → contratto da inviare per firma (richieste pre-esistenti)
   const [prevEmail, setPrevEmail] = useState('');
   const [prevImporto, setPrevImporto] = useState('610');
-  const [prevCaf, setPrevCaf] = useState('150');
+  const [prevCaf, setPrevCaf] = useState('100');
   const [prevEscludiTfr, setPrevEscludiTfr] = useState(false);
-  const [prevInvia, setPrevInvia] = useState(false);
+  const [prevInvia, setPrevInvia] = useState(true);
   const [prevLoading, setPrevLoading] = useState(false);
 
   // ── Simulazione costo badante (calcolatore CCNL/INPS 2026, stile doemploy) ──
@@ -228,7 +261,7 @@ export default function BadantiIntermediazione() {
   const [simBabysitter, setSimBabysitter] = useState(false);
   const [simPagaCustom, setSimPagaCustom] = useState('');
   const [simIntestatario, setSimIntestatario] = useState('');
-  const [simCaf, setSimCaf] = useState('150');
+  const [simCaf, setSimCaf] = useState('100');
   const [simEscludiTfr, setSimEscludiTfr] = useState(false);
   const [simPdfLoading, setSimPdfLoading] = useState(false);
   const [simRisultato, setSimRisultato] = useState<SimulazioneCosto | null>(null);
@@ -275,10 +308,6 @@ export default function BadantiIntermediazione() {
       const res = await api.get('/badanti-intermediazione/tariffe-ccnl');
       setTariffe(res.data?.parametri || null);
       setTariffeMeta({ personalizzato: !!res.data?.personalizzato, aggiornatoIl: res.data?.aggiornatoIl, aggiornatoDa: res.data?.aggiornatoDa });
-      if (res.data?.parametri?.cafMensileDefault != null) {
-        setSimCaf(String(res.data.parametri.cafMensileDefault));
-        setPrevCaf(String(res.data.parametri.cafMensileDefault));
-      }
     } catch { /* tariffe opzionali: restano i default */ }
   }
 
@@ -312,18 +341,25 @@ export default function BadantiIntermediazione() {
     }
   }
 
+  // Quota CAF sanitario suggerita: segue il tipo di contratto e le ore (listino intermediazione)
+  useEffect(() => {
+    setSimCaf(String(cafSuggerito(simContratto, simOre, tariffe)));
+  }, [simContratto, simOre, tariffe]);
+
   // All'apertura del modale preventivo: inizializza il simulatore dai dati della richiesta
   useEffect(() => {
     const r = richieste.find(x => x._id === selectedQuote);
     if (r) {
-      setSimContratto(r.contrattoTipo === 'orario_non_convivente' ? 'non_convivente' : 'convivente');
+      const tipo = r.contrattoTipo === 'orario_non_convivente' ? 'non_convivente' : 'convivente';
+      const ore = r.oreSettimanali ? String(r.oreSettimanali) : '30';
+      setSimContratto(tipo);
       setSimLivello(r.livello || 'BS');
-      setSimOre(r.oreSettimanali ? String(r.oreSettimanali) : '30');
+      setSimOre(ore);
       setSimRisultato(null);
       setSimErr('');
       setPrevEmail(r.patient?.email || '');
       setPrevImporto('610');
-      setPrevCaf('150');
+      setPrevCaf(String(cafSuggerito(tipo, ore, tariffe)));
       setPrevInvia(!!r.patient?.email);
     }
   }, [selectedQuote]);
@@ -364,28 +400,41 @@ export default function BadantiIntermediazione() {
     }
   }
 
+  const simPdfFileName = () =>
+    `preventivo-assistente-familiare${simIntestatario ? '-' + simIntestatario.replace(/\s+/g, '-').toLowerCase() : ''}.pdf`;
+
+  async function generaPdfPreventivo() {
+    const res = await api.post('/badanti-intermediazione/simula-costo/pdf', {
+      contrattoTipo: simContratto,
+      livello: simLivello,
+      oreSettimanali: simIsOrario ? Number(simOre) : undefined,
+      tempoDeterminato: simDeterminato,
+      indennitaPiuAutosuff: simPiuAutosuff,
+      certificazioneUni: simCertUni,
+      indennitaBabysitter: simBabysitter,
+      pagaPersonalizzata: simPagaCustom ? Number(simPagaCustom) : undefined,
+      intestatario: simIntestatario || undefined,
+      cafMensile: Number(simCaf) >= 0 ? Number(simCaf) : undefined,
+      escludiTfrTredicesima: simEscludiTfr,
+    }, { responseType: 'blob' });
+    return new Blob([res.data], { type: 'application/pdf' });
+  }
+
+  function scaricaBlob(blob: Blob, fileName: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    // Revoca ritardata: revocare subito puo' troncare il download su mobile (file 0 byte)
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
   async function scaricaPdfPreventivo() {
     try {
       setSimPdfLoading(true);
-      const res = await api.post('/badanti-intermediazione/simula-costo/pdf', {
-        contrattoTipo: simContratto,
-        livello: simLivello,
-        oreSettimanali: simIsOrario ? Number(simOre) : undefined,
-        tempoDeterminato: simDeterminato,
-        indennitaPiuAutosuff: simPiuAutosuff,
-        certificazioneUni: simCertUni,
-        indennitaBabysitter: simBabysitter,
-        pagaPersonalizzata: simPagaCustom ? Number(simPagaCustom) : undefined,
-        intestatario: simIntestatario || undefined,
-        cafMensile: Number(simCaf) >= 0 ? Number(simCaf) : undefined,
-        escludiTfrTredicesima: simEscludiTfr,
-      }, { responseType: 'blob' });
-      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `preventivo-assistente-familiare${simIntestatario ? '-' + simIntestatario.replace(/\s+/g, '-').toLowerCase() : ''}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const blob = await generaPdfPreventivo();
+      scaricaBlob(blob, simPdfFileName());
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore nella generazione del PDF');
     } finally {
@@ -440,6 +489,27 @@ export default function BadantiIntermediazione() {
       },
     }).catch(() => { /* l'archiviazione non blocca l'invio WhatsApp */ });
     window.open(`${wa}?text=${encodeURIComponent(testo)}`, '_blank');
+  }
+
+  // Condividi il PDF via WhatsApp/app di sistema (Web Share API; su desktop scarica il file)
+  async function condividiPdfPreventivo() {
+    try {
+      setSimPdfLoading(true);
+      const blob = await generaPdfPreventivo();
+      const file = new File([blob], simPdfFileName(), { type: 'application/pdf' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Preventivo assistente familiare' });
+      } else {
+        scaricaBlob(blob, file.name);
+        alert('Condivisione diretta non disponibile su questo dispositivo: il PDF è stato scaricato, inoltralo a WhatsApp dai Download.');
+      }
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
+        alert(err?.response?.data?.message || 'Errore nella condivisione del PDF');
+      }
+    } finally {
+      setSimPdfLoading(false);
+    }
   }
 
   // Invia SOLO il PDF del preventivo simulato via email (senza creare contratto)
@@ -545,7 +615,7 @@ export default function BadantiIntermediazione() {
       a.href = url;
       a.download = contratto.allegatoFileName || 'preventivo.pdf';
       a.click();
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore download preventivo');
     }
@@ -587,7 +657,7 @@ export default function BadantiIntermediazione() {
       a.href = url;
       a.download = `${doc.numero}${firmato ? '-firmato' : ''}.pdf`;
       a.click();
-      window.URL.revokeObjectURL(url);
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore download PDF');
     }
@@ -811,7 +881,7 @@ export default function BadantiIntermediazione() {
               <label className="tw-flex tw-flex-col tw-gap-1">
                 <span className="tw-text-sm tw-font-medium">Quota CAF sanitario (€/mese)</span>
                 <input type="number" step="0.01" min="0" value={simCaf} onChange={e => setSimCaf(e.target.value)} className="tw-border tw-rounded tw-p-2" />
-                <span className="tw-text-xs tw-text-slate-400">Voce stampata sul PDF preventivo</span>
+                <span className="tw-text-xs tw-text-slate-400">Suggerita in base al tipo di contratto, modificabile</span>
               </label>
               <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-pt-6">
                 <input type="checkbox" checked={simEscludiTfr} onChange={e => setSimEscludiTfr(e.target.checked)} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
@@ -866,16 +936,19 @@ export default function BadantiIntermediazione() {
                 </div>
               </div>
             )}
-            <div className="tw-flex tw-justify-end tw-gap-2 tw-mb-4 tw-flex-wrap">
-              <Button onClick={calcolaSimulazione} disabled={simLoading || (simIsOrario && !(Number(simOre) > 0))} className="tw-flex tw-items-center tw-gap-2">
+            <div className="tw-flex tw-flex-col sm:tw-flex-row sm:tw-justify-end tw-gap-2 tw-mb-4">
+              <Button onClick={calcolaSimulazione} disabled={simLoading || (simIsOrario && !(Number(simOre) > 0))} className="tw-flex tw-items-center tw-justify-center tw-gap-2">
                 <Euro size={18} /> {simLoading ? 'Calcolo...' : 'Calcola il costo mensile'}
               </Button>
               {simRisultato && (
                 <>
-                  <Button variant="secondary" onClick={scaricaPdfPreventivo} disabled={simPdfLoading} className="tw-flex tw-items-center tw-gap-2">
+                  <Button variant="secondary" onClick={scaricaPdfPreventivo} disabled={simPdfLoading} className="tw-flex tw-items-center tw-justify-center tw-gap-2">
                     <FileText size={18} /> {simPdfLoading ? 'Generazione...' : 'Scarica PDF simulazione'}
                   </Button>
-                  <Button variant="secondary" onClick={inviaPdfPreventivo} disabled={simPdfLoading} className="tw-flex tw-items-center tw-gap-2">
+                  <Button variant="secondary" onClick={condividiPdfPreventivo} disabled={simPdfLoading} className="tw-flex tw-items-center tw-justify-center tw-gap-2">
+                    <Share2 size={18} /> {simPdfLoading ? 'Generazione...' : 'Condividi WhatsApp'}
+                  </Button>
+                  <Button variant="secondary" onClick={inviaPdfPreventivo} disabled={simPdfLoading} className="tw-flex tw-items-center tw-justify-center tw-gap-2">
                     <Mail size={18} /> {simPdfLoading ? 'Invio...' : 'Invia PDF via email'}
                   </Button>
                   <Button variant="secondary" onClick={inviaWhatsAppPreventivo} className="tw-flex tw-items-center tw-gap-2" style={{ backgroundColor: '#25d366', color: '#fff', border: 'none' }}>
@@ -1064,8 +1137,8 @@ export default function BadantiIntermediazione() {
       </div>
 
       {selectedQuote && richiestaAperta && (
-        <div className="tw-fixed tw-inset-0 tw-bg-black/40 tw-flex tw-items-center tw-justify-center tw-z-50 tw-p-4">
-          <div className="tw-bg-white tw-rounded-2xl tw-p-6 tw-w-full tw-max-w-3xl tw-max-h-[90vh] tw-overflow-y-auto tw-shadow-xl">
+        <div className="tw-fixed tw-inset-0 tw-bg-black/40 tw-flex tw-items-center tw-justify-center tw-z-50 tw-p-2 sm:tw-p-4">
+          <div className="tw-bg-white tw-rounded-2xl tw-p-4 sm:tw-p-6 tw-w-full tw-max-w-3xl tw-max-h-[92vh] tw-overflow-y-auto tw-shadow-xl">
             <h2 className="tw-text-lg tw-font-bold tw-mb-1 tw-flex tw-items-center tw-gap-2 tw-text-slate-800"><Euro size={20} /> Simula costo e contratto d'incarico</h2>
             <p className="tw-text-xs tw-text-slate-500 tw-mb-4">Il PDF con la simulazione del costo sarà allegato al contratto d'incarico inviato al paziente insieme all'informativa GDPR per la firma.</p>
             <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-3 tw-gap-3 tw-mb-4">
@@ -1155,6 +1228,7 @@ export default function BadantiIntermediazione() {
               <label className="tw-flex tw-flex-col tw-gap-1">
                 <span className="tw-text-sm tw-font-medium">Quota CAF mensile (€)</span>
                 <input type="number" step="0.01" min="0" value={prevCaf} onChange={e => setPrevCaf(e.target.value)} className="tw-border tw-rounded tw-p-2" />
+                <span className="tw-text-xs tw-text-slate-400">Suggerita in base al tipo di contratto</span>
               </label>
               <label className="tw-flex tw-flex-col tw-gap-1">
                 <span className="tw-text-sm tw-font-medium">Corrispettivo contratto (€)</span>
@@ -1187,8 +1261,8 @@ export default function BadantiIntermediazione() {
 
       {/* ── Modale Tariffe CCNL / INPS — accesso riservato dal menu ⚙ (solo admin) ── */}
       {showTariffe && tariffe && (
-        <div className="tw-fixed tw-inset-0 tw-bg-black/40 tw-flex tw-items-center tw-justify-center tw-z-50 tw-p-4">
-          <div className="tw-bg-white tw-rounded-2xl tw-p-6 tw-w-full tw-max-w-5xl tw-max-h-[90vh] tw-overflow-y-auto tw-shadow-xl">
+        <div className="tw-fixed tw-inset-0 tw-bg-black/40 tw-flex tw-items-center tw-justify-center tw-z-50 tw-p-2 sm:tw-p-4">
+          <div className="tw-bg-white tw-rounded-2xl tw-p-4 sm:tw-p-6 tw-w-full tw-max-w-5xl tw-max-h-[92vh] tw-overflow-y-auto tw-shadow-xl">
             <div className="tw-flex tw-justify-between tw-items-start">
               <h2 className="tw-text-lg tw-font-bold tw-flex tw-items-center tw-gap-2 tw-text-slate-800">
                 <Euro size={20} /> Parametri CCNL / INPS

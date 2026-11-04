@@ -1,29 +1,19 @@
+// ─── Landing pubblica /badante — calcolatore costo badante CCNL ───────────────
+// Endpoint pubblici (rate-limited) usati dalla pagina esterna di preventivo:
+// POST /preview   → simulazione costo mensile + quota CAF suggerita
+// POST /richiesta → crea paziente consulenza + richiesta intermediazione +
+//                   richiesta prenotazione, notifica admin e conferma richiedente
 import { Router, Request, Response } from 'express';
 import BadanteIntermediazione from '../models/BadanteIntermediazione';
 import Patient from '../models/Patient';
 import RichiestaPrenotazione from '../models/RichiestaPrenotazione';
-import { inviaEmail, inviaEmailConfermaRichiesta } from '../utils/email';
+import { inviaEmail } from '../utils/email';
 import { rateLimitByIP } from '../middleware/rateLimit';
-import {
-  simulaCostoBadante,
-  CONTRATTI_SIM,
-  caricaParametri,
-  SimulazioneInput,
-} from '../utils/costoBadante';
+import { simulaCostoBadante, CONTRATTI_SIM, caricaParametri, quotaCafDefault, ContrattoSim, SimulazioneInput } from '../utils/costoBadante';
 
 const router = Router();
 
-// La landing propone il CAF sanitario a 50 €/mese (campagna pubblica): il default
-// del gestionale (P.cafMensileDefault) resta invariato per l'area riservata.
-const CAF_LANDING_DEFAULT = 50;
 const esc = (s: any) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-// ═════════════════════════════════════════════════════════════════════════════
-// LANDING PUBBLICA /badante — calcolatore preventivi per campagne Meta/FB/IG
-// Nessuna autenticazione: espone solo il calcolo e l'invio della richiesta.
-// Riutilizza simulaCostoBadante + parametri CCNL dell'area riservata — stessa
-// logica, stesse tariffe, stessa gestione CAF sanitario del gestionale.
-// ═════════════════════════════════════════════════════════════════════════════
 
 function validaSimulazione(body: any): { error?: string; input?: SimulazioneInput } {
   const { contrattoTipo, livello } = body || {};
@@ -49,29 +39,25 @@ function validaSimulazione(body: any): { error?: string; input?: SimulazioneInpu
   };
 }
 
-// CAF sanitario sulla landing: quota fissa 50 €/mese, non modificabile
-// dal client — qualunque valore inviato viene ignorato.
-function cafDaBody(_body: any): number {
-  return CAF_LANDING_DEFAULT;
+// Quota CAF sanitario del preventivo pubblico: listino intermediazione per tipo di contratto
+function cafDaBody(body: any, P: any): number {
+  return quotaCafDefault(body?.contrattoTipo as ContrattoSim, body?.oreSettimanali ? Number(body.oreSettimanali) : undefined, P);
 }
 
-// ─── POST /api/landing-badante/preview — calcolo costo mensile, senza salvare ──
+// POST /api/landing-badante/preview — solo calcolo, nessun dato salvato
 router.post('/preview', rateLimitByIP(120, 15 * 60 * 1000), async (req: Request, res: Response) => {
   try {
     const { error, input } = validaSimulazione(req.body);
     if (error) return res.status(400).json({ message: error });
     const P = await caricaParametri();
     const sim = simulaCostoBadante(input!, P);
-    return res.json({ ...sim, cafMensile: cafDaBody(req.body) });
+    return res.json({ ...sim, cafMensile: cafDaBody(req.body, P) });
   } catch (error: any) {
     return res.status(400).json({ message: error.message || 'Errore nel calcolo del costo' });
   }
 });
 
-// ─── POST /api/landing-badante/richiesta — modulo contatto → ricevuta + email ──
-// Crea paziente (consulenza/intermediazione), ricevuta in "Intermediazione
-// badanti" con la simulazione/preventivo collegato, richiesta in Gestione
-// Richieste e notifica email all'amministrazione.
+// POST /api/landing-badante/richiesta — invio contatto + preventivo
 router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request, res: Response) => {
   try {
     const { nome, telefono, email, messaggio, utm } = req.body || {};
@@ -88,20 +74,19 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
 
     const { error, input } = validaSimulazione(req.body);
     if (error) return res.status(400).json({ message: error });
-
     const P = await caricaParametri();
     const sim = simulaCostoBadante(input!, P);
-    const cafMensile = cafDaBody(req.body);
+    const cafMensile = cafDaBody(req.body, P);
 
     const utmString = utm && typeof utm === 'object'
       ? Object.entries(utm).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join('&').slice(0, 500)
       : '';
     const notaBase = `Richiesta da landing pubblica /badante${utmString ? ` — UTM: ${utmString}` : ''}`;
 
-    // 1) Paziente: riuso se stessa email gia' presente in intermediazione, altrimenti nuovo lead
     const partiNome = String(nome).trim().split(/\s+/);
     const firstName = partiNome[0];
     const lastName = partiNome.slice(1).join(' ') || partiNome[0];
+
     let paziente = emailPulita
       ? await Patient.findOne({ email: emailPulita, tipoGestione: 'consulenza' })
       : null;
@@ -124,7 +109,6 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
       await paziente.save();
     }
 
-    // 2) Ricevuta "Intermediazione badanti" con la simulazione (preventivo) collegata
     const livelloOk = ['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS'].includes(input!.livello || '')
       ? input!.livello
       : 'BS';
@@ -146,14 +130,13 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
       creatoDa: 'Landing pubblica',
     });
 
-    // 3) Richiesta in Gestione Richieste (visibile nel Centro Prenotazioni)
     const richiestaPrenotazione = await RichiestaPrenotazione.create({
       richiedenteNome: String(nome).trim(),
       richiedenteEmail: emailPulita || undefined,
       richiedenteTelefono: String(telefono).trim(),
       pazienteId: paziente._id,
       pazienteNome: `${paziente.firstName} ${paziente.lastName}`,
-      pazienteIndirizzo: 'Da definire', // non copiare paziente.address: in memoria e' cifrato (pre-save encrypt)
+      pazienteIndirizzo: 'Da definire',
       pazienteTelefono: String(telefono).trim(),
       tipoServizio: 'intermediazione',
       tipoSpecifico: `Preventivo ${sim.contrattoLabel} ${sim.livelloLabel} — ${sim.oreSettimanali}h/sett`,
@@ -169,15 +152,15 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
         note: `Costo mensile stimato €${sim.totaleCostoMensile.toFixed(2)} (netto lavoratore €${sim.retribuzioneNetta.toFixed(2)}) — CAF sanitario €${cafMensile.toFixed(2)}/mese — Intermediazione #${richiesta._id}${utmString ? ` — UTM: ${utmString}` : ''}`,
       }],
     });
+
     richiesta.richiestaPrenotazioneId = richiestaPrenotazione._id as any;
     await richiesta.save();
 
-    // 4) Notifica email admin (non blocca la risposta, ma esito riportato)
     let emailNotifica = false;
     try {
       const adminEmail = process.env.ADMIN_EMAIL || 'abbracciocuredomiciliari@gmail.com';
       const frontendUrl = process.env.FRONTEND_URL || 'https://app.abbracciocuredomiciliari.it';
-      await inviaEmail({
+      emailNotifica = await inviaEmail({
         to: adminEmail,
         subject: `🏠 Nuova richiesta preventivo badante — ${nome}`,
         html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
@@ -204,23 +187,26 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
           <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari</p>
         </div>`,
       });
-      emailNotifica = true;
     } catch (emailErr) {
       console.error('⚠️ Errore invio notifica landing badante:', emailErr);
     }
 
-    // 5) Conferma ricezione al richiedente (se ha lasciato l'email)
     if (emailPulita) {
-      inviaEmailConfermaRichiesta({
+      inviaEmail({
         to: emailPulita,
-        nome: String(nome).trim(),
-        oggettoRichiesta: 'richiesta di preventivo per badante / assistente familiare',
-        dettagli: [
-          { label: 'Contratto', valore: `${sim.contrattoLabel} — ${sim.livelloLabel}` },
-          { label: 'Ore settimanali', valore: `${sim.oreSettimanali} h` },
-          { label: 'Costo mensile stimato', valore: `€${sim.totaleCostoMensile.toFixed(2)}` },
-        ],
-        note: 'Verificheremo la disponibilità del personale nella tua zona e ti confermeremo la tariffa calcolata.',
+        subject: 'La tua richiesta di preventivo — Abbraccio Cure Domiciliari',
+        html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+          <h2 style="color:#c2410c;margin-top:0;">Richiesta ricevuta ✅</h2>
+          <p>Gentile <strong>${esc(nome)}</strong>,</p>
+          <p>abbiamo ricevuto la tua richiesta di preventivo per badante / assistente familiare.</p>
+          <table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:0.9rem;">
+            <tr><td style="padding:6px;background:#f8fafc;font-weight:bold;">Contratto:</td><td style="padding:6px;">${esc(sim.contrattoLabel)} — ${esc(sim.livelloLabel)}</td></tr>
+            <tr><td style="padding:6px;background:#fff7ed;font-weight:bold;">Ore settimanali:</td><td style="padding:6px;">${sim.oreSettimanali} h</td></tr>
+            <tr><td style="padding:6px;background:#f8fafc;font-weight:bold;">Costo mensile stimato:</td><td style="padding:6px;"><strong>€${sim.totaleCostoMensile.toFixed(2)}</strong></td></tr>
+          </table>
+          <p>Verificheremo la disponibilità del personale nella tua zona e ti confermeremo la tariffa calcolata.</p>
+          <p style="margin-top:24px;font-size:12px;color:#888;">Abbraccio Cure Domiciliari</p>
+        </div>`,
       }).catch(e => console.warn('⚠️ Errore conferma landing badante:', e?.message || e));
     }
 
