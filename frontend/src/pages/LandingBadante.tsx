@@ -6,7 +6,8 @@ import Abbraccino from '../components/Abbraccino';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api';
 const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '';
-const CAF_QUOTA = 50; // quota fissa CAF sanitario sulla landing pubblica (non modificabile)
+// Il CAF sanitario NON e' una quota fissa: il server la calcola per tipo di
+// contratto (listino intermediazione) e la restituisce in sim.cafMensile.
 const TELEFONO = '0601905242';
 const TELEFONO_LABEL = '06 01905242';
 const WHATSAPP = '393514175117';
@@ -172,7 +173,6 @@ export default function LandingBadante() {
     indennitaPiuAutosuff: piuAutosuff,
     certificazioneUni,
     indennitaBabysitter: babysitter,
-    cafMensile: CAF_QUOTA,
     escludiTfrTredicesima: escludiTfr,
   });
 
@@ -417,8 +417,8 @@ export default function LandingBadante() {
                   <InfoNote text="Quota mensile fissa: comprende pratiche di assunzione, comunicazioni obbligatorie, elaborazione delle buste paga e assistenza fiscale. Ci pensiamo noi." />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-                  <span style={{ background: '#fff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '7px 12px', fontWeight: 700, color: '#0c4a6e' }}>€ {CAF_QUOTA.toFixed(2)}/mese</span>
-                  <span style={{ fontSize: '0.78rem', color: '#0369a1' }}>pratiche amministrative e assistenza fiscale</span>
+                  <span style={{ background: '#fff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '7px 12px', fontWeight: 700, color: '#0c4a6e' }}>{sim ? `${euro(sim.cafMensile)}/mese` : 'da €50/mese'}</span>
+                  <span style={{ fontSize: '0.78rem', color: '#0369a1' }}>{sim ? 'pratiche amministrative e assistenza fiscale' : 'in base al tipo di contratto — importo esatto nel preventivo'}</span>
                 </div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginTop: '10px' }}>
                   <input type="checkbox" checked={escludiTfr} onChange={e => { setEscludiTfr(e.target.checked); invalida(); }} style={{ width: '16px', height: '16px', accentColor: '#ea580c' }} />
