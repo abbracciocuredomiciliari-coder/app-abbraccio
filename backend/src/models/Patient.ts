@@ -28,6 +28,8 @@ export interface IPatient extends Document {
 
   // === ACCETTAZIONE ===
   inAccettazione?: boolean;  // paziente in fase di accettazione: solo preventivi, nessun piano operativo
+  inAttesaConferma?: boolean; // paziente già lavorato (preventivo inviato) in attesa di conferma/decisione
+  attesaConfermaIl?: Date;   // data passaggio in attesa di conferma
   accettatoIl?: Date;        // data accettazione preventivo / attivazione piano
   terminato?: boolean;       // paziente terminato: percorso concluso
   terminatoIl?: Date;        // data chiusura paziente
@@ -85,6 +87,8 @@ const patientSchema = new Schema<IPatient>(
     pazienteCollegato: { type: Schema.Types.ObjectId, ref: 'Patient' },
     tipoGestione: { type: String, enum: ['privato', 'convenzione', 'consulenza'], default: 'privato' },
     inAccettazione: { type: Boolean, default: false },
+    inAttesaConferma: { type: Boolean, default: false },
+    attesaConfermaIl: { type: Date },
     accettatoIl: { type: Date },
     terminato: { type: Boolean, default: false },
     terminatoIl: { type: Date },

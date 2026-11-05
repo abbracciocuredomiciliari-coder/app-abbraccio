@@ -80,6 +80,8 @@ router.post('/', authorizeRole('admin', 'coordinator'), auditLog('patients', 'CR
       tipoGestione: ['privato', 'convenzione', 'consulenza'].includes(tipoGestione) ? tipoGestione : 'privato',
       categoriaPrivata: tipoGestione === 'consulenza' ? 'intermediazione_badanti' : (tipoGestione === 'convenzione' ? undefined : (categoriaPrivata || undefined)),
       inAccettazione: req.body.inAccettazione === true,
+      inAttesaConferma: req.body.inAttesaConferma === true,
+      attesaConfermaIl: req.body.inAttesaConferma === true ? new Date() : undefined,
       terminato: req.body.terminato === true,
       terminatoIl: req.body.terminato === true ? new Date() : undefined,
       siat: siat || undefined,
@@ -281,7 +283,7 @@ router.patch('/:id', authorizeRole('admin', 'coordinator'), auditLog('patients',
 
     const {
       firstName, lastName, birthDate, address, assistanceNeeds,
-      contactPhone, email, codiceFiscale, categoriaPrivata, tipoGestione, inAccettazione, terminato, accetta,
+      contactPhone, email, codiceFiscale, categoriaPrivata, tipoGestione, inAccettazione, inAttesaConferma, terminato, accetta,
     } = req.body;
 
     if (firstName !== undefined) patient.firstName = firstName.trim();
@@ -305,9 +307,24 @@ router.patch('/:id', authorizeRole('admin', 'coordinator'), auditLog('patients',
       if (tipoGestione === 'consulenza') patient.categoriaPrivata = 'intermediazione_badanti';
     }
     if (inAccettazione !== undefined) patient.inAccettazione = inAccettazione === true;
+    if (inAccettazione === true) {
+      // Rimesso in accettazione: esce dall'attesa conferma
+      patient.inAttesaConferma = false;
+      patient.attesaConfermaIl = undefined;
+    }
+    if (inAttesaConferma !== undefined) {
+      patient.inAttesaConferma = inAttesaConferma === true;
+      if (patient.inAttesaConferma) {
+        if (!patient.attesaConfermaIl) patient.attesaConfermaIl = new Date();
+        patient.inAccettazione = false; // lavorato: esce dallo slot accettazione
+      } else {
+        patient.attesaConfermaIl = undefined;
+      }
+    }
     if (accetta === true) {
       // Passaggio manuale: paziente accettato senza firma preventivo / attivazione piano
       patient.inAccettazione = false;
+      patient.inAttesaConferma = false;
       if (!patient.accettatoIl) patient.accettatoIl = new Date();
       patient.alertAccettazioneVisto = undefined; // riapri segnale dashboard del passaggio
     }
@@ -316,6 +333,7 @@ router.patch('/:id', authorizeRole('admin', 'coordinator'), auditLog('patients',
       if (patient.terminato) {
         if (!patient.terminatoIl) patient.terminatoIl = new Date();
         patient.inAccettazione = false;  // un paziente terminato non è più in accettazione
+        patient.inAttesaConferma = false;
       } else {
         patient.terminatoIl = undefined;
       }

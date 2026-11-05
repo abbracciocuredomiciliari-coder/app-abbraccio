@@ -28,6 +28,7 @@ import {
   MapPin,
   User,
   Calculator,
+  Clock,
   History,
 } from 'lucide-react';
 import FirmaCanvas from '../components/FirmaCanvas';
@@ -67,6 +68,8 @@ interface Patient {
   pazienteCollegato?: { _id: string; firstName: string; lastName: string } | string;
   tipoGestione?: 'privato' | 'convenzione' | 'consulenza';
   inAccettazione?: boolean;
+  inAttesaConferma?: boolean;
+  attesaConfermaIl?: string;
   accettatoIl?: string;
   terminato?: boolean;
   terminatoIl?: string;
@@ -176,7 +179,7 @@ function Patients() {
     riabilitazione: '🤸 Riabilitazione',
     intermediazione_badanti: '🤝 Intermediazioni',
   };
-  const [activeAccettazione, setActiveAccettazione] = useState<'tutti' | 'in_accettazione' | 'accettati' | 'terminati'>('tutti');
+  const [activeAccettazione, setActiveAccettazione] = useState<'tutti' | 'in_accettazione' | 'attesa_conferma' | 'accettati' | 'terminati'>('tutti');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -189,6 +192,7 @@ function Patients() {
     codiceFiscale: '',
     tipoGestione: 'privato' as 'privato' | 'convenzione' | 'consulenza',
     inAccettazione: false,
+    inAttesaConferma: false,
     terminato: false,
     ruoloContatto: 'paziente' as 'paziente' | 'caregiver',
     pazienteCollegato: ''
@@ -302,6 +306,8 @@ function Patients() {
 
     if (activeAccettazione === 'in_accettazione') {
       filtered = filtered.filter(p => p.inAccettazione === true && p.terminato !== true);
+    } else if (activeAccettazione === 'attesa_conferma') {
+      filtered = filtered.filter(p => p.inAttesaConferma === true && p.terminato !== true);
     } else if (activeAccettazione === 'accettati') {
       filtered = filtered.filter(p => p.inAccettazione !== true && p.terminato !== true && !!p.accettatoIl);
     } else if (activeAccettazione === 'terminati') {
@@ -368,6 +374,7 @@ function Patients() {
         codiceFiscale: '',
         tipoGestione: 'privato',
         inAccettazione: false,
+        inAttesaConferma: false,
         terminato: false,
         ruoloContatto: 'paziente',
         pazienteCollegato: ''
@@ -387,7 +394,7 @@ function Patients() {
     if (showForm) {
       setShowForm(false);
     } else {
-      setFormData({ firstName: '', lastName: '', birthDate: '', address: '', assistanceNeeds: '', categoriaPrivata: 'diagnostica', contactPhone: '', email: '', codiceFiscale: '', tipoGestione: 'privato', inAccettazione: false, terminato: false, ruoloContatto: 'paziente', pazienteCollegato: '' });
+      setFormData({ firstName: '', lastName: '', birthDate: '', address: '', assistanceNeeds: '', categoriaPrivata: 'diagnostica', contactPhone: '', email: '', codiceFiscale: '', tipoGestione: 'privato', inAccettazione: false, inAttesaConferma: false, terminato: false, ruoloContatto: 'paziente', pazienteCollegato: '' });
       setEditingPatient(null);
       setSuggerimentiIndirizzo([]);
       setIndirizzoCoords(null);
@@ -408,6 +415,7 @@ function Patients() {
       codiceFiscale: patient.codiceFiscale || '',
       tipoGestione: patient.tipoGestione || 'privato',
       inAccettazione: patient.inAccettazione === true,
+      inAttesaConferma: patient.inAttesaConferma === true,
       terminato: patient.terminato === true,
       ruoloContatto: patient.ruoloContatto === 'caregiver' ? 'caregiver' : 'paziente',
       pazienteCollegato: typeof patient.pazienteCollegato === 'object' ? patient.pazienteCollegato?._id || '' : patient.pazienteCollegato || '',
@@ -424,6 +432,18 @@ function Patients() {
       await api.patch(`/patients/${patient._id}`, { accetta: true });
       loadPatients();
       setSuccess('✅ Paziente segnato come accettato');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore aggiornamento paziente');
+    }
+  };
+
+  const segnaAttesaConferma = async (patient: Patient) => {
+    if (!confirm(`Spostare ${patient.firstName} ${patient.lastName} in "Attesa conferma"? Finisce nello slot dei pazienti lavorati in attesa di decisione.`)) return;
+    try {
+      await api.patch(`/patients/${patient._id}`, { inAttesaConferma: true });
+      loadPatients();
+      setSuccess('🕓 Paziente spostato in Attesa conferma');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore aggiornamento paziente');
@@ -1319,13 +1339,19 @@ function Patients() {
           </div>
 
           <label style={{ display: 'flex', alignItems: 'center', gap: '10px', background: formData.inAccettazione ? '#fef3c7' : '#f8fafc', border: `1px solid ${formData.inAccettazione ? '#f59e0b' : '#e2e8f0'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer' }}>
-            <input type="checkbox" checked={formData.inAccettazione} onChange={e => setFormData(prev => ({ ...prev, inAccettazione: e.target.checked }))} style={{ width: '18px', height: '18px', accentColor: '#d97706' }} />
+            <input type="checkbox" checked={formData.inAccettazione} onChange={e => setFormData(prev => ({ ...prev, inAccettazione: e.target.checked, inAttesaConferma: e.target.checked ? false : prev.inAttesaConferma }))} style={{ width: '18px', height: '18px', accentColor: '#d97706' }} />
             <span style={{ fontSize: '0.9rem', color: '#374151' }}>
               <strong>Paziente accettazione</strong> — il paziente è in fase di accettazione: serve per preventivi e piani in accettazione, non ancora operativi.
             </span>
           </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', background: formData.inAttesaConferma ? '#e0f2fe' : '#f8fafc', border: `1px solid ${formData.inAttesaConferma ? '#0ea5e9' : '#e2e8f0'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={formData.inAttesaConferma} onChange={e => setFormData(prev => ({ ...prev, inAttesaConferma: e.target.checked, inAccettazione: e.target.checked ? false : prev.inAccettazione }))} style={{ width: '18px', height: '18px', accentColor: '#0284c7' }} />
+            <span style={{ fontSize: '0.9rem', color: '#374151' }}>
+              <strong>Paziente attesa conferma</strong> — già lavorato (preventivo/pratica inviata): finisce nello slot "Attesa conferma" finché il cliente non decide.
+            </span>
+          </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: '10px', background: formData.terminato ? '#fee2e2' : '#f8fafc', border: `1px solid ${formData.terminato ? '#ef4444' : '#e2e8f0'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer' }}>
-            <input type="checkbox" checked={formData.terminato} onChange={e => setFormData(prev => ({ ...prev, terminato: e.target.checked, inAccettazione: e.target.checked ? false : prev.inAccettazione }))} style={{ width: '18px', height: '18px', accentColor: '#dc2626' }} />
+            <input type="checkbox" checked={formData.terminato} onChange={e => setFormData(prev => ({ ...prev, terminato: e.target.checked, inAccettazione: e.target.checked ? false : prev.inAccettazione, inAttesaConferma: e.target.checked ? false : prev.inAttesaConferma }))} style={{ width: '18px', height: '18px', accentColor: '#dc2626' }} />
             <span style={{ fontSize: '0.9rem', color: '#374151' }}>
               <strong>Paziente terminato</strong> — il percorso con il paziente è concluso: finisce nello slot "Terminati".
             </span>
@@ -1395,7 +1421,8 @@ function Patients() {
         {([
           { key: 'tutti', label: 'Tutti gli stati', count: patients.length },
           { key: 'in_accettazione', label: '⏳ In accettazione', count: patients.filter(p => p.inAccettazione === true && p.terminato !== true).length },
-          { key: 'accettati', label: '✅ Accettati', count: patients.filter(p => p.inAccettazione !== true && p.terminato !== true && !!p.accettatoIl).length },
+          { key: 'attesa_conferma', label: '🕓 Attesa conferma', count: patients.filter(p => p.inAttesaConferma === true && p.terminato !== true).length },
+          { key: 'accettati', label: '✅ Accettati', count: patients.filter(p => p.inAccettazione !== true && p.inAttesaConferma !== true && p.terminato !== true && !!p.accettatoIl).length },
           { key: 'terminati', label: '🏁 Terminati', count: patients.filter(p => p.terminato === true).length },
         ] as const).map(st => (
           <button
@@ -1403,7 +1430,7 @@ function Patients() {
             onClick={() => setActiveAccettazione(st.key)}
             className={`tw-px-4 tw-py-2 tw-rounded-xl tw-font-semibold tw-text-sm tw-transition-colors ${
               activeAccettazione === st.key
-                ? (st.key === 'in_accettazione' ? 'tw-bg-amber-500 tw-text-white tw-border-0' : st.key === 'accettati' ? 'tw-bg-emerald-600 tw-text-white tw-border-0' : st.key === 'terminati' ? 'tw-bg-slate-600 tw-text-white tw-border-0' : 'tw-bg-brand tw-text-white tw-border-0')
+                ? (st.key === 'in_accettazione' ? 'tw-bg-amber-500 tw-text-white tw-border-0' : st.key === 'attesa_conferma' ? 'tw-bg-sky-600 tw-text-white tw-border-0' : st.key === 'accettati' ? 'tw-bg-emerald-600 tw-text-white tw-border-0' : st.key === 'terminati' ? 'tw-bg-slate-600 tw-text-white tw-border-0' : 'tw-bg-brand tw-text-white tw-border-0')
                 : 'tw-bg-white tw-text-slate-600 tw-border tw-border-slate-200 hover:tw-bg-slate-50'
             }`}
           >
@@ -1444,6 +1471,11 @@ function Patients() {
                     {patient.inAccettazione && !patient.terminato && (
                       <span className="tw-text-xs tw-px-2 tw-py-0.5 tw-rounded-full tw-bg-amber-100 tw-text-amber-700 tw-font-bold tw-border tw-border-amber-200">
                         ⏳ In accettazione
+                      </span>
+                    )}
+                    {patient.inAttesaConferma && !patient.terminato && (
+                      <span className="tw-text-xs tw-px-2 tw-py-0.5 tw-rounded-full tw-bg-sky-100 tw-text-sky-700 tw-font-bold tw-border tw-border-sky-200" title={patient.attesaConfermaIl ? `In attesa dal ${formatDate(patient.attesaConfermaIl)}` : 'In attesa di conferma'}>
+                        🕓 Attesa conferma
                       </span>
                     )}
                     {!patient.inAccettazione && !patient.terminato && patient.accettatoIl && (
@@ -1495,7 +1527,7 @@ function Patients() {
                       Preventivo
                     </button>
                   )}
-                  {patient.inAccettazione && !patient.terminato && (user?.role === 'admin' || user?.role === 'coordinator') && (
+                  {(patient.inAccettazione || patient.inAttesaConferma) && !patient.terminato && (user?.role === 'admin' || user?.role === 'coordinator') && (
                     <>
                       <button
                         onClick={() => isConsulenza
@@ -1507,6 +1539,16 @@ function Patients() {
                         <FileText size={16} />
                         {isConsulenza ? 'Simula costo' : 'Preventivo'}
                       </button>
+                      {patient.inAccettazione && (
+                        <button
+                          onClick={() => segnaAttesaConferma(patient)}
+                          className="tw-bg-sky-600 tw-text-white tw-whitespace-nowrap"
+                          title="Lavorato: sposta il paziente in attesa di conferma/decisione del cliente"
+                        >
+                          <Clock size={16} />
+                          Attesa conferma
+                        </button>
+                      )}
                       <button
                         onClick={() => segnaAccettato(patient)}
                         className="tw-bg-emerald-600 tw-text-white tw-whitespace-nowrap"

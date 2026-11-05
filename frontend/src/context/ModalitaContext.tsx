@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import api from '../api/api';
 import { useAuth } from './AuthContext';
 
-export type Modalita = 'privato' | 'convenzione' | 'consulenza';
+export type Modalita = 'privato' | 'convenzione' | 'consulenza' | 'organizzativa';
 export type ModalitaAbilitata = 'entrambi' | 'privato' | 'convenzione';
 
 interface ModalitaContextValue {
@@ -10,6 +10,7 @@ interface ModalitaContextValue {
   setModalita: (m: Modalita) => void;
   isConvenzione: boolean;
   isConsulenza: boolean;
+  isOrganizzativa: boolean;
   modalitaAbilitata: ModalitaAbilitata;
   canSwitch: boolean;
 }
@@ -31,8 +32,11 @@ export function ModalitaProvider({ children }: { children: ReactNode }) {
     // La modalità scelta nei pulsanti del login è in localStorage: ri-sincronizza
     // lo stato a ogni cambio utente (altrimenti resta quella del mount iniziale)
     const stored = localStorage.getItem('modalita');
+    // 'organizzativa' è un'area gestionale: valida solo per ruoli privilegiati
     const sceltaLogin: Modalita =
-      stored === 'convenzione' || stored === 'consulenza' ? stored : 'privato';
+      stored === 'convenzione' || stored === 'consulenza' || (stored === 'organizzativa' && isPrivilegiato)
+        ? stored as Modalita
+        : 'privato';
     if (isPrivilegiato) {
       setModalitaAbilitata('entrambi');
       setModalitaState(sceltaLogin);
@@ -60,8 +64,9 @@ export function ModalitaProvider({ children }: { children: ReactNode }) {
 
   const setModalita = (m: Modalita) => {
     // Blocca se non abilitato (consulenza appartiene all'area privata)
-    if (modalitaAbilitata === 'privato' && m === 'convenzione') return;
-    if (modalitaAbilitata === 'convenzione' && (m === 'privato' || m === 'consulenza')) return;
+    if (!isPrivilegiato && m === 'organizzativa') return;
+    if (modalitaAbilitata === 'privato' && (m === 'convenzione' || m === 'organizzativa')) return;
+    if (modalitaAbilitata === 'convenzione' && (m === 'privato' || m === 'consulenza' || m === 'organizzativa')) return;
     localStorage.setItem('modalita', m);
     setModalitaState(m);
   };
@@ -69,7 +74,7 @@ export function ModalitaProvider({ children }: { children: ReactNode }) {
   const canSwitch = isPrivilegiato ? true : modalitaAbilitata === 'entrambi';
 
   return (
-    <ModalitaContext.Provider value={{ modalita, setModalita, isConvenzione: modalita === 'convenzione', isConsulenza: modalita === 'consulenza', modalitaAbilitata, canSwitch }}>
+    <ModalitaContext.Provider value={{ modalita, setModalita, isConvenzione: modalita === 'convenzione', isConsulenza: modalita === 'consulenza', isOrganizzativa: modalita === 'organizzativa', modalitaAbilitata, canSwitch }}>
       {children}
     </ModalitaContext.Provider>
   );

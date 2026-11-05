@@ -138,7 +138,7 @@ function isPrivilegiato(role: string) {
 
 function AppShell() {
   const { user, logout } = useAuth();
-  const { modalita, setModalita, isConvenzione, isConsulenza, modalitaAbilitata, canSwitch } = useModalita();
+  const { modalita, setModalita, isConvenzione, isConsulenza, isOrganizzativa, modalitaAbilitata, canSwitch } = useModalita();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const { toasts, removeToast } = useToast();
@@ -201,8 +201,8 @@ function AppShell() {
               type="button"
               onClick={() => {
                 if (!canSwitch) return;
-                const ordine = ['privato', 'convenzione', 'consulenza'] as const;
-                const nomi = { privato: 'Gestione Privata', convenzione: 'Convenzione SIAT', consulenza: 'Intermediazioni' } as const;
+                const ordine = ['privato', 'convenzione', 'consulenza', 'organizzativa'] as const;
+                const nomi = { privato: 'Gestione Privata', convenzione: 'Convenzione SIAT', consulenza: 'Intermediazioni', organizzativa: 'Procedure Organizzative' } as const;
                 const nuovaModalita = ordine[(ordine.indexOf(modalita) + 1) % ordine.length];
                 const msg = `Stai per passare da ${nomi[modalita]} a ${nomi[nuovaModalita]}.\n\nVuoi cambiare gestione?`;
                 if (window.confirm(msg)) setModalita(nuovaModalita);
@@ -232,7 +232,7 @@ function AppShell() {
               }}
             >
               <ArrowLeftRight size={14} />
-              {isConvenzione ? '🏥 Convenzione SIAT' : isConsulenza ? '🤝 Intermediazioni' : '👤 Gestione Privata'}
+              {isConvenzione ? '🏥 Convenzione SIAT' : isConsulenza ? '🤝 Intermediazioni' : isOrganizzativa ? '📋 Procedure Organizzative' : '👤 Gestione Privata'}
               {!canSwitch && <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>🔒</span>}
             </button>
           )}
@@ -340,7 +340,7 @@ function AppShell() {
           )}
 
           {/* ===== MENU PRIVILEGIATI (admin, coordinator, direttore) — aree Privato/Convenzione ===== */}
-          {user && isPrivilegiato(user.role) && !isConsulenza && (
+          {user && isPrivilegiato(user.role) && !isConsulenza && !isOrganizzativa && (
             <>
               {/* — Panoramica — */}
               <span className="nav-section-label">Panoramica</span>
@@ -360,6 +360,11 @@ function AppShell() {
               <Link to="/verbali-equipe" className={isActive('/verbali-equipe') ? 'active' : ''}>
                 <Users size={18} />
                 Riunione Équipe
+              </Link>
+              <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
+                <ClipboardList size={18} />
+                Consegne
+                <ConsegneBadge />
               </Link>
 
               {/* — Clinico — */}
@@ -420,51 +425,6 @@ function AppShell() {
                 Personale
               </Link>
 
-              {/* — Procedure Organizzative — */}
-              <span className="nav-section-label">Procedure Organizzative</span>
-              <Link to="/protocolli-procedure" className={isActive('/protocolli-procedure') ? 'active' : ''}>
-                <ClipboardList size={18} />
-                Protocolli e Procedure
-              </Link>
-              <Link
-                to="/checklist-hub"
-                className={location.pathname.startsWith('/checklist') || location.pathname.startsWith('/scheda-controllo') ? 'active' : ''}
-              >
-                <CheckSquare size={18} />
-                Check List
-              </Link>
-              <Link to="/storico-cliniche" className={isActive('/storico-cliniche') ? 'active' : ''}>
-                <BookOpen size={18} />
-                Storico cartelle
-              </Link>
-              <Link to="/archivio-cartelle" className={isActive('/archivio-cartelle') ? 'active' : ''}>
-                <Archive size={18} />
-                Archivio cartelle
-              </Link>
-              <Link to="/strumenti" className={isActive('/strumenti') ? 'active' : ''}>
-                <Stethoscope size={18} />
-                Strumenti e presidi
-              </Link>
-              <Link to="/report-consegne" className={isActive('/report-consegne') ? 'active' : ''}>
-                <Package size={18} />
-                Richieste e Consegne
-              </Link>
-              <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
-                <ClipboardList size={18} />
-                Consegne
-                <ConsegneBadge />
-              </Link>
-              <Link to="/gestione-contratti" className={isActive('/gestione-contratti') ? 'active' : ''}>
-                <FileText size={18} />
-                Contratti operatori
-              </Link>
-              {user.role === 'admin' && (
-                <Link to="/esportazione-siat" className={isActive('/esportazione-siat') ? 'active' : ''}>
-                  <FileText size={18} />
-                  Esportazione SIAT
-                </Link>
-              )}
-
               {/* — Amministrazione — */}
               <span className="nav-section-label">Amministrazione</span>
               <Link to="/compenso-incarichi" className={isActive('/compenso-incarichi') ? 'active' : ''}>
@@ -521,8 +481,59 @@ function AppShell() {
                     <Shield size={18} />
                     Consensi GDPR
                   </Link>
+                  {isConvenzione && (
+                    <Link to="/esportazione-siat" className={isActive('/esportazione-siat') ? 'active' : ''}>
+                      <FileText size={18} />
+                      Esportazione SIAT
+                    </Link>
+                  )}
                 </>
               )}
+            </>
+          )}
+
+          {/* ===== SCHERMATA PROCEDURE ORGANIZZATIVE (admin, coordinator, direttore) ===== */}
+          {user && isPrivilegiato(user.role) && isOrganizzativa && (
+            <>
+              <span className="nav-section-label">Panoramica</span>
+              <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
+                <ClipboardList size={18} />
+                Consegne
+                <ConsegneBadge />
+              </Link>
+
+              <span className="nav-section-label">Procedure Organizzative</span>
+              <Link to="/protocolli-procedure" className={isActive('/protocolli-procedure') ? 'active' : ''}>
+                <ClipboardList size={18} />
+                Protocolli e Procedure
+              </Link>
+              <Link
+                to="/checklist-hub"
+                className={location.pathname.startsWith('/checklist') || location.pathname.startsWith('/scheda-controllo') ? 'active' : ''}
+              >
+                <CheckSquare size={18} />
+                Check List
+              </Link>
+              <Link to="/storico-cliniche" className={isActive('/storico-cliniche') ? 'active' : ''}>
+                <BookOpen size={18} />
+                Storico cartelle
+              </Link>
+              <Link to="/archivio-cartelle" className={isActive('/archivio-cartelle') ? 'active' : ''}>
+                <Archive size={18} />
+                Archivio cartelle
+              </Link>
+              <Link to="/strumenti" className={isActive('/strumenti') ? 'active' : ''}>
+                <Stethoscope size={18} />
+                Strumenti e presidi
+              </Link>
+              <Link to="/report-consegne" className={isActive('/report-consegne') ? 'active' : ''}>
+                <Package size={18} />
+                Richieste e Consegne
+              </Link>
+              <Link to="/gestione-contratti" className={isActive('/gestione-contratti') ? 'active' : ''}>
+                <FileText size={18} />
+                Contratti operatori
+              </Link>
             </>
           )}
 
