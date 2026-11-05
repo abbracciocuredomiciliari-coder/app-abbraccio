@@ -357,11 +357,6 @@ function AppShell() {
                 Chat operatore
                 <ChatBadge />
               </Link>
-              <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
-                <ClipboardList size={18} />
-                Consegne
-                <ConsegneBadge />
-              </Link>
               <Link to="/verbali-equipe" className={isActive('/verbali-equipe') ? 'active' : ''}>
                 <Users size={18} />
                 Riunione Équipe
@@ -393,18 +388,6 @@ function AppShell() {
                   Centro Prenotazioni
                 </Link>
               )}
-              <Link to="/protocolli-procedure" className={isActive('/protocolli-procedure') ? 'active' : ''}>
-                <ClipboardList size={18} />
-                Protocolli e Procedure
-              </Link>
-              <Link to="/storico-cliniche" className={isActive('/storico-cliniche') ? 'active' : ''}>
-                <BookOpen size={18} />
-                Storico cartelle
-              </Link>
-              <Link to="/archivio-cartelle" className={isActive('/archivio-cartelle') ? 'active' : ''}>
-                <Archive size={18} />
-                Archivio cartelle
-              </Link>
               <Link to="/telemedicina" className={isActive('/telemedicina') ? 'active' : ''}>
                 <Video size={18} />
                 Telemedicina
@@ -436,13 +419,12 @@ function AppShell() {
                 <UserPlus size={18} />
                 Personale
               </Link>
-              <Link to="/strumenti" className={isActive('/strumenti') ? 'active' : ''}>
-                <Stethoscope size={18} />
-                Strumenti e presidi
-              </Link>
-              <Link to="/report-consegne" className={isActive('/report-consegne') ? 'active' : ''}>
-                <Package size={18} />
-                Richieste e Consegne
+
+              {/* — Procedure Organizzative — */}
+              <span className="nav-section-label">Procedure Organizzative</span>
+              <Link to="/protocolli-procedure" className={isActive('/protocolli-procedure') ? 'active' : ''}>
+                <ClipboardList size={18} />
+                Protocolli e Procedure
               </Link>
               <Link
                 to="/checklist-hub"
@@ -451,6 +433,37 @@ function AppShell() {
                 <CheckSquare size={18} />
                 Check List
               </Link>
+              <Link to="/storico-cliniche" className={isActive('/storico-cliniche') ? 'active' : ''}>
+                <BookOpen size={18} />
+                Storico cartelle
+              </Link>
+              <Link to="/archivio-cartelle" className={isActive('/archivio-cartelle') ? 'active' : ''}>
+                <Archive size={18} />
+                Archivio cartelle
+              </Link>
+              <Link to="/strumenti" className={isActive('/strumenti') ? 'active' : ''}>
+                <Stethoscope size={18} />
+                Strumenti e presidi
+              </Link>
+              <Link to="/report-consegne" className={isActive('/report-consegne') ? 'active' : ''}>
+                <Package size={18} />
+                Richieste e Consegne
+              </Link>
+              <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
+                <ClipboardList size={18} />
+                Consegne
+                <ConsegneBadge />
+              </Link>
+              <Link to="/gestione-contratti" className={isActive('/gestione-contratti') ? 'active' : ''}>
+                <FileText size={18} />
+                Contratti operatori
+              </Link>
+              {user.role === 'admin' && (
+                <Link to="/esportazione-siat" className={isActive('/esportazione-siat') ? 'active' : ''}>
+                  <FileText size={18} />
+                  Esportazione SIAT
+                </Link>
+              )}
 
               {/* — Amministrazione — */}
               <span className="nav-section-label">Amministrazione</span>
@@ -474,10 +487,6 @@ function AppShell() {
                 <ClipboardList size={18} />
                 Archivio Preventivi
               </Link>
-              <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''}>
-                <FileText size={18} />
-                Consegne
-              </Link>
               {!isConvenzione && (
                 <Link to="/preventivo-veloce" className={isActive('/preventivo-veloce') ? 'active' : ''}>
                   <Calculator size={18} />
@@ -490,10 +499,6 @@ function AppShell() {
                   Tariffario
                 </Link>
               )}
-              <Link to="/gestione-contratti" className={isActive('/gestione-contratti') ? 'active' : ''}>
-                <FileText size={18} />
-                Contratti operatori
-              </Link>
               <Link to="/archivio-email" className={isActive('/archivio-email') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <Mail size={18} />
                 Email gestione
@@ -515,10 +520,6 @@ function AppShell() {
                   <Link to="/gestione-consensi-gdpr" className={isActive('/gestione-consensi-gdpr') ? 'active' : ''}>
                     <Shield size={18} />
                     Consensi GDPR
-                  </Link>
-                  <Link to="/esportazione-siat" className={isActive('/esportazione-siat') ? 'active' : ''}>
-                    <FileText size={18} />
-                    Esportazione SIAT
                   </Link>
                 </>
               )}
@@ -575,10 +576,6 @@ function AppShell() {
               <Link to="/archivio-preventivi" className={isActive('/archivio-preventivi') ? 'active' : ''}>
                 <ClipboardList size={18} />
                 Archivio Preventivi
-              </Link>
-              <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''}>
-                <FileText size={18} />
-                Consegne
               </Link>
               <Link to="/archivi-intermediazione" className={isActive('/archivi-intermediazione') ? 'active' : ''}>
                 <Archive size={18} />
