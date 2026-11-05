@@ -114,6 +114,8 @@ export default function LandingBadante() {
   const [nome, setNome] = useState('');
   const [telefono, setTelefono] = useState('');
   const [email, setEmail] = useState('');
+  const [citta, setCitta] = useState('');
+  const [indirizzo, setIndirizzo] = useState('');
   const [messaggio, setMessaggio] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -214,6 +216,8 @@ export default function LandingBadante() {
         nome: nome.trim(),
         telefono: telefono.trim(),
         email: email.trim() || undefined,
+        citta: citta.trim(),
+        indirizzo: indirizzo.trim(),
         messaggio: messaggio.trim() || undefined,
         ...simBody(),
         utm: utmRef.current,
@@ -527,6 +531,14 @@ export default function LandingBadante() {
               <div>
                 <span style={label}>Email</span>
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="mario@email.it" style={input} />
+              </div>
+              <div>
+                <span style={label}>Città *</span>
+                <input type="text" value={citta} onChange={e => setCitta(e.target.value)} placeholder="Es. Roma" required style={input} />
+              </div>
+              <div>
+                <span style={label}>Indirizzo (via e n° civico) *</span>
+                <input type="text" value={indirizzo} onChange={e => setIndirizzo(e.target.value)} placeholder="Es. Via delle Rose 12" required style={input} />
               </div>
             </div>
             <div style={{ marginTop: '14px' }}>

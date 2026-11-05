@@ -93,6 +93,7 @@ export default function IscrizioneIntermediazione() {
   const [email, setEmail] = useState('');
   const [regioneResidenza, setRegioneResidenza] = useState('');
   const [cittaResidenza, setCittaResidenza] = useState('');
+  const [indirizzoResidenza, setIndirizzoResidenza] = useState('');
   const [regioneInteresse, setRegioneInteresse] = useState('');
   const [cittaInteresse, setCittaInteresse] = useState('');
   const [disponibilita, setDisponibilita] = useState('');
@@ -115,6 +116,11 @@ export default function IscrizioneIntermediazione() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
+    if (!cittaResidenza.trim() || !indirizzoResidenza.trim()) {
+      setErrore('Città e indirizzo di residenza sono obbligatori: senza non possiamo valutare la zona di lavoro.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setBusy(true);
     setErrore('');
     try {
@@ -131,7 +137,8 @@ export default function IscrizioneIntermediazione() {
       if (telefono.trim()) fd.append('telefono', telefono.trim());
       if (email.trim()) fd.append('email', email.trim());
       if (regioneResidenza) fd.append('regioneResidenza', regioneResidenza);
-      if (cittaResidenza.trim()) fd.append('cittaResidenza', cittaResidenza.trim());
+      fd.append('cittaResidenza', cittaResidenza.trim());
+      fd.append('indirizzoResidenza', indirizzoResidenza.trim());
       if (regioneInteresse) fd.append('regioneInteresse', regioneInteresse);
       if (cittaInteresse.trim()) fd.append('cittaInteresse', cittaInteresse.trim());
       if (disponibilita) fd.append('disponibilita', disponibilita);
@@ -273,7 +280,11 @@ export default function IscrizioneIntermediazione() {
                 {REGIONI.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
-            <div><span style={label}>Città</span><input style={input} value={cittaResidenza} onChange={e => setCittaResidenza(e.target.value)} placeholder="Es. Roma" /></div>
+            <div><span style={label}>Città *</span><input style={input} value={cittaResidenza} onChange={e => setCittaResidenza(e.target.value)} placeholder="Es. Roma" /></div>
+          </div>
+          <div style={{ marginBottom: '10px' }}>
+            <span style={label}>Indirizzo di residenza (via e numero civico) *</span>
+            <input style={input} value={indirizzoResidenza} onChange={e => setIndirizzoResidenza(e.target.value)} placeholder="Es. Via delle Rose 12" />
           </div>
           <div className="isc-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
             <div>

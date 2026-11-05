@@ -99,15 +99,15 @@ function bloccoFirma(doc: InstanceType<typeof PDFDocument>, nome: string, luogo:
   testo(doc, `Luogo e data: ${luogo}, ${data}`, { size: 9 });
   testo(doc, `Firmatario: ${nome}`, { size: 9 });
   testo(doc, 'Con la presente firma dichiaro di aver letto e accettato il presente contratto e l\'informativa GDPR al trattamento dei dati personali.', { size: 8.5, color: VERDE });
-  if (firmaImg && firmaImg.startsWith('data:image')) {
-    try {
-      const base64 = firmaImg.split(',')[1];
-      const img = Buffer.from(base64, 'base64');
-      if (doc.y > 700) doc.addPage();
-      doc.image(img, MARGINE, doc.y + 4, { width: 170 });
-      doc.y += 60;
-    } catch { /* firma non renderizzabile: la si omette dal PDF */ }
-  }
+}
+
+// Disegna l'immagine firma sopra la riga del Committente (colonna sinistra)
+function firmaSullaRiga(doc: InstanceType<typeof PDFDocument>, sY: number, firmaImg?: string) {
+  if (!firmaImg || !firmaImg.startsWith('data:image')) return;
+  try {
+    const img = Buffer.from(firmaImg.split(',')[1], 'base64');
+    doc.image(img, MARGINE + 45, sY + 2, { width: 160, height: 36, fit: [160, 36] });
+  } catch { /* firma non renderizzabile: resta la riga vuota */ }
 }
 
 // ─── PDF mandato intermediazione (Assistente familiare) ───────────────────────
@@ -192,6 +192,7 @@ async function pdfMandatoBadante(contratto: any, paziente: any): Promise<Buffer>
   const sY = doc.y;
   doc.moveTo(MARGINE, sY + 40).lineTo(MARGINE + 250, sY + 40).strokeColor('#94a3b8').lineWidth(0.8).stroke();
   doc.moveTo(MARGINE + 295, sY + 40).lineTo(MARGINE + LARGHEZZA, sY + 40).stroke();
+  firmaSullaRiga(doc, sY, contratto.stato === 'firmato' ? contratto.firmaImg : undefined);
   doc.font('Helvetica').fontSize(8).fillColor(GRIGIO)
     .text('Firma del Committente (Famiglia)', MARGINE, sY + 46, { width: 250, align: 'center' });
   doc.text(`Per ${AZIENDA.nome} (Legale Rappresentante: SCHEMBRI SIMONA)`, MARGINE + 295, sY + 46, { width: 250, align: 'center' });
@@ -265,9 +266,10 @@ async function pdfContrattoGenerico(contratto: any, paziente: any): Promise<Buff
   const sY = doc.y;
   doc.moveTo(MARGINE, sY + 40).lineTo(MARGINE + 250, sY + 40).strokeColor('#94a3b8').lineWidth(0.8).stroke();
   doc.moveTo(MARGINE + 295, sY + 40).lineTo(MARGINE + LARGHEZZA, sY + 40).stroke();
+  firmaSullaRiga(doc, sY, contratto.stato === 'firmato' ? contratto.firmaImg : undefined);
   doc.font('Helvetica').fontSize(8).fillColor(GRIGIO)
-    .text('Timbro e firma Agenzia', MARGINE, sY + 46, { width: 250, align: 'center' });
-  doc.text('Firma del Committente', MARGINE + 295, sY + 46, { width: 250, align: 'center' });
+    .text('Firma del Committente', MARGINE, sY + 46, { width: 250, align: 'center' });
+  doc.text('Timbro e firma Agenzia', MARGINE + 295, sY + 46, { width: 250, align: 'center' });
   doc.y = sY + 80;
 
   if (contratto.stato === 'firmato' && contratto.firmaImg) {

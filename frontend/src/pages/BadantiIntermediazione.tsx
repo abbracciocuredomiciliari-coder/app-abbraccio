@@ -646,6 +646,20 @@ export default function BadantiIntermediazione() {
     }
   }
 
+  // Invia il link firma via WhatsApp: il server prepara testo+link e archivia l'invio in cronologia
+  async function inviaWhatsAppContratto(contratto: ContrattoCollegato) {
+    const tel = window.prompt('Numero WhatsApp del destinatario (vuoto = scegli il contatto in WhatsApp)', '');
+    if (tel === null) return;
+    try {
+      const { data } = await api.post(`/contratti-pazienti/${contratto._id}/invia-whatsapp`, { telefono: tel });
+      const numero = String(data.telefono || '').replace(/[^\d]/g, '');
+      const wa = numero ? `https://wa.me/${numero.startsWith('39') ? numero : `39${numero}`}` : 'https://wa.me/';
+      window.open(`${wa}?text=${encodeURIComponent(data.testo)}`, '_blank');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore invio WhatsApp');
+    }
+  }
+
   async function scaricaPDF(doc: { _id: string; numero: string; stato?: string }) {
     try {
       const firmato = doc.stato === 'firmato';
@@ -1073,9 +1087,14 @@ export default function BadantiIntermediazione() {
                                 <Download size={14} className="tw-inline" /> Preventivo
                               </Button>
                               {isGestione && contratto.stato === 'emesso' && (
-                                <Button size="sm" variant="secondary" onClick={() => inviaFirmaContratto(contratto)}>
-                                  <Mail size={14} className="tw-inline" /> Invia per firma
-                                </Button>
+                                <>
+                                  <Button size="sm" variant="secondary" onClick={() => inviaFirmaContratto(contratto)}>
+                                    <Mail size={14} className="tw-inline" /> Invia per firma
+                                  </Button>
+                                  <Button size="sm" variant="secondary" onClick={() => inviaWhatsAppContratto(contratto)} className="tw-text-green-700">
+                                    <MessageCircle size={14} className="tw-inline" /> WhatsApp
+                                  </Button>
+                                </>
                               )}
                               {contratto.stato === 'firmato' && (
                                 <>

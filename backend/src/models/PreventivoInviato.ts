@@ -18,8 +18,9 @@ export interface IVoceInviata {
 
 export interface IPreventivoInviato extends Document {
   area: 'privato' | 'intermediazione';
-  tipo: 'preventivo_veloce' | 'costo_badante';
+  tipo: 'preventivo_veloce' | 'costo_badante' | 'contratto_firma';
   canale: 'whatsapp' | 'email';
+  contrattoId?: string;               // contratto_firma: riferimento al ContrattoPaziente inviato
   nomeCliente?: string;   // nome/cognome o intestatario libero (nessun paziente)
   email?: string;
   telefono?: string;
@@ -47,8 +48,9 @@ const voceSchema = new Schema<IVoceInviata>(
 const schema = new Schema<IPreventivoInviato>(
   {
     area: { type: String, enum: ['privato', 'intermediazione'], required: true, index: true },
-    tipo: { type: String, enum: ['preventivo_veloce', 'costo_badante'], required: true },
+    tipo: { type: String, enum: ['preventivo_veloce', 'costo_badante', 'contratto_firma'], required: true },
     canale: { type: String, enum: ['whatsapp', 'email'], required: true },
+    contrattoId: { type: String, trim: true },
     nomeCliente: { type: String, trim: true },
     email: { type: String, trim: true },
     telefono: { type: String, trim: true },

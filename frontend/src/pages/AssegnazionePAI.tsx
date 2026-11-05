@@ -25,6 +25,13 @@ interface OperatoreInZona {
   lastName: string;
   role: string;
   category: string;
+  email?: string;
+  phone?: string;
+  note?: string;
+  indirizzoResidenza?: string;
+  cittaResidenza?: string;
+  disponibilita?: 'diurno' | 'notturno' | 'h24';
+  residenzaPressoFamiglia?: boolean;
   domicilioPartenza?: string;
   domicilioCoords?: { lat: number; lng: number };
   raggioAzioneKm?: number;
@@ -83,6 +90,7 @@ export default function AssegnazionePAI() {
   const [operatoriInZona, setOperatoriInZona] = useState<OperatoreInZona[]>([]);
   const [loadingZona, setLoadingZona] = useState(false);
   const [operatoreSelezionato, setOperatoreSelezionato] = useState<OperatoreInZona | null>(null);
+  const [schedaOperatore, setSchedaOperatore] = useState<OperatoreInZona | null>(null);
 
   // Form piano/PAI
   const [showFormPiano, setShowFormPiano] = useState(false);
@@ -468,6 +476,10 @@ export default function AssegnazionePAI() {
                 center={operatoreSelezionato?.domicilioCoords || indirizzoCoords || pazienteSelezionato?.coords || undefined}
                 raggioKm={operatoreSelezionato?.raggioAzioneKm ?? 10}
                 markers={markersOperatori}
+                onMarkerClick={(i) => {
+                  const op = operatoriVisualizzati.filter(o => o.domicilioCoords?.lat)[i];
+                  if (op) setSchedaOperatore(op);
+                }}
                 markerPaziente={
                   pazienteSelezionato?.coords
                     ? { lat: pazienteSelezionato.coords.lat, lng: pazienteSelezionato.coords.lng, label: `${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName}` }
@@ -602,6 +614,56 @@ export default function AssegnazionePAI() {
           )}
         </div>
       </div>
+
+      {/* ═══ MODALE SCHEDA PROFESSIONISTA (click sul pin mappa) ═══════════ */}
+      {schedaOperatore && (() => {
+        const o = schedaOperatore;
+        const dispLabel = o.disponibilita === 'h24'
+          ? `🕐 Giorno e notte (H24)${o.residenzaPressoFamiglia ? ' — disponibile a convivere' : ''}`
+          : o.disponibilita === 'notturno' ? '🌙 Solo notturno'
+          : o.disponibilita === 'diurno' ? '☀️ Diurno / a ore' : '—';
+        const riga = (label: string, val?: string | null) => val ? (
+          <div style={{ display: 'flex', gap: '8px', padding: '7px 0', borderBottom: '1px solid #f1f5f9', fontSize: '0.85rem' }}>
+            <span style={{ minWidth: '110px', fontWeight: 700, color: '#64748b' }}>{label}</span>
+            <span style={{ color: '#1e293b', flex: 1 }}>{val}</span>
+          </div>
+        ) : null;
+        return (
+          <div onClick={() => setSchedaOperatore(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '14px', maxWidth: '440px', width: '100%', maxHeight: '86vh', overflowY: 'auto', padding: '20px', boxShadow: '0 10px 40px rgba(0,0,0,0.25)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>{o.firstName} {o.lastName}</div>
+                  <div style={{ fontSize: '0.82rem', color: COLORI_CATEGORIA[o.category] || colore, fontWeight: 700 }}>{capitalize(o.role)}</div>
+                </div>
+                <button onClick={() => setSchedaOperatore(null)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '8px', width: '32px', height: '32px', cursor: 'pointer', fontSize: '1rem', color: '#64748b' }}>✕</button>
+              </div>
+              <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '10px', padding: '10px 12px', margin: '10px 0', fontSize: '0.85rem', color: '#0c4a6e' }}>
+                <strong>Disponibilità:</strong> {dispLabel}
+              </div>
+              {riga('Città', o.cittaResidenza)}
+              {riga('Indirizzo', o.indirizzoResidenza)}
+              {riga('Domicilio lav.', o.domicilioPartenza)}
+              {riga('Raggio', `${o.raggioAzioneKm ?? 10} km`)}
+              {riga('Distanza', o.distanzaKm != null ? `${o.distanzaKm} km dal punto cercato` : null)}
+              {riga('Telefono', o.phone)}
+              {riga('Email', o.email)}
+              {o.note && (
+                <div style={{ marginTop: '10px', fontSize: '0.82rem', color: '#475569', background: '#f8fafc', borderRadius: '8px', padding: '10px', whiteSpace: 'pre-wrap' }}>
+                  {o.note}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => { setOperatoreSelezionato(o); setSchedaOperatore(null); }}
+                style={{ width: '100%', marginTop: '14px', background: colore, color: 'white', border: 'none', borderRadius: '10px', padding: '11px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
+              >
+                ✅ Seleziona questo professionista
+              </button>
+            </div>
+          </div>
+        );
+      })()}
     </section>
   );
 }

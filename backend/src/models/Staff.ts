@@ -23,6 +23,8 @@ export interface IStaff extends Document {
   userId?: Types.ObjectId; // collegamento con l'account di login (User)
   modalitaAbilitata: 'entrambi' | 'privato' | 'convenzione' | 'intermediazione';
   areaIntermediazione?: boolean; // personale iscritto dal modulo Intermediazioni (badante/colf/assistente familiare)
+  disponibilita?: 'diurno' | 'notturno' | 'h24';        // ereditata dalla candidatura intermediazione
+  residenzaPressoFamiglia?: boolean;                   // se h24: disponibile a convivere
 
   // === ZONA DI LAVORO ===
   domicilioPartenza?: string;       // Indirizzo testo
@@ -65,6 +67,8 @@ const staffSchema = new Schema<IStaff>(
       default: 'entrambi',
     },
     areaIntermediazione: { type: Boolean, default: false },
+    disponibilita: { type: String, enum: ['diurno', 'notturno', 'h24'] },
+    residenzaPressoFamiglia: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

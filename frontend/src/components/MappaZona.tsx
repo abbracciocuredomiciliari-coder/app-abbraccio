@@ -23,6 +23,8 @@ interface MappaZonaProps {
     label: string; sublabel?: string;
     colore?: string; distanzaKm?: number;
   }[];
+  /** Click sul marker operatore: indice nell'array markers */
+  onMarkerClick?: (index: number) => void;
   /** Marker paziente fisso */
   markerPaziente?: { lat: number; lng: number; label: string };
   altezza?: number;
@@ -34,6 +36,7 @@ export default function MappaZona({
   raggioKm = 10,
   onClickMappa,
   markers = [],
+  onMarkerClick,
   markerPaziente,
   altezza = 380,
   readonly = false,
@@ -129,9 +132,10 @@ export default function MappaZona({
         html: `<div style="background:${colore};color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);">${i + 1}</div>`,
         iconSize: [26, 26], iconAnchor: [13, 13], className: '',
       });
-      L.marker([m.lat, m.lng], { icon })
+      const mk = L.marker([m.lat, m.lng], { icon })
         .addTo(layer)
-        .bindPopup(`<strong>${m.label}</strong>${m.sublabel ? '<br/>' + m.sublabel : ''}${m.distanzaKm !== undefined ? '<br/>📍 ' + m.distanzaKm + ' km' : ''}`);
+        .bindPopup(`<strong>${m.label}</strong>${m.sublabel ? '<br/>' + m.sublabel : ''}${m.distanzaKm !== undefined ? '<br/>📍 ' + m.distanzaKm + ' km' : ''}${onMarkerClick ? '<br/><em style="font-size:11px;color:#2563eb">Tocca per la scheda completa</em>' : ''}`);
+      if (onMarkerClick) mk.on('click', () => onMarkerClick(i));
     });
 
     // Fit bounds se ci sono marker + paziente

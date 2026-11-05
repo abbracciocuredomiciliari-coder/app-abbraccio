@@ -87,6 +87,8 @@ export default function LandingPreventivo() {
   const [nome, setNome] = useState('');
   const [telefono, setTelefono] = useState('');
   const [email, setEmail] = useState('');
+  const [citta, setCitta] = useState('');
+  const [indirizzo, setIndirizzo] = useState('');
   const [messaggio, setMessaggio] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState<{ numero: string; totale: number } | null>(null);
@@ -205,7 +207,9 @@ export default function LandingPreventivo() {
       setSending(true);
       setSendError('');
       const res = await axios.post(`${API_BASE}/landing-preventivo/richiesta`, {
-        nome: nome.trim(), telefono: telefono.trim(), email: email.trim() || undefined, messaggio: messaggio.trim() || undefined,
+        nome: nome.trim(), telefono: telefono.trim(), email: email.trim() || undefined,
+        citta: citta.trim(), indirizzo: indirizzo.trim(),
+        messaggio: messaggio.trim() || undefined,
         voci: vociBody(), utm: utmRef.current,
       });
       setSent({ numero: res.data?.preventivo?.numero || '', totale: res.data?.preventivo?.totale ?? prev.totale });
@@ -535,10 +539,18 @@ export default function LandingPreventivo() {
                 <span style={label}>Email</span>
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="mario@email.it" style={input} />
               </div>
+              <div>
+                <span style={label}>Città *</span>
+                <input type="text" value={citta} onChange={e => setCitta(e.target.value)} placeholder="Es. Roma" required style={input} />
+              </div>
+              <div>
+                <span style={label}>Indirizzo (via e n° civico) *</span>
+                <input type="text" value={indirizzo} onChange={e => setIndirizzo(e.target.value)} placeholder="Es. Via delle Rose 12" required style={input} />
+              </div>
             </div>
             <div style={{ marginTop: '14px' }}>
               <span style={label}>Messaggio</span>
-              <textarea value={messaggio} onChange={e => setMessaggio(e.target.value)} rows={3} placeholder="Raccontaci le tue esigenze, zona, quando vuoi essere ricontattato..." style={{ ...input, resize: 'vertical' }} />
+              <textarea value={messaggio} onChange={e => setMessaggio(e.target.value)} rows={3} placeholder="Raccontaci le tue esigenze, quando vuoi essere ricontattato..." style={{ ...input, resize: 'vertical' }} />
             </div>
             {sendError && <p style={{ color: '#dc2626', fontSize: '0.88rem', margin: '10px 0 0' }}>{sendError}</p>}
             <button type="submit" disabled={sending}

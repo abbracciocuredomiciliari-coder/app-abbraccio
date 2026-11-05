@@ -47,9 +47,9 @@ async function rigeneraPdfInviato(doc: any): Promise<Buffer> {
 // POST /api/preventivi-inviati — registra un invio (usato anche internamente)
 router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), async (req: AuthRequest, res: Response) => {
   try {
-    const { area, tipo, canale, nomeCliente, email, telefono, prestazioni, totale, simulazione, testoInviato } = req.body || {};
+    const { area, tipo, canale, nomeCliente, email, telefono, prestazioni, totale, simulazione, testoInviato, contrattoId } = req.body || {};
     if (!['privato', 'intermediazione'].includes(area)) return res.status(400).json({ message: 'Area non valida' });
-    if (!['preventivo_veloce', 'costo_badante'].includes(tipo)) return res.status(400).json({ message: 'Tipo non valido' });
+    if (!['preventivo_veloce', 'costo_badante', 'contratto_firma'].includes(tipo)) return res.status(400).json({ message: 'Tipo non valido' });
     if (!['whatsapp', 'email'].includes(canale)) return res.status(400).json({ message: 'Canale non valido' });
 
     const righe = (Array.isArray(prestazioni) ? prestazioni : []).map((p: any) => ({
@@ -65,6 +65,7 @@ router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), async (req
       area,
       tipo,
       canale,
+      contrattoId: contrattoId ? String(contrattoId).trim().slice(0, 60) : undefined,
       nomeCliente: nomeCliente ? String(nomeCliente).trim().slice(0, 160) : undefined,
       email: email ? String(email).trim().slice(0, 120) : undefined,
       telefono: telefono ? String(telefono).trim().slice(0, 40) : undefined,

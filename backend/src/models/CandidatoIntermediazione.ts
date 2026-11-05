@@ -26,6 +26,7 @@ export interface ICandidatoIntermediazione extends Document {
   email?: string;
   regioneResidenza?: string;
   cittaResidenza?: string;
+  indirizzoResidenza?: string;        // via e numero civico — obbligatorio all'iscrizione
   regioneInteresse?: string;          // regione/città dove vorrebbe lavorare
   cittaInteresse?: string;
   disponibilita?: 'diurno' | 'notturno' | 'h24';
@@ -59,6 +60,7 @@ const schema = new Schema<ICandidatoIntermediazione>(
     email: { type: String, trim: true, lowercase: true },
     regioneResidenza: { type: String, trim: true },
     cittaResidenza: { type: String, trim: true },
+    indirizzoResidenza: { type: String, trim: true },
     regioneInteresse: { type: String, trim: true },
     cittaInteresse: { type: String, trim: true },
     disponibilita: { type: String, enum: ['diurno', 'notturno', 'h24'] },

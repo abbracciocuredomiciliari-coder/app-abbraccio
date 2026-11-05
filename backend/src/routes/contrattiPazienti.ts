@@ -15,6 +15,7 @@ import { decrypt } from '../utils/encryption';
 import ConsensoGDPR from '../models/ConsensoGDPR';
 import BadanteIntermediazione from '../models/BadanteIntermediazione';
 import { inviaEmailContrattoPaziente, normalizzaPaziente } from '../utils/contrattoInvio';
+import PreventivoInviato from '../models/PreventivoInviato';
 
 const router = Router();
 const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
@@ -51,9 +52,11 @@ function generaHtmlContratto(contratto: any, paziente: any, includeFirma = false
         <p style="font-size:11px;color:#166534;margin:8px 0;background:#dcfce7;padding:8px;border-radius:4px;">
           <strong>Con la presente firma</strong> dichiaro di aver letto e accettato il presente contratto e l'informativa GDPR al trattamento dei dati personali.
         </p>
-        <img src="${firmaImg}" alt="Firma" style="max-width:220px;max-height:80px;border:1px solid #d1d5db;margin-top:8px;" />
       </div>`
     : '';
+  const firmaCellaImg = includeFirma && firmaImg
+    ? `<img src="${firmaImg}" alt="Firma" style="max-width:200px;max-height:60px;display:block;margin:0 auto 4px;" />`
+    : '<div style="min-height:64px;"></div>';
 
   return `<!DOCTYPE html>
 <html lang="it">
@@ -148,8 +151,14 @@ function generaHtmlContratto(contratto: any, paziente: any, includeFirma = false
 
   <p style="margin-top:24px;"><strong>Letto, confermato e sottoscritto in ${luogo} il ${data}.</strong></p>
   <div class="field-row" style="margin-top:30px;">
-    <div class="field" style="flex:1;height:60px;"><span class="field-label">Timbro e firma Agenzia</span></div>
-    <div class="field" style="flex:1;height:60px;"><span class="field-label">Firma del Committente</span></div>
+    <div style="flex:1;text-align:center;">
+      ${firmaCellaImg}
+      <div class="field"><span class="field-label">Firma del Committente</span></div>
+    </div>
+    <div style="flex:1;text-align:center;">
+      <div style="min-height:64px;"></div>
+      <div class="field"><span class="field-label">Timbro e firma Agenzia</span></div>
+    </div>
   </div>
 
   ${firmaHtml}
@@ -185,9 +194,11 @@ function generaHtmlContrattoBadante(contratto: any, paziente: any, includeFirma 
         <p style="font-size:11px;color:#166534;margin:8px 0;background:#dcfce7;padding:8px;border-radius:4px;">
           <strong>Con la presente firma</strong> dichiaro di aver letto e accettato il presente contratto e l'informativa GDPR al trattamento dei dati personali.
         </p>
-        <img src="${firmaImg}" alt="Firma" style="max-width:220px;max-height:80px;border:1px solid #d1d5db;margin-top:8px;" />
       </div>`
     : '';
+  const firmaCellaImg = includeFirma && firmaImg
+    ? `<img src="${firmaImg}" alt="Firma" style="max-width:200px;max-height:60px;display:block;margin:0 auto 4px;" />`
+    : '<div style="min-height:34px;"></div>';
 
   return `<!DOCTYPE html>
 <html lang="it">
@@ -302,8 +313,14 @@ function generaHtmlContrattoBadante(contratto: any, paziente: any, includeFirma 
   <p style="margin-top:18px;"><strong>Luogo e Data:</strong> ${luogo}, lì ${data}</p>
 
   <div class="sign-row">
-    <div class="sign-cell">Firma del Committente (Famiglia)</div>
-    <div class="sign-cell">Per <strong>ABBRACCIO CURE DOMICILIARI S.R.L.S.</strong><br/>(Legale Rappresentante: SCHEMBRI SIMONA)</div>
+    <div style="flex:1;text-align:center;">
+      ${firmaCellaImg}
+      <div class="sign-cell">Firma del Committente (Famiglia)</div>
+    </div>
+    <div style="flex:1;text-align:center;">
+      <div style="min-height:64px;"></div>
+      <div class="sign-cell">Per <strong>ABBRACCIO CURE DOMICILIARI S.R.L.S.</strong><br/>(Legale Rappresentante: SCHEMBRI SIMONA)</div>
+    </div>
   </div>
 
   ${firmaHtml}
@@ -684,6 +701,43 @@ router.post('/:id/invia-email', authenticateToken, authorizeRole(...RUOLI_GESTIO
   } catch (error: any) {
     console.error('[Contratti pazienti invia-email] Errore:', error);
     return res.status(500).json({ message: "Errore nell'invio dell'email", error: error.message });
+  }
+});
+
+// POST /api/contratti-pazienti/:id/invia-whatsapp — prepara il link firma per WhatsApp
+// e archivia l'invio in cronologia (il messaggio parte dal telefono dell'operatore via wa.me)
+router.post('/:id/invia-whatsapp', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('contratti_pazienti', 'UPDATE'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { telefono } = req.body || {};
+    const contratto = await ContrattoPaziente.findById(req.params.id).populate('patient', 'firstName lastName contactPhone');
+    if (!contratto) return res.status(404).json({ message: 'Contratto non trovato' });
+    if (!contratto.token) {
+      contratto.token = crypto.randomBytes(32).toString('hex');
+      await contratto.save();
+    }
+    const paziente: any = contratto.patient || {};
+    const nomePaziente = `${paziente.firstName || ''} ${paziente.lastName || ''}`.trim() || 'Cliente';
+    const frontendUrl = (process.env.FRONTEND_URL || 'https://app.abbracciocuredomiciliari.it').replace(/\/$/, '');
+    const firmaUrl = `${frontendUrl}/firma-contratto-paziente?token=${contratto.token}`;
+    const testo = `Gentile ${nomePaziente}, le inviamo il link per leggere e firmare online il contratto d'incarico, l'informativa GDPR e il preventivo Abbraccio Cure Domiciliari (importo € ${Number(contratto.importo || 0).toFixed(2).replace('.', ',')}): ${firmaUrl}`;
+
+    const numero = telefono ? String(telefono).replace(/[^\d]/g, '') : '';
+    await PreventivoInviato.create({
+      area: 'intermediazione',
+      tipo: 'contratto_firma',
+      canale: 'whatsapp',
+      contrattoId: String(contratto._id),
+      nomeCliente: nomePaziente,
+      telefono: numero || undefined,
+      totale: Number(contratto.importo) || undefined,
+      testoInviato: testo,
+      inviatoDa: (req as any).user?.name || undefined,
+    });
+
+    return res.json({ firmaUrl, testo, telefono: numero || paziente.contactPhone || '' });
+  } catch (error: any) {
+    console.error('[Contratti pazienti invia-whatsapp] Errore:', error);
+    return res.status(500).json({ message: 'Errore preparazione invio WhatsApp', error: error.message });
   }
 });
 

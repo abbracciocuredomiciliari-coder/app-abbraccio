@@ -60,13 +60,20 @@ router.post('/preview', rateLimitByIP(120, 15 * 60 * 1000), async (req: Request,
 // POST /api/landing-badante/richiesta — invio contatto + preventivo
 router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request, res: Response) => {
   try {
-    const { nome, telefono, email, messaggio, utm } = req.body || {};
+    const { nome, telefono, email, messaggio, utm, citta, indirizzo } = req.body || {};
     if (!nome || !String(nome).trim()) {
       return res.status(400).json({ message: 'Nome obbligatorio' });
     }
     if (!telefono || !String(telefono).trim()) {
       return res.status(400).json({ message: 'Numero di telefono obbligatorio' });
     }
+    if (!citta || !String(citta).trim()) {
+      return res.status(400).json({ message: 'Città obbligatoria' });
+    }
+    if (!indirizzo || !String(indirizzo).trim()) {
+      return res.status(400).json({ message: 'Indirizzo obbligatorio (via e numero civico)' });
+    }
+    const indirizzoCompleto = `${String(indirizzo).trim().slice(0, 160)}, ${String(citta).trim().slice(0, 80)}`;
     const emailPulita = String(email || '').trim().toLowerCase();
     if (emailPulita && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailPulita)) {
       return res.status(400).json({ message: 'Email non valida' });
@@ -95,7 +102,7 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
         firstName,
         lastName,
         birthDate: new Date('1900-01-01'),
-        address: 'Da definire',
+        address: indirizzoCompleto,
         assistanceNeeds: 'Intermediazione badante/colf — contatto da landing page pubblica',
         contactPhone: String(telefono).trim(),
         email: emailPulita || undefined,
@@ -105,6 +112,7 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
       });
     } else {
       if (!paziente.contactPhone) paziente.contactPhone = String(telefono).trim();
+      if (!paziente.address || paziente.address === 'Da definire') paziente.address = indirizzoCompleto;
       paziente.inAccettazione = true;
       await paziente.save();
     }
@@ -136,7 +144,7 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
       richiedenteTelefono: String(telefono).trim(),
       pazienteId: paziente._id,
       pazienteNome: `${paziente.firstName} ${paziente.lastName}`,
-      pazienteIndirizzo: 'Da definire',
+      pazienteIndirizzo: indirizzoCompleto,
       pazienteTelefono: String(telefono).trim(),
       tipoServizio: 'intermediazione',
       tipoSpecifico: `Preventivo ${sim.contrattoLabel} ${sim.livelloLabel} — ${sim.oreSettimanali}h/sett`,
@@ -172,7 +180,8 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
             <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;width:150px;">Nome:</td><td style="padding:8px;">${esc(nome)}</td></tr>
             <tr><td style="padding:8px;background:#fff7ed;font-weight:bold;">Telefono:</td><td style="padding:8px;">${esc(telefono)}</td></tr>
             <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;">Email:</td><td style="padding:8px;">${esc(emailPulita) || '—'}</td></tr>
-            ${messaggio ? `<tr><td style="padding:8px;background:#fff7ed;font-weight:bold;">Messaggio:</td><td style="padding:8px;">${esc(messaggio)}</td></tr>` : ''}
+            <tr><td style="padding:8px;background:#fff7ed;font-weight:bold;">Indirizzo:</td><td style="padding:8px;">${esc(indirizzoCompleto)}</td></tr>
+            ${messaggio ? `<tr><td style="padding:8px;background:#f8fafc;font-weight:bold;">Messaggio:</td><td style="padding:8px;">${esc(messaggio)}</td></tr>` : ''}
             ${utmString ? `<tr><td style="padding:8px;background:#f8fafc;font-weight:bold;">Campagna:</td><td style="padding:8px;font-family:monospace;">${esc(utmString)}</td></tr>` : ''}
           </table>
           <h3 style="color:#1e4d8c;font-size:1rem;">Preventivo calcolato</h3>

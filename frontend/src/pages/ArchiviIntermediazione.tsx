@@ -38,8 +38,9 @@ interface ConsensoGdprRow {
 
 interface PreventivoInviato {
   _id: string;
-  tipo: 'preventivo_veloce' | 'costo_badante';
+  tipo: 'preventivo_veloce' | 'costo_badante' | 'contratto_firma';
   canale: 'whatsapp' | 'email';
+  contrattoId?: string;
   nomeCliente?: string;
   email?: string;
   telefono?: string;
@@ -197,6 +198,21 @@ export default function ArchiviIntermediazione() {
     }
   }
 
+  // Invia il link firma via WhatsApp: il server prepara testo+link e archivia l'invio in cronologia
+  async function inviaWhatsAppContratto(contratto: ContrattoCollegato) {
+    const tel = window.prompt('Numero WhatsApp del destinatario (vuoto = scegli il contatto in WhatsApp)', '');
+    if (tel === null) return;
+    try {
+      const { data } = await api.post(`/contratti-pazienti/${contratto._id}/invia-whatsapp`, { telefono: tel });
+      const numero = String(data.telefono || '').replace(/[^\d]/g, '');
+      const wa = numero ? `https://wa.me/${numero.startsWith('39') ? numero : `39${numero}`}` : 'https://wa.me/';
+      window.open(`${wa}?text=${encodeURIComponent(data.testo)}`, '_blank');
+      setTimeout(carica, 1500);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore invio WhatsApp');
+    }
+  }
+
   // Reinvia su WhatsApp lo stesso testo archiviato (wa.me non può allegare il PDF)
   async function reinviaWhatsAppInviato(inv: PreventivoInviato) {
     const tel = window.prompt('Numero WhatsApp del destinatario', inv.telefono || '');
@@ -208,6 +224,7 @@ export default function ArchiviIntermediazione() {
       const wa = numero ? `https://wa.me/${numero.startsWith('39') ? numero : `39${numero}`}` : 'https://wa.me/';
       api.post('/preventivi-inviati', {
         area: 'intermediazione', tipo: inv.tipo, canale: 'whatsapp',
+        contrattoId: inv.contrattoId,
         nomeCliente: inv.nomeCliente, telefono: numero || undefined,
         totale: inv.totale, testoInviato: testo, simulazione: inv.simulazione,
       }).catch(() => {});
@@ -302,9 +319,14 @@ export default function ArchiviIntermediazione() {
                             </Button>
                           )}
                           {c && c.stato !== 'firmato' && (
-                            <Button size="sm" variant="secondary" onClick={() => inviaFirmaContratto(c)}>
-                              <Mail size={14} className="tw-inline" /> Invia
-                            </Button>
+                            <>
+                              <Button size="sm" variant="secondary" onClick={() => inviaFirmaContratto(c)}>
+                                <Mail size={14} className="tw-inline" /> Invia
+                              </Button>
+                              <Button size="sm" variant="secondary" onClick={() => inviaWhatsAppContratto(c)} className="tw-text-green-700">
+                                <MessageCircle size={14} className="tw-inline" />
+                              </Button>
+                            </>
                           )}
                           {c && (
                             <Button size="sm" variant="secondary" className="tw-text-red-600" onClick={() => eliminaContratto(c)}>
@@ -363,10 +385,10 @@ export default function ArchiviIntermediazione() {
 
         <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
           <h2 className="tw-text-sm tw-font-bold tw-text-slate-600 tw-uppercase tw-mb-1 tw-flex tw-items-center tw-gap-2">
-            <Send size={16} /> Costi preventivi inviati senza paziente
+            <Send size={16} /> Cronologia invii WhatsApp / Email
           </h2>
           <p className="tw-text-xs tw-text-slate-400 tw-mb-3 tw-mt-0">
-            Costi del simulatore inviati via WhatsApp o email senza creare il paziente: se il cliente accetta, qui ritrovi cosa gli era stato mandato.
+            Preventivi, costi del simulatore e contratti per firma inviati via WhatsApp o email: qui ritrovi cosa è stato mandato, a chi e quando.
           </p>
           {inviati.length === 0 ? (
             <div className="tw-text-sm tw-text-slate-400">Nessun costo inviato senza paziente.</div>
@@ -405,20 +427,26 @@ export default function ArchiviIntermediazione() {
                           </span>
                         </td>
                         <td className="tw-py-2 tw-pr-3 tw-text-slate-500 tw-text-xs">
-                          {sim ? `${sim.contrattoLabel || ''} — ${sim.livelloLabel || ''}${sim.oreSettimanali ? `, ${sim.oreSettimanali}h/sett` : ''}` : '—'}
+                          {inv.tipo === 'contratto_firma'
+                            ? <span className="tw-font-semibold tw-text-slate-600">📄 Contratto + GDPR + preventivo per firma</span>
+                            : sim ? `${sim.contrattoLabel || ''} — ${sim.livelloLabel || ''}${sim.oreSettimanali ? `, ${sim.oreSettimanali}h/sett` : ''}` : (inv.tipo === 'preventivo_veloce' ? 'Preventivo veloce' : '—')}
                           {inv.simulazione?.escludiTfrTredicesima && <div className="tw-text-[11px] tw-text-slate-400">TFR/13ª esclusi{inv.simulazione.cafMensile !== undefined ? ` · CAF ${euro(inv.simulazione.cafMensile)}` : ''}</div>}
                         </td>
                         <td className="tw-py-2 tw-pr-3 tw-text-right tw-font-bold tw-text-emerald-700">{inv.totale !== undefined ? euro(inv.totale) : '—'}</td>
                         <td className="tw-py-2 tw-flex tw-gap-2 tw-flex-wrap">
-                          <Button size="sm" variant="secondary" onClick={() => pdfInviato(inv, true)}>
-                            <Eye size={14} className="tw-inline" /> PDF
-                          </Button>
-                          <Button size="sm" variant="secondary" onClick={() => pdfInviato(inv, false)}>
-                            <Download size={14} className="tw-inline" />
-                          </Button>
-                          <Button size="sm" variant="secondary" onClick={() => reinviaEmailInviato(inv)}>
-                            <Mail size={14} className="tw-inline" /> Reinvia
-                          </Button>
+                          {inv.tipo !== 'contratto_firma' && (
+                            <>
+                              <Button size="sm" variant="secondary" onClick={() => pdfInviato(inv, true)}>
+                                <Eye size={14} className="tw-inline" /> PDF
+                              </Button>
+                              <Button size="sm" variant="secondary" onClick={() => pdfInviato(inv, false)}>
+                                <Download size={14} className="tw-inline" />
+                              </Button>
+                              <Button size="sm" variant="secondary" onClick={() => reinviaEmailInviato(inv)}>
+                                <Mail size={14} className="tw-inline" /> Reinvia
+                              </Button>
+                            </>
+                          )}
                           <Button size="sm" variant="secondary" onClick={() => reinviaWhatsAppInviato(inv)} className="tw-text-green-700">
                             <MessageCircle size={14} className="tw-inline" />
                           </Button>

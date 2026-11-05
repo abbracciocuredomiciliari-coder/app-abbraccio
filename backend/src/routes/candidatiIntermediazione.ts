@@ -51,6 +51,12 @@ router.post('/pubblica', rateLimitByIP(10, 60 * 60 * 1000), upload.single('docum
     if (!RUOLO_LABEL[ruolo]) {
       return res.status(400).json({ message: 'Ruolo non valido.' });
     }
+    if (!s(body.cittaResidenza)) {
+      return res.status(400).json({ message: 'La città di residenza è obbligatoria.' });
+    }
+    if (!s(body.indirizzoResidenza)) {
+      return res.status(400).json({ message: "L'indirizzo di residenza (via e numero civico) è obbligatorio." });
+    }
 
     let documentoPath: string | undefined;
     let documentoNome: string | undefined;
@@ -85,6 +91,7 @@ router.post('/pubblica', rateLimitByIP(10, 60 * 60 * 1000), upload.single('docum
       email: s(body.email).toLowerCase() || undefined,
       regioneResidenza: s(body.regioneResidenza) || undefined,
       cittaResidenza: s(body.cittaResidenza) || undefined,
+      indirizzoResidenza: s(body.indirizzoResidenza) || undefined,
       regioneInteresse: s(body.regioneInteresse) || undefined,
       cittaInteresse: s(body.cittaInteresse) || undefined,
       disponibilita: ['diurno', 'notturno', 'h24'].includes(s(body.disponibilita)) ? s(body.disponibilita) : undefined,
@@ -284,7 +291,9 @@ router.patch('/:id/accetta', authenticateToken, authorizeRole(...RUOLI_GESTIONE)
       phone: c.telefono,
       codiceFiscale: c.codiceFiscale,
       cittaResidenza: c.cittaResidenza || c.cittaInteresse,
-      indirizzoResidenza: [c.cittaResidenza, c.regioneResidenza].filter(Boolean).join(', ') || undefined,
+      indirizzoResidenza: c.indirizzoResidenza || [c.cittaResidenza, c.regioneResidenza].filter(Boolean).join(', ') || undefined,
+      disponibilita: c.disponibilita,
+      residenzaPressoFamiglia: c.residenzaPressoFamiglia,
       note: noteStaff || undefined,
       modalitaAbilitata: SANITARI_PRIVATA.includes(c.ruolo) ? 'privato' : 'intermediazione',
       areaIntermediazione: !SANITARI_PRIVATA.includes(c.ruolo),
