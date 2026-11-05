@@ -117,6 +117,7 @@ import {
   Tag,
   Building2,
   ArrowLeftRight,
+  ChevronDown,
   Syringe,
   Map,
   Home,
@@ -141,6 +142,7 @@ function AppShell() {
   const { modalita, setModalita, isConvenzione, isConsulenza, isOrganizzativa, modalitaAbilitata, canSwitch } = useModalita();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [modalitaMenuOpen, setModalitaMenuOpen] = useState(false);
   const { toasts, removeToast } = useToast();
 
   const isActive = (path: string) => location.pathname === path;
@@ -195,46 +197,83 @@ function AppShell() {
         </button>
         <div style={{ padding: '16px 12px 8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.15)', marginBottom: '8px' }}>
           <img src="/logo.png" alt="Abbraccio Cure Domiciliari" style={{ width: '100%', maxWidth: '160px', height: 'auto', display: 'block', margin: '0 auto' }} />
-          {/* Pulsante switch modalità */}
+          {/* Menu a tendina switch modalità */}
           {user && (
-            <button
-              type="button"
-              onClick={() => {
-                if (!canSwitch) return;
-                const ordine = ['privato', 'convenzione', 'consulenza', 'organizzativa'] as const;
-                const nomi = { privato: 'Gestione Privata', convenzione: 'Convenzione SIAT', consulenza: 'Intermediazioni', organizzativa: 'Procedure Organizzative' } as const;
-                const nuovaModalita = ordine[(ordine.indexOf(modalita) + 1) % ordine.length];
-                const msg = `Stai per passare da ${nomi[modalita]} a ${nomi[nuovaModalita]}.\n\nVuoi cambiare gestione?`;
-                if (window.confirm(msg)) setModalita(nuovaModalita);
-              }}
-              title={
-                !canSwitch
-                  ? `Abilitazione: solo ${modalitaAbilitata === 'privato' ? 'pazienti privati' : 'pazienti in convenzione'}`
-                  : 'Cambia area di lavoro'
-              }
-              style={{
-                marginTop: '12px',
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: '8px',
-                border: canSwitch ? 'none' : '1px solid rgba(255,255,255,0.15)',
-                cursor: canSwitch ? 'pointer' : 'not-allowed',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                fontWeight: '700',
-                fontSize: '0.8rem',
-                background: isConvenzione ? 'rgba(2, 132, 199, 0.25)' : 'rgba(255,255,255,0.1)',
-                color: !canSwitch ? 'rgba(255,255,255,0.35)' : isConvenzione ? '#7dd3fc' : 'rgba(255,255,255,0.7)',
-                transition: 'all 0.2s',
-                opacity: canSwitch ? 1 : 0.6,
-              }}
-            >
-              <ArrowLeftRight size={14} />
-              {isConvenzione ? '🏥 Convenzione SIAT' : isConsulenza ? '🤝 Intermediazioni' : isOrganizzativa ? '📋 Procedure Organizzative' : '👤 Gestione Privata'}
-              {!canSwitch && <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>🔒</span>}
-            </button>
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => { if (canSwitch) setModalitaMenuOpen(v => !v); }}
+                title={
+                  !canSwitch
+                    ? `Abilitazione: solo ${modalitaAbilitata === 'privato' ? 'pazienti privati' : 'pazienti in convenzione'}`
+                    : 'Cambia area di lavoro'
+                }
+                style={{
+                  marginTop: '12px',
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: canSwitch ? 'none' : '1px solid rgba(255,255,255,0.15)',
+                  cursor: canSwitch ? 'pointer' : 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  fontWeight: '700',
+                  fontSize: '0.8rem',
+                  background: isConvenzione ? 'rgba(2, 132, 199, 0.25)' : 'rgba(255,255,255,0.1)',
+                  color: !canSwitch ? 'rgba(255,255,255,0.35)' : isConvenzione ? '#7dd3fc' : 'rgba(255,255,255,0.7)',
+                  transition: 'all 0.2s',
+                  opacity: canSwitch ? 1 : 0.6,
+                }}
+              >
+                <ArrowLeftRight size={14} />
+                {isConvenzione ? '🏥 Convenzione SIAT' : isConsulenza ? '🤝 Intermediazioni' : isOrganizzativa ? '📋 Procedure Organizzative' : '👤 Gestione Privata'}
+                {canSwitch ? <ChevronDown size={13} style={{ marginLeft: 'auto' }} /> : <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>🔒</span>}
+              </button>
+              {canSwitch && modalitaMenuOpen && (
+                <>
+                  <div onClick={() => setModalitaMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 999 }} />
+                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '6px', background: '#ffffff', borderRadius: '10px', boxShadow: '0 8px 28px rgba(0,0,0,0.35)', overflow: 'hidden', zIndex: 1000 }}>
+                    {([
+                      ['privato', '👤', 'Gestione Privata'],
+                      ['convenzione', '🏥', 'Convenzione SIAT'],
+                      ['consulenza', '🤝', 'Intermediazioni'],
+                      ['organizzativa', '📋', 'Procedure Organizzative'],
+                    ] as const).map(([val, icona, nome]) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => {
+                          setModalitaMenuOpen(false);
+                          if (val === modalita) return;
+                          if (window.confirm(`Vuoi passare a ${nome}?`)) setModalita(val);
+                        }}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '11px 14px',
+                          border: 'none',
+                          borderBottom: '1px solid #f1f5f9',
+                          background: modalita === val ? '#eff6ff' : '#ffffff',
+                          color: modalita === val ? '#1e4d8c' : '#334155',
+                          fontWeight: modalita === val ? 700 : 600,
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <span>{icona}</span>
+                        <span style={{ flex: 1 }}>{nome}</span>
+                        {modalita === val && <span style={{ color: '#1e4d8c', fontWeight: 800 }}>✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           )}
         </div>
         <nav onClick={() => setMenuOpen(false)}>
