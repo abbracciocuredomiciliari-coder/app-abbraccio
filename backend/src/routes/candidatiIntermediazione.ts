@@ -51,6 +51,12 @@ router.post('/pubblica', rateLimitByIP(10, 60 * 60 * 1000), upload.single('docum
     if (!RUOLO_LABEL[ruolo]) {
       return res.status(400).json({ message: 'Ruolo non valido.' });
     }
+    if (!s(body.telefono)) {
+      return res.status(400).json({ message: 'Il telefono è obbligatorio: serve per ricontattarti.' });
+    }
+    if (!/^[\d+\s().-]{6,20}$/.test(s(body.telefono)!)) {
+      return res.status(400).json({ message: 'Numero di telefono non valido.' });
+    }
     if (!s(body.cittaResidenza)) {
       return res.status(400).json({ message: 'La città di residenza è obbligatoria.' });
     }
@@ -60,6 +66,20 @@ router.post('/pubblica', rateLimitByIP(10, 60 * 60 * 1000), upload.single('docum
     }
     if (!s(body.indirizzoResidenza)) {
       return res.status(400).json({ message: "L'indirizzo di residenza (via e numero civico) è obbligatorio." });
+    }
+    const tipoLavoro = s(body.tipoLavoro);
+    if (!['ore', 'convivenza'].includes(tipoLavoro)) {
+      return res.status(400).json({ message: 'Indica come vuoi lavorare: a giornata (ad ore) oppure in convivenza.' });
+    }
+    const disponibilitaScelta = ['diurno', 'notturno', 'h24'].includes(s(body.disponibilita)) ? s(body.disponibilita) : undefined;
+    if (tipoLavoro === 'ore' && !disponibilitaScelta) {
+      return res.status(400).json({ message: 'Indica la disponibilità oraria: diurno, solo notturno o h24.' });
+    }
+    if (!s(body.cittaInteresse)) {
+      return res.status(400).json({ message: 'La città/zona di lavoro è obbligatoria: selezionala dai suggerimenti.' });
+    }
+    if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s'.-]{3,}$/.test(s(body.cittaInteresse)!)) {
+      return res.status(400).json({ message: 'Città di lavoro non valida: selezionala dai suggerimenti.' });
     }
 
     let documentoPath: string | undefined;
@@ -98,8 +118,9 @@ router.post('/pubblica', rateLimitByIP(10, 60 * 60 * 1000), upload.single('docum
       indirizzoResidenza: s(body.indirizzoResidenza) || undefined,
       regioneInteresse: s(body.regioneInteresse) || undefined,
       cittaInteresse: s(body.cittaInteresse) || undefined,
-      disponibilita: ['diurno', 'notturno', 'h24'].includes(s(body.disponibilita)) ? s(body.disponibilita) : undefined,
-      residenzaPressoFamiglia: b(body.residenzaPressoFamiglia),
+      tipoLavoro,
+      disponibilita: tipoLavoro === 'convivenza' ? 'h24' : disponibilitaScelta,
+      residenzaPressoFamiglia: tipoLavoro === 'convivenza' ? true : b(body.residenzaPressoFamiglia),
       certificato: b(body.certificato),
       esperienze: s(body.esperienze) || undefined,
       note: s(body.note) || undefined,
@@ -280,6 +301,7 @@ router.patch('/:id/accetta', authenticateToken, authorizeRole(...RUOLI_GESTIONE)
       c.note ? `Note: ${c.note}` : '',
       c.nazionalita ? `Nazionalità: ${c.nazionalita}` : '',
       c.extraUe ? `Permesso di soggiorno: ${c.permessoSoggiorno || 'da verificare'}` : '',
+      c.tipoLavoro === 'convivenza' ? 'Lavoro: convivenza' : c.tipoLavoro === 'ore' ? 'Lavoro: giornata ad ore' : '',
       c.disponibilita ? `Disponibilità: ${c.disponibilita}${c.disponibilita === 'h24' && c.residenzaPressoFamiglia ? ' (residente presso famiglia)' : ''}` : '',
       c.certificato ? 'Lavoratore certificato' : '',
       c.albo ? `Ordine/Albo: ${c.albo}` : '',
@@ -296,6 +318,7 @@ router.patch('/:id/accetta', authenticateToken, authorizeRole(...RUOLI_GESTIONE)
       codiceFiscale: c.codiceFiscale,
       cittaResidenza: c.cittaResidenza || c.cittaInteresse,
       indirizzoResidenza: c.indirizzoResidenza || [c.cittaResidenza, c.regioneResidenza].filter(Boolean).join(', ') || undefined,
+      tipoLavoro: c.tipoLavoro,
       disponibilita: c.disponibilita,
       residenzaPressoFamiglia: c.residenzaPressoFamiglia,
       note: noteStaff || undefined,

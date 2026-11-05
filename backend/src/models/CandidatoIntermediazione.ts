@@ -29,6 +29,7 @@ export interface ICandidatoIntermediazione extends Document {
   indirizzoResidenza?: string;        // via e numero civico — obbligatorio all'iscrizione
   regioneInteresse?: string;          // regione/città dove vorrebbe lavorare
   cittaInteresse?: string;
+  tipoLavoro?: 'ore' | 'convivenza';  // obbligatorio: lavoro a giornata ad ore o convivenza
   disponibilita?: 'diurno' | 'notturno' | 'h24';
   residenzaPressoFamiglia?: boolean;  // se h24: disponibile a vivere presso la famiglia
   certificato?: boolean;              // lavoratore con certificazione (es. corso OSS)
@@ -63,6 +64,7 @@ const schema = new Schema<ICandidatoIntermediazione>(
     indirizzoResidenza: { type: String, trim: true },
     regioneInteresse: { type: String, trim: true },
     cittaInteresse: { type: String, trim: true },
+    tipoLavoro: { type: String, enum: ['ore', 'convivenza'] },
     disponibilita: { type: String, enum: ['diurno', 'notturno', 'h24'] },
     residenzaPressoFamiglia: { type: Boolean, default: false },
     certificato: { type: Boolean, default: false },

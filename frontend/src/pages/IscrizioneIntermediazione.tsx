@@ -98,8 +98,9 @@ export default function IscrizioneIntermediazione() {
   const [indirizzoResidenza, setIndirizzoResidenza] = useState('');
   const [regioneInteresse, setRegioneInteresse] = useState('');
   const [cittaInteresse, setCittaInteresse] = useState('');
+  const [cittaInteresseValida, setCittaInteresseValida] = useState(false);
+  const [tipoLavoro, setTipoLavoro] = useState<'' | 'ore' | 'convivenza'>('');
   const [disponibilita, setDisponibilita] = useState('');
-  const [residenzaFamiglia, setResidenzaFamiglia] = useState(false);
   const [certificato, setCertificato] = useState(false);
   const [esperienze, setEsperienze] = useState('');
   const [note, setNote] = useState('');
@@ -118,6 +119,11 @@ export default function IscrizioneIntermediazione() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
+    if (!telefono.trim()) {
+      setErrore('Il telefono è obbligatorio: serve per ricontattarti.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     if (!cittaResidenza.trim() || !indirizzoResidenza.trim()) {
       setErrore('Città e indirizzo di residenza sono obbligatori: senza non possiamo valutare la zona di lavoro.');
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -125,6 +131,21 @@ export default function IscrizioneIntermediazione() {
     }
     if (!cittaValida) {
       setErrore('Seleziona la città di residenza dai suggerimenti che appaiono scrivendo.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (!cittaInteresse.trim() || !cittaInteresseValida) {
+      setErrore('La città dove vuoi lavorare è obbligatoria: selezionala dai suggerimenti che appaiono scrivendo.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (!tipoLavoro) {
+      setErrore('Indica come vuoi lavorare: a giornata (ad ore) oppure in convivenza.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (tipoLavoro === 'ore' && !disponibilita) {
+      setErrore('Indica la disponibilità oraria: diurno, solo notturno o h24.');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -141,15 +162,21 @@ export default function IscrizioneIntermediazione() {
       fd.append('extraUe', String(extraUe));
       if (permessoSoggiorno) fd.append('permessoSoggiorno', permessoSoggiorno);
       if (codiceFiscale.trim()) fd.append('codiceFiscale', codiceFiscale.trim().toUpperCase());
-      if (telefono.trim()) fd.append('telefono', telefono.trim());
+      fd.append('telefono', telefono.trim());
       if (email.trim()) fd.append('email', email.trim());
       if (regioneResidenza) fd.append('regioneResidenza', regioneResidenza);
       fd.append('cittaResidenza', cittaResidenza.trim());
       fd.append('indirizzoResidenza', indirizzoResidenza.trim());
       if (regioneInteresse) fd.append('regioneInteresse', regioneInteresse);
-      if (cittaInteresse.trim()) fd.append('cittaInteresse', cittaInteresse.trim());
-      if (disponibilita) fd.append('disponibilita', disponibilita);
-      fd.append('residenzaPressoFamiglia', String(residenzaFamiglia));
+      fd.append('cittaInteresse', cittaInteresse.trim());
+      fd.append('tipoLavoro', tipoLavoro);
+      if (tipoLavoro === 'convivenza') {
+        fd.append('disponibilita', 'h24');
+        fd.append('residenzaPressoFamiglia', 'true');
+      } else {
+        if (disponibilita) fd.append('disponibilita', disponibilita);
+        fd.append('residenzaPressoFamiglia', 'false');
+      }
       fd.append('certificato', String(certificato));
       if (esperienze.trim()) fd.append('esperienze', esperienze.trim());
       if (note.trim()) fd.append('note', note.trim());
@@ -242,7 +269,7 @@ export default function IscrizioneIntermediazione() {
             </div>
           )}
           <div className="isc-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div><span style={label}>Telefono</span><input style={input} type="tel" value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="333 1234567" /></div>
+            <div><span style={label}>Telefono *</span><input style={input} type="tel" value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="333 1234567" required /></div>
             <div><span style={label}>Email</span><input style={input} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="nome@email.it" /></div>
           </div>
         </div>
@@ -301,24 +328,36 @@ export default function IscrizioneIntermediazione() {
                 {REGIONI.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
-            <div><span style={label}>Città / zona di lavoro</span><input style={input} value={cittaInteresse} onChange={e => setCittaInteresse(e.target.value)} placeholder="Es. Roma Eur" /></div>
+            <div><span style={label}>Città dove vuoi lavorare *</span><CittaAutocomplete value={cittaInteresse} onChange={(c, valida) => { setCittaInteresse(c); setCittaInteresseValida(valida); }} placeholder="Scrivi e scegli dai suggerimenti" required style={input} /></div>
           </div>
           <div>
-            <span style={label}>Disponibilità oraria</span>
+            <span style={label}>Come vuoi lavorare? *</span>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {[['diurno', '☀️ Diurno'], ['notturno', '🌙 Solo notturno'], ['h24', '🕐 Disponibile h24']].map(([v, l]) => (
-                <button key={v} type="button" onClick={() => setDisponibilita(disponibilita === v ? '' : v)}
-                  style={{ flex: 1, minWidth: '110px', padding: '10px', borderRadius: '10px', border: `2px solid ${disponibilita === v ? '#1e4d8c' : '#e2e8f0'}`, background: disponibilita === v ? '#eff6ff' : '#fff', color: disponibilita === v ? '#1e4d8c' : '#475569', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer' }}>
+              {([['ore', '⏰ Giorno ad ore'], ['convivenza', '🏠 Convivenza (abiti dalla famiglia)']] as const).map(([v, l]) => (
+                <button key={v} type="button" onClick={() => setTipoLavoro(v)}
+                  style={{ flex: 1, minWidth: '150px', padding: '12px', borderRadius: '10px', border: `2px solid ${tipoLavoro === v ? '#1e4d8c' : '#e2e8f0'}`, background: tipoLavoro === v ? '#eff6ff' : '#fff', color: tipoLavoro === v ? '#1e4d8c' : '#475569', fontWeight: 700, fontSize: '0.92rem', cursor: 'pointer' }}>
                   {l}
                 </button>
               ))}
             </div>
           </div>
-          {disponibilita === 'h24' && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: '#334155', marginTop: '10px', cursor: 'pointer', background: '#f0f9ff', padding: '10px', borderRadius: '8px', border: '1px solid #bae6fd' }}>
-              <input type="checkbox" checked={residenzaFamiglia} onChange={e => setResidenzaFamiglia(e.target.checked)} />
-              Sono disponibile ad abitare presso la famiglia (convivenza)
-            </label>
+          {tipoLavoro === 'ore' && (
+            <div style={{ marginTop: '10px' }}>
+              <span style={label}>Disponibilità oraria *</span>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {[['diurno', '☀️ Diurno'], ['notturno', '🌙 Solo notturno'], ['h24', '🕐 Disponibile h24']].map(([v, l]) => (
+                  <button key={v} type="button" onClick={() => setDisponibilita(disponibilita === v ? '' : v)}
+                    style={{ flex: 1, minWidth: '110px', padding: '10px', borderRadius: '10px', border: `2px solid ${disponibilita === v ? '#1e4d8c' : '#e2e8f0'}`, background: disponibilita === v ? '#eff6ff' : '#fff', color: disponibilita === v ? '#1e4d8c' : '#475569', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer' }}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {tipoLavoro === 'convivenza' && (
+            <div style={{ marginTop: '10px', background: '#f0f9ff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #bae6fd', fontSize: '0.88rem', color: '#0c4a6e' }}>
+              🏠 Lavorerai <strong>vivendo presso la famiglia</strong> (convivenza, disponibilità h24).
+            </div>
           )}
         </div>
 

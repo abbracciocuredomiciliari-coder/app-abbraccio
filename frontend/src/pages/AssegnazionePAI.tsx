@@ -30,6 +30,7 @@ interface OperatoreInZona {
   note?: string;
   indirizzoResidenza?: string;
   cittaResidenza?: string;
+  tipoLavoro?: 'ore' | 'convivenza';
   disponibilita?: 'diurno' | 'notturno' | 'h24';
   residenzaPressoFamiglia?: boolean;
   domicilioPartenza?: string;
@@ -655,10 +656,13 @@ export default function AssegnazionePAI() {
       {/* ═══ MODALE SCHEDA PROFESSIONISTA (click sul pin mappa) ═══════════ */}
       {schedaOperatore && (() => {
         const o = schedaOperatore;
+        const tipoLabel = o.tipoLavoro === 'convivenza' ? '🏠 Convivenza'
+          : o.tipoLavoro === 'ore' ? '⏰ Giornata ad ore' : '';
         const dispLabel = o.disponibilita === 'h24'
           ? `🕐 Giorno e notte (H24)${o.residenzaPressoFamiglia ? ' — disponibile a convivere' : ''}`
           : o.disponibilita === 'notturno' ? '🌙 Solo notturno'
           : o.disponibilita === 'diurno' ? '☀️ Diurno / a ore' : '—';
+        const disponibilitaLabel = tipoLabel ? `${tipoLabel} · ${dispLabel}` : dispLabel;
         const riga = (label: string, val?: string | null) => val ? (
           <div style={{ display: 'flex', gap: '8px', padding: '7px 0', borderBottom: '1px solid #f1f5f9', fontSize: '0.85rem' }}>
             <span style={{ minWidth: '110px', fontWeight: 700, color: '#64748b' }}>{label}</span>
@@ -676,7 +680,7 @@ export default function AssegnazionePAI() {
                 <button onClick={() => setSchedaOperatore(null)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '8px', width: '32px', height: '32px', cursor: 'pointer', fontSize: '1rem', color: '#64748b' }}>✕</button>
               </div>
               <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '10px', padding: '10px 12px', margin: '10px 0', fontSize: '0.85rem', color: '#0c4a6e' }}>
-                <strong>Disponibilità:</strong> {dispLabel}
+                <strong>Disponibilità:</strong> {disponibilitaLabel}
               </div>
               {riga('Città', o.cittaResidenza)}
               {riga('Indirizzo', o.indirizzoResidenza)}

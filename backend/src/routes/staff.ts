@@ -49,7 +49,7 @@ router.get('/zona', authenticateToken, authorizeRole('admin', 'coordinator', 'di
     }
 
     const tuttiStaff = await Staff.find(query).select(
-      'firstName lastName role category email phone note indirizzoResidenza cittaResidenza disponibilita residenzaPressoFamiglia domicilioPartenza domicilioCoords raggioAzioneKm modalitaAbilitata areaIntermediazione active'
+      'firstName lastName role category email phone note indirizzoResidenza cittaResidenza tipoLavoro disponibilita residenzaPressoFamiglia domicilioPartenza domicilioCoords raggioAzioneKm modalitaAbilitata areaIntermediazione active'
     );
 
     // toObject() non applica il transform toJSON: phone resta cifrato → decifro a mano
