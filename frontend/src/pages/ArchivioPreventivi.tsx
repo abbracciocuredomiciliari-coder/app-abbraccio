@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
 import api from '../api/api';
@@ -81,9 +82,13 @@ export default function ArchivioPreventivi() {
   const [showArchivio, setShowArchivio] = useState(true);
   const [showOnline, setShowOnline] = useState(true);
   const [showInviati, setShowInviati] = useState(true);
-  const [ricerca, setRicerca] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [ricerca, setRicerca] = useState(searchParams.get('q') || '');
+  // ?paziente=<id> — arriva dal dossier/storico: mostra SOLO i documenti di quel paziente
+  const pazienteFiltro = searchParams.get('paziente') || '';
 
   const filtraRicerca = (d: DocumentoFatturazione) => {
+    if (pazienteFiltro && String(d.patient?._id || '') !== pazienteFiltro) return false;
     if (!ricerca.trim()) return true;
     const q = ricerca.trim().toLowerCase();
     const nomeCompleto = `${d.patient?.firstName || ''} ${d.patient?.lastName || ''}`.toLowerCase();
@@ -104,6 +109,16 @@ export default function ArchivioPreventivi() {
       .filter(d => d.tipo === 'preventivo' && d.stato !== 'annullato' && d.riferimentoTipo === 'landing')
       .filter(filtraRicerca);
   }, [documenti, ricerca]);
+
+  // Invii WhatsApp/email filtrati dalla stessa ricerca (nome cliente, contatto, telefono)
+  const inviatiVisibili = useMemo(() => {
+    if (!ricerca.trim()) return inviati;
+    const q = ricerca.trim().toLowerCase();
+    return inviati.filter(i =>
+      (i.nomeCliente || '').toLowerCase().includes(q) ||
+      (i.email || '').toLowerCase().includes(q) ||
+      (i.telefono || '').includes(q));
+  }, [inviati, ricerca]);
 
   const caricaDocumenti = async () => {
     setLoading(true);
@@ -313,7 +328,7 @@ export default function ArchivioPreventivi() {
           <div onClick={() => setShowInviati(!showInviati)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
             <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#92400e' }}>
               <Send size={20} />Preventivi veloci inviati (senza paziente)
-              <span style={{ background: '#fef3c7', color: '#92400e', borderRadius: '20px', padding: '2px 10px', fontSize: '0.8rem' }}>{inviati.length}</span>
+              <span style={{ background: '#fef3c7', color: '#92400e', borderRadius: '20px', padding: '2px 10px', fontSize: '0.8rem' }}>{inviatiVisibili.length}</span>
             </h3>
             {showInviati ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
           </div>
@@ -322,7 +337,7 @@ export default function ArchivioPreventivi() {
               <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '10px 0 0' }}>
                 Inviati da <strong>Preventivo veloce</strong> via WhatsApp o email senza creare il paziente: se il cliente accetta, qui ritrovi cosa gli è stato mandato.
               </p>
-              {inviati.length === 0 ? (
+              {inviatiVisibili.length === 0 ? (
                 <p style={{ color: '#9ca3af', marginTop: '14px', marginBottom: 0 }}>Nessun preventivo inviato senza paziente.</p>
               ) : (
                 <div style={{ overflowX: 'auto', marginTop: '14px' }}>
@@ -339,7 +354,7 @@ export default function ArchivioPreventivi() {
                       </tr>
                     </thead>
                     <tbody>
-                      {inviati.map(inv => (
+                      {inviatiVisibili.map(inv => (
                         <tr key={inv._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                           <td style={{ padding: '8px', whiteSpace: 'nowrap' }}>{formatData(inv.createdAt)}</td>
                           <td style={{ padding: '8px', fontWeight: 600 }}>{inv.nomeCliente || '—'}</td>
@@ -387,6 +402,12 @@ export default function ArchivioPreventivi() {
           </div>
           {showArchivio && (
             <>
+              {pazienteFiltro && (
+                <div style={{ marginTop: '12px', background: '#eff6ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '8px 12px', fontSize: '0.83rem', color: '#1e40af', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  🔎 Stai vedendo solo i documenti di questo paziente.
+                  <button type="button" onClick={() => { setSearchParams({}); setRicerca(''); }} style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: '#dc2626', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', fontSize: '0.8rem' }}>Mostra tutti</button>
+                </div>
+              )}
               <div style={{ marginTop: '14px', marginBottom: '4px' }}>
                 <input
                   type="text"

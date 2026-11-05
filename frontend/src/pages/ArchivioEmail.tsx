@@ -63,7 +63,9 @@ export default function ArchivioEmail() {
   const [totale, setTotale] = useState(0);
   const [tipi, setTipi] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [q, setQ] = useState('');
+  const [searchParams] = useSearchParams();
+  // ?q= — arriva dal dossier paziente / ricerca globale: filtra già sul destinatario
+  const [q, setQ] = useState(searchParams.get('q') || '');
   const [area, setArea] = useState('tutte');
   const [tipo, setTipo] = useState('tutti');
   const [esito, setEsito] = useState('tutti');
@@ -76,7 +78,6 @@ export default function ArchivioEmail() {
   const [loadingAllegato, setLoadingAllegato] = useState<string | null>(null);
 
   // Tab ricevute (apribile via /archivio-email?tab=ricevute)
-  const [searchParams] = useSearchParams();
   const [tab, setTab] = useState<'inviate' | 'ricevute'>(searchParams.get('tab') === 'ricevute' ? 'ricevute' : 'inviate');
   const [ricevute, setRicevute] = useState<EmailRicevutaItem[]>([]);
   const [totaleRicevute, setTotaleRicevute] = useState(0);

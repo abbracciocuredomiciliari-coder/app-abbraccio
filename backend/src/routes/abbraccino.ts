@@ -274,10 +274,13 @@ router.post('/interno', authenticateToken, rateLimitByIP(40, 10 * 60 * 1000), as
           .select('firstName lastName role category cittaResidenza').lean(),
       ]);
       const righe: string[] = [];
-      pz.forEach((p: any) => {
+      pz.slice(0, 2).forEach((p: any) => {
         const n = `${p.firstName} ${p.lastName}`;
         righe.push(`Paziente ${n} (${p.tipoGestione === 'consulenza' ? 'intermediazione' : p.tipoGestione === 'convenzione' ? 'convenzione SIAT' : 'privato'})`);
+        // Link SEMPRE filtrati sul paziente specifico: mai archivi generici
         azioni.unshift({ label: `👤 ${n} — storico completo`, url: `/ricerca?paziente=${p._id}` });
+        azioni.push({ label: `📄 Preventivi/fatture di ${p.lastName}`, url: `/archivio-preventivi?paziente=${p._id}` });
+        if (p.email) azioni.push({ label: `📧 Email a ${p.lastName}`, url: `/archivio-email?q=${encodeURIComponent(p.email)}` });
       });
       st.forEach((s: any) => {
         righe.push(`Operatore ${s.firstName} ${s.lastName} (${s.role || s.category || 'ruolo n/d'}, ${s.cittaResidenza || 'zona n/d'})`);

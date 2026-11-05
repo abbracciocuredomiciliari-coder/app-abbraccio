@@ -51,6 +51,18 @@ export default function RicercaGlobale() {
     if (input.trim().length >= 2) setParams({ q: input.trim() });
   };
 
+  // Apre il documento contratto del PAZIENTE (HTML stampabile) in una nuova
+  // scheda — mai la pagina dei contratti operatori.
+  const apriContratto = async (id: string) => {
+    try {
+      const res = await api.get(`/contratti-pazienti/${id}/pdf`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'text/html' }));
+      window.open(url, '_blank');
+    } catch {
+      alert('Errore nell\'apertura del contratto');
+    }
+  };
+
   const Sezione = ({ titolo, icona, count, children }: any) =>
     !count ? null : (
       <div className="tw-bg-white tw-rounded-xl tw-border tw-border-slate-200 tw-shadow-sm tw-mb-4 tw-overflow-hidden">
@@ -119,7 +131,7 @@ export default function RicercaGlobale() {
 
         <Sezione titolo="Preventivi e fatture" icona={<Receipt size={17} />} count={dossier.documenti.length}>
           {dossier.documenti.map((d: any) => (
-            <Riga key={d._id} onClick={() => navigate(d.tipo === 'fattura' ? '/archivio-fatture' : '/archivio-preventivi')}>
+            <Riga key={d._id} onClick={() => navigate(d.tipo === 'fattura' ? `/archivio-fatture?paziente=${p._id}` : `/archivio-preventivi?paziente=${p._id}`)}>
               <span className="tw-font-bold">{d.numero}</span>
               <Badge tone={d.tipo === 'fattura' ? 'blu' : 'giallo'}>{d.tipo}</Badge>
               <span>{fmtEuro(d.totale)}</span>
@@ -143,7 +155,7 @@ export default function RicercaGlobale() {
 
         <Sezione titolo="Contratti" icona={<FileText size={17} />} count={dossier.contratti.length}>
           {dossier.contratti.map((c: any) => (
-            <Riga key={c._id} onClick={() => navigate('/gestione-contratti')}>
+            <Riga key={c._id} onClick={() => apriContratto(c._id)}>
               <span className="tw-font-semibold">{c.profilo}</span>
               <Badge tone={c.stato === 'firmato' ? 'verde' : 'giallo'}>{c.stato || 'bozza'}</Badge>
               {c.firmatoIl && <span className="tw-text-slate-500">firmato il {fmtData(c.firmatoIl)}</span>}
@@ -154,9 +166,11 @@ export default function RicercaGlobale() {
 
         <Sezione titolo="Invii preventivi/contratti (WhatsApp · Email)" icona={<Handshake size={17} />} count={dossier.invii.length}>
           {dossier.invii.map((i: any) => (
-            <Riga key={i._id} onClick={() => navigate('/archivi-intermediazione')}>
+            <Riga key={i._id} onClick={() => navigate(isConsulenza
+              ? `/archivi-intermediazione?paziente=${p._id}&nome=${encodeURIComponent(p.nome)}`
+              : `/archivio-preventivi?q=${encodeURIComponent(p.nome)}`)}>
               <Badge tone="blu">{i.canale}</Badge>
-              <span className="tw-font-semibold">{i.tipo === 'contratto' ? 'Contratto' : 'Preventivo'}</span>
+              <span className="tw-font-semibold">{i.tipo === 'contratto_firma' ? 'Contratto' : 'Preventivo'}</span>
               {i.totale ? <span>{fmtEuro(i.totale)}</span> : null}
               {i.inviatoDa && <span className="tw-text-slate-500">da {i.inviatoDa}</span>}
               <span className="tw-text-slate-500">{fmtData(i.data)}</span>
@@ -187,7 +201,7 @@ export default function RicercaGlobale() {
 
         <Sezione titolo="Email" icona={<Mail size={17} />} count={dossier.email.length}>
           {dossier.email.map((e: any) => (
-            <Riga key={e._id} onClick={() => navigate('/archivio-email')}>
+            <Riga key={e._id} onClick={() => navigate(`/archivio-email?q=${encodeURIComponent(e.to || p.email || p.nome)}`)}>
               <span className="tw-font-semibold tw-truncate tw-max-w-[55%]">{e.subject}</span>
               <Badge tone={e.esito === 'inviata' ? 'verde' : 'rosso'}>{e.tipo}</Badge>
               {e.allegati > 0 && <span className="tw-text-slate-500">📎{e.allegati}</span>}
@@ -202,6 +216,17 @@ export default function RicercaGlobale() {
               <span className="tw-font-semibold">{c.titolo}</span>
               <Badge tone={c.priorita === 'urgente' ? 'rosso' : 'slate'}>{c.stato.replace(/_/g, ' ')}</Badge>
               <span className="tw-text-slate-500">{fmtData(c.data)}</span>
+            </Riga>
+          ))}
+        </Sezione>
+
+        <Sezione titolo="Consensi GDPR" icona={<FileText size={17} />} count={dossier.gdpr?.length || 0}>
+          {(dossier.gdpr || []).map((g: any) => (
+            <Riga key={g._id} onClick={isConsulenza ? () => navigate(`/archivi-intermediazione?paziente=${p._id}&nome=${encodeURIComponent(p.nome)}`) : undefined}>
+              <span className="tw-font-semibold">{g.firmatario || 'Firmatario'}</span>
+              <Badge tone={g.revocato ? 'rosso' : 'verde'}>{g.revocato ? 'Revocato' : 'Valido'}</Badge>
+              {g.contesto && <Badge>{g.contesto}</Badge>}
+              <span className="tw-text-slate-500">{fmtData(g.dataFirma)}</span>
             </Riga>
           ))}
         </Sezione>
@@ -293,7 +318,7 @@ export default function RicercaGlobale() {
 
           <Sezione titolo="Contratti" icona={<FileText size={17} />} count={dati.contratti.length}>
             {dati.contratti.map((c: any) => (
-              <Riga key={c._id} onClick={() => c.pazienteId && setParams({ paziente: c.pazienteId })}>
+              <Riga key={c._id} onClick={() => apriContratto(c._id)}>
                 <span className="tw-font-semibold">{c.paziente}</span>
                 <span className="tw-text-slate-600">{c.profilo}</span>
                 <Badge tone={c.stato === 'firmato' ? 'verde' : 'giallo'}>{c.stato || 'bozza'}</Badge>
@@ -315,7 +340,7 @@ export default function RicercaGlobale() {
 
           <Sezione titolo="Email" icona={<Mail size={17} />} count={dati.email.length}>
             {dati.email.map((e: any) => (
-              <Riga key={e._id} onClick={() => navigate('/archivio-email')}>
+              <Riga key={e._id} onClick={() => navigate(`/archivio-email?q=${encodeURIComponent(e.to)}`)}>
                 <span className="tw-font-semibold tw-truncate tw-max-w-[55%]">{e.subject}</span>
                 <span className="tw-text-slate-500">→ {e.to}</span>
                 <Badge tone={e.esito === 'inviata' ? 'verde' : 'rosso'}>{e.tipo}</Badge>

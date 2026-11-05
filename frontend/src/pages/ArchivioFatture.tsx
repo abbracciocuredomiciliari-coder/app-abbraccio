@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
 import api from '../api/api';
@@ -52,10 +53,14 @@ export default function ArchivioFatture() {
   const [documenti, setDocumenti] = useState<DocumentoFatturazione[]>([]);
   const [loading, setLoading] = useState(true);
   const [showArchivio, setShowArchivio] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+  // ?paziente=<id> — arriva dal dossier/storico: mostra SOLO le fatture di quel paziente
+  const pazienteFiltro = searchParams.get('paziente') || '';
 
   const archivioFatture = useMemo(
-    () => documenti.filter(d => d.tipo === 'fattura' && (d.stato === 'emesso' || d.stato === 'firmato')),
-    [documenti]
+    () => documenti.filter(d => d.tipo === 'fattura' && (d.stato === 'emesso' || d.stato === 'firmato')
+      && (!pazienteFiltro || String(d.patient?._id || '') === pazienteFiltro)),
+    [documenti, pazienteFiltro]
   );
 
   const caricaDocumenti = async () => {
@@ -181,6 +186,12 @@ export default function ArchivioFatture() {
             </h3>
             {showArchivio ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
           </div>
+          {showArchivio && pazienteFiltro && (
+            <div style={{ marginTop: '12px', background: '#eff6ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '8px 12px', fontSize: '0.83rem', color: '#1e40af', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              🔎 Stai vedendo solo le fatture di questo paziente.
+              <button type="button" onClick={() => setSearchParams({})} style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: '#dc2626', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', fontSize: '0.8rem' }}>Mostra tutte</button>
+            </div>
+          )}
           {showArchivio && (
             archivioFatture.length === 0 ? (
               <p style={{ color: '#9ca3af', marginTop: '14px', marginBottom: 0 }}>Nessuna fattura archiviata.</p>

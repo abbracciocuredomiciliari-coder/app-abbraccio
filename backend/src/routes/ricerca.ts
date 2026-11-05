@@ -11,6 +11,7 @@ import BadanteIntermediazione from '../models/BadanteIntermediazione';
 import RichiestaPrenotazione from '../models/RichiestaPrenotazione';
 import EmailLog from '../models/EmailLog';
 import ConsegnaAmministrativa from '../models/ConsegnaAmministrativa';
+import ConsensoGDPR from '../models/ConsensoGDPR';
 import WorkPlan from '../models/WorkPlan';
 import CandidatoIntermediazione from '../models/CandidatoIntermediazione';
 
@@ -41,16 +42,20 @@ async function dossierPaziente(p: any) {
   const mailRegex = p.email ? escapeRegex(String(p.email).trim()) : null;
   const nomeRegex = cognome.length >= 3 ? new RegExp(escapeRegex(cognome), 'i') : null;
 
-  const [documenti, contratti, invii, richieste, badanti, piani, email, consegne] = await Promise.all([
+  // I contratti servono prima: gli invii WhatsApp/email del contratto sono
+  // collegati tramite contrattoId (PreventivoInviato non ha il campo patient).
+  const contratti = await ContrattoPaziente.find({ patient: pid }).sort({ createdAt: -1 }).limit(30)
+    .select('profilo stato dataFirma createdAt').lean();
+  const contrattoIds = contratti.map((c: any) => c._id);
+
+  const [documenti, invii, richieste, badanti, piani, email, consegne, gdpr] = await Promise.all([
     DocumentoFatturazione.find({ patient: pid }).sort({ createdAt: -1 }).limit(60)
       .select('numero tipo totale totaleMensileStimato stato data createdAt').lean(),
-    ContrattoPaziente.find({ patient: pid }).sort({ createdAt: -1 }).limit(30)
-      .select('profilo stato dataFirma createdAt').lean(),
     PreventivoInviato.find({
       $or: [
         ...(mailRegex ? [{ email: { $regex: `^${mailRegex}$`, $options: 'i' } }] : []),
         ...(nomeRegex ? [{ nomeCliente: nomeRegex }] : []),
-        { patient: pid },
+        ...(contrattoIds.length ? [{ contrattoId: { $in: contrattoIds } }] : []),
       ],
     }).sort({ createdAt: -1 }).limit(40).select('tipo canale nomeCliente telefono totale createdAt inviatoDa').lean(),
     RichiestaPrenotazione.find({
@@ -71,6 +76,8 @@ async function dossierPaziente(p: any) {
       ? ConsegnaAmministrativa.find({ riferimento: nomeRegex }).sort({ createdAt: -1 }).limit(30)
           .select('titolo tipo stato priorita autoreNome createdAt').lean()
       : Promise.resolve([]),
+    ConsensoGDPR.find({ patientId: String(pid) }).sort({ dataFirma: -1 }).limit(20)
+      .select('nomeFirmatario cognomeFirmatario dataFirma luogoFirma versioneInformativa contesto revocato').lean(),
   ]);
 
   return {
@@ -110,6 +117,11 @@ async function dossierPaziente(p: any) {
     })),
     consegne: consegne.map((c: any) => ({
       _id: c._id, titolo: c.titolo, tipo: c.tipo, stato: c.stato, priorita: c.priorita, data: c.createdAt,
+    })),
+    gdpr: gdpr.map((g: any) => ({
+      _id: g._id, firmatario: `${g.nomeFirmatario || ''} ${g.cognomeFirmatario || ''}`.trim(),
+      dataFirma: g.dataFirma, luogo: g.luogoFirma, versione: g.versioneInformativa,
+      contesto: g.contesto, revocato: !!g.revocato,
     })),
   };
 }

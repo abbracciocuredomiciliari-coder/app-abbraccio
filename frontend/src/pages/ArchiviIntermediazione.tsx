@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 import { FileText, Download, Mail, Users, Eye, Trash2, Receipt, Send, MessageCircle } from 'lucide-react';
@@ -17,7 +18,7 @@ interface ContrattoCollegato {
 
 interface RichiestaArchivio {
   _id: string;
-  patient?: { firstName: string; lastName: string; codiceFiscale?: string; email?: string } | null;
+  patient?: { _id?: string; firstName: string; lastName: string; codiceFiscale?: string; email?: string } | null;
   contrattoId?: ContrattoCollegato | string;
   preventivoPdfFileName?: string;
   fatturaId?: string;
@@ -27,7 +28,7 @@ interface RichiestaArchivio {
 
 interface ConsensoGdprRow {
   _id: string;
-  patient?: { firstName: string; lastName: string } | null;
+  patient?: { _id?: string; firstName: string; lastName: string } | null;
   nomeFirmatario?: string;
   cognomeFirmatario?: string;
   dataFirma?: string;
@@ -60,6 +61,10 @@ export default function ArchiviIntermediazione() {
   const [archivioGdpr, setArchivioGdpr] = useState<ConsensoGdprRow[]>([]);
   const [inviati, setInviati] = useState<PreventivoInviato[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+  // ?paziente=<id>&nome=<nome> — arriva dal dossier/storico: mostra SOLO i record di quel paziente
+  const pazienteFiltro = searchParams.get('paziente') || '';
+  const nomeFiltro = (searchParams.get('nome') || '').toLowerCase();
 
   useEffect(() => { carica(); }, []);
 
@@ -81,8 +86,23 @@ export default function ArchiviIntermediazione() {
     }
   }
 
+  // Filtro per paziente specifico (da ?paziente= / ?nome=)
+  const contrattiVisibili = pazienteFiltro
+    ? archivioContratti.filter(r => String(r.patient?._id || '') === pazienteFiltro)
+    : archivioContratti;
+  const gdprVisibili = pazienteFiltro
+    ? archivioGdpr.filter(g => String(g.patient?._id || '') === pazienteFiltro)
+    : archivioGdpr;
+  const contrattoIdsPaziente = new Set(contrattiVisibili.map(r =>
+    typeof r.contrattoId === 'object' ? r.contrattoId?._id : r.contrattoId).filter(Boolean));
+  const inviatiVisibili = (pazienteFiltro || nomeFiltro)
+    ? inviati.filter(inv =>
+        (inv.contrattoId && contrattoIdsPaziente.has(inv.contrattoId)) ||
+        (nomeFiltro && (inv.nomeCliente || '').toLowerCase().includes(nomeFiltro)))
+    : inviati;
+
   // Contratti firmati = preventivi accettati: segnalazione principale
-  const firmatiCount = archivioContratti.filter(r =>
+  const firmatiCount = contrattiVisibili.filter(r =>
     r.contrattoId && typeof r.contrattoId === 'object' && r.contrattoId.stato === 'firmato'
   ).length;
 
@@ -255,7 +275,7 @@ export default function ArchiviIntermediazione() {
             <div>
               <h1 className="tw-text-2xl tw-font-bold tw-text-slate-800">Archivi intermediazione</h1>
               <p className="tw-text-slate-500 tw-text-sm tw-m-0">
-                Contratti {archivioContratti.length} · GDPR {archivioGdpr.length}
+                Contratti {contrattiVisibili.length} · GDPR {gdprVisibili.length}
                 {firmatiCount > 0 && <span className="tw-text-green-700 tw-font-bold"> · {firmatiCount} firmati</span>}
               </p>
             </div>
@@ -267,9 +287,16 @@ export default function ArchiviIntermediazione() {
           )}
         </div>
 
+        {(pazienteFiltro || nomeFiltro) && (
+          <div className="tw-bg-blue-50 tw-border tw-border-sky-200 tw-rounded-xl tw-px-4 tw-py-3 tw-text-sm tw-text-blue-900 tw-flex tw-items-center tw-gap-2">
+            🔎 Stai vedendo solo i documenti di questo paziente.
+            <button type="button" onClick={() => setSearchParams({})} className="tw-ml-auto tw-bg-transparent tw-border-0 tw-text-red-600 tw-font-bold tw-cursor-pointer tw-underline">Mostra tutti</button>
+          </div>
+        )}
+
         <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
           <h2 className="tw-text-sm tw-font-bold tw-text-slate-600 tw-uppercase tw-mb-3">Archivio Preventivo + Contratto</h2>
-          {archivioContratti.length === 0 ? (
+          {contrattiVisibili.length === 0 ? (
             <div className="tw-text-sm tw-text-slate-400">Nessun contratto generato.</div>
           ) : (
             <div className="tw-overflow-x-auto">
@@ -284,7 +311,7 @@ export default function ArchiviIntermediazione() {
                   </tr>
                 </thead>
                 <tbody>
-                  {archivioContratti.map(r => {
+                  {contrattiVisibili.map(r => {
                     const c = r.contrattoId && typeof r.contrattoId === 'object' ? r.contrattoId : undefined;
                     const nomeP = r.patient ? `${r.patient.firstName} ${r.patient.lastName}` : '—';
                     return (
@@ -345,7 +372,7 @@ export default function ArchiviIntermediazione() {
 
         <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
           <h2 className="tw-text-sm tw-font-bold tw-text-slate-600 tw-uppercase tw-mb-3">Archivio GDPR Intermediazione</h2>
-          {archivioGdpr.length === 0 ? (
+          {gdprVisibili.length === 0 ? (
             <div className="tw-text-sm tw-text-slate-400">Nessun consenso GDPR raccolto dall'intermediazione.</div>
           ) : (
             <div className="tw-overflow-x-auto">
@@ -361,7 +388,7 @@ export default function ArchiviIntermediazione() {
                   </tr>
                 </thead>
                 <tbody>
-                  {archivioGdpr.map(g => (
+                  {gdprVisibili.map(g => (
                     <tr key={g._id} className="tw-border-b tw-border-slate-100">
                       <td className="tw-py-2 tw-pr-3 tw-font-medium tw-text-slate-700">
                         {g.patient ? `${g.patient.firstName} ${g.patient.lastName}` : '—'}
@@ -390,7 +417,7 @@ export default function ArchiviIntermediazione() {
           <p className="tw-text-xs tw-text-slate-400 tw-mb-3 tw-mt-0">
             Preventivi, costi del simulatore e contratti per firma inviati via WhatsApp o email: qui ritrovi cosa è stato mandato, a chi e quando.
           </p>
-          {inviati.length === 0 ? (
+          {inviatiVisibili.length === 0 ? (
             <div className="tw-text-sm tw-text-slate-400">Nessun costo inviato senza paziente.</div>
           ) : (
             <div className="tw-overflow-x-auto">
@@ -407,7 +434,7 @@ export default function ArchiviIntermediazione() {
                   </tr>
                 </thead>
                 <tbody>
-                  {inviati.map(inv => {
+                  {inviatiVisibili.map(inv => {
                     const sim = inv.simulazione?.risultato;
                     return (
                       <tr key={inv._id} className="tw-border-b tw-border-slate-100">
