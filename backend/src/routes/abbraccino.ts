@@ -6,7 +6,7 @@ import Tariffario from '../models/Tariffario';
 import Patient from '../models/Patient';
 import Staff from '../models/Staff';
 import { CATEGORIE_LISTINO } from './landingPreventivo';
-import { caricaParametri } from '../utils/costoBadante';
+import { caricaParametri, simulaCostoBadante, quotaCafDefault } from '../utils/costoBadante';
 
 const router = express.Router();
 
@@ -231,7 +231,9 @@ REGOLE:
 - Se cerca una persona e compare in "PERSONE TROVATE", conferma chi hai trovato e che i bottoni sotto aprono il suo profilo completo (anagrafica, preventivi, contratti, email, consegne, operatori assegnati).
 - Non inventare dati su pazienti/operatori non presenti in PERSONE TROVATE.
 - Se la domanda è fuori ambito gestionale, riporta gentilmente al lavoro.
-Rispondi SOLO con JSON: {"risposta":"..."}`;
+CALCOLI — se l'utente chiede QUANTO COSTA una prestazione/servizio o un totale (es. "quanto costano 3 flebo + una visita"), aggiungi nel JSON "calcolo":{"voci":[{"nome":"NOME ESATTO dal listino","quantita":N}]} — usa SOLO nomi presenti nel LISTINO sotto, quantità plausibili (1-50). Il totale lo calcola il sistema con i prezzi reali.
+Se chiede il COSTO di badante/colf/assistente familiare, aggiungi "calcoloBadante":{"contrattoTipo":"convivente|convivente_part_time|non_convivente|sostituzione|assistenza_notturna|presenza_notturna","livello":"A|AS|B|BS|C|CS|D|DS","oreSettimanali":40}. Se il livello non è detto usa "C" (non autosufficiente) o "BS" (autosufficiente).
+Rispondi SOLO con JSON: {"risposta":"...","calcolo":{...},"calcoloBadante":{...}} (gli ultimi due campi solo se servono)`;
 
 router.post('/interno', authenticateToken, rateLimitByIP(40, 10 * 60 * 1000), async (req: any, res: any) => {
   try {
@@ -288,8 +290,28 @@ router.post('/interno', authenticateToken, rateLimitByIP(40, 10 * 60 * 1000), as
     }
 
     // 3) Risposta testuale via Groq, con fallback deterministico se non disponibile.
+    // Il listino reale entra nel prompt SOLO per domande sui costi — contiene
+    // molte voci e mandarlo sempre brucerebbe il rate-limit Groq.
+    const chiedeCosti = /cost|prezz|quant|euro|€|preventiv|tariff|pag/i.test(msgLow);
+    const chiedeBadante = /badant|colf|assistente familiare|convivent|ccnl|notturn/i.test(msgLow);
     const catalogo = sezioniOk.map((s) => `${s.label}: ${s.desc}`).join('\n');
-    let risposta: string;
+    let contestoExtra = '';
+    if (chiedeCosti && area !== 'consulenza') {
+      try {
+        const voci = await vociListino();
+        const perCat: Record<string, string[]> = {};
+        voci.forEach((v: any) => { (perCat[v.categoria || 'Servizi'] = perCat[v.categoria || 'Servizi'] || []).push(`${v.descrizione} €${v.prezzo}`); });
+        contestoExtra += `\nLISTINO REALE (usa nomi esatti per "calcolo"):\n${Object.entries(perCat).map(([c, vs]) => `${c}: ${vs.join('; ')}`).join('\n')}`;
+      } catch { /* senza listino */ }
+    }
+    if (chiedeBadante || (chiedeCosti && area === 'consulenza')) {
+      try {
+        const t = await tariffeCcnl();
+        contestoExtra += `\nTARIFFE CCNL 2026: ${JSON.stringify(t)}`;
+      } catch { /* senza ccnl */ }
+    }
+    let risposta = '';
+    let parsed: any = {};
     if (GROQ_API_KEY) {
       try {
         const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -300,13 +322,12 @@ router.post('/interno', authenticateToken, rateLimitByIP(40, 10 * 60 * 1000), as
             temperature: 0.3,
             response_format: { type: 'json_object' },
             messages: [
-              { role: 'system', content: `${PROMPT_INTERNO}\nSEZIONI DEL GESTIONALE:\n${catalogo}${personeTxt}` },
+              { role: 'system', content: `${PROMPT_INTERNO}\nSEZIONI DEL GESTIONALE:\n${catalogo}${personeTxt}${contestoExtra}` },
               { role: 'user', content: messaggio },
             ],
           }),
         });
         const data = await groqRes.json();
-        let parsed: any = {};
         try { parsed = JSON.parse(data?.choices?.[0]?.message?.content || '{}'); } catch { /* ignora */ }
         risposta = String(parsed.risposta || '').trim();
       } catch { risposta = ''; }
@@ -315,7 +336,66 @@ router.post('/interno', authenticateToken, rateLimitByIP(40, 10 * 60 * 1000), as
       risposta = fallbackInterno(sezioniHit, personeTxt);
     }
 
-    return res.json({ risposta: risposta.slice(0, 800), azioni: azioni.slice(0, 5) });
+    // 4) Calcoli reali lato server — mai fidarsi dell'aritmetica dell'LLM.
+    //    a) listino: matcha le voci per nome nel Tariffario e somma i prezzi veri
+    //    b) badante: gira il calcolatore CCNL vero (simulaCostoBadante)
+    let calcolo: any = null;
+    try {
+      const vociChieste = Array.isArray(parsed?.calcolo?.voci) ? parsed.calcolo.voci : [];
+      if (vociChieste.length) {
+        const norm = (s: string) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+        const tariffe = await Tariffario.find({ attivo: true }).select('nome prezzo unitaMisura promoAttiva prezzoPromo').lean();
+        const righe: any[] = [];
+        vociChieste.slice(0, 8).forEach((v: any) => {
+          const nomeCercato = norm(v.nome);
+          if (!nomeCercato) return;
+          const voce = tariffe.find((t: any) => norm(t.nome) === nomeCercato)
+            || tariffe.find((t: any) => norm(t.nome).includes(nomeCercato) || nomeCercato.includes(norm(t.nome)));
+          if (!voce) return;
+          const qty = Math.min(Math.max(parseInt(v.quantita, 10) || 1, 1), 50);
+          const prezzo = voce.promoAttiva && Number(voce.prezzoPromo) > 0 && Number(voce.prezzoPromo) < voce.prezzo ? Number(voce.prezzoPromo) : Number(voce.prezzo);
+          righe.push({ nome: voce.nome, quantita: qty, prezzo, subtotale: Math.round(prezzo * qty * 100) / 100 });
+        });
+        if (righe.length) {
+          const totale = Math.round(righe.reduce((s, r) => s + r.subtotale, 0) * 100) / 100;
+          calcolo = { tipo: 'listino', righe, totale };
+        }
+      }
+      if (!calcolo && parsed?.calcoloBadante && typeof parsed.calcoloBadante === 'object') {
+        const cb = parsed.calcoloBadante;
+        const tipiOk = ['convivente', 'convivente_part_time', 'non_convivente', 'sostituzione', 'assistenza_notturna', 'presenza_notturna'];
+        const livelliOk = ['A', 'AS', 'B', 'BS', 'C', 'CS', 'D', 'DS'];
+        const P = await caricaParametri();
+        const tipoContr = tipiOk.includes(cb.contrattoTipo) ? cb.contrattoTipo : 'convivente';
+        const oreSett = Math.min(Math.max(parseInt(cb.oreSettimanali, 10) || 40, 4), 60);
+        const sim = simulaCostoBadante({
+          contrattoTipo: tipoContr,
+          livello: livelliOk.includes(cb.livello) ? cb.livello : 'C',
+          oreSettimanali: oreSett,
+          tempoDeterminato: !!cb.tempoDeterminato,
+          indennitaPiuAutosuff: !!cb.indennitaPiuAutosuff,
+          certificazioneUni: !!cb.certificazioneUni,
+          indennitaBabysitter: !!cb.indennitaBabysitter,
+        }, P);
+        const caf = quotaCafDefault(tipoContr, oreSett, P);
+        calcolo = {
+          tipo: 'ccnl',
+          titolo: `${sim.contrattoLabel} — livello ${sim.livelloLabel}, ${oreSett}h/sett`,
+          righe: [
+            { nome: `Retribuzione lorda ${sim.pagaUnitaria === 'ora' ? 'oraria effettiva' : 'mensile'}`, valore: sim.pagaUnitaria === 'ora' ? sim.retribuzioneOrariaEffettiva : sim.retribuzioneLordaMensile },
+            { nome: 'Contributi INPS + Cassa.Colf (datore)', valore: Math.round((sim.contribInpsDatoreMensili + sim.cassaColfDatoreMensili) * 100) / 100 },
+            { nome: 'Rateo TFR + tredicesima', valore: Math.round((sim.tfr + sim.tredicesima) * 100) / 100 },
+            { nome: 'Gestione CAF', valore: caf },
+          ],
+          totale: Math.round((sim.totaleCostoMensile + caf) * 100) / 100,
+          netto: sim.retribuzioneNetta,
+        };
+      }
+    } catch (calcErr: any) {
+      console.warn('[Abbraccino interno] calcolo fallito:', calcErr?.message);
+    }
+
+    return res.json({ risposta: risposta.slice(0, 800), azioni: azioni.slice(0, 5), calcolo });
   } catch (e: any) {
     console.error('[Abbraccino interno] Errore:', e?.message);
     return res.status(502).json({ message: 'Abbraccino è impegnato, riprova tra poco.' });
