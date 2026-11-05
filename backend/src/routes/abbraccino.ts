@@ -1,7 +1,10 @@
 // @ts-nocheck
 import express from 'express';
 import { rateLimitByIP } from '../middleware/rateLimit';
+import { authenticateToken } from '../middleware/auth';
 import Tariffario from '../models/Tariffario';
+import Patient from '../models/Patient';
+import Staff from '../models/Staff';
 import { CATEGORIE_LISTINO } from './landingPreventivo';
 import { caricaParametri } from '../utils/costoBadante';
 
@@ -184,5 +187,145 @@ router.post('/chat', rateLimitByIP(20, 10 * 60 * 1000), async (req: any, res: an
     return res.status(502).json({ message: 'Abbraccino è impegnato, riprova tra poco.' });
   }
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ABBRACCINO INTERNO — assistente del gestionale (solo utenti autenticati).
+// Guida l'operatore tra le schermate e, se cita una persona, apre i link
+// diretti al suo dossier (ricerca globale). Le "azioni" sono i bottoni che il
+// widget mostra sotto la risposta: il frontend fa navigate(url).
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Catalogo delle schermate del gestionale con parole chiave per il match.
+// aree: privato = Gestione Privata, consulenza = Intermediazioni, * = entrambe.
+const SEZIONI: { url: string; label: string; desc: string; keys: string[]; aree: string[] }[] = [
+  { url: '/ricerca', label: 'Ricerca globale', desc: 'cerca pazienti, operatori, preventivi, email, consegne ovunque', keys: ['cerca', 'ricerca', 'trova', 'cerco'], aree: ['*'] },
+  { url: '/patients', label: 'Pazienti', desc: 'anagrafiche, documenti, contratti, consenso GDPR, preventivi, storico', keys: ['pazient', 'anagrafic', 'assistit', 'scheda'], aree: ['*'] },
+  { url: '/badanti-intermediazione', label: 'Intermediazioni', desc: 'richieste badanti/colf, candidati, colloqui, preventivi consulenza', keys: ['intermediazion', 'badant', 'colf', 'candidat', 'consulenza'], aree: ['consulenza'] },
+  { url: '/staff', label: 'Personale', desc: 'operatori, documenti, contratti, disponibilità', keys: ['personale', 'operator', 'staff', 'infermier', 'oss'], aree: ['*'] },
+  { url: '/assegnazione-pai', label: 'Assegnazione su mappa', desc: 'assegna operatori ai pazienti dalla mappa', keys: ['assegnazion', 'mappa', 'pai', 'piano'], aree: ['*'] },
+  { url: '/gestione-fatturazione', label: 'Fatturazione', desc: 'crea preventivi e fatture, invia per firma', keys: ['fattur', 'preventiv', 'document'], aree: ['*'] },
+  { url: '/archivio-preventivi', label: 'Archivio Preventivi', desc: 'tutti i preventivi emessi', keys: ['archivio preventiv', 'preventivi emessi'], aree: ['*'] },
+  { url: '/archivio-fatture', label: 'Archivio Fatture', desc: 'tutte le fatture emesse', keys: ['archivio fattur', 'fatture emesse'], aree: ['*'] },
+  { url: '/archivi-intermediazione', label: 'Archivi intermediazione', desc: 'contratti pazienti e cronologia invii WhatsApp/email', keys: ['archivi intermediazion', 'cronologia', 'whatsapp'], aree: ['consulenza'] },
+  { url: '/archivio-email', label: 'Email gestione', desc: 'email inviate e ricevute', keys: ['email', 'posta', 'mail'], aree: ['*'] },
+  { url: '/consegne', label: 'Consegne', desc: 'bacheca passaggio consegne tra ufficio e personale', keys: ['consegn', 'bacheca', 'promemoria'], aree: ['*'] },
+  { url: '/gestione-contratti', label: 'Contratti operatori', desc: 'contratti di incarico dei professionisti', keys: ['contratt'], aree: ['*'] },
+  { url: '/tariffario', label: 'Tariffario', desc: 'listino prezzi prestazioni', keys: ['tariffar', 'listino', 'prezz'], aree: ['*'] },
+  { url: '/preventivo-veloce', label: 'Preventivo veloce', desc: 'preventivo rapido dal listino con invio WhatsApp/email', keys: ['preventivo veloce', 'calcola'], aree: ['*'] },
+  { url: '/riunioni-colloquio', label: 'Riunioni Colloquio', desc: 'videocolloqui con candidati e famiglie', keys: ['colloqui', 'riunion', 'video'], aree: ['consulenza'] },
+  { url: '/gestione-utenti', label: 'Gestione Utenti', desc: 'utenti gestionale e accettazione candidature', keys: ['utent', 'accett', 'registrazion'], aree: ['*'] },
+  { url: '/gestione-richieste', label: 'Gestione Richieste', desc: 'richieste di servizio in arrivo', keys: ['richieste'], aree: ['privato'] },
+  { url: '/centro-prenotazioni', label: 'Centro Prenotazioni', desc: 'prenota prestazioni per i pazienti', keys: ['prenotazion', 'prenota', 'appuntament'], aree: ['privato'] },
+  { url: '/piani-lavorativi', label: 'Piani lavorativi', desc: 'calendario prestazioni operatori', keys: ['piani lavorativi', 'calendario', 'turni'], aree: ['*'] },
+  { url: '/compenso-incarichi', label: 'Compenso incarichi', desc: 'compensi e pagamenti operatori', keys: ['compens', 'pagament'], aree: ['*'] },
+  { url: '/gestione-ritenute', label: 'Ritenute professionisti', desc: 'ritenute d\'acconto professionisti', keys: ['ritenut', 'accont'], aree: ['*'] },
+  { url: '/telemedicina', label: 'Telemedicina', desc: 'monitoraggio parametri e pacchetti telemedicina', keys: ['telemed', 'monitoragg', 'parametr'], aree: ['privato'] },
+  { url: '/gestione-consensi-gdpr', label: 'Consensi GDPR', desc: 'consensi firmati dai pazienti', keys: ['gdpr', 'consens', 'privacy'], aree: ['*'] },
+];
+
+const PROMPT_INTERNO = `Sei Abbraccino, l'assistente interno del gestionale Abbraccio Cure Domiciliari (software aziendale per OSS, infermieri e amministrazione). Aiuti l'operatore a orientarsi e trovare dati.
+Il gestionale ha aree separate: GESTIONE PRIVATA (pazienti privati/convenzione SIAT, visite, telemedicina) e INTERMEDIAZIONI (badanti, colf, assistenti familiari, consulenza famiglie, candidature operatori).
+REGOLE:
+- Rispondi in italiano, max 70 parole, tono pratico da collega.
+- Se l'utente chiede DOVE si fa qualcosa, indica il nome della sezione (i bottoni-link li aggiunge il sistema, non scrivere URL).
+- Se cerca una persona e compare in "PERSONE TROVATE", conferma chi hai trovato e che i bottoni sotto aprono il suo profilo completo (anagrafica, preventivi, contratti, email, consegne, operatori assegnati).
+- Non inventare dati su pazienti/operatori non presenti in PERSONE TROVATE.
+- Se la domanda è fuori ambito gestionale, riporta gentilmente al lavoro.
+Rispondi SOLO con JSON: {"risposta":"..."}`;
+
+router.post('/interno', authenticateToken, rateLimitByIP(40, 10 * 60 * 1000), async (req: any, res: any) => {
+  try {
+    const messaggio = String(req.body?.messaggio || '').trim().slice(0, 600);
+    const area = String(req.body?.area || '');
+    if (!messaggio) return res.status(400).json({ message: 'Scrivi una domanda.' });
+
+    const azioni: { label: string; url: string }[] = [];
+    const msgLow = messaggio.toLowerCase();
+
+    // 1) Match sul catalogo sezioni → bottoni "Apri sezione"
+    const sezioniOk = SEZIONI.filter((s) => s.aree.includes('*') || !area || s.aree.includes(area));
+    const sezioniHit = sezioniOk
+      .map((s) => ({ s, score: s.keys.reduce((n, k) => n + (msgLow.includes(k) ? k.length : 0), 0) }))
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map((x) => x.s);
+    sezioniHit.forEach((s) => azioni.push({ label: `📂 ${s.label}`, url: s.url }));
+
+    // 2) Possibili nomi propri nel messaggio → cerca pazienti/operatori.
+    //    Parole con iniziale maiuscola, anche a inizio frase (es. "mario rossi"
+    //    viene gestito dal fallback: se nessun maiuscolo, tenta le ultime 2 parole).
+    const parole = messaggio.replace(/[.,!?;:()"']/g, ' ').split(/\s+/).filter(Boolean);
+    const maiuscole = parole.filter((w, i) => /^[A-ZÀÈÉÌÒÙ]/.test(w) && w.length > 2 && (i > 0 || parole.length > 1));
+    const candidatiNome = maiuscole.length >= 2 ? maiuscole.slice(0, 3)
+      : parole.length >= 2 && /paziente|sig\.?|signor|dott|mario|professionista|operatore/i.test(msgLow)
+        ? parole.slice(-2) : [];
+    let personeTxt = '';
+    if (candidatiNome.length) {
+      const rxParts = candidatiNome.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      const rxAll = new RegExp(rxParts.join('|'), 'i');
+      const filtroPaz = area === 'consulenza' ? { tipoGestione: 'consulenza' } : area === 'privato' ? { tipoGestione: { $ne: 'consulenza' } } : {};
+      const [pz, st] = await Promise.all([
+        Patient.find({ ...filtroPaz, $or: [{ firstName: rxAll }, { lastName: rxAll }] }).limit(5)
+          .select('firstName lastName tipoGestione email').lean(),
+        Staff.find({ $or: [{ firstName: rxAll }, { lastName: rxAll }] }).limit(5)
+          .select('firstName lastName role category cittaResidenza').lean(),
+      ]);
+      const righe: string[] = [];
+      pz.forEach((p: any) => {
+        const n = `${p.firstName} ${p.lastName}`;
+        righe.push(`Paziente ${n} (${p.tipoGestione === 'consulenza' ? 'intermediazione' : p.tipoGestione === 'convenzione' ? 'convenzione SIAT' : 'privato'})`);
+        azioni.unshift({ label: `👤 ${n} — storico completo`, url: `/ricerca?paziente=${p._id}` });
+      });
+      st.forEach((s: any) => {
+        righe.push(`Operatore ${s.firstName} ${s.lastName} (${s.role || s.category || 'ruolo n/d'}, ${s.cittaResidenza || 'zona n/d'})`);
+        azioni.push({ label: `🧑‍⚕️ ${s.firstName} ${s.lastName} — personale`, url: '/staff' });
+      });
+      if (righe.length) personeTxt = `\nPERSONE TROVATE: ${righe.join(' | ')}`;
+      else if (candidatiNome.length >= 2) {
+        azioni.push({ label: `🔎 Cerca "${candidatiNome.join(' ')}"`, url: `/ricerca?q=${encodeURIComponent(candidatiNome.join(' '))}` });
+      }
+    }
+
+    // 3) Risposta testuale via Groq, con fallback deterministico se non disponibile.
+    const catalogo = sezioniOk.map((s) => `${s.label}: ${s.desc}`).join('\n');
+    let risposta: string;
+    if (GROQ_API_KEY) {
+      try {
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` },
+          body: JSON.stringify({
+            model: LLM_MODEL,
+            temperature: 0.3,
+            response_format: { type: 'json_object' },
+            messages: [
+              { role: 'system', content: `${PROMPT_INTERNO}\nSEZIONI DEL GESTIONALE:\n${catalogo}${personeTxt}` },
+              { role: 'user', content: messaggio },
+            ],
+          }),
+        });
+        const data = await groqRes.json();
+        let parsed: any = {};
+        try { parsed = JSON.parse(data?.choices?.[0]?.message?.content || '{}'); } catch { /* ignora */ }
+        risposta = String(parsed.risposta || '').trim();
+      } catch { risposta = ''; }
+      if (!risposta) risposta = fallbackInterno(sezioniHit, personeTxt);
+    } else {
+      risposta = fallbackInterno(sezioniHit, personeTxt);
+    }
+
+    return res.json({ risposta: risposta.slice(0, 800), azioni: azioni.slice(0, 5) });
+  } catch (e: any) {
+    console.error('[Abbraccino interno] Errore:', e?.message);
+    return res.status(502).json({ message: 'Abbraccino è impegnato, riprova tra poco.' });
+  }
+});
+
+function fallbackInterno(sezioniHit: { label: string }[], personeTxt: string): string {
+  if (personeTxt) return `Ho trovato chi cercavi 💛 Sotto hai i bottoni per aprire la sua scheda completa: anagrafica, preventivi, contratti, email, consegne e operatori assegnati.`;
+  if (sezioniHit.length) return `Ecco dove andare: ti ho messo sotto il bottone per aprire "${sezioniHit[0].label}".`;
+  return 'Dimmi cosa cerchi — una persona (es. "paziente Rossi"), una funzione (es. "fatturazione", "assegnazione") — e ti porto lì. Oppure usa la Ricerca globale dal menu.';
+}
 
 export default router;

@@ -65,6 +65,7 @@ import abbraccinoRouter from './routes/abbraccino';
 import badantiIntermediazioneRouter from './routes/badantiIntermediazione';
 import ritenuteAccontoRouter from './routes/ritenuteAcconto';
 import shopRouter, { seedShopAdmin } from './routes/shop';
+import ricercaRouter from './routes/ricerca';
 
 if (!process.env.JWT_SECRET) {
   console.error('ERRORE: JWT_SECRET non è impostato. Configurare la variabile d\'ambiente nel file .env prima di avviare il server.');
@@ -230,6 +231,7 @@ app.use('/api/abbraccino', abbraccinoRouter);
 app.use('/api/badanti-intermediazione', badantiIntermediazioneRouter);
 app.use('/api/albo', alboPubblicoRouter);
 app.use('/api/ritenute-acconto', ritenuteAccontoRouter);
+app.use('/api/ricerca', ricercaRouter);
 // Shop Abbraccio: pubblico (prodotti/ordini/recensioni) + admin shop con JWT separato
 app.use('/api/shop', shopRouter);
 // Alias senza prefisso /api per compatibilità con URL diretti degli allegati

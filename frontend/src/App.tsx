@@ -10,6 +10,7 @@ import Breadcrumb from './components/Breadcrumb';
 import { ChatBadge } from './components/ChatBadge';
 import { ConsegneBadge } from './components/ConsegneBadge';
 import { EmailRicevuteBadge } from './components/EmailRicevuteBadge';
+import AbbraccinoInterno from './components/AbbraccinoInterno';
 
 // Eager load per pagine leggere (login, dashboard)
 import Login from './pages/Login';
@@ -25,6 +26,7 @@ const FirmaDocumento = lazy(() => import('./pages/FirmaDocumento'));
 const FirmaRitenuta = lazy(() => import('./pages/FirmaRitenuta'));
 const FirmaConsenso = lazy(() => import('./pages/FirmaConsenso'));
 const GestioneRitenute = lazy(() => import('./pages/GestioneRitenute'));
+const RicercaGlobale = lazy(() => import('./pages/RicercaGlobale'));
 
 // Lazy load per pagine pesanti
 const Patients = lazy(() => import('./pages/Patients'));
@@ -122,6 +124,7 @@ import {
   MessageCircle,
   Video,
   Calculator,
+  Search,
 } from 'lucide-react';
 
 // Ruoli con accesso completo (admin/coordinamento/direzione)
@@ -345,6 +348,10 @@ function AppShell() {
                 <LayoutDashboard size={18} />
                 Dashboard
               </Link>
+              <Link to="/ricerca" className={isActive('/ricerca') ? 'active' : ''}>
+                <Search size={18} />
+                Ricerca globale
+              </Link>
               <Link to="/chat" className={isActive('/chat') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <MessageCircle size={18} />
                 Chat operatore
@@ -526,6 +533,10 @@ function AppShell() {
                 <Users size={18} />
                 Intermediazioni
               </Link>
+              <Link to="/ricerca" className={isActive('/ricerca') ? 'active' : ''}>
+                <Search size={18} />
+                Ricerca globale
+              </Link>
               <Link to="/riunioni-colloquio" className={isActive('/riunioni-colloquio') ? 'active' : ''}>
                 <Video size={18} />
                 Riunioni Colloquio
@@ -638,6 +649,7 @@ function AppShell() {
 
           {/* Route privilegiati */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/ricerca" element={<ProtectedRoute><RicercaGlobale /></ProtectedRoute>} />
           <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
           <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
           <Route path="/workplan" element={<ProtectedRoute><WorkPlan /></ProtectedRoute>} />
@@ -720,6 +732,7 @@ function AppShell() {
         </Suspense>
       </main>
       <ToastContainer toasts={toasts} onRemove={removeToast} position="top-right" />
+      {user && !isLanding && <AbbraccinoInterno />}
     </div>
   );
 }

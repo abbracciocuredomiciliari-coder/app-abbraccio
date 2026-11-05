@@ -28,6 +28,7 @@ import {
   MapPin,
   User,
   Calculator,
+  History,
 } from 'lucide-react';
 import FirmaCanvas from '../components/FirmaCanvas';
 import { ChatWidget } from '../components/ChatWidget';
@@ -1474,6 +1475,14 @@ function Patients() {
                   >
                     <FileText size={16} />
                     Contratto
+                  </button>
+                  <button
+                    onClick={() => navigate(`/ricerca?paziente=${patient._id}`)}
+                    className="tw-bg-teal-700 tw-text-white tw-whitespace-nowrap"
+                    title="Storico completo: preventivi, fatture, contratti, email, consegne e operatori assegnati"
+                  >
+                    <History size={16} />
+                    Storico
                   </button>
                   {!isConsulenza && (patient.categoriaPrivata === 'diagnostica' || !patient.categoriaPrivata) && (
                     <button
