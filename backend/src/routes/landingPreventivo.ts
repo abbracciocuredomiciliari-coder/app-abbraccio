@@ -179,11 +179,14 @@ router.post('/preview', rateLimitByIP(120, 15 * 60 * 1000), async (req: Request,
 // ─── POST /api/landing-preventivo/richiesta — modulo → paziente + preventivo + richiesta + email
 router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request, res: Response) => {
   try {
-    const { nome, telefono, email, messaggio, utm, citta, indirizzo } = req.body || {};
+    const { nome, telefono, email, messaggio, utm, citta, indirizzo, richiedenteRuolo } = req.body || {};
     if (!nome || !String(nome).trim()) return res.status(400).json({ message: 'Nome obbligatorio' });
     if (!telefono || !String(telefono).trim()) return res.status(400).json({ message: 'Numero di telefono obbligatorio' });
     if (!citta || !String(citta).trim()) return res.status(400).json({ message: 'Città obbligatoria' });
+    if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s'.-]{3,}$/.test(String(citta).trim())) return res.status(400).json({ message: 'Città non valida: selezionala dai suggerimenti' });
     if (!indirizzo || !String(indirizzo).trim()) return res.status(400).json({ message: 'Indirizzo obbligatorio (via e numero civico)' });
+    if (!['paziente', 'caregiver'].includes(richiedenteRuolo)) return res.status(400).json({ message: 'Specifica se sei il paziente o il caregiver (familiare/referente)' });
+    const ruolo = richiedenteRuolo as 'paziente' | 'caregiver';
     const indirizzoCompleto = `${String(indirizzo).trim().slice(0, 160)}, ${String(citta).trim().slice(0, 80)}`;
     const emailPulita = String(email || '').trim().toLowerCase();
     if (emailPulita && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailPulita)) {
@@ -219,6 +222,7 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
       email: emailPulita || undefined,
       tipoGestione: 'privato',
       categoriaPrivata: MAPPA_CATEGORIA_PAZIENTE[catPrev] || 'assistenza_domiciliare',
+      ruoloContatto: ruolo,
       inAccettazione: true,
     });
 
@@ -272,12 +276,13 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
       dataPreferita: new Date(),
       priorita: 'normale',
       noteRichiedente: messaggioPulito || undefined,
+      richiedenteRuolo: ruolo,
       stato: 'in_attesa',
       storicoModifiche: [{
         data: new Date(),
         autore: String(nome).trim(),
         azione: 'Richiesta dal calcolatore preventivi online',
-        note: `Preventivo ${numero} — totale €${tot.toFixed(2)}${utmString ? ` — UTM: ${utmString}` : ''}`,
+        note: `Preventivo ${numero} — totale €${tot.toFixed(2)} — richiedente: ${ruolo === 'caregiver' ? 'caregiver/familiare' : 'paziente'}${utmString ? ` — UTM: ${utmString}` : ''}`,
       }],
     });
 
@@ -297,7 +302,8 @@ router.post('/richiesta', rateLimitByIP(10, 15 * 60 * 1000), async (req: Request
           </p>
           ${inPromo.length ? `<p style="background:#fef2f2;padding:12px;border-radius:6px;border-left:4px solid #dc2626;color:#991b1b;"><strong>🏷 Promozione:</strong> ${inPromo.length} ${inPromo.length === 1 ? 'prestazione a prezzo promozionale' : 'prestazioni a prezzo promozionale'} (dettaglio in tabella).</p>` : ''}
           <table style="width:100%;border-collapse:collapse;margin:16px 0;">
-            <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;width:150px;">Nome:</td><td style="padding:8px;">${esc(nome)}</td></tr>
+            <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;width:150px;">Nome:</td><td style="padding:8px;">${esc(nome)}${ruolo === 'caregiver' ? ' <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-size:0.78rem;font-weight:bold;">CAREGIVER</span>' : ''}</td></tr>
+            <tr><td style="padding:8px;background:#eff6ff;font-weight:bold;">Ruolo:</td><td style="padding:8px;">${ruolo === 'caregiver' ? 'Caregiver / familiare (richiede per un paziente)' : 'Paziente (richiede per sé)'}</td></tr>
             <tr><td style="padding:8px;background:#eff6ff;font-weight:bold;">Telefono:</td><td style="padding:8px;">${esc(telefono)}</td></tr>
             <tr><td style="padding:8px;background:#f8fafc;font-weight:bold;">Email:</td><td style="padding:8px;">${esc(emailPulita) || '—'}</td></tr>
             <tr><td style="padding:8px;background:#eff6ff;font-weight:bold;">Indirizzo:</td><td style="padding:8px;">${esc(indirizzoCompleto)}</td></tr>

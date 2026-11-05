@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Calculator, CheckCircle, Send, FileText, Info, Plus, Minus, Trash2, Phone, MessageCircle, Stethoscope, Tag } from 'lucide-react';
 import { TornaAlSito } from '../components/TornaAlSito';
 import Abbraccino from '../components/Abbraccino';
+import CittaAutocomplete from '../components/CittaAutocomplete';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.abbracciocuredomiciliari.it/api';
 const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '';
@@ -88,6 +89,8 @@ export default function LandingPreventivo() {
   const [telefono, setTelefono] = useState('');
   const [email, setEmail] = useState('');
   const [citta, setCitta] = useState('');
+  const [cittaValida, setCittaValida] = useState(false);
+  const [ruolo, setRuolo] = useState<'' | 'paziente' | 'caregiver'>('');
   const [indirizzo, setIndirizzo] = useState('');
   const [messaggio, setMessaggio] = useState('');
   const [sending, setSending] = useState(false);
@@ -198,6 +201,9 @@ export default function LandingPreventivo() {
   async function inviaRichiesta(e: FormEvent) {
     e.preventDefault();
     if (!nome.trim() || !telefono.trim()) { setSendError('Inserisci nome e numero di telefono.'); return; }
+    if (!ruolo) { setSendError('Indica se stai compilando per te (paziente) o come caregiver/familiare.'); return; }
+    if (!cittaValida || !citta.trim()) { setSendError('Seleziona la città dai suggerimenti che appaiono scrivendo.'); return; }
+    if (!indirizzo.trim()) { setSendError('Inserisci l\'indirizzo (via e numero civico).'); return; }
     if (!prev) {
       setSendError('Genera prima il preventivo con il pulsante "Genera preventivo".');
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -208,7 +214,7 @@ export default function LandingPreventivo() {
       setSendError('');
       const res = await axios.post(`${API_BASE}/landing-preventivo/richiesta`, {
         nome: nome.trim(), telefono: telefono.trim(), email: email.trim() || undefined,
-        citta: citta.trim(), indirizzo: indirizzo.trim(),
+        citta: citta.trim(), indirizzo: indirizzo.trim(), richiedenteRuolo: ruolo,
         messaggio: messaggio.trim() || undefined,
         voci: vociBody(), utm: utmRef.current,
       });
@@ -540,8 +546,29 @@ export default function LandingPreventivo() {
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="mario@email.it" style={input} />
               </div>
               <div>
+                <span style={label}>Chi compila il modulo? *</span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {(['paziente', 'caregiver'] as const).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setRuolo(r)}
+                      style={{
+                        flex: 1, padding: '10px 8px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer',
+                        border: `2px solid ${ruolo === r ? '#1e4d8c' : '#e2e8f0'}`,
+                        background: ruolo === r ? '#eff6ff' : '#fff',
+                        color: ruolo === r ? '#1e40af' : '#475569',
+                      }}
+                    >
+                      {r === 'paziente' ? '👤 Sono il paziente' : '🤝 Sono il caregiver'}
+                    </button>
+                  ))}
+                </div>
+                <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Caregiver = familiare o referente che richiede per un paziente</span>
+              </div>
+              <div>
                 <span style={label}>Città *</span>
-                <input type="text" value={citta} onChange={e => setCitta(e.target.value)} placeholder="Es. Roma" required style={input} />
+                <CittaAutocomplete value={citta} onChange={(c, valida) => { setCitta(c); setCittaValida(valida); }} placeholder="Scrivi e scegli dai suggerimenti" required style={input} />
               </div>
               <div>
                 <span style={label}>Indirizzo (via e n° civico) *</span>

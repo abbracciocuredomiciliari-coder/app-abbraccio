@@ -63,6 +63,8 @@ interface Patient {
   allergie?: string;
   caregiverRiferimento?: string;
   caregiverTelefono?: string;
+  ruoloContatto?: 'paziente' | 'caregiver';
+  pazienteCollegato?: { _id: string; firstName: string; lastName: string } | string;
   tipoGestione?: 'privato' | 'convenzione' | 'consulenza';
   inAccettazione?: boolean;
   accettatoIl?: string;
@@ -187,7 +189,9 @@ function Patients() {
     codiceFiscale: '',
     tipoGestione: 'privato' as 'privato' | 'convenzione' | 'consulenza',
     inAccettazione: false,
-    terminato: false
+    terminato: false,
+    ruoloContatto: 'paziente' as 'paziente' | 'caregiver',
+    pazienteCollegato: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -325,6 +329,11 @@ function Patients() {
     setError('');
     setSuccess('');
 
+    if (formData.ruoloContatto === 'caregiver' && !formData.pazienteCollegato) {
+      setError('Hai selezionato Caregiver: collega il paziente di cui si occupa (o cambia il ruolo in Paziente).');
+      return;
+    }
+
     try {
       if (editingPatient) {
         const vecchiaGestione = editingPatient.tipoGestione || 'privato';
@@ -359,7 +368,9 @@ function Patients() {
         codiceFiscale: '',
         tipoGestione: 'privato',
         inAccettazione: false,
-        terminato: false
+        terminato: false,
+        ruoloContatto: 'paziente',
+        pazienteCollegato: ''
       });
       setEditingPatient(null);
       setIndirizzoCoords(null);
@@ -376,7 +387,7 @@ function Patients() {
     if (showForm) {
       setShowForm(false);
     } else {
-      setFormData({ firstName: '', lastName: '', birthDate: '', address: '', assistanceNeeds: '', categoriaPrivata: 'diagnostica', contactPhone: '', email: '', codiceFiscale: '', tipoGestione: 'privato', inAccettazione: false, terminato: false });
+      setFormData({ firstName: '', lastName: '', birthDate: '', address: '', assistanceNeeds: '', categoriaPrivata: 'diagnostica', contactPhone: '', email: '', codiceFiscale: '', tipoGestione: 'privato', inAccettazione: false, terminato: false, ruoloContatto: 'paziente', pazienteCollegato: '' });
       setEditingPatient(null);
       setSuggerimentiIndirizzo([]);
       setIndirizzoCoords(null);
@@ -398,6 +409,8 @@ function Patients() {
       tipoGestione: patient.tipoGestione || 'privato',
       inAccettazione: patient.inAccettazione === true,
       terminato: patient.terminato === true,
+      ruoloContatto: patient.ruoloContatto === 'caregiver' ? 'caregiver' : 'paziente',
+      pazienteCollegato: typeof patient.pazienteCollegato === 'object' ? patient.pazienteCollegato?._id || '' : patient.pazienteCollegato || '',
     });
     setEditingPatient(patient);
     setSuggerimentiIndirizzo([]);
@@ -1260,6 +1273,51 @@ function Patients() {
               </select>
             )}
           </label>
+
+          {/* Ruolo anagrafica: paziente o caregiver (il caregiver va collegato al paziente) */}
+          <div style={{ background: formData.ruoloContatto === 'caregiver' ? '#fdf4ff' : '#f8fafc', border: `1px solid ${formData.ruoloContatto === 'caregiver' ? '#d8b4fe' : '#e2e8f0'}`, borderRadius: '10px', padding: '12px 14px' }}>
+            <span style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '8px' }}>Questa anagrafica è:</span>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              {(['paziente', 'caregiver'] as const).map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, ruoloContatto: r, pazienteCollegato: r === 'caregiver' ? prev.pazienteCollegato : '' }))}
+                  style={{
+                    flex: 1, minWidth: '140px', padding: '10px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer',
+                    border: `2px solid ${formData.ruoloContatto === r ? '#9333ea' : '#e2e8f0'}`,
+                    background: formData.ruoloContatto === r ? '#fae8ff' : '#fff',
+                    color: formData.ruoloContatto === r ? '#7e22ce' : '#475569',
+                  }}
+                >
+                  {r === 'paziente' ? '👤 Paziente' : '🤝 Caregiver / familiare'}
+                </button>
+              ))}
+            </div>
+            {formData.ruoloContatto === 'caregiver' && (
+              <div style={{ marginTop: '10px' }}>
+                <span style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#7e22ce', marginBottom: '5px' }}>
+                  È caregiver di quale paziente? *
+                </span>
+                <select
+                  value={formData.pazienteCollegato}
+                  onChange={e => setFormData(prev => ({ ...prev, pazienteCollegato: e.target.value }))}
+                  required
+                >
+                  <option value="">— Collega il paziente —</option>
+                  {patients
+                    .filter(p => p._id !== editingPatient?._id && p.ruoloContatto !== 'caregiver')
+                    .map(p => (
+                      <option key={p._id} value={p._id}>{p.lastName} {p.firstName}{p.address ? ` — ${p.address}` : ''}</option>
+                    ))}
+                </select>
+                <span style={{ display: 'block', fontSize: '0.72rem', color: '#a855f7', marginTop: '4px' }}>
+                  Il caregiver non è il paziente: qui lo colleghi all'anagrafica della persona assistita.
+                </span>
+              </div>
+            )}
+          </div>
+
           <label style={{ display: 'flex', alignItems: 'center', gap: '10px', background: formData.inAccettazione ? '#fef3c7' : '#f8fafc', border: `1px solid ${formData.inAccettazione ? '#f59e0b' : '#e2e8f0'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer' }}>
             <input type="checkbox" checked={formData.inAccettazione} onChange={e => setFormData(prev => ({ ...prev, inAccettazione: e.target.checked }))} style={{ width: '18px', height: '18px', accentColor: '#d97706' }} />
             <span style={{ fontSize: '0.9rem', color: '#374151' }}>
@@ -1378,6 +1436,11 @@ function Patients() {
                     <span className="tw-text-xs tw-px-2 tw-py-0.5 tw-rounded-full tw-bg-brand/10 tw-text-brand tw-font-medium">
                       ID: {patient._id.slice(-6).toUpperCase()}
                     </span>
+                    {patient.ruoloContatto === 'caregiver' && (
+                      <span className="tw-text-xs tw-px-2 tw-py-0.5 tw-rounded-full tw-bg-purple-100 tw-text-purple-700 tw-font-bold tw-border tw-border-purple-200">
+                        🤝 Caregiver{typeof patient.pazienteCollegato === 'object' && patient.pazienteCollegato ? ` di ${patient.pazienteCollegato.lastName} ${patient.pazienteCollegato.firstName}` : ''}
+                      </span>
+                    )}
                     {patient.inAccettazione && !patient.terminato && (
                       <span className="tw-text-xs tw-px-2 tw-py-0.5 tw-rounded-full tw-bg-amber-100 tw-text-amber-700 tw-font-bold tw-border tw-border-amber-200">
                         ⏳ In accettazione

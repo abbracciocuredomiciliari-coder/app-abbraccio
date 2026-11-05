@@ -1,4 +1,4 @@
-import { Document, Schema, model } from 'mongoose';
+import { Document, Schema, Types, model } from 'mongoose';
 import { encrypt, decrypt, hashForSearch } from '../utils/encryption';
 
 export interface IPatient extends Document {
@@ -17,7 +17,12 @@ export interface IPatient extends Document {
   allergie?: string;
   caregiverRiferimento?: string;
   caregiverTelefono?: string;
-  
+
+  // === RUOLO ANAGRAFICA ===
+  // 'caregiver' = la scheda è di un familiare/referente, collegato a un paziente reale
+  ruoloContatto?: 'paziente' | 'caregiver';
+  pazienteCollegato?: Types.ObjectId;  // paziente di cui è caregiver (se ruoloContatto === 'caregiver')
+
   // === MODALITÀ GESTIONE ===
   tipoGestione: 'privato' | 'convenzione' | 'consulenza';  // default: privato
 
@@ -76,6 +81,8 @@ const patientSchema = new Schema<IPatient>(
     allergie: { type: String, trim: true },
     caregiverRiferimento: { type: String, trim: true },
     caregiverTelefono: { type: String, trim: true },
+    ruoloContatto: { type: String, enum: ['paziente', 'caregiver'], default: 'paziente' },
+    pazienteCollegato: { type: Schema.Types.ObjectId, ref: 'Patient' },
     tipoGestione: { type: String, enum: ['privato', 'convenzione', 'consulenza'], default: 'privato' },
     inAccettazione: { type: Boolean, default: false },
     accettatoIl: { type: Date },

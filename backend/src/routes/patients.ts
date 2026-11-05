@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { Types } from 'mongoose';
 import Patient from '../models/Patient';
 import { authenticateToken } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
@@ -43,12 +44,14 @@ router.get('/', auditLog('patients', 'READ'), async (req: Request, res: Response
       const limitNum = Math.min(100, Math.max(1, parseInt(limit as string, 10) || 20));
       const skip = (pageNum - 1) * limitNum;
       const [patients, total] = await Promise.all([
-        Patient.find(filter).sort({ lastName: 1, firstName: 1 }).skip(skip).limit(limitNum),
+        Patient.find(filter).sort({ lastName: 1, firstName: 1 }).skip(skip).limit(limitNum)
+          .populate('pazienteCollegato', 'firstName lastName'),
         Patient.countDocuments(filter),
       ]);
       return res.json({ data: patients, total, page: pageNum, limit: limitNum, pages: Math.ceil(total / limitNum) });
     }
-    const patients = await Patient.find(filter).sort({ lastName: 1, firstName: 1 });
+    const patients = await Patient.find(filter).sort({ lastName: 1, firstName: 1 })
+      .populate('pazienteCollegato', 'firstName lastName');
     return res.json(patients);
   } catch (error) {
     return res.status(500).json({ message: 'Errore nel recupero dei pazienti', error });
@@ -72,6 +75,8 @@ router.post('/', authorizeRole('admin', 'coordinator'), auditLog('patients', 'CR
       contactPhone: req.body.contactPhone?.trim(),
       email: req.body.email?.trim(),
       codiceFiscale: codiceFiscale?.trim(),
+      ruoloContatto: req.body.ruoloContatto === 'caregiver' ? 'caregiver' : 'paziente',
+      pazienteCollegato: req.body.ruoloContatto === 'caregiver' && Types.ObjectId.isValid(req.body.pazienteCollegato || '') ? req.body.pazienteCollegato : undefined,
       tipoGestione: ['privato', 'convenzione', 'consulenza'].includes(tipoGestione) ? tipoGestione : 'privato',
       categoriaPrivata: tipoGestione === 'consulenza' ? 'intermediazione_badanti' : (tipoGestione === 'convenzione' ? undefined : (categoriaPrivata || undefined)),
       inAccettazione: req.body.inAccettazione === true,
@@ -288,6 +293,12 @@ router.patch('/:id', authorizeRole('admin', 'coordinator'), auditLog('patients',
     if (email !== undefined) patient.email = email?.trim() || undefined;
     if (codiceFiscale !== undefined) patient.codiceFiscale = codiceFiscale?.trim() || undefined;
     if (categoriaPrivata !== undefined) patient.categoriaPrivata = categoriaPrivata;
+    if (req.body.ruoloContatto !== undefined) {
+      patient.ruoloContatto = req.body.ruoloContatto === 'caregiver' ? 'caregiver' : 'paziente';
+      patient.pazienteCollegato = patient.ruoloContatto === 'caregiver' && Types.ObjectId.isValid(req.body.pazienteCollegato || '')
+        ? new Types.ObjectId(req.body.pazienteCollegato)
+        : undefined;
+    }
     if (tipoGestione !== undefined && ['privato', 'convenzione', 'consulenza'].includes(tipoGestione)) {
       patient.tipoGestione = tipoGestione;
       if (tipoGestione === 'convenzione') patient.categoriaPrivata = undefined;

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Mic, Square, Camera, Paperclip, CheckCircle, Phone, MessageCircle } from 'lucide-react';
 import { TornaAlSito } from '../components/TornaAlSito';
+import CittaAutocomplete from '../components/CittaAutocomplete';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // ISCRIZIONE INTERMEDIAZIONE — modulo pubblico semplificato per operatori:
@@ -93,6 +94,7 @@ export default function IscrizioneIntermediazione() {
   const [email, setEmail] = useState('');
   const [regioneResidenza, setRegioneResidenza] = useState('');
   const [cittaResidenza, setCittaResidenza] = useState('');
+  const [cittaValida, setCittaValida] = useState(false);
   const [indirizzoResidenza, setIndirizzoResidenza] = useState('');
   const [regioneInteresse, setRegioneInteresse] = useState('');
   const [cittaInteresse, setCittaInteresse] = useState('');
@@ -118,6 +120,11 @@ export default function IscrizioneIntermediazione() {
     }
     if (!cittaResidenza.trim() || !indirizzoResidenza.trim()) {
       setErrore('Città e indirizzo di residenza sono obbligatori: senza non possiamo valutare la zona di lavoro.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (!cittaValida) {
+      setErrore('Seleziona la città di residenza dai suggerimenti che appaiono scrivendo.');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -280,7 +287,7 @@ export default function IscrizioneIntermediazione() {
                 {REGIONI.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
-            <div><span style={label}>Città *</span><input style={input} value={cittaResidenza} onChange={e => setCittaResidenza(e.target.value)} placeholder="Es. Roma" /></div>
+            <div><span style={label}>Città *</span><CittaAutocomplete value={cittaResidenza} onChange={(c, valida) => { setCittaResidenza(c); setCittaValida(valida); }} placeholder="Scrivi e scegli dai suggerimenti" required style={input} /></div>
           </div>
           <div style={{ marginBottom: '10px' }}>
             <span style={label}>Indirizzo di residenza (via e numero civico) *</span>

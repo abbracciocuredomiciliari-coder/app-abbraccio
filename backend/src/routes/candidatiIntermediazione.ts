@@ -54,6 +54,10 @@ router.post('/pubblica', rateLimitByIP(10, 60 * 60 * 1000), upload.single('docum
     if (!s(body.cittaResidenza)) {
       return res.status(400).json({ message: 'La città di residenza è obbligatoria.' });
     }
+    // Città vincolata: solo lettere, min 3 caratteri (selezionata dai suggerimenti)
+    if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s'.-]{3,}$/.test(s(body.cittaResidenza)!)) {
+      return res.status(400).json({ message: 'Città non valida: selezionala dai suggerimenti.' });
+    }
     if (!s(body.indirizzoResidenza)) {
       return res.status(400).json({ message: "L'indirizzo di residenza (via e numero civico) è obbligatorio." });
     }

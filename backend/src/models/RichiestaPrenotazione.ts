@@ -9,6 +9,7 @@ export interface IRichiestaPrenotazione extends Document {
   richiedenteNome: string;
   richiedenteEmail?: string;
   richiedenteTelefono?: string;
+  richiedenteRuolo?: 'paziente' | 'caregiver';  // chi compila: il paziente stesso o un familiare
 
   // Paziente (può essere lo stesso richiedente o un altro)
   pazienteId?: Types.ObjectId;
@@ -64,6 +65,7 @@ const richiestaPrenotazioneSchema = new Schema<IRichiestaPrenotazione>(
     richiedenteNome: { type: String, required: true, trim: true },
     richiedenteEmail: { type: String, required: false, trim: true, lowercase: true },
     richiedenteTelefono: { type: String, trim: true },
+    richiedenteRuolo: { type: String, enum: ['paziente', 'caregiver'] },
 
     pazienteId: { type: Schema.Types.ObjectId, ref: 'Patient', required: false },
     pazienteNome: { type: String, required: true, trim: true },
