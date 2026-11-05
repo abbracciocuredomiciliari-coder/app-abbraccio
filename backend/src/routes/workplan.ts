@@ -43,6 +43,11 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
       filter.status = status;
     }
 
+    // Filtro per paziente (es. scheda assegnazione: incarichi già attivi sul paziente)
+    if (req.query.patient && /^[a-f0-9]{24}$/i.test(String(req.query.patient))) {
+      filter.patient = req.query.patient;
+    }
+
     const query = WorkPlan.find(filter)
       .populate('patient', 'firstName lastName tipoGestione')
       .populate('staff', 'firstName lastName role category active')
@@ -59,15 +64,15 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
         WorkPlan.countDocuments(filter),
       ]);
       // Filtro tipo gestione post-populate
-      const data = (tipo === 'privato' || tipo === 'convenzione')
+      const data = (tipo === 'privato' || tipo === 'convenzione' || tipo === 'consulenza')
         ? workplans.filter((wp: any) => (wp.patient as any)?.tipoGestione === tipo)
         : workplans;
       return res.json({ data, total, page: pageNum, limit: limitNum, pages: Math.ceil(total / limitNum) });
     }
 
     const workplans = await query;
-    // Filtro opzionale per tipo gestione (privato/convenzione)
-    if (tipo === 'privato' || tipo === 'convenzione') {
+    // Filtro opzionale per tipo gestione (privato/convenzione/consulenza)
+    if (tipo === 'privato' || tipo === 'convenzione' || tipo === 'consulenza') {
       return res.json(workplans.filter((wp: any) => (wp.patient as any)?.tipoGestione === tipo));
     }
     return res.json(workplans);
@@ -231,39 +236,51 @@ router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async
       console.warn('⚠️ Errore riattivazione paziente terminato:', pErr);
     }
 
-    // Invia email notifica all'operatore assegnato (mai per piani in accettazione)
+    // Invia email notifica all'operatore assegnato (mai per piani in accettazione).
+    // Gli indirizzi tecnici @intermediazione.local (candidati senza email reale)
+    // non sono recapitabili: lo segnaliamo nella risposta così l'UI avvisa.
+    let emailNotifica: 'inviata' | 'no_email' | 'errore' | 'non_prevista' = 'non_prevista';
     try {
-      if (workplan.inAccettazione) return res.status(201).json(workplan);
-      const populated = await WorkPlan.findById(workplan._id)
-        .populate('patient', 'firstName lastName')
-        .populate('staff', 'firstName lastName email')
-        .populate('prestazioni.staff', 'firstName lastName email');
+      if (workplan.inAccettazione || !workplan.staff) {
+        emailNotifica = 'non_prevista';
+        if (workplan.inAccettazione) {
+          const w = workplan.toObject() as any;
+          return res.status(201).json({ ...w, emailNotifica });
+        }
+      } else {
+        const populated = await WorkPlan.findById(workplan._id)
+          .populate('patient', 'firstName lastName')
+          .populate('staff', 'firstName lastName email')
+          .populate('prestazioni.staff', 'firstName lastName email');
 
-      if (populated) {
-        const staffDoc = populated.staff as any;
-        const patientDoc = populated.patient as any;
-        // Notifica tutti gli operatori delle prestazioni (se diversi dallo staff principale)
-        const staffEmails = new Set<string>();
-        if (staffDoc?.email) staffEmails.add(staffDoc.email);
-        (populated as any).prestazioni?.forEach((p: any) => { if (p.staff?.email) staffEmails.add(p.staff.email); });
-        if (staffDoc?.email) {
-          const nomePaziente = `${patientDoc?.firstName || ''} ${patientDoc?.lastName || ''}`.trim();
-          const dataInizio = new Date(workplan.date).toLocaleDateString('it-IT');
-          await inviaEmailNuovoPianoDiLavoro(
-            staffDoc.email,
-            `${staffDoc.firstName} ${staffDoc.lastName}`,
-            nomePaziente,
-            dataInizio,
-            workplan.task,
-            workplan._id.toString()
-          );
+        if (populated) {
+          const staffDoc = populated.staff as any;
+          const patientDoc = populated.patient as any;
+          const emailReale = staffDoc?.email && !String(staffDoc.email).endsWith('@intermediazione.local');
+          if (!emailReale) {
+            emailNotifica = 'no_email';
+          } else {
+            const nomePaziente = `${patientDoc?.firstName || ''} ${patientDoc?.lastName || ''}`.trim();
+            const dataInizio = new Date(workplan.date).toLocaleDateString('it-IT');
+            await inviaEmailNuovoPianoDiLavoro(
+              staffDoc.email,
+              `${staffDoc.firstName} ${staffDoc.lastName}`,
+              nomePaziente,
+              dataInizio,
+              workplan.task,
+              workplan._id.toString()
+            );
+            emailNotifica = 'inviata';
+          }
         }
       }
     } catch (emailErr) {
       console.warn('⚠️ Errore invio email notifica piano:', emailErr);
+      emailNotifica = 'errore';
     }
 
-    return res.status(201).json(workplan);
+    const w = workplan.toObject() as any;
+    return res.status(201).json({ ...w, emailNotifica });
   } catch (error: any) {
     console.error('❌ Errore creazione workplan:', error);
     return res.status(400).json({ message: 'Errore nella creazione dell incarico', error: error.message, details: error.errors });

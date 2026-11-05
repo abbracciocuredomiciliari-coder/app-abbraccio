@@ -5,7 +5,7 @@ import User from '../models/User';
 import StaffDocument from '../models/StaffDocument';
 import { authenticateToken } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
-import { encrypt } from '../utils/encryption';
+import { encrypt, decrypt } from '../utils/encryption';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 const router = Router();
@@ -52,11 +52,17 @@ router.get('/zona', authenticateToken, authorizeRole('admin', 'coordinator', 'di
       'firstName lastName role category email phone note indirizzoResidenza cittaResidenza disponibilita residenzaPressoFamiglia domicilioPartenza domicilioCoords raggioAzioneKm modalitaAbilitata areaIntermediazione active'
     );
 
+    // toObject() non applica il transform toJSON: phone resta cifrato → decifro a mano
+    const plain = (s: any) => {
+      const o = s.toObject();
+      if (o.phone) { try { o.phone = decrypt(o.phone); } catch { /* già in chiaro */ } }
+      return o;
+    };
     const conCoords = tuttiStaff
       .filter(s => s.domicilioCoords?.lat && s.domicilioCoords?.lng)
       .map(s => {
         const dist = haversineKm(s.domicilioCoords!.lat, s.domicilioCoords!.lng, lat, lng);
-        return { ...s.toObject(), distanzaKm: Math.round(dist * 10) / 10, inZona: dist <= (s.raggioAzioneKm || 10) };
+        return { ...plain(s), distanzaKm: Math.round(dist * 10) / 10, inZona: dist <= (s.raggioAzioneKm || 10) };
       })
       .filter(s => tutti || s.inZona)
       .sort((a, b) => a.distanzaKm - b.distanzaKm);
@@ -64,7 +70,7 @@ router.get('/zona', authenticateToken, authorizeRole('admin', 'coordinator', 'di
     if (!tutti) return res.json(conCoords);
     const senzaCoords = tuttiStaff
       .filter(s => !s.domicilioCoords?.lat || !s.domicilioCoords?.lng)
-      .map(s => ({ ...s.toObject(), distanzaKm: null, inZona: false }));
+      .map(s => ({ ...plain(s), distanzaKm: null, inZona: false }));
     return res.json([...conCoords, ...senzaCoords]);
   } catch (error) {
     return res.status(500).json({ message: 'Errore ricerca zona', error });

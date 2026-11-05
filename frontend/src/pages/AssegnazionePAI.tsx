@@ -91,6 +91,8 @@ export default function AssegnazionePAI() {
   const [loadingZona, setLoadingZona] = useState(false);
   const [operatoreSelezionato, setOperatoreSelezionato] = useState<OperatoreInZona | null>(null);
   const [schedaOperatore, setSchedaOperatore] = useState<OperatoreInZona | null>(null);
+  // Incarichi già attivi sul paziente selezionato (chi è stato assegnato)
+  const [incarichiPaziente, setIncarichiPaziente] = useState<{ _id: string; task: string; date: string; status: string; staff?: { firstName: string; lastName: string; role?: string } | null }[]>([]);
 
   // Form piano/PAI
   const [showFormPiano, setShowFormPiano] = useState(false);
@@ -143,6 +145,12 @@ export default function AssegnazionePAI() {
     }
     const pazConCoords = { ...p, coords };
     setPazienteSelezionato(pazConCoords);
+
+    // Carica gli incarichi già assegnati a questo paziente
+    setIncarichiPaziente([]);
+    api.get('/workplan', { params: { patient: p._id, status: 'pending' } })
+      .then((res) => setIncarichiPaziente(Array.isArray(res.data) ? res.data : res.data?.data || []))
+      .catch(() => setIncarichiPaziente([]));
 
     if (coords) {
       setLoadingZona(true);
@@ -205,11 +213,23 @@ export default function AssegnazionePAI() {
         notes: formPiano.notes,
         status: 'pending',
       };
-      await api.post('/workplan', body);
+      const res = await api.post('/workplan', body);
       const opNome = operatoreSelezionato ? `${operatoreSelezionato.firstName} ${operatoreSelezionato.lastName}` : 'nessun operatore';
-      setPianoCreatoMsg(`✅ ${isConvenzione ? 'PAI' : 'Piano di lavoro'} creato per ${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName} → ${opNome}`);
+      const nomeIncarico = isConvenzione ? 'PAI' : isConsulenza ? 'Incarico' : 'Piano di lavoro';
+      let msg = `✅ ${nomeIncarico} creato per ${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName} → ${opNome}`;
+      const emailStato = res.data?.emailNotifica;
+      if (operatoreSelezionato) {
+        if (emailStato === 'inviata') msg += ` · 📧 email di notifica inviata all'operatore`;
+        else if (emailStato === 'no_email') msg += ` · ⚠️ NESSUNA email inviata: il professionista non ha un'email valida (aggiorna la sua scheda in Personale)`;
+        else if (emailStato === 'errore') msg += ` · ⚠️ email non inviata (errore server)`;
+      }
+      setPianoCreatoMsg(msg);
       setShowFormPiano(false);
       setOperatoreSelezionato(null);
+      // Aggiorna la lista incarichi del paziente
+      api.get('/workplan', { params: { patient: pazienteSelezionato._id, status: 'pending' } })
+        .then((r) => setIncarichiPaziente(Array.isArray(r.data) ? r.data : r.data?.data || []))
+        .catch(() => {});
     } catch (err: any) {
       setPianoCreatoMsg(`❌ Errore: ${err?.response?.data?.message || err.message || 'salvataggio fallito'}`);
     }
@@ -265,7 +285,7 @@ export default function AssegnazionePAI() {
         </div>
       </div>
 
-      <style>{`.assegna-grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}@media(max-width:860px){.assegna-grid{grid-template-columns:1fr !important}}`}</style>
+      <style>{`.assegna-grid{display:grid;grid-template-columns:minmax(300px,340px) 1fr;gap:20px;align-items:start}@media(max-width:980px){.assegna-grid{grid-template-columns:1fr !important}}`}</style>
       <div className="assegna-grid">
 
         {/* ═══ COLONNA SINISTRA: ricerca + lista ════════════════════════════ */}
@@ -363,6 +383,23 @@ export default function AssegnazionePAI() {
               {!pazienteSelezionato.coords && !geocodingPaziente && (
                 <div style={{ fontSize: '0.78rem', color: '#dc2626', marginTop: '2px' }}>⚠️ Indirizzo non geocodificabile</div>
               )}
+              {/* Incarichi già assegnati: chi è il professionista sul paziente */}
+              {incarichiPaziente.length > 0 && (
+                <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '5px' }}>
+                    {isConsulenza ? 'Professionisti assegnati' : 'Operatori assegnati'}
+                  </div>
+                  {incarichiPaziente.map((w) => (
+                    <div key={w._id} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px', fontSize: '0.82rem', padding: '4px 0' }}>
+                      <span style={{ fontWeight: 700, color: '#059669' }}>
+                        {w.staff ? `👤 ${w.staff.firstName} ${w.staff.lastName}` : '⚠️ Senza operatore'}
+                      </span>
+                      <span style={{ color: '#64748b' }}>· {w.task}</span>
+                      <span style={{ color: '#94a3b8' }}>· {new Date(w.date).toLocaleDateString('it-IT')}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -420,12 +457,12 @@ export default function AssegnazionePAI() {
                       borderLeft: `4px solid ${COLORI_CATEGORIA[op.category] || '#059669'}`,
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between' }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e293b' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e293b', flex: '1 1 60%', minWidth: 0, overflowWrap: 'anywhere' }}>
                         <span style={{ display: 'inline-block', width: '20px', height: '20px', borderRadius: '50%', background: COLORI_CATEGORIA[op.category] || '#059669', color: 'white', fontSize: '0.7rem', textAlign: 'center', lineHeight: '20px', marginRight: '6px' }}>{i + 1}</span>
                         {op.firstName} {op.lastName}
                       </div>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: op.inZona === false ? '#94a3b8' : '#059669', whiteSpace: 'nowrap' }}>{op.distanzaKm != null ? '📍 ' + op.distanzaKm + ' km' : '📍 —'}{op.inZona === false ? ' · fuori zona' : ''}</span>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: op.inZona === false ? '#94a3b8' : '#059669', flexShrink: 0 }}>{op.distanzaKm != null ? '📍 ' + op.distanzaKm + ' km' : '📍 —'}{op.inZona === false ? ' · fuori zona' : ''}</span>
                     </div>
                     <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px', marginLeft: '26px' }}>
                       {op.role} · raggio {op.raggioAzioneKm ?? 10} km
@@ -655,7 +692,7 @@ export default function AssegnazionePAI() {
               )}
               <button
                 type="button"
-                onClick={() => { setOperatoreSelezionato(o); setSchedaOperatore(null); }}
+                onClick={() => { setOperatoreSelezionato(o); setSchedaOperatore(null); if (pazienteSelezionato) setShowFormPiano(true); }}
                 style={{ width: '100%', marginTop: '14px', background: colore, color: 'white', border: 'none', borderRadius: '10px', padding: '11px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
               >
                 ✅ Seleziona questo professionista
