@@ -59,7 +59,7 @@ async function uploadDir(sftp, local, remote) {
 
 const NGINX_CONF = `server {
     listen 80;
-    server_name abbracciofamiglie.it www.abbracciofamiglie.it;
+    server_name famiglia.abbracciocuredomiciliari.it famigli.abbracciocuredomiciliari.it;
     root /var/www/famiglia-abbraccio;
     index index.html;
 
@@ -92,7 +92,7 @@ async function main() {
   let r = await exec(`cp ${tmp} /etc/nginx/sites-available/famiglia-abbraccio && ln -sf /etc/nginx/sites-available/famiglia-abbraccio /etc/nginx/sites-enabled/famiglia-abbraccio && nginx -t && systemctl reload nginx`);
   console.log('nginx:', r.out.trim(), r.stderr.trim());
 
-  console.log('Deploy famiglia completato. Attendi DNS, poi lancia certbot --nginx -d abbracciofamiglie.it -d www.abbracciofamiglie.it');
+  console.log('Deploy famiglia completato. Attendi DNS, poi lancia certbot --nginx -d famiglia.abbracciocuredomiciliari.it');
   conn.end();
 }
 

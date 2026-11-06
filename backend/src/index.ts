@@ -102,11 +102,11 @@ const allowedOrigins: string[] = [
   // Sito pubblico (Shop Abbraccio chiama l'API)
   'https://www.abbracciocuredomiciliari.it',
   'https://abbracciocuredomiciliari.it',
-  // Abbraccio Famiglia — sito dedicato intermediazione
-  'https://www.abbracciofamiglie.it',
-  'https://abbracciofamiglie.it',
-  'http://www.abbracciofamiglie.it',
-  'http://abbracciofamiglie.it',
+  // Abbraccio Famiglia — sottodominio dedicato intermediazione
+  'https://famiglia.abbracciocuredomiciliari.it',
+  'https://famigli.abbracciocuredomiciliari.it',
+  'http://famiglia.abbracciocuredomiciliari.it',
+  'http://famigli.abbracciocuredomiciliari.it',
   'http://localhost:8080',
   'http://127.0.0.1:8080',
   'http://localhost:5500',
