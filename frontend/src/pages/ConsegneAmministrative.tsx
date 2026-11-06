@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { ClipboardList, Plus, Bell, UserCheck, Hourglass, CheckCircle, RotateCcw, Trash2, MessageSquare, AlertTriangle, Calendar, Smartphone } from 'lucide-react';
@@ -71,6 +72,8 @@ const dayLabel = (key: string) => {
 
 export default function ConsegneAmministrative() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filtroQ = (searchParams.get('q') || '').trim();
   const isGestione = !!user && ['admin', 'coordinator', 'direttore'].includes(user.role);
   const [consegne, setConsegne] = useState<Consegna[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +103,15 @@ export default function ConsegneAmministrative() {
 
   const aperte = consegne.filter(c => c.stato !== 'gestita');
   const gestite = consegne.filter(c => c.stato === 'gestita');
-  const visibili = mostraGestite ? consegne : aperte;
+  const filtroRx = filtroQ ? filtroQ.toLowerCase() : '';
+  const filtrate = filtroRx
+    ? consegne.filter(c =>
+        (c.riferimento || '').toLowerCase().includes(filtroRx) ||
+        c.titolo.toLowerCase().includes(filtroRx) ||
+        c.testo.toLowerCase().includes(filtroRx))
+    : null;
+  // Con filtro attivo mostriamo TUTTE le consegne del soggetto, anche le gestite.
+  const visibili = filtrate || (mostraGestite ? consegne : aperte);
 
   // Raggruppamento per giornata: giorni più recenti in cima.
   const giorni: { key: string; items: Consegna[] }[] = [];
@@ -200,6 +211,17 @@ export default function ConsegneAmministrative() {
         </button>
       </div>
 
+      {filtrate && (
+        <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2 tw-bg-blue-50 tw-border tw-border-blue-300 tw-text-blue-900 tw-rounded-xl tw-px-4 tw-py-3 tw-mb-5 tw-font-semibold tw-text-sm">
+          <ClipboardList size={18} />
+          Stai vedendo solo le consegne relative a <strong>«{filtroQ}»</strong> — {filtrate.length} trovate, incluse le già gestite.
+          <button type="button" onClick={() => setSearchParams({})}
+            className="tw-ml-auto tw-text-sm tw-font-bold tw-text-blue-700 tw-bg-white tw-border tw-border-blue-300 tw-rounded-lg tw-px-3 tw-py-1.5 tw-cursor-pointer hover:tw-bg-blue-100">
+            Mostra tutte
+          </button>
+        </div>
+      )}
+
       {aperte.length > 0 && (
         <div className="tw-flex tw-items-center tw-gap-2 tw-bg-red-50 tw-border tw-border-red-200 tw-text-red-700 tw-rounded-xl tw-px-4 tw-py-3 tw-mb-5 tw-font-bold tw-text-sm">
           <Bell size={18} /> {aperte.length} consegn{aperte.length === 1 ? 'a aperta' : 'e aperte'} da gestire — {consegne.filter(c => c.stato === 'da_gestire').length} nuov{consegne.filter(c => c.stato === 'da_gestire').length === 1 ? 'a' : 'e'}
@@ -259,19 +281,21 @@ export default function ConsegneAmministrative() {
 
       <div className="tw-flex tw-items-center tw-justify-between tw-mb-3">
         <h2 className="tw-m-0 tw-text-base tw-font-bold tw-text-slate-700">
-          {mostraGestite ? `Tutte le consegne (${consegne.length})` : `Consegne aperte (${aperte.length})`}
+          {filtrate ? `Consegne di «${filtroQ}» (${filtrate.length})` : mostraGestite ? `Tutte le consegne (${consegne.length})` : `Consegne aperte (${aperte.length})`}
         </h2>
-        <button type="button" onClick={() => setMostraGestite(v => !v)}
-          className="tw-text-sm tw-font-semibold tw-text-blue-700 tw-bg-transparent tw-border-0 tw-cursor-pointer hover:tw-underline">
-          {mostraGestite ? 'Nascondi quelle gestite' : `Mostra anche le gestite (${gestite.length})`}
-        </button>
+        {!filtrate && (
+          <button type="button" onClick={() => setMostraGestite(v => !v)}
+            className="tw-text-sm tw-font-semibold tw-text-blue-700 tw-bg-transparent tw-border-0 tw-cursor-pointer hover:tw-underline">
+            {mostraGestite ? 'Nascondi quelle gestite' : `Mostra anche le gestite (${gestite.length})`}
+          </button>
+        )}
       </div>
 
       {loading ? (
         <p className="tw-text-slate-400">Caricamento…</p>
       ) : visibili.length === 0 ? (
         <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-p-8 tw-text-center tw-text-slate-400">
-          {mostraGestite ? 'Nessuna consegna registrata.' : 'Nessuna consegna aperta: tutto gestito. ✅'}
+          {filtrate ? `Nessuna consegna trovata per «${filtroQ}».` : mostraGestite ? 'Nessuna consegna registrata.' : 'Nessuna consegna aperta: tutto gestito. ✅'}
         </div>
       ) : (
         <div className="tw-flex tw-flex-col tw-gap-5">

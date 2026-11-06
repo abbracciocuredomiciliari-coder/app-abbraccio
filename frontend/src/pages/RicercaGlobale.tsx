@@ -212,7 +212,7 @@ export default function RicercaGlobale() {
 
         <Sezione titolo="Consegne" icona={<ClipboardList size={17} />} count={dossier.consegne.length}>
           {dossier.consegne.map((c: any) => (
-            <Riga key={c._id} onClick={() => navigate('/consegne')}>
+            <Riga key={c._id} onClick={() => navigate(`/consegne?q=${encodeURIComponent(p.nome)}`)}>
               <span className="tw-font-semibold">{c.titolo}</span>
               <Badge tone={c.priorita === 'urgente' ? 'rosso' : 'slate'}>{c.stato.replace(/_/g, ' ')}</Badge>
               <span className="tw-text-slate-500">{fmtData(c.data)}</span>
@@ -351,7 +351,7 @@ export default function RicercaGlobale() {
 
           <Sezione titolo="Consegne" icona={<ClipboardList size={17} />} count={dati.consegne.length}>
             {dati.consegne.map((c: any) => (
-              <Riga key={c._id} onClick={() => navigate('/consegne')}>
+              <Riga key={c._id} onClick={() => navigate(`/consegne?q=${encodeURIComponent(q)}`)}>
                 <span className="tw-font-semibold">{c.titolo}</span>
                 <Badge tone={c.priorita === 'urgente' ? 'rosso' : 'slate'}>{c.stato.replace(/_/g, ' ')}</Badge>
                 <span className="tw-text-slate-500">{fmtData(c.data)}</span>

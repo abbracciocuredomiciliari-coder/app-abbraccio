@@ -73,7 +73,7 @@ async function dossierPaziente(p: any) {
       ],
     }).sort({ createdAt: -1 }).limit(40).select('to subject tipo area esito createdAt allegati').lean(),
     nomeRegex
-      ? ConsegnaAmministrativa.find({ riferimento: nomeRegex }).sort({ createdAt: -1 }).limit(30)
+      ? ConsegnaAmministrativa.find({ $or: [{ riferimento: nomeRegex }, { titolo: nomeRegex }, { testo: nomeRegex }] }).sort({ createdAt: -1 }).limit(30)
           .select('titolo tipo stato priorita autoreNome createdAt').lean()
       : Promise.resolve([]),
     ConsensoGDPR.find({ patientId: String(pid) }).sort({ dataFirma: -1 }).limit(20)
