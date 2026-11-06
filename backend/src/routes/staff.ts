@@ -100,7 +100,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
 
 // Crea nuovo membro dello staff
 router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
-  const { firstName, lastName, email, role, category, phone, dataInizioCollaborazione, note, modalitaAbilitata } = req.body;
+  const { firstName, lastName, email, role, category, phone, dataInizioCollaborazione, note, modalitaAbilitata, indirizzoResidenza, cittaResidenza } = req.body;
 
   if (!firstName?.trim() || !lastName?.trim() || !email?.trim() || !role) {
     return res.status(400).json({ message: 'I campi nome, cognome, email e ruolo sono obbligatori' });
@@ -124,6 +124,8 @@ router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async
       phone: phone?.trim(),
       note: note?.trim(),
       modalitaAbilitata: modalitaAbilitata || 'entrambi',
+      indirizzoResidenza: indirizzoResidenza?.trim(),
+      cittaResidenza: cittaResidenza?.trim(),
     };
 
     if (dataInizioCollaborazione) {
@@ -144,7 +146,7 @@ router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async
 router.put('/:staffId', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
   try {
     const staffId = req.params.staffId;
-    const { firstName, lastName, email, role, category, phone, note, modalitaAbilitata, domicilioPartenza, raggioAzioneKm, domicilioCoords } = req.body;
+    const { firstName, lastName, email, role, category, phone, note, modalitaAbilitata, domicilioPartenza, raggioAzioneKm, domicilioCoords, indirizzoResidenza, cittaResidenza } = req.body;
     
     const staffCurrent = await Staff.findById(staffId);
     if (!staffCurrent) return res.status(404).json({ message: 'Membro dello staff non trovato' });
@@ -174,6 +176,8 @@ router.put('/:staffId', authenticateToken, authorizeRole('admin', 'coordinator')
     if (modalitaAbilitata && ['entrambi', 'privato', 'convenzione', 'intermediazione'].includes(modalitaAbilitata)) {
       updateData.modalitaAbilitata = modalitaAbilitata;
     }
+    if (indirizzoResidenza !== undefined) updateData.indirizzoResidenza = indirizzoResidenza.trim();
+    if (cittaResidenza !== undefined) updateData.cittaResidenza = cittaResidenza.trim();
     if (domicilioPartenza !== undefined) updateData.domicilioPartenza = domicilioPartenza.trim();
     if (raggioAzioneKm !== undefined) updateData.raggioAzioneKm = Number(raggioAzioneKm);
     if (domicilioCoords?.lat !== undefined) updateData.domicilioCoords = domicilioCoords;

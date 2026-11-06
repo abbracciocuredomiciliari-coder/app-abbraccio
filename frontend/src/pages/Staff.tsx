@@ -18,6 +18,7 @@ import {
   Calendar,
   Phone,
   Mail,
+  MapPin,
   LogOut,
   CheckCircle,
   UserX,
@@ -30,6 +31,7 @@ import { Input } from '../components/ui/Input';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { Loading } from '../components/ui/Loading';
+import CittaAutocomplete from '../components/CittaAutocomplete';
 
 interface StaffMember {
   _id: string;
@@ -45,6 +47,8 @@ interface StaffMember {
   dataFineCollaborazione?: string;
   note?: string;
   modalitaAbilitata?: 'entrambi' | 'privato' | 'convenzione' | 'intermediazione';
+  indirizzoResidenza?: string;
+  cittaResidenza?: string;
   domicilioPartenza?: string;
   raggioAzioneKm?: number;
   domicilioCoords?: { lat: number; lng: number };
@@ -118,14 +122,17 @@ function Staff() {
     role: '',
     category: 'infermieristico' as StaffMember['category'],
     phone: '',
+    indirizzoResidenza: '',
+    cittaResidenza: '',
     dataInizioCollaborazione: new Date().toISOString().split('T')[0],
     note: '',
     modalitaAbilitata: 'entrambi' as 'entrambi' | 'privato' | 'convenzione' | 'intermediazione',
   });
+  const [cittaValida, setCittaValida] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [staffInModifica, setStaffInModifica] = useState<StaffMember | null>(null);
-  const [modificaForm, setModificaForm] = useState({ firstName: '', lastName: '', email: '', phone: '', role: '', category: 'infermieristico' as StaffMember['category'], note: '', modalitaAbilitata: 'entrambi' as 'entrambi' | 'privato' | 'convenzione' | 'intermediazione' });
+  const [modificaForm, setModificaForm] = useState({ firstName: '', lastName: '', email: '', phone: '', indirizzoResidenza: '', cittaResidenza: '', role: '', category: 'infermieristico' as StaffMember['category'], note: '', modalitaAbilitata: 'entrambi' as 'entrambi' | 'privato' | 'convenzione' | 'intermediazione' });
   const [salvataggioModifica, setSalvataggioModifica] = useState(false);
 
   // Document management state
@@ -274,6 +281,11 @@ function Staff() {
     setError('');
     setSuccess('');
 
+    if (formData.cittaResidenza.trim() && !cittaValida) {
+      setError('Seleziona la città dai suggerimenti: deve essere un comune italiano valido.');
+      return;
+    }
+
     try {
       await api.post('/staff', isConsulenza ? { ...formData, modalitaAbilitata: 'privato' } : formData);
       setFormData({
@@ -283,10 +295,13 @@ function Staff() {
         role: '',
         category: 'infermieristico',
         phone: '',
+        indirizzoResidenza: '',
+        cittaResidenza: '',
         dataInizioCollaborazione: new Date().toISOString().split('T')[0],
         note: '',
         modalitaAbilitata: 'entrambi',
       });
+      setCittaValida(true);
       setShowForm(false);
       loadStaff();
       setSuccess('Membro dello staff aggiunto con successo!');
@@ -311,7 +326,7 @@ function Staff() {
 
   const apriModificaStaff = (staff: StaffMember) => {
     setStaffInModifica(staff);
-    setModificaForm({ firstName: staff.firstName, lastName: staff.lastName, email: staff.email, phone: staff.phone || '', role: staff.role, category: staff.category, note: staff.note || '', modalitaAbilitata: staff.modalitaAbilitata || 'entrambi' });
+    setModificaForm({ firstName: staff.firstName, lastName: staff.lastName, email: staff.email, phone: staff.phone || '', indirizzoResidenza: staff.indirizzoResidenza || '', cittaResidenza: staff.cittaResidenza || '', role: staff.role, category: staff.category, note: staff.note || '', modalitaAbilitata: staff.modalitaAbilitata || 'entrambi' });
     setError('');
   };
 
@@ -807,6 +822,28 @@ function Staff() {
               placeholder="+39 333 1234567"
             />
           </label>
+          <div className="tw-grid tw-grid-cols-2 tw-gap-4">
+            <label>
+              Città di residenza
+              <CittaAutocomplete
+                value={formData.cittaResidenza}
+                onChange={(citta, valida) => {
+                  setFormData(prev => ({ ...prev, cittaResidenza: citta }));
+                  setCittaValida(valida);
+                }}
+                placeholder="Es. Roma"
+              />
+            </label>
+            <label>
+              Indirizzo di residenza
+              <input
+                name="indirizzoResidenza"
+                value={formData.indirizzoResidenza}
+                onChange={handleInputChange}
+                placeholder="Via, numero civico, CAP"
+              />
+            </label>
+          </div>
           <label>
             Data inizio collaborazione *
             <input
@@ -900,6 +937,11 @@ function Staff() {
                       {staff.phone && (
                         <span className="tw-inline-flex tw-items-center tw-gap-1">
                           <Phone size={14} /> {staff.phone}
+                        </span>
+                      )}
+                      {(staff.cittaResidenza || staff.indirizzoResidenza) && (
+                        <span className="tw-inline-flex tw-items-center tw-gap-1">
+                          <MapPin size={14} /> {[staff.indirizzoResidenza, staff.cittaResidenza].filter(Boolean).join(', ')}
                         </span>
                       )}
                       <span className="tw-inline-flex tw-items-center tw-gap-1">
@@ -1088,6 +1130,20 @@ function Staff() {
           </div>
           <label>Email di accesso *<input type="email" required value={modificaForm.email} onChange={e => setModificaForm(f => ({ ...f, email: e.target.value }))} /></label>
           <label>Telefono<input type="tel" value={modificaForm.phone} onChange={e => setModificaForm(f => ({ ...f, phone: e.target.value }))} /></label>
+          <div className="tw-grid tw-grid-cols-2 tw-gap-4">
+            <label>
+              Città di residenza
+              <CittaAutocomplete
+                value={modificaForm.cittaResidenza}
+                onChange={(citta) => setModificaForm(f => ({ ...f, cittaResidenza: citta }))}
+                placeholder="Es. Roma"
+              />
+            </label>
+            <label>
+              Indirizzo di residenza
+              <input value={modificaForm.indirizzoResidenza} onChange={e => setModificaForm(f => ({ ...f, indirizzoResidenza: e.target.value }))} placeholder="Via, numero civico, CAP" />
+            </label>
+          </div>
           <div className="tw-grid tw-grid-cols-2 tw-gap-3">
             <label>Categoria<select value={modificaForm.category} onChange={e => setModificaForm(f => ({ ...f, category: e.target.value as StaffMember['category'], role: rolesByCategory[e.target.value]?.includes(f.role) ? f.role : '' }))}>{categories.filter(c => !['privato','osa','assistente-familiare','badante','colf'].includes(c.value) || (!isConvenzione && modificaForm.modalitaAbilitata !== 'convenzione')).map(category => <option key={category.value} value={category.value}>{category.label}</option>)}</select></label>
             <label>Ruolo *<select required value={modificaForm.role} onChange={e => setModificaForm(f => ({ ...f, role: e.target.value }))}><option value="">Seleziona ruolo</option>{rolesByCategory[modificaForm.category].map(role => <option key={role} value={role}>{role}</option>)}</select></label>
