@@ -132,14 +132,23 @@ export default function GestioneRichieste() {
     caricaDati();
   }, []);
 
+  // La lista schede non include firmaBase64 (pesante): la carico solo quando apro la scheda
+  useEffect(() => {
+    if (schedaSelezionata && schedaSelezionata.firmaBase64 === undefined) {
+      api.get(`/scheda-servizio/${schedaSelezionata._id}`)
+        .then(r => setSchedaSelezionata((prev: any) => prev && prev._id === r.data._id ? { ...prev, firmaBase64: r.data.firmaBase64 } : prev))
+        .catch(() => {});
+    }
+  }, [schedaSelezionata?._id]);
+
   const caricaDati = async () => {
     try {
       const [richiesteRes, staffRes, pazienteRes, schedeRes, pazientiRes] = await Promise.allSettled([
         api.get('/richieste-prenotazioni'),
-        api.get('/staff', { params: { active: 'true' } }),
+        api.get('/staff/elenco', { params: { active: 'true' } }),
         api.get('/richieste-paziente'),
         api.get('/scheda-servizio'),
-        api.get('/patients'),
+        api.get('/patients/elenco'),
       ]);
       setRichieste(richiesteRes.status === 'fulfilled' ? (richiesteRes.value.data || []) : []);
       setStaff(staffRes.status === 'fulfilled' ? (staffRes.value.data || []) : []);

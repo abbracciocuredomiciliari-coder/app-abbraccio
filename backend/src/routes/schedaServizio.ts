@@ -73,7 +73,10 @@ router.get('/', authenticateToken, authorizeRole('admin', 'coordinator'), async 
     const { stato } = req.query;
     const filter: any = {};
     if (stato) filter.stato = stato;
+    // Escludo firmaBase64 (immagine base64 pesante): nella lista non serve,
+    // il dettaglio /:id e il PDF la includono comunque
     const schede = await SchedaServizio.find(filter)
+      .select('-firmaBase64')
       .populate('pazienteId', 'firstName lastName')
       .populate('compilataDa', 'name email')
       .sort({ createdAt: -1 });

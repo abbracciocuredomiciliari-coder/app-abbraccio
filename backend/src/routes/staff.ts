@@ -98,6 +98,21 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
   }
 });
 
+// GET /elenco — elenco leggero per tendine/selettori (nessun campo cifrato)
+router.get('/elenco', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const query: any = {};
+    if (req.query.active !== undefined) query.active = req.query.active === 'true';
+    const list = await Staff.find(query)
+      .select('firstName lastName role category active modalitaAbilitata cittaResidenza')
+      .sort({ category: 1, lastName: 1, firstName: 1 })
+      .lean();
+    return res.json(list);
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore nel recupero elenco personale', error });
+  }
+});
+
 // Crea nuovo membro dello staff
 router.post('/', authenticateToken, authorizeRole('admin', 'coordinator'), async (req: Request, res: Response) => {
   const { firstName, lastName, email, role, category, phone, dataInizioCollaborazione, note, modalitaAbilitata, indirizzoResidenza, cittaResidenza } = req.body;

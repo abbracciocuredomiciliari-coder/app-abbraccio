@@ -58,6 +58,24 @@ router.get('/', auditLog('patients', 'READ'), async (req: Request, res: Response
   }
 });
 
+// GET /elenco — elenco leggero _id+nome per tendine/selettori (nessun campo cifrato)
+router.get('/elenco', async (req: Request, res: Response) => {
+  try {
+    const { tipo } = req.query;
+    const filter: any = {};
+    if (tipo === 'privato') filter.tipoGestione = 'privato';
+    else if (tipo === 'convenzione') filter.tipoGestione = 'convenzione';
+    else if (tipo === 'consulenza') filter.tipoGestione = 'consulenza';
+    const pazienti = await Patient.find(filter)
+      .select('firstName lastName')
+      .sort({ lastName: 1, firstName: 1 })
+      .lean();
+    return res.json(pazienti);
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore nel recupero elenco pazienti', error });
+  }
+});
+
 router.post('/', authorizeRole('admin', 'coordinator'), auditLog('patients', 'CREATE'), async (req: Request, res: Response) => {
   const { firstName, lastName, birthDate, address, assistanceNeeds, codiceFiscale, tipoGestione, categoriaPrivata, siat } = req.body;
 
