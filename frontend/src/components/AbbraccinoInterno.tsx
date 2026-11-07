@@ -98,6 +98,24 @@ export default function AbbraccinoInterno() {
         @keyframes abIntGlow { 0%,100%{box-shadow:0 4px 16px rgba(242,181,42,.3), 0 0 0 0 rgba(242,181,42,.45)} 50%{box-shadow:0 4px 20px rgba(242,181,42,.7), 0 0 0 10px rgba(242,181,42,0)} }
         .ab-int-fab { animation: abIntGlow 1.8s ease-in-out infinite; }
         @keyframes abHeartBeat { 0%,100%{transform:scale(1)} 14%{transform:scale(1.18)} 28%{transform:scale(1)} 42%{transform:scale(1.18)} 70%{transform:scale(1)} }
+        .ab-header-close { display: none; }
+        /* Su smartphone la chat diventa a schermo intero: la tastiera non
+           copre più il pannello e tutte le risposte scorrono intere */
+        @media (max-width: 640px) {
+          .ab-chat-panel {
+            inset: 0 !important;
+            top: 0 !important; bottom: 0 !important; left: 0 !important; right: 0 !important;
+            width: 100% !important;
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+            border-radius: 0 !important;
+            border: none !important;
+          }
+          .ab-chat-msgs { max-height: none !important; }
+          .ab-close-fab { display: none !important; }
+          .ab-header-close { display: flex !important; }
+          .ab-chat-input { padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important; }
+        }
       `}</style>
 
       {!open && (
@@ -116,22 +134,26 @@ export default function AbbraccinoInterno() {
       )}
 
       {open && (
-        <button onClick={() => setOpen(false)} aria-label="Chiudi"
+        <button onClick={() => setOpen(false)} aria-label="Chiudi" className="ab-close-fab"
           style={{ position: 'fixed', bottom: 18, right: 18, width: 62, height: 62, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#1e3a5f,#1e4d8c)', color: '#fff', cursor: 'pointer', boxShadow: '0 6px 22px rgba(30,77,140,.4)', zIndex: 9990, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <X size={26} />
         </button>
       )}
 
       {open && (
-        <div style={{ position: 'fixed', bottom: 90, right: 14, width: 'min(370px, calc(100vw - 28px))', maxHeight: '72vh', background: '#fff', borderRadius: 18, boxShadow: '0 10px 40px rgba(0,0,0,.22)', zIndex: 9990, display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #dbeafe', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
+        <div className="ab-chat-panel" style={{ position: 'fixed', bottom: 90, right: 14, width: 'min(370px, calc(100vw - 28px))', maxHeight: '72vh', background: '#fff', borderRadius: 18, boxShadow: '0 10px 40px rgba(0,0,0,.22)', zIndex: 9990, display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #dbeafe', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
           <div style={{ background: 'linear-gradient(135deg,#1e3a5f,#1e4d8c)', color: '#fff', padding: '12px 16px', fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 8 }}>
             <CuoricinoIcon size={26} /> Abbraccino — guida del gestionale
             <button onClick={pulisci} title="Pulisci la conversazione"
               style={{ marginLeft: 'auto', background: 'rgba(255,255,255,.15)', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, padding: '5px 9px', fontSize: '0.72rem', fontWeight: 700 }}>
               <Trash2 size={14} /> Pulisci
             </button>
+            <button onClick={() => setOpen(false)} aria-label="Chiudi" className="ab-header-close"
+              style={{ background: 'rgba(255,255,255,.15)', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', alignItems: 'center', justifyContent: 'center', padding: '5px 8px' }}>
+              <X size={18} />
+            </button>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8, minHeight: 220, maxHeight: '50vh' }}>
+          <div className="ab-chat-msgs" style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8, minHeight: 220, maxHeight: '50vh' }}>
             {msgs.map((m, i) => (
               <div key={i} style={{ alignSelf: m.who === 'io' ? 'flex-end' : 'flex-start', maxWidth: '88%' }}>
                 <div style={{ background: m.who === 'io' ? '#1e4d8c' : '#f1f5f9', color: m.who === 'io' ? '#fff' : '#1e293b', borderRadius: 14, padding: '9px 12px', fontSize: '0.85rem', lineHeight: 1.45, whiteSpace: 'pre-wrap' }}>
@@ -172,7 +194,7 @@ export default function AbbraccinoInterno() {
             {busy && <div style={{ alignSelf: 'flex-start', color: '#94a3b8', fontSize: '0.8rem' }}>Abbraccino sta cercando…</div>}
             <div ref={bottomRef} />
           </div>
-          <form onSubmit={invia} style={{ display: 'flex', gap: 8, padding: 10, borderTop: '1px solid #e2e8f0' }}>
+          <form onSubmit={invia} className="ab-chat-input" style={{ display: 'flex', gap: 8, padding: 10, borderTop: '1px solid #e2e8f0' }}>
             <input value={input} onChange={(e) => setInput(e.target.value)} placeholder={listening ? 'Ti ascolto…' : 'Es: quanto costa una flebo? · paziente Rossi'}
               style={{ flex: 1, padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: 999, fontSize: '0.88rem', fontFamily: 'inherit' }} />
             {SR && (
