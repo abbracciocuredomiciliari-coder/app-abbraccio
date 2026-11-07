@@ -124,44 +124,45 @@ function Dashboard() {
           isPrivilegiato ? caricaNuoviAccettati() : Promise.resolve(),
         ]);
         setCounts(dashRes.data);
-        try {
-          const consegneRes = await api.get('/consegne-amministrative/conteggio');
-          setConsegne({ aperte: consegneRes.data.aperte || 0, daGestire: consegneRes.data.daGestire || 0 });
-        } catch { /* non bloccante */ }
-        try {
-          const unreadRes = await api.get('/messages/unread-count');
-          setUnreadChat(unreadRes.data || { general: 0, patient: 0, total: 0 });
-        } catch { /* non bloccante */ }
+
+        // Contatori secondari: in parallelo e non bloccano lo spinner principale
+        const extra: Promise<void>[] = [
+          api.get('/consegne-amministrative/conteggio')
+            .then(r => setConsegne({ aperte: r.data.aperte || 0, daGestire: r.data.daGestire || 0 }))
+            .catch(() => {}),
+          api.get('/messages/unread-count')
+            .then(r => setUnreadChat(r.data || { general: 0, patient: 0, total: 0 }))
+            .catch(() => {}),
+        ];
         if (isPrivilegiato) {
-          try {
-            const mailRes = await api.get('/archivio-email/ricevute', { params: { letta: 'non-lette', limit: 5 } });
-            setEmailNonLette(mailRes.data?.nonLette || 0);
-            setUltimeRicevute(mailRes.data?.email || []);
-          } catch { /* non bloccante */ }
-        }
-        if (isPrivilegiato) {
-          try {
-            const assignmentsRes = await api.get(`/workplan/assignment-status${tipoQuery}`);
-            setAssignmentCounts(assignmentsRes.data.counts || { in_attesa: 0, accettato: 0, rifiutato: 0 });
-          } catch { /* non bloccante */ }
+          extra.push(
+            api.get('/archivio-email/ricevute', { params: { letta: 'non-lette', limit: 5 } })
+              .then(r => { setEmailNonLette(r.data?.nonLette || 0); setUltimeRicevute(r.data?.email || []); })
+              .catch(() => {}),
+            api.get(`/workplan/assignment-status${tipoQuery}`)
+              .then(r => setAssignmentCounts(r.data.counts || { in_attesa: 0, accettato: 0, rifiutato: 0 }))
+              .catch(() => {}),
+          );
         }
         // Conta utenti pending (solo admin)
         if (user?.role === 'admin') {
-          try {
-            const usersRes = await api.get('/auth/all-users');
-            setPendingCount(usersRes.data.filter((u: any) => u.status === 'pending').length);
-          } catch { /* non bloccante */ }
+          extra.push(
+            api.get('/auth/all-users')
+              .then(r => setPendingCount(r.data.filter((u: any) => u.status === 'pending').length))
+              .catch(() => {}),
+          );
         }
         // Conta richieste in attesa (admin/coordinator)
         if (user?.role === 'admin' || user?.role === 'coordinator') {
-          try {
-            const [pren, paz, schede] = await Promise.all([
+          extra.push(
+            Promise.all([
               api.get('/richieste-prenotazioni', { params: { stato: 'in_attesa' } }),
               api.get('/richieste-paziente', { params: { stato: 'in_attesa' } }),
               api.get('/scheda-servizio', { params: { stato: 'inviata' } }),
-            ]);
-            setRichiesteInAttesa((pren.data?.length || 0) + (paz.data?.length || 0) + (schede.data?.length || 0));
-          } catch { /* non bloccante */ }
+            ])
+              .then(([pren, paz, schede]) => setRichiesteInAttesa((pren.data?.length || 0) + (paz.data?.length || 0) + (schede.data?.length || 0)))
+              .catch(() => {}),
+          );
         }
       } catch (error) {
         console.error('Errore caricamento dashboard', error);

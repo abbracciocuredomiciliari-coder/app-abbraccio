@@ -4,7 +4,12 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/app-ab
 
 const connectDB = async (): Promise<void> => {
   try {
-    await mongoose.connect(MONGODB_URI);
+    await mongoose.connect(MONGODB_URI, {
+      maxPoolSize: 20,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+      heartbeatFrequencyMS: 10000,
+    });
     console.log('MongoDB connesso');
   } catch (error) {
     console.error('Impossibile connettersi a MongoDB', error);

@@ -1,6 +1,7 @@
 import './config/env';
 import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import helmet from 'helmet';
 import path from 'path';
 import jwt from 'jsonwebtoken';
@@ -135,6 +136,9 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+// Compressione gzip di tutte le risposte API (liste grandi → caricamento più veloce)
+app.use(compression());
 
 app.use(express.json({ limit: '10mb' }));
 

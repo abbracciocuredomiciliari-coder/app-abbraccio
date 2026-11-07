@@ -460,7 +460,10 @@ router.patch('/change-password', authenticateToken, async (req: AuthRequest, res
 // GET /pending — lista utenti in attesa (solo admin)
 router.get('/pending', authenticateToken, authorizeRole('admin'), async (req: AuthRequest, res: Response) => {
   try {
-    const pendingUsers = await User.find({ status: 'pending' }).select('-password').sort({ createdAt: -1 });
+    const pendingUsers = await User.find({ status: 'pending' })
+      .select('-password -firmaContratto -resetPasswordToken -resetPasswordExpires')
+      .lean()
+      .sort({ createdAt: -1 });
     return res.json(pendingUsers);
   } catch (error) {
     return res.status(500).json({ message: 'Errore nel recupero degli utenti in attesa', error });
@@ -470,7 +473,11 @@ router.get('/pending', authenticateToken, authorizeRole('admin'), async (req: Au
 // GET /all-users — lista tutti gli utenti (solo admin)
 router.get('/all-users', authenticateToken, authorizeRole('admin'), async (req: AuthRequest, res: Response) => {
   try {
-    const users = await User.find({ status: { $ne: 'deleted' } }).select('-password').sort({ createdAt: -1 });
+    // Escludo campi pesanti non necessari alla lista (firma base64, token reset)
+    const users = await User.find({ status: { $ne: 'deleted' } })
+      .select('-password -firmaContratto -resetPasswordToken -resetPasswordExpires')
+      .lean()
+      .sort({ createdAt: -1 });
     return res.json(users);
   } catch (error) {
     return res.status(500).json({ message: 'Errore nel recupero degli utenti', error });
