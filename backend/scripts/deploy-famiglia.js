@@ -57,11 +57,25 @@ async function uploadDir(sftp, local, remote) {
   }
 }
 
+// Blocco HTTP: redirect verso HTTPS (il certificato Let's Encrypt esiste già).
+// IMPORTANTE: non rimuovere il blocco SSL — certbot lo aveva aggiunto ma veniva
+// sovrascritto a ogni deploy; ora è incluso qui in modo permanente.
 const NGINX_CONF = `server {
     listen 80;
     server_name famiglia.abbracciocuredomiciliari.it famigli.abbracciocuredomiciliari.it;
+    return 301 https://famiglia.abbracciocuredomiciliari.it$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name famiglia.abbracciocuredomiciliari.it famigli.abbracciocuredomiciliari.it;
     root /var/www/famiglia-abbraccio;
     index index.html;
+
+    ssl_certificate /etc/letsencrypt/live/famiglia.abbracciocuredomiciliari.it/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/famiglia.abbracciocuredomiciliari.it/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
     location / {
         try_files $uri $uri/ /index.html;
@@ -92,7 +106,7 @@ async function main() {
   let r = await exec(`cp ${tmp} /etc/nginx/sites-available/famiglia-abbraccio && ln -sf /etc/nginx/sites-available/famiglia-abbraccio /etc/nginx/sites-enabled/famiglia-abbraccio && nginx -t && systemctl reload nginx`);
   console.log('nginx:', r.out.trim(), r.stderr.trim());
 
-  console.log('Deploy famiglia completato. Attendi DNS, poi lancia certbot --nginx -d famiglia.abbracciocuredomiciliari.it');
+  console.log('Deploy famiglia completato → https://famiglia.abbracciocuredomiciliari.it');
   conn.end();
 }
 
