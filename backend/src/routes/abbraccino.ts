@@ -259,8 +259,12 @@ router.post('/interno', authenticateToken, rateLimitByIP(40, 10 * 60 * 1000), as
     //    viene gestito dal fallback: se nessun maiuscolo, tenta le ultime 2 parole).
     const parole = messaggio.replace(/[.,!?;:()"']/g, ' ').split(/\s+/).filter(Boolean);
     const maiuscole = parole.filter((w, i) => /^[A-ZÀÈÉÌÒÙ]/.test(w) && w.length > 2 && (i > 0 || parole.length > 1));
+    // Un solo nome proprio conta comunque ("mostrami Rossi"): senza questo il
+    // testo diceva "usa i pulsanti" ma non veniva generato nessun bottone.
     const candidatiNome = maiuscole.length >= 2 ? maiuscole.slice(0, 3)
-      : parole.length >= 2 && /paziente|sig\.?|signor|dott|mario|professionista|operatore/i.test(msgLow)
+      : maiuscole.length === 1 && (parole.length <= 4 || /cerca|trova|mostrami|apri|scheda|dossier|paziente|operatore|info|storic/i.test(msgLow))
+        ? maiuscole
+      : parole.length >= 2 && /paziente|sig\.?|signor|dott|professionista|operatore|cerca|trova|scheda|dossier|info/i.test(msgLow)
         ? parole.slice(-2) : [];
     let personeTxt = '';
     if (candidatiNome.length) {

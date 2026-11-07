@@ -48,16 +48,24 @@ async function dossierPaziente(p: any) {
     .select('profilo stato dataFirma createdAt').lean();
   const contrattoIds = contratti.map((c: any) => c._id);
 
+  // Preventivi inviati: match per email, nome cliente E telefono (invii
+  // WhatsApp spesso hanno solo il numero, non email né nome paziente)
+  const telDigits = dec(p.contactPhone).replace(/\D/g, '');
+  const telTail = telDigits.length >= 8 ? telDigits.slice(-8) : null;
+  const inviiOr: any[] = [
+    ...(mailRegex ? [{ email: { $regex: `^${mailRegex}$`, $options: 'i' } }] : []),
+    ...(nomeRegex ? [{ nomeCliente: nomeRegex }] : []),
+    ...(telTail ? [{ telefono: { $regex: telTail } }] : []),
+    ...(contrattoIds.length ? [{ contrattoId: { $in: contrattoIds } }] : []),
+  ];
+
   const [documenti, invii, richieste, badanti, piani, email, consegne, gdpr] = await Promise.all([
     DocumentoFatturazione.find({ patient: pid }).sort({ createdAt: -1 }).limit(60)
       .select('numero tipo totale totaleMensileStimato stato data createdAt').lean(),
-    PreventivoInviato.find({
-      $or: [
-        ...(mailRegex ? [{ email: { $regex: `^${mailRegex}$`, $options: 'i' } }] : []),
-        ...(nomeRegex ? [{ nomeCliente: nomeRegex }] : []),
-        ...(contrattoIds.length ? [{ contrattoId: { $in: contrattoIds } }] : []),
-      ],
-    }).sort({ createdAt: -1 }).limit(40).select('tipo canale nomeCliente telefono totale createdAt inviatoDa').lean(),
+    inviiOr.length
+      ? PreventivoInviato.find({ $or: inviiOr }).sort({ createdAt: -1 }).limit(40)
+          .select('tipo canale nomeCliente telefono totale createdAt inviatoDa').lean()
+      : Promise.resolve([]),
     RichiestaPrenotazione.find({
       $or: [{ pazienteId: pid }, ...(nomeRegex ? [{ pazienteNome: nomeRegex }] : [])],
     }).sort({ createdAt: -1 }).limit(40).select('tipoServizio stato pazienteNome createdAt').lean(),

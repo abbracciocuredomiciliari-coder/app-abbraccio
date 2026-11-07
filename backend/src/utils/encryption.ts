@@ -10,9 +10,14 @@ if (!ENCRYPTION_KEY || ENCRYPTION_KEY.length < 32) {
   console.error('WARNING: ENCRYPTION_KEY non impostata o troppo corta. Usare chiave AES-256 di almeno 32 caratteri.');
 }
 
+// La chiave derivata si calcola UNA volta: scryptSync è volutamente costosa
+// (decine di ms a chiamata) e veniva rieseguita per OGNI campo cifrato di OGNI
+// documento — il motivo per cui liste pazienti/personale impiegavano secondi.
+let cachedKey: Buffer | null = null;
 function getKey(): Buffer {
   if (!ENCRYPTION_KEY) throw new Error('ENCRYPTION_KEY mancante');
-  return crypto.scryptSync(ENCRYPTION_KEY, SALT, 32);
+  if (!cachedKey) cachedKey = crypto.scryptSync(ENCRYPTION_KEY, SALT, 32);
+  return cachedKey;
 }
 
 /**
