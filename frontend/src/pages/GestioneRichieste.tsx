@@ -665,6 +665,8 @@ export default function GestioneRichieste() {
         ))}
       </div>
 
+      <style>{`.gr-mobile{display:none}@media(max-width:760px){.gr-desktop{display:none !important}.gr-mobile{display:flex;flex-direction:column;gap:10px}}`}</style>
+
       {/* Tabella richieste */}
       {filteredRichieste.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: '#666' }}>
@@ -672,7 +674,72 @@ export default function GestioneRichieste() {
           <p>Nessuna richiesta {activeTab !== 'tutte' ? 'in questa categoria' : ''}</p>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <>
+        {/* Vista mobile: card impilabili, tutto raggiungibile senza scroll laterale */}
+        <div className="gr-mobile">
+          {filteredRichieste.map((r: Richiesta) => (
+            <div key={r._id} style={{ background: 'white', borderRadius: '12px', padding: '14px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1e293b' }}>{r.pazienteNome}</div>
+                  <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>{getTipoIcon(r.tipoServizio)}{r.tipoSpecifico ? ` — ${r.tipoSpecifico}` : ''}</div>
+                </div>
+                {getStatoBadge(r.stato)}
+              </div>
+              <div style={{ fontSize: '0.8rem', color: '#475569', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                {r.pazienteIndirizzo && <span>📍 {r.pazienteIndirizzo}</span>}
+                <span>👤 {r.richiedenteNome}{r.richiedenteEmail ? ` — ${r.richiedenteEmail}` : ''}</span>
+                <span>📅 {new Date(r.dataPreferita).toLocaleDateString('it-IT')}{r.orarioPreferito ? ` ore ${r.orarioPreferito}` : ''}</span>
+                {r.staffAssegnatoNome && <span>🧑‍⚕️ {r.staffAssegnatoNome}</span>}
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => apriGestione(r)}
+                  style={{ flex: '1 1 45%', padding: '10px 12px', background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Gestisci
+                </button>
+                {r.stato === 'in_attesa' && (
+                  <>
+                    <button
+                      onClick={() => {
+                        const dataConfermata = prompt('Data confermata (YYYY-MM-DD):', r.dataPreferita?.split('T')[0]);
+                        if (!dataConfermata) return;
+                        const orarioConfermato = prompt('Orario confermato (HH:MM):', r.orarioPreferito || '09:00');
+                        if (!orarioConfermato) return;
+                        approvaRichiesta(r._id, { dataConfermata, orarioConfermato });
+                      }}
+                      style={{ flex: '1 1 45%', padding: '10px 12px', background: '#d1fae5', color: '#065f46', border: 'none', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      ✓ Approva
+                    </button>
+                    <button
+                      onClick={() => {
+                        const motivo = prompt('Motivo del rifiuto (opzionale):');
+                        if (motivo !== null) {
+                          rifiutaRichiesta(r._id, motivo || undefined);
+                        }
+                      }}
+                      style={{ padding: '10px 12px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      ✕ Rifiuta
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => eliminaRichiesta(r._id)}
+                  style={{ padding: '10px 12px', background: '#f3f4f6', color: '#6b7280', border: 'none', borderRadius: '8px', fontSize: '0.85rem', cursor: 'pointer' }}
+                  title="Elimina richiesta"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Vista desktop: tabella */}
+        <div className="gr-desktop" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
             <thead>
               <tr style={{ background: '#f8fafc' }}>
@@ -761,6 +828,7 @@ export default function GestioneRichieste() {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {/* Modal Gestione */}

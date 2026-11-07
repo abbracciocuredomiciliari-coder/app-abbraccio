@@ -955,6 +955,22 @@ div[style*="border:1px solid #e5e7eb"] {
     max-width: 100%;
     box-sizing: border-box;
   }
+
+  /* Griglie Tailwind a 3-4 colonne: su tablet scendono a 2 */
+  .tw-grid-cols-3, .tw-grid-cols-4 { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+@media (max-width: 640px) {
+  /* Griglie a 2+ colonne definite inline (1fr 1fr, repeat(N,1fr)):
+     su schermi stretti collassano in pila invece di schiacciarsi */
+  .content [style*="1fr 1fr"],
+  .content [style*="repeat(2, 1fr)"],
+  .content [style*="repeat(3, 1fr)"],
+  .content [style*="repeat(4, 1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
+  /* Griglie Tailwind a 2+ colonne: una colonna sola */
+  .tw-grid-cols-2, .tw-grid-cols-3, .tw-grid-cols-4 { grid-template-columns: 1fr !important; }
 }
 
 @media (max-width: 480px) {
