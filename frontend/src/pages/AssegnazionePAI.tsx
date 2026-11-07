@@ -114,8 +114,9 @@ export default function AssegnazionePAI() {
   const [indirizzoCoords, setIndirizzoCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [loadingIndirizzo, setLoadingIndirizzo] = useState(false);
 
-  // Filtro figure professionali
+  // Filtro figure professionali + ricerca testuale operatori
   const [figuraFiltro, setFiguraFiltro] = useState<string[]>([]);
+  const [cercaOperatore, setCercaOperatore] = useState('');
 
   const isPrivilegiato = user && ['admin', 'coordinator', 'direttore'].includes(user.role);
   const colore = isConvenzione ? '#0369a1' : isConsulenza ? '#ea580c' : '#1e4d8c';
@@ -237,10 +238,17 @@ export default function AssegnazionePAI() {
     setSalvandoPiano(false);
   };
 
-  // ─── Filtra operatori per figura selezionata ──────────────────────────────
-  const operatoriVisualizzati = figuraFiltro.length === 0
-    ? operatoriInZona
-    : operatoriInZona.filter(op => figuraFiltro.includes(op.role.toLowerCase()));
+  // ─── Filtra operatori per figura e/o ricerca testuale ─────────────────────
+  // Il match è "contiene" su ruolo E categoria: i ruoli reali in anagrafica
+  // possono essere composti (es. "operatore-socio-sanitario" deve matchare "oss").
+  const opRole = (op: OperatoreInZona) => `${op.role || ''} ${op.category || ''}`.toLowerCase().replace(/-/g, ' ');
+  const q = cercaOperatore.trim().toLowerCase();
+  const operatoriVisualizzati = operatoriInZona
+    .filter(op => figuraFiltro.length === 0 || figuraFiltro.some(fig =>
+      opRole(op).includes(fig.replace(/-/g, ' '))))
+    .filter(op => !q ||
+      `${op.firstName} ${op.lastName} ${op.role} ${op.category} ${op.cittaResidenza || ''} ${op.domicilioPartenza || ''}`
+        .toLowerCase().includes(q));
 
   // ─── Marker mappa ──────────────────────────────────────────────────────────
   const markersOperatori = operatoriVisualizzati
@@ -286,7 +294,7 @@ export default function AssegnazionePAI() {
         </div>
       </div>
 
-      <style>{`.assegna-grid{display:grid;grid-template-columns:minmax(300px,340px) 1fr;gap:20px;align-items:start}@media(max-width:980px){.assegna-grid{grid-template-columns:1fr !important}}`}</style>
+      <style>{`.assegna-grid{display:grid;grid-template-columns:minmax(300px,340px) 1fr;gap:20px;align-items:start}@media(max-width:980px){.assegna-grid{grid-template-columns:1fr !important}}@media(max-width:640px){.assegna-grid{gap:12px}.op-list{max-height:52vh !important}}`}</style>
       <div className="assegna-grid">
 
         {/* ═══ COLONNA SINISTRA: ricerca + lista ════════════════════════════ */}
@@ -420,6 +428,20 @@ export default function AssegnazionePAI() {
                 <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0 }}>Impossibile cercare operatori senza coordinate paziente o indirizzo.</p>
               )}
 
+              {/* Ricerca operatore per nome/ruolo/città */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 10px' }}>
+                <Search size={14} style={{ color: '#94a3b8', flexShrink: 0 }} />
+                <input
+                  value={cercaOperatore}
+                  onChange={e => setCercaOperatore(e.target.value)}
+                  placeholder="Cerca operatore per nome, ruolo, città..."
+                  style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '0.82rem', color: '#1e293b', minWidth: 0 }}
+                />
+                {cercaOperatore && (
+                  <button type="button" onClick={() => setCercaOperatore('')} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem', padding: 0 }}>✕</button>
+                )}
+              </div>
+
               {/* Filtro figure */}
               <div style={{ marginBottom: '10px', display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.76rem', color: '#64748b', fontWeight: 600 }}>Filtra figura:</span>
@@ -444,13 +466,18 @@ export default function AssegnazionePAI() {
                   <div style={{ marginTop: '4px' }}>Possibili cause: nessun operatore ha impostato la propria zona di lavoro, oppure l'indirizzo non è coperto dai raggi d'azione configurati. Vai a <em>Gestione Personale</em> per configurare la zona degli operatori.</div>
                 </div>
               )}
+              {!loadingZona && operatoriInZona.length > 0 && operatoriVisualizzati.length === 0 && (
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px', fontSize: '0.82rem', color: '#64748b' }}>
+                  Nessun operatore corrisponde ai filtri impostati. <button type="button" onClick={() => { setFiguraFiltro([]); setCercaOperatore(''); }} style={{ color: colore, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, textDecoration: 'underline', padding: 0, fontSize: '0.82rem' }}>Azzera tutto</button>
+                </div>
+              )}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '340px', overflowY: 'auto' }}>
+              <div className="op-list" style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '380px', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
                 {operatoriVisualizzati.map((op, i) => (
                   <button
                     key={op._id}
                     type="button"
-                    onClick={() => { setOperatoreSelezionato(op); setShowFormPiano(true); setPianoCreatoMsg(''); }}
+                    onClick={() => setSchedaOperatore(op)}
                     style={{
                       textAlign: 'left', padding: '10px 12px', borderRadius: '8px', cursor: 'pointer',
                       background: operatoreSelezionato?._id === op._id ? '#f0fdf4' : '#f8fafc',
@@ -459,14 +486,18 @@ export default function AssegnazionePAI() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e293b', flex: '1 1 60%', minWidth: 0, overflowWrap: 'anywhere' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e293b', flex: '1 1 55%', minWidth: 0, overflowWrap: 'anywhere' }}>
                         <span style={{ display: 'inline-block', width: '20px', height: '20px', borderRadius: '50%', background: COLORI_CATEGORIA[op.category] || '#059669', color: 'white', fontSize: '0.7rem', textAlign: 'center', lineHeight: '20px', marginRight: '6px' }}>{i + 1}</span>
                         {op.firstName} {op.lastName}
                       </div>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: op.inZona === false ? '#94a3b8' : '#059669', flexShrink: 0 }}>{op.distanzaKm != null ? '📍 ' + op.distanzaKm + ' km' : '📍 —'}{op.inZona === false ? ' · fuori zona' : ''}</span>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: op.distanzaKm == null ? '#94a3b8' : op.inZona === false ? '#94a3b8' : '#059669', flexShrink: 0 }}>
+                        {op.distanzaKm != null ? `📍 ${op.distanzaKm} km${op.inZona === false ? ' · fuori zona' : ''}` : '🏠 zona non impostata'}
+                      </span>
                     </div>
-                    <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px', marginLeft: '26px' }}>
-                      {op.role} · raggio {op.raggioAzioneKm ?? 10} km
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#64748b', marginTop: '2px', marginLeft: '26px', flexWrap: 'wrap' }}>
+                      <span>{op.role} · raggio {op.raggioAzioneKm ?? 10} km</span>
+                      {op.phone && <span style={{ color: '#94a3b8' }}>· 📞 {op.phone}</span>}
+                      <span style={{ marginLeft: 'auto', fontSize: '0.7rem', fontWeight: 700, color: colore, whiteSpace: 'nowrap' }}>SCHEDA ›</span>
                     </div>
                     {op.domicilioPartenza && (
                       <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '1px', marginLeft: '26px' }}>🏠 {op.domicilioPartenza}</div>
