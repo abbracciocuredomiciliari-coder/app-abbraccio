@@ -157,6 +157,8 @@ function AppShell() {
   const { toasts, removeToast } = useToast();
 
   const isActive = (path: string) => location.pathname === path;
+  // Sezione menu aperta solo se contiene la pagina corrente (menu ridotto, stile demo)
+  const secOpen = (...paths: string[]) => paths.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
   const isFirma = location.pathname.startsWith('/firma-');
   // Landing pubbliche e link esterni del sito: pagina dedicata senza menu/login
   const isLanding = ['/badante', '/preventivo', '/register', '/richiesta-servizio', '/richiesta-assistenza', '/scrivi-consegna', '/iscriviti-intermediazione', '/area-famiglia', '/colloquio'].includes(location.pathname);
@@ -395,8 +397,14 @@ function AppShell() {
           {/* ===== MENU PRIVILEGIATI (admin, coordinator, direttore) — aree Privato/Convenzione ===== */}
           {user && isPrivilegiato(user.role) && !isConsulenza && !isOrganizzativa && (
             <>
+              {/* Ricerca globale sempre visibile */}
+              <Link to="/ricerca" className={isActive('/ricerca') ? 'active' : ''}>
+                <Search size={18} />
+                Ricerca globale
+              </Link>
               {/* — Panoramica — */}
-              <span className="nav-section-label">Panoramica</span>
+              <details className="nav-section" open={secOpen('/oggi','/dashboard','/chat','/verbali-equipe','/consegne')}>
+              <summary className="nav-section-label">Panoramica</summary>
               <Link to="/oggi" className={isActive('/oggi') ? 'active' : ''}>
                 <CalendarCheck size={18} />
                 Oggi
@@ -404,10 +412,6 @@ function AppShell() {
               <Link to="/dashboard" className={isActive('/dashboard') ? 'active' : ''}>
                 <LayoutDashboard size={18} />
                 Dashboard
-              </Link>
-              <Link to="/ricerca" className={isActive('/ricerca') ? 'active' : ''}>
-                <Search size={18} />
-                Ricerca globale
               </Link>
               <Link to="/chat" className={isActive('/chat') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <MessageCircle size={18} />
@@ -424,8 +428,10 @@ function AppShell() {
                 <ConsegneBadge />
               </Link>
 
+              </details>
               {/* — Clinico — */}
-              <span className="nav-section-label">Clinico</span>
+              <details className="nav-section" open={secOpen('/patients','/pazienti-convenzione','/centro-prenotazioni','/telemedicina','/relazioni-firmate','/assegnazione-pai')}>
+              <summary className="nav-section-label">Clinico</summary>
               {!isConvenzione && (
                 <Link to="/patients" className={isActive('/patients') ? 'active' : ''}>
                   <Users size={18} />
@@ -463,8 +469,10 @@ function AppShell() {
                 {isConvenzione ? 'Assegnazione PAI' : 'Assegnazione Piano di Lavoro'}
               </Link>
 
+              </details>
               {/* — Operativo — */}
-              <span className="nav-section-label">Operativo</span>
+              <details className="nav-section" open={secOpen('/portale-operatore','/piani-lavorativi','/staff')}>
+              <summary className="nav-section-label">Operativo</summary>
               {user.role === 'coordinator' && (
                 <>
                   <Link to="/portale-operatore" className={isActive('/portale-operatore') ? 'active' : ''}>
@@ -482,8 +490,10 @@ function AppShell() {
                 Personale
               </Link>
 
+              </details>
               {/* — Amministrazione — */}
-              <span className="nav-section-label">Amministrazione</span>
+              <details className="nav-section" open={secOpen('/compenso-incarichi','/gestione-fatturazione','/gestione-ritenute','/archivio-fatture','/archivio-preventivi','/preventivo-veloce','/tariffario','/archivio-email')}>
+              <summary className="nav-section-label">Amministrazione</summary>
               <Link to="/compenso-incarichi" className={isActive('/compenso-incarichi') ? 'active' : ''}>
                 <Euro size={18} />
                 Compenso incarichi
@@ -521,11 +531,13 @@ function AppShell() {
                 Email gestione
                 <EmailRicevuteBadge />
               </Link>
+              </details>
 
               {/* — Sistema (solo admin) — */}
               {user.role === 'admin' && (
                 <>
-                  <span className="nav-section-label">Sistema</span>
+                  <details className="nav-section" open={secOpen('/gestione-utenti','/gestione-richieste','/gestione-consensi-gdpr','/esportazione-siat')}>
+                  <summary className="nav-section-label">Sistema</summary>
                   <Link to="/gestione-utenti" className={isActive('/gestione-utenti') ? 'active' : ''}>
                     <ShieldCheck size={18} />
                     Gestione Utenti
@@ -544,6 +556,7 @@ function AppShell() {
                       Esportazione SIAT
                     </Link>
                   )}
+                  </details>
                 </>
               )}
             </>
@@ -552,7 +565,8 @@ function AppShell() {
           {/* ===== SCHERMATA PROCEDURE ORGANIZZATIVE (admin, coordinator, direttore) ===== */}
           {user && isPrivilegiato(user.role) && isOrganizzativa && (
             <>
-              <span className="nav-section-label">Panoramica</span>
+              <details className="nav-section" open={secOpen('/oggi','/consegne')}>
+              <summary className="nav-section-label">Panoramica</summary>
               <Link to="/oggi" className={isActive('/oggi') ? 'active' : ''}>
                 <CalendarCheck size={18} />
                 Oggi
@@ -563,13 +577,17 @@ function AppShell() {
                 <ConsegneBadge />
               </Link>
 
-              <span className="nav-section-label">Amministrazione</span>
+              </details>
+              <details className="nav-section" open={secOpen('/amministrazione')}>
+              <summary className="nav-section-label">Amministrazione</summary>
               <Link to="/amministrazione" className={isActive('/amministrazione') ? 'active' : ''}>
                 <Calculator size={18} />
                 Documenti e scadenze
               </Link>
 
-              <span className="nav-section-label">Procedure Organizzative</span>
+              </details>
+              <details className="nav-section" open={secOpen('/protocolli-procedure','/procedure','/protocolli','/modulistica','/checklist','/scheda-controllo','/storico-cliniche','/archivio-cartelle','/strumenti','/report-consegne','/gestione-contratti')}>
+              <summary className="nav-section-label">Procedure Organizzative</summary>
               <Link to="/protocolli-procedure" className={isActive('/protocolli-procedure') ? 'active' : ''}>
                 <ClipboardList size={18} />
                 Protocolli e Procedure
@@ -601,13 +619,20 @@ function AppShell() {
                 <FileText size={18} />
                 Contratti operatori
               </Link>
+              </details>
             </>
           )}
 
           {/* ===== MENU INTERMEDIAZIONI (admin, coordinator, direttore) ===== */}
           {user && isPrivilegiato(user.role) && isConsulenza && (
             <>
-              <span className="nav-section-label">Intermediazioni</span>
+              {/* Ricerca globale sempre visibile */}
+              <Link to="/ricerca" className={isActive('/ricerca') ? 'active' : ''}>
+                <Search size={18} />
+                Ricerca globale
+              </Link>
+              <details className="nav-section" open={secOpen('/oggi','/badanti-intermediazione','/riunioni-colloquio','/consegne','/patients','/staff','/assegnazione-pai','/gestione-contratti')}>
+              <summary className="nav-section-label">Intermediazioni</summary>
               <Link to="/oggi" className={isActive('/oggi') ? 'active' : ''}>
                 <CalendarCheck size={18} />
                 Oggi
@@ -615,10 +640,6 @@ function AppShell() {
               <Link to="/badanti-intermediazione" className={isActive('/badanti-intermediazione') ? 'active' : ''}>
                 <Users size={18} />
                 Intermediazioni
-              </Link>
-              <Link to="/ricerca" className={isActive('/ricerca') ? 'active' : ''}>
-                <Search size={18} />
-                Ricerca globale
               </Link>
               <Link to="/riunioni-colloquio" className={isActive('/riunioni-colloquio') ? 'active' : ''}>
                 <Video size={18} />
@@ -646,7 +667,9 @@ function AppShell() {
                 Contratti operatori
               </Link>
 
-              <span className="nav-section-label">Amministrazione</span>
+              </details>
+              <details className="nav-section" open={secOpen('/gestione-fatturazione','/archivio-fatture','/archivio-preventivi','/archivi-intermediazione','/archivio-email')}>
+              <summary className="nav-section-label">Amministrazione</summary>
               <Link to="/gestione-fatturazione" className={isActive('/gestione-fatturazione') ? 'active' : ''}>
                 <Receipt size={18} />
                 Fatturazione
@@ -668,11 +691,13 @@ function AppShell() {
                 Email gestione
                 <EmailRicevuteBadge />
               </Link>
+              </details>
 
               {/* — Sistema (solo admin) — */}
               {user.role === 'admin' && (
                 <>
-                  <span className="nav-section-label">Sistema</span>
+                  <details className="nav-section" open={secOpen('/gestione-utenti','/gestione-richieste')}>
+                  <summary className="nav-section-label">Sistema</summary>
                   <Link to="/gestione-utenti" className={isActive('/gestione-utenti') ? 'active' : ''}>
                     <ShieldCheck size={18} />
                     Gestione Utenti
@@ -681,6 +706,7 @@ function AppShell() {
                     <Calendar size={18} />
                     Gestione Richieste
                   </Link>
+                  </details>
                 </>
               )}
             </>

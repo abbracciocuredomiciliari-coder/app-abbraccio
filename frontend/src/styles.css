@@ -246,6 +246,43 @@ body {
   padding-top: 14px;
 }
 
+/* Nav sections collapsibili (menu ridotto) */
+details.nav-section > summary.nav-section-label {
+  pointer-events: auto;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+}
+
+details.nav-section > summary.nav-section-label::-webkit-details-marker {
+  display: none;
+}
+
+details.nav-section > summary.nav-section-label::before {
+  content: '\25B8';
+  font-size: 0.8rem;
+  opacity: 0.7;
+  transition: transform 0.15s ease;
+}
+
+details.nav-section[open] > summary.nav-section-label::before {
+  transform: rotate(90deg);
+}
+
+details.nav-section:not(:first-child) {
+  margin-top: 6px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  padding-top: 6px;
+}
+
+details.nav-section:not([open]) > summary.nav-section-label {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 12px;
+}
+
 /* User area */
 .user-area {
   padding: 16px;
