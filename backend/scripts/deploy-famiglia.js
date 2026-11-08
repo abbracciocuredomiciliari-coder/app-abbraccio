@@ -81,7 +81,15 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
-    location ~* \\.(?:css|js|png|jpg|jpeg|gif|ico|svg|webp|woff2?)$ {
+    # JS/CSS: cache breve (le URL sono versionate con ?v= ma la cache corta
+    # evita comunque pagine rotte tra HTML nuovo e asset vecchi)
+    location ~* \\.(?:css|js)$ {
+        expires 1h;
+        add_header Cache-Control "public";
+        try_files $uri =404;
+    }
+
+    location ~* \\.(?:png|jpg|jpeg|gif|ico|svg|webp|woff2?)$ {
         expires 7d;
         add_header Cache-Control "public";
         try_files $uri =404;
