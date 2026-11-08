@@ -70,8 +70,19 @@ interface PreventivoInviato {
   prestazioni: { descrizione: string; quantita: number; prezzoUnitario: number; importo: number }[];
   totale?: number;
   inviatoDa?: string;
+  stato?: 'inviato' | 'accettato' | 'rifiutato' | 'sostituito';
+  esitoNote?: string;
+  ricontattoIl?: string;
+  versione?: number;
   createdAt: string;
 }
+
+const STATO_INVIO: Record<string, { testo: string; bg: string; color: string }> = {
+  inviato: { testo: '📤 Inviato', bg: '#dbeafe', color: '#1e40af' },
+  accettato: { testo: '✅ Accettato', bg: '#dcfce7', color: '#166534' },
+  rifiutato: { testo: '🚫 Rifiutato', bg: '#fee2e2', color: '#b91c1c' },
+  sostituito: { testo: '↺ Sostituito', bg: '#f1f5f9', color: '#64748b' },
+};
 
 export default function ArchivioPreventivi() {
   const { user } = useAuth();
@@ -220,6 +231,39 @@ export default function ArchivioPreventivi() {
     }
   };
 
+  // Esito commerciale dell'invio: accettato/rifiutato + prossima azione datata
+  const esitoInviato = async (inv: PreventivoInviato, stato: 'accettato' | 'rifiutato' | 'inviato') => {
+    let esitoNote: string | undefined;
+    let ricontattoIl: string | undefined;
+    if (stato === 'rifiutato' || stato === 'accettato') {
+      const n = window.prompt(stato === 'rifiutato' ? 'Motivo del rifiuto (opzionale):' : 'Nota di accettazione (opzionale):', '');
+      if (n === null) return;
+      esitoNote = n.trim() || undefined;
+    }
+    if (stato === 'inviato' || stato === 'accettato') {
+      const d = window.prompt('Data ricontatto (YYYY-MM-DD, vuoto = nessun ricontatto):', inv.ricontattoIl ? inv.ricontattoIl.slice(0, 10) : '');
+      if (d === null) return;
+      ricontattoIl = d || undefined;
+    }
+    try {
+      await api.patch(`/preventivi-inviati/${inv._id}/stato`, { stato, esitoNote, ricontattoIl });
+      await caricaDocumenti();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore aggiornamento esito');
+    }
+  };
+
+  const impostaRicontatto = async (inv: PreventivoInviato) => {
+    const d = window.prompt('Data ricontatto (YYYY-MM-DD, vuoto = rimuovi):', inv.ricontattoIl ? inv.ricontattoIl.slice(0, 10) : '');
+    if (d === null) return;
+    try {
+      await api.patch(`/preventivi-inviati/${inv._id}/stato`, { stato: inv.stato || 'inviato', ricontattoIl: d || undefined });
+      await caricaDocumenti();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore aggiornamento ricontatto');
+    }
+  };
+
   const eliminaInviato = async (inv: PreventivoInviato) => {
     if (!confirm(`Eliminare questo invio archiviato${inv.nomeCliente ? ` (${inv.nomeCliente})` : ''}?`)) return;
     try {
@@ -348,15 +392,27 @@ export default function ArchivioPreventivi() {
                         <th style={{ textAlign: 'left', padding: '8px' }}>Cliente</th>
                         <th style={{ textAlign: 'left', padding: '8px' }}>Contatto</th>
                         <th style={{ textAlign: 'center', padding: '8px' }}>Canale</th>
+                        <th style={{ textAlign: 'center', padding: '8px' }}>Esito</th>
                         <th style={{ textAlign: 'left', padding: '8px' }}>Prestazioni</th>
                         <th style={{ textAlign: 'right', padding: '8px' }}>Totale</th>
                         <th style={{ padding: '8px' }} />
                       </tr>
                     </thead>
                     <tbody>
-                      {inviatiVisibili.map(inv => (
-                        <tr key={inv._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '8px', whiteSpace: 'nowrap' }}>{formatData(inv.createdAt)}</td>
+                      {inviatiVisibili.map(inv => {
+                        const badgeInvio = STATO_INVIO[inv.stato || 'inviato'] || STATO_INVIO.inviato;
+                        const ricontattoScaduto = inv.ricontattoIl && new Date(inv.ricontattoIl) <= new Date() && (!inv.stato || inv.stato === 'inviato');
+                        return (
+                        <tr key={inv._id} style={{ borderBottom: '1px solid #f1f5f9', opacity: inv.stato === 'sostituito' ? 0.55 : 1 }}>
+                          <td style={{ padding: '8px', whiteSpace: 'nowrap' }}>
+                            {formatData(inv.createdAt)}
+                            {(inv.versione || 1) > 1 && <span title={`Versione ${inv.versione}`} style={{ marginLeft: '6px', fontSize: '0.7rem', background: '#e0e7ff', color: '#4338ca', borderRadius: '8px', padding: '1px 6px', fontWeight: 700 }}>v{inv.versione}</span>}
+                            {inv.ricontattoIl && (
+                              <div style={{ fontSize: '0.72rem', color: ricontattoScaduto ? '#dc2626' : '#64748b', fontWeight: ricontattoScaduto ? 700 : 400 }}>
+                                📅 ricontatto {formatData(inv.ricontattoIl)}{ricontattoScaduto ? ' — SCADUTO' : ''}
+                              </div>
+                            )}
+                          </td>
                           <td style={{ padding: '8px', fontWeight: 600 }}>{inv.nomeCliente || '—'}</td>
                           <td style={{ padding: '8px', fontSize: '0.82rem', color: '#475569' }}>
                             {inv.email && <div>✉️ {inv.email}</div>}
@@ -368,12 +424,27 @@ export default function ArchivioPreventivi() {
                               {inv.canale === 'whatsapp' ? '💬 WhatsApp' : '✉️ Email'}
                             </span>
                           </td>
+                          <td style={{ padding: '8px', textAlign: 'center' }}>
+                            <span
+                              title={inv.esitoNote || undefined}
+                              style={{ padding: '3px 10px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap', background: badgeInvio.bg, color: badgeInvio.color }}
+                            >
+                              {badgeInvio.testo}
+                            </span>
+                          </td>
                           <td style={{ padding: '8px', fontSize: '0.82rem', color: '#475569', maxWidth: '300px' }} title={(inv.prestazioni || []).map(p => `${p.descrizione} ×${p.quantita} a €${p.prezzoUnitario}`).join('\n')}>
                             {(inv.prestazioni || []).slice(0, 2).map(p => `${p.descrizione} ×${p.quantita}`).join(', ')}{(inv.prestazioni || []).length > 2 ? ` +${inv.prestazioni.length - 2}` : ''}
                           </td>
                           <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#166534' }}>{inv.totale !== undefined ? formatEuro(inv.totale) : '—'}</td>
                           <td style={{ padding: '8px' }}>
-                            <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                            <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                              {(!inv.stato || inv.stato === 'inviato') && (
+                                <>
+                                  <button onClick={() => esitoInviato(inv, 'accettato')} title="Segna come accettato" style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, color: '#166534' }}>✅</button>
+                                  <button onClick={() => esitoInviato(inv, 'rifiutato')} title="Segna come rifiutato" style={{ background: '#fee2e2', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, color: '#b91c1c' }}>🚫</button>
+                                  <button onClick={() => impostaRicontatto(inv)} title="Imposta data ricontatto" style={{ background: '#fef3c7', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, color: '#92400e' }}>📅</button>
+                                </>
+                              )}
                               <button onClick={() => pdfInviato(inv, true)} title="Visualizza PDF inviato" style={{ background: '#f0f9ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0ea5e9' }}><Eye size={14} /></button>
                               <button onClick={() => pdfInviato(inv, false)} title="Scarica PDF" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Download size={14} /></button>
                               {user?.role === 'admin' && (
@@ -382,7 +453,8 @@ export default function ArchivioPreventivi() {
                             </div>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

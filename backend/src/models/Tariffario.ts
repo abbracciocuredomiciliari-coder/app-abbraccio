@@ -12,6 +12,13 @@ export interface ITariffario extends Document {
   ordine: number;
   aggiornatoDa?: string;
   isEsameStrumentale?: boolean;
+  validoDal?: Date;              // decorrenza del prezzo corrente
+  // Storico prezzi: ogni variazione conserva il prezzo precedente e il periodo
+  // di validità — i preventivi già inviati non cambiano mai retroattivamente
+  // perché le righe sono copiate nel documento.
+  storicoPrezzi?: { prezzo: number; dal: Date; al: Date; aggiornatoDa?: string }[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const tariffarioSchema = new Schema<ITariffario>(
@@ -31,6 +38,13 @@ const tariffarioSchema = new Schema<ITariffario>(
     ordine: { type: Number, default: 0 },
     aggiornatoDa: { type: String, trim: true },
     isEsameStrumentale: { type: Boolean, default: false },
+    validoDal: { type: Date },
+    storicoPrezzi: [{
+      prezzo: { type: Number },
+      dal: { type: Date },
+      al: { type: Date },
+      aggiornatoDa: { type: String },
+    }],
   },
   { timestamps: true }
 );

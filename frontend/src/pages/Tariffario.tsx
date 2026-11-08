@@ -16,7 +16,29 @@ interface VoceTariffario {
   isEsameStrumentale?: boolean;
   promoAttiva?: boolean;
   prezzoPromo?: number;
+  validoDal?: string;
+  storicoPrezzi?: { prezzo: number; dal: string; al: string; aggiornatoDa?: string }[];
 }
+
+// Unità di misura canoniche — evita duplicati tipo "ora"/"1 ora"/"orario".
+// Le voci esistenti con valori liberi restano invariate.
+const UNITA_MISURA = [
+  { value: '', label: '— nessuna —' },
+  { value: 'cad', label: 'cad. (a prestazione)' },
+  { value: 'ora', label: 'ora' },
+  { value: 'accesso', label: 'accesso' },
+  { value: 'seduta', label: 'seduta' },
+  { value: 'visita', label: 'visita' },
+  { value: '1 tratto', label: '1 tratto' },
+  { value: '1 organo', label: '1 organo' },
+  { value: '2 organi', label: '2 organi' },
+  { value: 'a km', label: 'a km' },
+  { value: 'giornata', label: 'giornata' },
+  { value: 'notte', label: 'notte' },
+  { value: 'settimana', label: 'settimana' },
+  { value: 'mese', label: 'mese' },
+  { value: 'forfait', label: 'forfait' },
+];
 
 const CATEGORIE: { value: VoceTariffario['categoria']; label: string; color: string }[] = [
   { value: 'prestazioni_infermieristiche', label: '💉 Prestazioni Infermieristiche', color: '#0369a1' },
@@ -113,6 +135,7 @@ export default function Tariffario() {
   };
 
   const formatEuro = (n: number) => `€ ${n.toFixed(2)}`;
+  const formatData = (d?: string) => { try { return d ? new Date(d).toLocaleDateString('it-IT') : '—'; } catch { return '—'; } };
 
   if (loading) return <section><p style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>⏳ Caricamento tariffario...</p></section>;
 
@@ -174,7 +197,17 @@ export default function Tariffario() {
                         {!v.attivo && <span style={{ fontSize: '0.72rem', color: '#dc2626', fontWeight: 700 }}>DISATTIVATA</span>}
                         {v.attivo && v.promoAttiva && v.prezzoPromo && <span style={{ fontSize: '0.72rem', color: '#b91c1c', fontWeight: 700 }}>🏷 IN PROMOZIONE nel calcolatore online</span>}
                       </td>
-                      <td style={{ padding: '10px 14px', fontSize: '0.85rem', color: '#64748b' }}>{v.unitaMisura || '—'}</td>
+                      <td style={{ padding: '10px 14px', fontSize: '0.85rem', color: '#64748b' }}>
+                        {v.unitaMisura || '—'}
+                        {v.storicoPrezzi && v.storicoPrezzi.length > 0 && (
+                          <div
+                            title={v.storicoPrezzi.map(s => `€ ${s.prezzo.toFixed(2)} · dal ${formatData(s.dal)} al ${formatData(s.al)}`).join('\n')}
+                            style={{ fontSize: '0.7rem', color: '#94a3b8', cursor: 'help' }}
+                          >
+                            ↺ {v.storicoPrezzi.length} prezz{v.storicoPrezzi.length === 1 ? 'o precedente' : 'i precedenti'}
+                          </div>
+                        )}
+                      </td>
                       <td style={{ padding: '10px 14px', textAlign: 'right' }}>
                         {editId === v._id ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
@@ -269,7 +302,9 @@ export default function Tariffario() {
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '0.88rem' }}>Unità misura</label>
-                <input type="text" placeholder="es. 1 tratto, ora..." value={nuova.unitaMisura} onChange={e => setNuova({ ...nuova, unitaMisura: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+                <select value={nuova.unitaMisura} onChange={e => setNuova({ ...nuova, unitaMisura: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}>
+                  {UNITA_MISURA.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
+                </select>
               </div>
             </div>
             <div style={{ marginBottom: '20px' }}>

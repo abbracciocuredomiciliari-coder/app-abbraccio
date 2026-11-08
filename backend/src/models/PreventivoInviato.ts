@@ -29,6 +29,17 @@ export interface IPreventivoInviato extends Document {
   simulazione?: Record<string, any>;    // costo_badante: { input, risultato, cafMensile, escludiTfrTredicesima }
   testoInviato?: string;                // riepilogo testuale del messaggio inviato
   inviatoDa?: string;
+  // Ciclo di vita commerciale — ogni invio ha uno stato e, se in lavorazione,
+  // una prossima azione datata (ricontatto). Default 'inviato' per i record esistenti.
+  stato?: 'inviato' | 'accettato' | 'rifiutato' | 'sostituito';
+  esitoNote?: string;                   // perché accettato/rifiutato
+  esitoDa?: string;                     // chi ha registrato l'esito
+  esitoIl?: Date;
+  ricontattoIl?: Date;                  // prossima azione datata
+  // Versioni: un invio può sostituire il precedente per lo stesso cliente
+  versione?: number;
+  gruppoId?: string;                    // collega tutte le versioni della stessa pratica
+  sostituitoDaId?: string;              // versione più recente che ha sostituito questa
   createdAt: Date;
   updatedAt: Date;
 }
@@ -59,6 +70,14 @@ const schema = new Schema<IPreventivoInviato>(
     simulazione: { type: Schema.Types.Mixed },
     testoInviato: { type: String },
     inviatoDa: { type: String, trim: true },
+    stato: { type: String, enum: ['inviato', 'accettato', 'rifiutato', 'sostituito'], default: 'inviato', index: true },
+    esitoNote: { type: String, trim: true, maxlength: 1000 },
+    esitoDa: { type: String, trim: true },
+    esitoIl: { type: Date },
+    ricontattoIl: { type: Date, index: true },
+    versione: { type: Number, default: 1 },
+    gruppoId: { type: String, trim: true, index: true },
+    sostituitoDaId: { type: String, trim: true },
   },
   { timestamps: true }
 );

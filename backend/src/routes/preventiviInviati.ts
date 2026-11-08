@@ -61,6 +61,14 @@ router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), async (req
       aliquotaIva: Number(p.aliquotaIva) >= 0 ? Number(p.aliquotaIva) : 0,
     })).filter((p: any) => p.descrizione).slice(0, 60);
 
+    // Versioni: se sostituisceId è fornito, la versione precedente viene
+    // marcata 'sostituito' e la nuova eredita gruppoId + versione+1.
+    // Il record vecchio resta invariato (mai modifiche retroattive ai contenuti).
+    let versione = 1;
+    let gruppoId: string | undefined;
+    const sostituisceId = String(req.body?.sostituisceId || '').trim();
+    const precedente = sostituisceId ? await PreventivoInviato.findById(sostituisceId) : null;
+
     const doc = await PreventivoInviato.create({
       area,
       tipo,
@@ -75,6 +83,17 @@ router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), async (req
       testoInviato: testoInviato ? String(testoInviato).slice(0, 4000) : undefined,
       inviatoDa: (req as any).user?.name || undefined,
     });
+
+    if (precedente) {
+      gruppoId = precedente.gruppoId || String(precedente._id);
+      versione = (precedente.versione || 1) + 1;
+      precedente.stato = 'sostituito';
+      precedente.sostituitoDaId = String(doc._id);
+      await precedente.save();
+      doc.gruppoId = gruppoId;
+      doc.versione = versione;
+      await doc.save();
+    }
     return res.status(201).json(doc);
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore nella registrazione dell\'invio', error: error.message });
@@ -167,6 +186,49 @@ router.post('/:id/reinvia', authenticateToken, authorizeRole(...RUOLI_GESTIONE),
   } catch (error: any) {
     console.error('[Preventivi inviati] Errore reinvio:', error);
     return res.status(500).json({ message: 'Errore nel reinvio del preventivo', error: error.message });
+  }
+});
+
+// PATCH /api/preventivi-inviati/:id/stato — esito commerciale:
+// accettato / rifiutato (con nota) o re-inviato; supporta il ricontatto datato
+// così un preventivo "in attesa" non viene dimenticato.
+const STATI_PREVENTIVO = ['inviato', 'accettato', 'rifiutato', 'sostituito'];
+router.patch('/:id/stato', authenticateToken, authorizeRole(...RUOLI_GESTIONE), async (req: AuthRequest, res: Response) => {
+  try {
+    const stato = String(req.body?.stato || '');
+    if (!STATI_PREVENTIVO.includes(stato)) return res.status(400).json({ message: 'Stato non valido' });
+    const doc = await PreventivoInviato.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: 'Invio non trovato' });
+    doc.stato = stato as any;
+    if (stato === 'accettato' || stato === 'rifiutato') {
+      doc.esitoNote = String(req.body?.esitoNote || '').trim().slice(0, 1000) || undefined;
+      doc.esitoDa = (req as any).user?.name || undefined;
+      doc.esitoIl = new Date();
+    }
+    if (req.body?.ricontattoIl !== undefined) {
+      const d = req.body.ricontattoIl ? new Date(req.body.ricontattoIl) : undefined;
+      doc.ricontattoIl = d && !isNaN(d.getTime()) ? d : undefined;
+    }
+    await doc.save();
+    return res.json(doc);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore aggiornamento stato', error: error.message });
+  }
+});
+
+// GET /api/preventivi-inviati/da-ricontattare — invii con ricontatto dovuto
+// (scaduto o entro domani) e ancora senza esito: prossime azioni datate.
+router.get('/da-ricontattare', authenticateToken, authorizeRole(...RUOLI_GESTIONE), async (req: Request, res: Response) => {
+  try {
+    const limite = new Date();
+    limite.setDate(limite.getDate() + 1);
+    const docs = await PreventivoInviato.find({
+      stato: 'inviato',
+      ricontattoIl: { $exists: true, $ne: null, $lte: limite },
+    }).select('-testoInviato').sort({ ricontattoIl: 1 }).limit(100).lean();
+    return res.json(docs);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore caricamento ricontatti', error: error.message });
   }
 });
 

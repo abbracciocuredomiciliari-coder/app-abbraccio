@@ -218,17 +218,37 @@ router.post('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('
   }
 });
 
-// PUT /api/tariffario/:id — modifica voce (prezzo, nome, ecc.) (solo gestione)
+// PUT /api/tariffario/:id — modifica voce (prezzo, nome, ecc.) (solo gestione).
+// Se il prezzo cambia, il vecchio prezzo va in storicoPrezzi con il periodo di
+// validità: nessuna modifica retroattiva, le righe dei preventivi già emessi
+// restano invariate perché sono copiate nei documenti.
 router.put('/:id', authenticateToken, authorizeRole(...RUOLI_GESTIONE), auditLog('tariffario', 'UPDATE'), async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user as { email?: string } | undefined;
     const isEsame = calcolaIsEsameStrumentale(req.body.categoria || '', req.body.nome || '');
-    const voce = await Tariffario.findByIdAndUpdate(
-      req.params.id,
-      { ...req.body, aggiornatoDa: user?.email, isEsameStrumentale: isEsame },
-      { new: true, runValidators: true }
-    );
-    if (!voce) return res.status(404).json({ message: 'Voce non trovata' });
+    const precedente = await Tariffario.findById(req.params.id);
+    if (!precedente) return res.status(404).json({ message: 'Voce non trovata' });
+
+    const nuovoPrezzo = Number(req.body.prezzo);
+    const prezzoCambiato = req.body.prezzo !== undefined && Number.isFinite(nuovoPrezzo) && nuovoPrezzo !== precedente.prezzo;
+
+    const update: any = { ...req.body, aggiornatoDa: user?.email, isEsameStrumentale: isEsame };
+    if (prezzoCambiato) {
+      const ora = new Date();
+      update.$push = {
+        storicoPrezzi: {
+          prezzo: precedente.prezzo,
+          dal: precedente.validoDal || precedente.updatedAt || precedente.createdAt,
+          al: ora,
+          aggiornatoDa: precedente.aggiornatoDa,
+        },
+      };
+      // validoDal esplicito oppure da ora
+      const d = req.body.validoDal ? new Date(req.body.validoDal) : ora;
+      update.validoDal = !isNaN(d.getTime()) ? d : ora;
+    }
+
+    const voce = await Tariffario.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true });
     return res.json(voce);
   } catch (error: any) {
     return res.status(500).json({ message: "Errore nell'aggiornamento della voce", error: error.message });
