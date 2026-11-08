@@ -1,7 +1,7 @@
 import { Document, Schema, model } from 'mongoose';
 
 export interface IProcedureDocument extends Document {
-  category: 'procedure' | 'protocol';
+  category: 'procedure' | 'protocol' | 'modulistica';
   fileName: string;
   displayName?: string;
   contentType: string;
@@ -15,7 +15,7 @@ const procedureDocumentSchema = new Schema<IProcedureDocument>(
     category: {
       type: String,
       required: true,
-      enum: ['procedure', 'protocol']
+      enum: ['procedure', 'protocol', 'modulistica']
     },
     fileName: { type: String, required: true, trim: true },
     displayName: { type: String, trim: true, default: '' },

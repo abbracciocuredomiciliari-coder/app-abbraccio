@@ -1,7 +1,7 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
 import { ToastContainer } from './components/ToastContainer';
 import { useToast } from './hooks/useToast';
-import { Link, useLocation, Route, Routes, Navigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ModalitaProvider, useModalita } from './context/ModalitaContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -137,10 +137,19 @@ function isPrivilegiato(role: string) {
   return RUOLI_PRIVILEGIATI.includes(role);
 }
 
+// Destinazione iniziale coerente dopo il cambio area di lavoro
+const HOME_PER_MODALITA: Record<string, string> = {
+  privato: '/dashboard',
+  convenzione: '/dashboard',
+  consulenza: '/badanti-intermediazione',
+  organizzativa: '/consegne',
+};
+
 function AppShell() {
   const { user, logout } = useAuth();
   const { modalita, setModalita, isConvenzione, isConsulenza, isOrganizzativa, modalitaAbilitata, canSwitch } = useModalita();
   const location = useLocation();
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [modalitaMenuOpen, setModalitaMenuOpen] = useState(false);
   const { toasts, removeToast } = useToast();
@@ -247,7 +256,10 @@ function AppShell() {
                         onClick={() => {
                           setModalitaMenuOpen(false);
                           if (val === modalita) return;
-                          if (window.confirm(`Vuoi passare a ${nome}?`)) setModalita(val);
+                          if (window.confirm(`Vuoi passare a ${nome}?`)) {
+                            setModalita(val);
+                            navigate(HOME_PER_MODALITA[val] || '/dashboard');
+                          }
                         }}
                         style={{
                           width: '100%',

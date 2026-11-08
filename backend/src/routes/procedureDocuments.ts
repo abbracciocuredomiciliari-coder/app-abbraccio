@@ -5,11 +5,12 @@ import { authenticateToken } from '../middleware/auth';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 const router = Router();
+const CATEGORIE_DOC = ['procedure', 'protocol', 'modulistica'];
 
 router.get('/', authenticateToken, async (req: Request, res: Response) => {
   try {
     const category = req.query.category as string | undefined;
-    const query = category && ['procedure', 'protocol'].includes(category) ? { category } : {};
+    const query = category && CATEGORIE_DOC.includes(category) ? { category } : {};
     const documents = await ProcedureDocument.find(query).sort({ createdAt: -1 });
     return res.json(
       documents.map((doc) => ({
@@ -33,7 +34,7 @@ router.post('/', authenticateToken, upload.single('document'), async (req: Reque
     const displayName = (req.body.displayName as string || '').trim();
     const file = (req as any).file;
 
-    if (!file || !category || !['procedure', 'protocol'].includes(category)) {
+    if (!file || !category || !CATEGORIE_DOC.includes(category)) {
       return res.status(400).json({ message: 'Categoria o file non valido' });
     }
 

@@ -110,6 +110,13 @@ async function main() {
   const deployDir = backendPkgErr ? remoteDir : `${remoteDir}/backend`;
   console.log('Deploy directory:', deployDir);
 
+  // Backup remoto della build precedente → ripristino con:
+  //   cd <deployDir> && rm -rf dist && mv dist.prev dist && pm2 restart abbraccio-backend
+  //   cd <remoteDir>/frontend && rm -rf dist && mv dist.prev dist
+  console.log('Backup remoto dist precedente (rollback)...');
+  const bak = await exec(`cd ${deployDir} && rm -rf dist.prev && cp -a dist dist.prev 2>/dev/null; cd ${remoteDir}/frontend 2>/dev/null && rm -rf dist.prev && cp -a dist dist.prev 2>/dev/null; true`);
+  if (bak.code !== 0) console.warn('  (backup remoto non riuscito — proseguo, ripristino via git)');
+
   console.log('Caricamento dist/...');
   await uploadDir(sftp, path.join(localBase, 'dist'), `${deployDir}/dist`);
   console.log('Caricamento public/...');
