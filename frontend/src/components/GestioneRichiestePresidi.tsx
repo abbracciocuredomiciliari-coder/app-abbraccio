@@ -9,6 +9,7 @@ interface RichiestaItem {
   unitaMisura: string;
   quantitaRichiesta: number;
   quantitaAutorizzata?: number;
+  quantitaConsegnata?: number;
   statoItem: 'in_attesa' | 'autorizzato' | 'rifiutato' | 'parziale';
   noteAdmin?: string;
 }
@@ -50,6 +51,8 @@ export default function GestioneRichiestePresidi() {
   const [noteAdminGlobale, setNoteAdminGlobale] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [consegnando, setConsegnando] = useState<string | null>(null);
+  const [consegnaParzialeId, setConsegnaParzialeId] = useState<string | null>(null);
+  const [itemsConsegna, setItemsConsegna] = useState<Record<string, number>>({});
 
   useEffect(() => {
     fetchRichieste();
@@ -137,6 +140,62 @@ export default function GestioneRichiestePresidi() {
     }
   };
 
+  const apriConsegnaParziale = (richiesta: Richiesta) => {
+    setConsegnaParzialeId(richiesta._id);
+    const init: Record<string, number> = {};
+    richiesta.items.forEach(item => {
+      if (item.statoItem === 'autorizzato' || item.statoItem === 'parziale') {
+        init[item.supplyId] = (item.quantitaAutorizzata ?? 0) - (item.quantitaConsegnata ?? 0);
+      }
+    });
+    setItemsConsegna(init);
+  };
+
+  const salvaConsegnaParziale = async (richiestaId: string) => {
+    setConsegnando(richiestaId);
+    try {
+      const items = Object.entries(itemsConsegna)
+        .map(([supplyId, quantita]) => ({ supplyId, quantita }))
+        .filter(i => i.quantita > 0);
+      if (items.length === 0) {
+        alert('Indicare almeno una quantità da consegnare');
+        return;
+      }
+      const res = await api.patch(`/supply-requests/${richiestaId}/consegna-parziale`, { items });
+      setRichieste(prev => prev.map(r => r._id === richiestaId ? res.data : r));
+      setConsegnaParzialeId(null);
+      setItemsConsegna({});
+      alert('Consegna parziale registrata! Il magazzino è stato aggiornato.');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nella consegna parziale');
+    } finally {
+      setConsegnando(null);
+    }
+  };
+
+  const registraReso = async (richiestaId: string, item: RichiestaItem) => {
+    const max = item.quantitaConsegnata ?? 0;
+    if (max <= 0) {
+      alert('Nessuna quantità consegnata da restituire per questo articolo');
+      return;
+    }
+    const input = prompt(`Quantità da restituire di "${item.nome}" (consegnati: ${max})?`, String(max));
+    if (input === null) return;
+    const quantita = parseInt(input) || 0;
+    if (quantita <= 0 || quantita > max) {
+      alert(`Quantità non valida (1-${max})`);
+      return;
+    }
+    const motivo = prompt('Motivo del reso (opzionale):') || '';
+    try {
+      const res = await api.post(`/supply-requests/${richiestaId}/reso`, { supplyId: item.supplyId, quantita, motivo });
+      setRichieste(prev => prev.map(r => r._id === richiestaId ? res.data : r));
+      alert('Reso registrato! Il materiale è rientrato a magazzino.');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nella registrazione del reso');
+    }
+  };
+
   const richiesteFiltrate = richieste.filter(r =>
     filtroStato === 'tutti' || r.stato === filtroStato
   );
@@ -211,11 +270,17 @@ export default function GestioneRichiestePresidi() {
                       </button>
                     )}
                     {r.stato === 'gestita' && (
-                      <button type="button" onClick={() => segnaComeConsegnata(r._id)}
-                        disabled={consegnando === r._id}
-                        style={{ background: '#0369a1', padding: '6px 14px', fontSize: '0.85rem', opacity: consegnando === r._id ? 0.6 : 1 }}>
-                        {consegnando === r._id ? '⏳...' : '🚚 Segna consegnato'}
-                      </button>
+                      <>
+                        <button type="button" onClick={() => segnaComeConsegnata(r._id)}
+                          disabled={consegnando === r._id}
+                          style={{ background: '#0369a1', padding: '6px 14px', fontSize: '0.85rem', opacity: consegnando === r._id ? 0.6 : 1 }}>
+                          {consegnando === r._id && consegnaParzialeId !== r._id ? '⏳...' : '🚚 Consegna tutto'}
+                        </button>
+                        <button type="button" onClick={() => consegnaParzialeId === r._id ? setConsegnaParzialeId(null) : apriConsegnaParziale(r)}
+                          style={{ background: '#d97706', padding: '6px 14px', fontSize: '0.85rem' }}>
+                          📦 Consegna parziale
+                        </button>
+                      </>
                     )}
                     {isInGestione && (
                       <button type="button" onClick={chiudiGestione}
@@ -299,6 +364,11 @@ export default function GestioneRichiestePresidi() {
                             <>
                               <td style={{ padding: '8px 8px', textAlign: 'center', fontWeight: '600', color: item.quantitaAutorizzata !== undefined ? '#065f46' : '#888' }}>
                                 {item.quantitaAutorizzata !== undefined ? `${item.quantitaAutorizzata} ${item.unitaMisura}` : '—'}
+                                {(item.quantitaConsegnata ?? 0) > 0 && (
+                                  <div style={{ fontSize: '0.75rem', color: '#0369a1', fontWeight: '700' }}>
+                                    consegnati {item.quantitaConsegnata}
+                                  </div>
+                                )}
                               </td>
                               <td style={{ padding: '8px 8px', textAlign: 'center' }}>
                                 {item.statoItem === 'in_attesa' ? (
@@ -313,6 +383,12 @@ export default function GestioneRichiestePresidi() {
                               </td>
                               <td style={{ padding: '8px 8px', color: '#666', fontSize: '0.82rem' }}>
                                 {item.noteAdmin || '—'}
+                                {(item.quantitaConsegnata ?? 0) > 0 && (
+                                  <button type="button" onClick={() => registraReso(r._id, item)}
+                                    style={{ marginLeft: '8px', background: 'none', border: '1px solid #cbd5e1', borderRadius: '10px', padding: '1px 8px', fontSize: '0.75rem', cursor: 'pointer', color: '#475569' }}>
+                                    ↩ Reso
+                                  </button>
+                                )}
                               </td>
                             </>
                           )}
@@ -341,6 +417,40 @@ export default function GestioneRichiestePresidi() {
                         </button>
                         <button type="button" onClick={chiudiGestione}
                           style={{ background: '#6c757d', padding: '10px 20px' }}>
+                          Annulla
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Consegna parziale: quantità da consegnare ora per ogni articolo */}
+                  {consegnaParzialeId === r._id && (
+                    <div style={{ marginTop: '16px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '14px' }}>
+                      <p style={{ margin: '0 0 10px', fontWeight: '700', fontSize: '0.9rem', color: '#92400e' }}>
+                        📦 Consegna parziale — indica quanto consegni ORA (il resto resta da consegnare)
+                      </p>
+                      {r.items.filter(i => i.statoItem === 'autorizzato' || i.statoItem === 'parziale').map(item => {
+                        const residuo = (item.quantitaAutorizzata ?? 0) - (item.quantitaConsegnata ?? 0);
+                        return (
+                          <div key={item.supplyId} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                            <span style={{ minWidth: '160px', fontSize: '0.87rem' }}>{item.nome}</span>
+                            <input
+                              type="number" min="0" max={residuo}
+                              value={itemsConsegna[item.supplyId] ?? residuo}
+                              onChange={e => setItemsConsegna(prev => ({ ...prev, [item.supplyId]: Math.min(parseInt(e.target.value) || 0, residuo) }))}
+                              style={{ width: '70px', textAlign: 'center', padding: '5px', border: '1px solid #fcd34d', borderRadius: '4px', fontSize: '0.9rem' }}
+                            />
+                            <span style={{ fontSize: '0.8rem', color: '#888' }}>/ residui {residuo} {item.unitaMisura}</span>
+                          </div>
+                        );
+                      })}
+                      <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                        <button type="button" onClick={() => salvaConsegnaParziale(r._id)} disabled={consegnando === r._id}
+                          style={{ background: '#d97706', padding: '8px 18px', fontWeight: '700' }}>
+                          {consegnando === r._id ? '⏳...' : '✅ Registra consegna parziale'}
+                        </button>
+                        <button type="button" onClick={() => setConsegnaParzialeId(null)}
+                          style={{ background: '#6c757d', padding: '8px 18px' }}>
                           Annulla
                         </button>
                       </div>

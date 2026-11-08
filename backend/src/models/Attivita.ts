@@ -38,7 +38,7 @@ export interface IAttivita extends Document {
   titolo: string;
   azioneRichiesta?: string;            // cosa deve fare il responsabile
   // Collegamento opzionale a una pratica
-  praticaTipo?: 'richiesta' | 'paziente' | 'intermediazione' | 'consegna' | 'documento' | 'generale';
+  praticaTipo?: 'richiesta' | 'paziente' | 'intermediazione' | 'consegna' | 'documento' | 'checklist' | 'magazzino' | 'generale';
   praticaId?: Types.ObjectId;
   praticaLabel?: string;               // es. "Richiesta #55 — Rossi Maria"
   area?: 'privato' | 'convenzione' | 'consulenza' | 'organizzativa';
@@ -81,7 +81,7 @@ const AttivitaSchema = new Schema<IAttivita>(
   {
     titolo: { type: String, required: true, trim: true, maxlength: 200 },
     azioneRichiesta: { type: String, trim: true, maxlength: 2000 },
-    praticaTipo: { type: String, enum: ['richiesta', 'paziente', 'intermediazione', 'consegna', 'documento', 'generale'] },
+    praticaTipo: { type: String, enum: ['richiesta', 'paziente', 'intermediazione', 'consegna', 'documento', 'checklist', 'magazzino', 'generale'] },
     praticaId: { type: Schema.Types.ObjectId },
     praticaLabel: { type: String, trim: true, maxlength: 200 },
     area: { type: String, enum: ['privato', 'convenzione', 'consulenza', 'organizzativa'], index: true },

@@ -7,6 +7,7 @@ export interface ISupplyRequestItem {
   unitaMisura?: string;
   quantitaRichiesta: number;
   quantitaAutorizzata?: number;
+  quantitaConsegnata?: number;  // consegne parziali: quanto è già stato consegnato
   statoItem: 'in_attesa' | 'autorizzato' | 'rifiutato' | 'parziale';
   noteAdmin?: string;
 }
@@ -32,6 +33,7 @@ const SupplyRequestItemSchema = new Schema<ISupplyRequestItem>({
   unitaMisura: { type: String },
   quantitaRichiesta: { type: Number, required: true, min: 1 },
   quantitaAutorizzata: { type: Number },
+  quantitaConsegnata: { type: Number, default: 0 },
   statoItem: { type: String, enum: ['in_attesa', 'autorizzato', 'rifiutato', 'parziale'], default: 'in_attesa' },
   noteAdmin: { type: String },
 }, { _id: false });

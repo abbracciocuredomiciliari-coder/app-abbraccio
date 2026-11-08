@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import SchedaControlloDefibrillatore from '../models/SchedaControlloDefibrillatore';
 import { authenticateToken } from '../middleware/auth';
+import { creaAttivitaAnomalia } from '../utils/anomalie';
 
 const router = Router();
 
@@ -55,6 +56,24 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
       compilatoDa: compilatoDa.trim(),
       dataCompilazione,
     });
+
+    // Anomalia → attività: ogni voce non conforme genera lavorazione tracciata
+    const vociKo = [
+      !scheda.integritaCaviAlimentazione && `integrità cavi alimentazione${scheda.integritaCaviAlimentazioneNote ? ` (${scheda.integritaCaviAlimentazioneNote})` : ''}`,
+      !scheda.correttoAvvioAutoTest && `auto-test all'avvio${scheda.correttoAvvioAutoTestNote ? ` (${scheda.correttoAvvioAutoTestNote})` : ''}`,
+      !scheda.puliziaScocca && `pulizia scocca${scheda.puliziaScoccanote ? ` (${scheda.puliziaScoccanote})` : ''}`,
+      !scheda.batteriaCarica && `batteria carica${scheda.batteriaCaricaNote ? ` (${scheda.batteriaCaricaNote})` : ''}`,
+    ].filter(Boolean);
+    if (vociKo.length > 0) {
+      await creaAttivitaAnomalia({
+        titolo: `Anomalia defibrillatore ${scheda.apparecchio || scheda.idSN || ''}`.trim(),
+        descrizione: `Scheda controllo del ${new Date(scheda.dataCompilazione).toLocaleDateString('it-IT')} — voci non conformi: ${vociKo.join('; ')}.`,
+        praticaId: scheda._id,
+        praticaLabel: `Scheda DAE ${scheda.idSN || scheda.apparecchio || ''}`.trim(),
+        autoreNome: scheda.compilatoDa,
+      });
+    }
+
     return res.status(201).json(scheda);
   } catch (error: any) {
     return res.status(400).json({ message: error?.message || 'Errore nella creazione della scheda' });

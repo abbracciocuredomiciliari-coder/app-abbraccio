@@ -19,6 +19,10 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
         fileName: doc.fileName,
         displayName: doc.displayName || '',
         contentType: doc.contentType,
+        versione: doc.versione ?? 1,
+        stato: doc.stato ?? 'vigente',
+        autoreNome: doc.autoreNome || '',
+        noteVersione: doc.noteVersione || '',
         createdAt: doc.createdAt,
         updatedAt: doc.updatedAt,
       }))
@@ -43,7 +47,8 @@ router.post('/', authenticateToken, upload.single('document'), async (req: Reque
       fileName: file.originalname,
       displayName: displayName || file.originalname,
       contentType: file.mimetype,
-      data: file.buffer
+      data: file.buffer,
+      autoreNome: (req as any).user?.name || ''
     });
 
     return res.status(201).json({
@@ -52,6 +57,10 @@ router.post('/', authenticateToken, upload.single('document'), async (req: Reque
       fileName: document.fileName,
       displayName: document.displayName || '',
       contentType: document.contentType,
+      versione: document.versione ?? 1,
+      stato: document.stato ?? 'vigente',
+      autoreNome: document.autoreNome || '',
+      noteVersione: document.noteVersione || '',
       createdAt: document.createdAt,
       updatedAt: document.updatedAt,
     });
@@ -86,11 +95,44 @@ router.patch('/:documentId/rename', authenticateToken, async (req: Request, res:
       fileName: document.fileName,
       displayName: document.displayName || '',
       contentType: document.contentType,
+      versione: document.versione ?? 1,
+      stato: document.stato ?? 'vigente',
+      autoreNome: document.autoreNome || '',
+      noteVersione: document.noteVersione || '',
       createdAt: document.createdAt,
       updatedAt: document.updatedAt,
     });
   } catch (error) {
     return res.status(500).json({ message: 'Errore durante la rinomina del documento', error });
+  }
+});
+
+// PATCH meta: cambia stato (bozza/vigente/archiviata) e note di versione
+router.patch('/:documentId/meta', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { stato, noteVersione } = req.body;
+    const update: any = {};
+    if (stato && ['bozza', 'vigente', 'archiviata'].includes(stato)) update.stato = stato;
+    if (typeof noteVersione === 'string') update.noteVersione = noteVersione.trim();
+    const document = await ProcedureDocument.findByIdAndUpdate(req.params.documentId, update, { new: true });
+    if (!document) {
+      return res.status(404).json({ message: 'Documento non trovato' });
+    }
+    return res.json({
+      _id: document._id,
+      category: document.category,
+      fileName: document.fileName,
+      displayName: document.displayName || '',
+      contentType: document.contentType,
+      versione: document.versione ?? 1,
+      stato: document.stato ?? 'vigente',
+      autoreNome: document.autoreNome || '',
+      noteVersione: document.noteVersione || '',
+      createdAt: document.createdAt,
+      updatedAt: document.updatedAt,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Errore nell\'aggiornamento dei metadati', error });
   }
 });
 
@@ -112,6 +154,12 @@ router.put('/:documentId', authenticateToken, upload.single('document'), async (
     existing.fileName = file.originalname;
     existing.contentType = file.mimetype;
     existing.data = file.buffer;
+    // Sostituzione del file = nuova versione del documento
+    existing.versione = (existing.versione || 1) + 1;
+    existing.stato = 'vigente';
+    if (typeof req.body.noteVersione === 'string' && req.body.noteVersione.trim()) {
+      existing.noteVersione = req.body.noteVersione.trim();
+    }
     await existing.save();
 
     return res.json({
@@ -120,6 +168,10 @@ router.put('/:documentId', authenticateToken, upload.single('document'), async (
       fileName: existing.fileName,
       displayName: existing.displayName || '',
       contentType: existing.contentType,
+      versione: existing.versione ?? 1,
+      stato: existing.stato ?? 'vigente',
+      autoreNome: existing.autoreNome || '',
+      noteVersione: existing.noteVersione || '',
       createdAt: existing.createdAt,
       updatedAt: existing.updatedAt,
     });

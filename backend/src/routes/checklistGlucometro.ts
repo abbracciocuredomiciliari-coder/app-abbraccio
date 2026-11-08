@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import CheckListGlucometro from '../models/CheckListGlucometro';
 import { authenticateToken } from '../middleware/auth';
+import { creaAttivitaAnomalia } from '../utils/anomalie';
 
 const router = Router();
 
@@ -45,6 +46,23 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
       controlloSuperato: controlloSuperato || false,
       note: note?.trim() || '',
     });
+
+    // Anomalia → attività: un controllo non superato diventa lavorazione tracciata
+    if (!checklist.controlloSuperato) {
+      const falliti = [
+        !checklist.livelloBasso?.passato && 'livello basso',
+        !checklist.livelloNormale?.passato && 'livello normale',
+        !checklist.livelloAlto?.passato && 'livello alto',
+      ].filter(Boolean).join(', ') || 'controllo generale';
+      await creaAttivitaAnomalia({
+        titolo: `Anomalia glucometro ${checklist.idGlucometro || '(senza ID)'}`,
+        descrizione: `Checklist del ${new Date(checklist.dataControllo).toLocaleDateString('it-IT')} non superata: ${falliti}.${checklist.note ? ` Note: ${checklist.note}` : ''}`,
+        praticaId: checklist._id,
+        praticaLabel: `Checklist glucometro ${checklist.idGlucometro || ''}`.trim(),
+        autoreNome: checklist.operatore,
+      });
+    }
+
     return res.status(201).json(checklist);
   } catch (error: any) {
     return res.status(400).json({ message: error?.message || 'Errore nella creazione della checklist' });

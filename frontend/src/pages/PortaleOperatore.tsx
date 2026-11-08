@@ -300,6 +300,9 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
 
   // Prelievi giornalieri
   const [prelieviOggi, setPrelieviOggi] = useState<PrelievoOperatore[]>([]);
+  const [mieAttivita, setMieAttivita] = useState<any[]>([]);
+  const [trasferimentiInSospeso, setTrasferimentiInSospeso] = useState<any[]>([]);
+  const [mostraAttivita, setMostraAttivita] = useState(false);
   const [prelievoAperto, setPrelievoAperto] = useState<string | null>(null);
   const [testoDiariaPrelievo, setTestoDiariaPrelievo] = useState('');
   const [salvandoDiariaPrelievo, setSalvandoDiariaPrelievo] = useState(false);
@@ -485,6 +488,15 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
         });
         setPrelieviOggi(prelRes.data || []);
       } catch { setPrelieviOggi([]); }
+      // Attività assegnate all'operatore + passaggi turno da accettare (modello comune)
+      try {
+        const [mieRes, traspRes] = await Promise.all([
+          api.get('/attivita', { params: { vista: 'mie' } }).catch(() => ({ data: { attivita: [] } })),
+          api.get('/attivita', { params: { vista: 'trasferimenti' } }).catch(() => ({ data: { attivita: [] } })),
+        ]);
+        setMieAttivita(mieRes.data?.attivita || mieRes.data || []);
+        setTrasferimentiInSospeso(traspRes.data?.attivita || traspRes.data || []);
+      } catch { setMieAttivita([]); setTrasferimentiInSospeso([]); }
     } catch {}
     finally { if (!silent) setLoading(false); }
   };
@@ -951,6 +963,55 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
           {!canSwitch && <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>🔒</span>}
         </button>
       </div>
+
+      {/* ─── Attività assegnate + passaggi turno (modello comune aree) ─── */}
+      {trasferimentiInSospeso.length > 0 && (
+        <div className="tw-mb-4 tw-p-4 tw-rounded-xl tw-bg-amber-50 tw-border tw-border-amber-300">
+          <h3 className="tw-m-0 tw-mb-2 tw-text-amber-800 tw-text-base">🔁 Passaggi turno da accettare ({trasferimentiInSospeso.length})</h3>
+          <div className="tw-grid tw-gap-2">
+            {trasferimentiInSospeso.slice(0, 5).map((a: any) => (
+              <div key={a._id} className="tw-flex tw-items-center tw-justify-between tw-gap-2.5 tw-bg-white tw-rounded-lg tw-px-3 tw-py-2.5">
+                <div>
+                  <strong>{a.titolo}</strong><br />
+                  <small className="tw-text-slate-500">da {a.trasferimento?.daNome || 'collega'}{a.scadenza ? ` · scade ${new Date(a.scadenza).toLocaleDateString('it-IT')}` : ''}</small>
+                </div>
+                <button
+                  onClick={async () => {
+                    try { await api.post(`/attivita/${a._id}/accetta-trasferimento`); await caricaDati(true); } catch {}
+                  }}
+                  className="tw-px-3 tw-py-2 tw-bg-amber-600 tw-text-white tw-border-0 tw-rounded-md tw-font-bold tw-cursor-pointer hover:tw-bg-amber-700"
+                >Accetta</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {mieAttivita.length > 0 && (
+        <div className="tw-mb-4">
+          <button
+            type="button"
+            onClick={() => setMostraAttivita(v => !v)}
+            className="tw-w-full tw-text-left tw-px-4 tw-py-3 tw-rounded-xl tw-bg-violet-50 tw-border tw-border-violet-200 tw-text-violet-800 tw-font-semibold tw-cursor-pointer hover:tw-bg-violet-100"
+          >
+            📌 {mieAttivita.length} attività a te assegnat{mieAttivita.length > 1 ? 'e' : 'a'} {mostraAttivita ? '▲' : '▼'}
+          </button>
+          {mostraAttivita && (
+            <div className="tw-mt-2 tw-grid tw-gap-2">
+              {mieAttivita.slice(0, 10).map((a: any) => (
+                <div key={a._id} className="tw-bg-white tw-rounded-lg tw-px-3 tw-py-2.5 tw-border tw-border-violet-100">
+                  <strong className="tw-text-sm">{a.titolo}</strong>
+                  <div className="tw-text-xs tw-text-slate-500">
+                    {a.praticaLabel && <span>{a.praticaLabel} · </span>}
+                    {a.scadenza ? `scade ${new Date(a.scadenza).toLocaleDateString('it-IT')}` : 'senza scadenza'}
+                    {a.priorita === 'alta' && ' · 🔴 urgente'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {!pazienteSelezionato && !mostraTuttiPiani && pazientiDaAccettare.length > 0 && (
         <div className="tw-mb-5 tw-p-4 tw-rounded-xl tw-bg-blue-50 tw-border tw-border-blue-300">

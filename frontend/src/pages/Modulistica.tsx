@@ -24,6 +24,10 @@ interface DocumentItem {
   fileName: string;
   displayName: string;
   contentType: string;
+  versione?: number;
+  stato?: 'bozza' | 'vigente' | 'archiviata';
+  autoreNome?: string;
+  noteVersione?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -150,6 +154,16 @@ function Modulistica() {
       setMessage(`Errore durante l'aggiornamento: ${error?.response?.data?.message || error?.message}`);
     } finally {
       setUploading(false);
+    }
+  };
+
+  // Catalogo versionato: bozza → vigente → archiviata
+  const toggleStato = async (documentId: string, nuovoStato: 'bozza' | 'vigente' | 'archiviata') => {
+    try {
+      const res = await api.patch(`/procedure-documents/${documentId}/meta`, { stato: nuovoStato });
+      setDocuments(documents.map(d => d._id === documentId ? { ...d, stato: res.data.stato, noteVersione: res.data.noteVersione } : d));
+    } catch {
+      setDownloadMessage('Errore nel cambio di stato del documento');
     }
   };
 
@@ -425,9 +439,19 @@ function Modulistica() {
                             File: {document.fileName}
                           </p>
                         )}
-                        <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--gray-500)' }}>
+                        <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--gray-500)', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                           Caricato: {formatDate(document.createdAt)}
                           {document.updatedAt !== document.createdAt && ` • Aggiornato: ${formatDate(document.updatedAt)}`}
+                          <span style={{ background: '#e0f2fe', color: '#0369a1', borderRadius: '10px', padding: '1px 8px', fontWeight: 700, fontSize: '0.75rem' }}>
+                            v{document.versione ?? 1}
+                          </span>
+                          <span style={{
+                            borderRadius: '10px', padding: '1px 8px', fontWeight: 700, fontSize: '0.75rem',
+                            background: (document.stato ?? 'vigente') === 'vigente' ? '#d1fae5' : (document.stato === 'bozza' ? '#fef3c7' : '#f1f5f9'),
+                            color: (document.stato ?? 'vigente') === 'vigente' ? '#065f46' : (document.stato === 'bozza' ? '#92400e' : '#475569'),
+                          }}>
+                            {(document.stato ?? 'vigente') === 'vigente' ? '✓ vigente' : document.stato === 'bozza' ? 'bozza' : 'archiviata'}
+                          </span>
                         </p>
                       </>
                     )}
@@ -445,6 +469,15 @@ function Modulistica() {
                     <button type="button" onClick={() => openUpdateDialog(document._id)} style={{ background: 'var(--warning)' }}>
                       <RefreshCw size={16} />Aggiorna
                     </button>
+                    {(document.stato ?? 'vigente') !== 'archiviata' ? (
+                      <button type="button" onClick={() => toggleStato(document._id, 'archiviata')} title="Archivia" style={{ background: 'var(--gray-500, #6c757d)' }}>
+                        <FileText size={16} />Archivia
+                      </button>
+                    ) : (
+                      <button type="button" onClick={() => toggleStato(document._id, 'vigente')} title="Ripristina come vigente" style={{ background: 'var(--success)' }}>
+                        <Check size={16} />Ripristina
+                      </button>
+                    )}
                     <button type="button" onClick={() => deleteDocument(document._id)} style={{ background: 'var(--danger)' }}>
                       <Trash2 size={16} />
                     </button>

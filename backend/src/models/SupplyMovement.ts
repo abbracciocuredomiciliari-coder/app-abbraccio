@@ -1,6 +1,6 @@
 import { Document, Schema, model, Types } from 'mongoose';
 
-export type MovementType = 'carico' | 'scarico';
+export type MovementType = 'carico' | 'scarico' | 'reso';
 
 export interface ISupplyMovement extends Document {
   supply: Types.ObjectId;
@@ -18,7 +18,7 @@ export interface ISupplyMovement extends Document {
 const supplyMovementSchema = new Schema<ISupplyMovement>(
   {
     supply: { type: Schema.Types.ObjectId, ref: 'MedicalSupply', required: true },
-    tipo: { type: String, required: true, enum: ['carico', 'scarico'] },
+    tipo: { type: String, required: true, enum: ['carico', 'scarico', 'reso'] },
     quantita: { type: Number, required: true, min: 1 },
     motivazione: { type: String, trim: true },
     eseguitoDa: { type: Schema.Types.ObjectId, ref: 'User' },
