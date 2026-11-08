@@ -31,6 +31,23 @@ export interface IDocumentoFatturazione extends Document {
   totaleMensileStimato?: number; // costo ricorrente mensile (es. badante + gestione amministrativa), informativo
   totaleMensileLabel?: string;
   documentoOrigineId?: Types.ObjectId; // se una fattura nasce dalla conferma di un preventivo
+  // ── Amministrazione ─────────────────────────────────────────────────────
+  // Distinti: emissione (stato), trasmissione, incasso e archiviazione.
+  // Un documento archiviato NON è necessariamente pagato.
+  tipoDocumentoFiscale?: 'standard' | 'nota_credito' | 'acconto';
+  notaCreditoDiId?: Types.ObjectId;    // fattura stornata da questa nota di credito
+  dataTrasmissione?: Date;             // eventuale trasmissione (SDI/PEC/consultazione)
+  pagamento?: {
+    stato?: 'da_incassare' | 'parziale' | 'saldato';
+    scadenza?: Date;
+    incassi?: {
+      data: Date;
+      importo: number;
+      metodo?: string;                  // contanti, bonifico, pos, altro
+      nota?: string;
+      registratoDa?: string;
+    }[];
+  };
   firma?: {
     token: string;
     firmato: boolean;
@@ -78,6 +95,20 @@ const documentoFatturazioneSchema = new Schema<IDocumentoFatturazione>(
     totaleMensileStimato: { type: Number },
     totaleMensileLabel: { type: String, trim: true },
     documentoOrigineId: { type: Schema.Types.ObjectId, ref: 'DocumentoFatturazione' },
+    tipoDocumentoFiscale: { type: String, enum: ['standard', 'nota_credito', 'acconto'], default: 'standard' },
+    notaCreditoDiId: { type: Schema.Types.ObjectId, ref: 'DocumentoFatturazione' },
+    dataTrasmissione: { type: Date },
+    pagamento: {
+      stato: { type: String, enum: ['da_incassare', 'parziale', 'saldato'], default: 'da_incassare' },
+      scadenza: { type: Date },
+      incassi: [{
+        data: { type: Date, default: Date.now },
+        importo: { type: Number, required: true },
+        metodo: { type: String, trim: true },
+        nota: { type: String, trim: true },
+        registratoDa: { type: String, trim: true },
+      }],
+    },
     firma: {
       token: { type: String, unique: true, sparse: true },
       firmato: { type: Boolean, default: false },

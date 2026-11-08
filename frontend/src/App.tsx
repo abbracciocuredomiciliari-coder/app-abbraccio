@@ -80,6 +80,7 @@ const CentroPrenotazioni = lazy(() => import('./pages/CentroPrenotazioni'));
 const CentroPrenotazioniConvenzione = lazy(() => import('./pages/CentroPrenotazioniConvenzione'));
 const GestioneRichieste = lazy(() => import('./pages/GestioneRichieste'));
 const Oggi = lazy(() => import('./pages/Oggi'));
+const Amministrazione = lazy(() => import('./pages/Amministrazione'));
 const PortalePaziente = lazy(() => import('./pages/PortalePaziente'));
 const RichiestaServizio = lazy(() => import('./pages/RichiestaServizio'));
 const LandingBadante = lazy(() => import('./pages/LandingBadante'));
@@ -562,6 +563,12 @@ function AppShell() {
                 <ConsegneBadge />
               </Link>
 
+              <span className="nav-section-label">Amministrazione</span>
+              <Link to="/amministrazione" className={isActive('/amministrazione') ? 'active' : ''}>
+                <Calculator size={18} />
+                Documenti e scadenze
+              </Link>
+
               <span className="nav-section-label">Procedure Organizzative</span>
               <Link to="/protocolli-procedure" className={isActive('/protocolli-procedure') ? 'active' : ''}>
                 <ClipboardList size={18} />
@@ -722,6 +729,7 @@ function AppShell() {
           {/* Route privilegiati */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/oggi" element={<ProtectedRoute><Oggi /></ProtectedRoute>} />
+          <Route path="/amministrazione" element={<ProtectedRoute><Amministrazione /></ProtectedRoute>} />
           <Route path="/ricerca" element={<ProtectedRoute><RicercaGlobale /></ProtectedRoute>} />
           <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
           <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
