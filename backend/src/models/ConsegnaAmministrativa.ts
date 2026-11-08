@@ -39,6 +39,21 @@ export interface IConsegnaAmministrativa extends Document {
   presaInCaricoIl?: Date;
   gestitaDaNome?: string;
   gestitaIl?: Date;
+  esito?: string;                 // obbligatorio per chiudere come 'gestita'
+  scadenza?: Date;                // prossima azione datata
+  interlocutoreAttesa?: string;   // in_attesa_riscontro: con chi siamo in attesa
+  dataControlloAttesa?: Date;     // in_attesa_riscontro: quando ricontrollare
+  // Lettura separata dallo stato: leggere NON equivale a lavoro concluso
+  lettaDa?: { userId: Types.ObjectId; nome: string; il: Date }[];
+  // Passaggio turno: responsabilità al cedente finché non accettata
+  trasferimento?: {
+    aId: Types.ObjectId;
+    aNome: string;
+    daNome: string;
+    richiestoIl: Date;
+    accettato: boolean;
+    accettatoIl?: Date;
+  };
   storico: IMovimentoConsegna[];
   createdAt: Date;
   updatedAt: Date;
@@ -73,6 +88,23 @@ const ConsegnaAmministrativaSchema = new Schema<IConsegnaAmministrativa>({
   presaInCaricoIl: { type: Date },
   gestitaDaNome: { type: String },
   gestitaIl: { type: Date },
+  esito: { type: String, trim: true, maxlength: 2000 },
+  scadenza: { type: Date },
+  interlocutoreAttesa: { type: String, trim: true, maxlength: 120 },
+  dataControlloAttesa: { type: Date },
+  lettaDa: [{
+    userId: { type: Schema.Types.ObjectId, ref: 'User' },
+    nome: { type: String },
+    il: { type: Date, default: Date.now },
+  }],
+  trasferimento: {
+    aId: { type: Schema.Types.ObjectId, ref: 'User' },
+    aNome: { type: String },
+    daNome: { type: String },
+    richiestoIl: { type: Date },
+    accettato: { type: Boolean, default: false },
+    accettatoIl: { type: Date },
+  },
   storico: { type: [MovimentoSchema], default: [] },
 }, { timestamps: true });
 

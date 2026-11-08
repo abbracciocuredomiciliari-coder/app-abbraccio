@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { ClipboardList, Plus, Bell, UserCheck, Hourglass, CheckCircle, RotateCcw, Trash2, MessageSquare, AlertTriangle, Calendar, Smartphone } from 'lucide-react';
+import { ClipboardList, Plus, Bell, UserCheck, Hourglass, CheckCircle, RotateCcw, Trash2, MessageSquare, AlertTriangle, Calendar, Smartphone, Clock } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { DictationMicButton } from '../components/DictationMicButton';
 
@@ -30,6 +30,12 @@ interface Consegna {
   presaInCaricoIl?: string;
   gestitaDaNome?: string;
   gestitaIl?: string;
+  esito?: string;
+  scadenza?: string;
+  interlocutoreAttesa?: string;
+  dataControlloAttesa?: string;
+  lettaDa?: { userId: string; nome: string; il: string }[];
+  trasferimento?: { aId: string; aNome: string; daNome: string; richiestoIl: string; accettato: boolean };
   storico: Movimento[];
   createdAt: string;
 }
@@ -89,6 +95,8 @@ export default function ConsegneAmministrative() {
   const [priorita, setPriorita] = useState<'normale' | 'urgente'>('normale');
   const [dataGiornata, setDataGiornata] = useState('');
   const [riferimento, setRiferimento] = useState('');
+  const [scadenza, setScadenza] = useState('');
+  const [utenti, setUtenti] = useState<{ _id: string; name: string }[]>([]);
 
   const carica = async () => {
     try {
@@ -100,6 +108,11 @@ export default function ConsegneAmministrative() {
   };
 
   useEffect(() => { carica(); const id = setInterval(carica, 30000); return () => clearInterval(id); }, []);
+  useEffect(() => {
+    api.get('/auth/all-users').then(r => {
+      setUtenti((r.data || []).map((x: any) => ({ _id: x._id || x.id, name: x.name })).filter((x: any) => x._id));
+    }).catch(() => {});
+  }, []);
 
   const aperte = consegne.filter(c => c.stato !== 'gestita');
   const gestite = consegne.filter(c => c.stato === 'gestita');
@@ -133,8 +146,9 @@ export default function ConsegneAmministrative() {
         titolo: titolo.trim(), testo: testo.trim(), tipo, priorita,
         dataGiornata: tipo === 'giornata' && dataGiornata ? dataGiornata : undefined,
         riferimento: tipo === 'pratica' && riferimento.trim() ? riferimento.trim() : undefined,
+        scadenza: scadenza || undefined,
       });
-      setTitolo(''); setTesto(''); setRiferimento(''); setDataGiornata(''); setTipo('generale'); setPriorita('normale'); setShowForm(false);
+      setTitolo(''); setTesto(''); setRiferimento(''); setDataGiornata(''); setTipo('generale'); setPriorita('normale'); setScadenza(''); setShowForm(false);
       await carica();
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore nel salvataggio della consegna');
@@ -144,17 +158,65 @@ export default function ConsegneAmministrative() {
   };
 
   const cambiaStato = async (id: string, stato: Stato) => {
-    let nota: string | undefined;
-    if (stato === 'in_attesa_riscontro' || stato === 'gestita') {
-      const n = window.prompt(stato === 'in_attesa_riscontro' ? 'Nota (es. cosa si attende):' : 'Nota di chiusura (opzionale):', '');
-      if (n === null) return;
-      nota = n.trim() || undefined;
+    const body: Record<string, any> = { stato };
+    if (stato === 'in_attesa_riscontro') {
+      const interlocutore = window.prompt('Con chi siete in attesa? (es. famiglia Rossi, ASL, fornitore):', '');
+      if (interlocutore === null) return;
+      const dataControllo = window.prompt('Data di controllo (YYYY-MM-DD):', new Date(Date.now() + 86400000).toISOString().slice(0, 10));
+      if (interlocutore.trim()) body.interlocutore = interlocutore.trim();
+      if (dataControllo) body.dataControllo = dataControllo;
+    }
+    if (stato === 'gestita') {
+      // Regola: il completamento richiede un esito
+      const esito = window.prompt('Esito della consegna (obbligatorio — cosa è stato fatto/risposto):', '');
+      if (esito === null) return;
+      if (!esito.trim()) { alert('Serve un esito per chiudere la consegna.'); return; }
+      body.esito = esito.trim();
     }
     try {
-      await api.patch(`/consegne-amministrative/${id}/stato`, { stato, nota });
+      await api.patch(`/consegne-amministrative/${id}/stato`, body);
       await carica();
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore aggiornamento consegna');
+    }
+  };
+
+  const segnaLetta = async (id: string) => {
+    try { await api.post(`/consegne-amministrative/${id}/letta`); } catch { /* noop */ }
+  };
+
+  const impostaScadenza = async (c: Consegna) => {
+    const d = window.prompt('Scadenza / prossima azione (YYYY-MM-DD, vuoto per rimuovere):', c.scadenza ? c.scadenza.slice(0, 10) : '');
+    if (d === null) return;
+    try {
+      await api.patch(`/consegne-amministrative/${c._id}/scadenza`, { scadenza: d || undefined });
+      await carica();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore aggiornamento scadenza');
+    }
+  };
+
+  const trasferisci = async (c: Consegna) => {
+    if (utenti.length === 0) { alert('Elenco utenti non caricato.'); return; }
+    const nomi = utenti.map((x, i) => `${i + 1}. ${x.name}`).join('\n');
+    const scelta = window.prompt(`Passa la consegna a (numero):\n${nomi}`);
+    const idx = parseInt(scelta || '', 10) - 1;
+    const dest = utenti[idx];
+    if (isNaN(idx) || !dest?._id) return;
+    try {
+      await api.post(`/consegne-amministrative/${c._id}/trasferisci`, { aId: dest._id });
+      await carica();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore trasferimento');
+    }
+  };
+
+  const accettaTrasferimento = async (c: Consegna) => {
+    try {
+      await api.post(`/consegne-amministrative/${c._id}/accetta-trasferimento`);
+      await carica();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore accettazione');
     }
   };
 
@@ -263,6 +325,10 @@ export default function ConsegneAmministrative() {
                 <option value="urgente">🔴 Urgente</option>
               </select>
             </div>
+            <div>
+              <span style={label}>Scadenza / prossima azione</span>
+              <input style={input} type="date" value={scadenza} onChange={e => setScadenza(e.target.value)} />
+            </div>
           </div>
           <div className="tw-mb-3">
             <div className="tw-flex tw-items-center tw-justify-between tw-mb-1">
@@ -337,6 +403,14 @@ export default function ConsegneAmministrative() {
                         {c.dataGiornata && <span className="tw-flex tw-items-center tw-gap-1"><Calendar size={12} />{new Date(c.dataGiornata).toLocaleDateString('it-IT')}</span>}
                         {c.riferimento && <span>📂 {c.riferimento}</span>}
                         <span>· di <strong>{c.autoreNome}</strong> il {fmtData(c.createdAt)}</span>
+                        {c.scadenza && (
+                          <span className={new Date(c.scadenza) < new Date() && c.stato !== 'gestita' ? 'tw-text-red-600 tw-font-bold' : ''}>
+                            ⏰ scadenza {new Date(c.scadenza).toLocaleDateString('it-IT')}
+                          </span>
+                        )}
+                        {c.lettaDa && c.lettaDa.length > 0 && (
+                          <span title={`Letta da: ${c.lettaDa.map(l => l.nome).join(', ')}`}>👁 letta da {c.lettaDa.length} persone</span>
+                        )}
                       </div>
                     </div>
                     <span className="tw-text-xs tw-font-bold tw-px-2.5 tw-py-1 tw-rounded-full" style={{ background: st.bg, color: st.color, border: `1px solid ${st.border}` }}>
@@ -350,6 +424,28 @@ export default function ConsegneAmministrative() {
                     <div className="tw-text-xs tw-text-slate-500 tw-mb-2">
                       {c.presaInCaricoDaNome && <span>👤 Presa in carico da <strong>{c.presaInCaricoDaNome}</strong> il {fmtData(c.presaInCaricoIl)} · </span>}
                       {c.stato === 'gestita' && c.gestitaDaNome && <span>✅ Gestita da <strong>{c.gestitaDaNome}</strong> il {fmtData(c.gestitaIl)}</span>}
+                    </div>
+                  )}
+
+                  {c.stato === 'in_attesa_riscontro' && (c.interlocutoreAttesa || c.dataControlloAttesa) && (
+                    <div className="tw-text-xs tw-text-amber-700 tw-bg-amber-50 tw-border tw-border-amber-200 tw-rounded-lg tw-px-2.5 tw-py-1.5 tw-mb-2">
+                      ⏳ In attesa di {c.interlocutoreAttesa && <strong>{c.interlocutoreAttesa}</strong>}
+                      {c.dataControlloAttesa && <span> · controllo {new Date(c.dataControlloAttesa).toLocaleDateString('it-IT')}</span>}
+                    </div>
+                  )}
+
+                  {c.stato === 'gestita' && c.esito && (
+                    <div className="tw-text-xs tw-text-emerald-800 tw-bg-emerald-50 tw-border tw-border-emerald-200 tw-rounded-lg tw-px-2.5 tw-py-1.5 tw-mb-2">
+                      ✅ <strong>Esito:</strong> {c.esito}
+                    </div>
+                  )}
+
+                  {c.trasferimento && !c.trasferimento.accettato && c.stato !== 'gestita' && (
+                    <div className="tw-text-xs tw-text-blue-800 tw-bg-blue-50 tw-border tw-border-blue-200 tw-rounded-lg tw-px-2.5 tw-py-1.5 tw-mb-2 tw-flex tw-flex-wrap tw-items-center tw-gap-2">
+                      <span>🔄 Trasferimento a <strong>{c.trasferimento.aNome}</strong> — responsabilità ancora di <strong>{c.trasferimento.daNome}</strong> finché non accetta</span>
+                      {String(c.trasferimento.aId) === user?.id && (
+                        <Button size="sm" onClick={() => accettaTrasferimento(c)}>Accetta</Button>
+                      )}
                     </div>
                   )}
 
@@ -374,7 +470,17 @@ export default function ConsegneAmministrative() {
                         <RotateCcw size={14} /> Riapri
                       </Button>
                     )}
-                    <Button size="sm" variant="secondary" onClick={() => { setApertaId(aperta ? null : c._id); setNotaTesto(''); }} className="tw-flex tw-items-center tw-gap-1.5">
+                    {c.stato !== 'gestita' && (
+                      <>
+                        <Button size="sm" variant="secondary" onClick={() => impostaScadenza(c)} className="tw-flex tw-items-center tw-gap-1.5">
+                          <Clock size={14} /> Scadenza
+                        </Button>
+                        <Button size="sm" variant="secondary" onClick={() => trasferisci(c)} className="tw-flex tw-items-center tw-gap-1.5">
+                          <UserCheck size={14} /> Passa
+                        </Button>
+                      </>
+                    )}
+                    <Button size="sm" variant="secondary" onClick={() => { setApertaId(aperta ? null : c._id); setNotaTesto(''); if (!aperta) segnaLetta(c._id); }} className="tw-flex tw-items-center tw-gap-1.5">
                       <MessageSquare size={14} /> {aperta ? 'Chiudi' : `Storico/note (${c.storico.length})`}
                     </Button>
                     {(isGestione || c.autoreNome === user?.name) && (

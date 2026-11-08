@@ -87,6 +87,7 @@ router.post('/', authenticateToken, auditLog('consegne_amministrative', 'CREATE'
     const priorita = req.body?.priorita === 'urgente' ? 'urgente' : 'normale';
     const riferimento = String(req.body?.riferimento || '').trim().slice(0, 160) || undefined;
     const dataGiornata = req.body?.dataGiornata ? new Date(req.body.dataGiornata) : undefined;
+    const scadenza = req.body?.scadenza ? new Date(req.body.scadenza) : undefined;
 
     if (!titolo || !testo) {
       return res.status(400).json({ message: 'Titolo e testo della consegna sono obbligatori' });
@@ -100,6 +101,7 @@ router.post('/', authenticateToken, auditLog('consegne_amministrative', 'CREATE'
       priorita,
       riferimento,
       dataGiornata: dataGiornata && !isNaN(dataGiornata.getTime()) ? dataGiornata : undefined,
+      scadenza: scadenza && !isNaN(scadenza.getTime()) ? scadenza : undefined,
       autoreId: new mongoose.Types.ObjectId(userId),
       autoreNome: user.name || 'Utente',
       storico: [{ azione: 'creata', da: new mongoose.Types.ObjectId(userId), daNome: user.name || 'Utente', il: new Date() }],
@@ -126,6 +128,23 @@ router.patch('/:id/stato', authenticateToken, auditLog('consegne_amministrative'
 
     const userId = user.userId || user.id;
     const userNome = user.name || 'Utente';
+
+    // Regola: il completamento richiede un esito
+    if (nuovoStato === 'gestita') {
+      const esito = String(req.body?.esito || '').trim().slice(0, 2000);
+      if (!esito) {
+        return res.status(400).json({ message: "Per segnare la consegna come gestita serve un esito (cosa è stato fatto / risposto)", richiedeEsito: true });
+      }
+      consegna.esito = esito;
+      consegna.gestitaDaNome = userNome;
+      consegna.gestitaIl = new Date();
+    }
+    if (nuovoStato === 'in_attesa_riscontro') {
+      const interlocutore = String(req.body?.interlocutore || '').trim().slice(0, 120);
+      const dataControllo = req.body?.dataControllo ? new Date(req.body.dataControllo) : undefined;
+      if (interlocutore) consegna.interlocutoreAttesa = interlocutore;
+      if (dataControllo && !isNaN(dataControllo.getTime())) consegna.dataControlloAttesa = dataControllo;
+    }
     consegna.stato = nuovoStato as any;
 
     if (nuovoStato === 'presa_in_carico') {
@@ -133,16 +152,102 @@ router.patch('/:id/stato', authenticateToken, auditLog('consegne_amministrative'
       consegna.presaInCaricoDaNome = userNome;
       consegna.presaInCaricoIl = new Date();
     }
-    if (nuovoStato === 'gestita') {
-      consegna.gestitaDaNome = userNome;
-      consegna.gestitaIl = new Date();
-    }
     consegna.storico.push({ azione: nuovoStato, da: new mongoose.Types.ObjectId(userId), daNome: userNome, il: new Date(), nota });
     await consegna.save();
     return res.json(consegna);
   } catch (error: any) {
     console.error('[Consegne PATCH stato] Errore:', error);
     return res.status(500).json({ message: 'Errore aggiornamento consegna', error: error.message });
+  }
+});
+
+// POST /api/consegne-amministrative/:id/letta — segna come letta (NON gestita)
+router.post('/:id/letta', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const user: any = req.user;
+    const userId = String(user.userId || user.id);
+    const consegna = await ConsegnaAmministrativa.findById(req.params.id);
+    if (!consegna) return res.status(404).json({ message: 'Consegna non trovata' });
+    consegna.lettaDa = consegna.lettaDa || [];
+    if (!consegna.lettaDa.some(l => String(l.userId) === userId)) {
+      consegna.lettaDa.push({ userId: new mongoose.Types.ObjectId(userId), nome: user.name || 'Utente', il: new Date() } as any);
+      consegna.storico.push({ azione: 'letta', da: new mongoose.Types.ObjectId(userId), daNome: user.name || 'Utente', il: new Date() });
+      await consegna.save();
+    }
+    return res.json({ ok: true, lettaDaCount: consegna.lettaDa.length });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore lettura consegna', error: error.message });
+  }
+});
+
+// PATCH /api/consegne-amministrative/:id/scadenza — imposta prossima azione datata
+router.patch('/:id/scadenza', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const user: any = req.user;
+    const consegna = await ConsegnaAmministrativa.findById(req.params.id);
+    if (!consegna) return res.status(404).json({ message: 'Consegna non trovata' });
+    const d = req.body?.scadenza ? new Date(req.body.scadenza) : undefined;
+    consegna.scadenza = d && !isNaN(d.getTime()) ? d : undefined;
+    consegna.storico.push({ azione: 'scadenza', da: new mongoose.Types.ObjectId(user.userId || user.id), daNome: user.name || 'Utente', il: new Date(), nota: consegna.scadenza ? `Scadenza: ${consegna.scadenza.toLocaleDateString('it-IT')}` : 'Scadenza rimossa' });
+    await consegna.save();
+    return res.json(consegna);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore aggiornamento scadenza', error: error.message });
+  }
+});
+
+// POST /api/consegne-amministrative/:id/trasferisci — passaggio turno:
+// il destinatario deve accettare; fino ad allora responsabilità al cedente.
+router.post('/:id/trasferisci', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const user: any = req.user;
+    const aId = String(req.body?.aId || '');
+    if (!mongoose.isValidObjectId(aId)) return res.status(400).json({ message: 'Destinatario non valido' });
+    const User = (await import('../models/User')).default;
+    const dest = await User.findById(aId).select('name').lean();
+    if (!dest) return res.status(404).json({ message: 'Utente destinatario non trovato' });
+    const consegna = await ConsegnaAmministrativa.findById(req.params.id);
+    if (!consegna) return res.status(404).json({ message: 'Consegna non trovata' });
+    if (consegna.stato === 'gestita') return res.status(400).json({ message: 'Consegna già gestita' });
+    consegna.trasferimento = {
+      aId: dest._id as any,
+      aNome: (dest as any).name,
+      daNome: consegna.presaInCaricoDaNome || user.name || 'Utente',
+      richiestoIl: new Date(),
+      accettato: false,
+    } as any;
+    consegna.storico.push({ azione: 'trasferita', da: new mongoose.Types.ObjectId(user.userId || user.id), daNome: user.name || 'Utente', il: new Date(), nota: `verso ${(dest as any).name} — in attesa di accettazione` });
+    await consegna.save();
+    return res.json(consegna);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore trasferimento', error: error.message });
+  }
+});
+
+// POST /api/consegne-amministrative/:id/accetta-trasferimento
+router.post('/:id/accetta-trasferimento', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const user: any = req.user;
+    const userId = String(user.userId || user.id);
+    const consegna = await ConsegnaAmministrativa.findById(req.params.id);
+    if (!consegna) return res.status(404).json({ message: 'Consegna non trovata' });
+    if (!consegna.trasferimento || consegna.trasferimento.accettato) {
+      return res.status(400).json({ message: 'Nessun trasferimento in sospeso' });
+    }
+    if (String(consegna.trasferimento.aId) !== userId) {
+      return res.status(403).json({ message: 'Solo il destinatario può accettare' });
+    }
+    consegna.presaInCaricoDaId = new mongoose.Types.ObjectId(userId);
+    consegna.presaInCaricoDaNome = user.name || 'Utente';
+    consegna.presaInCaricoIl = new Date();
+    consegna.trasferimento.accettato = true;
+    consegna.trasferimento.accettatoIl = new Date();
+    if (consegna.stato === 'da_gestire') consegna.stato = 'presa_in_carico';
+    consegna.storico.push({ azione: 'trasferimento_accettato', da: new mongoose.Types.ObjectId(userId), daNome: user.name || 'Utente', il: new Date() });
+    await consegna.save();
+    return res.json(consegna);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore accettazione trasferimento', error: error.message });
   }
 });
 
