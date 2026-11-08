@@ -1,6 +1,7 @@
 import { useEffect, useState, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
+import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Printer } from 'lucide-react';
 
@@ -30,7 +31,16 @@ function apriPDFScheda(s: any) {
 // Tipi
 // ═════════════════════════════════════════════════════════════════════════════
 type TipoServizio = 'prelievo' | 'esame_strumentale' | 'prestazione' | 'assistenza' | 'riabilitazione' | 'medico' | 'visita_specialistica' | 'ambulanza' | 'intermediazione' | 'psicologia' | 'telemedicina';
-type StatoRichiesta = 'in_attesa' | 'in_revisione' | 'confermata' | 'modificata' | 'rifiutata' | 'completata';
+type StatoRichiesta = 'in_attesa' | 'in_revisione' | 'in_valutazione' | 'confermata' | 'modificata' | 'rifiutata' | 'completata';
+
+const MOTIVI_VALUTAZIONE: Record<string, string> = {
+  prezzo: 'Prezzo',
+  confronto_familiare: 'Confronto con familiare',
+  mancata_risposta: 'Mancata risposta',
+  attesa_informazioni: 'Attesa informazioni',
+  attesa_candidato: 'Attesa candidato',
+  altro: 'Altro',
+};
 
 interface Richiesta {
   _id: string;
@@ -55,6 +65,10 @@ interface Richiesta {
   staffAssegnatoNome?: string;
   noteAdmin?: string;
   pazienteId?: string;
+  motivoValutazione?: string;
+  notaValutazione?: string;
+  ricontattoIl?: string;
+  responsabileNome?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -97,7 +111,8 @@ export default function GestioneRichieste() {
   const [richieste, setRichieste] = useState<Richiesta[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'tutte' | 'in_attesa' | 'in_revisione' | 'confermata' | 'rifiutata'>('tutte');
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<'tutte' | 'in_attesa' | 'in_revisione' | 'in_valutazione' | 'confermata' | 'rifiutata'>('tutte');
 
   // Richieste registrazione paziente
   const [richiestePaziente, setRichiestePaziente] = useState<RichiestaPaziente[]>([]);
@@ -122,7 +137,10 @@ export default function GestioneRichieste() {
     orarioConfermato: '',
     staffAssegnatoId: '',
     noteAdmin: '',
-    creaAppuntamento: true
+    creaAppuntamento: true,
+    motivoValutazione: '',
+    notaValutazione: '',
+    ricontattoIl: '',
   });
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -215,7 +233,10 @@ export default function GestioneRichieste() {
       orarioConfermato: r.orarioConfermato || r.orarioPreferito || '',
       staffAssegnatoId: staffId,
       noteAdmin: r.noteAdmin || '',
-      creaAppuntamento: true
+      creaAppuntamento: true,
+      motivoValutazione: r.motivoValutazione || '',
+      notaValutazione: r.notaValutazione || '',
+      ricontattoIl: r.ricontattoIl ? new Date(r.ricontattoIl).toISOString().split('T')[0] : '',
     });
     setGestioneModal(true);
   };
@@ -276,6 +297,31 @@ export default function GestioneRichieste() {
     }
   };
 
+  // Famiglia in valutazione: registra dubbio/ostacolo + ricontatto concordato.
+  // Non archivia automaticamente chi non risponde.
+  const valutazioneRichiesta = async (r: Richiesta) => {
+    const elenco = Object.entries(MOTIVI_VALUTAZIONE).map(([k, v], i) => `${i + 1}. ${v}`).join('\n');
+    const scelta = prompt(`Motivo dell'attesa (numero):\n${elenco}`);
+    if (!scelta) return;
+    const idx = parseInt(scelta, 10) - 1;
+    const motivoValutazione = Object.keys(MOTIVI_VALUTAZIONE)[idx] || 'altro';
+    const nota = prompt('Nota (dubbio o ostacolo, chi deve rispondere):') || '';
+    const ricontatto = prompt('Ricontatto concordato (YYYY-MM-DD):', new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10));
+    try {
+      await api.patch(`/richieste-prenotazioni/${r._id}/gestisci`, {
+        stato: 'in_valutazione',
+        motivoValutazione,
+        notaValutazione: nota,
+        ricontattoIl: ricontatto || undefined,
+        responsabileId: (user as any)?.id,
+      });
+      await caricaDati();
+      alert('Richiesta segnata "in valutazione" — la trovi nei ricontatti');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore nel salvataggio');
+    }
+  };
+
   // ════════════════════════════════════════════════════════════════════════════
   // Helpers
   // ════════════════════════════════════════════════════════════════════════════
@@ -283,6 +329,7 @@ export default function GestioneRichieste() {
     const styles: Record<StatoRichiesta, { bg: string; color: string; label: string }> = {
       in_attesa: { bg: '#fef3c7', color: '#92400e', label: '⏳ In attesa' },
       in_revisione: { bg: '#dbeafe', color: '#1e40af', label: '📝 In revisione' },
+      in_valutazione: { bg: '#ffedd5', color: '#9a3412', label: '🤔 In valutazione' },
       confermata: { bg: '#d1fae5', color: '#065f46', label: '✅ Confermata' },
       modificata: { bg: '#e0e7ff', color: '#3730a3', label: '✏️ Modificata' },
       rifiutata: { bg: '#fee2e2', color: '#991b1b', label: '❌ Rifiutata' },
@@ -631,6 +678,7 @@ export default function GestioneRichieste() {
         {[
           { key: 'in_attesa', label: 'In attesa', count: countByStato('in_attesa'), color: '#f59e0b' },
           { key: 'in_revisione', label: 'In revisione', count: countByStato('in_revisione'), color: '#3b82f6' },
+          { key: 'in_valutazione', label: 'In valutazione', count: countByStato('in_valutazione'), color: '#ea580c' },
           { key: 'confermata', label: 'Confermate', count: countByStato('confermata'), color: '#16a34a' },
           { key: 'rifiutata', label: 'Rifiutate', count: countByStato('rifiutata'), color: '#dc2626' },
         ].map(stat => (
@@ -655,7 +703,7 @@ export default function GestioneRichieste() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        {(['tutte', 'in_attesa', 'in_revisione', 'confermata', 'rifiutata'] as const).map(tab => (
+        {(['tutte', 'in_attesa', 'in_revisione', 'in_valutazione', 'confermata', 'rifiutata'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -700,6 +748,9 @@ export default function GestioneRichieste() {
                 <span>👤 {r.richiedenteNome}{r.richiedenteEmail ? ` — ${r.richiedenteEmail}` : ''}</span>
                 <span>📅 {new Date(r.dataPreferita).toLocaleDateString('it-IT')}{r.orarioPreferito ? ` ore ${r.orarioPreferito}` : ''}</span>
                 {r.staffAssegnatoNome && <span>🧑‍⚕️ {r.staffAssegnatoNome}</span>}
+                {r.stato === 'in_valutazione' && (
+                  <span style={{ color: '#9a3412' }}>🤔 {MOTIVI_VALUTAZIONE[r.motivoValutazione || ''] || 'In valutazione'}{r.ricontattoIl ? ` — ricontatto ${new Date(r.ricontattoIl).toLocaleDateString('it-IT')}` : ''}{r.responsabileNome ? ` · ${r.responsabileNome}` : ''}</span>
+                )}
               </div>
               <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
                 <button
@@ -708,6 +759,15 @@ export default function GestioneRichieste() {
                 >
                   Gestisci
                 </button>
+                {(r.stato === 'in_attesa' || r.stato === 'in_revisione') && (
+                  <button
+                    onClick={() => valutazioneRichiesta(r)}
+                    style={{ flex: '1 1 45%', padding: '10px 12px', background: '#ffedd5', color: '#9a3412', border: 'none', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+                    title="La famiglia deve pensarci: registra motivo e ricontatto"
+                  >
+                    🤔 In valutazione
+                  </button>
+                )}
                 {r.stato === 'in_attesa' && (
                   <>
                     <button
@@ -787,6 +847,11 @@ export default function GestioneRichieste() {
                         👤 {r.staffAssegnatoNome}
                       </div>
                     )}
+                    {r.stato === 'in_valutazione' && (
+                      <div style={{ fontSize: '0.7rem', color: '#9a3412', marginTop: '4px' }}>
+                        {MOTIVI_VALUTAZIONE[r.motivoValutazione || ''] || ''}{r.ricontattoIl ? ` · ricontatto ${new Date(r.ricontattoIl).toLocaleDateString('it-IT')}` : ''}
+                      </div>
+                    )}
                   </td>
                   <td style={{ padding: '12px' }}>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -796,6 +861,15 @@ export default function GestioneRichieste() {
                       >
                         Gestisci
                       </button>
+                      {(r.stato === 'in_attesa' || r.stato === 'in_revisione' || r.stato === 'in_valutazione') && (
+                        <button
+                          onClick={() => valutazioneRichiesta(r)}
+                          style={{ padding: '6px 12px', background: '#ffedd5', color: '#9a3412', border: 'none', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
+                          title="Famiglia in valutazione: motivo + ricontatto concordato"
+                        >
+                          🤔
+                        </button>
+                      )}
                       {r.stato === 'in_attesa' && (
                         <>
                           <button
@@ -891,6 +965,7 @@ export default function GestioneRichieste() {
                 >
                   <option value="in_attesa">⏳ In attesa</option>
                   <option value="in_revisione">📝 In revisione</option>
+                  <option value="in_valutazione">🤔 Famiglia in valutazione</option>
                   <option value="confermata">✅ Confermata</option>
                   <option value="rifiutata">❌ Rifiutata</option>
                   <option value="completata">✔️ Completata</option>
@@ -946,6 +1021,38 @@ export default function GestioneRichieste() {
                   <p style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '4px' }}>⚠️ Nessun operatore disponibile. Verifica che esistano membri dello staff attivi.</p>
                 )}
               </div>
+
+              {/* Famiglia in valutazione: dubbio + ricontatto */}
+              {gestioneForm.stato === 'in_valutazione' && (
+                <div style={{ marginBottom: '16px', background: '#fff7ed', border: '1px solid #fdba74', borderRadius: '10px', padding: '14px' }}>
+                  <div style={{ fontWeight: 700, color: '#9a3412', marginBottom: '10px', fontSize: '0.9rem' }}>🤔 Famiglia in valutazione — non archiviare: registra dubbio e ricontatto</div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>Motivo dell'attesa *</label>
+                  <select
+                    value={gestioneForm.motivoValutazione}
+                    onChange={(e: ChangeEvent<HTMLSelectElement>) => setGestioneForm({ ...gestioneForm, motivoValutazione: e.target.value })}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #fdba74', marginBottom: '10px' }}
+                    required
+                  >
+                    <option value="">— Seleziona motivo —</option>
+                    {Object.entries(MOTIVI_VALUTAZIONE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  </select>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>Nota (dubbio / chi deve rispondere)</label>
+                  <input
+                    type="text"
+                    value={gestioneForm.notaValutazione}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setGestioneForm({ ...gestioneForm, notaValutazione: e.target.value })}
+                    placeholder="Es. vuole parlarne col figlio, risponde la figlia Laura"
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #fdba74', marginBottom: '10px' }}
+                  />
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>Ricontatto concordato</label>
+                  <input
+                    type="date"
+                    value={gestioneForm.ricontattoIl}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setGestioneForm({ ...gestioneForm, ricontattoIl: e.target.value })}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #fdba74' }}
+                  />
+                </div>
+              )}
 
               {/* Note admin */}
               <div style={{ marginBottom: '16px' }}>

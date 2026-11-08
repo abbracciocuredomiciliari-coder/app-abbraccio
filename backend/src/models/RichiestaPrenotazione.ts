@@ -1,7 +1,7 @@
 import { Document, Schema, model, Types } from 'mongoose';
 
 export type TipoServizio = 'prelievo' | 'esame_strumentale' | 'prestazione' | 'assistenza' | 'riabilitazione' | 'medico' | 'visita_specialistica' | 'ambulanza' | 'intermediazione' | 'psicologia' | 'telemedicina';
-export type StatoRichiesta = 'in_attesa' | 'in_revisione' | 'confermata' | 'modificata' | 'rifiutata' | 'completata';
+export type StatoRichiesta = 'in_attesa' | 'in_revisione' | 'in_valutazione' | 'confermata' | 'modificata' | 'rifiutata' | 'completata';
 
 export interface IRichiestaPrenotazione extends Document {
   // Richiedente (caregiver/paziente registrato)
@@ -40,6 +40,13 @@ export interface IRichiestaPrenotazione extends Document {
   staffAssegnatoNome?: string;
   dataConfermata?: Date;
   orarioConfermato?: string;
+
+  // Famiglia in valutazione: dubbio/ostacolo, chi risponde, ricontatto concordato
+  motivoValutazione?: 'prezzo' | 'confronto_familiare' | 'mancata_risposta' | 'attesa_informazioni' | 'attesa_candidato' | 'altro';
+  notaValutazione?: string;
+  ricontattoIl?: Date;
+  responsabileId?: Types.ObjectId;
+  responsabileNome?: string;
 
   // Riferimenti creati (popolati dopo conferma)
   prelievoId?: Types.ObjectId;
@@ -88,7 +95,7 @@ const richiestaPrenotazioneSchema = new Schema<IRichiestaPrenotazione>(
     stato: {
       type: String,
       required: true,
-      enum: ['in_attesa', 'in_revisione', 'confermata', 'modificata', 'rifiutata', 'completata'],
+      enum: ['in_attesa', 'in_revisione', 'in_valutazione', 'confermata', 'modificata', 'rifiutata', 'completata'],
       default: 'in_attesa'
     },
     priorita: {
@@ -103,6 +110,12 @@ const richiestaPrenotazioneSchema = new Schema<IRichiestaPrenotazione>(
     staffAssegnatoNome: { type: String, trim: true },
     dataConfermata: { type: Date },
     orarioConfermato: { type: String, trim: true },
+
+    motivoValutazione: { type: String, enum: ['prezzo', 'confronto_familiare', 'mancata_risposta', 'attesa_informazioni', 'attesa_candidato', 'altro'] },
+    notaValutazione: { type: String, trim: true },
+    ricontattoIl: { type: Date, index: true },
+    responsabileId: { type: Schema.Types.ObjectId, ref: 'User' },
+    responsabileNome: { type: String, trim: true },
 
     prelievoId: { type: Schema.Types.ObjectId, ref: 'Prelievo', required: false },
     esameStrumentaleId: { type: Schema.Types.ObjectId, ref: 'EsameStrumentale', required: false },

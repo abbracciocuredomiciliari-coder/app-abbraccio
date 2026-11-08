@@ -79,6 +79,7 @@ const CentroPrenotazioniPrivato = lazy(() => import('./pages/CentroPrenotazioniP
 const CentroPrenotazioni = lazy(() => import('./pages/CentroPrenotazioni'));
 const CentroPrenotazioniConvenzione = lazy(() => import('./pages/CentroPrenotazioniConvenzione'));
 const GestioneRichieste = lazy(() => import('./pages/GestioneRichieste'));
+const Oggi = lazy(() => import('./pages/Oggi'));
 const PortalePaziente = lazy(() => import('./pages/PortalePaziente'));
 const RichiestaServizio = lazy(() => import('./pages/RichiestaServizio'));
 const LandingBadante = lazy(() => import('./pages/LandingBadante'));
@@ -395,6 +396,10 @@ function AppShell() {
             <>
               {/* — Panoramica — */}
               <span className="nav-section-label">Panoramica</span>
+              <Link to="/oggi" className={isActive('/oggi') ? 'active' : ''}>
+                <CalendarCheck size={18} />
+                Oggi
+              </Link>
               <Link to="/dashboard" className={isActive('/dashboard') ? 'active' : ''}>
                 <LayoutDashboard size={18} />
                 Dashboard
@@ -547,6 +552,10 @@ function AppShell() {
           {user && isPrivilegiato(user.role) && isOrganizzativa && (
             <>
               <span className="nav-section-label">Panoramica</span>
+              <Link to="/oggi" className={isActive('/oggi') ? 'active' : ''}>
+                <CalendarCheck size={18} />
+                Oggi
+              </Link>
               <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <ClipboardList size={18} />
                 Consegne
@@ -592,6 +601,10 @@ function AppShell() {
           {user && isPrivilegiato(user.role) && isConsulenza && (
             <>
               <span className="nav-section-label">Intermediazioni</span>
+              <Link to="/oggi" className={isActive('/oggi') ? 'active' : ''}>
+                <CalendarCheck size={18} />
+                Oggi
+              </Link>
               <Link to="/badanti-intermediazione" className={isActive('/badanti-intermediazione') ? 'active' : ''}>
                 <Users size={18} />
                 Intermediazioni
@@ -708,6 +721,7 @@ function AppShell() {
 
           {/* Route privilegiati */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/oggi" element={<ProtectedRoute><Oggi /></ProtectedRoute>} />
           <Route path="/ricerca" element={<ProtectedRoute><RicercaGlobale /></ProtectedRoute>} />
           <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
           <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />

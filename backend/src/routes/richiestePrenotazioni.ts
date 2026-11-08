@@ -7,6 +7,7 @@ import WorkPlan from '../models/WorkPlan';
 import Patient from '../models/Patient';
 import ContrattoPaziente from '../models/ContrattoPaziente';
 import Staff from '../models/Staff';
+import User from '../models/User';
 import { authenticateToken } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import { inviaEmailNuovaRichiestaPrenotazione, inviaEmailConfermaPrenotazione, inviaEmailConfermaRichiesta } from '../utils/email';
@@ -269,7 +270,11 @@ router.patch('/:id/gestisci', authenticateToken, authorizeRole('admin', 'coordin
       staffAssegnatoId,
       staffAssegnatoNome,
       noteAdmin,
-      creaAppuntamento
+      creaAppuntamento,
+      motivoValutazione,
+      notaValutazione,
+      ricontattoIl,
+      responsabileId,
     } = req.body;
 
     const richiesta = await RichiestaPrenotazione.findById(id);
@@ -296,6 +301,20 @@ router.patch('/:id/gestisci', authenticateToken, authorizeRole('admin', 'coordin
       }
     }
     if (noteAdmin !== undefined) richiesta.noteAdmin = noteAdmin;
+
+    // Famiglia in valutazione: dubbio, chi risponde, ricontatto concordato
+    if (stato === 'in_valutazione') {
+      if (motivoValutazione) richiesta.motivoValutazione = motivoValutazione;
+      if (notaValutazione !== undefined) richiesta.notaValutazione = notaValutazione;
+      if (ricontattoIl) richiesta.ricontattoIl = new Date(ricontattoIl);
+      if (responsabileId) {
+        richiesta.responsabileId = responsabileId;
+        try {
+          const respUser = await User.findById(responsabileId).select('name').lean();
+          if (respUser) richiesta.responsabileNome = (respUser as any).name;
+        } catch { /* ignore */ }
+      }
+    }
 
     // Aggiungi a storico
     richiesta.storicoModifiche.push({
