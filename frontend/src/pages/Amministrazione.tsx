@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/api';
-import { Calculator, Plus, Euro, Send, Paperclip, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Calculator, Plus, Euro, Send, Paperclip, AlertTriangle, RefreshCw, FileDown } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -62,6 +62,14 @@ export default function Amministrazione() {
     imponibile: '', iva: '', totale: '', descrizione: '', area: 'trasversale', scadenzaPagamento: '', praticaLabel: '',
   });
   const [allegato, setAllegato] = useState<{ fileName: string; contentType: string; dataBase64: string } | null>(null);
+  // ── Preparazione commercialista ──
+  const [showComm, setShowComm] = useState(false);
+  const [commDal, setCommDal] = useState(`${new Date().getFullYear()}-01-01`);
+  const [commAl, setCommAl] = useState(new Date().toISOString().slice(0, 10));
+  const [anteprima, setAnteprima] = useState<{ totaleDocumenti: number; perOrigine: Record<string, number>; anomalie: string[]; ultimaConsegna?: any } | null>(null);
+  const [consegne, setConsegne] = useState<any[]>([]);
+  const [diff, setDiff] = useState<{ consegnaId: string; nuovi: any[]; modificati: any[] } | null>(null);
+  const [lavorazioni, setLavorazioni] = useState<any[]>([]);
 
   const carica = async () => {
     setLoading(true);
@@ -74,12 +82,14 @@ export default function Amministrazione() {
       if (filtri.dal) params.dal = filtri.dal;
       if (filtri.al) params.al = filtri.al;
       if (filtri.q.trim()) params.q = filtri.q.trim();
-      const [docRes, contRes] = await Promise.all([
+      const [docRes, contRes, lavRes] = await Promise.all([
         api.get('/amministrazione/documenti', { params }),
         api.get('/amministrazione/conteggi'),
+        api.get('/attivita', { params: { area: 'organizzativa', vista: 'tutte' } }).catch(() => ({ data: [] })),
       ]);
       setRighe(docRes.data || []);
       setConteggi(contRes.data);
+      setLavorazioni((lavRes.data || []).filter((a: any) => !['completata', 'annullata'].includes(a.stato)));
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore caricamento archivio amministrativo');
     } finally {
@@ -203,6 +213,60 @@ export default function Amministrazione() {
       alert(err?.response?.data?.message || 'Errore registrazione fattura');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const caricaAnteprima = async () => {
+    try {
+      const res = await api.get('/amministrazione/commercialista/anteprima', { params: { dal: commDal, al: commAl } });
+      setAnteprima(res.data);
+      const c = await api.get('/amministrazione/commercialista/consegne');
+      setConsegne(c.data || []);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore anteprima');
+    }
+  };
+
+  const registraPreparazione = async () => {
+    if (!window.confirm(`Registrare la preparazione di ${anteprima?.totaleDocumenti || 0} documenti per il periodo ${commDal} → ${commAl}?\n\nQuesto NON invia nulla: crea il registro di cosa è stato preparato.`)) return;
+    try {
+      await api.post('/amministrazione/commercialista/consegne', { dal: commDal, al: commAl });
+      await caricaAnteprima();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore registrazione preparazione');
+    }
+  };
+
+  const marcaConsegnata = async (c: any) => {
+    const modalita = window.prompt('Modalità di consegna (email, chiavetta, accesso diretto…):', 'email');
+    if (modalita === null) return;
+    try {
+      await api.patch(`/amministrazione/commercialista/consegne/${c._id}`, { stato: 'consegnata', modalitaConsegna: modalita.trim() || undefined });
+      await caricaAnteprima();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore aggiornamento consegna');
+    }
+  };
+
+  const vediDifferenze = async (c: any) => {
+    try {
+      const res = await api.get(`/amministrazione/commercialista/consegne/${c._id}/differenze`);
+      setDiff({ consegnaId: c._id, nuovi: res.data.nuovi || [], modificati: res.data.modificati || [] });
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore confronto');
+    }
+  };
+
+  const scaricaCsv = async (c: any) => {
+    try {
+      const res = await api.get(`/amministrazione/commercialista/consegne/${c._id}/csv`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = `commercialista-${c._id}.csv`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Errore esportazione CSV');
     }
   };
 
@@ -394,6 +458,122 @@ export default function Amministrazione() {
           </table>
         </div>
       )}
+
+      {/* ── Lavorazioni back office ── */}
+      {lavorazioni.length > 0 && (
+        <div style={{ background: 'white', borderRadius: '12px', padding: '16px 18px', marginTop: '18px', border: '1px solid #bae6fd', borderLeft: '4px solid #0284c7' }}>
+          <h3 style={{ margin: '0 0 10px', color: '#0369a1', fontSize: '1rem' }}>
+            ☑ Lavorazioni back office aperte ({lavorazioni.length})
+          </h3>
+          {lavorazioni.slice(0, 8).map(a => {
+            const scad = a.scadenza && new Date(a.scadenza) < new Date();
+            return (
+              <div key={a._id} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', padding: '7px 0', borderTop: '1px solid #f1f5f9', fontSize: '0.84rem' }}>
+                <strong>{a.titolo}</strong>
+                {a.praticaLabel && <span style={{ color: '#64748b' }}>· {a.praticaLabel}</span>}
+                <span style={{ color: '#64748b' }}>👤 {a.responsabileNome || 'da assegnare'}</span>
+                {a.scadenza && <span style={{ color: scad ? '#b91c1c' : '#64748b', fontWeight: scad ? 700 : 400 }}>⏰ {data(a.scadenza)}{scad ? ' — scaduta' : ''}</span>}
+                <span style={{ marginLeft: 'auto', borderRadius: '10px', padding: '2px 10px', fontSize: '0.72rem', fontWeight: 700, background: '#f1f5f9', color: '#475569' }}>{a.stato}</span>
+                <Link to="/oggi" style={{ fontSize: '0.78rem', color: '#0284c7', fontWeight: 700 }}>apri →</Link>
+              </div>
+            );
+          })}
+          {lavorazioni.length > 8 && <Link to="/oggi" style={{ fontSize: '0.8rem', color: '#0284c7', fontWeight: 700 }}>Vedi tutte in "Oggi" →</Link>}
+        </div>
+      )}
+
+      {/* ── Prepara documenti per il commercialista ── */}
+      <div style={{ background: 'white', borderRadius: '12px', padding: '18px', marginTop: '18px', border: '1px solid #e9d5ff', borderLeft: '4px solid #7c3aed' }}>
+        <div onClick={() => { setShowComm(!showComm); if (!showComm && !anteprima) caricaAnteprima(); }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+          <h3 style={{ margin: 0, color: '#6d28d9', fontSize: '1rem' }}>
+            🧾 Prepara documenti per il commercialista
+          </h3>
+          <span style={{ color: '#94a3b8' }}>{showComm ? '▲' : '▼'}</span>
+        </div>
+        {showComm && (
+          <div style={{ marginTop: '14px' }}>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '14px' }}>
+              <div><span style={lbl}>Dal</span><input style={{ ...input, width: '150px' }} type="date" value={commDal} onChange={e => { setCommDal(e.target.value); setAnteprima(null); }} /></div>
+              <div><span style={lbl}>Al</span><input style={{ ...input, width: '150px' }} type="date" value={commAl} onChange={e => { setCommAl(e.target.value); setAnteprima(null); }} /></div>
+              <Button variant="secondary" onClick={caricaAnteprima}>Aggiorna riepilogo</Button>
+              {anteprima && <Button variant="primary" onClick={registraPreparazione} icon={<FileDown size={15} />}>Registra preparazione</Button>}
+            </div>
+
+            {anteprima && (
+              <>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                  {Object.entries(anteprima.perOrigine).map(([o, n]) => (
+                    <span key={o} style={{ background: '#f5f3ff', color: '#6d28d9', borderRadius: '12px', padding: '4px 12px', fontSize: '0.8rem', fontWeight: 700 }}>
+                      {ORIGINE_LABEL[o] || o}: {n}
+                    </span>
+                  ))}
+                  <span style={{ background: '#ede9fe', color: '#5b21b6', borderRadius: '12px', padding: '4px 12px', fontSize: '0.8rem', fontWeight: 800 }}>
+                    Totale: {anteprima.totaleDocumenti}
+                  </span>
+                </div>
+                {anteprima.anomalie.length > 0 ? (
+                  <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', padding: '10px 12px', marginBottom: '12px', fontSize: '0.82rem', color: '#9a3412' }}>
+                    <strong>⚠ {anteprima.anomalie.length} anomalie da verificare prima della consegna:</strong>
+                    <ul style={{ margin: '6px 0 0', paddingLeft: '18px', maxHeight: '160px', overflowY: 'auto' }}>
+                      {anteprima.anomalie.map((a, i) => <li key={i}>{a}</li>)}
+                    </ul>
+                  </div>
+                ) : (
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '8px 12px', marginBottom: '12px', fontSize: '0.82rem', color: '#166534' }}>
+                    ✓ Nessuna anomalia rilevata nel periodo (buchi numerazione, CF mancanti, duplicati, importi a zero).
+                  </div>
+                )}
+                {anteprima.ultimaConsegna && (
+                  <p style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                    Ultima preparazione: {data(anteprima.ultimaConsegna.preparataIl)} — stato {anteprima.ultimaConsegna.stato}
+                  </p>
+                )}
+              </>
+            )}
+
+            {/* Registro consegne */}
+            {consegne.length > 0 && (
+              <>
+                <h4 style={{ margin: '14px 0 8px', fontSize: '0.9rem', color: '#475569' }}>Registro preparazioni</h4>
+                {consegne.map(c => (
+                  <div key={c._id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px', marginBottom: '8px', fontSize: '0.84rem' }}>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <strong>{data(c.periodoDal)} → {data(c.periodoAl)}</strong>
+                      <span style={{ color: '#64748b' }}>{c.tipologie?.length ? c.tipologie.length : 0} tipologie · preparata il {data(c.preparataIl)}{c.preparataDa ? ` da ${c.preparataDa}` : ''}</span>
+                      <span style={{ borderRadius: '10px', padding: '2px 10px', fontSize: '0.74rem', fontWeight: 700, background: c.stato === 'verificata' ? '#dcfce7' : c.stato === 'consegnata' ? '#dbeafe' : '#fef3c7', color: c.stato === 'verificata' ? '#166534' : c.stato === 'consegnata' ? '#1e40af' : '#92400e' }}>
+                        {c.stato}{c.consegnataIl ? ` il ${data(c.consegnataIl)}` : ''}{c.modalitaConsegna ? ` · ${c.modalitaConsegna}` : ''}
+                      </span>
+                      {c.anomalie?.length > 0 && <span style={{ fontSize: '0.74rem', color: '#b45309' }}>⚠ {c.anomalie.length} anomalie</span>}
+                      <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px' }}>
+                        <button onClick={() => scaricaCsv(c)} style={{ ...btnPiccolo, background: '#f5f3ff', color: '#6d28d9' }}>CSV</button>
+                        <button onClick={() => vediDifferenze(c)} style={{ ...btnPiccolo, background: '#f1f5f9', color: '#334155' }}>differenze</button>
+                        {c.stato === 'preparata' && (
+                          <button onClick={() => marcaConsegnata(c)} style={{ ...btnPiccolo, background: '#dbeafe', color: '#1e40af' }}>Marca consegnata</button>
+                        )}
+                      </div>
+                    </div>
+                    {diff && diff.consegnaId === c._id && (
+                      <div style={{ marginTop: '10px', borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
+                        {diff.nuovi.length === 0 && diff.modificati.length === 0 ? (
+                          <span style={{ color: '#166534' }}>✓ Nessun documento aggiunto o modificato dopo questa preparazione.</span>
+                        ) : (
+                          <>
+                            {diff.nuovi.length > 0 && <div><strong>Aggiunti dopo ({diff.nuovi.length}):</strong> {diff.nuovi.slice(0, 8).map(r => `${r.numero} (${r.soggetto})`).join(' · ')}{diff.nuovi.length > 8 ? ' …' : ''}</div>}
+                            {diff.modificati.length > 0 && <div><strong>Modificati dopo ({diff.modificati.length}):</strong> {diff.modificati.slice(0, 8).map(r => `${r.numero} (${r.soggetto})`).join(' · ')}{diff.modificati.length > 8 ? ' …' : ''}</div>}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </>
+            )}
+            <p style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '10px' }}>
+              L'esportazione non è un invio: la consegna va marcata esplicitamente. I formati definitivi (XML, rendiconti) vanno concordati con il commercialista.
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Collegamenti alle gestioni di dettaglio esistenti */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '18px', fontSize: '0.85rem' }}>

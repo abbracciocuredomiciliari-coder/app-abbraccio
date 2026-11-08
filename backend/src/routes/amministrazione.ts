@@ -7,6 +7,7 @@ import DocumentoFatturazione from '../models/DocumentoFatturazione';
 import PreventivoInviato from '../models/PreventivoInviato';
 import RitenutaAcconto from '../models/RitenutaAcconto';
 import FatturaRicevuta from '../models/FatturaRicevuta';
+import ConsegnaCommercialista from '../models/ConsegnaCommercialista';
 import Attivita from '../models/Attivita';
 
 const router = Router();
@@ -34,14 +35,10 @@ function inPeriodo(data: any, dal?: string, al?: string): boolean {
   return true;
 }
 
-// GET /api/amministrazione/documenti — archivio unico normalizzato
-// filtri: area, origine, statoDoc, statoPagamento, dal, al, q
-router.get('/documenti', authenticateToken, authorizeRole(...RUOLI_AMM), async (req: Request, res: Response) => {
-  try {
-    const { area, origine, dal, al } = req.query as Record<string, string>;
-    const q = String(req.query.q || '').trim().toLowerCase();
-    const statoDoc = String(req.query.statoDoc || '');
-    const statoPag = String(req.query.statoPagamento || '');
+// Raccolta unificata dei documenti economici di tutte le aree — usata sia
+// dall'archivio sia dalla preparazione commercialista.
+async function raccogliRighe(filtroOrigine?: string): Promise<any[]> {
+    const origine = filtroOrigine || '';
     const righe: any[] = [];
 
     if (!origine || origine === 'fattura' || origine === 'preventivo' || origine === 'nota_credito') {
@@ -61,7 +58,8 @@ router.get('/documenti', authenticateToken, authorizeRole(...RUOLI_AMM), async (
           incassato: (d.pagamento?.incassi || []).reduce((s: number, i: any) => s + (i.importo || 0), 0),
           praticaTipo: 'paziente', praticaId: String(d.patient?._id || ''),
           collegato: d.documentoOrigineId ? String(d.documentoOrigineId) : undefined,
-          aggiornatoIl: d.updatedAt,
+          cfMancante: d.tipo === 'fattura' && !d.patient?.codiceFiscale,
+          aggiornatoIl: d.updatedAt, creatoIl: d.createdAt,
         });
       });
     }
@@ -77,7 +75,7 @@ router.get('/documenti', authenticateToken, authorizeRole(...RUOLI_AMM), async (
           statoDoc: i.stato || 'inviato', statoPagamento: undefined,
           praticaTipo: undefined, praticaId: undefined,
           nota: `${i.tipo === 'costo_badante' ? 'Costo badante' : i.tipo === 'contratto_firma' ? 'Contratto per firma' : 'Preventivo veloce'} · ${i.canale}`,
-          aggiornatoIl: i.updatedAt,
+          aggiornatoIl: i.updatedAt, creatoIl: i.createdAt,
         });
       });
     }
@@ -91,7 +89,7 @@ router.get('/documenti', authenticateToken, authorizeRole(...RUOLI_AMM), async (
           data: r.data, totale: r.nettoAPagare,
           statoDoc: r.stato, statoPagamento: undefined,
           nota: `Ritenuta ${r.percentualeRitenuta}% · lordo €${(r.importoLordo || 0).toFixed(2)}`,
-          aggiornatoIl: (r as any).updatedAt,
+          aggiornatoIl: (r as any).updatedAt, creatoIl: (r as any).createdAt,
         });
       });
     }
@@ -108,10 +106,24 @@ router.get('/documenti', authenticateToken, authorizeRole(...RUOLI_AMM), async (
           pagato: (f.pagamento?.pagamenti || []).reduce((s: number, p: any) => s + (p.importo || 0), 0),
           praticaTipo: f.praticaTipo, praticaId: f.praticaId ? String(f.praticaId) : undefined,
           nota: f.descrizione, hasAllegato: !!f.allegato?.fileName,
-          aggiornatoIl: f.updatedAt,
+          aggiornatoIl: f.updatedAt, creatoIl: f.createdAt,
         });
       });
     }
+
+    righe.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+    return righe;
+}
+
+// GET /api/amministrazione/documenti — archivio unico normalizzato
+// filtri: area, origine, statoDoc, statoPagamento, dal, al, q
+router.get('/documenti', authenticateToken, authorizeRole(...RUOLI_AMM), async (req: Request, res: Response) => {
+  try {
+    const { area, origine, dal, al } = req.query as Record<string, string>;
+    const q = String(req.query.q || '').trim().toLowerCase();
+    const statoDoc = String(req.query.statoDoc || '');
+    const statoPag = String(req.query.statoPagamento || '');
+    const righe = await raccogliRighe(origine);
 
     // Filtri applicati alla vista unificata
     let out = righe;
@@ -122,7 +134,6 @@ router.get('/documenti', authenticateToken, authorizeRole(...RUOLI_AMM), async (
     if (q) out = out.filter(r =>
       r.soggetto.toLowerCase().includes(q) || String(r.numero).toLowerCase().includes(q) ||
       (r.nota || '').toLowerCase().includes(q));
-    out.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
     return res.json(out.slice(0, 500));
   } catch (error: any) {
     console.error('[Amministrazione documenti] Errore:', error);
@@ -354,6 +365,166 @@ router.post('/documenti-emessi/:id/apri-attivita', authenticateToken, authorizeR
     return res.status(201).json(attivita);
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore creazione attività', error: error.message });
+  }
+});
+
+// ─── Preparazione documenti per il commercialista ────────────────────────────
+// L'esportazione non è un invio: la consegna va marcata esplicitamente.
+
+function calcolaAnomalie(righe: any[]): string[] {
+  const anomalie: string[] = [];
+
+  // 1. Buchi nella numerazione fatture per serie + anno
+  const perSerie = new Map<string, Set<number>>();
+  righe.filter(r => r.origine === 'fattura').forEach(r => {
+    const m = String(r.numero).match(/^(FATT(?:-CF)?)-(\d{4})-(\d+)$/);
+    if (!m) return;
+    const chiave = `${m[1]}-${m[2]}`;
+    if (!perSerie.has(chiave)) perSerie.set(chiave, new Set());
+    perSerie.get(chiave)!.add(parseInt(m[3], 10));
+  });
+  perSerie.forEach((numeri, serie) => {
+    const max = Math.max(...numeri);
+    for (let n = 1; n <= max; n++) {
+      if (!numeri.has(n)) anomalie.push(`Numerazione ${serie}: manca il progressivo ${String(n).padStart(5, '0')}`);
+    }
+  });
+
+  // 2. Fatture senza codice fiscale intestatario
+  righe.filter(r => r.origine === 'fattura' && r.cfMancante).forEach(r => {
+    anomalie.push(`${r.numero}: intestatario senza codice fiscale (${r.soggetto})`);
+  });
+
+  // 3. Possibili duplicati: stesso soggetto + totale + giorno
+  const visti = new Map<string, string>();
+  righe.filter(r => ['fattura', 'preventivo'].includes(r.origine)).forEach(r => {
+    const chiave = `${r.soggetto}|${r.totale}|${new Date(r.data).toISOString().slice(0, 10)}`;
+    if (visti.has(chiave)) anomalie.push(`Possibile duplicato: ${visti.get(chiave)} e ${r.numero} (${r.soggetto}, €${(r.totale || 0).toFixed(2)})`);
+    else visti.set(chiave, r.numero);
+  });
+
+  // 4. Documenti a importo zero
+  righe.filter(r => ['fattura', 'fattura_ricevuta'].includes(r.origine) && !(r.totale > 0)).forEach(r => {
+    anomalie.push(`${r.numero}: totale a zero (${r.soggetto})`);
+  });
+
+  return anomalie.slice(0, 100);
+}
+
+// GET /api/amministrazione/commercialista/anteprima?dal&al — riepilogo + anomalie
+router.get('/commercialista/anteprima', authenticateToken, authorizeRole(...RUOLI_AMM), async (req: Request, res: Response) => {
+  try {
+    const { dal, al } = req.query as Record<string, string>;
+    const righe = (await raccogliRighe()).filter(r => inPeriodo(r.data, dal, al));
+    const perOrigine: Record<string, number> = {};
+    righe.forEach(r => { perOrigine[r.origine] = (perOrigine[r.origine] || 0) + 1; });
+    return res.json({
+      totaleDocumenti: righe.length,
+      perOrigine,
+      anomalie: calcolaAnomalie(righe),
+      ultimaConsegna: await ConsegnaCommercialista.findOne().sort({ preparataIl: -1 }).select('preparataIl stato periodoDal periodoAl').lean(),
+    });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore anteprima', error: error.message });
+  }
+});
+
+// POST /api/amministrazione/commercialista/consegne — registra una preparazione
+router.post('/commercialista/consegne', authenticateToken, authorizeRole(...RUOLI_AMM), auditLog('amministrazione', 'CREATE'), async (req: AuthRequest, res: Response) => {
+  try {
+    const b = req.body || {};
+    const dal = b.dal ? String(b.dal) : undefined;
+    const al = b.al ? String(b.al) : undefined;
+    const righe = (await raccogliRighe()).filter(r => inPeriodo(r.data, dal, al));
+    if (righe.length === 0) return res.status(400).json({ message: 'Nessun documento nel periodo selezionato' });
+    const tipologie = [...new Set(righe.map(r => r.origine))];
+    const consegna = await ConsegnaCommercialista.create({
+      periodoDal: dal ? new Date(dal) : undefined,
+      periodoAl: al ? new Date(al) : undefined,
+      tipologie,
+      documenti: righe.map(r => ({ origine: r.origine, rifId: r.id, numero: r.numero, soggetto: r.soggetto, data: r.data, totale: r.totale, aggiornatoIl: r.aggiornatoIl })),
+      anomalie: calcolaAnomalie(righe),
+      preparataDa: (req as any).user?.name || undefined,
+      note: String(b.note || '').trim().slice(0, 1000) || undefined,
+    });
+    return res.status(201).json(consegna);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore registrazione preparazione', error: error.message });
+  }
+});
+
+// GET /api/amministrazione/commercialista/consegne — registro consegne
+router.get('/commercialista/consegne', authenticateToken, authorizeRole(...RUOLI_AMM), async (_req: Request, res: Response) => {
+  try {
+    const consegne = await ConsegnaCommercialista.find().select('-documenti').sort({ preparataIl: -1 }).limit(50).lean();
+    return res.json(consegne);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore caricamento consegne', error: error.message });
+  }
+});
+
+// PATCH /api/amministrazione/commercialista/consegne/:id — marca consegna/verifica
+router.patch('/commercialista/consegne/:id', authenticateToken, authorizeRole(...RUOLI_AMM), auditLog('amministrazione', 'UPDATE', req => req.params.id), async (req: AuthRequest, res: Response) => {
+  try {
+    const consegna = await ConsegnaCommercialista.findById(req.params.id);
+    if (!consegna) return res.status(404).json({ message: 'Consegna non trovata' });
+    const stato = String(req.body?.stato || '');
+    if (!['consegnata', 'verificata'].includes(stato)) {
+      return res.status(400).json({ message: 'Stato non valido (consegnata | verificata)' });
+    }
+    consegna.stato = stato as any;
+    if (stato === 'consegnata') {
+      consegna.consegnataIl = new Date();
+      consegna.consegnataDa = (req as any).user?.name || undefined;
+      consegna.modalitaConsegna = String(req.body?.modalitaConsegna || '').trim().slice(0, 120) || undefined;
+    }
+    await consegna.save();
+    return res.json(consegna);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore aggiornamento consegna', error: error.message });
+  }
+});
+
+// GET /api/amministrazione/commercialista/consegne/:id/differenze — documenti
+// aggiunti o modificati DOPO questa preparazione (stesso periodo)
+router.get('/commercialista/consegne/:id/differenze', authenticateToken, authorizeRole(...RUOLI_AMM), async (req: Request, res: Response) => {
+  try {
+    const consegna = await ConsegnaCommercialista.findById(req.params.id);
+    if (!consegna) return res.status(404).json({ message: 'Consegna non trovata' });
+    const dal = consegna.periodoDal ? consegna.periodoDal.toISOString() : undefined;
+    const al = consegna.periodoAl ? consegna.periodoAl.toISOString() : undefined;
+    const righe = (await raccogliRighe()).filter(r => inPeriodo(r.data, dal, al));
+    const snapshot = new Map(consegna.documenti.map(d => [d.rifId, d]));
+    const nuovi: any[] = [];
+    const modificati: any[] = [];
+    righe.forEach(r => {
+      const s = snapshot.get(r.id);
+      if (!s) { if (r.creatoIl && new Date(r.creatoIl) > consegna.preparataIl) nuovi.push(r); }
+      else if (r.aggiornatoIl && s.aggiornatoIl && new Date(r.aggiornatoIl) > new Date(s.aggiornatoIl)) modificati.push(r);
+    });
+    return res.json({ nuovi: nuovi.slice(0, 100), modificati: modificati.slice(0, 100) });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore confronto consegna', error: error.message });
+  }
+});
+
+// GET /api/amministrazione/commercialista/consegne/:id/csv — riepilogo CSV
+// (formato base concordabile col commercialista; i PDF restano scaricabili
+// dalle gestioni dedicate o dagli allegati)
+router.get('/commercialista/consegne/:id/csv', authenticateToken, authorizeRole(...RUOLI_AMM), async (req: Request, res: Response) => {
+  try {
+    const consegna = await ConsegnaCommercialista.findById(req.params.id).lean();
+    if (!consegna) return res.status(404).json({ message: 'Consegna non trovata' });
+    const escCsv = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const righe = consegna.documenti.map(d =>
+      [d.origine, d.numero, d.soggetto, d.data ? new Date(d.data).toLocaleDateString('it-IT') : '', (d.totale ?? '').toString().replace('.', ',')]
+        .map(escCsv).join(';'));
+    const csv = ['"origine";"numero";"soggetto";"data";"totale"', ...righe].join('\r\n');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="commercialista-${consegna._id}.csv"`);
+    return res.send('﻿' + csv);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore esportazione CSV', error: error.message });
   }
 });
 
