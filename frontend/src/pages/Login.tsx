@@ -92,8 +92,8 @@ function Login() {
         <div
           className="tw-w-16 tw-h-16 tw-mx-auto tw-mb-4 tw-rounded-2xl tw-flex tw-items-center tw-justify-center"
           style={{
-            background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-            boxShadow: '0 12px 24px rgba(79, 70, 229, 0.3)',
+            background: 'linear-gradient(135deg, #102f3b 0%, #1c7164 100%)',
+            boxShadow: '0 12px 24px rgba(16, 47, 59, 0.3)',
           }}
         >
           <Heart size={32} color="white" />
@@ -115,10 +115,10 @@ function Login() {
             aria-pressed={workspace === 'privato'}
             className="tw-relative tw-rounded-2xl tw-p-3 tw-flex tw-flex-col tw-items-center tw-gap-1 tw-transition-all tw-duration-200 tw-border-2 tw-overflow-hidden"
             style={{
-              background: workspace === 'privato' ? 'linear-gradient(135deg, #4f46e5 0%, #6366f1 55%, #38bdf8 100%)' : '#fff',
+              background: workspace === 'privato' ? 'linear-gradient(135deg, #102f3b 0%, #28505a 55%, #3d6b76 100%)' : '#fff',
               borderColor: workspace === 'privato' ? 'transparent' : '#e2e8f0',
               color: workspace === 'privato' ? '#fff' : '#64748b',
-              boxShadow: workspace === 'privato' ? '0 10px 24px rgba(79, 70, 229, 0.35)' : 'none',
+              boxShadow: workspace === 'privato' ? '0 10px 24px rgba(16, 47, 59, 0.35)' : 'none',
               transform: workspace === 'privato' ? 'scale(1.02)' : 'scale(1)',
               cursor: 'pointer',
             }}

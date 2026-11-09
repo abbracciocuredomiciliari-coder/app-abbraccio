@@ -274,8 +274,8 @@ function AppShell() {
                           padding: '11px 14px',
                           border: 'none',
                           borderBottom: '1px solid #f1f5f9',
-                          background: modalita === val ? '#eff6ff' : '#ffffff',
-                          color: modalita === val ? '#1e4d8c' : '#334155',
+                          background: modalita === val ? '#edf5f0' : '#ffffff',
+                          color: modalita === val ? '#1c7164' : '#334155',
                           fontWeight: modalita === val ? 700 : 600,
                           fontSize: '0.85rem',
                           cursor: 'pointer',
@@ -284,7 +284,7 @@ function AppShell() {
                       >
                         <span>{icona}</span>
                         <span style={{ flex: 1 }}>{nome}</span>
-                        {modalita === val && <span style={{ color: '#1e4d8c', fontWeight: 800 }}>✓</span>}
+                        {modalita === val && <span style={{ color: '#1c7164', fontWeight: 800 }}>✓</span>}
                       </button>
                     ))}
                   </div>
