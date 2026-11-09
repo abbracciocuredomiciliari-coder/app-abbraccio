@@ -756,29 +756,10 @@ button[style*="475569"] {
 button[style*="#6c757d"]:hover,
 button[style*="475569"]:hover { background: #4f666c !important; }
 
-/* Rilascio: i bottoni a sfondo CHIARO o trasparente che citano i colori
-   solo in testo/bordo (es. "Aggiungi" bianco con testo verde, pillola
-   Abbraccino, icone info) NON devono essere riempiti — tornano al loro
-   sfondo inline anche su hover, cosi' il testo resta leggibile.
-   NOTA: il DOM serializza "#fff" come "rgb(255, 255, 255)" — per questo
-   servono i pattern rgb(2xx, oltre a quelli esadecimali per sicurezza. */
-button[style*="background: rgb(2"], button[style*="background:rgb(2"],
-button[style*="background-color: rgb(2"], button[style*="background-color:rgb(2"],
-button[style*="background:#f"], button[style*="background: #f"],
-button[style*="background:#e"], button[style*="background: #e"],
-button[style*="background:none"], button[style*="background: none"],
-button[style*="background:transparent"], button[style*="background: transparent"],
-button[style*="background:white"], button[style*="background: white"],
-button[style*="background: rgb(2"]:hover, button[style*="background:rgb(2"]:hover,
-button[style*="background-color: rgb(2"]:hover, button[style*="background-color:rgb(2"]:hover,
-button[style*="background:#f"]:hover, button[style*="background: #f"]:hover,
-button[style*="background:#e"]:hover, button[style*="background: #e"]:hover,
-button[style*="background:none"]:hover, button[style*="background: none"]:hover,
-button[style*="background:transparent"]:hover, button[style*="background: transparent"]:hover,
-button[style*="background:white"]:hover, button[style*="background: white"]:hover {
-  background: revert !important;
-  box-shadow: revert !important;
-}
+/* NOTA: i bottoni a sfondo chiaro (bianco/trasparente) con testo o bordo
+   brand NON vengono piu' riempiti: i selettori qui sopra matchano il
+   brand solo dentro la proprieta' background. Non serve nessuna regola
+   di "rilascio" (background:revert annullerebbe anche gli stili inline). */
 
 /* ============================================
    Lists
