@@ -252,7 +252,7 @@ export default function Oggi() {
           ['ricontatti', 'Ricontatti', '#7c3aed', 'ricontatti'],
           ['senzaResp', 'Senza resp.', '#64748b', 'senza_responsabile'],
           ['trasferimenti', 'Da accettare', '#0891b2', 'trasferimenti'],
-          ['consegneAperte', 'Consegne', '#ea580c', 'consegne'],
+          ['consegneAperte', 'Consegne', '#b58b44', 'consegne'],
         ] as const).map(([k, label, col, v]) => (
           <button key={k} onClick={() => setVista(v)} style={{
             background: vista === v ? col : '#fff', color: vista === v ? '#fff' : col,
@@ -355,7 +355,7 @@ export default function Oggi() {
               const scad = c.scadenza && new Date(c.scadenza) < new Date();
               const trasfMio = c.trasferimento && !c.trasferimento.accettato && String(c.trasferimento.aId) === (user as any)?.id;
               return (
-                <div key={c._id} style={{ background: '#fff', borderRadius: 12, padding: '12px 14px', border: `2px solid ${scad ? '#fca5a5' : trasfMio ? '#fdba74' : '#e2e8f0'}` }}>
+                <div key={c._id} style={{ background: '#fff', borderRadius: 12, padding: '12px 14px', border: `2px solid ${scad ? '#fca5a5' : trasfMio ? '#e3d3ae' : '#e2e8f0'}` }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, minWidth: 200 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -371,7 +371,7 @@ export default function Oggi() {
                         <span>✍️ {c.autoreNome}</span>
                       </div>
                       {c.trasferimento && !c.trasferimento.accettato && (
-                        <div style={{ fontSize: '0.78rem', color: '#9a3412', marginTop: 6, background: '#fff7ed', padding: '4px 8px', borderRadius: 6, display: 'inline-block' }}>
+                        <div style={{ fontSize: '0.78rem', color: '#865d17', marginTop: 6, background: '#fbf5e9', padding: '4px 8px', borderRadius: 6, display: 'inline-block' }}>
                           🔁 Passaggio a {c.trasferimento.aNome} in attesa di accettazione (responsabilità: {c.trasferimento.daNome})
                         </div>
                       )}

@@ -324,7 +324,7 @@ export default function CentroPrenotazioniConvenzione() {
                         <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{p.tipoPrelievo ? (Array.isArray(p.tipoPrelievo) ? p.tipoPrelievo.join(', ') : p.tipoPrelievo) : 'N/D'}{p.orario ? ` · ${p.orario}` : ''}</div>
                         {p.staff && <div style={{ fontSize: '0.78rem', color: '#0369a1' }}>👤 {p.staff.firstName} {p.staff.lastName}</div>}
                       </div>
-                      <span style={{ padding: '2px 8px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700', background: p.status === 'eseguito' ? '#dcfce7' : '#fff7ed', color: p.status === 'eseguito' ? '#15803d' : '#9a3412' }}>{p.status}</span>
+                      <span style={{ padding: '2px 8px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700', background: p.status === 'eseguito' ? '#dcfce7' : '#fbf5e9', color: p.status === 'eseguito' ? '#15803d' : '#865d17' }}>{p.status}</span>
                       {canEdit && <button onClick={() => handleEliminaPrelievo(p._id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '4px' }}><Trash2 size={16} /></button>}
                     </div>
                   ))}

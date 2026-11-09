@@ -222,7 +222,7 @@ export default function IscrizioneIntermediazione() {
           <img src="/logo.png" alt="Abbraccio" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
           <div className="isc-hide-mobile">
             <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '1.05rem', lineHeight: 1.1 }}>Abbraccio Cure Domiciliari</div>
-            <div style={{ fontSize: '0.75rem', color: '#c2410c', fontWeight: 600 }}>Badanti · Colf · Operatori Sanitari</div>
+            <div style={{ fontSize: '0.75rem', color: '#15574d', fontWeight: 600 }}>Badanti · Colf · Operatori Sanitari</div>
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', background: '#f6f9ff', border: '1px solid #dfe9fb', borderRadius: '10px', padding: '5px 10px' }}>
             <span style={{ fontSize: '0.62rem', color: '#64748b', lineHeight: 1.25, textAlign: 'right' }}>

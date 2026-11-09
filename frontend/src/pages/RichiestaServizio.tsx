@@ -29,7 +29,7 @@ const TIPI_SERVIZIO = [
     tipi: ['Fisioterapia','Logopedia','Ergoterapia','Neuro-riabilitazione','Riabilitazione respiratoria','Altro'] },
   { value: 'ambulanza', label: 'Servizio Ambulanza', emoji: '�', color: '#b91c1c', bg: '#fee2e2', Icon: Activity,
     tipi: ['Trasporto programmato','Trasporto lettiga o sedia a rotelle','Accompagnamento a visite/terapie','Rientro post-ricovero','Altro'] },
-  { value: 'intermediazione', label: 'Badante, Colf e Assistenti Familiari', emoji: '🏠', color: '#c2410c', bg: '#ffedd5', Icon: UserPlus,
+  { value: 'intermediazione', label: 'Badante, Colf e Assistenti Familiari', emoji: '🏠', color: '#15574d', bg: '#d8e8df', Icon: UserPlus,
     tipi: ['Badante','Colf','Assistente familiare','Caregiver convivente','Altro'] },
   { value: 'psicologia', label: 'Terapia psicologica', emoji: '🧠', color: '#9333ea', bg: '#f3e8ff', Icon: HeartPulse,
     tipi: ['Primo colloquio psicologico','Seduta individuale','Supporto psicologico al caregiver','Valutazione psicodiagnostica','Altro'] },

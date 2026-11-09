@@ -758,7 +758,7 @@ export default function WorkPlanAccessPage() {
       {!consensoPrestazioneFirmato ? (
         <button
           onClick={() => setShowConsensoPrestazione(true)}
-          className="tw-w-full tw-mb-4 tw-bg-orange-50 tw-text-orange-800 tw-border tw-border-orange-300 tw-rounded-[10px] tw-p-3 tw-cursor-pointer tw-font-semibold tw-text-[0.9rem] tw-flex tw-items-center tw-justify-center tw-gap-1.5"
+          className="tw-w-full tw-mb-4 tw-bg-brand-50 tw-text-brand-800 tw-border tw-border-brand-300 tw-rounded-[10px] tw-p-3 tw-cursor-pointer tw-font-semibold tw-text-[0.9rem] tw-flex tw-items-center tw-justify-center tw-gap-1.5"
         >
           <FileText size={18} /> Firma consenso prestazione e rischi
         </button>
@@ -1332,17 +1332,17 @@ export default function WorkPlanAccessPage() {
 
       {/* ===== ALLEGATI — sempre visibili, integrati nel flusso ===== */}
 
-      <div className="tw-border-2 tw-border-orange-200 tw-rounded-[10px] tw-mb-4 tw-overflow-hidden tw-bg-orange-50">
+      <div className="tw-border-2 tw-border-brand-200 tw-rounded-[10px] tw-mb-4 tw-overflow-hidden tw-bg-brand-50">
 
-        <div className="tw-px-4 tw-py-3 tw-bg-orange-50 tw-border-b tw-border-orange-200 tw-flex tw-items-center tw-justify-between">
+        <div className="tw-px-4 tw-py-3 tw-bg-brand-50 tw-border-b tw-border-brand-200 tw-flex tw-items-center tw-justify-between">
 
-          <span className="tw-font-bold tw-text-orange-700 tw-text-[0.95rem] tw-flex tw-items-center tw-gap-2">
+          <span className="tw-font-bold tw-text-brand-700 tw-text-[0.95rem] tw-flex tw-items-center tw-gap-2">
 
             <Paperclip size={18} /> Allegati cartella ({allegati.length})
 
           </span>
 
-          <button type="button" onClick={() => setShowAllegati(!showAllegati)} className="tw-bg-transparent tw-border tw-border-orange-200 tw-rounded-md tw-cursor-pointer tw-text-orange-700 tw-px-2.5 tw-py-1 tw-text-[0.8rem] tw-flex tw-items-center tw-gap-1">
+          <button type="button" onClick={() => setShowAllegati(!showAllegati)} className="tw-bg-transparent tw-border tw-border-brand-200 tw-rounded-md tw-cursor-pointer tw-text-brand-700 tw-px-2.5 tw-py-1 tw-text-[0.8rem] tw-flex tw-items-center tw-gap-1">
 
             {showAllegati ? <><ChevronUp size={14} /> Nascondi</> : <><ChevronDown size={14} /> Mostra</>}
 
@@ -1354,7 +1354,7 @@ export default function WorkPlanAccessPage() {
 
         {/* Form upload — sempre visibile */}
 
-        <div className="tw-px-4 tw-py-3" style={{ borderBottom: allegati.length > 0 ? '1px solid #fed7aa' : 'none' }}>
+        <div className="tw-px-4 tw-py-3" style={{ borderBottom: allegati.length > 0 ? '1px solid #b9d5c6' : 'none' }}>
 
           <div className="tw-flex tw-gap-2 tw-items-start tw-flex-wrap">
 
@@ -1362,13 +1362,13 @@ export default function WorkPlanAccessPage() {
 
               <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" onChange={e => setUploadFile(e.target.files?.[0] || null)} className="tw-w-full tw-text-[0.85rem] tw-mb-1.5" />
 
-              {uploadFile && <div className="tw-text-[0.78rem] tw-text-orange-700 tw-mb-1">📄 {uploadFile.name} ({formatDimensione(uploadFile.size)})</div>}
+              {uploadFile && <div className="tw-text-[0.78rem] tw-text-brand-700 tw-mb-1">📄 {uploadFile.name} ({formatDimensione(uploadFile.size)})</div>}
 
-              <input type="text" value={uploadDescrizione} onChange={e => setUploadDescrizione(e.target.value)} placeholder="Descrizione allegato (opzionale)..." className="tw-w-full tw-px-2 tw-py-1.5 tw-rounded-md tw-border tw-border-orange-200 tw-text-[0.85rem] tw-box-border" />
+              <input type="text" value={uploadDescrizione} onChange={e => setUploadDescrizione(e.target.value)} placeholder="Descrizione allegato (opzionale)..." className="tw-w-full tw-px-2 tw-py-1.5 tw-rounded-md tw-border tw-border-brand-200 tw-text-[0.85rem] tw-box-border" />
 
             </div>
 
-            <button type="button" onClick={caricaFile} disabled={!uploadFile || uploadLoading} className={`tw-px-4 tw-py-2.5 tw-text-white tw-border-0 tw-rounded-lg tw-font-semibold tw-text-[0.88rem] tw-flex tw-items-center tw-gap-1.5 tw-whitespace-nowrap tw-self-end ${uploadFile && !uploadLoading ? 'tw-bg-orange-700 tw-cursor-pointer' : 'tw-bg-orange-300 tw-cursor-not-allowed'}`}>
+            <button type="button" onClick={caricaFile} disabled={!uploadFile || uploadLoading} className={`tw-px-4 tw-py-2.5 tw-text-white tw-border-0 tw-rounded-lg tw-font-semibold tw-text-[0.88rem] tw-flex tw-items-center tw-gap-1.5 tw-whitespace-nowrap tw-self-end ${uploadFile && !uploadLoading ? 'tw-bg-brand-700 tw-cursor-pointer' : 'tw-bg-brand-300 tw-cursor-not-allowed'}`}>
 
               {uploadLoading ? '⏳' : <><Paperclip size={15} /> Allega</>}
 
@@ -1390,7 +1390,7 @@ export default function WorkPlanAccessPage() {
 
             {allegati.map(all => (
 
-              <div key={all._id} className="tw-px-2.5 tw-py-2 tw-rounded-md tw-border tw-border-orange-200 tw-bg-white tw-flex tw-items-center tw-gap-2">
+              <div key={all._id} className="tw-px-2.5 tw-py-2 tw-rounded-md tw-border tw-border-brand-200 tw-bg-white tw-flex tw-items-center tw-gap-2">
 
                 <div className="tw-flex-shrink-0">{getFileIcon(all.mimeType)}</div>
 
@@ -1434,7 +1434,7 @@ export default function WorkPlanAccessPage() {
 
         {allegati.length > 0 && !showAllegati && (
 
-          <div className="tw-px-4 tw-py-2 tw-text-[0.8rem] tw-text-orange-700">
+          <div className="tw-px-4 tw-py-2 tw-text-[0.8rem] tw-text-brand-700">
 
             {allegati.length} allegato{allegati.length > 1 ? 'i' : ''} presente{allegati.length > 1 ? 'i' : ''} — clicca "Mostra" per visualizzarli
 
@@ -1526,11 +1526,11 @@ export default function WorkPlanAccessPage() {
       {showConsensoPrestazione && (
         <div className="tw-fixed tw-inset-0 tw-bg-black/55 tw-z-[110] tw-p-3 tw-overflow-y-auto" onClick={() => setShowConsensoPrestazione(false)}>
           <div className="tw-bg-white tw-rounded-2xl tw-w-full tw-max-w-[620px] tw-mx-auto tw-p-5" onClick={e => e.stopPropagation()}>
-            <h3 className="tw-m-0 tw-mb-2 tw-text-orange-800">Consenso alla prestazione sanitaria e rischi</h3>
+            <h3 className="tw-m-0 tw-mb-2 tw-text-brand-800">Consenso alla prestazione sanitaria e rischi</h3>
             <p className="tw-text-[0.85rem] tw-text-slate-600 tw-leading-relaxed tw-mb-3.5">
               Il firmatario dichiara di aver ricevuto informazioni sulle prestazioni sanitarie e assistenziali svolte da Abbraccio Cure Domiciliari e dai suoi operatori incaricati.
             </p>
-            <div className="tw-p-3 tw-rounded-lg tw-bg-orange-50 tw-border tw-border-orange-200 tw-text-[0.83rem] tw-text-orange-900 tw-leading-normal tw-mb-4">
+            <div className="tw-p-3 tw-rounded-lg tw-bg-brand-50 tw-border tw-border-brand-200 tw-text-[0.83rem] tw-text-brand-800 tw-leading-normal tw-mb-4">
               Le prestazioni sono effettuate secondo le procedure aziendali e le condizioni cliniche rilevate. Possono sussistere rischi prevedibili connessi allo stato di salute, alla risposta individuale al trattamento e alle attività svolte al domicilio. In caso di necessità l'operatore attiva il medico o i servizi di emergenza.
             </div>
 
@@ -1559,7 +1559,7 @@ export default function WorkPlanAccessPage() {
             <FirmaCanvas label="Firma del paziente / firmatario" sublabel="Firmare con il dito sullo schermo" onFirmaCompleta={setFirmaConsensoPrestazione} onCancella={() => setFirmaConsensoPrestazione('')} altezza={160} />
             <div className="tw-flex tw-gap-2.5 tw-mt-4">
               <button onClick={() => setShowConsensoPrestazione(false)} className="tw-flex-1 tw-p-3 tw-rounded-lg tw-border tw-border-slate-300 tw-bg-slate-100 tw-cursor-pointer">Annulla</button>
-              <button onClick={salvaConsensoPrestazione} disabled={savingConsensoPrestazione} className="tw-flex-[2] tw-p-3 tw-rounded-lg tw-border-0 tw-bg-orange-700 tw-text-white tw-font-bold tw-cursor-pointer">{savingConsensoPrestazione ? 'Salvataggio...' : 'Firma e archivia consenso'}</button>
+              <button onClick={salvaConsensoPrestazione} disabled={savingConsensoPrestazione} className="tw-flex-[2] tw-p-3 tw-rounded-lg tw-border-0 tw-bg-brand-700 tw-text-white tw-font-bold tw-cursor-pointer">{savingConsensoPrestazione ? 'Salvataggio...' : 'Firma e archivia consenso'}</button>
             </div>
           </div>
         </div>

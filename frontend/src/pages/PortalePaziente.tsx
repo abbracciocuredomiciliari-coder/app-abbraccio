@@ -43,7 +43,7 @@ const PRIORITA = [
 ];
 
 const STATO_COLORS: Record<string, { bg: string; color: string; label: string }> = {
-  in_attesa:   { bg: '#fff7ed', color: '#c2410c', label: '⏳ In attesa' },
+  in_attesa:   { bg: '#fbf5e9', color: '#865d17', label: '⏳ In attesa' },
   in_revisione:{ bg: 'var(--brand-50)', color: '#1d4ed8', label: '🔍 In revisione' },
   confermata:  { bg: '#f0fdf4', color: '#15803d', label: '✅ Confermata' },
   rifiutata:   { bg: '#fef2f2', color: '#dc2626', label: '❌ Rifiutata' },

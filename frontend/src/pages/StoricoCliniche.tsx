@@ -413,12 +413,12 @@ export default function StoricoCliniche() {
                     {/* Sezione allegati */}
                     {!loadingDettaglio && allegatiDettaglio.length > 0 && (
                       <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
-                        <div style={{ fontWeight: '600', color: '#c2410c', marginBottom: '10px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ fontWeight: '600', color: '#865d17', marginBottom: '10px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <Paperclip size={16} /> Allegati ({allegatiDettaglio.length})
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                           {allegatiDettaglio.map(all => (
-                            <div key={all._id} style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #fed7aa', backgroundColor: '#fff7ed', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div key={all._id} style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #e3d3ae', backgroundColor: '#fbf5e9', display: 'flex', alignItems: 'center', gap: '10px' }}>
                               <div style={{ flexShrink: 0 }}>{getFileIcon(all.mimeType)}</div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontWeight: '600', fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{all.nomeFile}</div>

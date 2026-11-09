@@ -126,7 +126,7 @@ const TIPI_PRESTAZIONE = [
 ];
 
 const STATO_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
-  inviata:   { label: '⏳ Inviata — in attesa di conferma', bg: '#fff7ed', color: '#c2410c' },
+  inviata:   { label: '⏳ Inviata — in attesa di conferma', bg: '#fbf5e9', color: '#865d17' },
   accettata: { label: '✅ Accettata dall\'amministrazione', bg: '#f0fdf4', color: '#15803d' },
   archiviata:{ label: '📁 Archiviata nella documentazione', bg: 'var(--brand-50)', color: '#1d4ed8' },
   rifiutata: { label: '❌ Non accettata', bg: '#fef2f2', color: '#dc2626' },

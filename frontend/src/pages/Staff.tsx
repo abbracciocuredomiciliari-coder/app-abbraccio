@@ -77,7 +77,7 @@ const categories = [
   { value: 'osa', label: 'OSA - Operatore Socio Assistenziale', color: '#06b6d4' },
   { value: 'assistente-familiare', label: 'Assistente familiare', color: '#f59e0b' },
   { value: 'badante', label: 'Badante', color: '#ec4899' },
-  { value: 'colf', label: 'Colf', color: '#f97316' },
+  { value: 'colf', label: 'Colf', color: '#b58b44' },
 ];
 
 const rolesByCategory: Record<string, string[]> = {

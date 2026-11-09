@@ -332,7 +332,7 @@ export default function GestioneRichieste() {
     const styles: Record<StatoRichiesta, { bg: string; color: string; label: string }> = {
       in_attesa: { bg: '#fef3c7', color: '#92400e', label: '⏳ In attesa' },
       in_revisione: { bg: 'var(--brand-100)', color: 'var(--brand-700)', label: '📝 In revisione' },
-      in_valutazione: { bg: '#ffedd5', color: '#9a3412', label: '🤔 In valutazione' },
+      in_valutazione: { bg: '#f5ecd7', color: '#865d17', label: '🤔 In valutazione' },
       confermata: { bg: '#d1fae5', color: '#065f46', label: '✅ Confermata' },
       modificata: { bg: 'var(--brand-100)', color: 'var(--brand-800)', label: '✏️ Modificata' },
       rifiutata: { bg: '#fee2e2', color: '#991b1b', label: '❌ Rifiutata' },
@@ -380,7 +380,7 @@ export default function GestioneRichieste() {
     const styles: Record<string, { bg: string; color: string }> = {
       bassa: { bg: '#dcfce7', color: '#166534' },
       normale: { bg: 'var(--brand-100)', color: 'var(--brand-700)' },
-      alta: { bg: '#ffedd5', color: '#9a3412' },
+      alta: { bg: '#f5ecd7', color: '#865d17' },
       urgente: { bg: '#fee2e2', color: '#991b1b' },
       molto_urgente: { bg: '#7f1d1d', color: '#ffffff' }
     };
@@ -607,7 +607,7 @@ export default function GestioneRichieste() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {schedeServizi.map(s => {
                 const statoStyle: Record<string, { bg: string; color: string; label: string }> = {
-                  inviata:    { bg: '#fff7ed', color: '#c2410c', label: '⏳ Inviata' },
+                  inviata:    { bg: '#fbf5e9', color: '#865d17', label: '⏳ Inviata' },
                   accettata:  { bg: '#f0fdf4', color: '#15803d', label: '✅ Accettata' },
                   archiviata: { bg: 'var(--brand-50)', color: '#1d4ed8', label: '📁 Archiviata' },
                   rifiutata:  { bg: '#fef2f2', color: '#dc2626', label: '❌ Rifiutata' },
@@ -752,7 +752,7 @@ export default function GestioneRichieste() {
                 <span>📅 {new Date(r.dataPreferita).toLocaleDateString('it-IT')}{r.orarioPreferito ? ` ore ${r.orarioPreferito}` : ''}</span>
                 {r.staffAssegnatoNome && <span>🧑‍⚕️ {r.staffAssegnatoNome}</span>}
                 {r.stato === 'in_valutazione' && (
-                  <span style={{ color: '#9a3412' }}>🤔 {MOTIVI_VALUTAZIONE[r.motivoValutazione || ''] || 'In valutazione'}{r.ricontattoIl ? ` — ricontatto ${new Date(r.ricontattoIl).toLocaleDateString('it-IT')}` : ''}{r.responsabileNome ? ` · ${r.responsabileNome}` : ''}</span>
+                  <span style={{ color: '#865d17' }}>🤔 {MOTIVI_VALUTAZIONE[r.motivoValutazione || ''] || 'In valutazione'}{r.ricontattoIl ? ` — ricontatto ${new Date(r.ricontattoIl).toLocaleDateString('it-IT')}` : ''}{r.responsabileNome ? ` · ${r.responsabileNome}` : ''}</span>
                 )}
               </div>
               <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
@@ -765,7 +765,7 @@ export default function GestioneRichieste() {
                 {(r.stato === 'in_attesa' || r.stato === 'in_revisione') && (
                   <button
                     onClick={() => valutazioneRichiesta(r)}
-                    style={{ flex: '1 1 45%', padding: '10px 12px', background: '#ffedd5', color: '#9a3412', border: 'none', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+                    style={{ flex: '1 1 45%', padding: '10px 12px', background: '#f5ecd7', color: '#865d17', border: 'none', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
                     title="La famiglia deve pensarci: registra motivo e ricontatto"
                   >
                     🤔 In valutazione
@@ -851,7 +851,7 @@ export default function GestioneRichieste() {
                       </div>
                     )}
                     {r.stato === 'in_valutazione' && (
-                      <div style={{ fontSize: '0.7rem', color: '#9a3412', marginTop: '4px' }}>
+                      <div style={{ fontSize: '0.7rem', color: '#865d17', marginTop: '4px' }}>
                         {MOTIVI_VALUTAZIONE[r.motivoValutazione || ''] || ''}{r.ricontattoIl ? ` · ricontatto ${new Date(r.ricontattoIl).toLocaleDateString('it-IT')}` : ''}
                       </div>
                     )}
@@ -867,7 +867,7 @@ export default function GestioneRichieste() {
                       {(r.stato === 'in_attesa' || r.stato === 'in_revisione' || r.stato === 'in_valutazione') && (
                         <button
                           onClick={() => valutazioneRichiesta(r)}
-                          style={{ padding: '6px 12px', background: '#ffedd5', color: '#9a3412', border: 'none', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
+                          style={{ padding: '6px 12px', background: '#f5ecd7', color: '#865d17', border: 'none', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
                           title="Famiglia in valutazione: motivo + ricontatto concordato"
                         >
                           🤔
@@ -1034,13 +1034,13 @@ export default function GestioneRichieste() {
 
               {/* Famiglia in valutazione: dubbio + ricontatto */}
               {gestioneForm.stato === 'in_valutazione' && (
-                <div style={{ marginBottom: '16px', background: '#fff7ed', border: '1px solid #fdba74', borderRadius: '10px', padding: '14px' }}>
-                  <div style={{ fontWeight: 700, color: '#9a3412', marginBottom: '10px', fontSize: '0.9rem' }}>🤔 Famiglia in valutazione — non archiviare: registra dubbio e ricontatto</div>
+                <div style={{ marginBottom: '16px', background: '#fbf5e9', border: '1px solid #e3d3ae', borderRadius: '10px', padding: '14px' }}>
+                  <div style={{ fontWeight: 700, color: '#865d17', marginBottom: '10px', fontSize: '0.9rem' }}>🤔 Famiglia in valutazione — non archiviare: registra dubbio e ricontatto</div>
                   <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>Motivo dell'attesa *</label>
                   <select
                     value={gestioneForm.motivoValutazione}
                     onChange={(e: ChangeEvent<HTMLSelectElement>) => setGestioneForm({ ...gestioneForm, motivoValutazione: e.target.value })}
-                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #fdba74', marginBottom: '10px' }}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e3d3ae', marginBottom: '10px' }}
                     required
                   >
                     <option value="">— Seleziona motivo —</option>
@@ -1052,14 +1052,14 @@ export default function GestioneRichieste() {
                     value={gestioneForm.notaValutazione}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => setGestioneForm({ ...gestioneForm, notaValutazione: e.target.value })}
                     placeholder="Es. vuole parlarne col figlio, risponde la figlia Laura"
-                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #fdba74', marginBottom: '10px' }}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e3d3ae', marginBottom: '10px' }}
                   />
                   <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>Ricontatto concordato</label>
                   <input
                     type="date"
                     value={gestioneForm.ricontattoIl}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => setGestioneForm({ ...gestioneForm, ricontattoIl: e.target.value })}
-                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #fdba74' }}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e3d3ae' }}
                   />
                 </div>
               )}

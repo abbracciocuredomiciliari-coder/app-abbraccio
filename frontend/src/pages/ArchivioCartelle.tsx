@@ -463,7 +463,7 @@ export default function ArchivioCartelle() {
                             </h4>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                               {dettaglio.allegati.map((all, idx) => (
-                                <div key={idx} style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #fed7aa', backgroundColor: '#fff7ed', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div key={idx} style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #e3d3ae', backgroundColor: '#fbf5e9', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                   <div style={{ flexShrink: 0 }}>{getFileIcon(all.mimeType)}</div>
                                   <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ fontWeight: '600', fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{all.nomeFile}</div>

@@ -150,10 +150,10 @@ export default function CandidatureIntermediazione({ onToast }: { onToast: (msg:
   const shareBtn: React.CSSProperties = { background: 'none', border: 'none', color: 'var(--brand-700)', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem', padding: 0 };
 
   return (
-    <div style={{ marginBottom: '28px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '14px', padding: '18px' }}>
+    <div style={{ marginBottom: '28px', background: '#edf5f0', border: '1px solid #b9d5c6', borderRadius: '14px', padding: '18px' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '12px' }}>
         <div>
-          <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#9a3412', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#15574d', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <UserPlus size={19} /> Candidature Intermediazioni — badanti, colf, assistenti familiari
             {nAttesa > 0 && <span style={{ background: '#dc2626', color: '#fff', borderRadius: '999px', padding: '2px 9px', fontSize: '0.75rem', fontWeight: 800 }}>{nAttesa} nuove</span>}
           </h3>
@@ -161,7 +161,7 @@ export default function CandidatureIntermediazione({ onToast }: { onToast: (msg:
             Iscrizioni rapide dal link esterno — accettate finiscono in <strong>Personale Intermediazioni</strong> e nella mappa (solo badanti/colf/assistenti familiari).
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.8rem', color: '#57534e', background: '#fff', border: '1px dashed #fdba74', borderRadius: '8px', padding: '6px 10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.8rem', color: '#57534e', background: '#fff', border: '1px dashed #8abda4', borderRadius: '8px', padding: '6px 10px' }}>
           <Smartphone size={14} />
           <code style={{ color: 'var(--brand-700)', fontWeight: 700 }}>/iscriviti-intermediazione</code>
           <button type="button"
@@ -185,7 +185,7 @@ export default function CandidatureIntermediazione({ onToast }: { onToast: (msg:
       <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
         {(['in_attesa', 'accettato', 'rifiutato', 'tutti'] as const).map(f => (
           <button key={f} type="button" onClick={() => setFiltro(f)}
-            style={{ background: filtro === f ? '#c2410c' : '#fff', color: filtro === f ? '#fff' : '#57534e', border: '1px solid #fdba74', borderRadius: '6px', padding: '5px 12px', fontSize: '0.82rem', cursor: 'pointer', fontWeight: filtro === f ? 700 : 400 }}>
+            style={{ background: filtro === f ? '#15574d' : '#fff', color: filtro === f ? '#fff' : '#57534e', border: '1px solid #8abda4', borderRadius: '6px', padding: '5px 12px', fontSize: '0.82rem', cursor: 'pointer', fontWeight: filtro === f ? 700 : 400 }}>
             {f === 'in_attesa' ? `⏳ In attesa (${nAttesa})` : f === 'accettato' ? '✅ Accettati' : f === 'rifiutato' ? '❌ Rifiutati' : '📋 Tutti'}
           </button>
         ))}
@@ -202,7 +202,7 @@ export default function CandidatureIntermediazione({ onToast }: { onToast: (msg:
               <div key={c._id} style={{ background: '#fff', border: '1px solid #fde8d0', borderRadius: '10px', padding: '12px 14px' }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
                   <strong style={{ color: '#292524', fontSize: '0.95rem' }}>{c.nome} {c.cognome}</strong>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, background: '#ffedd5', color: '#9a3412', borderRadius: '999px', padding: '2px 8px' }}>{RUOLO_LABEL[c.ruolo]}</span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, background: '#d8e8df', color: '#15574d', borderRadius: '999px', padding: '2px 8px' }}>{RUOLO_LABEL[c.ruolo]}</span>
                   {c.stato === 'accettato' && <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#15803d' }}><CheckCircle size={12} style={{ verticalAlign: '-2px' }} /> Accettato</span>}
                   {c.stato === 'rifiutato' && <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#b91c1c' }}>❌ Rifiutato</span>}
                   {c.stato === 'in_attesa' && manc.length > 0 && (
