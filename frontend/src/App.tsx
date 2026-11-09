@@ -277,7 +277,7 @@ function AppShell() {
                           border: 'none',
                           borderBottom: '1px solid #f1f5f9',
                           background: modalita === val ? '#edf5f0' : '#ffffff',
-                          color: modalita === val ? '#1f5c33' : '#334155',
+                          color: modalita === val ? '#174c3c' : '#334155',
                           fontWeight: modalita === val ? 700 : 600,
                           fontSize: '0.85rem',
                           cursor: 'pointer',

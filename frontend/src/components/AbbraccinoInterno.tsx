@@ -128,7 +128,7 @@ export default function AbbraccinoInterno() {
 
       {!open && (
         <div className="ab-launcher" style={{ position: 'fixed', right: 14, bottom: 6, zIndex: 9990, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-          <button onClick={() => setOpen(true)} className="ab-pill-top" style={{ background: '#fff', color: '#1f5c33', border: '1.5px solid #dcebdc', borderRadius: 999, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 800, boxShadow: '0 3px 10px rgba(0,0,0,.10)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          <button onClick={() => setOpen(true)} className="ab-pill-top" style={{ background: '#fff', color: '#174c3c', border: '1.5px solid #dcebdc', borderRadius: 999, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 800, boxShadow: '0 3px 10px rgba(0,0,0,.10)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
             Sono Abbraccino 💛
           </button>
           <button onClick={() => setOpen(true)} aria-label="Chiedi ad Abbraccino" className="ab-int-fab"

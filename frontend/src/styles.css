@@ -3,24 +3,24 @@
    Abbraccio Cure Domiciliari
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 :root {
   /* ══ PALETTE CENTRALE ABBRACCIO ══
      Unico punto di verità dei colori. Per cambiare l'identità in futuro
      basta modificare queste variabili (o il blocco theme in tailwind.config.js).
      Verde = colore principale · ambra = attese/attenzione · rosso = errori. */
-  --brand-50:  #edf4ea;
-  --brand-100: #dcebdc;
-  --brand-200: #bcdcc0;
-  --brand-300: #8fc49a;
-  --brand-500: #417f52;
-  --brand-600: #2b6b3e;
-  --brand-700: #1f5c33;
-  --brand-800: #154a27;
-  --nav-900:   #16281d;   /* verde bosco profondo navigazione */
-  --gold:      #b58b44;
-  --gold-300:  #d0b176;
+  --brand-50:  #f4f7f1;
+  --brand-100: #e0edda;
+  --brand-200: #cfe3cc;
+  --brand-300: #9dc4a4;
+  --brand-500: #3d8368;
+  --brand-600: #26715a;
+  --brand-700: #174c3c;   /* forest — bottoni primari, titoli */
+  --brand-800: #123b2e;
+  --nav-900:   #173e32;   /* sidebar verde bosco */
+  --gold:      #97773c;
+  --gold-300:  #c9a25f;
 
   /* Alias legacy (mantenuti per compatibilità col codice esistente) */
   --brand-blue: var(--nav-900);
@@ -33,40 +33,40 @@
   --primary: var(--brand-700);
   --primary-light: var(--brand-500);
   --primary-dark: var(--brand-800);
-  --primary-bg: rgba(31, 92, 51, 0.08);
-  --primary-border: rgba(31, 92, 51, 0.2);
+  --primary-bg: rgba(23, 76, 60, 0.07);
+  --primary-border: rgba(23, 76, 60, 0.18);
 
-  /* Secondary — Azzurro clinico */
-  --secondary: #0891b2;
-  --secondary-light: #06b6d4;
-  --secondary-bg: rgba(8, 145, 178, 0.08);
+  /* Secondary — Salvia discreto */
+  --secondary: #4f7186;
+  --secondary-light: #6d8fa0;
+  --secondary-bg: rgba(79, 113, 134, 0.08);
 
-  /* Success — Verde salute */
-  --success: #059669;
-  --success-light: #10b981;
-  --success-bg: rgba(5, 150, 105, 0.08);
-  --success-border: rgba(5, 150, 105, 0.25);
+  /* Success — Verde salvia (tag chiaro) */
+  --success: #557e38;
+  --success-light: #6d9a4e;
+  --success-bg: #edf4e5;
+  --success-border: rgba(85, 126, 56, 0.25);
 
-  /* Warning — Ambra attese */
-  --warning: #b58b44;
-  --warning-light: #d0b176;
-  --warning-bg: rgba(181, 139, 68, 0.1);
-  --warning-border: rgba(181, 139, 68, 0.3);
+  /* Warning — Ocra tenue */
+  --warning: #97773c;
+  --warning-light: #c9a25f;
+  --warning-bg: #faf1dc;
+  --warning-border: rgba(151, 119, 60, 0.3);
 
-  /* Danger — Rosso urgenza */
-  --danger: #dc2626;
-  --danger-light: #ef4444;
-  --danger-bg: rgba(220, 38, 38, 0.08);
-  --danger-border: rgba(220, 38, 38, 0.25);
+  /* Danger — Terracotta leggibile */
+  --danger: #9c4836;
+  --danger-light: #c05f49;
+  --danger-bg: #fff1ed;
+  --danger-border: #edd4c9;
 
-  /* Info */
-  --info: #0284c7;
-  --info-light: #0ea5e9;
-  --info-bg: rgba(2, 132, 199, 0.08);
+  /* Info — Ardesia */
+  --info: #4f7186;
+  --info-light: #6d8fa0;
+  --info-bg: #eef3f6;
 
   /* Purple — Obiettivi */
-  --purple: #7c3aed;
-  --purple-bg: rgba(124, 58, 237, 0.08);
+  --purple: #6d5a94;
+  --purple-bg: rgba(109, 90, 148, 0.08);
 
   /* Neutrals */
   --gray-50: #f8fafc;
@@ -83,24 +83,24 @@
   /* Sidebar — verde scuro di navigazione */
   --sidebar-bg: var(--nav-900);
   --sidebar-width: 265px;
-  --sidebar-text: #aac7ad;
-  --sidebar-hover: rgba(255,255,255,0.08);
-  --sidebar-active-bg: #e9f1e4;
-  --sidebar-active-text: var(--brand-800);
-  --sidebar-active-border: var(--gold-300);
+  --sidebar-text: #c0d6cb;
+  --sidebar-hover: rgba(255,255,255,0.07);
+  --sidebar-active-bg: #e0edda;
+  --sidebar-active-text: #1c4939;
+  --sidebar-active-border: transparent;
 
   /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
-  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
-  --shadow-blue: 0 4px 14px rgba(31,92,51,0.25);
+  --shadow-xs: 0 1px 2px rgba(36,61,48,0.04);
+  --shadow-sm: 0 1px 3px rgba(36,61,48,0.05);
+  --shadow-md: 0 3px 8px rgba(36,61,48,0.07);
+  --shadow-lg: 0 8px 18px rgba(36,61,48,0.09);
+  --shadow-xl: 0 16px 32px rgba(36,61,48,0.12);
+  --shadow-blue: 0 4px 14px rgba(23,76,60,0.25);
 
   /* Typography — DM Sans testo / Manrope titoli (identità demo) */
-  --font: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-head: 'Manrope', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-serif: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+  --font: 'Inter', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-head: 'Inter', 'Manrope', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
 
   /* Radius */
   --r-sm: 6px;
@@ -139,8 +139,8 @@ html {
 body {
   margin: 0;
   font-family: var(--font);
-  background: #eef2e8;
-  color: var(--gray-800);
+  background: #f4f7f3;
+  color: #233a31;
   line-height: 1.6;
 }
 
@@ -196,7 +196,7 @@ body {
   background: var(--primary-light);
   border-radius: var(--r-md);
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 8px rgba(31,92,51,0.4);
+  box-shadow: 0 2px 8px rgba(23,76,60,0.4);
   flex-shrink: 0;
 }
 
@@ -254,7 +254,7 @@ body {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.35);
+  color: #93b5a3;
   user-select: none;
   pointer-events: none;
 }
@@ -390,9 +390,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 h1 {
-  font-family: var(--font-serif);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 650;
+  letter-spacing: -0.02em;
 }
 
 h2 {
@@ -629,73 +628,72 @@ button:active { transform: scale(0.97) !important; }
 .workplan-list button:hover,
 .add-button:hover {
   background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-  box-shadow: 0 6px 20px rgba(31,92,51,0.35);
+  box-shadow: 0 6px 20px rgba(23,76,60,0.35);
   transform: translateY(-1px);
 }
 
 /* Btn variants via inline style overrides */
 button[style*="background"][style*="brand-700"],
 button[style*="background"][style*="brand-800"] {
-  background: linear-gradient(135deg, var(--brand-800), var(--brand-700)) !important;
-  box-shadow: 0 2px 8px rgba(31,92,51,0.3) !important;
+  background: var(--brand-700) !important;
+  box-shadow: none !important;
 }
 button[style*="background"][style*="brand-700"]:hover,
 button[style*="background"][style*="brand-800"]:hover {
-  box-shadow: 0 4px 14px rgba(31,92,51,0.4) !important;
-  transform: translateY(-1px);
+  background: #28634e !important;
 }
 
 button[style*="#059669"],
 button[style*="059669"] {
-  background: linear-gradient(135deg, #047857, #059669) !important;
-  box-shadow: 0 2px 8px rgba(5,150,105,0.3) !important;
+  background: #557e38 !important;
+  box-shadow: none !important;
 }
-button[style*="#059669"]:hover { box-shadow: 0 4px 14px rgba(5,150,105,0.4) !important; transform: translateY(-1px); }
+button[style*="#059669"]:hover { background: #6d9a4e !important; }
 
 button[style*="#0284c7"],
 button[style*="0284c7"] {
-  background: linear-gradient(135deg, #0369a1, #0284c7) !important;
-  box-shadow: 0 2px 8px rgba(2,132,199,0.3) !important;
+  background: #4f7186 !important;
+  box-shadow: none !important;
 }
-button[style*="#0284c7"]:hover { box-shadow: 0 4px 14px rgba(2,132,199,0.4) !important; transform: translateY(-1px); }
+button[style*="#0284c7"]:hover { background: #5f8299 !important; }
 
 button[style*="#7c3aed"],
 button[style*="7c3aed"] {
-  background: linear-gradient(135deg, #6d28d9, #7c3aed) !important;
-  box-shadow: 0 2px 8px rgba(124,58,237,0.3) !important;
+  background: #6d5a94 !important;
+  box-shadow: none !important;
 }
-button[style*="#7c3aed"]:hover { box-shadow: 0 4px 14px rgba(124,58,237,0.4) !important; transform: translateY(-1px); }
+button[style*="#7c3aed"]:hover { background: #7d6aa4 !important; }
 
 button[style*="#c2410c"],
 button[style*="c2410c"] {
-  background: linear-gradient(135deg, #9a3412, #c2410c) !important;
-  box-shadow: 0 2px 8px rgba(194,65,12,0.3) !important;
+  background: #9c4836 !important;
+  box-shadow: none !important;
 }
-button[style*="#c2410c"]:hover { box-shadow: 0 4px 14px rgba(194,65,12,0.4) !important; transform: translateY(-1px); }
+button[style*="#c2410c"]:hover { background: #ac5340 !important; }
 
 button[style*="#dc2626"],
 button[style*="dc2626"] {
-  background: linear-gradient(135deg, #b91c1c, #dc2626) !important;
-  box-shadow: 0 2px 8px rgba(220,38,38,0.3) !important;
+  background: #9c4836 !important;
+  box-shadow: none !important;
 }
-button[style*="#dc2626"]:hover { box-shadow: 0 4px 14px rgba(220,38,38,0.4) !important; transform: translateY(-1px); }
+button[style*="#dc2626"]:hover { background: #ac5340 !important; }
 
 button[style*="#16a34a"],
 button[style*="16a34a"] {
-  background: linear-gradient(135deg, #15803d, #16a34a) !important;
-  box-shadow: 0 2px 8px rgba(22,163,74,0.3) !important;
+  background: #557e38 !important;
+  box-shadow: none !important;
 }
-button[style*="#16a34a"]:hover { box-shadow: 0 4px 14px rgba(22,163,74,0.4) !important; transform: translateY(-1px); }
+button[style*="#16a34a"]:hover { background: #6d9a4e !important; }
 
 button[style*="#6c757d"],
 button[style*="6c757d"],
 button[style*="#475569"],
 button[style*="475569"] {
-  background: linear-gradient(135deg, #374151, #4b5563) !important;
-  box-shadow: 0 2px 6px rgba(71,85,105,0.25) !important;
+  background: #637569 !important;
+  box-shadow: none !important;
 }
 button[style*="#6c757d"]:hover,
-button[style*="#475569"]:hover { box-shadow: 0 4px 12px rgba(71,85,105,0.35) !important; transform: translateY(-1px); }
+button[style*="475569"]:hover { background: #738579 !important; }
 
 /* ============================================
    Lists
@@ -811,7 +809,7 @@ section > div > ul > li {
 }
 
 .login-form button:hover {
-  box-shadow: 0 6px 20px rgba(31,92,51,0.4);
+  box-shadow: 0 6px 20px rgba(23,76,60,0.4);
   transform: translateY(-1px);
 }
 
@@ -890,6 +888,15 @@ div[style*="border:1px solid #e5e7eb"] {
 /* ============================================
    Tablet — breakpoint intermedio (769-1024px)
    ============================================ */
+/* Intestazioni tabella stile Luxury: micro-etichette salvia */
+.content th {
+  font-size: 0.66rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #7b8c7d;
+}
+
 @media (min-width: 769px) and (max-width: 1024px) {
   :root { --sidebar-width: 220px; }
 
@@ -996,6 +1003,7 @@ div[style*="border:1px solid #e5e7eb"] {
 
   /* Contenuto a tutta larghezza, sotto la topbar */
   .content { margin-left: 0; padding: 16px; padding-top: 72px; overflow-x: hidden; overflow-x: clip; }
+
   section { max-width: 100%; }
   section.wide, .section-wide { max-width: 100%; }
   .dashboard-grid { grid-template-columns: 1fr 1fr; }

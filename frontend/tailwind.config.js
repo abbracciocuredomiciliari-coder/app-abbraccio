@@ -16,11 +16,11 @@ export default {
       colors: {
         brand: {
           // Palette centrale: deve restare allineata a styles.css (:root --brand-*)
-          50: '#edf4ea', 100: '#dcebdc', 200: '#bcdcc0', 300: '#8fc49a',
-          500: '#417f52', 600: '#2b6b3e', 700: '#1f5c33', 800: '#154a27',
-          DEFAULT: '#1f5c33',
-          dark: '#154a27',
-          light: '#417f52',
+          50: '#f4f7f1', 100: '#e0edda', 200: '#cfe3cc', 300: '#9dc4a4',
+          500: '#3d8368', 600: '#26715a', 700: '#174c3c', 800: '#123b2e',
+          DEFAULT: '#174c3c',
+          dark: '#123b2e',
+          light: '#3d8368',
         },
       },
       fontFamily: {
