@@ -94,7 +94,7 @@ function Login() {
         <div
           className="tw-w-16 tw-h-16 tw-mx-auto tw-mb-4 tw-rounded-2xl tw-flex tw-items-center tw-justify-center"
           style={{
-            background: 'linear-gradient(135deg, #102f3b 0%, #1c7164 100%)',
+            background: 'linear-gradient(135deg, var(--nav-900) 0%, var(--brand-700) 100%)',
             boxShadow: '0 12px 24px rgba(16, 47, 59, 0.3)',
           }}
         >
@@ -117,7 +117,7 @@ function Login() {
             aria-pressed={workspace === 'privato'}
             className="tw-relative tw-rounded-2xl tw-p-3 tw-flex tw-flex-col tw-items-center tw-gap-1 tw-transition-all tw-duration-200 tw-border-2 tw-overflow-hidden"
             style={{
-              background: workspace === 'privato' ? 'linear-gradient(135deg, #102f3b 0%, #28505a 55%, #3d6b76 100%)' : '#fff',
+              background: workspace === 'privato' ? 'linear-gradient(135deg, var(--nav-900) 0%, var(--brand-800) 55%, var(--brand-600) 100%)' : '#fff',
               borderColor: workspace === 'privato' ? 'transparent' : '#e2e8f0',
               color: workspace === 'privato' ? '#fff' : '#64748b',
               boxShadow: workspace === 'privato' ? '0 10px 24px rgba(16, 47, 59, 0.35)' : 'none',

@@ -267,14 +267,14 @@ export default function TrovaOperatori() {
           {posizioniOpen && (
             <div style={{ borderTop: '1px solid #fef3c7', padding: '10px 14px', maxHeight: '260px', overflowY: 'auto' }}>
               <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 8px' }}>
-                Completa domicilio di partenza e coordinate in <a href="/staff" style={{ color: '#1c7164', fontWeight: 700 }}>Personale</a> per renderli visibili nella ricerca geografica.
+                Completa domicilio di partenza e coordinate in <a href="/staff" style={{ color: 'var(--brand-700)', fontWeight: 700 }}>Personale</a> per renderli visibili nella ricerca geografica.
               </p>
               {senzaPosizione.operatori.map((o: any) => (
                 <div key={o._id} style={{ display: 'flex', gap: '10px', alignItems: 'center', padding: '5px 0', fontSize: '0.82rem', borderTop: '1px solid #f8fafc', flexWrap: 'wrap' }}>
                   <strong>{o.nome}</strong>
                   <span style={{ color: '#64748b' }}>{QUALIFICA_LABEL[o.qualifica] || o.qualifica}</span>
                   {o.zonaDichiarata && <span style={{ color: '#64748b' }}>· {o.zonaDichiarata}</span>}
-                  <a href="/staff" style={{ marginLeft: 'auto', color: '#1c7164', fontSize: '0.78rem', fontWeight: 700 }}>completa in Personale →</a>
+                  <a href="/staff" style={{ marginLeft: 'auto', color: 'var(--brand-700)', fontSize: '0.78rem', fontWeight: 700 }}>completa in Personale →</a>
                 </div>
               ))}
             </div>
