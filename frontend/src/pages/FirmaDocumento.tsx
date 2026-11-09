@@ -139,9 +139,9 @@ export default function FirmaDocumento() {
         )}
 
         {stato === 'firmato' && doc?.tipo === 'preventivo' && (
-          <div className="tw-mt-4 tw-p-4 tw-bg-blue-50 tw-rounded-xl tw-border tw-border-blue-200 tw-text-left">
-            <div className="tw-text-sm tw-font-bold tw-text-blue-800 tw-mb-2">Estremi per il pagamento con bonifico bancario</div>
-            <div className="tw-text-sm tw-text-blue-900 tw-leading-relaxed">
+          <div className="tw-mt-4 tw-p-4 tw-bg-brand-50 tw-rounded-xl tw-border tw-border-brand-200 tw-text-left">
+            <div className="tw-text-sm tw-font-bold tw-text-slate-800 tw-mb-2">Estremi per il pagamento con bonifico bancario</div>
+            <div className="tw-text-sm tw-text-slate-800 tw-leading-relaxed">
               Intestatario: <strong>ABBRACCIO CURE DOMICILIARI S.R.L.S.</strong><br />
               Banca: UniCredit<br />
               IBAN: <strong>IT20 B020 0805 1130 0010 7454 488</strong><br />
@@ -149,7 +149,7 @@ export default function FirmaDocumento() {
               Causale: Preventivo n. {doc.numero}<br />
               Importo da pagare: <strong>{formatEuro(doc.totale)}</strong>
             </div>
-            <p className="tw-text-xs tw-text-blue-700 tw-mt-2 tw-mb-0">
+            <p className="tw-text-xs tw-text-brand-700 tw-mt-2 tw-mb-0">
               Gli stessi estremi sono riportati nel preventivo firmato e nell'email di conferma.
             </p>
           </div>
@@ -167,8 +167,8 @@ export default function FirmaDocumento() {
 
         {stato === 'pronto' && doc && (
           <div>
-            <div className="tw-bg-blue-50 tw-rounded-lg tw-py-3.5 tw-px-4 tw-mb-5 tw-border tw-border-blue-200">
-              <p className="tw-m-0 tw-text-blue-800 tw-text-[0.9rem]">
+            <div className="tw-bg-brand-50 tw-rounded-lg tw-py-3.5 tw-px-4 tw-mb-5 tw-border tw-border-brand-200">
+              <p className="tw-m-0 tw-text-slate-800 tw-text-[0.9rem]">
                 Ciao <strong>{doc.patient?.firstName || ''} {doc.patient?.lastName || ''}</strong>,
                 {' '}qui sotto trovi il {doc.tipo === 'fattura' ? 'documento fiscale' : 'preventivo'} n. <strong>{doc.numero}</strong>
                 {' '}del <strong>{formatData(doc.data)}</strong>.

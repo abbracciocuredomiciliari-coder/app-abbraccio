@@ -107,8 +107,8 @@ export default function FirmaRitenuta() {
 
         {stato === 'pronto' && doc && (
           <div>
-            <div className="tw-bg-blue-50 tw-rounded-lg tw-py-3.5 tw-px-4 tw-mb-5 tw-border tw-border-blue-200">
-              <p className="tw-m-0 tw-text-blue-800 tw-text-[0.9rem]">
+            <div className="tw-bg-brand-50 tw-rounded-lg tw-py-3.5 tw-px-4 tw-mb-5 tw-border tw-border-brand-200">
+              <p className="tw-m-0 tw-text-slate-800 tw-text-[0.9rem]">
                 Spett.le <strong>{doc.datiProfessionista?.firstName || ''} {doc.datiProfessionista?.lastName || ''}</strong>,
                 {' '}qui sotto trovi la ritenuta d'acconto n. <strong>{doc.numero}</strong>
                 {' '}del <strong>{formatData(doc.data)}</strong>.

@@ -288,7 +288,7 @@ export default function ArchiviIntermediazione() {
         </div>
 
         {(pazienteFiltro || nomeFiltro) && (
-          <div className="tw-bg-blue-50 tw-border tw-border-sky-200 tw-rounded-xl tw-px-4 tw-py-3 tw-text-sm tw-text-blue-900 tw-flex tw-items-center tw-gap-2">
+          <div className="tw-bg-brand-50 tw-border tw-border-sky-200 tw-rounded-xl tw-px-4 tw-py-3 tw-text-sm tw-text-slate-800 tw-flex tw-items-center tw-gap-2">
             🔎 Stai vedendo solo i documenti di questo paziente.
             <button type="button" onClick={() => setSearchParams({})} className="tw-ml-auto tw-bg-transparent tw-border-0 tw-text-red-600 tw-font-bold tw-cursor-pointer tw-underline">Mostra tutti</button>
           </div>
@@ -449,7 +449,7 @@ export default function ArchiviIntermediazione() {
                           {!inv.email && !inv.telefono && '—'}
                         </td>
                         <td className="tw-py-2 tw-pr-3">
-                          <span className={`tw-inline-block tw-px-2 tw-py-0.5 tw-rounded-full tw-text-[11px] tw-font-bold ${inv.canale === 'whatsapp' ? 'tw-bg-green-100 tw-text-green-700' : 'tw-bg-blue-100 tw-text-blue-700'}`}>
+                          <span className={`tw-inline-block tw-px-2 tw-py-0.5 tw-rounded-full tw-text-[11px] tw-font-bold ${inv.canale === 'whatsapp' ? 'tw-bg-green-100 tw-text-green-700' : 'tw-bg-brand-100 tw-text-brand-700'}`}>
                             {inv.canale === 'whatsapp' ? '💬 WhatsApp' : '✉️ Email'}
                           </span>
                         </td>

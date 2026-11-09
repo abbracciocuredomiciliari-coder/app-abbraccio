@@ -1500,7 +1500,7 @@ function Patients() {
                   </div>
                   {(patient.diagnosiAmmissione || patient.allergie || patient.caregiverRiferimento) && (
                     <div className="tw-flex tw-flex-wrap tw-gap-2 tw-mt-1.5">
-                      {patient.diagnosiAmmissione && <span className="tw-text-xs tw-bg-blue-50 tw-text-blue-700 tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-blue-200">🏥 {patient.diagnosiAmmissione.slice(0, 40)}{patient.diagnosiAmmissione.length > 40 ? '…' : ''}</span>}
+                      {patient.diagnosiAmmissione && <span className="tw-text-xs tw-bg-brand-50 tw-text-brand-700 tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-brand-200">🏥 {patient.diagnosiAmmissione.slice(0, 40)}{patient.diagnosiAmmissione.length > 40 ? '…' : ''}</span>}
                       {patient.allergie && <span className="tw-text-xs tw-bg-red-50 tw-text-red-600 tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-red-200 tw-font-semibold">⚠️ {patient.allergie.slice(0, 30)}{patient.allergie.length > 30 ? '…' : ''}</span>}
                       {patient.caregiverRiferimento && <span className="tw-text-xs tw-bg-green-50 tw-text-green-700 tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-green-200">👤 {patient.caregiverRiferimento}</span>}
                     </div>
@@ -1520,7 +1520,7 @@ function Patients() {
                   {!patient.inAccettazione && !patient.terminato && !isConsulenza && (user?.role === 'admin' || user?.role === 'coordinator') && (
                     <button
                       onClick={() => apriPreventivoRapido(patient)}
-                      className="tw-bg-blue-700 tw-text-white tw-whitespace-nowrap"
+                      className="tw-bg-brand-700 tw-text-white tw-whitespace-nowrap"
                       title="Genera un preventivo per questo paziente, anche con il calcolatore dal listino"
                     >
                       <Calculator size={16} />
@@ -1738,7 +1738,7 @@ function Patients() {
                 <>
                   {/* Testo informativa */}
                   <div className="tw-text-[0.82rem] tw-text-slate-700 tw-leading-relaxed tw-mb-5">
-                    <div className="tw-bg-blue-50 tw-border tw-border-blue-200 tw-rounded-lg tw-p-3 tw-mb-3.5 tw-text-[0.83rem]">
+                    <div className="tw-bg-brand-50 tw-border tw-border-brand-200 tw-rounded-lg tw-p-3 tw-mb-3.5 tw-text-[0.83rem]">
                       <strong>Gent. Sig./Sig.ra {consensoPaziente.firstName} {consensoPaziente.lastName}</strong>,<br/>
                       con la presente La informiamo che la nostra Società <strong>Abbraccio Cure Domiciliari</strong> (Roma, Via Di Santa Maria Ausiliatrice 4b) tratterà i Suoi dati personali in qualità di Responsabile del trattamento per l'erogazione dei servizi di assistenza domiciliare, ai sensi del Reg. UE 2016/679 (GDPR).
                     </div>
@@ -1801,7 +1801,7 @@ function Patients() {
                   </div>
 
                   {/* Consenso checkbox */}
-                  <div className="tw-border-2 tw-border-brand tw-rounded-xl tw-p-4 tw-mb-5 tw-bg-blue-50/50">
+                  <div className="tw-border-2 tw-border-brand tw-rounded-xl tw-p-4 tw-mb-5 tw-bg-brand-50/50">
                     <p className="tw-text-[0.88rem] tw-text-slate-700 tw-mb-3 tw-font-semibold">📋 Preso atto dell'informativa sul trattamento dei dati personali e di categoria particolare:</p>
                     <p className="tw-text-[0.88rem] tw-text-slate-700 tw-leading-snug">
                       Acconsento al trattamento dei miei Dati Personali per le finalità connesse alla corretta esecuzione del/i servizio/i di assistenza domiciliare richiesto/i.
@@ -1944,7 +1944,7 @@ function Patients() {
                 <button
                   type="button"
                   onClick={() => openPatientSummaryPdf(selectedPatient)}
-                  className="tw-bg-blue-600 tw-text-white tw-px-3.5 tw-py-2.5 tw-rounded-lg tw-flex tw-items-center tw-gap-2 tw-text-sm tw-font-semibold hover:tw-bg-blue-700"
+                  className="tw-bg-brand-700 tw-text-white tw-px-3.5 tw-py-2.5 tw-rounded-lg tw-flex tw-items-center tw-gap-2 tw-text-sm tw-font-semibold hover:tw-bg-brand-700"
                 >
                   <Eye size={16} />
                   Visualizza PDF
@@ -2120,7 +2120,7 @@ function Patients() {
                         <button
                           type="button"
                           onClick={() => openDocument(doc._id, doc.contentType, doc.fileName)}
-                          className="tw-bg-blue-600 tw-text-white tw-px-3 tw-py-2 tw-rounded-lg tw-flex tw-items-center tw-gap-1.5 tw-text-sm tw-font-semibold hover:tw-bg-blue-700"
+                          className="tw-bg-brand-700 tw-text-white tw-px-3 tw-py-2 tw-rounded-lg tw-flex tw-items-center tw-gap-1.5 tw-text-sm tw-font-semibold hover:tw-bg-brand-700"
                         >
                           <Eye size={16} />
                           Apri

@@ -115,17 +115,17 @@ export default function FirmaContrattoPaziente() {
           const allegatoUrl = `${apiBase}/contratti-pazienti/allegato/${token}`;
           return (
             <div>
-              <div className="tw-bg-blue-50 tw-rounded-lg tw-py-3.5 tw-px-4 tw-mb-5 tw-border tw-border-blue-200">
-                <p className="tw-m-0 tw-text-blue-800 tw-text-[0.9rem]">
+              <div className="tw-bg-brand-50 tw-rounded-lg tw-py-3.5 tw-px-4 tw-mb-5 tw-border tw-border-brand-200">
+                <p className="tw-m-0 tw-text-slate-800 tw-text-[0.9rem]">
                   Ciao <strong>{contratto.patient?.firstName} {contratto.patient?.lastName}</strong>, per proseguire <strong>leggi i documenti</strong> sottostanti, acconsenti al trattamento dei dati e firma con dito, penna o mouse.
                 </p>
               </div>
 
               <div className="tw-flex tw-gap-3 tw-mb-2">
-                <a href={anteprimaUrl} target="_blank" rel="noreferrer" className="tw-flex-1 tw-text-center tw-py-2 tw-px-3 tw-rounded-lg tw-bg-blue-100 tw-text-blue-800 tw-text-sm tw-font-semibold hover:tw-bg-blue-200 tw-transition-colors">
+                <a href={anteprimaUrl} target="_blank" rel="noreferrer" className="tw-flex-1 tw-text-center tw-py-2 tw-px-3 tw-rounded-lg tw-bg-brand-100 tw-text-slate-800 tw-text-sm tw-font-semibold hover:tw-bg-brand-100 tw-transition-colors">
                   📄 Leggi contratto
                 </a>
-                <a href={gdprUrl} target="_blank" rel="noreferrer" className="tw-flex-1 tw-text-center tw-py-2 tw-px-3 tw-rounded-lg tw-bg-blue-100 tw-text-blue-800 tw-text-sm tw-font-semibold hover:tw-bg-blue-200 tw-transition-colors">
+                <a href={gdprUrl} target="_blank" rel="noreferrer" className="tw-flex-1 tw-text-center tw-py-2 tw-px-3 tw-rounded-lg tw-bg-brand-100 tw-text-slate-800 tw-text-sm tw-font-semibold hover:tw-bg-brand-100 tw-transition-colors">
                   📋 Leggi informativa GDPR
                 </a>
               </div>

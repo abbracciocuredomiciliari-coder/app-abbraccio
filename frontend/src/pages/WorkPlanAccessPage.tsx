@@ -693,7 +693,7 @@ export default function WorkPlanAccessPage() {
 
       {/* Header */}
 
-      <div className="tw-bg-blue-800 tw-text-white tw-rounded-xl tw-p-5 tw-mb-4">
+      <div className="tw-bg-brand-700 tw-text-white tw-rounded-xl tw-p-5 tw-mb-4">
 
         <div className="tw-flex tw-justify-between tw-items-start">
 
@@ -729,7 +729,7 @@ export default function WorkPlanAccessPage() {
       <div className="tw-grid tw-grid-cols-2 tw-gap-2.5 tw-mb-4">
         <button
           onClick={() => setShowChat(true)}
-          className="tw-bg-slate-50 tw-border tw-border-slate-200 tw-rounded-[10px] tw-p-3 tw-cursor-pointer tw-font-semibold tw-text-[0.9rem] tw-text-blue-800 tw-flex tw-items-center tw-justify-center tw-gap-1.5"
+          className="tw-bg-slate-50 tw-border tw-border-slate-200 tw-rounded-[10px] tw-p-3 tw-cursor-pointer tw-font-semibold tw-text-[0.9rem] tw-text-slate-800 tw-flex tw-items-center tw-justify-center tw-gap-1.5"
         >
           <MessageCircle size={18} /> Chat coord./ufficio
         </button>

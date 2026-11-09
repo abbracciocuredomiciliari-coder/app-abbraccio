@@ -248,9 +248,9 @@ function Cal({ anno, mese, sel, onDay, onPrev, onNext, dots }: {
             const iso = `${anno}-${String(mese + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             const active = iso === sel;
             const cnt = dots.get(iso) || 0;
-            return (<button className={`tw-border-0 tw-cursor-pointer tw-rounded-lg tw-py-1.5 tw-px-0.5 tw-text-sm tw-relative tw-transition-all ${active ? 'tw-bg-blue-600 tw-text-white tw-font-bold tw-shadow-md' : 'tw-bg-transparent tw-text-slate-800 hover:tw-bg-slate-100 tw-font-normal'}`} key={i} onClick={() => onDay(iso)}>
+            return (<button className={`tw-border-0 tw-cursor-pointer tw-rounded-lg tw-py-1.5 tw-px-0.5 tw-text-sm tw-relative tw-transition-all ${active ? 'tw-bg-brand-700 tw-text-white tw-font-bold tw-shadow-md' : 'tw-bg-transparent tw-text-slate-800 hover:tw-bg-slate-100 tw-font-normal'}`} key={i} onClick={() => onDay(iso)}>
               {d}
-              {cnt > 0 && <span className={`tw-absolute tw-bottom-1 tw-left-1/2 tw-w-1.5 tw-h-1.5 tw-rounded-full tw-block -tw-translate-x-1/2 ${active ? 'tw-bg-white' : 'tw-bg-blue-600'}`}/>}
+              {cnt > 0 && <span className={`tw-absolute tw-bottom-1 tw-left-1/2 tw-w-1.5 tw-h-1.5 tw-rounded-full tw-block -tw-translate-x-1/2 ${active ? 'tw-bg-white' : 'tw-bg-brand-700'}`}/>}
             </button>);
         })}
       </div>
@@ -825,16 +825,16 @@ export default function CentroPrenotazioni() {
               <div>
                 <h3 className="tw-text-sky-600 tw-mb-3 tw-mt-0">
                   {new Date(prelGiorno + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
-                  <span className="tw-ml-2 tw-bg-blue-50 tw-text-blue-700 tw-rounded-full tw-py-0.5 tw-px-2.5 tw-text-xs tw-font-semibold">{prelSel.length}</span>
+                  <span className="tw-ml-2 tw-bg-brand-50 tw-text-brand-700 tw-rounded-full tw-py-0.5 tw-px-2.5 tw-text-xs tw-font-semibold">{prelSel.length}</span>
                 </h3>
                 {prelSel.length === 0
                     ? <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-8 tw-text-center tw-text-slate-400">Nessun prelievo</div>
                     : <div className="tw-flex tw-flex-col tw-gap-2.5">
-                    {prelSel.map(p => (<div className={`tw-bg-white tw-rounded-xl tw-overflow-hidden tw-border tw-border-blue-100 tw-shadow-sm hover:tw-shadow-md tw-transition-shadow ${p.status === 'eseguito' ? 'tw-border-l-4 tw-border-l-emerald-500' : 'tw-border-l-4 tw-border-l-sky-600'}`} key={p._id}>
+                    {prelSel.map(p => (<div className={`tw-bg-white tw-rounded-xl tw-overflow-hidden tw-border tw-border-brand-200 tw-shadow-sm hover:tw-shadow-md tw-transition-shadow ${p.status === 'eseguito' ? 'tw-border-l-4 tw-border-l-emerald-500' : 'tw-border-l-4 tw-border-l-sky-600'}`} key={p._id}>
                         <button className="tw-w-full tw-bg-transparent tw-border-0 tw-cursor-pointer tw-py-3 tw-px-3.5 tw-text-left tw-flex tw-justify-between tw-items-center" type="button" onClick={() => setAperto(aperto === p._id ? null : p._id)}>
                           <div>
                             <div className="tw-font-bold tw-text-sm"><User className="tw-inline tw-mr-1" size={14}/>{p.patient?.firstName} {p.patient?.lastName}{p.orario && <span className="tw-ml-2 tw-text-slate-500 tw-font-normal tw-text-xs"><Clock className="tw-inline" size={11}/> {p.orario}</span>}</div>
-                            <div className="tw-text-xs tw-text-slate-500">💉 {p.tipoPrelievo} <span className={`tw-ml-1.5 tw-py-px tw-px-2 tw-rounded-full tw-text-[0.65rem] tw-font-bold ${p.status === 'eseguito' ? 'tw-bg-emerald-50 tw-text-emerald-600' : 'tw-bg-blue-50 tw-text-blue-700'}`}>{p.status === 'eseguito' ? '✅ Eseguito' : '🔵 Pianificato'}</span></div>
+                            <div className="tw-text-xs tw-text-slate-500">💉 {p.tipoPrelievo} <span className={`tw-ml-1.5 tw-py-px tw-px-2 tw-rounded-full tw-text-[0.65rem] tw-font-bold ${p.status === 'eseguito' ? 'tw-bg-emerald-50 tw-text-emerald-600' : 'tw-bg-brand-50 tw-text-brand-700'}`}>{p.status === 'eseguito' ? '✅ Eseguito' : '🔵 Pianificato'}</span></div>
                           </div>
                           <div className="tw-flex tw-gap-1.5">
                             {puoGestire && <button className="tw-bg-red-50 hover:tw-bg-red-100 tw-border tw-border-red-100 tw-rounded-lg tw-py-1 tw-px-2 tw-cursor-pointer tw-text-red-600 tw-transition-colors" onClick={e => { e.stopPropagation(); eliminaPrelievo(p._id); }}><Trash2 size={14}/></button>}
@@ -879,9 +879,9 @@ export default function CentroPrenotazioni() {
                     : <div className="tw-flex tw-flex-col tw-gap-2">
                     {prelAss.map(p => {
                             const s = selP.has(p._id);
-                            return (<div className={`tw-rounded-xl tw-py-3 tw-px-3.5 tw-cursor-pointer tw-flex tw-justify-between tw-items-center tw-transition-colors ${s ? 'tw-bg-blue-50 tw-border-2 tw-border-blue-600 tw-shadow-sm' : 'tw-bg-white tw-border-2 tw-border-slate-200 hover:tw-bg-slate-50'}`} key={p._id} onClick={() => setSelP(prev => { const n = new Set(prev); s ? n.delete(p._id) : n.add(p._id); return n; })}>
+                            return (<div className={`tw-rounded-xl tw-py-3 tw-px-3.5 tw-cursor-pointer tw-flex tw-justify-between tw-items-center tw-transition-colors ${s ? 'tw-bg-brand-50 tw-border-2 tw-border-brand-200 tw-shadow-sm' : 'tw-bg-white tw-border-2 tw-border-slate-200 hover:tw-bg-slate-50'}`} key={p._id} onClick={() => setSelP(prev => { const n = new Set(prev); s ? n.delete(p._id) : n.add(p._id); return n; })}>
                         <div><div className="tw-font-bold tw-text-sm">{p.patient?.firstName} {p.patient?.lastName}</div><div className="tw-text-xs tw-text-slate-500">💉 {p.tipoPrelievo}{p.orario ? ` · ${p.orario}` : ''}</div></div>
-                        <div className={`tw-w-5 tw-h-5 tw-rounded-full tw-flex tw-items-center tw-justify-center ${s ? 'tw-border-2 tw-border-blue-600 tw-bg-blue-600' : 'tw-border-2 tw-border-slate-300 tw-bg-transparent'}`}>{s && <CheckCircle size={12} color="white"/>}</div>
+                        <div className={`tw-w-5 tw-h-5 tw-rounded-full tw-flex tw-items-center tw-justify-center ${s ? 'tw-border-2 tw-border-brand-200 tw-bg-brand-700' : 'tw-border-2 tw-border-slate-300 tw-bg-transparent'}`}>{s && <CheckCircle size={12} color="white"/>}</div>
                       </div>);
                         })}
                   </div>}
@@ -1007,7 +1007,7 @@ export default function CentroPrenotazioni() {
                     <div className="tw-flex-1 tw-min-w-[0]">
                       <div className="tw-font-bold tw-text-sm tw-text-slate-900 tw-mb-1 tw-break-words">
                         {w.patient?.firstName ?? '(paziente eliminato)'} {w.patient?.lastName ?? ''}
-                        <span className={`tw-ml-1.5 tw-py-px tw-px-1.5 tw-rounded-full tw-text-[0.55rem] tw-font-bold ${w.type === 'prestazionale' ? 'tw-bg-blue-50 tw-text-blue-700' : 'tw-bg-pink-50 tw-text-pink-700'}`}>{w.type === 'prestazionale' ? 'PREST' : 'ASS'}</span>
+                        <span className={`tw-ml-1.5 tw-py-px tw-px-1.5 tw-rounded-full tw-text-[0.55rem] tw-font-bold ${w.type === 'prestazionale' ? 'tw-bg-brand-50 tw-text-brand-700' : 'tw-bg-pink-50 tw-text-pink-700'}`}>{w.type === 'prestazionale' ? 'PREST' : 'ASS'}</span>
                         <span className={`tw-ml-1 tw-py-px tw-px-1.5 tw-rounded-full tw-text-[0.55rem] tw-font-bold tw-text-emerald-700 ${w.status === 'completed' ? 'tw-bg-emerald-50' : 'tw-bg-emerald-100'}`}>{w.status === 'completed' ? '✅' : '🟢'}</span>
                       </div>
                       <div className="tw-text-xs tw-text-slate-600">👤 {w.staff?.firstName} {w.staff?.lastName} — {w.staff?.role}</div>
@@ -1090,7 +1090,7 @@ export default function CentroPrenotazioni() {
                 </div>
                 {/* Macro-categorie e fabbisogni — Prestazionale */}
                 {fpTipo === 'prestazionale' && (<div className="tw-border-t tw-border-slate-200 tw-pt-3 tw-mt-1">
-                    <div className="tw-font-bold tw-text-sm tw-text-blue-900 tw-mb-2">🩺 Categorie assistenziali * (seleziona una o più)</div>
+                    <div className="tw-font-bold tw-text-sm tw-text-slate-800 tw-mb-2">🩺 Categorie assistenziali * (seleziona una o più)</div>
                     <div className="tw-flex tw-gap-2 tw-flex-wrap tw-mb-3">
                       {(Object.keys(MACRO_CATEGORIE_LABELS) as (keyof typeof MACRO_CATEGORIE_LABELS)[]).map(cat => {
                     const info = MACRO_CATEGORIE_LABELS[cat];
@@ -1129,7 +1129,7 @@ export default function CentroPrenotazioni() {
                         </ul>
                       </div>)}
                     {(Object.keys(fpMacroCats) as (keyof typeof fpMacroCats)[]).filter(c => fpMacroCats[c]).length > 0 && (<div className="tw-border-t tw-border-slate-200 tw-pt-3 tw-mt-3">
-                        <div className="tw-font-bold tw-text-sm tw-text-blue-900 tw-mb-2">👤 Operatori per categoria</div>
+                        <div className="tw-font-bold tw-text-sm tw-text-slate-800 tw-mb-2">👤 Operatori per categoria</div>
                         {(Object.keys(fpMacroCats) as (keyof typeof fpMacroCats)[]).filter(c => fpMacroCats[c]).map(cat => {
                         const info = MACRO_CATEGORIE_LABELS[cat];
                         return (<div className="tw-mb-2.5" key={cat}>
@@ -1248,7 +1248,7 @@ export default function CentroPrenotazioni() {
               <button className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border tw-border-slate-200 tw-bg-white tw-cursor-pointer tw-text-slate-700 tw-font-semibold hover:tw-bg-slate-50" onClick={() => setDettaglioPiano(null)}>Chiudi</button>
               <button className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border tw-border-sky-200 tw-bg-sky-50 tw-cursor-pointer tw-text-sky-700 tw-font-semibold hover:tw-bg-sky-100 tw-flex tw-items-center tw-gap-1.5" onClick={() => copiaLink(dettaglioPiano._id)}>{copiedId === dettaglioPiano._id ? <CheckCircle size={14}/> : <Copy size={14}/>} Copia link</button>
               {puoGestire && <button className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border-0 tw-bg-violet-600 hover:tw-bg-violet-700 tw-text-white tw-cursor-pointer tw-font-semibold tw-flex tw-items-center tw-gap-1.5" onClick={rigeneraPreventivoDaDettaglio} disabled={rigenerandoDoc}><FileText size={14}/>{rigenerandoDoc ? '...' : 'Rigenera preventivo'}</button>}
-              {puoGestire && <button className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border-0 tw-bg-blue-800 hover:tw-bg-blue-900 tw-text-white tw-cursor-pointer tw-font-semibold tw-flex tw-items-center tw-gap-1.5" onClick={() => { const w = dettaglioPiano; setDettaglioPiano(null); setCalcPiano(w); }}><Calculator size={14}/> Calcolatore listino</button>}
+              {puoGestire && <button className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border-0 tw-bg-brand-700 hover:tw-bg-brand-700 tw-text-white tw-cursor-pointer tw-font-semibold tw-flex tw-items-center tw-gap-1.5" onClick={() => { const w = dettaglioPiano; setDettaglioPiano(null); setCalcPiano(w); }}><Calculator size={14}/> Calcolatore listino</button>}
               {puoGestire && <button className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border-0 tw-bg-amber-500 hover:tw-bg-amber-600 tw-text-white tw-cursor-pointer tw-font-semibold tw-flex tw-items-center tw-gap-1.5" onClick={() => { const w = dettaglioPiano; setDettaglioPiano(null); apriModificaPiano(w); }}><Pencil size={14}/> Modifica piano</button>}
             </div>
           </div>
@@ -1258,7 +1258,7 @@ export default function CentroPrenotazioni() {
       {calcPiano && (<div className="modal-overlay tw-fixed tw-inset-0 tw-bg-black/50 tw-backdrop-blur-sm tw-flex tw-items-start tw-justify-center tw-z-[1150] tw-py-8 tw-px-4 tw-overflow-y-auto" onClick={() => !calcSaving && setCalcPiano(null)}>
           <div className="modal-content tw-max-w-[860px] tw-w-full tw-bg-white tw-rounded-2xl tw-shadow-2xl tw-p-6 tw-max-h-[calc(100vh_-_64px)] tw-overflow-y-auto tw-box-border" onClick={e => e.stopPropagation()}>
             <div className="tw-flex tw-justify-between tw-items-center tw-mb-4">
-              <h3 className="tw-m-0 tw-text-blue-900 tw-flex tw-items-center tw-gap-2 tw-font-bold tw-text-lg"><Calculator size={20}/>Preventivo da listino — {calcPiano.patient?.firstName} {calcPiano.patient?.lastName}</h3>
+              <h3 className="tw-m-0 tw-text-slate-800 tw-flex tw-items-center tw-gap-2 tw-font-bold tw-text-lg"><Calculator size={20}/>Preventivo da listino — {calcPiano.patient?.firstName} {calcPiano.patient?.lastName}</h3>
               <button className="tw-bg-transparent tw-border-0 tw-cursor-pointer tw-text-slate-500 hover:tw-text-slate-700" onClick={() => setCalcPiano(null)} disabled={calcSaving}><X size={22}/></button>
             </div>
             <p className="tw-text-sm tw-text-slate-500 tw-mb-4">
@@ -1300,7 +1300,7 @@ export default function CentroPrenotazioni() {
                 </p>
                 <div className="tw-flex tw-gap-2.5 tw-justify-end tw-flex-wrap">
                   <button className="tw-py-2.5 tw-px-4 tw-rounded-lg tw-border tw-border-slate-200 tw-bg-white tw-cursor-pointer tw-text-slate-700 tw-font-semibold hover:tw-bg-slate-50 tw-transition-colors" onClick={() => { setPendingDoc(null); setDocCreato(null); }}>Chiudi</button>
-                  <button className="tw-py-2.5 tw-px-5 tw-rounded-lg tw-bg-blue-600 hover:tw-bg-blue-700 tw-text-white tw-border-0 tw-cursor-pointer tw-font-bold tw-shadow-sm tw-transition-colors tw-flex tw-items-center tw-gap-2" onClick={() => scaricaDocumentoPDF(docCreato)}><Download size={16} /> Scarica PDF</button>
+                  <button className="tw-py-2.5 tw-px-5 tw-rounded-lg tw-bg-brand-700 hover:tw-bg-brand-700 tw-text-white tw-border-0 tw-cursor-pointer tw-font-bold tw-shadow-sm tw-transition-colors tw-flex tw-items-center tw-gap-2" onClick={() => scaricaDocumentoPDF(docCreato)}><Download size={16} /> Scarica PDF</button>
                   <button className="tw-py-2.5 tw-px-5 tw-rounded-lg tw-bg-emerald-600 hover:tw-bg-emerald-700 tw-text-white tw-border-0 tw-cursor-pointer tw-font-bold tw-shadow-sm tw-transition-colors tw-flex tw-items-center tw-gap-2" onClick={() => apriInvioEmail(docCreato)}><Mail size={16} /> Invia via email</button>
                 </div>
               </>)}

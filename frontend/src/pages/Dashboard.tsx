@@ -404,18 +404,18 @@ function Dashboard() {
       {isPrivilegiato && emailNonLette > 0 && (
         <div
           onClick={() => navigate('/archivio-email?tab=ricevute')}
-          className="tw-flex tw-items-center tw-gap-3 tw-mb-5 tw-cursor-pointer tw-rounded-xl tw-border-2 tw-border-blue-400 tw-bg-blue-400/10 tw-px-4 tw-py-3 hover:tw-bg-blue-400/20 tw-transition-colors"
+          className="tw-flex tw-items-center tw-gap-3 tw-mb-5 tw-cursor-pointer tw-rounded-xl tw-border-2 tw-border-brand-200 tw-bg-brand-700/10 tw-px-4 tw-py-3 hover:tw-bg-brand-700/20 tw-transition-colors"
         >
           <Inbox size={22} color="var(--brand-600)" className="tw-flex-shrink-0" />
           <div className="tw-flex-1">
-            <div className="tw-font-bold tw-text-blue-800 tw-text-sm">
+            <div className="tw-font-bold tw-text-slate-800 tw-text-sm">
               📥 {emailNonLette} {emailNonLette === 1 ? 'nuova email ricevuta' : 'nuove email ricevute'} sulla casella aziendale
             </div>
-            <div className="tw-text-blue-700 tw-text-xs tw-mt-0.5">
+            <div className="tw-text-brand-700 tw-text-xs tw-mt-0.5">
               {ultimeRicevute.slice(0, 3).map(e => e.from.nome || e.from.email).join(' · ')}{emailNonLette > 3 ? ` e altre ${emailNonLette - 3}` : ''} — clicca per leggerle in Archivio Email
             </div>
           </div>
-          <span className="tw-flex-shrink-0 tw-rounded-full tw-bg-blue-500 tw-text-white tw-font-extrabold tw-text-sm tw-px-3 tw-py-1">{emailNonLette}</span>
+          <span className="tw-flex-shrink-0 tw-rounded-full tw-bg-brand-700 tw-text-white tw-font-extrabold tw-text-sm tw-px-3 tw-py-1">{emailNonLette}</span>
         </div>
       )}
 

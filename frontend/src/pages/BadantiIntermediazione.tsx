@@ -734,7 +734,7 @@ export default function BadantiIntermediazione() {
   const statoBadge = (stato: string) => {
     const map: Record<string, string> = {
       aperta: 'tw-bg-slate-100 tw-text-slate-700',
-      preventivo_emesso: 'tw-bg-blue-100 tw-text-blue-700',
+      preventivo_emesso: 'tw-bg-brand-100 tw-text-brand-700',
       accettata: 'tw-bg-green-100 tw-text-green-700',
       fatturata: 'tw-bg-emerald-100 tw-text-emerald-700',
       annullata: 'tw-bg-red-100 tw-text-red-700',

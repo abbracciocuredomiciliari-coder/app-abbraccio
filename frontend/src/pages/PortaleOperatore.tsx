@@ -1014,13 +1014,13 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
       )}
 
       {!pazienteSelezionato && !mostraTuttiPiani && pazientiDaAccettare.length > 0 && (
-        <div className="tw-mb-5 tw-p-4 tw-rounded-xl tw-bg-blue-50 tw-border tw-border-blue-300">
-          <h3 className="tw-m-0 tw-mb-1.5 tw-text-blue-700">📋 Pazienti da accettare ({pazientiDaAccettare.length})</h3>
+        <div className="tw-mb-5 tw-p-4 tw-rounded-xl tw-bg-brand-50 tw-border tw-border-brand-200">
+          <h3 className="tw-m-0 tw-mb-1.5 tw-text-brand-700">📋 Pazienti da accettare ({pazientiDaAccettare.length})</h3>
           <p className="tw-m-0 tw-mb-3 tw-text-slate-600 tw-text-[0.9rem]">Accetta o rifiuta l'incarico prima di accedere ai dati del paziente.</p>
           <div className="tw-grid tw-gap-2">
             {pazientiDaAccettare.map(piano => <div key={piano._id} className="tw-flex tw-items-center tw-justify-between tw-gap-2.5 tw-bg-white tw-rounded-lg tw-px-3 tw-py-2.5">
               <div><strong>{piano.patient?.firstName} {piano.patient?.lastName}</strong><br /><small>{piano.task} · {new Date(piano.date).toLocaleDateString('it-IT')}</small></div>
-              <button onClick={() => { setPianoDaAccettare(piano); setMostraModalAccettazione(true); }} className="tw-px-2.5 tw-py-2 tw-bg-blue-700 tw-text-white tw-border-0 tw-rounded-md tw-font-bold tw-cursor-pointer hover:tw-bg-blue-800">Apri richiesta</button>
+              <button onClick={() => { setPianoDaAccettare(piano); setMostraModalAccettazione(true); }} className="tw-px-2.5 tw-py-2 tw-bg-brand-700 tw-text-white tw-border-0 tw-rounded-md tw-font-bold tw-cursor-pointer hover:tw-bg-brand-700">Apri richiesta</button>
             </div>)}
           </div>
         </div>
@@ -1137,7 +1137,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
             <button
               type="button"
               onClick={() => navigate('/piani-lavorativi')}
-              className="tw-bg-blue-50 tw-border tw-border-blue-200 tw-rounded-xl tw-px-2.5 tw-py-3.5 tw-text-center tw-cursor-pointer tw-min-w-0 tw-overflow-hidden hover:tw-bg-blue-100"
+              className="tw-bg-brand-50 tw-border tw-border-brand-200 tw-rounded-xl tw-px-2.5 tw-py-3.5 tw-text-center tw-cursor-pointer tw-min-w-0 tw-overflow-hidden hover:tw-bg-brand-100"
             >
               <div className="tw-text-[0.68rem] tw-text-brand tw-font-bold tw-uppercase tw-mb-1 tw-whitespace-nowrap tw-overflow-hidden tw-text-ellipsis">Consensi e firme</div>
               <div className="tw-text-[1.8rem] tw-leading-none">✍️</div>
@@ -1183,7 +1183,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                       >
                         <div className="tw-flex-1">
                           <div className="tw-font-bold tw-text-sky-700 tw-text-[0.9rem] tw-flex tw-items-center tw-gap-2 tw-flex-wrap">
-                            {prel.orario && <span className="tw-bg-blue-50 tw-px-1.5 tw-py-px tw-rounded tw-text-[0.78rem]">⏰ {prel.orario}</span>}
+                            {prel.orario && <span className="tw-bg-brand-50 tw-px-1.5 tw-py-px tw-rounded tw-text-[0.78rem]">⏰ {prel.orario}</span>}
                             {prel.patient?.firstName || 'N/D'} {prel.patient?.lastName || ''}
                             <span className="tw-px-1.5 tw-py-px tw-rounded-full tw-text-[0.7rem] tw-font-bold" style={{ background: prel.status === 'eseguito' ? '#f0fdf4' : 'var(--brand-50)', color: prel.status === 'eseguito' ? '#059669' : '#0369a1' }}>
                               {prel.status === 'eseguito' ? '✅ Eseguito' : '🔵 Da eseguire'}
@@ -1339,7 +1339,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                               </button>
                               <button
                                 onClick={() => visualizzaPrelievoPDF(prel)}
-                                className="tw-flex-1 tw-bg-blue-500 tw-text-white tw-border-0 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-semibold tw-text-[0.83rem] tw-flex tw-items-center tw-justify-center tw-gap-1.5 hover:tw-bg-blue-600"
+                                className="tw-flex-1 tw-bg-brand-700 tw-text-white tw-border-0 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-semibold tw-text-[0.83rem] tw-flex tw-items-center tw-justify-center tw-gap-1.5 hover:tw-bg-brand-700"
                               >
                                 <Eye size={14} /> Visualizza Verbale
                               </button>
@@ -1569,10 +1569,10 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
               <button type="button" onClick={() => setShowConsensoGDPR(true)} className={`tw-border tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] ${consensoGDPRFirmato ? 'tw-bg-green-100 tw-text-green-800 tw-border-green-300' : 'tw-bg-red-600 tw-text-white tw-border-red-700 hover:tw-bg-red-700'}`}>{consensoGDPRFirmato ? '✅ Consenso GDPR firmato' : '⚠️ Firma consenso GDPR'}</button>
               <button type="button" onClick={() => setShowConsensoPrestazione(true)} className={`tw-border tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] ${consensoPrestazioneFirmato ? 'tw-bg-green-100 tw-text-green-800 tw-border-green-300' : 'tw-bg-orange-700 tw-text-white tw-border-orange-800 hover:tw-bg-orange-800'}`}>{consensoPrestazioneFirmato ? '✅ Consenso prestazione firmato' : '⚠️ Firma consenso prestazione e rischi'}</button>
               <button type="button" onClick={() => setShowCustomerSatisfaction(true)} className="tw-bg-violet-100 tw-text-violet-800 tw-border tw-border-violet-300 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-violet-200">⭐ Customer Satisfaction</button>
-              <button type="button" onClick={() => setShowSchedaDimissione(true)} className="tw-bg-blue-100 tw-text-blue-700 tw-border tw-border-blue-300 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-blue-200">📋 Scheda dimissione</button>
+              <button type="button" onClick={() => setShowSchedaDimissione(true)} className="tw-bg-brand-100 tw-text-brand-700 tw-border tw-border-brand-200 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-brand-100">📋 Scheda dimissione</button>
               <button type="button" onClick={() => setShowRiformulazionePAI(true)} className="tw-bg-sky-100 tw-text-sky-700 tw-border tw-border-sky-300 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-sky-200">🔄 Riformula / rinnova PAI</button>
               <button type="button" onClick={() => setShowDatiCliniciADI(true)} className="tw-bg-cyan-100 tw-text-cyan-800 tw-border tw-border-cyan-300 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-cyan-200">🩺 Dati clinici ADI</button>
-              {consensoGDPRFirmato && <><button type="button" onClick={() => esportaConsensoPdf('gdpr')} className="tw-bg-blue-50 tw-text-blue-700 tw-border tw-border-blue-300 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-blue-100">📄 PDF GDPR</button><button type="button" onClick={() => inviaEmailConsenso('gdpr')} className="tw-bg-blue-50 tw-text-blue-700 tw-border tw-border-blue-300 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-blue-100">✉️ Invia GDPR</button></>}
+              {consensoGDPRFirmato && <><button type="button" onClick={() => esportaConsensoPdf('gdpr')} className="tw-bg-brand-50 tw-text-brand-700 tw-border tw-border-brand-200 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-brand-100">📄 PDF GDPR</button><button type="button" onClick={() => inviaEmailConsenso('gdpr')} className="tw-bg-brand-50 tw-text-brand-700 tw-border tw-border-brand-200 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-brand-100">✉️ Invia GDPR</button></>}
               {consensoPrestazioneFirmato && <><button type="button" onClick={() => esportaConsensoPdf('prestazione')} className="tw-bg-orange-50 tw-text-orange-800 tw-border tw-border-orange-300 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-orange-100">📄 PDF prestazione</button><button type="button" onClick={() => inviaEmailConsenso('prestazione')} className="tw-bg-orange-50 tw-text-orange-800 tw-border tw-border-orange-300 tw-rounded-md tw-px-3 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.8rem] hover:tw-bg-orange-100">✉️ Invia prestazione</button></>}
             </div>
             <div className="tw-text-[0.88rem] tw-text-slate-600 tw-mt-1.5 tw-flex tw-flex-wrap tw-gap-3">
@@ -1662,10 +1662,10 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                 <button type="button" onClick={() => setShowConsensoGDPR(true)} className={`tw-border tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] ${consensoGDPRFirmato ? 'tw-bg-green-100 tw-text-green-800 tw-border-green-300' : 'tw-bg-red-600 tw-text-white tw-border-red-700 hover:tw-bg-red-700'}`}>{consensoGDPRFirmato ? '✅ GDPR firmato' : '⚠️ Firma GDPR'}</button>
                 <button type="button" onClick={() => setShowConsensoPrestazione(true)} className={`tw-border tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] ${consensoPrestazioneFirmato ? 'tw-bg-green-100 tw-text-green-800 tw-border-green-300' : 'tw-bg-orange-700 tw-text-white tw-border-orange-800 hover:tw-bg-orange-800'}`}>{consensoPrestazioneFirmato ? '✅ Prestazione firmata' : '⚠️ Firma prestazione e rischi'}</button>
                 <button type="button" onClick={() => setShowCustomerSatisfaction(true)} className="tw-bg-violet-100 tw-text-violet-800 tw-border tw-border-violet-300 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-violet-200">⭐ Customer Satisfaction</button>
-                <button type="button" onClick={() => setShowSchedaDimissione(true)} className="tw-bg-blue-100 tw-text-blue-700 tw-border tw-border-blue-300 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-blue-200">📋 Scheda dimissione</button>
+                <button type="button" onClick={() => setShowSchedaDimissione(true)} className="tw-bg-brand-100 tw-text-brand-700 tw-border tw-border-brand-200 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-brand-100">📋 Scheda dimissione</button>
                 <button type="button" onClick={() => setShowRiformulazionePAI(true)} className="tw-bg-sky-100 tw-text-sky-700 tw-border tw-border-sky-300 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-sky-200">🔄 Riformula / rinnova PAI</button>
                 <button type="button" onClick={() => setShowDatiCliniciADI(true)} className="tw-bg-cyan-100 tw-text-cyan-800 tw-border tw-border-cyan-300 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-cyan-200">🩺 Dati clinici ADI</button>
-                {consensoGDPRFirmato && <><button type="button" onClick={() => esportaConsensoPdf('gdpr')} className="tw-bg-blue-50 tw-text-blue-700 tw-border tw-border-blue-300 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-blue-100">📄 PDF GDPR</button><button type="button" onClick={() => inviaEmailConsenso('gdpr')} className="tw-bg-blue-50 tw-text-blue-700 tw-border tw-border-blue-300 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-blue-100">✉️ Invia GDPR</button></>}
+                {consensoGDPRFirmato && <><button type="button" onClick={() => esportaConsensoPdf('gdpr')} className="tw-bg-brand-50 tw-text-brand-700 tw-border tw-border-brand-200 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-brand-100">📄 PDF GDPR</button><button type="button" onClick={() => inviaEmailConsenso('gdpr')} className="tw-bg-brand-50 tw-text-brand-700 tw-border tw-border-brand-200 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-brand-100">✉️ Invia GDPR</button></>}
                 {consensoPrestazioneFirmato && <><button type="button" onClick={() => esportaConsensoPdf('prestazione')} className="tw-bg-orange-50 tw-text-orange-800 tw-border tw-border-orange-300 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-orange-100">📄 PDF prestazione</button><button type="button" onClick={() => inviaEmailConsenso('prestazione')} className="tw-bg-orange-50 tw-text-orange-800 tw-border tw-border-orange-300 tw-rounded-md tw-px-3.5 tw-py-2 tw-cursor-pointer tw-font-bold tw-text-[0.84rem] hover:tw-bg-orange-100">✉️ Invia prestazione</button></>}
               </div>
             </div>
@@ -2053,7 +2053,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                     {exportData && (
                       <>
                         <button type="button" onClick={visualizzaPDF}
-                          className="tw-bg-blue-500 tw-text-white tw-px-4.5 tw-py-2.5 tw-rounded-md tw-cursor-pointer tw-font-semibold tw-whitespace-nowrap hover:tw-bg-blue-600">
+                          className="tw-bg-brand-700 tw-text-white tw-px-4.5 tw-py-2.5 tw-rounded-md tw-cursor-pointer tw-font-semibold tw-whitespace-nowrap hover:tw-bg-brand-700">
                           👁️ Visualizza PDF
                         </button>
                         <button type="button" onClick={stampaPDF}
@@ -2229,7 +2229,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                           { val: 'medico', label: '🩺 Medico' },
                           { val: 'altro', label: '✏️ Altro' },
                         ].map(r => (
-                          <label key={r.val} className={`tw-flex tw-items-center tw-gap-2 tw-cursor-pointer tw-text-[0.88rem] tw-px-3.5 tw-py-2 tw-rounded-lg tw-border-2 ${eventoForm.ruoloOperatore === r.val ? 'tw-border-brand tw-bg-blue-50 tw-font-bold' : 'tw-border-slate-200 tw-bg-white'}`}>
+                          <label key={r.val} className={`tw-flex tw-items-center tw-gap-2 tw-cursor-pointer tw-text-[0.88rem] tw-px-3.5 tw-py-2 tw-rounded-lg tw-border-2 ${eventoForm.ruoloOperatore === r.val ? 'tw-border-brand tw-bg-brand-50 tw-font-bold' : 'tw-border-slate-200 tw-bg-white'}`}>
                             <input type="radio" name="ruoloOp" value={r.val} checked={eventoForm.ruoloOperatore === r.val} onChange={() => setEventoForm(p => ({ ...p, ruoloOperatore: r.val }))} style={{ accentColor: 'var(--brand-700)' }} />
                             {r.label}
                           </label>

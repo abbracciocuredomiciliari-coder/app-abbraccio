@@ -115,7 +115,7 @@ export default function PreventivoVeloce() {
   return (
     <div className="page-container tw-p-5">
       <div className="tw-mb-5">
-        <h1 className="tw-flex tw-items-center tw-gap-2 tw-text-blue-900 tw-m-0 tw-text-2xl tw-font-extrabold">
+        <h1 className="tw-flex tw-items-center tw-gap-2 tw-text-slate-800 tw-m-0 tw-text-2xl tw-font-extrabold">
           <Calculator size={26} /> Preventivo veloce — senza anagrafica
         </h1>
         <p className="tw-text-slate-500 tw-text-sm tw-mt-1.5 tw-mb-0">
@@ -130,8 +130,8 @@ export default function PreventivoVeloce() {
       />
 
       {risultato && (
-        <div className="tw-mt-5 tw-bg-white tw-rounded-2xl tw-border tw-border-blue-200 tw-shadow-sm tw-p-5 tw-max-w-[720px]">
-          <h2 className="tw-flex tw-items-center tw-gap-2 tw-m-0 tw-mb-4 tw-text-lg tw-text-blue-900 tw-font-bold">
+        <div className="tw-mt-5 tw-bg-white tw-rounded-2xl tw-border tw-border-brand-200 tw-shadow-sm tw-p-5 tw-max-w-[720px]">
+          <h2 className="tw-flex tw-items-center tw-gap-2 tw-m-0 tw-mb-4 tw-text-lg tw-text-slate-800 tw-font-bold">
             <User size={20} /> Destinatario del preventivo
           </h2>
           <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-2 tw-gap-3 tw-mb-3">
@@ -161,7 +161,7 @@ export default function PreventivoVeloce() {
 
           <div className="tw-flex tw-flex-wrap tw-gap-2.5">
             <button type="button" onClick={() => generaPdf(true)} disabled={busy !== null}
-              className="tw-flex tw-items-center tw-gap-1.5 tw-px-4 tw-py-2.5 tw-rounded-lg tw-border tw-border-blue-600 tw-bg-white tw-text-blue-800 tw-font-bold tw-cursor-pointer disabled:tw-opacity-50">
+              className="tw-flex tw-items-center tw-gap-1.5 tw-px-4 tw-py-2.5 tw-rounded-lg tw-border tw-border-brand-200 tw-bg-white tw-text-slate-800 tw-font-bold tw-cursor-pointer disabled:tw-opacity-50">
               <Eye size={17} /> Visualizza / stampa PDF
             </button>
             <button type="button" onClick={() => generaPdf(false)} disabled={busy !== null}
@@ -169,7 +169,7 @@ export default function PreventivoVeloce() {
               <Printer size={17} /> {busy === 'pdf' ? 'Generazione...' : 'Scarica PDF'}
             </button>
             <button type="button" onClick={inviaEmail} disabled={busy !== null || !email.trim()}
-              className="tw-flex tw-items-center tw-gap-1.5 tw-px-4 tw-py-2.5 tw-rounded-lg tw-border-0 tw-bg-blue-700 tw-text-white tw-font-bold tw-cursor-pointer disabled:tw-opacity-50">
+              className="tw-flex tw-items-center tw-gap-1.5 tw-px-4 tw-py-2.5 tw-rounded-lg tw-border-0 tw-bg-brand-700 tw-text-white tw-font-bold tw-cursor-pointer disabled:tw-opacity-50">
               <Mail size={17} /> {busy === 'email' ? 'Invio...' : 'Invia via email'}
             </button>
             <button type="button" onClick={apriWhatsApp} disabled={busy !== null}

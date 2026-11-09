@@ -210,7 +210,7 @@ export default function ArchivioEmail() {
   return (
     <div className="page-container tw-p-5">
       <div className="tw-mb-5">
-        <h1 className="tw-flex tw-items-center tw-gap-2 tw-text-blue-900 tw-m-0 tw-text-2xl tw-font-extrabold">
+        <h1 className="tw-flex tw-items-center tw-gap-2 tw-text-slate-800 tw-m-0 tw-text-2xl tw-font-extrabold">
           <Mail size={26} /> Archivio email
         </h1>
         <p className="tw-text-slate-500 tw-text-sm tw-mt-1.5 tw-mb-0">
@@ -223,11 +223,11 @@ export default function ArchivioEmail() {
       {/* Tab inviate / ricevute */}
       <div className="tw-flex tw-gap-2 tw-mb-4">
         <button type="button" onClick={() => setTab('inviate')}
-          className={`tw-flex tw-items-center tw-gap-2 tw-px-4 tw-py-2.5 tw-rounded-xl tw-border tw-font-bold tw-text-sm tw-cursor-pointer ${tab === 'inviate' ? 'tw-bg-blue-900 tw-text-white tw-border-blue-900' : 'tw-bg-white tw-text-slate-600 tw-border-slate-200'}`}>
+          className={`tw-flex tw-items-center tw-gap-2 tw-px-4 tw-py-2.5 tw-rounded-xl tw-border tw-font-bold tw-text-sm tw-cursor-pointer ${tab === 'inviate' ? 'tw-bg-brand-700 tw-text-white tw-border-brand-200' : 'tw-bg-white tw-text-slate-600 tw-border-slate-200'}`}>
           <Send size={15} /> Inviate
         </button>
         <button type="button" onClick={() => setTab('ricevute')}
-          className={`tw-flex tw-items-center tw-gap-2 tw-px-4 tw-py-2.5 tw-rounded-xl tw-border tw-font-bold tw-text-sm tw-cursor-pointer ${tab === 'ricevute' ? 'tw-bg-blue-900 tw-text-white tw-border-blue-900' : 'tw-bg-white tw-text-slate-600 tw-border-slate-200'}`}>
+          className={`tw-flex tw-items-center tw-gap-2 tw-px-4 tw-py-2.5 tw-rounded-xl tw-border tw-font-bold tw-text-sm tw-cursor-pointer ${tab === 'ricevute' ? 'tw-bg-brand-700 tw-text-white tw-border-brand-200' : 'tw-bg-white tw-text-slate-600 tw-border-slate-200'}`}>
           <Inbox size={15} /> Ricevute
           {nonLette > 0 && <span className="tw-bg-red-500 tw-text-white tw-rounded-full tw-text-xs tw-px-2 tw-py-0.5 tw-font-extrabold">{nonLette}</span>}
         </button>
@@ -342,7 +342,7 @@ export default function ArchivioEmail() {
                               onClick={() => apriAllegato(e, i)}
                               disabled={loadingAllegato === `${e._id}-${i}`}
                               title="Visualizza / scarica l'allegato inviato"
-                              className="tw-text-blue-700 tw-bg-blue-50 tw-border tw-border-blue-200 tw-rounded tw-px-1.5 tw-py-0.5 tw-font-semibold tw-cursor-pointer hover:tw-bg-blue-100 tw-underline disabled:tw-opacity-50">
+                              className="tw-text-brand-700 tw-bg-brand-50 tw-border tw-border-brand-200 tw-rounded tw-px-1.5 tw-py-0.5 tw-font-semibold tw-cursor-pointer hover:tw-bg-brand-100 tw-underline disabled:tw-opacity-50">
                               {loadingAllegato === `${e._id}-${i}` ? '⏳' : '📄'} {nome}
                             </button>
                           ))}
@@ -383,7 +383,7 @@ export default function ArchivioEmail() {
                 <div key={e._id} className="tw-px-4 tw-py-3 tw-cursor-pointer hover:tw-bg-slate-50" onClick={() => apriCorpo(e)}>
                   <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-3">
                     {!e.letta
-                      ? <span className="tw-w-2.5 tw-h-2.5 tw-rounded-full tw-bg-blue-600 tw-shrink-0" title="Non letta" />
+                      ? <span className="tw-w-2.5 tw-h-2.5 tw-rounded-full tw-bg-brand-700 tw-shrink-0" title="Non letta" />
                       : <span className="tw-w-2.5 tw-h-2.5 tw-rounded-full tw-bg-transparent tw-shrink-0" />}
                     <div className="tw-flex-1 tw-min-w-[260px]">
                       <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2 tw-mb-0.5">
@@ -406,7 +406,7 @@ export default function ArchivioEmail() {
                     </button>
                   </div>
                   {aperta === e._id && (
-                    <div className="tw-mt-3 tw-ml-5 tw-border-l-4 tw-border-blue-100 tw-pl-4">
+                    <div className="tw-mt-3 tw-ml-5 tw-border-l-4 tw-border-brand-200 tw-pl-4">
                       {!corpo ? <div className="tw-text-sm tw-text-slate-400">Caricamento…</div> : (
                         <>
                           {corpo.allegati && corpo.allegati.length > 0 && (
@@ -414,7 +414,7 @@ export default function ArchivioEmail() {
                               {corpo.allegati.map((a, i) => (
                                 <button key={i} type="button" onClick={ev => apriAllegatoRicevuto(e, i, ev)}
                                   disabled={loadingAllegato === `r-${e._id}-${i}`}
-                                  className="tw-text-blue-700 tw-bg-blue-50 tw-border tw-border-blue-200 tw-rounded tw-px-1.5 tw-py-0.5 tw-text-xs tw-font-semibold tw-cursor-pointer hover:tw-bg-blue-100 tw-underline disabled:tw-opacity-50">
+                                  className="tw-text-brand-700 tw-bg-brand-50 tw-border tw-border-brand-200 tw-rounded tw-px-1.5 tw-py-0.5 tw-text-xs tw-font-semibold tw-cursor-pointer hover:tw-bg-brand-100 tw-underline disabled:tw-opacity-50">
                                   {loadingAllegato === `r-${e._id}-${i}` ? '⏳' : '📄'} {a.filename} ({Math.round(a.size / 1024)} KB)
                                 </button>
                               ))}

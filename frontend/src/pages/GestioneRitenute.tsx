@@ -325,7 +325,7 @@ export default function GestioneRitenute() {
                   <td className="tw-p-3">{formatEuro(r.importoLordo)}</td>
                   <td className="tw-p-3">{formatEuro(r.importoRitenuta)}</td>
                   <td className="tw-p-3 tw-font-semibold">{formatEuro(r.nettoAPagare)}</td>
-                  <td className="tw-p-3"><span className={`tw-px-2 tw-py-1 tw-rounded tw-text-xs tw-font-semibold ${r.stato === 'firmato' ? 'tw-bg-green-100 tw-text-green-700' : r.stato === 'annullato' ? 'tw-bg-red-100 tw-text-red-700' : 'tw-bg-blue-100 tw-text-blue-700'}`}>{r.stato}</span></td>
+                  <td className="tw-p-3"><span className={`tw-px-2 tw-py-1 tw-rounded tw-text-xs tw-font-semibold ${r.stato === 'firmato' ? 'tw-bg-green-100 tw-text-green-700' : r.stato === 'annullato' ? 'tw-bg-red-100 tw-text-red-700' : 'tw-bg-brand-100 tw-text-brand-700'}`}>{r.stato}</span></td>
                   <td className="tw-p-3 tw-flex tw-gap-2 tw-flex-wrap">
                     {r.stato === 'emesso' && (
                       <>

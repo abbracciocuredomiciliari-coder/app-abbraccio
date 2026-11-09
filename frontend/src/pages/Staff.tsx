@@ -1058,7 +1058,7 @@ function Staff() {
                     )}
                     <button
                       onClick={() => openProfiloPdf(staff)}
-                      className="!tw-bg-blue-600 tw-text-white"
+                      className="!tw-bg-brand-700 tw-text-white"
                       title="Visualizza profilo PDF"
                     >
                       <FileText size={16} />

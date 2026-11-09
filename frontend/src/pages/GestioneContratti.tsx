@@ -174,7 +174,7 @@ export default function GestioneContratti() {
           <button
             onClick={() => scaricaPDF(utente._id, tipo, false)}
             disabled={pending[`${utente._id}-${tipo}-false`]}
-            className="tw-flex tw-items-center tw-justify-center tw-gap-2 tw-px-4 tw-py-2.5 tw-rounded-lg tw-bg-blue-600 hover:tw-bg-blue-700 tw-text-white tw-text-sm tw-font-medium tw-transition-colors"
+            className="tw-flex tw-items-center tw-justify-center tw-gap-2 tw-px-4 tw-py-2.5 tw-rounded-lg tw-bg-brand-700 hover:tw-bg-brand-700 tw-text-white tw-text-sm tw-font-medium tw-transition-colors"
           >
             <Download size={16} /> Scarica PDF
           </button>
@@ -223,7 +223,7 @@ export default function GestioneContratti() {
                 value={filtro}
                 onChange={e => setFiltro(e.target.value)}
                 placeholder="Nome, email o professione"
-                className="tw-w-full tw-pl-10 tw-pr-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-blue-500"
+                className="tw-w-full tw-pl-10 tw-pr-3 tw-py-2 tw-rounded-lg tw-border tw-border-slate-300 tw-text-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-brand-300"
               />
             </div>
 
@@ -237,7 +237,7 @@ export default function GestioneContratti() {
                   <button
                     key={u._id}
                     onClick={() => setSelezionato(u)}
-                    className={`tw-w-full tw-text-left tw-flex tw-items-center tw-gap-3 tw-p-3 tw-rounded-lg tw-border tw-transition-colors ${selezionato?._id === u._id ? 'tw-bg-blue-50 tw-border-blue-300' : 'tw-bg-white tw-border-slate-100 hover:tw-bg-slate-50'}`}
+                    className={`tw-w-full tw-text-left tw-flex tw-items-center tw-gap-3 tw-p-3 tw-rounded-lg tw-border tw-transition-colors ${selezionato?._id === u._id ? 'tw-bg-brand-50 tw-border-brand-200' : 'tw-bg-white tw-border-slate-100 hover:tw-bg-slate-50'}`}
                   >
                     <div className="tw-w-9 tw-h-9 tw-rounded-full tw-bg-slate-100 tw-flex tw-items-center tw-justify-center tw-text-slate-600">
                       <User size={18} />
@@ -267,7 +267,7 @@ export default function GestioneContratti() {
               <div className="tw-bg-white tw-rounded-xl tw-border tw-border-slate-200 tw-p-5 tw-shadow-sm">
                 <div className="tw-flex tw-items-center tw-justify-between">
                   <div className="tw-flex tw-items-center tw-gap-3">
-                    <div className="tw-w-12 tw-h-12 tw-rounded-full tw-bg-blue-100 tw-flex tw-items-center tw-justify-center tw-text-blue-700">
+                    <div className="tw-w-12 tw-h-12 tw-rounded-full tw-bg-brand-100 tw-flex tw-items-center tw-justify-center tw-text-brand-700">
                       <User size={24} />
                     </div>
                     <div>

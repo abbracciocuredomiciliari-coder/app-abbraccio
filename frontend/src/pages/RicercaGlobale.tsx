@@ -67,9 +67,9 @@ export default function RicercaGlobale() {
     !count ? null : (
       <div className="tw-bg-white tw-rounded-xl tw-border tw-border-slate-200 tw-shadow-sm tw-mb-4 tw-overflow-hidden">
         <div className="tw-flex tw-items-center tw-gap-2 tw-px-4 tw-py-2.5 tw-bg-slate-50 tw-border-b tw-border-slate-200">
-          <span className="tw-text-blue-800">{icona}</span>
+          <span className="tw-text-slate-800">{icona}</span>
           <span className="tw-font-bold tw-text-slate-800">{titolo}</span>
-          <span className="tw-ml-auto tw-text-xs tw-bg-blue-100 tw-text-blue-800 tw-rounded-full tw-px-2 tw-py-0.5 tw-font-bold">{count}</span>
+          <span className="tw-ml-auto tw-text-xs tw-bg-brand-100 tw-text-slate-800 tw-rounded-full tw-px-2 tw-py-0.5 tw-font-bold">{count}</span>
         </div>
         <div className="tw-divide-y tw-divide-slate-100">{children}</div>
       </div>
@@ -78,7 +78,7 @@ export default function RicercaGlobale() {
   const Riga = ({ children, onClick }: any) => (
     <div
       onClick={onClick}
-      className={`tw-px-4 tw-py-2.5 tw-text-sm tw-flex tw-flex-wrap tw-items-center tw-gap-x-3 tw-gap-y-1 ${onClick ? 'tw-cursor-pointer hover:tw-bg-blue-50/50' : ''}`}
+      className={`tw-px-4 tw-py-2.5 tw-text-sm tw-flex tw-flex-wrap tw-items-center tw-gap-x-3 tw-gap-y-1 ${onClick ? 'tw-cursor-pointer hover:tw-bg-brand-50/50' : ''}`}
     >
       {children}
       {onClick && <ExternalLink size={13} className="tw-ml-auto tw-text-slate-400 tw-shrink-0" />}
@@ -89,7 +89,7 @@ export default function RicercaGlobale() {
     <span className={`tw-text-[0.68rem] tw-font-bold tw-rounded-full tw-px-2 tw-py-0.5 tw-uppercase tw-tracking-wide ${
       tone === 'verde' ? 'tw-bg-emerald-100 tw-text-emerald-700'
       : tone === 'rosso' ? 'tw-bg-red-100 tw-text-red-700'
-      : tone === 'blu' ? 'tw-bg-blue-100 tw-text-blue-700'
+      : tone === 'blu' ? 'tw-bg-brand-100 tw-text-brand-700'
       : tone === 'giallo' ? 'tw-bg-amber-100 tw-text-amber-700'
       : 'tw-bg-slate-100 tw-text-slate-600'}`}
     >{children}</span>
@@ -100,12 +100,12 @@ export default function RicercaGlobale() {
     const p = dossier.paziente;
     return (
       <div className="page-container tw-max-w-4xl">
-        <button onClick={() => { setParams({}); setDossier(null); }} className="tw-mb-3 tw-flex tw-items-center tw-gap-1 tw-text-blue-800 tw-font-semibold">
+        <button onClick={() => { setParams({}); setDossier(null); }} className="tw-mb-3 tw-flex tw-items-center tw-gap-1 tw-text-slate-800 tw-font-semibold">
           <ArrowLeft size={16} /> Torna alla ricerca
         </button>
         <div className="tw-bg-white tw-rounded-xl tw-border tw-border-slate-200 tw-shadow-sm tw-p-5 tw-mb-4">
           <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-3">
-            <UserCircle size={40} className="tw-text-blue-800" />
+            <UserCircle size={40} className="tw-text-slate-800" />
             <div>
               <h1 className="tw-text-xl tw-font-bold tw-text-slate-900">{p.nome}</h1>
               <div className="tw-text-sm tw-text-slate-500">
@@ -117,7 +117,7 @@ export default function RicercaGlobale() {
               </div>
             </div>
             <div className="tw-ml-auto tw-flex tw-gap-2">
-              <button onClick={() => navigate('/patients')} className="tw-bg-blue-800 tw-text-white tw-text-sm">Apri in Pazienti</button>
+              <button onClick={() => navigate('/patients')} className="tw-bg-brand-700 tw-text-white tw-text-sm">Apri in Pazienti</button>
               <button onClick={() => navigate('/gestione-fatturazione')} className="tw-bg-slate-700 tw-text-white tw-text-sm">Nuovo documento</button>
             </div>
           </div>
@@ -146,7 +146,7 @@ export default function RicercaGlobale() {
           {dossier.piani.map((w: any) => (
             <Riga key={w._id} onClick={() => navigate('/piani-lavorativi')}>
               <span className="tw-font-semibold">{w.task}</span>
-              {w.operatore && <span className="tw-text-blue-800">→ {w.operatore}{w.ruoloOperatore ? ` (${w.ruoloOperatore})` : ''}</span>}
+              {w.operatore && <span className="tw-text-slate-800">→ {w.operatore}{w.ruoloOperatore ? ` (${w.ruoloOperatore})` : ''}</span>}
               <Badge>{w.status || 'pianificato'}</Badge>
               <span className="tw-text-slate-500">{fmtData(w.date)}</span>
             </Riga>
@@ -252,10 +252,10 @@ export default function RicercaGlobale() {
           <input
             value={input} onChange={(e) => setInput(e.target.value)} autoFocus
             placeholder="Nome paziente, operatore, n° preventivo, email, oggetto…"
-            className="tw-w-full tw-pl-9 tw-pr-3 tw-py-2.5 tw-border tw-border-slate-300 tw-rounded-xl tw-text-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-blue-300"
+            className="tw-w-full tw-pl-9 tw-pr-3 tw-py-2.5 tw-border tw-border-slate-300 tw-rounded-xl tw-text-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-brand-300"
           />
         </div>
-        <button type="submit" className="tw-bg-blue-800 tw-text-white tw-px-5 tw-rounded-xl tw-font-bold tw-text-sm">Cerca</button>
+        <button type="submit" className="tw-bg-brand-700 tw-text-white tw-px-5 tw-rounded-xl tw-font-bold tw-text-sm">Cerca</button>
       </form>
 
       {loading && <p className="tw-text-slate-500 tw-text-center tw-py-8">Ricerca in corso…</p>}
@@ -309,7 +309,7 @@ export default function RicercaGlobale() {
                 <span className="tw-font-bold">{d.numero}</span>
                 <Badge tone={d.tipo === 'fattura' ? 'blu' : 'giallo'}>{d.tipo}</Badge>
                 <span>{fmtEuro(d.totale)}</span>
-                {d.paziente && <span className="tw-text-blue-800">{d.paziente}</span>}
+                {d.paziente && <span className="tw-text-slate-800">{d.paziente}</span>}
                 <Badge>{d.stato}</Badge>
                 <span className="tw-text-slate-500">{fmtData(d.data)}</span>
               </Riga>

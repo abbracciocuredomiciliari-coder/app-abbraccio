@@ -291,7 +291,7 @@ function Documentazione() {
             onChange={handleProcedureFileChange}
           />
           {procedureFile && (
-            <div className="selected-file-actions tw-border tw-border-blue-600 tw-p-3 tw-rounded-lg tw-bg-blue-50">
+            <div className="selected-file-actions tw-border tw-border-brand-200 tw-p-3 tw-rounded-lg tw-bg-brand-50">
               <p>
                 <strong>File selezionato:</strong> {procedureFile.name}
               </p>
@@ -349,7 +349,7 @@ function Documentazione() {
             onChange={handleProtocolFileChange}
           />
           {protocolFile && (
-            <div className="selected-file-actions tw-border tw-border-blue-600 tw-p-3 tw-rounded-lg tw-bg-blue-50">
+            <div className="selected-file-actions tw-border tw-border-brand-200 tw-p-3 tw-rounded-lg tw-bg-brand-50">
               <p>
                 <strong>File selezionato:</strong> {protocolFile.name}
               </p>

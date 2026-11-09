@@ -250,7 +250,7 @@ export default function ConsegneAmministrative() {
     <div className="page-container tw-p-5">
       <div className="tw-flex tw-flex-wrap tw-items-center tw-justify-between tw-gap-3 tw-mb-5">
         <div>
-          <h1 className="tw-flex tw-items-center tw-gap-2 tw-text-blue-900 tw-m-0 tw-text-2xl tw-font-extrabold">
+          <h1 className="tw-flex tw-items-center tw-gap-2 tw-text-slate-800 tw-m-0 tw-text-2xl tw-font-extrabold">
             <ClipboardList size={26} /> Consegne amministrative
           </h1>
           <p className="tw-text-slate-500 tw-text-sm tw-mt-1.5 tw-mb-0">
@@ -263,23 +263,23 @@ export default function ConsegneAmministrative() {
       </div>
 
       {/* Link pubblico per il personale esterno */}
-      <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2 tw-bg-blue-50 tw-border tw-border-dashed tw-border-blue-300 tw-rounded-xl tw-px-4 tw-py-2.5 tw-mb-5 tw-text-sm">
-        <Smartphone size={16} className="tw-text-blue-700" />
+      <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2 tw-bg-brand-50 tw-border tw-border-dashed tw-border-brand-200 tw-rounded-xl tw-px-4 tw-py-2.5 tw-mb-5 tw-text-sm">
+        <Smartphone size={16} className="tw-text-brand-700" />
         <span className="tw-text-slate-600">Link per chi lavora fuori (senza entrare nel gestionale):</span>
-        <code className="tw-bg-white tw-border tw-border-blue-200 tw-rounded tw-px-2 tw-py-0.5 tw-text-blue-800 tw-font-semibold">/scrivi-consegna</code>
+        <code className="tw-bg-white tw-border tw-border-brand-200 tw-rounded tw-px-2 tw-py-0.5 tw-text-slate-800 tw-font-semibold">/scrivi-consegna</code>
         <button type="button"
           onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/scrivi-consegna`); alert('Link copiato: condividilo su WhatsApp con il personale esterno.'); }}
-          className="tw-text-blue-700 tw-font-bold tw-bg-transparent tw-border-0 tw-cursor-pointer hover:tw-underline">
+          className="tw-text-brand-700 tw-font-bold tw-bg-transparent tw-border-0 tw-cursor-pointer hover:tw-underline">
           📋 Copia link
         </button>
       </div>
 
       {filtrate && (
-        <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2 tw-bg-blue-50 tw-border tw-border-blue-300 tw-text-blue-900 tw-rounded-xl tw-px-4 tw-py-3 tw-mb-5 tw-font-semibold tw-text-sm">
+        <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2 tw-bg-brand-50 tw-border tw-border-brand-200 tw-text-slate-800 tw-rounded-xl tw-px-4 tw-py-3 tw-mb-5 tw-font-semibold tw-text-sm">
           <ClipboardList size={18} />
           Stai vedendo solo le consegne relative a <strong>«{filtroQ}»</strong> — {filtrate.length} trovate, incluse le già gestite.
           <button type="button" onClick={() => setSearchParams({})}
-            className="tw-ml-auto tw-text-sm tw-font-bold tw-text-blue-700 tw-bg-white tw-border tw-border-blue-300 tw-rounded-lg tw-px-3 tw-py-1.5 tw-cursor-pointer hover:tw-bg-blue-100">
+            className="tw-ml-auto tw-text-sm tw-font-bold tw-text-brand-700 tw-bg-white tw-border tw-border-brand-200 tw-rounded-lg tw-px-3 tw-py-1.5 tw-cursor-pointer hover:tw-bg-brand-100">
             Mostra tutte
           </button>
         </div>
@@ -292,8 +292,8 @@ export default function ConsegneAmministrative() {
       )}
 
       {showForm && (
-        <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-blue-200 tw-shadow-sm tw-p-5 tw-mb-5">
-          <h2 className="tw-m-0 tw-mb-4 tw-text-lg tw-text-blue-900 tw-font-bold">Nuova consegna</h2>
+        <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-brand-200 tw-shadow-sm tw-p-5 tw-mb-5">
+          <h2 className="tw-m-0 tw-mb-4 tw-text-lg tw-text-slate-800 tw-font-bold">Nuova consegna</h2>
           <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-3 tw-gap-3 tw-mb-3">
             <div className="md:tw-col-span-2">
               <span style={label}>Titolo *</span>
@@ -352,7 +352,7 @@ export default function ConsegneAmministrative() {
         </h2>
         {!filtrate && (
           <button type="button" onClick={() => setMostraGestite(v => !v)}
-            className="tw-text-sm tw-font-semibold tw-text-blue-700 tw-bg-transparent tw-border-0 tw-cursor-pointer hover:tw-underline">
+            className="tw-text-sm tw-font-semibold tw-text-brand-700 tw-bg-transparent tw-border-0 tw-cursor-pointer hover:tw-underline">
             {mostraGestite ? 'Nascondi quelle gestite' : `Mostra anche le gestite (${gestite.length})`}
           </button>
         )}
@@ -371,9 +371,9 @@ export default function ConsegneAmministrative() {
             const oggi = g.key === new Date().toISOString().slice(0, 10);
             return (
             <div key={g.key}>
-              <div className={`tw-flex tw-items-center tw-gap-2 tw-mb-2.5 tw-px-1 tw-py-1.5 tw-border-b-2 ${oggi ? 'tw-border-blue-500' : 'tw-border-slate-200'}`}>
-                <Calendar size={17} className={oggi ? 'tw-text-blue-700' : 'tw-text-slate-500'} />
-                <h3 className={`tw-m-0 tw-text-sm tw-font-extrabold tw-capitalize ${oggi ? 'tw-text-blue-800' : 'tw-text-slate-600'}`}>
+              <div className={`tw-flex tw-items-center tw-gap-2 tw-mb-2.5 tw-px-1 tw-py-1.5 tw-border-b-2 ${oggi ? 'tw-border-brand-200' : 'tw-border-slate-200'}`}>
+                <Calendar size={17} className={oggi ? 'tw-text-brand-700' : 'tw-text-slate-500'} />
+                <h3 className={`tw-m-0 tw-text-sm tw-font-extrabold tw-capitalize ${oggi ? 'tw-text-slate-800' : 'tw-text-slate-600'}`}>
                   {dayLabel(g.key)}
                 </h3>
                 <span className="tw-text-xs tw-font-bold tw-text-slate-400 tw-bg-slate-100 tw-rounded-full tw-px-2 tw-py-0.5">
@@ -396,7 +396,7 @@ export default function ConsegneAmministrative() {
                     <div className="tw-flex-1 tw-min-w-[220px]">
                       <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2 tw-mb-1">
                         <strong className="tw-text-slate-800">{c.titolo}</strong>
-                        {c.origine === 'esterna' && <span className="tw-text-xs tw-font-bold tw-text-blue-600 tw-bg-blue-50 tw-border tw-border-blue-200 tw-rounded-full tw-px-2 tw-py-0.5">🌐 da remoto</span>}
+                        {c.origine === 'esterna' && <span className="tw-text-xs tw-font-bold tw-text-brand-700 tw-bg-brand-50 tw-border tw-border-brand-200 tw-rounded-full tw-px-2 tw-py-0.5">🌐 da remoto</span>}
                         {c.priorita === 'urgente' && <span className="tw-text-xs tw-font-bold tw-text-red-600 tw-flex tw-items-center tw-gap-1"><AlertTriangle size={13} />URGENTE</span>}
                       </div>
                       <div className="tw-flex tw-flex-wrap tw-gap-2 tw-text-xs tw-text-slate-500">
@@ -442,7 +442,7 @@ export default function ConsegneAmministrative() {
                   )}
 
                   {c.trasferimento && !c.trasferimento.accettato && c.stato !== 'gestita' && (
-                    <div className="tw-text-xs tw-text-blue-800 tw-bg-blue-50 tw-border tw-border-blue-200 tw-rounded-lg tw-px-2.5 tw-py-1.5 tw-mb-2 tw-flex tw-flex-wrap tw-items-center tw-gap-2">
+                    <div className="tw-text-xs tw-text-slate-800 tw-bg-brand-50 tw-border tw-border-brand-200 tw-rounded-lg tw-px-2.5 tw-py-1.5 tw-mb-2 tw-flex tw-flex-wrap tw-items-center tw-gap-2">
                       <span>🔄 Trasferimento a <strong>{c.trasferimento.aNome}</strong> — responsabilità ancora di <strong>{c.trasferimento.daNome}</strong> finché non accetta</span>
                       {String(c.trasferimento.aId) === user?.id && (
                         <Button size="sm" onClick={() => accettaTrasferimento(c)}>Accetta</Button>
