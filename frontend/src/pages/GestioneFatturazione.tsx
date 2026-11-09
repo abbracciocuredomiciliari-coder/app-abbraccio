@@ -647,7 +647,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px', color: isConvenzione ? '#0369a1' : 'var(--brand-700)' }}>
           {archivioOnly ? <Archive size={28} /> : (isConvenzione ? <Building2 size={28} /> : <Receipt size={28} />)}
-          {archivioOnly ? 'Archivio Fatture' : (isConvenzione ? 'Tariffa da Fatturare all\u2019ASL' : (isConsulenza ? 'Fatturazione Intermediazioni' : 'Fatturazione Pazienti Privati'))}
+          {archivioOnly ? 'Archivio Fatture' : (isConvenzione ? 'Tariffa da Fatturare all\u2019ASL' : (isConsulenza ? 'Fatturazione Intermediazioni' : 'Gestione fatturazione'))}
         </h1>
         {!archivioOnly && (
           <div style={{ display: 'flex', gap: '10px' }}>

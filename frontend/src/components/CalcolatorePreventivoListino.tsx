@@ -247,7 +247,7 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
                             </div>
                             {q === 0 ? (
                               <button type="button" onClick={() => setQta(v.id, 1)} style={{ border: '1px solid var(--brand-700)', background: '#fff', color: 'var(--brand-700)', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                                <Plus size={14} /> Aggiungi
+                                <Plus size={14} /> Aggiungi servizio
                               </button>
                             ) : (
                               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>

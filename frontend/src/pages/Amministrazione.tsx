@@ -28,6 +28,7 @@ interface Riga {
   hasAllegato?: boolean;
   praticaTipo?: string;
   praticaId?: string;
+  praticaLabel?: string;
   aggiornatoIl?: string;
 }
 
@@ -92,6 +93,8 @@ export default function Amministrazione() {
   const [lavorazioni, setLavorazioni] = useState<any[]>([]);
   // ── Controlli back office ──
   const [controlli, setControlli] = useState<any | null>(null);
+  // ── Dettaglio laterale documento ──
+  const [dettaglio, setDettaglio] = useState<Riga | null>(null);
 
   // ── Sezione corrente nel router: sopravvive al ritorno dal dettaglio ──
   const [searchParams, setSearchParams] = useSearchParams();
@@ -416,6 +419,7 @@ export default function Amministrazione() {
                 </td>
                 <td>
                   <div style={{ display: 'flex', gap: '5px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                    <button className="ab-btn ab-btn--sm" onClick={() => setDettaglio(r)} title="Apri dettaglio documento">Dettaglio →</button>
                     {r.origine === 'fattura' && r.statoPagamento !== 'saldato' && (
                       <button className="ab-btn ab-btn--sm" onClick={() => registraIncasso(r)} title="Registra incasso / acconto"><Euro size={12} /> Incasso</button>
                     )}
@@ -608,6 +612,9 @@ export default function Amministrazione() {
                 <div className="ab-kpi-foot">{conteggioControlli} controlli · {lavorazioni.length} lavorazioni aperte</div>
               </button>
             </div>
+            <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)', margin: '-10px 0 20px' }}>
+              Valori sull'intero archivio autorizzato (non solo la pagina visibile). «Da incassare/da pagare» = residuo su documenti non saldati; «Scadute» = scadenza incasso/pagamento superata.
+            </p>
 
             {conteggioControlli > 0 && (
               <div className="ab-notice ab-notice--danger" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
@@ -970,6 +977,71 @@ export default function Amministrazione() {
       </nav>
 
       {sezioneContenuto()}
+
+      {/* ── Dettaglio laterale documento ── */}
+      {dettaglio && (
+        <div role="dialog" aria-modal="true" aria-label="Dettaglio documento"
+          style={{ position: 'fixed', inset: 0, background: 'rgba(15,35,40,0.4)', zIndex: 300, display: 'flex', justifyContent: 'flex-end' }}
+          onClick={e => { if (e.target === e.currentTarget) setDettaglio(null); }}
+          onKeyDown={e => { if (e.key === 'Escape') setDettaglio(null); }}>
+          <aside style={{ background: '#fff', width: 'min(430px, 100%)', height: '100%', overflowY: 'auto', padding: '26px 24px', boxShadow: '-8px 0 30px rgba(0,0,0,0.15)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
+              <div>
+                <p className="ab-eyebrow" style={{ marginBottom: '4px' }}>{ORIGINE_LABEL[dettaglio.origine] || dettaglio.origine}</p>
+                <h2 style={{ margin: 0, fontFamily: 'var(--font-head)', fontSize: '1.3rem', color: 'var(--gray-900)' }}>{dettaglio.numero}</h2>
+              </div>
+              <button className="ab-btn ab-btn--sm" onClick={() => setDettaglio(null)} aria-label="Chiudi dettaglio">✕ Chiudi</button>
+            </div>
+
+            <dl style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px', margin: '0 0 20px' }}>
+              {[
+                ['Soggetto', dettaglio.soggetto],
+                ['Area', AREA_LABEL[dettaglio.area] || dettaglio.area],
+                ['Data documento', data(dettaglio.data)],
+                ['Totale', dettaglio.totale !== undefined ? euro(dettaglio.totale) : '—'],
+                dettaglio.incassato !== undefined ? ['Incassato', euro(dettaglio.incassato)] : null,
+                dettaglio.pagato !== undefined ? ['Pagato', euro(dettaglio.pagato)] : null,
+                dettaglio.statoDoc ? ['Stato documento', `${dettaglio.statoDoc}${dettaglio.dataTrasmissione ? ` · trasmesso il ${data(dettaglio.dataTrasmissione)}` : ''}`] : null,
+                dettaglio.statoPagamento ? ['Stato pagamento', STATO_PAG_LABEL[dettaglio.statoPagamento]?.testo || dettaglio.statoPagamento] : null,
+                dettaglio.scadenzaPagamento ? ['Scadenza', `${data(dettaglio.scadenzaPagamento)}${scaduta(dettaglio) ? ' — scaduta' : ''}`] : null,
+                dettaglio.praticaLabel || dettaglio.praticaId ? ['Pratica', dettaglio.praticaLabel || `${dettaglio.praticaTipo || ''} ${dettaglio.praticaId}`] : null,
+                dettaglio.nota ? ['Nota', dettaglio.nota] : null,
+                dettaglio.aggiornatoIl ? ['Ultimo aggiornamento', data(dettaglio.aggiornatoIl)] : null,
+              ].filter(Boolean).map((kv: any) => (
+                <div key={kv[0]}>
+                  <dt style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>{kv[0]}</dt>
+                  <dd style={{ margin: 0, fontSize: '0.88rem', fontWeight: 600, color: 'var(--gray-900)', overflowWrap: 'anywhere' }}>{kv[1]}</dd>
+                </div>
+              ))}
+            </dl>
+
+            <div className="ab-actions" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+              {dettaglio.origine === 'fattura' && dettaglio.statoPagamento !== 'saldato' && (
+                <button className="ab-btn ab-btn--primary" onClick={() => { const r = dettaglio; setDettaglio(null); registraIncasso(r); }}><Euro size={15} /> Registra incasso / acconto</button>
+              )}
+              {dettaglio.origine === 'fattura_ricevuta' && dettaglio.statoPagamento !== 'pagata' && (
+                <button className="ab-btn ab-btn--primary" onClick={() => { const r = dettaglio; setDettaglio(null); registraPagamento(r); }}><Euro size={15} /> Registra pagamento</button>
+              )}
+              {dettaglio.origine === 'fattura' && (
+                <button className="ab-btn" onClick={() => { const r = dettaglio; setDettaglio(null); impostaScadenza(r); }}>Imposta scadenza incasso</button>
+              )}
+              {(dettaglio.origine === 'fattura' || dettaglio.origine === 'nota_credito') && !dettaglio.dataTrasmissione && (
+                <button className="ab-btn" onClick={() => { const r = dettaglio; setDettaglio(null); segnaTrasmesso(r); }}><Send size={15} /> Segna data trasmissione</button>
+              )}
+              {['fattura', 'preventivo', 'nota_credito'].includes(dettaglio.origine) && (
+                <button className="ab-btn" onClick={() => { const r = dettaglio; setDettaglio(null); apriAttivita(r); }}>Apri lavorazione back office</button>
+              )}
+              {dettaglio.hasAllegato && (
+                <button className="ab-btn" onClick={() => apriAllegato(dettaglio)}><Paperclip size={15} /> Apri allegato originale</button>
+              )}
+            </div>
+
+            <p style={{ fontSize: '0.76rem', color: 'var(--gray-500)', marginTop: '18px', borderTop: '1px solid var(--gray-100)', paddingTop: '12px' }}>
+              I documenti restano nella gestione di origine: qui vedi gli stati condivisi (emesso ≠ trasmesso ≠ pagato ≠ consegnato).
+            </p>
+          </aside>
+        </div>
+      )}
     </section>
   );
 }
