@@ -528,4 +528,76 @@ router.get('/commercialista/consegne/:id/csv', authenticateToken, authorizeRole(
   }
 });
 
+// ═══ GET /api/amministrazione/controlli — verifiche back office ════════════
+// Aggrega i controlli trasversali: ogni segnalazione può diventare una
+// lavorazione (Attivita) con responsabile, scadenza ed esito.
+router.get('/controlli', authenticateToken, authorizeRole(...RUOLI_AMM), async (_req: Request, res: Response) => {
+  try {
+    const adesso = new Date();
+    const setteGiorniFa = new Date(adesso.getTime() - 7 * 86400000);
+    const righe = await raccogliRighe();
+
+    const scad = (d?: any) => d && new Date(d) < adesso;
+
+    const controlli = {
+      // 1. Fatture emesse senza codice fiscale intestatario
+      cfMancanti: righe.filter(r => r.origine === 'fattura' && (r as any).cfMancante)
+        .map(r => ({ id: r.id, titolo: `${r.numero} — ${r.soggetto}`, dettaglio: 'Fattura senza codice fiscale intestatario', praticaTipo: 'documento', praticaId: r.id })),
+
+      // 2. Incassi scaduti non saldati
+      incassiScaduti: righe.filter(r => r.origine === 'fattura' && scad(r.scadenzaPagamento) && r.statoPagamento !== 'saldato')
+        .map(r => ({ id: r.id, titolo: `${r.numero} — ${r.soggetto}`, dettaglio: `Scaduto il ${new Date(r.scadenzaPagamento!).toLocaleDateString('it-IT')} · residuo €${((r.totale || 0) - (r.incassato || 0)).toFixed(2)}`, praticaTipo: 'documento', praticaId: r.id })),
+
+      // 3. Pagamenti fornitori scaduti
+      pagamentiScaduti: righe.filter(r => r.origine === 'fattura_ricevuta' && scad(r.scadenzaPagamento) && r.statoPagamento !== 'pagata')
+        .map(r => ({ id: r.id, titolo: `${r.numero} — ${r.soggetto}`, dettaglio: `Scaduto il ${new Date(r.scadenzaPagamento!).toLocaleDateString('it-IT')} · residuo €${((r.totale || 0) - (r.pagato || 0)).toFixed(2)}`, praticaTipo: 'documento', praticaId: r.id })),
+
+      // 4. Preventivi inviati senza esito da oltre 7 giorni
+      inviiSenzaEsito: righe.filter(r => r.origine === 'invio' && r.statoDoc === 'inviato' && new Date(r.data) < setteGiorniFa)
+        .map(r => ({ id: r.id, titolo: `${r.numero} — ${r.soggetto}`, dettaglio: `Inviato il ${new Date(r.data).toLocaleDateString('it-IT')} senza riscontro`, praticaTipo: 'documento', praticaId: r.id })),
+
+      // 5. Preparazioni commercialista registrate ma mai consegnate
+      consegneDaConsegnare: (await ConsegnaCommercialista.find({ stato: 'preparata' }).select('-documenti').sort({ preparataIl: -1 }).lean())
+        .map((c: any) => ({ id: String(c._id), titolo: `Preparazione ${new Date(c.preparataIl).toLocaleDateString('it-IT')}`, dettaglio: `${(c.tipologie || []).length} tipologie · in attesa di consegna`, praticaTipo: 'documento', praticaId: String(c._id) })),
+
+      // 6. Lavorazioni back office scadute
+      lavorazioniScadute: (await Attivita.find({ area: 'organizzativa', stato: { $nin: ['completata', 'annullata'] }, scadenza: { $lt: adesso } }).sort({ scadenza: 1 }).limit(50).lean())
+        .map((a: any) => ({ id: String(a._id), titolo: a.titolo, dettaglio: `Scaduta il ${new Date(a.scadenza).toLocaleDateString('it-IT')} · ${a.responsabileNome || 'senza responsabile'}`, praticaTipo: a.praticaTipo, praticaId: a.praticaId ? String(a.praticaId) : undefined })),
+    };
+
+    const totale = Object.values(controlli).reduce((s, arr) => s + arr.length, 0);
+    return res.json({ totale, ...controlli });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore controlli amministrazione', error: error.message });
+  }
+});
+
+// ═══ POST /api/amministrazione/controlli/apri-attivita — da segnalazione ═══
+// a lavorazione: il controllo diventa un compito con responsabile e scadenza.
+router.post('/controlli/apri-attivita', authenticateToken, authorizeRole(...RUOLI_AMM), async (req: AuthRequest, res: Response) => {
+  try {
+    const user: any = req.user;
+    const b = req.body || {};
+    const titolo = String(b.titolo || '').trim().slice(0, 200);
+    if (!titolo) return res.status(400).json({ message: 'Titolo obbligatorio' });
+    const attivita = await Attivita.create({
+      titolo,
+      azioneRichiesta: String(b.dettaglio || '').slice(0, 2000) || undefined,
+      praticaTipo: ['documento', 'richiesta', 'paziente', 'consegna', 'intermediazione'].includes(b.praticaTipo) ? b.praticaTipo : 'documento',
+      praticaId: b.praticaId && mongoose.isValidObjectId(String(b.praticaId)) ? new mongoose.Types.ObjectId(String(b.praticaId)) : undefined,
+      praticaLabel: String(b.titolo || '').slice(0, 200),
+      area: 'organizzativa',
+      priorita: ['bassa', 'normale', 'alta', 'urgente'].includes(b.priorita) ? b.priorita : 'normale',
+      scadenza: b.scadenza ? new Date(b.scadenza) : undefined,
+      stato: 'da_prendere',
+      autoreId: new mongoose.Types.ObjectId(user.userId || user.id),
+      autoreNome: user.name || 'Utente',
+      storico: [{ azione: 'creata', data: new Date(), autoreNome: user.name || 'Utente', nota: 'da controllo back office' }],
+    });
+    return res.status(201).json(attivita);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore creazione attività', error: error.message });
+  }
+});
+
 export default router;

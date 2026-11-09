@@ -3,6 +3,11 @@ import mongoose from 'mongoose';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import Attivita from '../models/Attivita';
 import User from '../models/User';
+import ConsegnaAmministrativa from '../models/ConsegnaAmministrativa';
+import RichiestaPrenotazione from '../models/RichiestaPrenotazione';
+import Patient from '../models/Patient';
+import BadanteIntermediazione from '../models/BadanteIntermediazione';
+import DocumentoFatturazione from '../models/DocumentoFatturazione';
 
 const router = Router();
 const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
@@ -102,17 +107,83 @@ router.get('/conteggi', authenticateToken, async (req: AuthRequest, res: Respons
     const oggi = new Date(); oggi.setHours(23, 59, 59, 999);
     const my = new mongoose.Types.ObjectId(me.userId);
 
-    const [mie, daPrendere, scadute, senzaResp, ricontatti, trasferimenti] = await Promise.all([
+    const [mie, daPrendere, scadute, senzaResp, ricontatti, trasferimenti, consegneAperte, consegneTrasf] = await Promise.all([
       Attivita.countDocuments({ ...areaQ, ...aperte, responsabileId: my } as any),
       Attivita.countDocuments({ ...areaQ, stato: 'da_prendere' } as any),
       Attivita.countDocuments({ ...areaQ, ...aperte, scadenza: { $lt: new Date() } } as any),
       Attivita.countDocuments({ ...areaQ, ...aperte, responsabileId: { $exists: false } } as any),
       Attivita.countDocuments({ ...areaQ, ...aperte, dataControlloAttesa: { $lte: oggi } } as any),
       Attivita.countDocuments({ ...areaQ, 'trasferimento.aId': my, 'trasferimento.accettato': false } as any),
+      // Riconciliazione consegne: le consegne aperte contano nel riepilogo
+      // operativo senza essere duplicate come attività.
+      ConsegnaAmministrativa.countDocuments({ stato: { $ne: 'gestita' } }),
+      ConsegnaAmministrativa.countDocuments({ 'trasferimento.aId': my, 'trasferimento.accettato': false, stato: { $ne: 'gestita' } }),
     ]);
-    return res.json({ mie, daPrendere, scadute, senzaResp, ricontatti, trasferimenti });
+    return res.json({ mie, daPrendere, scadute, senzaResp, ricontatti, trasferimenti, consegneAperte, consegneTrasf });
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore conteggi attività', error: error.message });
+  }
+});
+
+// ═══ GET /api/attivita/pratiche — ricerca pratiche reali da collegare ══════
+// ?tipo=richiesta|paziente|intermediazione|consegna|documento  ?q=testo
+// Sostituisce il campo libero: ogni attività punta a un record reale.
+router.get('/pratiche', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const tipo = String(req.query.tipo || '');
+    const q = String(req.query.q || '').trim();
+    const rx = q ? new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') : null;
+    const out: { id: string; tipo: string; label: string }[] = [];
+
+    if (tipo === 'richiesta') {
+      const filtro: any = { stato: { $nin: ['rifiutata', 'completata'] } };
+      if (rx) filtro.$or = [{ pazienteNome: rx }, { richiedenteNome: rx }, { tipoSpecifico: rx }];
+      const rows = await RichiestaPrenotazione.find(filtro).sort({ createdAt: -1 }).limit(20).lean();
+      rows.forEach((r: any) => out.push({
+        id: String(r._id), tipo,
+        label: `Richiesta — ${r.pazienteNome} · ${r.tipoSpecifico || r.tipoServizio} (${r.stato})`,
+      }));
+    } else if (tipo === 'paziente') {
+      const filtro: any = rx ? { $or: [{ firstName: rx }, { lastName: rx }] } : {};
+      const rows = await Patient.find(filtro).sort({ lastName: 1 }).limit(20).lean();
+      rows.forEach((p: any) => out.push({
+        id: String(p._id), tipo,
+        label: `Paziente — ${p.lastName} ${p.firstName}`,
+      }));
+    } else if (tipo === 'intermediazione') {
+      const rows = await BadanteIntermediazione.find({ stato: { $nin: ['annullata', 'fatturata'] } })
+        .populate('patient', 'firstName lastName').sort({ createdAt: -1 }).limit(40).lean();
+      rows.forEach((b: any) => {
+        const nome = `${b.patient?.lastName || ''} ${b.patient?.firstName || ''}`.trim() || '—';
+        if (rx && !rx.test(nome)) return;
+        out.push({ id: String(b._id), tipo, label: `Intermediazione — ${nome} · ${b.livello} (${b.stato})` });
+      });
+      out.splice(20);
+    } else if (tipo === 'consegna') {
+      const filtro: any = { stato: { $ne: 'gestita' } };
+      if (rx) filtro.$or = [{ titolo: rx }, { riferimento: rx }, { testo: rx }];
+      const rows = await ConsegnaAmministrativa.find(filtro).sort({ createdAt: -1 }).limit(20).lean();
+      rows.forEach((c: any) => out.push({
+        id: String(c._id), tipo,
+        label: `Consegna — ${c.titolo} (${c.stato.replace(/_/g, ' ')})`,
+      }));
+    } else if (tipo === 'documento') {
+      const filtro: any = rx ? { numero: rx } : {};
+      const docs = await DocumentoFatturazione.find(filtro)
+        .populate('patient', 'firstName lastName').sort({ data: -1 }).limit(20).lean();
+      docs.forEach((d: any) => {
+        const nome = `${d.patient?.lastName || ''} ${d.patient?.firstName || ''}`.trim();
+        out.push({
+          id: String(d._id), tipo,
+          label: `${d.tipo === 'fattura' ? 'Fattura' : 'Preventivo'} ${d.numero}${nome ? ` — ${nome}` : ''}`,
+        });
+      });
+    } else {
+      return res.status(400).json({ message: 'Tipo pratica non valido' });
+    }
+    return res.json(out);
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore ricerca pratiche', error: error.message });
   }
 });
 
@@ -156,7 +227,7 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
     const attivita = await Attivita.create({
       titolo,
       azioneRichiesta: String(b.azioneRichiesta || '').trim().slice(0, 2000) || undefined,
-      praticaTipo: ['richiesta', 'paziente', 'intermediazione', 'consegna', 'generale'].includes(b.praticaTipo) ? b.praticaTipo : undefined,
+      praticaTipo: ['richiesta', 'paziente', 'intermediazione', 'consegna', 'documento', 'checklist', 'magazzino', 'generale'].includes(b.praticaTipo) ? b.praticaTipo : undefined,
       praticaId: b.praticaId && mongoose.isValidObjectId(String(b.praticaId)) ? new mongoose.Types.ObjectId(String(b.praticaId)) : undefined,
       praticaLabel: String(b.praticaLabel || '').trim().slice(0, 200) || undefined,
       area: ['privato', 'convenzione', 'consulenza', 'organizzativa'].includes(b.area) ? b.area : undefined,

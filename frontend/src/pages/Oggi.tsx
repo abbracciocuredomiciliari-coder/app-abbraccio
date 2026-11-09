@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
@@ -11,7 +12,8 @@ import { Plus, UserCheck, Hourglass, CheckCircle, XCircle, ArrowLeftRight, Rotat
 // ═════════════════════════════════════════════════════════════════════════════
 
 type Stato = 'da_prendere' | 'in_lavorazione' | 'in_attesa' | 'completata' | 'annullata';
-type Vista = 'oggi' | 'mie' | 'da_prendere' | 'scadute' | 'ricontatti' | 'in_attesa' | 'senza_responsabile' | 'trasferimenti' | 'completate' | 'tutte';
+type Vista = 'oggi' | 'mie' | 'da_prendere' | 'scadute' | 'ricontatti' | 'in_attesa' | 'senza_responsabile' | 'trasferimenti' | 'completate' | 'tutte' | 'consegne';
+type PraticaTipo = 'richiesta' | 'paziente' | 'intermediazione' | 'consegna' | 'documento' | 'checklist' | 'magazzino' | 'generale';
 
 interface Attivita {
   _id: string;
@@ -40,6 +42,43 @@ interface Attivita {
 
 interface Utente { _id?: string; id?: string; name: string; role: string; }
 
+interface ConsegnaAperta {
+  _id: string;
+  titolo: string;
+  testo?: string;
+  tipo?: string;
+  priorita?: string;
+  stato: 'da_gestire' | 'presa_in_carico' | 'in_attesa_riscontro' | 'gestita';
+  riferimento?: string;
+  scadenza?: string;
+  interlocutoreAttesa?: string;
+  dataControlloAttesa?: string;
+  presaInCaricoDaNome?: string;
+  autoreNome: string;
+  trasferimento?: { aId: string; aNome: string; daNome: string; accettato: boolean };
+  createdAt: string;
+}
+
+interface PraticaOpt { id: string; tipo: string; label: string }
+
+// Dove porta il collegamento pratica nella pagina giusta dell'area
+const PRATICA_ROUTE: Record<string, string> = {
+  richiesta: '/gestione-richieste',
+  paziente: '/patients',
+  intermediazione: '/archivi-intermediazione',
+  consegna: '/consegne',
+  documento: '/amministrazione',
+  checklist: '/checklist-hub',
+  magazzino: '/strumenti',
+};
+
+const STATO_CONSEGNA: Record<string, { label: string; bg: string; color: string }> = {
+  da_gestire: { label: 'Da gestire', bg: '#fee2e2', color: '#b91c1c' },
+  presa_in_carico: { label: 'Presa in carico', bg: '#dbeafe', color: '#1d4ed8' },
+  in_attesa_riscontro: { label: 'Attesa riscontro', bg: '#fef3c7', color: '#b45309' },
+  gestita: { label: 'Gestita', bg: '#dcfce7', color: '#15803d' },
+};
+
 const STATO_LABEL: Record<Stato, string> = {
   da_prendere: 'Da prendere', in_lavorazione: 'In lavorazione', in_attesa: 'In attesa',
   completata: 'Completata', annullata: 'Annullata',
@@ -62,6 +101,7 @@ const VISTE: { key: Vista; label: string }[] = [
   { key: 'in_attesa', label: '⏳ Attesa risposte' },
   { key: 'senza_responsabile', label: '❓ Senza responsabile' },
   { key: 'trasferimenti', label: '🔁 Da accettare' },
+  { key: 'consegne', label: '📮 Consegne' },
   { key: 'completate', label: '✅ Chiuse' },
   { key: 'tutte', label: '📋 Tutte aperte' },
 ];
@@ -77,6 +117,7 @@ export default function Oggi() {
 
   const [vista, setVista] = useState<Vista>('oggi');
   const [attivita, setAttivita] = useState<Attivita[]>([]);
+  const [consegne, setConsegne] = useState<ConsegnaAperta[]>([]);
   const [conteggi, setConteggi] = useState<Record<string, number>>({});
   const [utenti, setUtenti] = useState<Utente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +129,10 @@ export default function Oggi() {
   const [showForm, setShowForm] = useState(false);
   const [fTitolo, setFTitolo] = useState('');
   const [fAzione, setFAzione] = useState('');
-  const [fPratica, setFPratica] = useState('');
+  const [fPraticaTipo, setFPraticaTipo] = useState<PraticaTipo | ''>('');
+  const [fPraticaQ, setFPraticaQ] = useState('');
+  const [fPraticaSel, setFPraticaSel] = useState<PraticaOpt | null>(null);
+  const [pratiche, setPratiche] = useState<PraticaOpt[]>([]);
   const [fResponsabile, setFResponsabile] = useState('');
   const [fScadenza, setFScadenza] = useState('');
   const [fPriorita, setFPriorita] = useState('normale');
@@ -101,16 +145,32 @@ export default function Oggi() {
 
   const carica = async () => {
     try {
-      const [a, c] = await Promise.all([
-        api.get('/attivita', { params: { vista, area } }),
+      const richieste: Promise<any>[] = [
         api.get('/attivita/conteggi', { params: { area } }),
-      ]);
-      setAttivita(a.data || []);
+      ];
+      if (vista === 'consegne') {
+        richieste.unshift(api.get('/consegne-amministrative', { params: { aperte: '1' } }));
+      } else {
+        richieste.unshift(api.get('/attivita', { params: { vista, area } }));
+      }
+      const [lista, c] = await Promise.all(richieste);
+      if (vista === 'consegne') setConsegne(lista.data || []);
+      else setAttivita(lista.data || []);
       setConteggi(c.data || {});
     } catch { /* noop */ } finally { setLoading(false); }
   };
 
   useEffect(() => { setLoading(true); carica(); }, [vista, area]);
+
+  // Ricerca pratiche reali (debounce)
+  useEffect(() => {
+    if (!fPraticaTipo || fPraticaSel) { setPratiche([]); return; }
+    const t = setTimeout(() => {
+      api.get('/attivita/pratiche', { params: { tipo: fPraticaTipo, q: fPraticaQ } })
+        .then(r => setPratiche(r.data || [])).catch(() => setPratiche([]));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [fPraticaTipo, fPraticaQ, fPraticaSel]);
   useEffect(() => {
     api.get('/auth/all-users').then(r => {
       const list = (r.data || []).map((x: any) => ({ _id: x._id || x.id, name: x.name, role: x.role }));
@@ -128,12 +188,18 @@ export default function Oggi() {
 
   const crea = () => azione(async () => {
     await api.post('/attivita', {
-      titolo: fTitolo, azioneRichiesta: fAzione, praticaLabel: fPratica,
-      praticaTipo: 'generale', area, priorita: fPriorita,
+      titolo: fTitolo, azioneRichiesta: fAzione,
+      praticaTipo: fPraticaSel ? fPraticaSel.tipo : 'generale',
+      praticaId: fPraticaSel?.id,
+      praticaLabel: fPraticaSel?.label,
+      area, priorita: fPriorita,
       scadenza: fScadenza || undefined, responsabileId: fResponsabile || undefined,
     });
-    setFTitolo(''); setFAzione(''); setFPratica(''); setFResponsabile(''); setFScadenza(''); setShowForm(false);
+    setFTitolo(''); setFAzione(''); setFPraticaTipo(''); setFPraticaQ(''); setFPraticaSel(null);
+    setFResponsabile(''); setFScadenza(''); setShowForm(false);
   });
+
+  const accettaConsegna = (id: string) => azione(() => api.post(`/consegne-amministrative/${id}/accetta-trasferimento`));
 
   const prendi = (id: string) => azione(() => api.post(`/attivita/${id}/prendi`));
   const attesa = (id: string) => {
@@ -186,6 +252,7 @@ export default function Oggi() {
           ['ricontatti', 'Ricontatti', '#7c3aed', 'ricontatti'],
           ['senzaResp', 'Senza resp.', '#64748b', 'senza_responsabile'],
           ['trasferimenti', 'Da accettare', '#0891b2', 'trasferimenti'],
+          ['consegneAperte', 'Consegne', '#ea580c', 'consegne'],
         ] as const).map(([k, label, col, v]) => (
           <button key={k} onClick={() => setVista(v)} style={{
             background: vista === v ? col : '#fff', color: vista === v ? '#fff' : col,
@@ -204,7 +271,43 @@ export default function Oggi() {
           <div style={{ display: 'grid', gap: 10 }}>
             <input style={inputSt} placeholder="Titolo * (es. Ricontattare famiglia Rossi)" value={fTitolo} onChange={e => setFTitolo(e.target.value)} />
             <input style={inputSt} placeholder="Azione richiesta (cosa deve fare il responsabile)" value={fAzione} onChange={e => setFAzione(e.target.value)} />
-            <input style={inputSt} placeholder="Pratica (es. Richiesta #55 — Rossi Maria)" value={fPratica} onChange={e => setFPratica(e.target.value)} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, 200px) 1fr', gap: 10 }}>
+              <select style={inputSt} value={fPraticaTipo} onChange={e => { setFPraticaTipo(e.target.value as PraticaTipo | ''); setFPraticaSel(null); setFPraticaQ(''); }}>
+                <option value="">Nessuna pratica collegata</option>
+                <option value="richiesta">Richiesta / prenotazione</option>
+                <option value="paziente">Paziente</option>
+                <option value="intermediazione">Pratica intermediazione</option>
+                <option value="consegna">Consegna aperta</option>
+                <option value="documento">Documento fatturazione</option>
+              </select>
+              <div style={{ position: 'relative' }}>
+                {fPraticaSel ? (
+                  <div style={{ ...inputSt, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#eff6ff', borderColor: '#93c5fd' }}>
+                    <span style={{ color: '#1d4ed8', fontWeight: 600 }}>📂 {fPraticaSel.label}</span>
+                    <button type="button" onClick={() => setFPraticaSel(null)} style={{ border: 'none', background: 'none', color: '#b91c1c', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+                  </div>
+                ) : (
+                  <>
+                    <input style={inputSt} disabled={!fPraticaTipo} placeholder={fPraticaTipo ? 'Cerca la pratica reale…' : 'Scegli prima il tipo'} value={fPraticaQ} onChange={e => setFPraticaQ(e.target.value)} />
+                    {fPraticaTipo && pratiche.length > 0 && (
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20, background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, marginTop: 4, maxHeight: 220, overflowY: 'auto', boxShadow: '0 8px 20px rgba(0,0,0,0.12)' }}>
+                        {pratiche.map(p => (
+                          <button key={p.id} type="button" onClick={() => setFPraticaSel(p)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.82rem', borderBottom: '1px solid #f1f5f9' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#f1f5f9')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {fPraticaTipo && pratiche.length === 0 && fPraticaQ && (
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20, background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, marginTop: 4, padding: '8px 12px', fontSize: '0.78rem', color: '#64748b' }}>
+                        Nessuna pratica trovata
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
               <select style={inputSt} value={fResponsabile} onChange={e => setFResponsabile(e.target.value)}>
                 <option value="">Responsabile (vuoto = da prendere)</option>
@@ -237,7 +340,56 @@ export default function Oggi() {
         ))}
       </div>
 
-      {loading ? <div style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>Caricamento…</div> : (
+      {loading ? <div style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>Caricamento…</div>
+      : vista === 'consegne' ? (
+        // ── Consegne aperte: stessa fonte della pagina Consegne, qui solo
+        //    riepilogo operativo — nessuna duplicazione del lavoro.
+        consegne.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 40, color: '#64748b', background: '#f8fafc', borderRadius: 12 }}>
+            Nessuna consegna aperta. 🎉
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gap: 10 }}>
+            {consegne.map(c => {
+              const st = STATO_CONSEGNA[c.stato] || STATO_CONSEGNA.da_gestire;
+              const scad = c.scadenza && new Date(c.scadenza) < new Date();
+              const trasfMio = c.trasferimento && !c.trasferimento.accettato && String(c.trasferimento.aId) === (user as any)?.id;
+              return (
+                <div key={c._id} style={{ background: '#fff', borderRadius: 12, padding: '12px 14px', border: `2px solid ${scad ? '#fca5a5' : trasfMio ? '#fdba74' : '#e2e8f0'}` }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#0f172a' }}>{c.titolo}</span>
+                        <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: st.bg, color: st.color }}>{st.label}</span>
+                        {c.priorita === 'urgente' && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#b91c1c' }}>🔴 urgente</span>}
+                      </div>
+                      <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: 6, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                        {c.riferimento && <span>📂 {c.riferimento}</span>}
+                        <span>👤 {c.presaInCaricoDaNome || <em style={{ color: '#b91c1c' }}>non presa in carico</em>}</span>
+                        {c.scadenza && <span style={{ color: scad ? '#b91c1c' : undefined, fontWeight: scad ? 700 : 400 }}>📅 {fmtData(c.scadenza)}{scad ? ' — SCADUTA' : ''}</span>}
+                        {c.stato === 'in_attesa_riscontro' && <span>⏳ {c.interlocutoreAttesa} · controllo {fmtData(c.dataControlloAttesa)}</span>}
+                        <span>✍️ {c.autoreNome}</span>
+                      </div>
+                      {c.trasferimento && !c.trasferimento.accettato && (
+                        <div style={{ fontSize: '0.78rem', color: '#9a3412', marginTop: 6, background: '#fff7ed', padding: '4px 8px', borderRadius: 6, display: 'inline-block' }}>
+                          🔁 Passaggio a {c.trasferimento.aNome} in attesa di accettazione (responsabilità: {c.trasferimento.daNome})
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      {trasfMio && <button style={btnSt('#0891b2')} onClick={() => accettaConsegna(c._id)} disabled={busy}>✓ Accetta</button>}
+                      <Link to="/consegne" style={{ ...btnSt('#e2e8f0', '#334155'), textDecoration: 'none' }}>Gestisci →</Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div style={{ fontSize: '0.76rem', color: '#94a3b8', textAlign: 'center' }}>
+              Le consegne si lavorano nella pagina Consegne — qui contano nel riepilogo senza duplicare il lavoro.
+            </div>
+          </div>
+        )
+      ) : (
         attivita.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40, color: '#64748b', background: '#f8fafc', borderRadius: 12 }}>
             Nessuna attività in questa vista. 🎉
@@ -264,7 +416,11 @@ export default function Oggi() {
                       </div>
                       {a.azioneRichiesta && <div style={{ fontSize: '0.82rem', color: '#475569', marginTop: 4 }}>→ {a.azioneRichiesta}</div>}
                       <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: 6, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                        {a.praticaLabel && <span>📂 {a.praticaLabel}</span>}
+                        {a.praticaLabel && (PRATICA_ROUTE[a.praticaTipo || ''] ? (
+                          <Link to={PRATICA_ROUTE[a.praticaTipo!]} style={{ color: '#1d4ed8', fontWeight: 600, textDecoration: 'none' }}>📂 {a.praticaLabel} →</Link>
+                        ) : (
+                          <span>📂 {a.praticaLabel}</span>
+                        ))}
                         <span>👤 {a.responsabileNome || <em style={{ color: '#b91c1c' }}>senza responsabile</em>}</span>
                         {a.scadenza && <span style={{ color: scaduta(a) ? '#b91c1c' : undefined, fontWeight: scaduta(a) ? 700 : 400 }}>📅 {fmtData(a.scadenza)}{scaduta(a) ? ' — SCADUTA' : ''}</span>}
                         {a.stato === 'in_attesa' && <span>⏳ {a.interlocutoreAttesa} · controllo {fmtData(a.dataControlloAttesa)}</span>}

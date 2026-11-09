@@ -161,10 +161,11 @@ export default function ConsegneAmministrative() {
     const body: Record<string, any> = { stato };
     if (stato === 'in_attesa_riscontro') {
       const interlocutore = window.prompt('Con chi siete in attesa? (es. famiglia Rossi, ASL, fornitore):', '');
-      if (interlocutore === null) return;
+      if (!interlocutore || !interlocutore.trim()) return;
       const dataControllo = window.prompt('Data di controllo (YYYY-MM-DD):', new Date(Date.now() + 86400000).toISOString().slice(0, 10));
-      if (interlocutore.trim()) body.interlocutore = interlocutore.trim();
-      if (dataControllo) body.dataControllo = dataControllo;
+      if (!dataControllo) return;
+      body.interlocutore = interlocutore.trim();
+      body.dataControllo = dataControllo;
     }
     if (stato === 'gestita') {
       // Regola: il completamento richiede un esito

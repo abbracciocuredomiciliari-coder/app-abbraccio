@@ -70,6 +70,9 @@ export default function Amministrazione() {
   const [consegne, setConsegne] = useState<any[]>([]);
   const [diff, setDiff] = useState<{ consegnaId: string; nuovi: any[]; modificati: any[] } | null>(null);
   const [lavorazioni, setLavorazioni] = useState<any[]>([]);
+  // ── Controlli back office ──
+  const [controlli, setControlli] = useState<any | null>(null);
+  const [controlliOpen, setControlliOpen] = useState(false);
 
   const carica = async () => {
     setLoading(true);
@@ -82,14 +85,16 @@ export default function Amministrazione() {
       if (filtri.dal) params.dal = filtri.dal;
       if (filtri.al) params.al = filtri.al;
       if (filtri.q.trim()) params.q = filtri.q.trim();
-      const [docRes, contRes, lavRes] = await Promise.all([
+      const [docRes, contRes, lavRes, chkRes] = await Promise.all([
         api.get('/amministrazione/documenti', { params }),
         api.get('/amministrazione/conteggi'),
         api.get('/attivita', { params: { area: 'organizzativa', vista: 'tutte' } }).catch(() => ({ data: [] })),
+        api.get('/amministrazione/controlli').catch(() => ({ data: null })),
       ]);
       setRighe(docRes.data || []);
       setConteggi(contRes.data);
       setLavorazioni((lavRes.data || []).filter((a: any) => !['completata', 'annullata'].includes(a.stato)));
+      setControlli(chkRes.data);
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore caricamento archivio amministrativo');
     } finally {
@@ -161,6 +166,21 @@ export default function Amministrazione() {
     try {
       await api.post(`/amministrazione/documenti-emessi/${r.id}/apri-attivita`, { titolo: titolo.trim(), scadenza: scadenza || undefined });
       alert('Attività creata: la trovi in "Oggi" con responsabile e scadenza.');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Errore creazione attività');
+    }
+  };
+
+  const apriAttivitaDaControllo = async (item: any) => {
+    const scadenza = window.prompt('Scadenza lavorazione (YYYY-MM-DD):', new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10));
+    try {
+      await api.post('/amministrazione/controlli/apri-attivita', {
+        titolo: item.titolo, dettaglio: item.dettaglio,
+        praticaTipo: item.praticaTipo, praticaId: item.praticaId,
+        scadenza: scadenza || undefined,
+      });
+      alert('Lavorazione creata: la trovi in "Oggi" con responsabile e scadenza.');
+      await carica();
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore creazione attività');
     }
@@ -440,7 +460,7 @@ export default function Amministrazione() {
                         {(r.origine === 'fattura' || r.origine === 'nota_credito') && !r.dataTrasmissione && (
                           <button onClick={() => segnaTrasmesso(r)} title="Segna data trasmissione" style={{ ...btnPiccolo, background: '#e0e7ff', color: '#3730a3' }}><Send size={12} style={{ verticalAlign: '-2px' }} /></button>
                         )}
-                        {r.origine === 'fattura' && (
+                        {['fattura', 'preventivo', 'nota_credito'].includes(r.origine) && (
                           <button onClick={() => apriAttivita(r)} title="Apri lavorazione back office su questo documento" style={{ ...btnPiccolo, background: '#f1f5f9', color: '#334155' }}>☑ attività</button>
                         )}
                         {r.origine === 'fattura_ricevuta' && r.statoPagamento !== 'pagata' && (
@@ -456,6 +476,53 @@ export default function Amministrazione() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* ── Controlli back office: verifiche trasversali → lavorazioni ── */}
+      {controlli && (
+        <div style={{ background: 'white', borderRadius: '12px', padding: '16px 18px', marginTop: '18px', border: '1px solid #fecaca', borderLeft: '4px solid #dc2626' }}>
+          <div onClick={() => setControlliOpen(v => !v)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+            <h3 style={{ margin: 0, color: '#b91c1c', fontSize: '1rem' }}>
+              🔍 Controlli da fare ({controlli.totale ?? Object.values(controlli).reduce((s: number, v: any) => s + (Array.isArray(v) ? v.length : 0), 0)})
+            </h3>
+            <span style={{ color: '#94a3b8' }}>{controlliOpen ? '▲' : '▼'}</span>
+          </div>
+          {controlliOpen && (
+            <div style={{ marginTop: '12px', display: 'grid', gap: '12px' }}>
+              {([
+                ['cfMancanti', 'Fatture senza codice fiscale'],
+                ['incassiScaduti', 'Incassi scaduti non saldati'],
+                ['pagamentiScaduti', 'Pagamenti fornitori scaduti'],
+                ['inviiSenzaEsito', 'Preventivi inviati senza riscontro (>7gg)'],
+                ['consegneDaConsegnare', 'Preparazioni commercialista da consegnare'],
+                ['lavorazioniScadute', 'Lavorazioni back office scadute'],
+              ] as const).map(([k, label]) => {
+                const items = (controlli[k] as any[]) || [];
+                if (items.length === 0) return null;
+                return (
+                  <div key={k} style={{ borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#b91c1c', marginBottom: '6px' }}>
+                      {label} ({items.length})
+                    </div>
+                    {items.slice(0, 10).map((it: any) => (
+                      <div key={it.id} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', padding: '5px 0', fontSize: '0.82rem' }}>
+                        <strong>{it.titolo}</strong>
+                        <span style={{ color: '#64748b' }}>{it.dettaglio}</span>
+                        <button onClick={() => apriAttivitaDaControllo(it)} style={{ ...btnPiccolo, background: '#f1f5f9', color: '#334155', marginLeft: 'auto' }}>☑ attività</button>
+                      </div>
+                    ))}
+                    {items.length > 10 && <div style={{ fontSize: '0.76rem', color: '#94a3b8' }}>…e altri {items.length - 10}</div>}
+                  </div>
+                );
+              })}
+              {!(controlli.totale > 0) && (
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '8px 12px', fontSize: '0.82rem', color: '#166534' }}>
+                  ✓ Nessun controllo in sospeso.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

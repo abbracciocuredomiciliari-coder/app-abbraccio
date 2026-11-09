@@ -142,8 +142,11 @@ router.patch('/:id/stato', authenticateToken, auditLog('consegne_amministrative'
     if (nuovoStato === 'in_attesa_riscontro') {
       const interlocutore = String(req.body?.interlocutore || '').trim().slice(0, 120);
       const dataControllo = req.body?.dataControllo ? new Date(req.body.dataControllo) : undefined;
-      if (interlocutore) consegna.interlocutoreAttesa = interlocutore;
-      if (dataControllo && !isNaN(dataControllo.getTime())) consegna.dataControlloAttesa = dataControllo;
+      if (!interlocutore || !dataControllo || isNaN(dataControllo.getTime())) {
+        return res.status(400).json({ message: 'In attesa di riscontro richiede interlocutore e data di controllo' });
+      }
+      consegna.interlocutoreAttesa = interlocutore;
+      consegna.dataControlloAttesa = dataControllo;
     }
     consegna.stato = nuovoStato as any;
 
