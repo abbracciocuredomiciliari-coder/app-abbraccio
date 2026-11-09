@@ -531,6 +531,10 @@ function AppShell() {
                 <Calculator size={18} />
                 Amministrazione unica
               </Link>
+              <Link to="/preventivo-veloce" className={isActive('/preventivo-veloce') ? 'active' : ''}>
+                <FileText size={18} />
+                Preventivo veloce
+              </Link>
               </details>
 
               {/* — Impostazioni (solo admin) — */}
