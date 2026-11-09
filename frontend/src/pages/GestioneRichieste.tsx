@@ -870,6 +870,13 @@ export default function GestioneRichieste() {
                           🤔
                         </button>
                       )}
+                      <button
+                        onClick={() => navigate(`/trova-operatori?praticaTipo=richiesta&praticaId=${r._id}&praticaLabel=${encodeURIComponent(`Richiesta ${r.pazienteNome} — ${r.tipoServizio}`)}&zona=${encodeURIComponent(r.pazienteIndirizzo || '')}`)}
+                        style={{ padding: '6px 12px', background: '#e0f2fe', color: '#0369a1', border: 'none', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
+                        title="Trova operatori in zona per questa pratica"
+                      >
+                        ⌖
+                      </button>
                       {r.stato === 'in_attesa' && (
                         <>
                           <button

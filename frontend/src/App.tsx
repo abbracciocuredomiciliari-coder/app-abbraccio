@@ -81,6 +81,7 @@ const CentroPrenotazioniConvenzione = lazy(() => import('./pages/CentroPrenotazi
 const GestioneRichieste = lazy(() => import('./pages/GestioneRichieste'));
 const Oggi = lazy(() => import('./pages/Oggi'));
 const Amministrazione = lazy(() => import('./pages/Amministrazione'));
+const TrovaOperatori = lazy(() => import('./pages/TrovaOperatori'));
 const PortalePaziente = lazy(() => import('./pages/PortalePaziente'));
 const RichiestaServizio = lazy(() => import('./pages/RichiestaServizio'));
 const LandingBadante = lazy(() => import('./pages/LandingBadante'));
@@ -471,7 +472,7 @@ function AppShell() {
 
               </details>
               {/* — Operativo — */}
-              <details className="nav-section" open={secOpen('/portale-operatore','/piani-lavorativi','/staff')}>
+              <details className="nav-section" open={secOpen('/portale-operatore','/piani-lavorativi','/staff','/trova-operatori')}>
               <summary className="nav-section-label">Operativo</summary>
               {user.role === 'coordinator' && (
                 <>
@@ -488,6 +489,10 @@ function AppShell() {
               <Link to="/staff" className={isActive('/staff') ? 'active' : ''}>
                 <UserPlus size={18} />
                 Personale
+              </Link>
+              <Link to="/trova-operatori" className={isActive('/trova-operatori') ? 'active' : ''}>
+                <Map size={18} />
+                Trova operatori
               </Link>
 
               </details>
@@ -631,7 +636,7 @@ function AppShell() {
                 <Search size={18} />
                 Ricerca globale
               </Link>
-              <details className="nav-section" open={secOpen('/oggi','/badanti-intermediazione','/riunioni-colloquio','/consegne','/patients','/staff','/assegnazione-pai','/gestione-contratti')}>
+              <details className="nav-section" open={secOpen('/oggi','/badanti-intermediazione','/riunioni-colloquio','/consegne','/patients','/staff','/assegnazione-pai','/gestione-contratti','/trova-operatori')}>
               <summary className="nav-section-label">Intermediazioni</summary>
               <Link to="/oggi" className={isActive('/oggi') ? 'active' : ''}>
                 <CalendarCheck size={18} />
@@ -661,6 +666,10 @@ function AppShell() {
               <Link to="/assegnazione-pai" className={isActive('/assegnazione-pai') ? 'active' : ''}>
                 <Map size={18} />
                 Assegnazione su mappa
+              </Link>
+              <Link to="/trova-operatori?area=intermediazione" className={isActive('/trova-operatori') ? 'active' : ''}>
+                <Search size={18} />
+                Trova candidati in zona
               </Link>
               <Link to="/gestione-contratti" className={isActive('/gestione-contratti') ? 'active' : ''}>
                 <FileText size={18} />
@@ -756,6 +765,7 @@ function AppShell() {
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/oggi" element={<ProtectedRoute><Oggi /></ProtectedRoute>} />
           <Route path="/amministrazione" element={<ProtectedRoute><Amministrazione /></ProtectedRoute>} />
+          <Route path="/trova-operatori" element={<ProtectedRoute><TrovaOperatori /></ProtectedRoute>} />
           <Route path="/ricerca" element={<ProtectedRoute><RicercaGlobale /></ProtectedRoute>} />
           <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
           <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
