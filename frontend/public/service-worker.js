@@ -1,4 +1,4 @@
-const CACHE_NAME = 'abbraccio-v6';
+const CACHE_NAME = 'abbraccio-v7';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

@@ -112,13 +112,10 @@ import {
   Shield,
   Briefcase,
   UserCircle,
-  Euro,
-  Receipt,
   HeartPulse,
   Menu,
   X,
   Package,
-  Tag,
   Building2,
   ArrowLeftRight,
   ChevronDown,
@@ -417,7 +414,7 @@ function AppShell() {
                 Ricerca globale
               </Link>
               {/* — Panoramica — */}
-              <details className="nav-section" open={secOpen('/oggi','/dashboard','/chat','/verbali-equipe','/consegne')}>
+              <details className="nav-section" open={secOpen('/oggi','/dashboard','/chat','/verbali-equipe','/consegne','/archivio-email')}>
               <summary className="nav-section-label">Panoramica</summary>
               <Link to="/oggi" className={isActive('/oggi') ? 'active' : ''}>
                 <CalendarCheck size={18} />
@@ -427,25 +424,30 @@ function AppShell() {
                 <LayoutDashboard size={18} />
                 Dashboard
               </Link>
-              <Link to="/chat" className={isActive('/chat') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
-                <MessageCircle size={18} />
-                Chat operatore
-                <ChatBadge />
-              </Link>
-              <Link to="/verbali-equipe" className={isActive('/verbali-equipe') ? 'active' : ''}>
-                <Users size={18} />
-                Riunione Équipe
-              </Link>
               <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <ClipboardList size={18} />
                 Consegne
                 <ConsegneBadge />
               </Link>
+              <Link to="/chat" className={isActive('/chat') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
+                <MessageCircle size={18} />
+                Chat operatore
+                <ChatBadge />
+              </Link>
+              <Link to="/archivio-email" className={isActive('/archivio-email') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
+                <Mail size={18} />
+                Email gestione
+                <EmailRicevuteBadge />
+              </Link>
+              <Link to="/verbali-equipe" className={isActive('/verbali-equipe') ? 'active' : ''}>
+                <Users size={18} />
+                Riunione Équipe
+              </Link>
 
               </details>
-              {/* — Clinico — */}
-              <details className="nav-section" open={secOpen('/patients','/pazienti-convenzione','/centro-prenotazioni','/telemedicina','/relazioni-firmate','/assegnazione-pai')}>
-              <summary className="nav-section-label">Clinico</summary>
+              {/* — Persone e pratiche — */}
+              <details className="nav-section" open={secOpen('/patients','/pazienti-convenzione','/gestione-richieste','/telemedicina','/relazioni-firmate')}>
+              <summary className="nav-section-label">Persone e pratiche</summary>
               {!isConvenzione && (
                 <Link to="/patients" className={isActive('/patients') ? 'active' : ''}>
                   <Users size={18} />
@@ -458,6 +460,25 @@ function AppShell() {
                   Pazienti Convenzione
                 </Link>
               )}
+              {user.role === 'admin' && (
+                <Link to="/gestione-richieste" className={isActive('/gestione-richieste') ? 'active' : ''}>
+                  <Calendar size={18} />
+                  Gestione Richieste
+                </Link>
+              )}
+              <Link to="/telemedicina" className={isActive('/telemedicina') ? 'active' : ''}>
+                <Video size={18} />
+                Telemedicina
+              </Link>
+              <Link to="/relazioni-firmate" className={isActive('/relazioni-firmate') ? 'active' : ''}>
+                <FileText size={18} />
+                Relazioni firmate
+              </Link>
+
+              </details>
+              {/* — Agenda — */}
+              <details className="nav-section" open={secOpen('/centro-prenotazioni','/assegnazione-pai','/piani-lavorativi')}>
+              <summary className="nav-section-label">Agenda</summary>
               {!isConvenzione && (
                 <Link to="/centro-prenotazioni" className={isActive('/centro-prenotazioni') ? 'active' : ''}>
                   <Calendar size={18} />
@@ -470,35 +491,21 @@ function AppShell() {
                   Centro Prenotazioni
                 </Link>
               )}
-              <Link to="/telemedicina" className={isActive('/telemedicina') ? 'active' : ''}>
-                <Video size={18} />
-                Telemedicina
-              </Link>
-              <Link to="/relazioni-firmate" className={isActive('/relazioni-firmate') ? 'active' : ''}>
-                <FileText size={18} />
-                Relazioni firmate
-              </Link>
               <Link to="/assegnazione-pai" className={isActive('/assegnazione-pai') ? 'active' : ''}>
                 <Map size={18} />
                 {isConvenzione ? 'Assegnazione PAI' : 'Assegnazione Piano di Lavoro'}
               </Link>
+              {user.role === 'coordinator' && (
+                <Link to="/piani-lavorativi" className={isActive('/piani-lavorativi') ? 'active' : ''}>
+                  <Calendar size={18} />
+                  Piani lavorativi
+                </Link>
+              )}
 
               </details>
-              {/* — Operativo — */}
-              <details className="nav-section" open={secOpen('/portale-operatore','/piani-lavorativi','/staff','/trova-operatori')}>
-              <summary className="nav-section-label">Operativo</summary>
-              {user.role === 'coordinator' && (
-                <>
-                  <Link to="/portale-operatore" className={isActive('/portale-operatore') ? 'active' : ''}>
-                    <LayoutDashboard size={18} />
-                    Portale Operatore
-                  </Link>
-                  <Link to="/piani-lavorativi" className={isActive('/piani-lavorativi') ? 'active' : ''}>
-                    <Calendar size={18} />
-                    Piani lavorativi
-                  </Link>
-                </>
-              )}
+              {/* — Professionisti — */}
+              <details className="nav-section" open={secOpen('/staff','/trova-operatori','/portale-operatore')}>
+              <summary className="nav-section-label">Professionisti</summary>
               <Link to="/staff" className={isActive('/staff') ? 'active' : ''}>
                 <UserPlus size={18} />
                 Personale
@@ -507,66 +514,33 @@ function AppShell() {
                 <Map size={18} />
                 Trova operatori
               </Link>
+              {user.role === 'coordinator' && (
+                <Link to="/portale-operatore" className={isActive('/portale-operatore') ? 'active' : ''}>
+                  <LayoutDashboard size={18} />
+                  Portale Operatore
+                </Link>
+              )}
 
               </details>
-              {/* — Amministrazione — */}
-              <details className="nav-section" open={secOpen('/amministrazione','/compenso-incarichi','/gestione-fatturazione','/gestione-ritenute','/archivio-fatture','/archivio-preventivi','/preventivo-veloce','/tariffario','/archivio-email')}>
+              {/* — Amministrazione — unico ingresso; gli strumenti
+                  (fatturazione, compensi, ritenute, archivi, tariffario)
+                  sono nelle sezioni dell'hub */}
+              <details className="nav-section" open={secOpen('/amministrazione','/compenso-incarichi','/gestione-fatturazione','/gestione-ritenute','/archivio-fatture','/archivio-preventivi','/preventivo-veloce','/tariffario')}>
               <summary className="nav-section-label">Amministrazione</summary>
               <Link to="/amministrazione" className={isActive('/amministrazione') ? 'active' : ''}>
                 <Calculator size={18} />
                 Amministrazione unica
               </Link>
-              <Link to="/compenso-incarichi" className={isActive('/compenso-incarichi') ? 'active' : ''}>
-                <Euro size={18} />
-                Compenso incarichi
-              </Link>
-              <Link to="/gestione-fatturazione" className={isActive('/gestione-fatturazione') ? 'active' : ''}>
-                <Receipt size={18} />
-                Fatturazione
-              </Link>
-              <Link to="/gestione-ritenute" className={isActive('/gestione-ritenute') ? 'active' : ''}>
-                <Euro size={18} />
-                Ritenute professionisti
-              </Link>
-              <Link to="/archivio-fatture" className={isActive('/archivio-fatture') ? 'active' : ''}>
-                <Archive size={18} />
-                Archivio Fatture
-              </Link>
-              <Link to="/archivio-preventivi" className={isActive('/archivio-preventivi') ? 'active' : ''}>
-                <ClipboardList size={18} />
-                Archivio Preventivi
-              </Link>
-              {!isConvenzione && (
-                <Link to="/preventivo-veloce" className={isActive('/preventivo-veloce') ? 'active' : ''}>
-                  <Calculator size={18} />
-                  Preventivo veloce
-                </Link>
-              )}
-              {!isConvenzione && (
-                <Link to="/tariffario" className={isActive('/tariffario') ? 'active' : ''}>
-                  <Tag size={18} />
-                  Tariffario
-                </Link>
-              )}
-              <Link to="/archivio-email" className={isActive('/archivio-email') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
-                <Mail size={18} />
-                Email gestione
-                <EmailRicevuteBadge />
-              </Link>
               </details>
 
-              {/* — Sistema (solo admin) — */}
+              {/* — Impostazioni (solo admin) — */}
               {user.role === 'admin' && (
                 <>
-                  <details className="nav-section" open={secOpen('/gestione-utenti','/gestione-richieste','/gestione-consensi-gdpr','/esportazione-siat')}>
-                  <summary className="nav-section-label">Sistema</summary>
+                  <details className="nav-section" open={secOpen('/gestione-utenti','/gestione-consensi-gdpr','/esportazione-siat')}>
+                  <summary className="nav-section-label">Impostazioni</summary>
                   <Link to="/gestione-utenti" className={isActive('/gestione-utenti') ? 'active' : ''}>
                     <ShieldCheck size={18} />
                     Gestione Utenti
-                  </Link>
-                  <Link to="/gestione-richieste" className={isActive('/gestione-richieste') ? 'active' : ''}>
-                    <Calendar size={18} />
-                    Gestione Richieste
                   </Link>
                   <Link to="/gestione-consensi-gdpr" className={isActive('/gestione-consensi-gdpr') ? 'active' : ''}>
                     <Shield size={18} />
@@ -609,7 +583,7 @@ function AppShell() {
 
               </details>
               <details className="nav-section" open={secOpen('/protocolli-procedure','/procedure','/protocolli','/modulistica','/checklist','/scheda-controllo','/storico-cliniche','/archivio-cartelle','/strumenti','/report-consegne','/gestione-contratti')}>
-              <summary className="nav-section-label">Procedure Organizzative</summary>
+              <summary className="nav-section-label">Procedure e materiali</summary>
               <Link to="/protocolli-procedure" className={isActive('/protocolli-procedure') ? 'active' : ''}>
                 <ClipboardList size={18} />
                 Protocolli e Procedure
@@ -653,88 +627,88 @@ function AppShell() {
                 <Search size={18} />
                 Ricerca globale
               </Link>
-              <details className="nav-section" open={secOpen('/oggi','/badanti-intermediazione','/riunioni-colloquio','/consegne','/patients','/staff','/assegnazione-pai','/gestione-contratti','/trova-operatori')}>
-              <summary className="nav-section-label">Intermediazioni</summary>
+              <details className="nav-section" open={secOpen('/oggi','/consegne','/archivio-email')}>
+              <summary className="nav-section-label">Panoramica</summary>
               <Link to="/oggi" className={isActive('/oggi') ? 'active' : ''}>
                 <CalendarCheck size={18} />
                 Oggi
-              </Link>
-              <Link to="/badanti-intermediazione" className={isActive('/badanti-intermediazione') ? 'active' : ''}>
-                <Users size={18} />
-                Intermediazioni
-              </Link>
-              <Link to="/riunioni-colloquio" className={isActive('/riunioni-colloquio') ? 'active' : ''}>
-                <Video size={18} />
-                Riunioni Colloquio
               </Link>
               <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <ClipboardList size={18} />
                 Consegne
                 <ConsegneBadge />
               </Link>
-              <Link to="/patients" className={isActive('/patients') ? 'active' : ''}>
-                <UserCircle size={18} />
-                Pazienti intermediazioni
-              </Link>
-              <Link to="/staff" className={isActive('/staff') ? 'active' : ''}>
-                <UserPlus size={18} />
-                Personale (colf/badanti)
-              </Link>
-              <Link to="/assegnazione-pai" className={isActive('/assegnazione-pai') ? 'active' : ''}>
-                <Map size={18} />
-                Assegnazione su mappa
-              </Link>
-              <Link to="/trova-operatori?area=intermediazione" className={isActive('/trova-operatori') ? 'active' : ''}>
-                <Search size={18} />
-                Trova candidati in zona
-              </Link>
-              <Link to="/gestione-contratti" className={isActive('/gestione-contratti') ? 'active' : ''}>
-                <FileText size={18} />
-                Contratti operatori
-              </Link>
-
-              </details>
-              <details className="nav-section" open={secOpen('/amministrazione','/gestione-fatturazione','/archivio-fatture','/archivio-preventivi','/archivi-intermediazione','/archivio-email')}>
-              <summary className="nav-section-label">Amministrazione</summary>
-              <Link to="/amministrazione" className={isActive('/amministrazione') ? 'active' : ''}>
-                <Calculator size={18} />
-                Amministrazione unica
-              </Link>
-              <Link to="/gestione-fatturazione" className={isActive('/gestione-fatturazione') ? 'active' : ''}>
-                <Receipt size={18} />
-                Fatturazione
-              </Link>
-              <Link to="/archivio-fatture" className={isActive('/archivio-fatture') ? 'active' : ''}>
-                <Archive size={18} />
-                Archivio Fatture
-              </Link>
-              <Link to="/archivio-preventivi" className={isActive('/archivio-preventivi') ? 'active' : ''}>
-                <ClipboardList size={18} />
-                Archivio Preventivi
-              </Link>
-              <Link to="/archivi-intermediazione" className={isActive('/archivi-intermediazione') ? 'active' : ''}>
-                <Archive size={18} />
-                Archivi intermediazione
-              </Link>
               <Link to="/archivio-email" className={isActive('/archivio-email') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <Mail size={18} />
                 Email gestione
                 <EmailRicevuteBadge />
               </Link>
+
+              </details>
+              <details className="nav-section" open={secOpen('/badanti-intermediazione','/patients','/gestione-richieste','/archivi-intermediazione')}>
+              <summary className="nav-section-label">Persone e pratiche</summary>
+              <Link to="/badanti-intermediazione" className={isActive('/badanti-intermediazione') ? 'active' : ''}>
+                <Users size={18} />
+                Intermediazioni
+              </Link>
+              <Link to="/patients" className={isActive('/patients') ? 'active' : ''}>
+                <UserCircle size={18} />
+                Pazienti intermediazioni
+              </Link>
+              {user.role === 'admin' && (
+                <Link to="/gestione-richieste" className={isActive('/gestione-richieste') ? 'active' : ''}>
+                  <Calendar size={18} />
+                  Gestione Richieste
+                </Link>
+              )}
+              <Link to="/archivi-intermediazione" className={isActive('/archivi-intermediazione') ? 'active' : ''}>
+                <Archive size={18} />
+                Archivi intermediazione
+              </Link>
+
+              </details>
+              <details className="nav-section" open={secOpen('/trova-operatori','/staff','/gestione-contratti','/riunioni-colloquio','/assegnazione-pai')}>
+              <summary className="nav-section-label">Professionisti</summary>
+              <Link to="/trova-operatori?area=intermediazione" className={isActive('/trova-operatori') ? 'active' : ''}>
+                <Search size={18} />
+                Trova candidati in zona
+              </Link>
+              <Link to="/staff" className={isActive('/staff') ? 'active' : ''}>
+                <UserPlus size={18} />
+                Personale (colf/badanti)
+              </Link>
+              <Link to="/gestione-contratti" className={isActive('/gestione-contratti') ? 'active' : ''}>
+                <FileText size={18} />
+                Contratti operatori
+              </Link>
+              <Link to="/riunioni-colloquio" className={isActive('/riunioni-colloquio') ? 'active' : ''}>
+                <Video size={18} />
+                Riunioni Colloquio
+              </Link>
+              <Link to="/assegnazione-pai" className={isActive('/assegnazione-pai') ? 'active' : ''}>
+                <Map size={18} />
+                Assegnazione su mappa
+              </Link>
+
+              </details>
+              {/* Amministrazione — unico ingresso; fatturazione e archivi
+                  sono nelle sezioni dell'hub */}
+              <details className="nav-section" open={secOpen('/amministrazione','/gestione-fatturazione','/archivio-fatture','/archivio-preventivi')}>
+              <summary className="nav-section-label">Amministrazione</summary>
+              <Link to="/amministrazione" className={isActive('/amministrazione') ? 'active' : ''}>
+                <Calculator size={18} />
+                Amministrazione unica
+              </Link>
               </details>
 
-              {/* — Sistema (solo admin) — */}
+              {/* — Impostazioni (solo admin) — */}
               {user.role === 'admin' && (
                 <>
-                  <details className="nav-section" open={secOpen('/gestione-utenti','/gestione-richieste')}>
-                  <summary className="nav-section-label">Sistema</summary>
+                  <details className="nav-section" open={secOpen('/gestione-utenti')}>
+                  <summary className="nav-section-label">Impostazioni</summary>
                   <Link to="/gestione-utenti" className={isActive('/gestione-utenti') ? 'active' : ''}>
                     <ShieldCheck size={18} />
                     Gestione Utenti
-                  </Link>
-                  <Link to="/gestione-richieste" className={isActive('/gestione-richieste') ? 'active' : ''}>
-                    <Calendar size={18} />
-                    Gestione Richieste
                   </Link>
                   </details>
                 </>
@@ -758,6 +732,28 @@ function AppShell() {
       </aside>
       )}
       <main className={isLanding ? 'content content--bare' : 'content'}>
+        {/* Topbar desktop: ricerca globale + contesto area (stile demo) */}
+        {!isLanding && !isFirma && user && isPrivilegiato(user.role) && (
+          <div className="app-topbar">
+            <form
+              className="app-topbar-search"
+              onSubmit={e => {
+                e.preventDefault();
+                const q = (e.currentTarget.elements.namedItem('topq') as HTMLInputElement)?.value.trim();
+                if (q) navigate(`/ricerca?q=${encodeURIComponent(q)}`);
+              }}
+            >
+              <Search size={17} />
+              <input name="topq" type="search" placeholder="Cerca persone, pratiche, documenti…" aria-label="Ricerca globale" />
+            </form>
+            <div className="app-topbar-right">
+              <span className="app-topbar-area">
+                {isConvenzione ? 'Convenzione SIAT' : isConsulenza ? 'Intermediazioni' : isOrganizzativa ? 'Procedure' : 'Gestione Privata'}
+              </span>
+              <span>{user.name}</span>
+            </div>
+          </div>
+        )}
         {/* Breadcrumb Navigation */}
         {!isLanding && <Breadcrumb />}
         

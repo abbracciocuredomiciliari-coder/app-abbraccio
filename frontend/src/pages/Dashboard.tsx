@@ -203,7 +203,7 @@ function Dashboard() {
     return Math.floor((new Date(d).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   };
 
-  const dashboardCards = [
+  const dashboardCards: { title: string; subtitle: string; value: number | string; icon: any; color: string; bgColor: string; link: string; alert?: 'warn' | 'danger' }[] = [
     {
       title: 'Pazienti registrati',
       subtitle: 'totali in archivio',
@@ -226,6 +226,7 @@ function Dashboard() {
       title: 'In accettazione',
       subtitle: 'in attesa di accettazione',
       value: counts.inAccettazioneCount,
+      alert: counts.inAccettazioneCount > 0 ? 'warn' as const : undefined,
       icon: Bell,
       color: counts.inAccettazioneCount > 0 ? '#d97706' : '#64748b',
       bgColor: counts.inAccettazioneCount > 0 ? 'rgba(217, 119, 6, 0.1)' : 'rgba(100, 116, 139, 0.08)',
@@ -246,6 +247,7 @@ function Dashboard() {
         ? `${consegne.daGestire} da prendere in carico · ${consegne.aperte} aperte totali`
         : 'Nessuna consegna aperta',
       value: consegne.daGestire,
+      alert: consegne.daGestire > 0 ? 'warn' as const : undefined,
       icon: ClipboardList,
       color: consegne.daGestire > 0 ? '#d97706' : '#0d9488',
       bgColor: consegne.daGestire > 0 ? 'rgba(217, 119, 6, 0.1)' : 'rgba(13, 148, 136, 0.1)',
@@ -265,6 +267,7 @@ function Dashboard() {
       title: 'Pazienti assegnati',
       subtitle: `${assignmentCounts.in_attesa} in attesa · ${assignmentCounts.accettato} accettati`,
       value: assignmentCounts.in_attesa,
+      alert: assignmentCounts.in_attesa > 0 ? 'danger' as const : undefined,
       icon: ClipboardList,
       color: assignmentCounts.in_attesa > 0 ? '#dc2626' : 'var(--brand-600)',
       bgColor: assignmentCounts.in_attesa > 0 ? 'rgba(220, 38, 38, 0.1)' : 'rgba(37, 99, 235, 0.1)',
@@ -276,6 +279,7 @@ function Dashboard() {
         ? `${unreadChat.general} generali · ${unreadChat.patient} paziente`
         : 'Nessun nuovo messaggio',
       value: unreadChat.total,
+      alert: unreadChat.total > 0 ? 'warn' as const : undefined,
       icon: MessageCircle,
       color: unreadChat.total > 0 ? '#ef4444' : '#0d9488',
       bgColor: unreadChat.total > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(13, 148, 136, 0.1)',
@@ -357,10 +361,13 @@ function Dashboard() {
 
   return (
     <section className="tw-max-w-none">
-      <h2 className="tw-flex tw-items-center tw-gap-2">
-        <Activity size={28} />
-        Dashboard — {areaNome}
-      </h2>
+      <header className="ab-heading">
+        <div>
+          <p className="ab-eyebrow">Panoramica · {areaNome}</p>
+          <h1 className="ab-title">Dashboard</h1>
+          <p className="ab-subtitle">Il lavoro di oggi, in ordine.</p>
+        </div>
+      </header>
 
       {/* Banner utenti in attesa — solo admin */}
       {user?.role === 'admin' && pendingCount > 0 && (
@@ -419,33 +426,20 @@ function Dashboard() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
+      <div className="ab-kpis" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))' }}>
         {dashboardCards.map((card) => (
           <button
             key={card.title}
             type="button"
             onClick={() => navigate(card.link)}
-            className="tw-group tw-relative tw-flex tw-flex-col tw-min-w-0 tw-w-full tw-text-left tw-bg-white tw-border tw-border-slate-200 tw-rounded-2xl tw-p-5 tw-shadow-sm tw-cursor-pointer tw-transition-all hover:tw-shadow-md hover:tw--translate-y-0.5"
+            className={`ab-kpi${card.alert === 'danger' ? ' ab-kpi--danger' : card.alert ? ' ab-kpi--warn' : ''}`}
           >
-            <span className="tw-absolute tw-top-0 tw-left-0 tw-right-0 tw-h-1 tw-rounded-t-2xl tw-bg-gradient-to-r tw-from-brand tw-to-brand-light" />
-            <div className="tw-flex tw-items-start tw-justify-between tw-gap-3 tw-mb-3">
-              <div className="tw-flex-1 tw-min-w-0">
-                <h3 className="tw-m-0 tw-mb-1 tw-text-slate-500 tw-text-sm tw-font-bold tw-leading-tight tw-break-words">{card.title}</h3>
-                <p className="tw-m-0 tw-text-slate-400 tw-text-[0.82rem] tw-leading-snug tw-break-words">{card.subtitle}</p>
-              </div>
-              <div
-                className="tw-flex tw-items-center tw-justify-center tw-w-10 tw-h-10 tw-rounded-lg tw-flex-shrink-0"
-                style={{ backgroundColor: card.bgColor }}
-              >
-                <card.icon size={20} color={card.color} />
-              </div>
+            <div className="ab-kpi-label">
+              <span style={{ overflowWrap: 'anywhere', minWidth: 0 }}>{card.title}</span>
+              <card.icon size={16} color={card.color} style={{ flexShrink: 0 }} />
             </div>
-            <p
-              className={`tw-m-0 tw-font-bold tw-break-words ${typeof card.value === 'number' ? 'tw-text-[2.2rem] tw-leading-none tw-tracking-tight' : 'tw-text-[1.15rem] tw-leading-snug'}`}
-              style={{ color: card.color }}
-            >
-              {card.value}
-            </p>
+            <div className="ab-kpi-value">{card.value}</div>
+            <div className="ab-kpi-foot">{card.subtitle}</div>
           </button>
         ))}
       </div>

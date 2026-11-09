@@ -33,7 +33,7 @@ export function Button({
     justifyContent: 'center',
     gap: '8px',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '6px',
     fontWeight: 600,
     cursor: disabled || loading ? 'not-allowed' : 'pointer',
     transition: 'all 0.2s ease',
@@ -48,9 +48,8 @@ export function Button({
 
   const variantStyles = {
     primary: {
-      backgroundColor: '#0d9488',
+      backgroundColor: 'var(--brand-700)',
       color: 'white',
-      boxShadow: '0 1px 3px rgba(13, 148, 136, 0.3)',
     },
     secondary: {
       backgroundColor: '#f1f5f9',
@@ -72,7 +71,7 @@ export function Button({
   };
 
   const hoverStyles = !disabled && !loading ? {
-    primary: { backgroundColor: '#0f766e', transform: 'translateY(-1px)' },
+    primary: { backgroundColor: 'var(--brand-800)' },
     secondary: { backgroundColor: '#e2e8f0' },
     danger: { backgroundColor: '#b91c1c' },
     success: { backgroundColor: '#047857' },
