@@ -63,9 +63,17 @@ router.get('/elenco', async (req: Request, res: Response) => {
   try {
     const { tipo } = req.query;
     const filter: any = {};
-    if (tipo === 'privato') filter.tipoGestione = 'privato';
-    else if (tipo === 'convenzione') filter.tipoGestione = 'convenzione';
-    else if (tipo === 'consulenza') filter.tipoGestione = 'consulenza';
+    if (tipo === 'privato') {
+      filter.tipoGestione = 'privato';
+      filter.categoriaPrivata = { $ne: 'intermediazione_badanti' };
+    } else if (tipo === 'convenzione') {
+      filter.tipoGestione = 'convenzione';
+    } else if (tipo === 'consulenza') {
+      filter.$or = [
+        { tipoGestione: 'consulenza' },
+        { tipoGestione: 'privato', categoriaPrivata: 'intermediazione_badanti' },
+      ];
+    }
     const pazienti = await Patient.find(filter)
       .select('firstName lastName')
       .sort({ lastName: 1, firstName: 1 })

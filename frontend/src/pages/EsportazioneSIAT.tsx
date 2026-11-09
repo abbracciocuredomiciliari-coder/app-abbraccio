@@ -61,7 +61,7 @@ export default function EsportazioneSIAT() {
 
   const loadPatients = async () => {
     try {
-      const res = await api.get('/patients');
+      const res = await api.get('/patients?tipo=convenzione');
       setPatients(res.data);
     } catch (error) {
       console.error('Errore caricamento pazienti', error);

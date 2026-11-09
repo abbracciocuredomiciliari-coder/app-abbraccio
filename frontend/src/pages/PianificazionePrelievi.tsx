@@ -16,6 +16,7 @@ interface Paziente {
   firstName: string;
   lastName: string;
   tipoGestione?: string;
+  categoriaPrivata?: string;
   siat?: { asl?: string; npi?: string };
 }
 
@@ -144,7 +145,11 @@ export default function PianificazionePrelievi() {
           api.get('/staff', { params: { active: true } }),
         ]);
         const filtrati = pazRes.data.filter((p: Paziente) =>
-          isConvenzione ? p.tipoGestione === 'convenzione' : (p.tipoGestione === 'privato' || !p.tipoGestione)
+          isConvenzione
+            ? p.tipoGestione === 'convenzione'
+            : modalita === 'consulenza'
+              ? (p.tipoGestione === 'consulenza' || p.categoriaPrivata === 'intermediazione_badanti')
+              : (p.tipoGestione === 'privato' || !p.tipoGestione) && p.categoriaPrivata !== 'intermediazione_badanti'
         );
         setPazienti(filtrati);
         setStaff(staffRes.data.filter((s: StaffMember) => s.active));

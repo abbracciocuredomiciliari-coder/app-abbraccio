@@ -2,6 +2,7 @@ import { useEffect, useState, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
+import { useModalita } from '../context/ModalitaContext';
 import { Button } from '../components/ui/Button';
 import { Printer } from 'lucide-react';
 
@@ -112,6 +113,8 @@ export default function GestioneRichieste() {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { modalita } = useModalita();
+  const tipoPazienti = modalita === 'consulenza' ? 'consulenza' : modalita === 'convenzione' ? 'convenzione' : 'privato';
   const [activeTab, setActiveTab] = useState<'tutte' | 'in_attesa' | 'in_revisione' | 'in_valutazione' | 'confermata' | 'rifiutata'>('tutte');
 
   // Richieste registrazione paziente
@@ -166,7 +169,7 @@ export default function GestioneRichieste() {
         api.get('/staff/elenco', { params: { active: 'true' } }),
         api.get('/richieste-paziente'),
         api.get('/scheda-servizio'),
-        api.get('/patients/elenco'),
+        api.get('/patients/elenco', { params: { tipo: tipoPazienti } }),
       ]);
       setRichieste(richiesteRes.status === 'fulfilled' ? (richiesteRes.value.data || []) : []);
       setStaff(staffRes.status === 'fulfilled' ? (staffRes.value.data || []) : []);
@@ -678,7 +681,7 @@ export default function GestioneRichieste() {
         {[
           { key: 'in_attesa', label: 'In attesa', count: countByStato('in_attesa'), color: '#f59e0b' },
           { key: 'in_revisione', label: 'In revisione', count: countByStato('in_revisione'), color: 'var(--brand-500)' },
-          { key: 'in_valutazione', label: 'In valutazione', count: countByStato('in_valutazione'), color: '#ea580c' },
+          { key: 'in_valutazione', label: 'In valutazione', count: countByStato('in_valutazione'), color: '#b58b44' },
           { key: 'confermata', label: 'Confermate', count: countByStato('confermata'), color: '#16a34a' },
           { key: 'rifiutata', label: 'Rifiutate', count: countByStato('rifiutata'), color: '#dc2626' },
         ].map(stat => (

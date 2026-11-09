@@ -1,6 +1,7 @@
 ﻿import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
+import { useModalita } from '../context/ModalitaContext';
 import {
   HeartPulse,
   Plus,
@@ -126,6 +127,8 @@ const fmtSize = (bytes: number) => bytes < 1024 * 1024 ? `${Math.round(bytes / 1
 // ─────────────────────────────────────────────────────────────────────────────
 export default function EsamiStrumentali() {
   const { user } = useAuth();
+  const { modalita } = useModalita();
+  const tipoPazienti = modalita === 'consulenza' ? 'consulenza' : modalita === 'convenzione' ? 'convenzione' : 'privato';
   const [esami, setEsami] = useState<EsameItem[]>([]);
   const [tariffario, setTariffario] = useState<VoceTariffario[]>([]);
   const [patients, setPatients] = useState<PatientOption[]>([]);
@@ -205,7 +208,7 @@ export default function EsamiStrumentali() {
       const [esamiRes, tariffarioRes, patRes, staffRes] = await Promise.all([
         api.get('/esami-strumentali', { params }),
         isPrivilegiato ? api.get('/tariffario', { params: { soloAttivi: 'true' } }) : Promise.resolve({ data: [] }),
-        isPrivilegiato ? api.get('/patients') : Promise.resolve({ data: [] }),
+        isPrivilegiato ? api.get('/patients', { params: { tipo: tipoPazienti } }) : Promise.resolve({ data: [] }),
         isPrivilegiato ? api.get('/staff') : Promise.resolve({ data: [] }),
       ]);
       setEsami(esamiRes.data);

@@ -736,7 +736,7 @@ export default function BadantiIntermediazione() {
       aperta: 'tw-bg-slate-100 tw-text-slate-700',
       preventivo_emesso: 'tw-bg-brand-100 tw-text-brand-700',
       accettata: 'tw-bg-green-100 tw-text-green-700',
-      fatturata: 'tw-bg-emerald-100 tw-text-emerald-700',
+      fatturata: 'tw-bg-brand-100 tw-text-brand-800',
       annullata: 'tw-bg-red-100 tw-text-red-700',
     };
     return `tw-inline-flex tw-px-2 tw-py-1 tw-rounded tw-text-xs tw-font-semibold ${map[stato] || 'tw-bg-slate-100 tw-text-slate-700'}`;
@@ -754,7 +754,7 @@ export default function BadantiIntermediazione() {
 
         <div className="tw-flex tw-justify-between tw-items-center tw-flex-wrap tw-gap-4 tw-bg-white tw-rounded-2xl tw-shadow-sm tw-border tw-border-slate-100 tw-p-5 md:tw-p-6">
           <div className="tw-flex tw-items-center tw-gap-4">
-            <div className="tw-p-3 tw-rounded-xl tw-text-white tw-shadow-sm tw-bg-rose-600">
+            <div className="tw-p-3 tw-rounded-xl tw-text-white tw-shadow-sm tw-bg-brand-800">
               <Users size={24} />
             </div>
             <div>
@@ -788,7 +788,7 @@ export default function BadantiIntermediazione() {
                         onClick={() => { setShowMenu(false); navigate('/archivi-intermediazione'); }}
                         className="tw-w-full tw-text-left tw-px-3 tw-py-2 tw-rounded-lg hover:tw-bg-slate-50 tw-text-sm tw-flex tw-items-center tw-gap-2"
                       >
-                        <FileText size={16} className="tw-text-rose-600" /> Archivi intermediazione
+                        <FileText size={16} className="tw-text-brand-700" /> Archivi intermediazione
                         {firmatiCount > 0 && (
                           <span className="tw-ml-auto tw-text-[10px] tw-font-bold tw-text-white tw-bg-green-600 tw-rounded-full tw-px-1.5 tw-py-0.5">
                             {firmatiCount} firmati
@@ -800,7 +800,7 @@ export default function BadantiIntermediazione() {
                           onClick={() => { setShowMenu(false); setShowTariffe(true); }}
                           className="tw-w-full tw-text-left tw-px-3 tw-py-2 tw-rounded-lg hover:tw-bg-slate-50 tw-text-sm tw-flex tw-items-center tw-gap-2"
                         >
-                          <Euro size={16} className="tw-text-amber-600" /> Tariffe CCNL / INPS
+                          <Euro size={16} className="tw-text-[#b58b44]" /> Tariffe CCNL / INPS
                           <span className="tw-ml-auto tw-text-[10px] tw-font-bold tw-text-slate-400">
                             {tariffeMeta.personalizzato ? 'personalizzate' : 'ufficiali'}
                           </span>
@@ -839,8 +839,8 @@ export default function BadantiIntermediazione() {
               <label className="tw-flex tw-flex-col tw-gap-1">
                 <span className="tw-text-sm tw-font-medium">Durata del contratto</span>
                 <div className="tw-flex tw-gap-2">
-                  <button type="button" onClick={() => { setSimDeterminato(false); setSimRisultato(null); }} className={`tw-flex-1 tw-border tw-rounded tw-p-2 tw-text-sm tw-font-semibold ${!simDeterminato ? 'tw-bg-emerald-50 tw-border-emerald-400 tw-text-emerald-800' : 'tw-bg-white tw-text-slate-500'}`}>Indeterminato</button>
-                  <button type="button" onClick={() => { setSimDeterminato(true); setSimRisultato(null); }} className={`tw-flex-1 tw-border tw-rounded tw-p-2 tw-text-sm tw-font-semibold ${simDeterminato ? 'tw-bg-emerald-50 tw-border-emerald-400 tw-text-emerald-800' : 'tw-bg-white tw-text-slate-500'}`}>Determinato</button>
+                  <button type="button" onClick={() => { setSimDeterminato(false); setSimRisultato(null); }} className={`tw-flex-1 tw-border tw-rounded tw-p-2 tw-text-sm tw-font-semibold ${!simDeterminato ? 'tw-bg-brand-50 tw-border-brand-300 tw-text-brand-800' : 'tw-bg-white tw-text-slate-500'}`}>Indeterminato</button>
+                  <button type="button" onClick={() => { setSimDeterminato(true); setSimRisultato(null); }} className={`tw-flex-1 tw-border tw-rounded tw-p-2 tw-text-sm tw-font-semibold ${simDeterminato ? 'tw-bg-brand-50 tw-border-brand-300 tw-text-brand-800' : 'tw-bg-white tw-text-slate-500'}`}>Determinato</button>
                 </div>
               </label>
               {simTipoCorrente.livelli.length > 0 ? (
@@ -974,11 +974,11 @@ export default function BadantiIntermediazione() {
             {simErr && <div className="tw-text-red-600 tw-text-sm tw-mb-3">{simErr}</div>}
             {simRisultato && (
               <div className="tw-space-y-4">
-                <div className="tw-p-4 tw-bg-rose-600 tw-rounded-xl tw-text-white">
-                  <div className="tw-text-xs tw-uppercase tw-font-bold tw-text-rose-100 tw-tracking-wide">Costo mensile stimato</div>
+                <div className="tw-p-4 tw-bg-brand-800 tw-rounded-xl tw-text-white">
+                  <div className="tw-text-xs tw-uppercase tw-font-bold tw-text-brand-100 tw-tracking-wide">Costo mensile stimato</div>
                   <div className="tw-text-3xl tw-font-extrabold">€{simRisultato.totaleCostoMensile.toFixed(2).replace('.', ',')}</div>
-                  <div className="tw-text-xs tw-text-rose-100">Totale a carico del datore di lavoro, inclusi gli accantonamenti.</div>
-                  <div className="tw-text-xs tw-text-rose-200 tw-mt-2 tw-font-semibold">
+                  <div className="tw-text-xs tw-text-brand-100">Totale a carico del datore di lavoro, inclusi gli accantonamenti.</div>
+                  <div className="tw-text-xs tw-text-brand-200 tw-mt-2 tw-font-semibold">
                     {simRisultato.contrattoLabel} · {simRisultato.livelloLabel} · {simRisultato.oreSettimanali.toFixed(2).replace('.', ',')} ore a settimana
                   </div>
                 </div>
@@ -990,7 +990,7 @@ export default function BadantiIntermediazione() {
                     <div className="tw-text-xs tw-font-bold tw-text-slate-500 tw-uppercase tw-mt-3 tw-mb-1">Trattenute del lavoratore</div>
                     <div className="tw-flex tw-justify-between tw-text-sm tw-py-1"><span className="tw-text-slate-600">Contributi INPS ({simRisultato.contribInpsLavoratoreOrario.toFixed(2).replace('.', ',')} €/h)</span><span className="tw-font-semibold">€{simRisultato.contribInpsLavoratoreMensili.toFixed(2).replace('.', ',')}</span></div>
                     <div className="tw-flex tw-justify-between tw-text-sm tw-py-1"><span className="tw-text-slate-600">Cas.sa.Colf ({simRisultato.cassaColfLavoratoreOrario.toFixed(2).replace('.', ',')} €/h)</span><span className="tw-font-semibold">€{simRisultato.cassaColfLavoratoreMensili.toFixed(2).replace('.', ',')}</span></div>
-                    <div className="tw-flex tw-justify-between tw-text-sm tw-py-1 tw-font-bold tw-text-emerald-700 tw-border-t-2 tw-border-emerald-200 tw-mt-1"><span>Retribuzione netta</span><span>€{simRisultato.retribuzioneNetta.toFixed(2).replace('.', ',')}</span></div>
+                    <div className="tw-flex tw-justify-between tw-text-sm tw-py-1 tw-font-bold tw-text-brand-700 tw-border-t-2 tw-border-brand-200 tw-mt-1"><span>Retribuzione netta</span><span>€{simRisultato.retribuzioneNetta.toFixed(2).replace('.', ',')}</span></div>
                   </div>
                   <div className="tw-p-4 tw-bg-slate-50 tw-rounded-xl">
                     <div className="tw-text-xs tw-font-bold tw-text-slate-500 tw-uppercase tw-mb-2">A carico del datore di lavoro</div>
@@ -1034,13 +1034,13 @@ export default function BadantiIntermediazione() {
                 // Paziente eliminato: populate restituisce null, mostriamo un fallback invece di crashare
                 const nomePaziente = r.patient ? `${r.patient.firstName} ${r.patient.lastName}` : 'Paziente rimosso';
                 return (
-                  <div key={r._id} className="tw-bg-white tw-rounded-xl tw-overflow-hidden tw-border tw-border-rose-100 tw-shadow-sm hover:tw-shadow-md tw-transition-shadow tw-border-l-4 tw-border-l-rose-600">
+                  <div key={r._id} className="tw-bg-white tw-rounded-xl tw-overflow-hidden tw-border tw-border-brand-100 tw-shadow-sm hover:tw-shadow-md tw-transition-shadow tw-border-l-4 tw-border-l-brand-700">
                     <div className="tw-p-4">
                       {/* ── Dati paziente/richiesta (riga superiore, senza azioni) ── */}
                       <div className="tw-flex tw-flex-wrap tw-justify-between tw-items-start tw-gap-4">
                         <div className="tw-flex-1 tw-min-w-[240px]">
                           <div className="tw-flex tw-items-center tw-flex-wrap tw-gap-2 tw-mb-1">
-                            <User size={18} className="tw-text-rose-600" />
+                            <User size={18} className="tw-text-brand-700" />
                             <strong className="tw-text-[1.05rem] tw-text-slate-800">{nomePaziente}</strong>
                             <span className="tw-text-xs tw-px-2 tw-py-0.5 tw-rounded-full tw-bg-slate-100 tw-text-slate-600 tw-font-medium">{r.patient?.codiceFiscale || ''}</span>
                             <span className={statoBadge(r.stato)}>{r.stato.replace('_', ' ')}</span>
@@ -1191,8 +1191,8 @@ export default function BadantiIntermediazione() {
               <label className="tw-flex tw-flex-col tw-gap-1">
                 <span className="tw-text-sm tw-font-medium">Durata</span>
                 <div className="tw-flex tw-gap-2">
-                  <button type="button" onClick={() => { setSimDeterminato(false); setSimRisultato(null); }} className={`tw-flex-1 tw-border tw-rounded tw-p-2 tw-text-sm tw-font-semibold ${!simDeterminato ? 'tw-bg-emerald-50 tw-border-emerald-400 tw-text-emerald-800' : 'tw-bg-white tw-text-slate-500'}`}>Indeterminato</button>
-                  <button type="button" onClick={() => { setSimDeterminato(true); setSimRisultato(null); }} className={`tw-flex-1 tw-border tw-rounded tw-p-2 tw-text-sm tw-font-semibold ${simDeterminato ? 'tw-bg-emerald-50 tw-border-emerald-400 tw-text-emerald-800' : 'tw-bg-white tw-text-slate-500'}`}>Determinato</button>
+                  <button type="button" onClick={() => { setSimDeterminato(false); setSimRisultato(null); }} className={`tw-flex-1 tw-border tw-rounded tw-p-2 tw-text-sm tw-font-semibold ${!simDeterminato ? 'tw-bg-brand-50 tw-border-brand-300 tw-text-brand-800' : 'tw-bg-white tw-text-slate-500'}`}>Indeterminato</button>
+                  <button type="button" onClick={() => { setSimDeterminato(true); setSimRisultato(null); }} className={`tw-flex-1 tw-border tw-rounded tw-p-2 tw-text-sm tw-font-semibold ${simDeterminato ? 'tw-bg-brand-50 tw-border-brand-300 tw-text-brand-800' : 'tw-bg-white tw-text-slate-500'}`}>Determinato</button>
                 </div>
               </label>
               {simIsOrario && (
@@ -1236,7 +1236,7 @@ export default function BadantiIntermediazione() {
               </Button>
               {simRisultato && (
                 <div className="tw-text-sm tw-font-bold tw-text-slate-700">
-                  Costo mensile: <span className="tw-text-rose-700">€{simRisultato.totaleCostoMensile.toFixed(2).replace('.', ',')}</span>
+                  Costo mensile: <span className="tw-text-brand-800">€{simRisultato.totaleCostoMensile.toFixed(2).replace('.', ',')}</span>
                   <span className="tw-text-xs tw-font-normal tw-text-slate-500 tw-ml-2">{simRisultato.contrattoLabel} · {simRisultato.livelloLabel}</span>
                 </div>
               )}
@@ -1293,7 +1293,7 @@ export default function BadantiIntermediazione() {
               I valori si applicano subito al simulatore, al PDF preventivo e al preventivo reale da firmare.
             </p>
             <p className="tw-text-xs tw-mb-4 tw-font-semibold">
-              <span className={tariffeMeta.personalizzato ? 'tw-text-amber-600' : 'tw-text-slate-400'}>
+              <span className={tariffeMeta.personalizzato ? 'tw-text-[#b58b44]' : 'tw-text-slate-400'}>
                 {tariffeMeta.personalizzato ? 'Tariffe personalizzate salvate' : 'Minimi ufficiali (nessuna personalizzazione)'}
               </span>
               {tariffeMeta.aggiornatoIl ? (

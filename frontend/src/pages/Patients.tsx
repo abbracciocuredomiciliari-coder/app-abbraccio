@@ -140,7 +140,7 @@ const categoryColors: Record<string, string> = {
 
 function Patients() {
   const { user, getToken } = useAuth();
-  const { isConsulenza } = useModalita();
+  const { isConsulenza, isConvenzione } = useModalita();
   const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
@@ -285,7 +285,7 @@ function Patients() {
 
   const loadPatients = async () => {
     try {
-      const response = await api.get(isConsulenza ? '/patients?tipo=consulenza' : '/patients?tipo=privato');
+      const response = await api.get(isConsulenza ? '/patients?tipo=consulenza' : isConvenzione ? '/patients?tipo=convenzione' : '/patients?tipo=privato');
       setPatients(response.data);
     } catch (error) {
       console.error('Errore caricamento pazienti', error);

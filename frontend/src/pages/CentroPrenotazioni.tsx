@@ -749,7 +749,7 @@ export default function CentroPrenotazioni() {
         (async () => {
             setLoading(true);
             try {
-                const [pazRes, staffRes] = await Promise.all([api.get('/patients'), api.get('/staff', { params: { active: true } })]);
+                const [pazRes, staffRes] = await Promise.all([api.get('/patients?tipo=privato'), api.get('/staff', { params: { active: true } })]);
                 const pazList = (pazRes.data as Paz[]).filter(p => p.tipoGestione === 'privato' || !p.tipoGestione);
                 setPazienti(pazList);
                 setStaff((staffRes.data as Staff[]).filter(s => s.active));

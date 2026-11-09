@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/api';
 import { useToast } from '../hooks/useToast';
+import { useModalita } from '../context/ModalitaContext';
 import { Package, Plus, Save, Loader2, Euro, Calendar, Activity, Users, TrendingUp, CheckCircle } from 'lucide-react';
 
 type Pacchetto = { _id: string; codice: string; nome: string; descrizione: string; tipo: string; prezzoMensile: number; prezzoAttivazione: number; durataMinimaMesi: number; incluseProfessioni: string[]; dispositiviInclusi: string[]; visiteIncluse: number; parametriInclusi: string[]; verticali: string[]; attivo: boolean; note?: string };
@@ -14,6 +15,8 @@ const verticali = ['BPCO', 'diabete', 'scompenso', 'demenza', 'Parkinson', 'post
 const tipiPacchetto = ['canone', 'noleggio', 'ibrido'];
 
 export default function TelemedicinaPacchetti() {
+  const { modalita } = useModalita();
+  const tipoPazienti = modalita === 'consulenza' ? 'consulenza' : modalita === 'convenzione' ? 'convenzione' : 'privato';
   const { addToast } = useToast();
   const [pacchetti, setPacchetti] = useState<Pacchetto[]>([]);
   const [sottoscrizioni, setSottoscrizioni] = useState<Sottoscrizione[]>([]);
@@ -37,7 +40,7 @@ export default function TelemedicinaPacchetti() {
     finally { setLoading(false); }
   }
 
-  async function loadPazienti() { try { const r = await api.get('/patients'); setPazienti(r.data); } catch {} }
+  async function loadPazienti() { try { const r = await api.get('/patients', { params: { tipo: tipoPazienti } }); setPazienti(r.data); } catch {} }
 
   async function loadSubs() {
     try { const r = await api.get('/telemedicina/sottoscrizioni?attivo=true'); setSottoscrizioni(r.data); }

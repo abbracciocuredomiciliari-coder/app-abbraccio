@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
+import { useModalita } from '../context/ModalitaContext';
 import { useToast } from '../hooks/useToast';
 import { Video, Plus, Activity, Calendar, AlertCircle, Loader2, RefreshCw, ClipboardList, Stethoscope, TrendingUp, Shield } from 'lucide-react';
 import TelemedicinaDispositivi from '../components/TelemedicinaDispositivi';
@@ -41,6 +42,8 @@ const professioni = [
 
 export default function Telemedicina() {
   const { user } = useAuth();
+  const { modalita } = useModalita();
+  const tipoPazienti = modalita === 'consulenza' ? 'consulenza' : modalita === 'convenzione' ? 'convenzione' : 'privato';
   const { addToast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -68,7 +71,7 @@ export default function Telemedicina() {
       setLoading(true);
       const [tRes, pRes] = await Promise.all([
         api.get('/telemedicina/teleconsulti', { params: { from: filters.from || undefined, to: filters.to || undefined, stato: filters.stato || undefined } }),
-        api.get('/patients'),
+        api.get('/patients', { params: { tipo: tipoPazienti } }),
       ]);
       setTeleconsulti(tRes.data);
       setPatients(pRes.data);

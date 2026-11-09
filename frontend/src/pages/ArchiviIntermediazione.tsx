@@ -269,7 +269,7 @@ export default function ArchiviIntermediazione() {
 
         <div className="tw-flex tw-justify-between tw-items-center tw-flex-wrap tw-gap-4 tw-bg-white tw-rounded-2xl tw-shadow-sm tw-border tw-border-slate-100 tw-p-5 md:tw-p-6">
           <div className="tw-flex tw-items-center tw-gap-4">
-            <div className="tw-p-3 tw-rounded-xl tw-text-white tw-shadow-sm tw-bg-rose-600">
+            <div className="tw-p-3 tw-rounded-xl tw-text-white tw-shadow-sm tw-bg-brand-800">
               <FileText size={24} />
             </div>
             <div>
@@ -321,7 +321,7 @@ export default function ArchiviIntermediazione() {
                         <td className="tw-py-2 tw-pr-3">
                           {c?.stato === 'firmato'
                             ? <span className="tw-text-green-700 tw-font-semibold">Firmato{c.dataFirma ? ` ${new Date(c.dataFirma).toLocaleDateString('it-IT')}` : ''}</span>
-                            : <span className="tw-text-amber-600 tw-font-semibold">In attesa firma</span>}
+                            : <span className="tw-text-[#b58b44] tw-font-semibold">In attesa firma</span>}
                         </td>
                         <td className="tw-py-2 tw-pr-3 tw-text-slate-500">{c?.email || '—'}</td>
                         <td className="tw-py-2 tw-flex tw-gap-2 tw-flex-wrap">
@@ -459,7 +459,7 @@ export default function ArchiviIntermediazione() {
                             : sim ? `${sim.contrattoLabel || ''} — ${sim.livelloLabel || ''}${sim.oreSettimanali ? `, ${sim.oreSettimanali}h/sett` : ''}` : (inv.tipo === 'preventivo_veloce' ? 'Preventivo veloce' : '—')}
                           {inv.simulazione?.escludiTfrTredicesima && <div className="tw-text-[11px] tw-text-slate-400">TFR/13ª esclusi{inv.simulazione.cafMensile !== undefined ? ` · CAF ${euro(inv.simulazione.cafMensile)}` : ''}</div>}
                         </td>
-                        <td className="tw-py-2 tw-pr-3 tw-text-right tw-font-bold tw-text-emerald-700">{inv.totale !== undefined ? euro(inv.totale) : '—'}</td>
+                        <td className="tw-py-2 tw-pr-3 tw-text-right tw-font-bold tw-text-brand-700">{inv.totale !== undefined ? euro(inv.totale) : '—'}</td>
                         <td className="tw-py-2 tw-flex tw-gap-2 tw-flex-wrap">
                           {inv.tipo !== 'contratto_firma' && (
                             <>
