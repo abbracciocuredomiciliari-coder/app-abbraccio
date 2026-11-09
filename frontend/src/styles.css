@@ -675,14 +675,37 @@ button:active { transform: scale(0.97) !important; }
   background: var(--primary-dark);
 }
 
-/* Btn variants via inline style overrides */
-button[style*="background"][style*="brand-700"],
-button[style*="background"][style*="brand-800"] {
+/* Btn variants via inline style overrides.
+   IMPORTANTE: i selettori devono matchare il brand SOLO nella proprieta'
+   background/background-color. Un bottone bianco con testo o bordo
+   var(--brand-700) non deve essere riempito di verde (scritta illeggibile). */
+button[style*="background: var(--brand-700)"],
+button[style*="background:var(--brand-700)"],
+button[style*="background: var(--brand-800)"],
+button[style*="background:var(--brand-800)"],
+button[style*="background-color: var(--brand-700)"],
+button[style*="background-color:var(--brand-700)"],
+button[style*="background-color: var(--brand-800)"],
+button[style*="background-color:var(--brand-800)"],
+button[style*="background: linear-gradient"][style*="brand-700"],
+button[style*="background: linear-gradient"][style*="brand-800"],
+button[style*="background:linear-gradient"][style*="brand-700"],
+button[style*="background:linear-gradient"][style*="brand-800"] {
   background: var(--brand-700) !important;
   box-shadow: none !important;
 }
-button[style*="background"][style*="brand-700"]:hover,
-button[style*="background"][style*="brand-800"]:hover {
+button[style*="background: var(--brand-700)"]:hover,
+button[style*="background:var(--brand-700)"]:hover,
+button[style*="background: var(--brand-800)"]:hover,
+button[style*="background:var(--brand-800)"]:hover,
+button[style*="background-color: var(--brand-700)"]:hover,
+button[style*="background-color:var(--brand-700)"]:hover,
+button[style*="background-color: var(--brand-800)"]:hover,
+button[style*="background-color:var(--brand-800)"]:hover,
+button[style*="background: linear-gradient"][style*="brand-700"]:hover,
+button[style*="background: linear-gradient"][style*="brand-800"]:hover,
+button[style*="background:linear-gradient"][style*="brand-700"]:hover,
+button[style*="background:linear-gradient"][style*="brand-800"]:hover {
   background: var(--brand-800) !important;
 }
 
@@ -736,12 +759,18 @@ button[style*="475569"]:hover { background: #4f666c !important; }
 /* Rilascio: i bottoni a sfondo CHIARO o trasparente che citano i colori
    solo in testo/bordo (es. "Aggiungi" bianco con testo verde, pillola
    Abbraccino, icone info) NON devono essere riempiti — tornano al loro
-   sfondo inline anche su hover, cosi' il testo resta leggibile. */
+   sfondo inline anche su hover, cosi' il testo resta leggibile.
+   NOTA: il DOM serializza "#fff" come "rgb(255, 255, 255)" — per questo
+   servono i pattern rgb(2xx, oltre a quelli esadecimali per sicurezza. */
+button[style*="background: rgb(2"], button[style*="background:rgb(2"],
+button[style*="background-color: rgb(2"], button[style*="background-color:rgb(2"],
 button[style*="background:#f"], button[style*="background: #f"],
 button[style*="background:#e"], button[style*="background: #e"],
 button[style*="background:none"], button[style*="background: none"],
 button[style*="background:transparent"], button[style*="background: transparent"],
 button[style*="background:white"], button[style*="background: white"],
+button[style*="background: rgb(2"]:hover, button[style*="background:rgb(2"]:hover,
+button[style*="background-color: rgb(2"]:hover, button[style*="background-color:rgb(2"]:hover,
 button[style*="background:#f"]:hover, button[style*="background: #f"]:hover,
 button[style*="background:#e"]:hover, button[style*="background: #e"]:hover,
 button[style*="background:none"]:hover, button[style*="background: none"]:hover,
