@@ -733,6 +733,24 @@ button[style*="475569"] {
 button[style*="#6c757d"]:hover,
 button[style*="475569"]:hover { background: #4f666c !important; }
 
+/* Rilascio: i bottoni a sfondo CHIARO o trasparente che citano i colori
+   solo in testo/bordo (es. "Aggiungi" bianco con testo verde, pillola
+   Abbraccino, icone info) NON devono essere riempiti — tornano al loro
+   sfondo inline anche su hover, cosi' il testo resta leggibile. */
+button[style*="background:#f"], button[style*="background: #f"],
+button[style*="background:#e"], button[style*="background: #e"],
+button[style*="background:none"], button[style*="background: none"],
+button[style*="background:transparent"], button[style*="background: transparent"],
+button[style*="background:white"], button[style*="background: white"],
+button[style*="background:#f"]:hover, button[style*="background: #f"]:hover,
+button[style*="background:#e"]:hover, button[style*="background: #e"]:hover,
+button[style*="background:none"]:hover, button[style*="background: none"]:hover,
+button[style*="background:transparent"]:hover, button[style*="background: transparent"]:hover,
+button[style*="background:white"]:hover, button[style*="background: white"]:hover {
+  background: revert !important;
+  box-shadow: revert !important;
+}
+
 /* ============================================
    Lists
    ============================================ */

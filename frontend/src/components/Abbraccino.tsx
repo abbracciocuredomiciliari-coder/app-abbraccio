@@ -77,7 +77,7 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
   }
 
   const pillTop: React.CSSProperties = { background: '#fff', color: 'var(--brand-800)', border: '1.5px solid var(--brand-300)', borderRadius: 999, padding: '6px 14px', fontSize: '0.8rem', fontWeight: 800, boxShadow: '0 3px 10px rgba(0,0,0,.10)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' };
-  const pillBtm: React.CSSProperties = { ...pillTop, background: 'var(--brand-700)', color: '#fff', border: 'none', padding: '7px 16px', boxShadow: '0 4px 14px rgba(16,47,59,.35)' };
+  const pillBtm: React.CSSProperties = { ...pillTop, background: '#1c7164', color: '#fff', border: 'none', padding: '7px 16px', boxShadow: '0 4px 14px rgba(16,47,59,.35)' };
 
   return (
     <>

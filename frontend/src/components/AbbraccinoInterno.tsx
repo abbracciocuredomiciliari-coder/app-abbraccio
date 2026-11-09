@@ -135,7 +135,7 @@ export default function AbbraccinoInterno() {
             style={{ width: 62, height: 62, borderRadius: '50%', border: 'none', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 5, boxSizing: 'border-box' }}>
             <CuoricinoIcon size={50} />
           </button>
-          <button onClick={() => setOpen(true)} className="ab-pill-btm" style={{ background: 'var(--brand-700)', color: '#fff', border: 'none', borderRadius: 999, padding: '7px 16px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(16,47,59,.35)' }}>
+          <button onClick={() => setOpen(true)} className="ab-pill-btm" style={{ background: '#1c7164', color: '#fff', border: 'none', borderRadius: 999, padding: '7px 16px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(16,47,59,.35)' }}>
             Abbraccino Aiutino
           </button>
         </div>
