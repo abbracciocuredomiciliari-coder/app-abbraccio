@@ -116,19 +116,27 @@ export default function AbbraccinoInterno() {
           .ab-header-close { display: flex !important; }
           .ab-chat-input { padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important; }
         }
+        /* Su smartphone il lanciatore e' compatto: una sola pill + icona piccola */
+        @media (max-width: 640px) {
+          .ab-launcher { right: 10px !important; bottom: 8px !important; gap: 4px !important; }
+          .ab-pill-top { display: none !important; }
+          .ab-int-fab { width: 46px !important; height: 46px !important; }
+          .ab-int-fab svg { width: 34px !important; height: 34px !important; }
+          .ab-pill-btm { font-size: 0.66rem !important; padding: 4px 10px !important; }
+        }
       `}</style>
 
       {!open && (
-        <div style={{ position: 'fixed', right: 14, bottom: 6, zIndex: 9990, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-          <button onClick={() => setOpen(true)} style={{ background: '#fff', color: '#1c7164', border: '1.5px solid #d9ebe4', borderRadius: 999, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 800, boxShadow: '0 3px 10px rgba(0,0,0,.10)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+        <div className="ab-launcher" style={{ position: 'fixed', right: 14, bottom: 6, zIndex: 9990, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+          <button onClick={() => setOpen(true)} className="ab-pill-top" style={{ background: '#fff', color: '#1c7164', border: '1.5px solid #d9ebe4', borderRadius: 999, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 800, boxShadow: '0 3px 10px rgba(0,0,0,.10)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
             Sono Abbraccino 💛
           </button>
           <button onClick={() => setOpen(true)} aria-label="Chiedi ad Abbraccino" className="ab-int-fab"
             style={{ width: 62, height: 62, borderRadius: '50%', border: 'none', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 5, boxSizing: 'border-box' }}>
             <CuoricinoIcon size={50} />
           </button>
-          <button onClick={() => setOpen(true)} style={{ background: 'linear-gradient(135deg,var(--nav-900),var(--brand-700))', color: '#fff', border: 'none', borderRadius: 999, padding: '5px 14px', fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-            Chiedimi un aiutino
+          <button onClick={() => setOpen(true)} className="ab-pill-btm" style={{ background: 'linear-gradient(135deg,var(--nav-900),var(--brand-700))', color: '#fff', border: 'none', borderRadius: 999, padding: '5px 14px', fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            Abbraccino Aiutino
           </button>
         </div>
       )}

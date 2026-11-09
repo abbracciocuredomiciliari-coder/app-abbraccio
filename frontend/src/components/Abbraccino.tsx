@@ -86,17 +86,25 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
         @keyframes abGlow { 0%,100%{box-shadow:0 4px 16px rgba(242,181,42,.3), 0 0 0 0 rgba(242,181,42,.45)} 50%{box-shadow:0 4px 20px rgba(242,181,42,.7), 0 0 0 10px rgba(242,181,42,0)} }
         .ab-fab { animation: abGlow 1.8s ease-in-out infinite; }
         .ab-heart { display:block; animation: abHeartBeat 1.8s ease-in-out infinite; transform-origin:center; }
+        /* Su smartphone il lanciatore e' compatto: una sola pill + icona piccola */
+        @media (max-width: 640px) {
+          .ab-launcher { right: 10px !important; bottom: 8px !important; gap: 4px !important; }
+          .ab-pill-top { display: none !important; }
+          .ab-fab { width: 46px !important; height: 46px !important; }
+          .ab-fab svg { width: 34px !important; height: 34px !important; }
+          .ab-pill-btm { font-size: 0.66rem !important; padding: 4px 10px !important; }
+        }
       `}</style>
 
       {/* colonna: etichetta sopra / icona / etichetta sotto — centrata */}
       {!open && (
-        <div style={{ position: 'fixed', right: 14, bottom: 6, zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-          <button onClick={() => setOpen(true)} style={pillTop}>Sono Abbraccino 💛</button>
+        <div className="ab-launcher" style={{ position: 'fixed', right: 14, bottom: 6, zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+          <button onClick={() => setOpen(true)} className="ab-pill-top" style={pillTop}>Sono Abbraccino 💛</button>
           <button onClick={() => setOpen(true)} aria-label="Chiedi ad Abbraccino" className="ab-fab"
             style={{ width: 62, height: 62, borderRadius: '50%', border: 'none', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 5, boxSizing: 'border-box' }}>
             <span className="ab-heart"><CuoricinoIcon size={50} /></span>
           </button>
-          <button onClick={() => setOpen(true)} style={pillBtm}>Chiedimi un aiutino</button>
+          <button onClick={() => setOpen(true)} className="ab-pill-btm" style={pillBtm}>Abbraccino Aiutino</button>
         </div>
       )}
 
