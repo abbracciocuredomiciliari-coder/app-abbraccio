@@ -420,16 +420,23 @@ details.nav-section:not([open]) > summary.nav-section-label {
   background: transparent;
 }
 
+/* Ogni pagina occupa tutta la larghezza disponibile, come la Dashboard.
+   Le radici di pagina (section o div con max-width inline) si estendono:
+   !important serve per battere gli stili inline ereditati (1100/1200px). */
 section {
-  max-width: 980px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
 }
 
-/* Pagine con tabelle/report dense — più spazio su monitor larghi */
 section.wide,
 .section-wide {
-  max-width: 1440px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
+}
+
+.content:not(.content--bare) > section,
+.content:not(.content--bare) > div {
+  max-width: 100% !important;
 }
 
 /* ============================================
