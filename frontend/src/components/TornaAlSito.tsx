@@ -5,7 +5,7 @@ import { ChevronLeft } from 'lucide-react';
 // servizio del sito deve poter tornare indietro senza perdersi.
 const URL_SITO = 'https://www.abbracciocuredomiciliari.it';
 
-export function TornaAlSito({ color = '#1e4d8c' }: { color?: string }) {
+export function TornaAlSito({ color = 'var(--brand-700)' }: { color?: string }) {
   return (
     <a
       href={URL_SITO}

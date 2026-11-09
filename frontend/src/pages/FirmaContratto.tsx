@@ -145,7 +145,7 @@ export default function FirmaContratto() {
               onClick={handleInviaFirma}
               disabled={!firma || loading}
               className="tw-w-full tw-p-3.5 tw-border-0 tw-rounded-lg tw-text-white tw-text-base tw-font-bold disabled:tw-cursor-not-allowed tw-transition-colors"
-              style={{ backgroundColor: firma && !loading ? '#1e4d8c' : '#93c5fd' }}
+              style={{ backgroundColor: firma && !loading ? 'var(--brand-700)' : 'var(--brand-300)' }}
             >
               {loading ? '⏳ Salvataggio...' : '✅ Firma e invia contratto'}
             </button>

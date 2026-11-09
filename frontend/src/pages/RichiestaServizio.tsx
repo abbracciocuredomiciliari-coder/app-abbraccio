@@ -13,15 +13,15 @@ const MESI = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','
 const GIORNI_SETT = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
 
 const TIPI_SERVIZIO = [
-  { value: 'visita_specialistica', label: 'Visita Specialistica', emoji: '🩺', color: '#2563eb', bg: '#dbeafe', Icon: HeartPulse,
+  { value: 'visita_specialistica', label: 'Visita Specialistica', emoji: '🩺', color: 'var(--brand-600)', bg: 'var(--brand-100)', Icon: HeartPulse,
     tipi: ['Cardiologo','Geriatra','Urologo','Endocrinologo','Otorinolaringoiatra','Fisiatra','Oncologo','Angiologo','Neurologo','Broncopneumologo','Nutrizionista','Psicologa','Altro specialista'] },
-  { value: 'medico', label: 'Visita Medica', emoji: '👨‍⚕️', color: '#1d4ed8', bg: '#dbeafe', Icon: HeartPulse,
+  { value: 'medico', label: 'Visita Medica', emoji: '👨‍⚕️', color: '#1d4ed8', bg: 'var(--brand-100)', Icon: HeartPulse,
     tipi: ['Visita generale','Visita specialistica','Consulenza geriatrica','Valutazione clinica','Prescrizione terapia','Altro'] },
   { value: 'esame_strumentale', label: 'Esame Strumentale', emoji: '🔬', color: '#7c3aed', bg: '#ede9fe', Icon: HeartPulse,
     tipi: ['ECG','Holter ECG','Holter pressorio','Ecografia','RX domiciliare','Spirometria','Saturimetria','EGA','Polisonnografia','Ecocardiogramma','Screening cardiaco','Glicemia capillare','Titolazione CPAP','Altro'] },
   { value: 'prelievo', label: 'Prelievo', emoji: '💉', color: '#dc2626', bg: '#fee2e2', Icon: Syringe,
     tipi: ['Emocromo completo','Glicemia','Coagulazione (PT/INR/aPTT)','Elettroliti','Funzionalità epatica','Funzionalità renale','Profilo lipidico','Ormoni tiroidei (TSH/fT4)','PCR / VES','Esame urine','Emogasanalisi','Altro'] },
-  { value: 'prestazione', label: 'Prestazione Infermieristica', emoji: '🏥', color: '#0369a1', bg: '#eff6ff', Icon: Activity,
+  { value: 'prestazione', label: 'Prestazione Infermieristica', emoji: '🏥', color: '#0369a1', bg: 'var(--brand-50)', Icon: Activity,
     tipi: ['Medicazione','Somministrazione farmaci','Misurazione parametri vitali','Cateterismo','Gestione stomia','Prelievo arterioso','Altro'] },
   { value: 'assistenza', label: 'Assistenza Domiciliare', emoji: '🤲', color: '#b45309', bg: '#fef3c7', Icon: HeartPulse,
     tipi: ['Assistenza anziani','Assistenza notturna','Cure palliative','Assistenza pazienti cronici','Igiene personale','Compagnia e vigilanza','Aiuto domestico','Altro'] },
@@ -55,7 +55,7 @@ function Calendario({ year, month, onPrev, onNext, selectedDate, onSelectDate }:
     <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
         <button type="button" onClick={onPrev} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: '6px', fontSize: '1.1rem' }}><ChevronLeft size={18} /></button>
-        <span style={{ fontWeight: '700', fontSize: '0.95rem', color: '#1e3a5f' }}>{MESI[month]} {year}</span>
+        <span style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--nav-900)' }}>{MESI[month]} {year}</span>
         <button type="button" onClick={onNext} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: '6px', fontSize: '1.1rem' }}><ChevronRight size={18} /></button>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '2px', textAlign: 'center' }}>
@@ -69,8 +69,8 @@ function Calendario({ year, month, onPrev, onNext, selectedDate, onSelectDate }:
           return (
             <div key={iso} onClick={() => !isPast && onSelectDate(iso)}
               style={{ padding: '6px 2px', borderRadius: '7px', cursor: isPast ? 'default' : 'pointer',
-                background: isSel ? '#1e3a5f' : isToday ? '#dbeafe' : 'transparent',
-                color: isSel ? 'white' : isPast ? '#d1d5db' : isToday ? '#1e40af' : '#374151',
+                background: isSel ? 'var(--nav-900)' : isToday ? 'var(--brand-100)' : 'transparent',
+                color: isSel ? 'white' : isPast ? '#d1d5db' : isToday ? 'var(--brand-700)' : '#374151',
                 fontWeight: isSel || isToday ? '700' : '400', fontSize: '0.85rem' }}>
               {d}
             </div>
@@ -192,7 +192,7 @@ export default function RichiestaServizio() {
 
   if (inviata) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, var(--nav-900) 0%, var(--brand-600) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
         <div style={{ background: 'white', borderRadius: '20px', padding: '48px 36px', maxWidth: '480px', width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
           <div style={{ width: '72px', height: '72px', background: '#dcfce7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
             <CheckCircle size={40} color="#15803d" />
@@ -205,7 +205,7 @@ export default function RichiestaServizio() {
               ? 'La richiesta di registrazione del paziente è stata ricevuta. L\'amministratore la elaborerà e il paziente comparirà nella lista appena approvata.'
               : 'La tua richiesta è stata ricevuta. Il nostro staff la elaborerà al più presto e ti contatteremo per confermare l\'appuntamento.'}
           </p>
-          <a href="https://www.abbracciocuredomiciliari.it" style={{ display: 'inline-block', background: '#1e3a5f', color: 'white', padding: '12px 28px', borderRadius: '10px', textDecoration: 'none', fontWeight: '700' }}>
+          <a href="https://www.abbracciocuredomiciliari.it" style={{ display: 'inline-block', background: 'var(--nav-900)', color: 'white', padding: '12px 28px', borderRadius: '10px', textDecoration: 'none', fontWeight: '700' }}>
             Torna al sito
           </a>
         </div>
@@ -214,7 +214,7 @@ export default function RichiestaServizio() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)', padding: '30px 16px' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, var(--nav-900) 0%, var(--brand-600) 100%)', padding: '30px 16px' }}>
       <div style={{ maxWidth: '580px', margin: '0 auto' }}>
 
         <div style={{ marginBottom: '14px' }}><TornaAlSito color="#fff" /></div>
@@ -229,11 +229,11 @@ export default function RichiestaServizio() {
         {/* Selettore modalità */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', background: 'rgba(255,255,255,0.12)', borderRadius: '12px', padding: '6px' }}>
           <button type="button" onClick={() => { setModalita('prenotazione'); setStep(1); }}
-            style={{ flex: 1, padding: '10px 8px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '0.88rem', background: modalita === 'prenotazione' ? 'white' : 'transparent', color: modalita === 'prenotazione' ? '#1e3a5f' : 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            style={{ flex: 1, padding: '10px 8px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '0.88rem', background: modalita === 'prenotazione' ? 'white' : 'transparent', color: modalita === 'prenotazione' ? 'var(--nav-900)' : 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
             <Calendar size={15} /> Prenota un servizio
           </button>
           <button type="button" onClick={() => setModalita('registrazione')}
-            style={{ flex: 1, padding: '10px 8px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '0.88rem', background: modalita === 'registrazione' ? 'white' : 'transparent', color: modalita === 'registrazione' ? '#1e3a5f' : 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            style={{ flex: 1, padding: '10px 8px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '0.88rem', background: modalita === 'registrazione' ? 'white' : 'transparent', color: modalita === 'registrazione' ? 'var(--nav-900)' : 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
             <UserPlus size={15} /> Registra paziente
           </button>
         </div>
@@ -241,7 +241,7 @@ export default function RichiestaServizio() {
         {/* ════ FORM REGISTRAZIONE PAZIENTE ════ */}
         {modalita === 'registrazione' && (
           <div style={{ background: 'white', borderRadius: '16px', padding: '28px', boxShadow: '0 10px 40px rgba(0,0,0,0.15)' }}>
-            <h2 style={{ margin: '0 0 4px', color: '#1e3a5f', fontSize: '1.2rem' }}>📋 Registrazione nuovo paziente</h2>
+            <h2 style={{ margin: '0 0 4px', color: 'var(--nav-900)', fontSize: '1.2rem' }}>📋 Registrazione nuovo paziente</h2>
             <p style={{ margin: '0 0 20px', color: '#6b7280', fontSize: '0.85rem' }}>I dati saranno verificati dall'amministratore. Dopo l'approvazione il paziente sarà disponibile nel sistema.</p>
             <form onSubmit={handleRegistraPaziente} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
@@ -302,7 +302,7 @@ export default function RichiestaServizio() {
               {regError && <div style={{ background: '#fee2e2', border: '1px solid #ef4444', borderRadius: '8px', padding: '10px 14px', color: '#dc2626', fontSize: '0.88rem' }}>⚠️ {regError}</div>}
 
               <button type="submit" disabled={regSending}
-                style={{ width: '100%', padding: '14px', background: regSending ? '#9ca3af' : '#1e3a5f', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '1rem', cursor: regSending ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                style={{ width: '100%', padding: '14px', background: regSending ? '#9ca3af' : 'var(--nav-900)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '1rem', cursor: regSending ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                 <UserPlus size={18} />
                 {regSending ? 'Invio in corso...' : 'Invia richiesta di registrazione paziente'}
               </button>
@@ -317,7 +317,7 @@ export default function RichiestaServizio() {
             <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.9rem',
                 background: step >= s ? 'white' : 'rgba(255,255,255,0.2)',
-                color: step >= s ? '#1e3a5f' : 'rgba(255,255,255,0.5)' }}>
+                color: step >= s ? 'var(--nav-900)' : 'rgba(255,255,255,0.5)' }}>
                 {step > s ? '✓' : s}
               </div>
               {s < 3 && <div style={{ width: '40px', height: '2px', background: step > s ? 'white' : 'rgba(255,255,255,0.25)', borderRadius: '1px' }} />}
@@ -330,7 +330,7 @@ export default function RichiestaServizio() {
           {/* ── STEP 1: Tipo servizio ── */}
           {step === 1 && (
             <div>
-              <h2 style={{ margin: '0 0 6px', color: '#1e3a5f', fontSize: '1.2rem' }}>Che servizio ti serve?</h2>
+              <h2 style={{ margin: '0 0 6px', color: 'var(--nav-900)', fontSize: '1.2rem' }}>Che servizio ti serve?</h2>
               <p style={{ margin: '0 0 20px', color: '#6b7280', fontSize: '0.88rem' }}>Seleziona il tipo di prestazione richiesta</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
                 {TIPI_SERVIZIO.map(t => (
@@ -358,7 +358,7 @@ export default function RichiestaServizio() {
               )}
 
               <button type="button" disabled={!tipoServizio} onClick={() => setStep(2)}
-                style={{ width: '100%', padding: '13px', background: tipoServizio ? '#1e3a5f' : '#e5e7eb', color: tipoServizio ? 'white' : '#9ca3af', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '1rem', cursor: tipoServizio ? 'pointer' : 'not-allowed' }}>
+                style={{ width: '100%', padding: '13px', background: tipoServizio ? 'var(--nav-900)' : '#e5e7eb', color: tipoServizio ? 'white' : '#9ca3af', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '1rem', cursor: tipoServizio ? 'pointer' : 'not-allowed' }}>
                 Avanti →
               </button>
             </div>
@@ -367,7 +367,7 @@ export default function RichiestaServizio() {
           {/* ── STEP 2: Data e dati paziente ── */}
           {step === 2 && (
             <div>
-              <h2 style={{ margin: '0 0 6px', color: '#1e3a5f', fontSize: '1.2rem' }}>Quando e per chi?</h2>
+              <h2 style={{ margin: '0 0 6px', color: 'var(--nav-900)', fontSize: '1.2rem' }}>Quando e per chi?</h2>
               <p style={{ margin: '0 0 16px', color: '#6b7280', fontSize: '0.88rem' }}>Scegli la data preferita e inserisci i dati del paziente</p>
 
               <div style={{ marginBottom: '16px' }}>
@@ -375,7 +375,7 @@ export default function RichiestaServizio() {
                 <Calendario year={calYear} month={calMonth} onPrev={prevMonth} onNext={nextMonth}
                   selectedDate={selectedDate} onSelectDate={setSelectedDate} />
                 {selectedDate ? (
-                  <div style={{ marginTop: '8px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '8px 12px', color: '#1d4ed8', fontWeight: '600', fontSize: '0.88rem' }}>
+                  <div style={{ marginTop: '8px', background: 'var(--brand-50)', border: '1px solid var(--brand-200)', borderRadius: '8px', padding: '8px 12px', color: '#1d4ed8', fontWeight: '600', fontSize: '0.88rem' }}>
                     📅 {new Date(selectedDate + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
                   </div>
                 ) : (
@@ -434,7 +434,7 @@ export default function RichiestaServizio() {
                   ← Indietro
                 </button>
                 <button type="button" disabled={!selectedDate || !pazienteNome || !pazienteIndirizzo} onClick={() => setStep(3)}
-                  style={{ flex: 2, padding: '13px', background: (selectedDate && pazienteNome && pazienteIndirizzo) ? '#1e3a5f' : '#e5e7eb', color: (selectedDate && pazienteNome && pazienteIndirizzo) ? 'white' : '#9ca3af', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '1rem', cursor: (selectedDate && pazienteNome && pazienteIndirizzo) ? 'pointer' : 'not-allowed' }}>
+                  style={{ flex: 2, padding: '13px', background: (selectedDate && pazienteNome && pazienteIndirizzo) ? 'var(--nav-900)' : '#e5e7eb', color: (selectedDate && pazienteNome && pazienteIndirizzo) ? 'white' : '#9ca3af', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '1rem', cursor: (selectedDate && pazienteNome && pazienteIndirizzo) ? 'pointer' : 'not-allowed' }}>
                   Avanti →
                 </button>
               </div>
@@ -444,7 +444,7 @@ export default function RichiestaServizio() {
           {/* ── STEP 3: Dati richiedente + invio ── */}
           {step === 3 && (
             <form onSubmit={handleSubmit}>
-              <h2 style={{ margin: '0 0 6px', color: '#1e3a5f', fontSize: '1.2rem' }}>I tuoi dati</h2>
+              <h2 style={{ margin: '0 0 6px', color: 'var(--nav-900)', fontSize: '1.2rem' }}>I tuoi dati</h2>
               <p style={{ margin: '0 0 16px', color: '#6b7280', fontSize: '0.88rem' }}>Chi sta effettuando la richiesta? (paziente stesso o familiare/caregiver)</p>
 
               {/* Riepilogo */}
@@ -478,7 +478,7 @@ export default function RichiestaServizio() {
                   ← Indietro
                 </button>
                 <button type="submit" disabled={sending}
-                  style={{ flex: 2, padding: '13px', background: sending ? '#9ca3af' : '#1e3a5f', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '1rem', cursor: sending ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  style={{ flex: 2, padding: '13px', background: sending ? '#9ca3af' : 'var(--nav-900)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '1rem', cursor: sending ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                   <Send size={18} />
                   {sending ? 'Invio...' : 'Invia Richiesta'}
                 </button>

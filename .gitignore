@@ -48,3 +48,6 @@ ssh_run.py
 
 backend/.env.production
 
+backend/.env.test
+frontend/vite.log
+screenshots/

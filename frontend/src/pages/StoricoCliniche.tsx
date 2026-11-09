@@ -161,11 +161,11 @@ export default function StoricoCliniche() {
   <title>Cartella Clinica — ${cartella.paziente?.firstName} ${cartella.paziente?.lastName}</title>
   <style>
     body { font-family: Arial, sans-serif; font-size: 12px; color: #222; margin: 20px; }
-    .logo-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; border-bottom: 2px solid #1e40af; padding-bottom: 12px; }
+    .logo-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; border-bottom: 2px solid var(--brand-700); padding-bottom: 12px; }
     .logo-header img { height: 60px; width: auto; }
-    .logo-header .title-block h1 { margin: 0; font-size: 18px; color: #1e40af; }
+    .logo-header .title-block h1 { margin: 0; font-size: 18px; color: var(--brand-700); }
     .logo-header .title-block p { margin: 2px 0 0; font-size: 11px; color: #666; }
-    h1 { font-size: 18px; border-bottom: 2px solid #1e40af; padding-bottom: 8px; color: #1e40af; }
+    h1 { font-size: 18px; border-bottom: 2px solid var(--brand-700); padding-bottom: 8px; color: var(--brand-700); }
     h2 { font-size: 14px; color: #444; margin-top: 16px; }
     .header-info { display: flex; gap: 32px; margin-bottom: 16px; flex-wrap: wrap; }
     .info-block { background: #f0f9ff; padding: 8px 12px; border-radius: 4px; border: 1px solid #bae6fd; }
@@ -267,7 +267,7 @@ export default function StoricoCliniche() {
             style={{ width: '100%', padding: '12px 14px 12px 44px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' }}
           />
         </div>
-        <button type="submit" style={{ padding: '12px 20px', background: '#1e40af', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <button type="submit" style={{ padding: '12px 20px', background: 'var(--brand-700)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <Search size={16} /> Cerca
         </button>
         {searchTerm && (
@@ -304,7 +304,7 @@ export default function StoricoCliniche() {
                           <Lock size={10} /> Tutte firmate
                         </span>
                       )}
-                      <span style={{ fontSize: '0.75rem', padding: '2px 8px', backgroundColor: '#eff6ff', color: '#1e40af', borderRadius: '10px' }}>
+                      <span style={{ fontSize: '0.75rem', padding: '2px 8px', backgroundColor: 'var(--brand-50)', color: 'var(--brand-700)', borderRadius: '10px' }}>
                         {c.workPlan?.type === 'prestazionale' ? 'Prestazionale' : 'Assistenziale'}
                       </span>
                     </div>
@@ -329,7 +329,7 @@ export default function StoricoCliniche() {
                       <button
                         type="button"
                         onClick={() => stampaCartella(c)}
-                        style={{ padding: '8px 12px', background: '#1e40af', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.82rem' }}
+                        style={{ padding: '8px 12px', background: 'var(--brand-700)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.82rem' }}
                         title="Stampa cartella"
                       >
                         <Printer size={15} /> Stampa

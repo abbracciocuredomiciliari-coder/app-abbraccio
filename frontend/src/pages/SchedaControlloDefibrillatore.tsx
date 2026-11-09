@@ -210,15 +210,15 @@ function SchedaControlloDefibrillatore() {
   <title>Scheda Controllo Defibrillatore — ${dataComp}</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 24px; color: #222; font-size: 13px; }
-    .intestazione { display: flex; align-items: center; gap: 20px; border-bottom: 3px solid #1e4d8c; padding-bottom: 14px; margin-bottom: 18px; }
+    .intestazione { display: flex; align-items: center; gap: 20px; border-bottom: 3px solid var(--brand-700); padding-bottom: 14px; margin-bottom: 18px; }
     .intestazione img { height: 70px; width: auto; }
-    .intestazione .testo h1 { margin: 0; font-size: 18px; color: #1e4d8c; }
+    .intestazione .testo h1 { margin: 0; font-size: 18px; color: var(--brand-700); }
     .intestazione .testo p { margin: 3px 0 0; font-size: 11px; color: #666; }
     .info-box { background: #f5f8fc; border: 1px solid #d0dff0; border-radius: 6px; padding: 10px 16px; margin-bottom: 16px; }
-    .info-box strong { color: #1e4d8c; }
-    h2 { font-size: 14px; color: #1e4d8c; margin: 18px 0 8px; border-bottom: 1px solid #d0dff0; padding-bottom: 4px; }
+    .info-box strong { color: var(--brand-700); }
+    h2 { font-size: 14px; color: var(--brand-700); margin: 18px 0 8px; border-bottom: 1px solid #d0dff0; padding-bottom: 4px; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 12px; }
-    th { background: #1e4d8c; color: #fff; padding: 7px 10px; text-align: left; }
+    th { background: var(--brand-700); color: #fff; padding: 7px 10px; text-align: left; }
     td { vertical-align: middle; }
     .firma-box { margin-top: 24px; border-top: 1px solid #ddd; padding-top: 12px; }
     .footer { margin-top: 16px; font-size: 10px; color: #aaa; border-top: 1px solid #eee; padding-top: 6px; }
@@ -329,7 +329,7 @@ function SchedaControlloDefibrillatore() {
         <button
           type="button"
           onClick={apriForm}
-          style={{ background: '#1e4d8c', marginBottom: '28px', fontSize: '1rem', padding: '10px 22px' }}
+          style={{ background: 'var(--brand-700)', marginBottom: '28px', fontSize: '1rem', padding: '10px 22px' }}
         >
           ➕ Nuova scheda di controllo
         </button>
@@ -339,11 +339,11 @@ function SchedaControlloDefibrillatore() {
       {mostraForm && (
         <div
           className="dashboard-folder"
-          style={{ marginBottom: '32px', border: '2px solid #1e4d8c', borderRadius: '10px', padding: '24px' }}
+          style={{ marginBottom: '32px', border: '2px solid var(--brand-700)', borderRadius: '10px', padding: '24px' }}
         >
           {/* Intestazione form */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ margin: 0, color: '#1e4d8c' }}>
+            <h3 style={{ margin: 0, color: 'var(--brand-700)' }}>
               📝 Nuova Scheda — {new Date(form.dataCompilazione).toLocaleDateString('it-IT')}
             </h3>
             <button
@@ -408,11 +408,11 @@ function SchedaControlloDefibrillatore() {
           {/* ─── Registro Interventi e Controlli ─────────────────────────────── */}
           <div style={{ marginBottom: '28px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <h4 style={{ margin: 0, color: '#1e4d8c' }}>📋 Registro Interventi e Controlli</h4>
+              <h4 style={{ margin: 0, color: 'var(--brand-700)' }}>📋 Registro Interventi e Controlli</h4>
               <button
                 type="button"
                 onClick={aggiungiRiga}
-                style={{ background: '#1e4d8c', fontSize: '0.82rem', padding: '5px 14px' }}
+                style={{ background: 'var(--brand-700)', fontSize: '0.82rem', padding: '5px 14px' }}
               >
                 ➕ Aggiungi riga
               </button>
@@ -421,7 +421,7 @@ function SchedaControlloDefibrillatore() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
                 <thead>
-                  <tr style={{ background: '#1e4d8c', color: '#fff' }}>
+                  <tr style={{ background: 'var(--brand-700)', color: '#fff' }}>
                     <th style={{ padding: '8px 10px', textAlign: 'left', minWidth: '130px' }}>Data</th>
                     <th style={{ padding: '8px 10px', textAlign: 'left', minWidth: '200px' }}>Tipo Intervento</th>
                     <th style={{ padding: '8px 10px', textAlign: 'center', minWidth: '100px' }}>Esito (Ok/Ko)</th>
@@ -496,7 +496,7 @@ function SchedaControlloDefibrillatore() {
 
           {/* ─── Checklist Verifica Prima dell'Uso ───────────────────────────── */}
           <div style={{ marginBottom: '24px' }}>
-            <h4 style={{ marginBottom: '14px', color: '#1e4d8c' }}>✅ Checklist Verifica Prima dell'Uso</h4>
+            <h4 style={{ marginBottom: '14px', color: 'var(--brand-700)' }}>✅ Checklist Verifica Prima dell'Uso</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {vociChecklist.map((voce) => {
                 const checked = form[voce.key];
@@ -681,14 +681,14 @@ function SchedaControlloDefibrillatore() {
                         <button
                           type="button"
                           onClick={() => visualizzaScheda(entry)}
-                          style={{ background: '#3b82f6', fontSize: '0.85rem', padding: '6px 14px' }}
+                          style={{ background: 'var(--brand-500)', fontSize: '0.85rem', padding: '6px 14px' }}
                         >
                           👁️ Visualizza PDF
                         </button>
                         <button
                           type="button"
                           onClick={() => stampaScheda(entry)}
-                          style={{ background: '#1e4d8c', fontSize: '0.85rem', padding: '6px 14px' }}
+                          style={{ background: 'var(--brand-700)', fontSize: '0.85rem', padding: '6px 14px' }}
                         >
                           🖨️ Stampa PDF
                         </button>
@@ -718,13 +718,13 @@ function SchedaControlloDefibrillatore() {
                         {/* Registro interventi */}
                         {entry.registroInterventi.length > 0 && (
                           <div style={{ marginBottom: '16px' }}>
-                            <strong style={{ color: '#1e4d8c', fontSize: '0.9rem' }}>
+                            <strong style={{ color: 'var(--brand-700)', fontSize: '0.9rem' }}>
                               📋 Registro Interventi e Controlli
                             </strong>
                             <div style={{ overflowX: 'auto', marginTop: '8px' }}>
                               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                                 <thead>
-                                  <tr style={{ background: '#1e4d8c', color: '#fff' }}>
+                                  <tr style={{ background: 'var(--brand-700)', color: '#fff' }}>
                                     <th style={{ padding: '6px 10px', textAlign: 'left' }}>Data</th>
                                     <th style={{ padding: '6px 10px', textAlign: 'left' }}>Tipo Intervento</th>
                                     <th style={{ padding: '6px 10px', textAlign: 'center' }}>Esito</th>
@@ -764,7 +764,7 @@ function SchedaControlloDefibrillatore() {
 
                         {/* Checklist verifica */}
                         <div>
-                          <strong style={{ color: '#1e4d8c', fontSize: '0.9rem' }}>
+                          <strong style={{ color: 'var(--brand-700)', fontSize: '0.9rem' }}>
                             ✅ Checklist Verifica Prima dell'Uso
                           </strong>
                           <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>

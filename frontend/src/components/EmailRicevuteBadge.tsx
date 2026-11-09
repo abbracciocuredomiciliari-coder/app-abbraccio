@@ -29,7 +29,7 @@ export function EmailRicevuteBadge() {
     <span
       style={{
         marginLeft: 'auto',
-        background: '#2563eb',
+        background: 'var(--brand-600)',
         color: '#fff',
         borderRadius: '999px',
         padding: '2px 8px',

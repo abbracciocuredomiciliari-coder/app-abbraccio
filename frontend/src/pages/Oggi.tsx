@@ -74,7 +74,7 @@ const PRATICA_ROUTE: Record<string, string> = {
 
 const STATO_CONSEGNA: Record<string, { label: string; bg: string; color: string }> = {
   da_gestire: { label: 'Da gestire', bg: '#fee2e2', color: '#b91c1c' },
-  presa_in_carico: { label: 'Presa in carico', bg: '#dbeafe', color: '#1d4ed8' },
+  presa_in_carico: { label: 'Presa in carico', bg: 'var(--brand-100)', color: '#1d4ed8' },
   in_attesa_riscontro: { label: 'Attesa riscontro', bg: '#fef3c7', color: '#b45309' },
   gestita: { label: 'Gestita', bg: '#dcfce7', color: '#15803d' },
 };
@@ -85,7 +85,7 @@ const STATO_LABEL: Record<Stato, string> = {
 };
 const STATO_STYLE: Record<Stato, { bg: string; color: string }> = {
   da_prendere: { bg: '#fee2e2', color: '#b91c1c' },
-  in_lavorazione: { bg: '#dbeafe', color: '#1d4ed8' },
+  in_lavorazione: { bg: 'var(--brand-100)', color: '#1d4ed8' },
   in_attesa: { bg: '#fef3c7', color: '#b45309' },
   completata: { bg: '#dcfce7', color: '#15803d' },
   annullata: { bg: '#f1f5f9', color: '#64748b' },
@@ -239,8 +239,8 @@ export default function Oggi() {
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 4px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
-        <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1e4d8c', margin: 0 }}>📌 Oggi</h1>
-        <button style={btnSt('#1e4d8c')} onClick={() => setShowForm(v => !v)}><Plus size={15} /> Nuova attività</button>
+        <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--brand-700)', margin: 0 }}>📌 Oggi</h1>
+        <button style={btnSt('var(--brand-700)')} onClick={() => setShowForm(v => !v)}><Plus size={15} /> Nuova attività</button>
       </div>
 
       {/* Contatori cliccabili */}
@@ -267,7 +267,7 @@ export default function Oggi() {
       {/* Form nuova attività */}
       {showForm && (
         <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-          <div style={{ fontWeight: 700, color: '#1e4d8c', marginBottom: 10 }}>Nuova attività</div>
+          <div style={{ fontWeight: 700, color: 'var(--brand-700)', marginBottom: 10 }}>Nuova attività</div>
           <div style={{ display: 'grid', gap: 10 }}>
             <input style={inputSt} placeholder="Titolo * (es. Ricontattare famiglia Rossi)" value={fTitolo} onChange={e => setFTitolo(e.target.value)} />
             <input style={inputSt} placeholder="Azione richiesta (cosa deve fare il responsabile)" value={fAzione} onChange={e => setFAzione(e.target.value)} />
@@ -282,7 +282,7 @@ export default function Oggi() {
               </select>
               <div style={{ position: 'relative' }}>
                 {fPraticaSel ? (
-                  <div style={{ ...inputSt, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#eff6ff', borderColor: '#93c5fd' }}>
+                  <div style={{ ...inputSt, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--brand-50)', borderColor: 'var(--brand-300)' }}>
                     <span style={{ color: '#1d4ed8', fontWeight: 600 }}>📂 {fPraticaSel.label}</span>
                     <button type="button" onClick={() => setFPraticaSel(null)} style={{ border: 'none', background: 'none', color: '#b91c1c', cursor: 'pointer', fontWeight: 700 }}>✕</button>
                   </div>
@@ -335,7 +335,7 @@ export default function Oggi() {
         {VISTE.map(v => (
           <button key={v.key} onClick={() => setVista(v.key)} style={{
             padding: '6px 12px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700,
-            background: vista === v.key ? '#1e4d8c' : '#e2e8f0', color: vista === v.key ? '#fff' : '#475569',
+            background: vista === v.key ? 'var(--brand-700)' : '#e2e8f0', color: vista === v.key ? '#fff' : '#475569',
           }}>{v.label}</button>
         ))}
       </div>
@@ -454,7 +454,7 @@ export default function Oggi() {
 
                   {aperta && (
                     <div style={{ marginTop: 12, borderTop: '1px solid #e2e8f0', paddingTop: 10 }}>
-                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1e4d8c', marginBottom: 6 }}>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--brand-700)', marginBottom: 6 }}>
                         Aggiornamenti ({a.aggiornamenti?.length || 0})
                         <button onClick={() => setStoricoId(storicoId === a._id ? null : a._id)} style={{ marginLeft: 10, background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '0.72rem' }}>
                           {storicoId === a._id ? 'nascondi cronologia' : 'mostra cronologia'}
@@ -478,7 +478,7 @@ export default function Oggi() {
                       {!chiusa && (
                         <div style={{ display: 'flex', gap: 6 }}>
                           <input style={{ ...inputSt, flex: 1 }} placeholder="Aggiungi aggiornamento…" value={notaTesto} onChange={e => setNotaTesto(e.target.value)} />
-                          <button style={btnSt('#1e4d8c')} onClick={() => aggiungiNota(a._id)} disabled={busy || !notaTesto.trim()}><MessageSquare size={13} /> Invia</button>
+                          <button style={btnSt('var(--brand-700)')} onClick={() => aggiungiNota(a._id)} disabled={busy || !notaTesto.trim()}><MessageSquare size={13} /> Invia</button>
                         </div>
                       )}
                     </div>

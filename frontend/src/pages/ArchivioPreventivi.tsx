@@ -78,7 +78,7 @@ interface PreventivoInviato {
 }
 
 const STATO_INVIO: Record<string, { testo: string; bg: string; color: string }> = {
-  inviato: { testo: '📤 Inviato', bg: '#dbeafe', color: '#1e40af' },
+  inviato: { testo: '📤 Inviato', bg: 'var(--brand-100)', color: 'var(--brand-700)' },
   accettato: { testo: '✅ Accettato', bg: '#dcfce7', color: '#166534' },
   rifiutato: { testo: '🚫 Rifiutato', bg: '#fee2e2', color: '#b91c1c' },
   sostituito: { testo: '↺ Sostituito', bg: '#f1f5f9', color: '#64748b' },
@@ -277,7 +277,7 @@ export default function ArchivioPreventivi() {
   if (isConvenzione) {
     return (
       <section className="fade-in section-wide">
-        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px', color: '#1e4d8c' }}>
+        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--brand-700)' }}>
           <ClipboardList size={28} />Archivio Preventivi
         </h1>
         <p style={{ color: '#6b7280', marginTop: '24px' }}>L&apos;archivio preventivi è disponibile solo nella modalità privata.</p>
@@ -287,7 +287,7 @@ export default function ArchivioPreventivi() {
 
   return (
     <section className="fade-in section-wide">
-      <h1 style={{ margin: 0, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px', color: '#1e4d8c' }}>
+      <h1 style={{ margin: 0, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--brand-700)' }}>
         <ClipboardList size={28} />Archivio Preventivi
       </h1>
 
@@ -297,11 +297,11 @@ export default function ArchivioPreventivi() {
         <>
         {/* ── Preventivi dal calcolatore online (/preventivo) ── */}
         {!isConsulenza && (
-        <div style={{ background: 'white', borderRadius: '12px', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #bfdbfe', borderLeft: '4px solid #1e4d8c' }}>
+        <div style={{ background: 'white', borderRadius: '12px', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid var(--brand-200)', borderLeft: '4px solid var(--brand-700)' }}>
           <div onClick={() => setShowOnline(!showOnline)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
-            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#1e4d8c' }}>
+            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--brand-700)' }}>
               <Globe size={20} />Preventivi dal calcolatore online
-              <span style={{ background: '#dbeafe', color: '#1e3a8a', borderRadius: '20px', padding: '2px 10px', fontSize: '0.8rem' }}>{preventiviOnline.length}</span>
+              <span style={{ background: 'var(--brand-100)', color: 'var(--brand-800)', borderRadius: '20px', padding: '2px 10px', fontSize: '0.8rem' }}>{preventiviOnline.length}</span>
             </h3>
             {showOnline ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
           </div>
@@ -347,8 +347,8 @@ export default function ArchivioPreventivi() {
                             <td style={{ padding: '8px' }}>
                               <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                                 <button onClick={() => anteprimaDocumento(prev)} title="Visualizza / stampa PDF" style={{ background: '#f0f9ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0ea5e9' }}><Eye size={14} /></button>
-                                <button onClick={() => scaricaDocumentoPDF(prev)} title="Scarica PDF" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Download size={14} /></button>
-                                <button onClick={() => rinviaDocumento(prev)} title="Invia per email" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Mail size={14} /></button>
+                                <button onClick={() => scaricaDocumentoPDF(prev)} title="Scarica PDF" style={{ background: 'var(--brand-50)', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: 'var(--brand-600)' }}><Download size={14} /></button>
+                                <button onClick={() => rinviaDocumento(prev)} title="Invia per email" style={{ background: 'var(--brand-50)', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: 'var(--brand-600)' }}><Mail size={14} /></button>
                                 {user?.role === 'admin' && (
                                   <button onClick={() => eliminaDocumento(prev)} title="Elimina definitivamente" style={{ background: '#fee2e2', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#b91c1c' }}><Trash2 size={14} /></button>
                                 )}
@@ -406,7 +406,7 @@ export default function ArchivioPreventivi() {
                         <tr key={inv._id} style={{ borderBottom: '1px solid #f1f5f9', opacity: inv.stato === 'sostituito' ? 0.55 : 1 }}>
                           <td style={{ padding: '8px', whiteSpace: 'nowrap' }}>
                             {formatData(inv.createdAt)}
-                            {(inv.versione || 1) > 1 && <span title={`Versione ${inv.versione}`} style={{ marginLeft: '6px', fontSize: '0.7rem', background: '#e0e7ff', color: '#4338ca', borderRadius: '8px', padding: '1px 6px', fontWeight: 700 }}>v{inv.versione}</span>}
+                            {(inv.versione || 1) > 1 && <span title={`Versione ${inv.versione}`} style={{ marginLeft: '6px', fontSize: '0.7rem', background: 'var(--brand-100)', color: 'var(--brand-800)', borderRadius: '8px', padding: '1px 6px', fontWeight: 700 }}>v{inv.versione}</span>}
                             {inv.ricontattoIl && (
                               <div style={{ fontSize: '0.72rem', color: ricontattoScaduto ? '#dc2626' : '#64748b', fontWeight: ricontattoScaduto ? 700 : 400 }}>
                                 📅 ricontatto {formatData(inv.ricontattoIl)}{ricontattoScaduto ? ' — SCADUTO' : ''}
@@ -420,7 +420,7 @@ export default function ArchivioPreventivi() {
                             {!inv.email && !inv.telefono && '—'}
                           </td>
                           <td style={{ padding: '8px', textAlign: 'center' }}>
-                            <span style={{ padding: '3px 10px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap', background: inv.canale === 'whatsapp' ? '#dcfce7' : '#dbeafe', color: inv.canale === 'whatsapp' ? '#166534' : '#1e40af' }}>
+                            <span style={{ padding: '3px 10px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap', background: inv.canale === 'whatsapp' ? '#dcfce7' : 'var(--brand-100)', color: inv.canale === 'whatsapp' ? '#166534' : 'var(--brand-700)' }}>
                               {inv.canale === 'whatsapp' ? '💬 WhatsApp' : '✉️ Email'}
                             </span>
                           </td>
@@ -446,7 +446,7 @@ export default function ArchivioPreventivi() {
                                 </>
                               )}
                               <button onClick={() => pdfInviato(inv, true)} title="Visualizza PDF inviato" style={{ background: '#f0f9ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0ea5e9' }}><Eye size={14} /></button>
-                              <button onClick={() => pdfInviato(inv, false)} title="Scarica PDF" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Download size={14} /></button>
+                              <button onClick={() => pdfInviato(inv, false)} title="Scarica PDF" style={{ background: 'var(--brand-50)', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: 'var(--brand-600)' }}><Download size={14} /></button>
                               {user?.role === 'admin' && (
                                 <button onClick={() => eliminaInviato(inv)} title="Elimina" style={{ background: '#fee2e2', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#b91c1c' }}><Trash2 size={14} /></button>
                               )}
@@ -475,7 +475,7 @@ export default function ArchivioPreventivi() {
           {showArchivio && (
             <>
               {pazienteFiltro && (
-                <div style={{ marginTop: '12px', background: '#eff6ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '8px 12px', fontSize: '0.83rem', color: '#1e40af', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ marginTop: '12px', background: 'var(--brand-50)', border: '1px solid #bae6fd', borderRadius: '8px', padding: '8px 12px', fontSize: '0.83rem', color: 'var(--brand-700)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   🔎 Stai vedendo solo i documenti di questo paziente.
                   <button type="button" onClick={() => { setSearchParams({}); setRicerca(''); }} style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: '#dc2626', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', fontSize: '0.8rem' }}>Mostra tutti</button>
                 </div>
@@ -545,14 +545,14 @@ export default function ArchivioPreventivi() {
                                 <button
                                   onClick={() => scaricaDocumentoPDF(prev)}
                                   title={prev.firma?.firmato ? 'Scarica preventivo firmato' : 'Scarica preventivo'}
-                                  style={{ background: prev.firma?.firmato ? '#dcfce7' : '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: prev.firma?.firmato ? '#166534' : '#2563eb' }}
+                                  style={{ background: prev.firma?.firmato ? '#dcfce7' : 'var(--brand-50)', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: prev.firma?.firmato ? '#166534' : 'var(--brand-600)' }}
                                 >
                                   <Download size={14} />
                                 </button>
                                 <button
                                   onClick={() => rinviaDocumento(prev)}
                                   title="Rinvia per email"
-                                  style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}
+                                  style={{ background: 'var(--brand-50)', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: 'var(--brand-600)' }}
                                 >
                                   <Mail size={14} />
                                 </button>

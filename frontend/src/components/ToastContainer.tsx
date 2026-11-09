@@ -19,7 +19,7 @@ const stylesMap: Record<ToastType, { background: string; border: string }> = {
   success: { background: '#f0fdf4', border: '#bbf7d0' },
   error: { background: '#fef2f2', border: '#fecaca' },
   warning: { background: '#fffbeb', border: '#fde68a' },
-  info: { background: '#eff6ff', border: '#bfdbfe' },
+  info: { background: 'var(--brand-50)', border: 'var(--brand-200)' },
 };
 
 export function ToastContainer({

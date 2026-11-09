@@ -56,7 +56,7 @@ export default function ColloquioPubblico() {
   if (error && !invito) return (
     <div style={box}>
       <div style={{ textAlign: 'center', paddingTop: 60 }}>
-        <h2 style={{ color: '#1e4d8c' }}>Abbraccio Cure Domiciliari</h2>
+        <h2 style={{ color: 'var(--brand-700)' }}>Abbraccio Cure Domiciliari</h2>
         <p style={{ background: '#fee2e2', color: '#b91c1c', padding: 14, borderRadius: 8 }}>{error}</p>
         <p style={{ color: '#64748b', fontSize: 14 }}>Se il link non funziona chiama lo <strong>06 01905242</strong>.</p>
       </div>
@@ -71,15 +71,15 @@ export default function ColloquioPubblico() {
 
   return (
     <div style={box}>
-      <div style={{ textAlign: 'center', borderBottom: '2px solid #1e4d8c', paddingBottom: 14, marginBottom: 18 }}>
-        <h2 style={{ color: '#1e4d8c', margin: 0 }}>Abbraccio Cure Domiciliari</h2>
+      <div style={{ textAlign: 'center', borderBottom: '2px solid var(--brand-700)', paddingBottom: 14, marginBottom: 18 }}>
+        <h2 style={{ color: 'var(--brand-700)', margin: 0 }}>Abbraccio Cure Domiciliari</h2>
         <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Intermediazioni — invito a colloquio</p>
       </div>
 
       <h3 style={{ marginTop: 0 }}>{invito!.titolo}</h3>
       <p>Ciao <strong>{invito!.io.nome}</strong>, sei invitato/a a questo colloquio:</p>
 
-      <div style={{ background: '#f0f7ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: 16, margin: '14px 0', lineHeight: 1.9 }}>
+      <div style={{ background: '#f0f7ff', border: '1px solid var(--brand-200)', borderRadius: 10, padding: 16, margin: '14px 0', lineHeight: 1.9 }}>
         <div>📅 <strong>{dataStr}</strong></div>
         <div>{m.icona} {m.testo}</div>
         <div>📋 <strong>Motivo:</strong> {invito!.ordineDelGiorno}</div>

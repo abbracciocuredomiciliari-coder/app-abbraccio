@@ -258,7 +258,7 @@ export default function LandingBadante() {
   const euro = (n: number) => `€ ${Number(n || 0).toFixed(2)}`;
   const check: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', color: '#475569', fontWeight: 600 };
   const btnWa: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 16px', borderRadius: '10px', background: '#25d366', color: '#fff', fontWeight: 800, textDecoration: 'none', fontSize: '0.95rem' };
-  const btnTel: React.CSSProperties = { ...btnWa, background: '#1e4d8c' };
+  const btnTel: React.CSSProperties = { ...btnWa, background: 'var(--brand-700)' };
 
   // Testo del preventivo da condividere su WhatsApp (richiesta + eventuale messaggio)
   const totaleAttuale = sim ? sim.totaleCostoMensile + sim.cafMensile - (escludiTfr ? sim.tfr + sim.tredicesima : 0) : 0;
@@ -312,7 +312,7 @@ export default function LandingBadante() {
             <a href={testoWhatsApp()} target="_blank" rel="noopener" style={{ ...btnWa, padding: '8px 12px', fontSize: '0.82rem' }}><MessageCircle size={15} /> <span className="landing-hide-mobile">WhatsApp</span></a>
             <div className="landing-hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f6f9ff', border: '1px solid #dfe9fb', borderRadius: '10px', padding: '6px 12px' }}>
               <span style={{ fontSize: '0.66rem', color: '#64748b', lineHeight: 1.25, textAlign: 'right' }}>
-                in collaborazione con<br /><strong style={{ color: '#1e40af', fontSize: '0.7rem' }}>Salus Group</strong>
+                in collaborazione con<br /><strong style={{ color: 'var(--brand-700)', fontSize: '0.7rem' }}>Salus Group</strong>
               </span>
               <img src="/images/logo-salus.png" alt="Salus Group" style={{ height: '34px', width: 'auto', display: 'block' }} />
             </div>
@@ -335,7 +335,7 @@ export default function LandingBadante() {
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', background: '#fff', border: '1px solid #dfe9fb', borderRadius: '14px', padding: '10px 18px', marginTop: '18px', boxShadow: '0 2px 10px rgba(16,42,80,.06)' }}>
             <img src="/images/logo-salus.png" alt="Salus Group - Divisione Datoriale Casimpresa" style={{ height: '42px', width: 'auto', display: 'block' }} />
             <span style={{ fontSize: '0.8rem', color: '#64748b', lineHeight: 1.45, textAlign: 'left' }}>
-              <strong style={{ color: '#1e40af', display: 'block', fontSize: '0.85rem' }}>Servizio in partnership con Salus Group</strong>
+              <strong style={{ color: 'var(--brand-700)', display: 'block', fontSize: '0.85rem' }}>Servizio in partnership con Salus Group</strong>
               Divisione Datoriale Casimpresa — selezione di personale domestico qualificato e referenziato.
             </span>
           </div>
@@ -532,7 +532,7 @@ export default function LandingBadante() {
             <strong>Siamo a tua disposizione.</strong> Compila il modulo: verifichiamo la disponibilità di una lavoratrice o un lavoratore nella tua zona e ti confermiamo la tariffa calcolata — <strong>senza impegno</strong>.
           </p>
           <p style={{ color: '#64748b', fontSize: '0.82rem', margin: '0 0 18px' }}>
-            Inviando il modulo registreremo il tuo preventivo e ti ricontatteremo noi. Preferisci parlare subito? <a href={`tel:${TELEFONO}`} style={{ color: '#1e4d8c', fontWeight: 700 }}>Chiama {TELEFONO_LABEL}</a> o <a href={testoWhatsApp()} target="_blank" rel="noopener" style={{ color: '#16a34a', fontWeight: 700 }}>scrivici su WhatsApp</a>.
+            Inviando il modulo registreremo il tuo preventivo e ti ricontatteremo noi. Preferisci parlare subito? <a href={`tel:${TELEFONO}`} style={{ color: 'var(--brand-700)', fontWeight: 700 }}>Chiama {TELEFONO_LABEL}</a> o <a href={testoWhatsApp()} target="_blank" rel="noopener" style={{ color: '#16a34a', fontWeight: 700 }}>scrivici su WhatsApp</a>.
           </p>
           <form onSubmit={inviaRichiesta}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(220px,100%),1fr))', gap: '14px' }}>

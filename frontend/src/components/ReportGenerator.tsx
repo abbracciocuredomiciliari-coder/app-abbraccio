@@ -135,7 +135,7 @@ export function ReportGenerator({ patientId, patientName, renderTrigger }: Repor
         <div className="modal-overlay" onClick={() => setOpen(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px', width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ margin: 0, color: '#1e4d8c' }}>
+              <h3 style={{ margin: 0, color: 'var(--brand-700)' }}>
                 📝 Relazione LLM — {patientName}
               </h3>
               <button onClick={() => setOpen(false)} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer' }}>

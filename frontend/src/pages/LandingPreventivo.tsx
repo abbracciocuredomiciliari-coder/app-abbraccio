@@ -242,22 +242,22 @@ export default function LandingPreventivo() {
   const input: React.CSSProperties = { width: '100%', padding: '11px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', fontFamily: 'inherit' };
   const label: React.CSSProperties = { display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#475569', marginBottom: '5px' };
   // Menu a tendina categoria: evidenziato e leggibile
-  const selectCat: React.CSSProperties = { ...input, padding: '14px 16px', fontSize: '1.05rem', fontWeight: 800, color: '#1e3a8a', background: 'linear-gradient(180deg,#dbeafe,#eff6ff)', border: '2px solid #3b82f6', borderRadius: '12px', boxShadow: '0 3px 10px rgba(30,77,140,.18)', cursor: 'pointer' };
+  const selectCat: React.CSSProperties = { ...input, padding: '14px 16px', fontSize: '1.05rem', fontWeight: 800, color: 'var(--brand-800)', background: 'linear-gradient(180deg,var(--brand-100),var(--brand-50))', border: '2px solid var(--brand-500)', borderRadius: '12px', boxShadow: '0 3px 10px rgba(28,113,100,.18)', cursor: 'pointer' };
   const btnWa: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 16px', borderRadius: '10px', background: '#25d366', color: '#fff', fontWeight: 800, textDecoration: 'none', fontSize: '0.95rem', border: 'none', cursor: 'pointer' };
-  const btnTel: React.CSSProperties = { ...btnWa, background: '#1e4d8c' };
+  const btnTel: React.CSSProperties = { ...btnWa, background: 'var(--brand-700)' };
 
   const catCorrente = categorie.find(c => c.key === categoriaAttiva);
 
   if (sent) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#eff6ff,#ffffff 55%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
-        <div style={{ background: '#fff', borderRadius: '20px', boxShadow: '0 8px 30px rgba(0,0,0,.08)', padding: '44px 36px', maxWidth: '540px', textAlign: 'center', border: '1px solid #dbeafe' }}>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,var(--brand-50),#ffffff 55%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
+        <div style={{ background: '#fff', borderRadius: '20px', boxShadow: '0 8px 30px rgba(0,0,0,.08)', padding: '44px 36px', maxWidth: '540px', textAlign: 'center', border: '1px solid var(--brand-100)' }}>
           <CheckCircle size={56} color="#16a34a" style={{ margin: '0 auto 16px' }} />
           <h1 style={{ color: '#1e293b', fontSize: '1.5rem', margin: '0 0 10px' }}>Richiesta inviata!</h1>
           <p style={{ color: '#64748b', lineHeight: 1.6, margin: '0 0 14px' }}>
             Grazie <strong>{nome.split(' ')[0]}</strong>, ti ricontatteremo al più presto al numero <strong>{telefono}</strong>.
           </p>
-          <p style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', padding: '12px', color: '#1e3a8a', fontSize: '0.9rem' }}>
+          <p style={{ background: 'var(--brand-50)', border: '1px solid var(--brand-200)', borderRadius: '10px', padding: '12px', color: 'var(--brand-800)', fontSize: '0.9rem' }}>
             Preventivo <strong>{sent.numero}</strong> registrato — totale <strong>{euro(sent.totale)}</strong>.
           </p>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '18px' }}>
@@ -271,16 +271,16 @@ export default function LandingPreventivo() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#eff6ff,#ffffff 55%)', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,var(--brand-50),#ffffff 55%)', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
       <style>{`@media (max-width: 640px) { .landing-hide-mobile { display: none; } .prev-sticky { position: static !important; } .prev-grid { grid-template-columns: 1fr !important; } .prev-btn-2col { grid-template-columns: 1fr !important; } .prev-card-pad { padding: 14px 14px 16px !important; } .prev-hero { padding: 12px 14px !important; } .prev-list { max-height: 300px !important; overflow-y: auto !important; } .prev-table { font-size: 0.78rem !important; } .prev-table td { padding: 4px 3px !important; word-break: break-word; } }`}</style>
       {/* Header — solo brand Abbraccio */}
-      <header style={{ background: '#fff', borderBottom: '1px solid #dbeafe', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10 }}>
+      <header style={{ background: '#fff', borderBottom: '1px solid var(--brand-100)', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: '1080px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <TornaAlSito />
           <img src="/logo.png" alt="Abbraccio Cure Domiciliari" style={{ height: '46px', width: 'auto', display: 'block' }} />
           <div className="landing-hide-mobile">
             <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '1.05rem', lineHeight: 1.1 }}>Abbraccio Cure Domiciliari</div>
-            <div style={{ fontSize: '0.75rem', color: '#1e4d8c', fontWeight: 600 }}>Infermieri · OSS · Visite mediche · Esami a domicilio</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--brand-700)', fontWeight: 600 }}>Infermieri · OSS · Visite mediche · Esami a domicilio</div>
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
             <a href={`tel:${TELEFONO}`} style={{ ...btnTel, padding: '8px 12px', fontSize: '0.82rem' }}><Phone size={15} /> <span className="landing-hide-mobile">{TELEFONO_LABEL}</span></a>
@@ -292,7 +292,7 @@ export default function LandingPreventivo() {
       <main style={{ maxWidth: '1080px', margin: '0 auto', padding: '28px 16px 48px' }}>
         {/* Hero */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <span style={{ background: '#dbeafe', color: '#1e3a8a', padding: '6px 14px', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 700 }}>
+          <span style={{ background: 'var(--brand-100)', color: 'var(--brand-800)', padding: '6px 14px', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 700 }}>
             Preventivo online gratuito
           </span>
           <h1 style={{ color: '#1e293b', fontSize: 'clamp(1.5rem,4vw,2.2rem)', margin: '14px 0 8px', fontWeight: 800 }}>
@@ -308,12 +308,12 @@ export default function LandingPreventivo() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(320px,100%),1fr))', gap: '20px', alignItems: 'start' }}>
           {/* Calcolatore */}
-          <div style={{ background: 'linear-gradient(165deg,#eff6ff 0%,#ffffff 55%)', borderRadius: '16px', border: '1px solid #93c5fd', boxShadow: '0 8px 24px rgba(30,77,140,.10)', overflow: 'hidden' }}>
-            <div style={{ background: 'linear-gradient(90deg,#1e3a8a,#1e4d8c)', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ background: 'linear-gradient(165deg,var(--brand-50) 0%,#ffffff 55%)', borderRadius: '16px', border: '1px solid var(--brand-300)', boxShadow: '0 8px 24px rgba(28,113,100,.10)', overflow: 'hidden' }}>
+            <div style={{ background: 'linear-gradient(90deg,var(--brand-800),var(--brand-700))', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Calculator size={20} color="#fff" />
               <div>
                 <h2 style={{ fontSize: '1.05rem', color: '#fff', margin: 0, fontWeight: 800 }}>Calcolatore prestazioni</h2>
-                <div style={{ fontSize: '0.72rem', color: '#dbeafe' }}>listino ufficiale Abbraccio Cure Domiciliari</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--brand-100)' }}>listino ufficiale Abbraccio Cure Domiciliari</div>
               </div>
             </div>
             <div className="prev-card-pad" style={{ display: 'grid', gap: '14px', padding: '22px 24px 24px' }}>
@@ -334,21 +334,21 @@ export default function LandingPreventivo() {
               {categorie.length > 0 && (
                 <>
                   <div>
-                    <span style={{ ...label, fontSize: '1rem', color: '#1e4d8c', fontWeight: 800, marginBottom: '8px', display: 'flex', alignItems: 'center' }}>📋 SCEGLI IL TIPO DI PRESTAZIONE <InfoNote text="Scegli la categoria: ogni categoria raggruppa le prestazioni del nostro listino. Puoi aggiungere prestazioni da più categorie allo stesso preventivo." /></span>
+                    <span style={{ ...label, fontSize: '1rem', color: 'var(--brand-700)', fontWeight: 800, marginBottom: '8px', display: 'flex', alignItems: 'center' }}>📋 SCEGLI IL TIPO DI PRESTAZIONE <InfoNote text="Scegli la categoria: ogni categoria raggruppa le prestazioni del nostro listino. Puoi aggiungere prestazioni da più categorie allo stesso preventivo." /></span>
                     <select value={categoriaAttiva} onChange={e => setCategoriaAttiva(e.target.value)} style={selectCat}>
                       {categorie.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
                     </select>
                     {catCorrente && <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{catCorrente.descrizione}</span>}
                     <button type="button" onClick={() => setShowLegenda(o => !o)}
-                      style={{ marginTop: '6px', border: 'none', background: 'none', padding: 0, cursor: 'pointer', color: '#1e4d8c', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                      style={{ marginTop: '6px', border: 'none', background: 'none', padding: 0, cursor: 'pointer', color: 'var(--brand-700)', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                       <Info size={14} /> {showLegenda ? 'Nascondi la legenda delle categorie' : 'Quale categoria scegliere? Legenda'}
                     </button>
                     {showLegenda && (
-                      <div style={{ marginTop: '8px', background: '#fff', border: '1px solid #bfdbfe', borderRadius: '10px', overflow: 'hidden' }}>
+                      <div style={{ marginTop: '8px', background: '#fff', border: '1px solid var(--brand-200)', borderRadius: '10px', overflow: 'hidden' }}>
                         {categorie.map(c => (
                           <button key={c.key} type="button" onClick={() => { setCategoriaAttiva(c.key); setShowLegenda(false); }}
-                            style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', width: '100%', textAlign: 'left', border: 'none', borderBottom: '1px solid #eff6ff', padding: '9px 12px', cursor: 'pointer', background: c.key === categoriaAttiva ? '#dbeafe' : '#fff', fontFamily: 'inherit' }}>
-                            <Stethoscope size={16} color="#1e4d8c" style={{ flexShrink: 0, marginTop: '2px' }} />
+                            style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', width: '100%', textAlign: 'left', border: 'none', borderBottom: '1px solid var(--brand-50)', padding: '9px 12px', cursor: 'pointer', background: c.key === categoriaAttiva ? 'var(--brand-100)' : '#fff', fontFamily: 'inherit' }}>
+                            <Stethoscope size={16} color="var(--brand-700)" style={{ flexShrink: 0, marginTop: '2px' }} />
                             <span>
                               <span style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>{c.label} <span style={{ color: '#94a3b8', fontWeight: 500 }}>· {c.voci.length} voci</span></span>
                               <span style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', lineHeight: 1.4 }}>{c.descrizione}</span>
@@ -361,7 +361,7 @@ export default function LandingPreventivo() {
 
                   {/* Voci della categoria */}
                   {catCorrente && (
-                    <div style={{ background: '#fff', border: '1px solid #dbeafe', borderRadius: '10px', overflow: 'hidden' }}>
+                    <div style={{ background: '#fff', border: '1px solid var(--brand-100)', borderRadius: '10px', overflow: 'hidden' }}>
                       <div style={{ padding: '8px 12px', background: '#f8fafc', fontSize: '0.75rem', fontWeight: 700, color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
                         <span>Prestazione</span><span>Prezzo · Quantità <InfoNote text="I prezzi sono quelli del listino ufficiale Abbraccio. Le prestazioni contrassegnate PROMO hanno un prezzo promozionale: il listino è mostrato barrato. La quantità indica accessi, ore o esami." /></span>
                       </div>
@@ -370,7 +370,7 @@ export default function LandingPreventivo() {
                           const q = selezione[v.id] || 0;
                           const gg = giorniVoci[v.id] || 1;
                           return (
-                            <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 12px', borderBottom: '1px solid #f1f5f9', background: q > 0 ? '#eff6ff' : v.promo ? '#fff7f7' : '#fff', flexWrap: 'wrap' }}>
+                            <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 12px', borderBottom: '1px solid #f1f5f9', background: q > 0 ? 'var(--brand-50)' : v.promo ? '#fff7f7' : '#fff', flexWrap: 'wrap' }}>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>{v.nome}</div>
                                 <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
@@ -378,7 +378,7 @@ export default function LandingPreventivo() {
                                 </div>
                               </div>
                               {q === 0 ? (
-                                <button type="button" onClick={() => setQta(v.id, 1)} style={{ border: '1px solid #1e4d8c', background: '#fff', color: '#1e4d8c', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                                <button type="button" onClick={() => setQta(v.id, 1)} style={{ border: '1px solid var(--brand-700)', background: '#fff', color: 'var(--brand-700)', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                                   <Plus size={14} /> Aggiungi
                                 </button>
                               ) : (
@@ -392,9 +392,9 @@ export default function LandingPreventivo() {
                                 <div style={{ flexBasis: '100%', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#475569', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '6px 9px' }}>
                                   <span><strong>{q}</strong> ore/giorno</span>
                                   <span>per</span>
-                                  <input type="number" min={1} max={365} value={gg} onChange={e => setGiorniVoce(v.id, Number(e.target.value) || 1)} style={{ width: '48px', textAlign: 'center', padding: '3px 2px', border: '1px solid #93c5fd', borderRadius: '6px', fontWeight: 800, fontSize: '0.78rem', color: '#1e4d8c' }} />
+                                  <input type="number" min={1} max={365} value={gg} onChange={e => setGiorniVoce(v.id, Number(e.target.value) || 1)} style={{ width: '48px', textAlign: 'center', padding: '3px 2px', border: '1px solid var(--brand-300)', borderRadius: '6px', fontWeight: 800, fontSize: '0.78rem', color: 'var(--brand-700)' }} />
                                   <span>giorni</span>
-                                  <span style={{ marginLeft: 'auto', color: '#1e4d8c', fontWeight: 800 }}>= {q * gg} ore totali · {euro(v.prezzo * q * gg)}</span>
+                                  <span style={{ marginLeft: 'auto', color: 'var(--brand-700)', fontWeight: 800 }}>= {q * gg} ore totali · {euro(v.prezzo * q * gg)}</span>
                                 </div>
                               )}
                             </div>
@@ -435,7 +435,7 @@ export default function LandingPreventivo() {
                   )}
 
                   <button type="button" onClick={genera} disabled={previewLoading || numSelezionate === 0}
-                    style={{ marginTop: '4px', width: '100%', padding: '14px', border: 'none', borderRadius: '10px', background: previewLoading || numSelezionate === 0 ? '#93c5fd' : 'linear-gradient(135deg,#1e3a8a,#1e4d8c)', color: '#fff', fontWeight: 800, fontSize: '1rem', cursor: previewLoading ? 'wait' : numSelezionate === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 14px rgba(30,77,140,.30)' }}>
+                    style={{ marginTop: '4px', width: '100%', padding: '14px', border: 'none', borderRadius: '10px', background: previewLoading || numSelezionate === 0 ? 'var(--brand-300)' : 'linear-gradient(135deg,var(--brand-800),var(--brand-700))', color: '#fff', fontWeight: 800, fontSize: '1rem', cursor: previewLoading ? 'wait' : numSelezionate === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 14px rgba(28,113,100,.30)' }}>
                     <Calculator size={18} /> {previewLoading ? 'Calcolo in corso...' : prev ? 'Rigenera preventivo' : 'Genera preventivo'}
                   </button>
                 </>
@@ -444,9 +444,9 @@ export default function LandingPreventivo() {
           </div>
 
           {/* Preventivo */}
-          <div className="prev-sticky prev-card-pad" style={{ background: '#fff', borderRadius: '16px', border: '1px solid #dbeafe', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: '24px', position: 'sticky', top: '80px' }}>
+          <div className="prev-sticky prev-card-pad" style={{ background: '#fff', borderRadius: '16px', border: '1px solid var(--brand-100)', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: '24px', position: 'sticky', top: '80px' }}>
             <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', color: '#1e293b', margin: '0 0 14px' }}>
-              <FileText size={20} color="#1e4d8c" /> Il tuo preventivo
+              <FileText size={20} color="var(--brand-700)" /> Il tuo preventivo
             </h2>
             {previewLoading && <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>⏳ Calcolo in corso...</p>}
             {previewError && <p style={{ color: '#dc2626', fontSize: '0.88rem' }}>{previewError}</p>}
@@ -482,7 +482,7 @@ export default function LandingPreventivo() {
                     )}
                   </tbody>
                 </table>
-                <div style={{ background: 'linear-gradient(135deg,#1e3a8a,#1e4d8c)', borderRadius: '12px', padding: '16px 18px', marginTop: '14px', color: '#fff' }}>
+                <div style={{ background: 'linear-gradient(135deg,var(--brand-800),var(--brand-700))', borderRadius: '12px', padding: '16px 18px', marginTop: '14px', color: '#fff' }}>
                   <div style={{ fontSize: '0.78rem', fontWeight: 600, opacity: 0.9 }}>TOTALE PREVENTIVO</div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
                     <div style={{ fontSize: '1.6rem', fontWeight: 800, lineHeight: 1.2 }}>{euro(prev.totale)}</div>
@@ -502,17 +502,17 @@ export default function LandingPreventivo() {
                   <a href={`tel:${TELEFONO}`} style={btnTel}><Phone size={17} /> Telefona</a>
                 </div>
                 <button type="button" onClick={() => formRef.current?.scrollIntoView({ behavior: 'smooth' })}
-                  style={{ marginTop: '8px', width: '100%', padding: '10px', border: '1px solid #1e4d8c', borderRadius: '10px', background: '#fff', color: '#1e4d8c', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'inherit' }}>
+                  style={{ marginTop: '8px', width: '100%', padding: '10px', border: '1px solid var(--brand-700)', borderRadius: '10px', background: '#fff', color: 'var(--brand-700)', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'inherit' }}>
                   <Send size={15} /> Oppure compila il modulo
                 </button>
               </>
             )}
             {!prev && !previewLoading && !previewError && (
               <div style={{ textAlign: 'center', padding: '26px 10px', color: '#94a3b8' }}>
-                <Calculator size={34} color="#93c5fd" style={{ margin: '0 auto 10px' }} />
+                <Calculator size={34} color="var(--brand-300)" style={{ margin: '0 auto 10px' }} />
                 <p style={{ fontSize: '0.88rem', margin: 0, lineHeight: 1.55 }}>
                   Nessun preventivo ancora.<br />
-                  Aggiungi le prestazioni e premi <strong style={{ color: '#1e4d8c' }}>«Genera preventivo»</strong>:<br />
+                  Aggiungi le prestazioni e premi <strong style={{ color: 'var(--brand-700)' }}>«Genera preventivo»</strong>:<br />
                   se modifichi qualcosa dovrai rigenerarlo.
                 </p>
               </div>
@@ -521,15 +521,15 @@ export default function LandingPreventivo() {
         </div>
 
         {/* Modulo richiesta */}
-        <div ref={formRef} style={{ background: '#fff', borderRadius: '16px', border: '1px solid #dbeafe', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: '26px', marginTop: '24px' }}>
+        <div ref={formRef} style={{ background: '#fff', borderRadius: '16px', border: '1px solid var(--brand-100)', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: '26px', marginTop: '24px' }}>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem', color: '#1e293b', margin: '0 0 6px' }}>
-            <Send size={20} color="#1e4d8c" /> Richiedi appuntamento o maggiori informazioni
+            <Send size={20} color="var(--brand-700)" /> Richiedi appuntamento o maggiori informazioni
           </h2>
           <p style={{ color: '#475569', fontSize: '0.9rem', margin: '0 0 6px', lineHeight: 1.55 }}>
             <strong>Siamo a tua disposizione.</strong> Compila il modulo: verifichiamo la disponibilità del personale nella tua zona e ti confermiamo la tariffa calcolata — <strong>senza impegno</strong>.
           </p>
           <p style={{ color: '#64748b', fontSize: '0.82rem', margin: '0 0 18px' }}>
-            Inviando il modulo registreremo il tuo preventivo e ti ricontatteremo noi. Preferisci parlare subito? <a href={`tel:${TELEFONO}`} style={{ color: '#1e4d8c', fontWeight: 700 }}>Chiama {TELEFONO_LABEL}</a> o <a href={testoWhatsApp()} target="_blank" rel="noopener" style={{ color: '#16a34a', fontWeight: 700 }}>scrivici su WhatsApp</a>.
+            Inviando il modulo registreremo il tuo preventivo e ti ricontatteremo noi. Preferisci parlare subito? <a href={`tel:${TELEFONO}`} style={{ color: 'var(--brand-700)', fontWeight: 700 }}>Chiama {TELEFONO_LABEL}</a> o <a href={testoWhatsApp()} target="_blank" rel="noopener" style={{ color: '#16a34a', fontWeight: 700 }}>scrivici su WhatsApp</a>.
           </p>
           <form onSubmit={inviaRichiesta}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(220px,100%),1fr))', gap: '14px' }}>
@@ -555,9 +555,9 @@ export default function LandingPreventivo() {
                       onClick={() => setRuolo(r)}
                       style={{
                         flex: 1, padding: '10px 8px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer',
-                        border: `2px solid ${ruolo === r ? '#1e4d8c' : '#e2e8f0'}`,
-                        background: ruolo === r ? '#eff6ff' : '#fff',
-                        color: ruolo === r ? '#1e40af' : '#475569',
+                        border: `2px solid ${ruolo === r ? 'var(--brand-700)' : '#e2e8f0'}`,
+                        background: ruolo === r ? 'var(--brand-50)' : '#fff',
+                        color: ruolo === r ? 'var(--brand-700)' : '#475569',
                       }}
                     >
                       {r === 'paziente' ? '👤 Sono il paziente' : '🤝 Sono il caregiver'}
@@ -581,7 +581,7 @@ export default function LandingPreventivo() {
             </div>
             {sendError && <p style={{ color: '#dc2626', fontSize: '0.88rem', margin: '10px 0 0' }}>{sendError}</p>}
             <button type="submit" disabled={sending}
-              style={{ marginTop: '18px', width: '100%', padding: '14px', border: 'none', borderRadius: '10px', background: sending ? '#93c5fd' : 'linear-gradient(135deg,#1e3a8a,#1e4d8c)', color: '#fff', fontWeight: 800, fontSize: '1rem', cursor: sending ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              style={{ marginTop: '18px', width: '100%', padding: '14px', border: 'none', borderRadius: '10px', background: sending ? 'var(--brand-300)' : 'linear-gradient(135deg,var(--brand-800),var(--brand-700))', color: '#fff', fontWeight: 800, fontSize: '1rem', cursor: sending ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               <Send size={18} /> {sending ? 'Invio in corso...' : 'Invia richiesta con il tuo preventivo'}
             </button>
             <div className="prev-btn-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px' }}>

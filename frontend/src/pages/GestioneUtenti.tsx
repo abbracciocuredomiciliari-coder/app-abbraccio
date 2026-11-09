@@ -47,6 +47,7 @@ const roleLabels: Record<string, string> = {
   coordinator: 'Coordinatore',
   caregiver: 'Operatore',
   direttore: 'Direttore Sanitario',
+  commercialista: 'Commercialista',
   paziente_registrato: 'Paziente / Caregiver',
 };
 
@@ -379,9 +380,9 @@ function GestioneUtenti() {
               type="button"
               onClick={() => setFiltro(f)}
               style={{
-                background: active ? '#1e4d8c' : '#f1f5f9',
+                background: active ? 'var(--brand-700)' : '#f1f5f9',
                 color: active ? '#fff' : '#374151',
-                border: `1px solid ${active ? '#1e4d8c' : '#e2e8f0'}`,
+                border: `1px solid ${active ? 'var(--brand-700)' : '#e2e8f0'}`,
                 borderRadius: '6px',
                 padding: '7px 16px',
                 fontSize: '0.9rem',
@@ -411,7 +412,7 @@ function GestioneUtenti() {
       {nPending > 0 && filtro !== 'pending' && (
         <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid #f59e0b', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#92400e', fontWeight: '600', fontSize: '0.9rem' }}>
           ⚠️ Ci sono <strong>{nPending}</strong> richieste in attesa di approvazione.{' '}
-          <button type="button" onClick={() => setFiltro('pending')} style={{ background: 'none', border: 'none', color: '#1e4d8c', cursor: 'pointer', fontWeight: '700', textDecoration: 'underline', padding: 0 }}>
+          <button type="button" onClick={() => setFiltro('pending')} style={{ background: 'none', border: 'none', color: 'var(--brand-700)', cursor: 'pointer', fontWeight: '700', textDecoration: 'underline', padding: 0 }}>
             Visualizza →
           </button>
         </div>
@@ -483,6 +484,7 @@ function GestioneUtenti() {
                             <option value="caregiver">Operatore</option>
                             <option value="coordinator">Coordinatore</option>
                             <option value="direttore">Direttore Sanitario</option>
+                              <option value="commercialista">Commercialista (solo documenti)</option>
                             <option value="admin">Admin</option>
                             <option value="paziente_registrato">Paziente / Caregiver</option>
                           </select>
@@ -516,7 +518,7 @@ function GestioneUtenti() {
                         type="button"
                         onClick={() => openUserProfilePdf(utente._id)}
                         disabled={loadingPdfUserId === utente._id}
-                        style={{ background: '#2563eb', color: '#fff', fontSize: '0.85rem', padding: '6px 14px' }}
+                        style={{ background: 'var(--brand-600)', color: '#fff', fontSize: '0.85rem', padding: '6px 14px' }}
                       >
                         {loadingPdfUserId === utente._id ? '⏳ Caricamento...' : '📄 Profilo PDF'}
                       </button>

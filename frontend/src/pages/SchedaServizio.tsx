@@ -47,10 +47,10 @@ function generaHTMLScheda(s: SchedaMia): string {
   <style>
     *{box-sizing:border-box}
     body{font-family:Arial,sans-serif;font-size:13px;color:#111;margin:30px;max-width:750px}
-    h1{font-size:20px;color:#1e4d8c;margin-bottom:4px;text-align:center}
+    h1{font-size:20px;color:var(--brand-700);margin-bottom:4px;text-align:center}
     h2{font-size:11px;color:#6b7280;text-align:center;margin:0 0 24px;text-transform:uppercase;letter-spacing:1px}
     .section{margin-bottom:20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}
-    .section-title{background:#1e4d8c;color:white;padding:8px 14px;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.5px}
+    .section-title{background:var(--brand-700);color:white;padding:8px 14px;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.5px}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px}
     .field label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:3px}
     .field span{font-size:13px;color:#111;font-weight:600}
@@ -97,7 +97,7 @@ function generaHTMLScheda(s: SchedaMia): string {
   ${s.noteAdmin ? `<div class="section"><div class="section-title">Note Amministrazione</div><div style="padding:12px 14px;color:#374151">${s.noteAdmin}</div></div>` : ''}
   <div class="footer">Documento generato — App Abbraccio Cure Domiciliari — ${new Date().toLocaleString('it-IT')}</div>
   <div class="no-print" style="margin-top:24px;text-align:center">
-    <button onclick="window.print()" style="background:#1e4d8c;color:white;border:none;border-radius:8px;padding:12px 28px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Stampa / Salva PDF</button>
+    <button onclick="window.print()" style="background:var(--brand-700);color:white;border:none;border-radius:8px;padding:12px 28px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Stampa / Salva PDF</button>
   </div>
   </body></html>`;
 }
@@ -128,7 +128,7 @@ const TIPI_PRESTAZIONE = [
 const STATO_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
   inviata:   { label: '⏳ Inviata — in attesa di conferma', bg: '#fff7ed', color: '#c2410c' },
   accettata: { label: '✅ Accettata dall\'amministrazione', bg: '#f0fdf4', color: '#15803d' },
-  archiviata:{ label: '📁 Archiviata nella documentazione', bg: '#eff6ff', color: '#1d4ed8' },
+  archiviata:{ label: '📁 Archiviata nella documentazione', bg: 'var(--brand-50)', color: '#1d4ed8' },
   rifiutata: { label: '❌ Non accettata', bg: '#fef2f2', color: '#dc2626' },
 };
 
@@ -239,9 +239,9 @@ export default function SchedaServizio() {
   const labelStyle = { display: 'block' as const, fontWeight: 600 as const, fontSize: '0.85rem', color: '#374151', marginBottom: '6px' };
   const inputStyle = { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem', boxSizing: 'border-box' as const };
   const checkboxRow = (label: string, checked: boolean, onChange: () => void) => (
-    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '10px 12px', borderRadius: '8px', border: `2px solid ${checked ? '#2563eb' : '#e2e8f0'}`, background: checked ? '#eff6ff' : 'white', fontWeight: 600, fontSize: '0.9rem', color: checked ? '#1d4ed8' : '#374151', userSelect: 'none' }}>
+    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '10px 12px', borderRadius: '8px', border: `2px solid ${checked ? 'var(--brand-600)' : '#e2e8f0'}`, background: checked ? 'var(--brand-50)' : 'white', fontWeight: 600, fontSize: '0.9rem', color: checked ? '#1d4ed8' : '#374151', userSelect: 'none' }}>
       <input type="checkbox" checked={checked} onChange={onChange} style={{ display: 'none' }} />
-      <span style={{ width: '20px', height: '20px', borderRadius: '4px', border: `2px solid ${checked ? '#2563eb' : '#d1d5db'}`, background: checked ? '#2563eb' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <span style={{ width: '20px', height: '20px', borderRadius: '4px', border: `2px solid ${checked ? 'var(--brand-600)' : '#d1d5db'}`, background: checked ? 'var(--brand-600)' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         {checked && <CheckCircle size={14} color="white" />}
       </span>
       {label}
@@ -254,7 +254,7 @@ export default function SchedaServizio() {
       <section className="fade-in" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
         <div style={{ background: 'white', borderRadius: '16px', padding: '40px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
           <CheckCircle size={64} color="#16a34a" style={{ marginBottom: '16px' }} />
-          <h2 style={{ color: '#1e3a5f', fontSize: '1.5rem', marginBottom: '8px' }}>Scheda Inviata!</h2>
+          <h2 style={{ color: 'var(--nav-900)', fontSize: '1.5rem', marginBottom: '8px' }}>Scheda Inviata!</h2>
           <p style={{ color: '#6b7280', marginBottom: '8px' }}>
             La scheda è stata inviata all'amministrazione che la verificherà e archivierà nella tua documentazione.
           </p>
@@ -272,7 +272,7 @@ export default function SchedaServizio() {
             )}
             <button
               onClick={() => { setStep('form'); setFirma(''); setNomeCognomePaziente(''); setDataNascita(''); setTipoPrestazione(''); setCostoPrestazione(''); setNomeFirmatario(''); setUltimaScheda(null); }}
-              style={{ background: '#2563eb', color: 'white', border: 'none', borderRadius: '10px', padding: '14px 28px', cursor: 'pointer', fontWeight: 700, fontSize: '1rem' }}
+              style={{ background: 'var(--brand-600)', color: 'white', border: 'none', borderRadius: '10px', padding: '14px 28px', cursor: 'pointer', fontWeight: 700, fontSize: '1rem' }}
             >
               Compila nuova scheda
             </button>
@@ -281,7 +281,7 @@ export default function SchedaServizio() {
 
         {schedeInviate.length > 0 && (
           <div style={{ marginTop: '24px' }}>
-            <h3 style={{ color: '#1e3a5f', fontWeight: 700, marginBottom: '12px' }}>Le tue schede inviate</h3>
+            <h3 style={{ color: 'var(--nav-900)', fontWeight: 700, marginBottom: '12px' }}>Le tue schede inviate</h3>
             {schedeInviate.map(s => {
               const cfg = STATO_CONFIG[s.stato] || { label: s.stato, bg: '#f3f4f6', color: '#374151' };
               return (
@@ -318,7 +318,7 @@ export default function SchedaServizio() {
     return (
       <section className="fade-in" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
         <div style={sectionStyle}>
-          <div style={sectionHeaderStyle('#1e4d8c')}>
+          <div style={sectionHeaderStyle('var(--brand-700)')}>
             <FileText size={16} /> Firma del Paziente o Caregiver
           </div>
           <div style={sectionBodyStyle}>
@@ -332,9 +332,9 @@ export default function SchedaServizio() {
                 {(['paziente', 'caregiver'] as const).map(r => (
                   <button key={r} onClick={() => setRuoloFirmatario(r)}
                     style={{ flex: 1, padding: '12px', borderRadius: '10px', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem',
-                      background: ruoloFirmatario === r ? '#1e3a5f' : '#f3f4f6',
+                      background: ruoloFirmatario === r ? 'var(--nav-900)' : '#f3f4f6',
                       color: ruoloFirmatario === r ? 'white' : '#374151',
-                      border: `2px solid ${ruoloFirmatario === r ? '#1e3a5f' : '#d1d5db'}` }}>
+                      border: `2px solid ${ruoloFirmatario === r ? 'var(--nav-900)' : '#d1d5db'}` }}>
                     {r === 'paziente' ? '🧑‍🦳 Paziente' : '👨‍👩‍👧 Caregiver'}
                   </button>
                 ))}
@@ -367,7 +367,7 @@ export default function SchedaServizio() {
                 ← Indietro
               </button>
               <button onClick={inviaScheda} disabled={saving || !firma || !nomeFirmatario.trim()}
-                style={{ flex: 2, background: saving || !firma || !nomeFirmatario.trim() ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '10px', padding: '14px', cursor: saving || !firma || !nomeFirmatario.trim() ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                style={{ flex: 2, background: saving || !firma || !nomeFirmatario.trim() ? 'var(--brand-300)' : 'var(--brand-600)', color: 'white', border: 'none', borderRadius: '10px', padding: '14px', cursor: saving || !firma || !nomeFirmatario.trim() ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                 {saving ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={18} />}
                 {saving ? 'Invio in corso...' : 'Invia Scheda'}
               </button>
@@ -383,8 +383,8 @@ export default function SchedaServizio() {
     <section className="fade-in" style={{ maxWidth: '700px', margin: '0 auto', padding: '20px' }}>
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e3a5f', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-          <FileText size={24} color="#2563eb" />
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--nav-900)', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+          <FileText size={24} color="var(--brand-600)" />
           Scheda Servizi Assistenza Domiciliare
         </h1>
         <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>
@@ -415,7 +415,7 @@ export default function SchedaServizio() {
 
       {/* SEZIONE 1 — Dati Paziente */}
       <div style={sectionStyle}>
-        <div style={sectionHeaderStyle('#1e4d8c')}>
+        <div style={sectionHeaderStyle('var(--brand-700)')}>
           <User size={15} /> 1. Dati del Paziente
         </div>
         <div style={sectionBodyStyle}>
@@ -459,8 +459,8 @@ export default function SchedaServizio() {
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {([['singola', '☐ Singola'], ['multipla', '☐ Multipla'], ['continuata', '☐ Continuata']] as const).map(([v, l]) => (
                 <button key={v} onClick={() => setFrequenzaPrestazione(v)}
-                  style={{ padding: '10px 16px', borderRadius: '8px', border: `2px solid ${frequenzaPrestazione === v ? '#2563eb' : '#d1d5db'}`,
-                    background: frequenzaPrestazione === v ? '#eff6ff' : 'white', color: frequenzaPrestazione === v ? '#1d4ed8' : '#374151',
+                  style={{ padding: '10px 16px', borderRadius: '8px', border: `2px solid ${frequenzaPrestazione === v ? 'var(--brand-600)' : '#d1d5db'}`,
+                    background: frequenzaPrestazione === v ? 'var(--brand-50)' : 'white', color: frequenzaPrestazione === v ? '#1d4ed8' : '#374151',
                     fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}>
                   {l.replace('☐ ', frequenzaPrestazione === v ? '☑ ' : '☐ ')}
                 </button>
@@ -567,7 +567,7 @@ export default function SchedaServizio() {
           if (err) { setErrore(err); return; }
           setErrore(''); setStep('firma');
         }}
-        style={{ width: '100%', background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '12px', padding: '16px', cursor: 'pointer', fontWeight: 700, fontSize: '1.05rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+        style={{ width: '100%', background: 'var(--brand-700)', color: 'white', border: 'none', borderRadius: '12px', padding: '16px', cursor: 'pointer', fontWeight: 700, fontSize: '1.05rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
       >
         <FileText size={20} /> Continua — Firma e Invia
       </button>

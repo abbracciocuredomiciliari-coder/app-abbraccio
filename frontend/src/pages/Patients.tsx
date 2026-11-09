@@ -132,7 +132,7 @@ const categoryIcons: Record<string, React.ElementType> = {
 };
 
 const categoryColors: Record<string, string> = {
-  cartella_clinica: '#4f46e5',
+  cartella_clinica: 'var(--brand-600)',
   esame: '#06b6d4',
   risultato_analisi: '#10b981',
   consulenza: '#f59e0b',
@@ -1026,8 +1026,8 @@ function Patients() {
     }).join('');
 
     const consensoHtml = consenso ? `
-      <h2 style="font-size:13pt;color:#1e40af;margin-top:24px">Consenso GDPR attivo</h2>
-      <div style="padding:14px;background:#f8fafc;border:1px solid #dbeafe;border-radius:10px;margin-bottom:20px">
+      <h2 style="font-size:13pt;color:var(--brand-700);margin-top:24px">Consenso GDPR attivo</h2>
+      <div style="padding:14px;background:#f8fafc;border:1px solid var(--brand-100);border-radius:10px;margin-bottom:20px">
         <p style="margin:0 0 8px"><strong>Firmatario:</strong> ${consenso.nomeFirmatario} ${consenso.cognomeFirmatario} (${consenso.firmatoDa})</p>
         <p style="margin:0 0 8px"><strong>Data firma:</strong> ${new Date(consenso.dataFirma).toLocaleDateString('it-IT')}</p>
         <p style="margin:0 0 8px"><strong>Versione informativa:</strong> ${consenso.versioneInformativa}</p>
@@ -1037,12 +1037,12 @@ function Patients() {
 
     return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Riepilogo paziente ${patient.firstName} ${patient.lastName}</title><style>
       body{font-family:Arial,sans-serif;color:#111;margin:0;padding:24px}
-      h1{font-size:18pt;color:#1e40af;margin-bottom:8px}
-      h2{font-size:13pt;color:#1e40af;margin-top:24px;margin-bottom:10px}
+      h1{font-size:18pt;color:var(--brand-700);margin-bottom:8px}
+      h2{font-size:13pt;color:var(--brand-700);margin-top:24px;margin-bottom:10px}
       p{font-size:10pt;line-height:1.6;margin:0 0 10px}
       table{width:100%;border-collapse:collapse;margin-top:12px}
       th,td{border:1px solid #e5e7eb;padding:10px;text-align:left;font-size:10pt}
-      th{background:#eff6ff}
+      th{background:var(--brand-50)}
       .section{margin-top:18px}
     </style></head><body>
       <h1>Riepilogo paziente</h1>
@@ -2649,7 +2649,7 @@ function Patients() {
                 type="button"
                 onClick={() => setPreventivoRapidoCalc(o => !o)}
                 className="tw-w-full tw-mb-4 tw-py-2.5 tw-rounded-lg tw-font-bold tw-border-0 tw-flex tw-items-center tw-justify-center tw-gap-2 tw-cursor-pointer"
-                style={{ background: preventivoRapidoCalc ? '#dbeafe' : 'linear-gradient(135deg,#1e3a8a,#1e4d8c)', color: preventivoRapidoCalc ? '#1e3a8a' : '#fff' }}
+                style={{ background: preventivoRapidoCalc ? 'var(--brand-100)' : 'linear-gradient(135deg,var(--brand-800),var(--brand-700))', color: preventivoRapidoCalc ? 'var(--brand-800)' : '#fff' }}
               >
                 <Calculator size={17} />
                 {preventivoRapidoCalc ? 'Chiudi il calcolatore' : '🧮 Apri il calcolatore dal listino'}

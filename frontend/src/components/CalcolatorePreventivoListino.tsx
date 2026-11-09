@@ -179,7 +179,7 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
   const input: React.CSSProperties = { width: '100%', padding: '11px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', fontFamily: 'inherit' };
   const label: React.CSSProperties = { display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#475569', marginBottom: '5px' };
   // Menu a tendina categoria: evidenziato e leggibile
-  const selectCat: React.CSSProperties = { ...input, padding: '14px 16px', fontSize: '1.05rem', fontWeight: 800, color: '#1e3a8a', background: 'linear-gradient(180deg,#dbeafe,#eff6ff)', border: '2px solid #3b82f6', borderRadius: '12px', boxShadow: '0 3px 10px rgba(30,77,140,.18)', cursor: 'pointer' };
+  const selectCat: React.CSSProperties = { ...input, padding: '14px 16px', fontSize: '1.05rem', fontWeight: 800, color: 'var(--brand-800)', background: 'linear-gradient(180deg,var(--brand-100),var(--brand-50))', border: '2px solid var(--brand-500)', borderRadius: '12px', boxShadow: '0 3px 10px rgba(28,113,100,.18)', cursor: 'pointer' };
 
   const catCorrente = categorie.find(c => c.key === categoriaAttiva);
 
@@ -187,12 +187,12 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
     <div style={{ fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: '16px', alignItems: 'start' }}>
         {/* Calcolatore */}
-        <div style={{ background: 'linear-gradient(165deg,#eff6ff 0%,#ffffff 55%)', borderRadius: '16px', border: '1px solid #93c5fd', boxShadow: '0 8px 24px rgba(30,77,140,.10)', overflow: 'hidden' }}>
-          <div style={{ background: 'linear-gradient(90deg,#1e3a8a,#1e4d8c)', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ background: 'linear-gradient(165deg,var(--brand-50) 0%,#ffffff 55%)', borderRadius: '16px', border: '1px solid var(--brand-300)', boxShadow: '0 8px 24px rgba(28,113,100,.10)', overflow: 'hidden' }}>
+          <div style={{ background: 'linear-gradient(90deg,var(--brand-800),var(--brand-700))', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Calculator size={20} color="#fff" />
             <div>
               <h2 style={{ fontSize: '1rem', color: '#fff', margin: 0, fontWeight: 800 }}>Calcolatore prestazioni</h2>
-              <div style={{ fontSize: '0.72rem', color: '#dbeafe' }}>listino ufficiale Abbraccio Cure Domiciliari</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--brand-100)' }}>listino ufficiale Abbraccio Cure Domiciliari</div>
             </div>
           </div>
           <div style={{ display: 'grid', gap: '12px', padding: '16px 18px 18px' }}>
@@ -202,21 +202,21 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
             {categorie.length > 0 && (
               <>
                 <div>
-                  <span style={{ ...label, fontSize: '1rem', color: '#1e4d8c', fontWeight: 800, marginBottom: '8px', display: 'flex', alignItems: 'center' }}>📋 SCEGLI IL TIPO DI PRESTAZIONE <InfoNote text="Scegli la categoria: ogni categoria raggruppa le prestazioni del listino. Puoi aggiungere prestazioni da più categorie allo stesso preventivo." /></span>
+                  <span style={{ ...label, fontSize: '1rem', color: 'var(--brand-700)', fontWeight: 800, marginBottom: '8px', display: 'flex', alignItems: 'center' }}>📋 SCEGLI IL TIPO DI PRESTAZIONE <InfoNote text="Scegli la categoria: ogni categoria raggruppa le prestazioni del listino. Puoi aggiungere prestazioni da più categorie allo stesso preventivo." /></span>
                   <select value={categoriaAttiva} onChange={e => setCategoriaAttiva(e.target.value)} style={selectCat}>
                     {categorie.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
                   </select>
                   {catCorrente && <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{catCorrente.descrizione}</span>}
                   <button type="button" onClick={() => setShowLegenda(o => !o)}
-                    style={{ marginTop: '6px', border: 'none', background: 'none', padding: 0, cursor: 'pointer', color: '#1e4d8c', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                    style={{ marginTop: '6px', border: 'none', background: 'none', padding: 0, cursor: 'pointer', color: 'var(--brand-700)', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                     <Info size={14} /> {showLegenda ? 'Nascondi la legenda delle categorie' : 'Quale categoria scegliere? Legenda'}
                   </button>
                   {showLegenda && (
-                    <div style={{ marginTop: '8px', background: '#fff', border: '1px solid #bfdbfe', borderRadius: '10px', overflow: 'hidden' }}>
+                    <div style={{ marginTop: '8px', background: '#fff', border: '1px solid var(--brand-200)', borderRadius: '10px', overflow: 'hidden' }}>
                       {categorie.map(c => (
                         <button key={c.key} type="button" onClick={() => { setCategoriaAttiva(c.key); setShowLegenda(false); }}
-                          style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', width: '100%', textAlign: 'left', border: 'none', borderBottom: '1px solid #eff6ff', padding: '9px 12px', cursor: 'pointer', background: c.key === categoriaAttiva ? '#dbeafe' : '#fff', fontFamily: 'inherit' }}>
-                          <Stethoscope size={16} color="#1e4d8c" style={{ flexShrink: 0, marginTop: '2px' }} />
+                          style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', width: '100%', textAlign: 'left', border: 'none', borderBottom: '1px solid var(--brand-50)', padding: '9px 12px', cursor: 'pointer', background: c.key === categoriaAttiva ? 'var(--brand-100)' : '#fff', fontFamily: 'inherit' }}>
+                          <Stethoscope size={16} color="var(--brand-700)" style={{ flexShrink: 0, marginTop: '2px' }} />
                           <span>
                             <span style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>{c.label} <span style={{ color: '#94a3b8', fontWeight: 500 }}>· {c.voci.length} voci</span></span>
                             <span style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', lineHeight: 1.4 }}>{c.descrizione}</span>
@@ -229,7 +229,7 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
 
                 {/* Voci della categoria */}
                 {catCorrente && (
-                  <div style={{ background: '#fff', border: '1px solid #dbeafe', borderRadius: '10px', overflow: 'hidden' }}>
+                  <div style={{ background: '#fff', border: '1px solid var(--brand-100)', borderRadius: '10px', overflow: 'hidden' }}>
                     <div style={{ padding: '8px 12px', background: '#f8fafc', fontSize: '0.75rem', fontWeight: 700, color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
                       <span>Prestazione</span><span>Prezzo · Quantità</span>
                     </div>
@@ -238,7 +238,7 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
                         const q = selezione[v.id] || 0;
                         const gg = giorniVoci[v.id] || 1;
                         return (
-                          <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderBottom: '1px solid #f1f5f9', background: q > 0 ? '#eff6ff' : v.promo ? '#fff7f7' : '#fff', flexWrap: 'wrap' }}>
+                          <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderBottom: '1px solid #f1f5f9', background: q > 0 ? 'var(--brand-50)' : v.promo ? '#fff7f7' : '#fff', flexWrap: 'wrap' }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>{v.nome}</div>
                               <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
@@ -246,7 +246,7 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
                               </div>
                             </div>
                             {q === 0 ? (
-                              <button type="button" onClick={() => setQta(v.id, 1)} style={{ border: '1px solid #1e4d8c', background: '#fff', color: '#1e4d8c', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                              <button type="button" onClick={() => setQta(v.id, 1)} style={{ border: '1px solid var(--brand-700)', background: '#fff', color: 'var(--brand-700)', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                                 <Plus size={14} /> Aggiungi
                               </button>
                             ) : (
@@ -260,9 +260,9 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
                               <div style={{ flexBasis: '100%', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#475569', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '6px 9px' }}>
                                 <span><strong>{q}</strong> ore/giorno</span>
                                 <span>per</span>
-                                <input type="number" min={1} max={365} value={gg} onChange={e => setGiorniVoce(v.id, Number(e.target.value) || 1)} style={{ width: '48px', textAlign: 'center', padding: '3px 2px', border: '1px solid #93c5fd', borderRadius: '6px', fontWeight: 800, fontSize: '0.78rem', color: '#1e4d8c' }} />
+                                <input type="number" min={1} max={365} value={gg} onChange={e => setGiorniVoce(v.id, Number(e.target.value) || 1)} style={{ width: '48px', textAlign: 'center', padding: '3px 2px', border: '1px solid var(--brand-300)', borderRadius: '6px', fontWeight: 800, fontSize: '0.78rem', color: 'var(--brand-700)' }} />
                                 <span>giorni</span>
-                                <span style={{ marginLeft: 'auto', color: '#1e4d8c', fontWeight: 800 }}>= {q * gg} ore totali · {euro(prezzoEff(v) * q * gg)}</span>
+                                <span style={{ marginLeft: 'auto', color: 'var(--brand-700)', fontWeight: 800 }}>= {q * gg} ore totali · {euro(prezzoEff(v) * q * gg)}</span>
                               </div>
                             )}
                           </div>
@@ -314,7 +314,7 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
                 )}
 
                 <button type="button" onClick={genera} disabled={previewLoading || numSelezionate === 0}
-                  style={{ marginTop: '2px', width: '100%', padding: '13px', border: 'none', borderRadius: '10px', background: previewLoading || numSelezionate === 0 ? '#93c5fd' : 'linear-gradient(135deg,#1e3a8a,#1e4d8c)', color: '#fff', fontWeight: 800, fontSize: '0.95rem', cursor: previewLoading ? 'wait' : numSelezionate === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  style={{ marginTop: '2px', width: '100%', padding: '13px', border: 'none', borderRadius: '10px', background: previewLoading || numSelezionate === 0 ? 'var(--brand-300)' : 'linear-gradient(135deg,var(--brand-800),var(--brand-700))', color: '#fff', fontWeight: 800, fontSize: '0.95rem', cursor: previewLoading ? 'wait' : numSelezionate === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                   <Calculator size={17} /> {previewLoading ? 'Calcolo in corso...' : prev ? 'Rigenera preventivo' : 'Genera preventivo'}
                 </button>
               </>
@@ -323,9 +323,9 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
         </div>
 
         {/* Preventivo */}
-        <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #dbeafe', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: '18px' }}>
+        <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid var(--brand-100)', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: '18px' }}>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', color: '#1e293b', margin: '0 0 12px' }}>
-            <FileText size={19} color="#1e4d8c" /> Anteprima preventivo
+            <FileText size={19} color="var(--brand-700)" /> Anteprima preventivo
           </h2>
           {previewLoading && <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>⏳ Calcolo in corso...</p>}
           {previewError && <p style={{ color: '#dc2626', fontSize: '0.88rem' }}>{previewError}</p>}
@@ -362,7 +362,7 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
                 </label>
               )}
 
-              <div style={{ background: 'linear-gradient(135deg,#1e3a8a,#1e4d8c)', borderRadius: '12px', padding: '14px 16px', marginTop: '12px', color: '#fff' }}>
+              <div style={{ background: 'linear-gradient(135deg,var(--brand-800),var(--brand-700))', borderRadius: '12px', padding: '14px 16px', marginTop: '12px', color: '#fff' }}>
                 <div style={{ fontSize: '0.78rem', fontWeight: 600, opacity: 0.9 }}>TOTALE PREVENTIVO</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
                   <div style={{ fontSize: '1.5rem', fontWeight: 800, lineHeight: 1.2 }}>{euro(totaleFinale)}</div>
@@ -388,10 +388,10 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
           )}
           {!prev && !previewLoading && !previewError && (
             <div style={{ textAlign: 'center', padding: '26px 10px', color: '#94a3b8' }}>
-              <Calculator size={34} color="#93c5fd" style={{ margin: '0 auto 10px' }} />
+              <Calculator size={34} color="var(--brand-300)" style={{ margin: '0 auto 10px' }} />
               <p style={{ fontSize: '0.88rem', margin: 0, lineHeight: 1.55 }}>
                 Nessun preventivo ancora.<br />
-                Aggiungi le prestazioni e premi <strong style={{ color: '#1e4d8c' }}>«Genera preventivo»</strong>.
+                Aggiungi le prestazioni e premi <strong style={{ color: 'var(--brand-700)' }}>«Genera preventivo»</strong>.
               </p>
             </div>
           )}

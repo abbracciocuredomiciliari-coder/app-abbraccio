@@ -92,14 +92,14 @@ export default function MappaZona({
       map.setView([center.lat, center.lng], 11);
       cerchioRef.current = L.circle([center.lat, center.lng], {
         radius: raggioKm * 1000,
-        color: '#1e4d8c',
-        fillColor: '#1e4d8c',
+        color: 'var(--brand-700)',
+        fillColor: 'var(--brand-700)',
         fillOpacity: 0.12,
         weight: 2,
       }).addTo(map);
 
       const icon = L.divIcon({
-        html: `<div style="background:#1e4d8c;color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);">🏠</div>`,
+        html: `<div style="background:var(--brand-700);color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);">🏠</div>`,
         iconSize: [28, 28],
         iconAnchor: [14, 14],
         className: '',
@@ -134,7 +134,7 @@ export default function MappaZona({
       });
       const mk = L.marker([m.lat, m.lng], { icon })
         .addTo(layer)
-        .bindPopup(`<strong>${m.label}</strong>${m.sublabel ? '<br/>' + m.sublabel : ''}${m.distanzaKm !== undefined ? '<br/>📍 ' + m.distanzaKm + ' km' : ''}${onMarkerClick ? '<br/><em style="font-size:11px;color:#2563eb">Tocca per la scheda completa</em>' : ''}`);
+        .bindPopup(`<strong>${m.label}</strong>${m.sublabel ? '<br/>' + m.sublabel : ''}${m.distanzaKm !== undefined ? '<br/>📍 ' + m.distanzaKm + ' km' : ''}${onMarkerClick ? '<br/><em style="font-size:11px;color:var(--brand-600)">Tocca per la scheda completa</em>' : ''}`);
       if (onMarkerClick) mk.on('click', () => onMarkerClick(i));
     });
 

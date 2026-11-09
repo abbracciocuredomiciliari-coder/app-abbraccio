@@ -25,7 +25,7 @@ type DashboardData = {
 const colorByPriorita: Record<string, string> = {
   critica: '#dc2626',
   alta: '#d97706',
-  media: '#2563eb',
+  media: 'var(--brand-600)',
   bassa: '#64748b',
 };
 
@@ -54,12 +54,12 @@ export default function DashboardTelemedicina() {
   if (!data) return null;
 
   const cards = [
-    { title: 'Alert aperti', value: data.alertAperti, icon: Bell, color: '#2563eb', bg: 'rgba(37, 99, 235, 0.08)', link: '/telemedicina?tab=centrale' },
+    { title: 'Alert aperti', value: data.alertAperti, icon: Bell, color: 'var(--brand-600)', bg: 'rgba(37, 99, 235, 0.08)', link: '/telemedicina?tab=centrale' },
     { title: 'Alert critici', value: data.alertCritici, icon: AlertTriangle, color: '#dc2626', bg: 'rgba(220, 38, 38, 0.08)', link: '/telemedicina?tab=centrale' },
     { title: 'Teleconsulti oggi', value: data.teleconsultiOggi, icon: Video, color: '#0d9488', bg: 'rgba(13, 148, 136, 0.08)', link: '/telemedicina?tab=agenda' },
     { title: 'Dispositivi offline', value: data.dispositiviOffline, icon: Server, color: '#d97706', bg: 'rgba(217, 119, 6, 0.08)', link: '/telemedicina?tab=dispositivi' },
     { title: 'Parametri 24h', value: data.parametri24h, icon: HeartPulse, color: '#0891b2', bg: 'rgba(8, 145, 178, 0.08)', link: '/telemedicina?tab=dispositivi' },
-    { title: 'Pazienti monitorati', value: data.pazientiMonitorati, icon: Activity, color: '#1e4d8c', bg: 'rgba(30, 77, 140, 0.08)', link: '/telemedicina' },
+    { title: 'Pazienti monitorati', value: data.pazientiMonitorati, icon: Activity, color: 'var(--brand-700)', bg: 'rgba(30, 77, 140, 0.08)', link: '/telemedicina' },
   ];
 
   return (

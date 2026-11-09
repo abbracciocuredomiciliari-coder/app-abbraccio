@@ -23,10 +23,17 @@ interface Operatore {
   coordinateMancanti: boolean;
   distanzaKm: number | null;
   disponibilita: string | null;
+  disponibilitaStato?: 'compatibile' | 'non_compatibile' | 'non_verificata';
   tipoLavoro: string | null;
   residenzaPressoFamiglia: boolean;
   professionista: boolean;
 }
+
+const DISPONIBILITA_STATO: Record<string, { testo: string; bg: string; color: string }> = {
+  compatibile: { testo: 'fascia dichiarata compatibile — da confermare', bg: '#dcfce7', color: '#166534' },
+  non_compatibile: { testo: 'fascia dichiarata NON compatibile', bg: '#fee2e2', color: '#b91c1c' },
+  non_verificata: { testo: 'disponibilità non verificata', bg: '#fef3c7', color: '#92400e' },
+};
 
 const QUALIFICHE = [
   '', 'infermieristico', 'oss', 'osa', 'riabilitativo', 'medico', 'sociale',
@@ -57,6 +64,11 @@ export default function TrovaOperatori() {
   const [lat, setLat] = useState(searchParams.get('lat') || '');
   const [lng, setLng] = useState(searchParams.get('lng') || '');
   const [raggioKm, setRaggioKm] = useState('15');
+  const [dataRichiesta, setDataRichiesta] = useState('');
+  const [oraInizio, setOraInizio] = useState('');
+  const [oraFine, setOraFine] = useState('');
+  const [senzaPosizione, setSenzaPosizione] = useState<{ totale: number; operatori: any[] } | null>(null);
+  const [posizioniOpen, setPosizioniOpen] = useState(false);
 
   const [risultati, setRisultati] = useState<Operatore[]>([]);
   const [senzaZonaEsclusi, setSenzaZonaEsclusi] = useState(0);
@@ -82,6 +94,7 @@ export default function TrovaOperatori() {
       if (tipoLavoro) params.tipoLavoro = tipoLavoro;
       if (q) params.q = q;
       if (lat && lng) { params.lat = lat; params.lng = lng; params.raggioKm = raggioKm; }
+      if (dataRichiesta && oraInizio && oraFine) { params.data = dataRichiesta; params.oraInizio = oraInizio; params.oraFine = oraFine; }
       const res = await api.get('/ricerca-operatori', { params });
       setRisultati(res.data.risultati || []);
       setSenzaZonaEsclusi(res.data.senzaZonaEsclusi || 0);
@@ -92,7 +105,10 @@ export default function TrovaOperatori() {
     }
   };
 
-  useEffect(() => { cerca(); /* ricerca iniziale con eventuali parametri URL */ }, []);
+  useEffect(() => {
+    cerca(); /* ricerca iniziale con eventuali parametri URL */
+    api.get('/ricerca-operatori/senza-posizione').then(r => setSenzaPosizione(r.data)).catch(() => {});
+  }, []);
 
   const registraProposta = async () => {
     if (!modalProposta || !notaProposta.trim()) return;
@@ -141,13 +157,13 @@ export default function TrovaOperatori() {
 
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '16px' }}>
-      <h2 style={{ margin: '0 0 4px', color: '#1e4d8c' }}>Trova operatori per zona</h2>
+      <h2 style={{ margin: '0 0 4px', color: 'var(--brand-700)' }}>Trova operatori per zona</h2>
       <p style={{ margin: '0 0 16px', color: '#64748b', fontSize: '0.9rem' }}>
         Un'unica ricerca per assistenza privata, intermediazione e convenzione SIAT.
       </p>
 
       {contesto.praticaLabel && (
-        <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '0.88rem', color: '#1e40af' }}>
+        <div style={{ background: 'var(--brand-50)', border: '1px solid var(--brand-200)', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '0.88rem', color: 'var(--brand-700)' }}>
           Contesto pratica: <strong>{contesto.praticaLabel}</strong>. Le proposte e i colloqui registrati saranno collegati a questa pratica.
         </div>
       )}
@@ -196,7 +212,24 @@ export default function TrovaOperatori() {
             <span style={labelStyle}>Nome / email</span>
             <input value={q} onChange={e => setQ(e.target.value)} placeholder="Cerca per nome…" style={inputStyle} />
           </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span style={labelStyle}>Data richiesta</span>
+            <input type="date" value={dataRichiesta} onChange={e => setDataRichiesta(e.target.value)} style={inputStyle} />
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span style={labelStyle}>Dalle</span>
+            <input type="time" value={oraInizio} onChange={e => setOraInizio(e.target.value)} style={inputStyle} />
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span style={labelStyle}>Alle</span>
+            <input type="time" value={oraFine} onChange={e => setOraFine(e.target.value)} style={inputStyle} />
+          </label>
         </div>
+        {(dataRichiesta || oraInizio || oraFine) && (
+          <p style={{ margin: '8px 0 0', fontSize: '0.78rem', color: '#92400e' }}>
+            La verifica orario confronta la fascia con la disponibilità <em>dichiarata</em> dall'operatore — non è una conferma di disponibilità effettiva sulla data.
+          </p>
+        )}
         <details style={{ marginTop: '10px' }}>
           <summary style={{ cursor: 'pointer', fontSize: '0.82rem', color: '#475569', fontWeight: 600 }}>Ricerca geografica (coordinate + raggio)</summary>
           <div style={{ display: 'flex', gap: '10px', marginTop: '8px', flexWrap: 'wrap' }}>
@@ -210,7 +243,7 @@ export default function TrovaOperatori() {
         </details>
         <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
           <button onClick={cerca} disabled={loading}
-            style={{ background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '6px', padding: '9px 20px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            style={{ background: 'var(--brand-700)', color: '#fff', border: 'none', borderRadius: '6px', padding: '9px 20px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Search size={15} /> {loading ? 'Ricerca…' : 'Cerca operatori'}
           </button>
         </div>
@@ -219,6 +252,33 @@ export default function TrovaOperatori() {
       {senzaZonaEsclusi > 0 && (
         <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '8px 14px', marginBottom: '12px', fontSize: '0.82rem', color: '#92400e', display: 'flex', gap: '6px', alignItems: 'center' }}>
           <AlertTriangle size={14} /> {senzaZonaEsclusi} operatori senza zona impostata esclusi dalla ricerca geografica — restano trovabili con la ricerca non geografica.
+        </div>
+      )}
+
+      {/* Posizioni da completare */}
+      {senzaPosizione && senzaPosizione.totale > 0 && (
+        <div style={{ background: 'white', border: '1px solid #fde68a', borderLeft: '4px solid #d97706', borderRadius: '8px', marginBottom: '14px' }}>
+          <div onClick={() => setPosizioniOpen(v => !v)} style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.86rem' }}>
+            <span style={{ color: '#92400e', fontWeight: 700 }}>
+              <AlertTriangle size={14} style={{ verticalAlign: '-2px' }} /> {senzaPosizione.totale} operatori senza posizione di partenza — ricercabili solo per nome/qualifica
+            </span>
+            <span style={{ color: '#94a3b8' }}>{posizioniOpen ? '▲' : '▼'}</span>
+          </div>
+          {posizioniOpen && (
+            <div style={{ borderTop: '1px solid #fef3c7', padding: '10px 14px', maxHeight: '260px', overflowY: 'auto' }}>
+              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 8px' }}>
+                Completa domicilio di partenza e coordinate in <a href="/staff" style={{ color: '#1c7164', fontWeight: 700 }}>Personale</a> per renderli visibili nella ricerca geografica.
+              </p>
+              {senzaPosizione.operatori.map((o: any) => (
+                <div key={o._id} style={{ display: 'flex', gap: '10px', alignItems: 'center', padding: '5px 0', fontSize: '0.82rem', borderTop: '1px solid #f8fafc', flexWrap: 'wrap' }}>
+                  <strong>{o.nome}</strong>
+                  <span style={{ color: '#64748b' }}>{QUALIFICA_LABEL[o.qualifica] || o.qualifica}</span>
+                  {o.zonaDichiarata && <span style={{ color: '#64748b' }}>· {o.zonaDichiarata}</span>}
+                  <a href="/staff" style={{ marginLeft: 'auto', color: '#1c7164', fontSize: '0.78rem', fontWeight: 700 }}>completa in Personale →</a>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -240,8 +300,13 @@ export default function TrovaOperatori() {
                 </span>
                 {op.professionista && <span style={{ background: '#f5f3ff', color: '#6d28d9', borderRadius: '10px', padding: '1px 8px', fontSize: '0.74rem', fontWeight: 700 }}>P.IVA</span>}
                 {op.coordinateMancanti && (
-                  <span style={{ background: '#fffbeb', color: '#92400e', borderRadius: '10px', padding: '1px 8px', fontSize: '0.74rem', fontWeight: 700 }}>
-                    ⚠ zona non impostata
+                  <span style={{ background: '#fee2e2', color: '#b91c1c', borderRadius: '10px', padding: '1px 8px', fontSize: '0.74rem', fontWeight: 700 }}>
+                    ⚠ posizione mancante
+                  </span>
+                )}
+                {op.disponibilitaStato && dataRichiesta && oraInizio && oraFine && (
+                  <span style={{ background: DISPONIBILITA_STATO[op.disponibilitaStato].bg, color: DISPONIBILITA_STATO[op.disponibilitaStato].color, borderRadius: '10px', padding: '1px 8px', fontSize: '0.74rem', fontWeight: 700 }}>
+                    {DISPONIBILITA_STATO[op.disponibilitaStato].testo}
                   </span>
                 )}
               </div>
@@ -251,6 +316,7 @@ export default function TrovaOperatori() {
               <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 {op.zona && <span><MapPin size={11} style={{ verticalAlign: '-1px' }} /> {op.zona}</span>}
                 {op.distanzaKm !== null && <span><strong>{op.distanzaKm} km</strong> (raggio {op.raggioAzioneKm} km)</span>}
+                {op.coordinateMancanti && <span style={{ color: '#b45309' }}>distanza non calcolabile</span>}
                 {op.disponibilita && <span>disp: {op.disponibilita}</span>}
                 {op.tipoLavoro && <span>{op.tipoLavoro === 'convivenza' ? 'convivenza' : 'a ore'}</span>}
                 {op.residenzaPressoFamiglia && <span>residente possibile</span>}
@@ -320,7 +386,7 @@ export default function TrovaOperatori() {
                 style={{ width: '100%', marginTop: '6px', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.88rem', boxSizing: 'border-box' }} />
             </label>
             <button onClick={registraColloquio} disabled={salvando || !dataColloquio}
-              style={{ width: '100%', marginTop: '14px', background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '6px', padding: '10px', fontWeight: 700, cursor: 'pointer' }}>
+              style={{ width: '100%', marginTop: '14px', background: 'var(--brand-700)', color: '#fff', border: 'none', borderRadius: '6px', padding: '10px', fontWeight: 700, cursor: 'pointer' }}>
               {salvando ? 'Registrazione…' : 'Aggiungi ad attività (nessun invito)'}
             </button>
           </div>

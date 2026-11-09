@@ -249,7 +249,7 @@ export default function GestioneRichiestePresidi() {
                 {/* Header */}
                 <div style={{ background: '#f8fafc', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                   <div>
-                    <span style={{ fontWeight: '700', fontSize: '0.95rem', color: '#1e4d8c' }}>
+                    <span style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--brand-700)' }}>
                       👤 {r.operatoreNome}
                     </span>
                     <span style={{ marginLeft: '12px', fontSize: '0.85rem', color: '#666' }}>
@@ -265,7 +265,7 @@ export default function GestioneRichiestePresidi() {
                     </span>
                     {r.stato === 'in_attesa' && !isInGestione && (
                       <button type="button" onClick={() => apriGestione(r)}
-                        style={{ background: '#1e4d8c', padding: '6px 14px', fontSize: '0.85rem' }}>
+                        style={{ background: 'var(--brand-700)', padding: '6px 14px', fontSize: '0.85rem' }}>
                         ✏️ Gestisci
                       </button>
                     )}
@@ -322,7 +322,7 @@ export default function GestioneRichiestePresidi() {
                               {item.categoria === 'farmaco' ? '💊' : '🏥'}
                             </span>
                           </td>
-                          <td style={{ padding: '8px 8px', textAlign: 'center', fontWeight: '700', color: '#1e4d8c' }}>
+                          <td style={{ padding: '8px 8px', textAlign: 'center', fontWeight: '700', color: 'var(--brand-700)' }}>
                             {item.quantitaRichiesta} {item.unitaMisura}
                           </td>
 

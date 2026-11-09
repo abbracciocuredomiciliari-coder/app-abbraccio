@@ -393,7 +393,7 @@ export default function CentroPrelievi() {
               <td style="padding:10px;border:1px solid #e2e8f0;text-align:center;font-weight:600;">${p.orario || '—'}</td>
               <td style="padding:10px;border:1px solid #e2e8f0;"><div style="font-weight:700;">${p.patient?.firstName || 'N/D'} ${p.patient?.lastName || ''}</div>${p.patient?.siat?.asl ? `<div style="font-size:0.75rem;color:#64748b;">ASL: ${p.patient.siat.asl}</div>` : ''}</td>
               <td style="padding:10px;border:1px solid #e2e8f0;">${p.tipoPrelievo}${p.note ? `<div style="font-size:0.75rem;color:#64748b;">${p.note}</div>` : ''}</td>
-              <td style="padding:10px;border:1px solid #e2e8f0;text-align:center;"><span style="font-size:0.75rem;font-weight:700;padding:2px 6px;border-radius:4px;background:${p.status === 'eseguito' ? '#dcfce7' : '#dbeafe'};color:${p.status === 'eseguito' ? '#166534' : '#1e40af'};">${p.status === 'eseguito' ? '✓ Eseguito' : 'Pianificato'}</span></td>
+              <td style="padding:10px;border:1px solid #e2e8f0;text-align:center;"><span style="font-size:0.75rem;font-weight:700;padding:2px 6px;border-radius:4px;background:${p.status === 'eseguito' ? '#dcfce7' : 'var(--brand-100)'};color:${p.status === 'eseguito' ? '#166534' : 'var(--brand-700)'};">${p.status === 'eseguito' ? '✓ Eseguito' : 'Pianificato'}</span></td>
               <td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:center;">${p.firmaOperatore ? `<img src="${p.firmaOperatore}" style="max-width:88px;max-height:44px;display:block;margin:auto;"/>` : '<div style="height:44px;"></div>'}</td>
               <td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:center;">${p.firmaPaziente ? `<div style="font-size:0.7rem;color:#64748b;">${p.nomeFirmatarioPaziente || 'Paziente'}</div><img src="${p.firmaPaziente}" style="max-width:88px;max-height:44px;display:block;margin:auto;"/>` : '<div style="height:44px;"></div>'}</td>
             </tr>`).join('')}</tbody>
@@ -406,7 +406,7 @@ export default function CentroPrelievi() {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;border-bottom:2px solid #1e293b;padding-bottom:12px;">
         <div><h1 style="font-size:1.2rem;margin:0 0 4px;">📋 Foglio Prelievi Giornaliero</h1>
           <div style="font-size:0.9rem;color:#475569;">${dataLabel}</div>
-          <div style="display:inline-block;padding:2px 10px;border-radius:4px;background:${isConvenzione ? '#dbeafe' : '#dcfce7'};color:${isConvenzione ? '#1e40af' : '#166534'};font-weight:700;font-size:0.8rem;margin-top:4px;">${tipoLabel}</div>
+          <div style="display:inline-block;padding:2px 10px;border-radius:4px;background:${isConvenzione ? 'var(--brand-100)' : '#dcfce7'};color:${isConvenzione ? 'var(--brand-700)' : '#166534'};font-weight:700;font-size:0.8rem;margin-top:4px;">${tipoLabel}</div>
         </div>
         <div style="text-align:right;font-size:0.8rem;color:#64748b;">Totale: <strong>${prelieviGiornoSel.length}</strong><br/>Stampato: ${new Date().toLocaleString('it-IT')}</div>
       </div>
@@ -470,9 +470,9 @@ export default function CentroPrelievi() {
   // ─── UI ────────────────────────────────────────────────────────────────────
   if (loading) return <section><p>Caricamento...</p></section>;
 
-  const colore = isConvenzione ? '#0369a1' : '#1e4d8c';
+  const colore = isConvenzione ? '#0369a1' : 'var(--brand-700)';
   const badgeModalita = isConvenzione
-    ? <span style={{ background: '#eff6ff', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: '6px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 700 }}><Building2 size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />Convenzione SIAT</span>
+    ? <span style={{ background: 'var(--brand-50)', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: '6px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 700 }}><Building2 size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />Convenzione SIAT</span>
     : <span style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 700 }}>👤 Privati</span>;
 
   return (
@@ -561,7 +561,7 @@ export default function CentroPrelievi() {
                         <div style={{ fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                           {p.orario && <span style={{ background: '#f1f5f9', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', color: '#475569' }}><Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />{p.orario}</span>}
                           {p.patient?.firstName || 'N/D'} {p.patient?.lastName || ''}
-                          <span style={{ padding: '2px 8px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700, background: p.status === 'eseguito' ? '#f0fdf4' : p.status === 'annullato' ? '#fef2f2' : '#eff6ff', color: p.status === 'eseguito' ? '#059669' : p.status === 'annullato' ? '#dc2626' : colore }}>
+                          <span style={{ padding: '2px 8px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700, background: p.status === 'eseguito' ? '#f0fdf4' : p.status === 'annullato' ? '#fef2f2' : 'var(--brand-50)', color: p.status === 'eseguito' ? '#059669' : p.status === 'annullato' ? '#dc2626' : colore }}>
                             {p.status === 'eseguito' ? '✅ Eseguito' : p.status === 'annullato' ? '❌ Annullato' : '🔵 Pianificato'}
                           </span>
                         </div>
@@ -618,7 +618,7 @@ export default function CentroPrelievi() {
                             </button>
                             <button
                               onClick={() => visualizzaPrelievoPDF(p)}
-                              style={{ flex: 1, background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.83rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                              style={{ flex: 1, background: 'var(--brand-500)', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.83rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                             >
                               <Eye size={14} /> Visualizza PDF
                             </button>
@@ -713,7 +713,7 @@ export default function CentroPrelievi() {
                       <div
                         key={p._id}
                         onClick={() => toggleSelezionato(p._id)}
-                        style={{ background: sel ? (isConvenzione ? '#eff6ff' : '#f0fdf4') : 'white', border: `2px solid ${sel ? colore : '#e2e8f0'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', transition: 'all 0.15s' }}
+                        style={{ background: sel ? (isConvenzione ? 'var(--brand-50)' : '#f0fdf4') : 'white', border: `2px solid ${sel ? colore : '#e2e8f0'}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', transition: 'all 0.15s' }}
                       >
                         <input type="checkbox" checked={sel} onChange={() => toggleSelezionato(p._id)} onClick={e => e.stopPropagation()} style={{ width: '17px', height: '17px', cursor: 'pointer', flexShrink: 0 }} />
                         <div style={{ flex: 1 }}>

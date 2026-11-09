@@ -67,18 +67,18 @@ export default function GestioneConsensiGDPR() {
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:Arial,sans-serif;font-size:10pt;line-height:1.6;color:#111;padding:28px 36px}
-  .header{text-align:center;border-bottom:2px solid #1e4d8c;padding-bottom:14px;margin-bottom:18px}
-  .header h1{color:#1e4d8c;font-size:12pt;text-transform:uppercase;letter-spacing:0.4px}
+  .header{text-align:center;border-bottom:2px solid var(--brand-700);padding-bottom:14px;margin-bottom:18px}
+  .header h1{color:var(--brand-700);font-size:12pt;text-transform:uppercase;letter-spacing:0.4px}
   .header p{font-size:9pt;color:#555;margin-top:4px}
   .paziente-box{background:#f0f4ff;border:1px solid #c7d7f0;border-radius:6px;padding:12px 16px;margin-bottom:16px;font-size:9.5pt}
-  .paziente-box strong{color:#1e4d8c}
-  h2{font-size:9.5pt;color:#1e4d8c;text-transform:uppercase;background:#f0f4ff;border-left:3px solid #1e4d8c;padding:5px 10px;margin:14px 0 8px}
+  .paziente-box strong{color:var(--brand-700)}
+  h2{font-size:9.5pt;color:var(--brand-700);text-transform:uppercase;background:#f0f4ff;border-left:3px solid var(--brand-700);padding:5px 10px;margin:14px 0 8px}
   p{margin-bottom:8px;font-size:9.5pt}
   ul{margin:4px 0 10px 20px}
   ul li{font-size:9.5pt;margin-bottom:4px}
   .highlight{background:#fef3c7;border-left:3px solid #f59e0b;padding:8px 12px;margin:10px 0;font-size:9pt}
-  .consenso-box{border:2px solid #1e4d8c;border-radius:6px;padding:16px 20px;margin-top:20px;background:#fafbff}
-  .consenso-box h3{color:#1e4d8c;font-size:10pt;margin-bottom:10px}
+  .consenso-box{border:2px solid var(--brand-700);border-radius:6px;padding:16px 20px;margin-top:20px;background:#fafbff}
+  .consenso-box h3{color:var(--brand-700);font-size:10pt;margin-bottom:10px}
   .consenso-row{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid #e5e7eb;gap:20px}
   .cb-group{display:flex;gap:28px;flex-shrink:0;font-size:9pt}
   .cb-group label{display:flex;align-items:center;gap:4px}
@@ -193,11 +193,11 @@ con la presente desideriamo comunicarLe che per l'instaurazione e la gestione de
         <h3 style={{ marginBottom: '16px' }}><Search size={20} /> Cerca Paziente</h3>
         <input type="text" placeholder="Nome o cognome..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--gray-300)' }} />
         {searchTerm && <div style={{ marginTop: '16px', maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--gray-200)', borderRadius: '8px' }}>
-          {filteredPatients.map(p => <button key={p._id} onClick={() => { setSelectedPatient(p); setSearchTerm(''); setConsensi([]); }} style={{ width: '100%', padding: '12px', textAlign: 'left', border: 'none', borderBottom: '1px solid var(--gray-100)', background: selectedPatient?._id === p._id ? '#dbeafe' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}><User size={20} color="#6b7280" /><div><div style={{ fontWeight: '600' }}>{p.firstName} {p.lastName}</div><div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{p.birthDate ? new Date(p.birthDate).toLocaleDateString('it-IT') : 'N/D'}</div></div></button>)}
+          {filteredPatients.map(p => <button key={p._id} onClick={() => { setSelectedPatient(p); setSearchTerm(''); setConsensi([]); }} style={{ width: '100%', padding: '12px', textAlign: 'left', border: 'none', borderBottom: '1px solid var(--gray-100)', background: selectedPatient?._id === p._id ? 'var(--brand-100)' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}><User size={20} color="#6b7280" /><div><div style={{ fontWeight: '600' }}>{p.firstName} {p.lastName}</div><div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{p.birthDate ? new Date(p.birthDate).toLocaleDateString('it-IT') : 'N/D'}</div></div></button>)}
         </div>}
       </div>
 
-      {selectedPatient && <div style={{ background: 'linear-gradient(135deg, #1e4d8c 0%, #3b82f6 100%)', padding: '20px', borderRadius: '12px', color: 'white', marginBottom: '24px' }}><h3><User size={20} /> Paziente: {selectedPatient.firstName} {selectedPatient.lastName}</h3></div>}
+      {selectedPatient && <div style={{ background: 'linear-gradient(135deg, var(--brand-700) 0%, var(--brand-500) 100%)', padding: '20px', borderRadius: '12px', color: 'white', marginBottom: '24px' }}><h3><User size={20} /> Paziente: {selectedPatient.firstName} {selectedPatient.lastName}</h3></div>}
 
       {selectedPatient && !loading && <>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -215,7 +215,7 @@ con la presente desideriamo comunicarLe che per l'instaurazione e la gestione de
           </div>
           <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>Firmato da: {c.nomeFirmatario} {c.cognomeFirmatario} il {formatDate(c.dataFirma)}</p>
           <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-            <button onClick={() => stampaConsenso(c, selectedPatient)} style={{ background: '#3b82f6' }}><Printer size={16} /> Stampa</button>
+            <button onClick={() => stampaConsenso(c, selectedPatient)} style={{ background: 'var(--brand-500)' }}><Printer size={16} /> Stampa</button>
             {!c.revocato && <button onClick={() => revocaConsenso(c.patientId)} style={{ background: '#ef4444' }}><Trash2 size={16} /> Revoca</button>}
           </div>
         </div>)}
@@ -238,7 +238,7 @@ con la presente desideriamo comunicarLe che per l'instaurazione e la gestione de
             {Object.entries(formData.datiSensibili).map(([k, v]) => <label key={k} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', background: 'white', borderRadius: '8px' }}><input type="checkbox" checked={v} onChange={(e) => setFormData({ ...formData, datiSensibili: { ...formData.datiSensibili, [k]: e.target.checked } })} />{k === 'datiSanitari' ? 'Dati Sanitari' : k === 'datiEconomici' ? 'Dati Economici' : 'Immagini'}</label>)}
           </div></div>
           <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-            <a href="/informativa-privacy.html" target="_blank" style={{ color: '#3b82f6', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}><FileText size={16} /> Leggi informativa completa</a>
+            <a href="/informativa-privacy.html" target="_blank" style={{ color: 'var(--brand-500)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}><FileText size={16} /> Leggi informativa completa</a>
           </div>
           <button type="submit" disabled={saving} style={{ marginTop: '16px', opacity: saving ? 0.7 : 1 }}>{saving ? <><Loader2 size={16} className="spin" /> Salvataggio...</> : <><Save size={16} /> Registra Consenso</>}</button>
         </div>

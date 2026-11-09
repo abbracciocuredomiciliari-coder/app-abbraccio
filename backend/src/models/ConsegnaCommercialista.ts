@@ -16,17 +16,21 @@ export interface IDocConsegnato {
   data?: Date;
   totale?: number;
   aggiornatoIl?: Date;     // per rilevare modifiche successive alla consegna
+  haOriginale?: boolean;   // originale disponibile nel pacchetto ZIP
 }
 
 export interface IConsegnaCommercialista extends Document {
   periodoDal?: Date;
   periodoAl?: Date;
   tipologie: string[];
+  aree?: string[];                  // filtro aree usato in preparazione (vuoto = tutte)
   documenti: IDocConsegnato[];
   anomalie?: string[];              // segnalazioni rilevate in preparazione
   preparataIl: Date;
   preparataDa?: string;
-  stato: 'preparata' | 'consegnata' | 'verificata';
+  stato: 'preparata' | 'scaricata' | 'consegnata' | 'verificata';
+  scaricataIl?: Date;               // download pacchetto ≠ consegna
+  scaricataDa?: string;
   consegnataIl?: Date;
   consegnataDa?: string;
   modalitaConsegna?: string;        // email, chiavetta, accesso diretto, altro
@@ -44,6 +48,7 @@ const docSchema = new Schema<IDocConsegnato>(
     data: { type: Date },
     totale: { type: Number },
     aggiornatoIl: { type: Date },
+    haOriginale: { type: Boolean },
   },
   { _id: false }
 );
@@ -53,11 +58,14 @@ const schema = new Schema<IConsegnaCommercialista>(
     periodoDal: { type: Date },
     periodoAl: { type: Date },
     tipologie: [{ type: String }],
+    aree: [{ type: String }],
     documenti: { type: [docSchema], default: [] },
     anomalie: [{ type: String }],
     preparataIl: { type: Date, default: Date.now },
     preparataDa: { type: String, trim: true },
-    stato: { type: String, enum: ['preparata', 'consegnata', 'verificata'], default: 'preparata', index: true },
+    stato: { type: String, enum: ['preparata', 'scaricata', 'consegnata', 'verificata'], default: 'preparata', index: true },
+    scaricataIl: { type: Date },
+    scaricataDa: { type: String, trim: true },
     consegnataIl: { type: Date },
     consegnataDa: { type: String, trim: true },
     modalitaConsegna: { type: String, trim: true },

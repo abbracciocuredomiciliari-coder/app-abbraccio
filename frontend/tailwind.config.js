@@ -15,13 +15,16 @@ export default {
     extend: {
       colors: {
         brand: {
-          DEFAULT: '#1e4d8c',
-          dark: '#1a3a6b',
-          light: '#2563eb',
+          // Palette centrale: deve restare allineata a styles.css (:root --brand-*)
+          50: '#eef6f2', 100: '#d9ebe4', 200: '#bfe0d6', 300: '#8ccab8',
+          500: '#2e927f', 600: '#23826f', 700: '#1c7164', 800: '#155a50',
+          DEFAULT: '#1c7164',
+          dark: '#155a50',
+          light: '#2e927f',
         },
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['DM Sans', 'Manrope', 'sans-serif'],
       },
     },
   },

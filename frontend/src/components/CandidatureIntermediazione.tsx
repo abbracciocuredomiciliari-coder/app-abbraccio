@@ -147,7 +147,7 @@ export default function CandidatureIntermediazione({ onToast }: { onToast: (msg:
 
   const linkIscrizione = `${window.location.origin}/iscriviti-intermediazione`;
   const msgIscrizione = `Iscriviti come operatore Abbraccio (badante, colf, assistente familiare): ${linkIscrizione}`;
-  const shareBtn: React.CSSProperties = { background: 'none', border: 'none', color: '#1e4d8c', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem', padding: 0 };
+  const shareBtn: React.CSSProperties = { background: 'none', border: 'none', color: 'var(--brand-700)', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem', padding: 0 };
 
   return (
     <div style={{ marginBottom: '28px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '14px', padding: '18px' }}>
@@ -163,7 +163,7 @@ export default function CandidatureIntermediazione({ onToast }: { onToast: (msg:
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.8rem', color: '#57534e', background: '#fff', border: '1px dashed #fdba74', borderRadius: '8px', padding: '6px 10px' }}>
           <Smartphone size={14} />
-          <code style={{ color: '#1e4d8c', fontWeight: 700 }}>/iscriviti-intermediazione</code>
+          <code style={{ color: 'var(--brand-700)', fontWeight: 700 }}>/iscriviti-intermediazione</code>
           <button type="button"
             onClick={() => { navigator.clipboard?.writeText(linkIscrizione); onToast('Link copiato negli appunti.', 'ok'); }}
             style={shareBtn}>

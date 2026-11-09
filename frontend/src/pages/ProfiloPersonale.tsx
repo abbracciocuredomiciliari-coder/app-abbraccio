@@ -330,8 +330,8 @@ export default function ProfiloPersonale() {
       {/* Dati anagrafici */}
       <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '20px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '16px' }}>
-          <h3 style={{ margin: 0, color: '#1e4d8c', fontSize: '1rem' }}>📋 Dati personali</h3>
-          {!editDati && <button type="button" onClick={() => { setEditDati(true); setDatiSuccess(''); setDatiError(''); }} style={{ background: 'none', border: '1px solid #1e4d8c', borderRadius: '6px', padding: '4px 12px', color: '#1e4d8c', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>✏️ Modifica</button>}
+          <h3 style={{ margin: 0, color: 'var(--brand-700)', fontSize: '1rem' }}>📋 Dati personali</h3>
+          {!editDati && <button type="button" onClick={() => { setEditDati(true); setDatiSuccess(''); setDatiError(''); }} style={{ background: 'none', border: '1px solid var(--brand-700)', borderRadius: '6px', padding: '4px 12px', color: 'var(--brand-700)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>✏️ Modifica</button>}
         </div>
         {datiSuccess && <div style={{ background: 'rgba(5,150,105,0.08)', border: '1px solid #6ee7b7', borderRadius: '6px', padding: '10px 14px', color: '#065f46', fontSize: '0.88rem', marginBottom: '12px' }}>✅ {datiSuccess}</div>}
         {datiError && <div style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid #fca5a5', borderRadius: '6px', padding: '10px 14px', color: '#7f1d1d', fontSize: '0.88rem', marginBottom: '12px' }}>❌ {datiError}</div>}
@@ -344,13 +344,13 @@ export default function ProfiloPersonale() {
         </div> : <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '520px' }}>
           {[['Nome', 'firstName', 'text'], ['Cognome', 'lastName', 'text'], ['Email', 'email', 'email'], ['Telefono', 'phone', 'tel']].map(([label, key, type]) => <label key={key} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}><span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>{label}</span><input type={type} value={datiForm[key as keyof typeof datiForm]} onChange={e => setDatiForm(prev => ({ ...prev, [key]: e.target.value }))} required={key !== 'phone'} style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.9rem' }} /></label>)}
           <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748b' }}>Se modifichi l'email, dal prossimo accesso dovrai usare il nuovo indirizzo.</p>
-          <div style={{ display: 'flex', gap: '8px' }}><button type="button" onClick={salvaDati} disabled={datiSaving} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '7px', padding: '8px 18px', cursor: 'pointer', fontWeight: 700, fontSize: '0.88rem' }}><Save size={15} />{datiSaving ? 'Salvataggio...' : 'Salva dati'}</button><button type="button" onClick={() => { setEditDati(false); setDatiForm({ firstName: profilo.firstName || '', lastName: profilo.lastName || '', email: profilo.email || '', phone: profilo.phone || '' }); setDatiError(''); }} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid #d1d5db', borderRadius: '7px', padding: '8px 14px', cursor: 'pointer', color: '#555', fontSize: '0.88rem' }}><X size={14} /> Annulla</button></div>
+          <div style={{ display: 'flex', gap: '8px' }}><button type="button" onClick={salvaDati} disabled={datiSaving} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--brand-700)', color: '#fff', border: 'none', borderRadius: '7px', padding: '8px 18px', cursor: 'pointer', fontWeight: 700, fontSize: '0.88rem' }}><Save size={15} />{datiSaving ? 'Salvataggio...' : 'Salva dati'}</button><button type="button" onClick={() => { setEditDati(false); setDatiForm({ firstName: profilo.firstName || '', lastName: profilo.lastName || '', email: profilo.email || '', phone: profilo.phone || '' }); setDatiError(''); }} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid #d1d5db', borderRadius: '7px', padding: '8px 14px', cursor: 'pointer', color: '#555', fontSize: '0.88rem' }}><X size={14} /> Annulla</button></div>
         </div>}
       </div>
 
       {/* Periodo collaborazione */}
       <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '20px', marginBottom: '20px' }}>
-        <h3 style={{ margin: '0 0 16px', color: '#1e4d8c', fontSize: '1rem' }}>📅 Periodo di collaborazione</h3>
+        <h3 style={{ margin: '0 0 16px', color: 'var(--brand-700)', fontSize: '1rem' }}>📅 Periodo di collaborazione</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
           <div>
             <div style={{ fontSize: '0.78rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Data inizio</div>
@@ -373,12 +373,12 @@ export default function ProfiloPersonale() {
       {/* Zona lavorativa */}
       <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '20px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-          <h3 style={{ margin: 0, color: '#1e4d8c', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <h3 style={{ margin: 0, color: 'var(--brand-700)', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <MapPin size={16} /> Zona lavorativa
           </h3>
           {!editZona && (
             <button type="button" onClick={() => { setEditZona(true); setZonaSuccess(''); setZonaError(''); }}
-              style={{ background: 'none', border: '1px solid #1e4d8c', borderRadius: '6px', padding: '4px 12px', color: '#1e4d8c', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
+              style={{ background: 'none', border: '1px solid var(--brand-700)', borderRadius: '6px', padding: '4px 12px', color: 'var(--brand-700)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
               ✏️ Modifica
             </button>
           )}
@@ -425,7 +425,7 @@ export default function ProfiloPersonale() {
             </label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button type="button" onClick={salvaZona} disabled={zonaSaving || geocoding}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '7px', padding: '8px 18px', cursor: 'pointer', fontWeight: 700, fontSize: '0.88rem' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--brand-700)', color: '#fff', border: 'none', borderRadius: '7px', padding: '8px 18px', cursor: 'pointer', fontWeight: 700, fontSize: '0.88rem' }}>
                 <Save size={15} />
                 {geocoding ? 'Geocoding...' : zonaSaving ? 'Salvataggio...' : 'Salva zona'}
               </button>
@@ -440,7 +440,7 @@ export default function ProfiloPersonale() {
 
       {/* Contratto */}
       <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '20px', marginBottom: '20px' }}>
-        <h3 style={{ margin: '0 0 16px', color: '#1e4d8c', fontSize: '1rem' }}>📋 Contratto di collaborazione</h3>
+        <h3 style={{ margin: '0 0 16px', color: 'var(--brand-700)', fontSize: '1rem' }}>📋 Contratto di collaborazione</h3>
         {contractError && (
           <div style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid #fca5a5', borderRadius: '6px', padding: '10px 14px', color: '#7f1d1d', fontSize: '0.88rem', marginBottom: '12px' }}>
             ❌ {contractError}
@@ -466,7 +466,7 @@ export default function ProfiloPersonale() {
                 disabled={contractLoading}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '6px',
-                  background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '7px',
+                  background: 'var(--brand-700)', color: '#fff', border: 'none', borderRadius: '7px',
                   padding: '9px 20px', cursor: contractLoading ? 'not-allowed' : 'pointer',
                   fontWeight: 700, fontSize: '0.88rem', opacity: contractLoading ? 0.7 : 1
                 }}
@@ -501,7 +501,7 @@ export default function ProfiloPersonale() {
                 disabled={salvandoRegime || !regimeFiscaleSelezionato}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '6px', alignSelf: 'flex-start',
-                  background: (!regimeFiscaleSelezionato || salvandoRegime) ? '#e5e7eb' : '#1e4d8c',
+                  background: (!regimeFiscaleSelezionato || salvandoRegime) ? '#e5e7eb' : 'var(--brand-700)',
                   color: (!regimeFiscaleSelezionato || salvandoRegime) ? '#9ca3af' : '#fff',
                   border: 'none', borderRadius: '7px', padding: '8px 18px',
                   cursor: (!regimeFiscaleSelezionato || salvandoRegime) ? 'not-allowed' : 'pointer',
@@ -521,7 +521,7 @@ export default function ProfiloPersonale() {
                   disabled={caricandoAnteprima}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '6px',
-                    background: '#f8fafc', color: '#1e4d8c', border: '1px solid #1e4d8c', borderRadius: '7px',
+                    background: '#f8fafc', color: 'var(--brand-700)', border: '1px solid var(--brand-700)', borderRadius: '7px',
                     padding: '8px 18px', cursor: caricandoAnteprima ? 'not-allowed' : 'pointer',
                     fontWeight: 700, fontSize: '0.88rem'
                   }}
@@ -547,7 +547,7 @@ export default function ProfiloPersonale() {
                   disabled={firmaLoading}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '6px',
-                    background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '7px',
+                    background: 'var(--brand-700)', color: '#fff', border: 'none', borderRadius: '7px',
                     padding: '8px 18px', cursor: firmaLoading ? 'not-allowed' : 'pointer',
                     fontWeight: 700, fontSize: '0.88rem', opacity: firmaLoading ? 0.7 : 1
                   }}
@@ -560,7 +560,7 @@ export default function ProfiloPersonale() {
             {mostraAnteprima && (
               <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', maxHeight: '400px', overflowY: 'auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <strong style={{ color: '#1e4d8c', fontSize: '0.95rem' }}>Anteprima contratto</strong>
+                  <strong style={{ color: 'var(--brand-700)', fontSize: '0.95rem' }}>Anteprima contratto</strong>
                   <button type="button" onClick={() => setMostraAnteprima(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
                     <X size={18} />
                   </button>
@@ -578,7 +578,7 @@ export default function ProfiloPersonale() {
 
       {/* Documenti allegati */}
       <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '20px', marginBottom: '20px' }}>
-        <h3 style={{ margin: '0 0 16px', color: '#1e4d8c', fontSize: '1rem' }}>📎 Documenti allegati</h3>
+        <h3 style={{ margin: '0 0 16px', color: 'var(--brand-700)', fontSize: '1rem' }}>📎 Documenti allegati</h3>
         {documenti.length === 0 ? (
           <p style={{ color: '#888', fontStyle: 'italic', margin: 0 }}>Nessun documento allegato. Contatta l'amministratore.</p>
         ) : (
@@ -595,7 +595,7 @@ export default function ProfiloPersonale() {
                       </div>
                     </div>
                     <a href={doc.url} target="_blank" rel="noopener noreferrer"
-                      style={{ background: '#1e4d8c', color: '#fff', padding: '6px 14px', borderRadius: '6px', textDecoration: 'none', fontSize: '0.85rem', fontWeight: '600' }}>
+                      style={{ background: 'var(--brand-700)', color: '#fff', padding: '6px 14px', borderRadius: '6px', textDecoration: 'none', fontSize: '0.85rem', fontWeight: '600' }}>
                       👁️ Visualizza
                     </a>
                   </div>
@@ -608,7 +608,7 @@ export default function ProfiloPersonale() {
 
       {/* Cambio password */}
       <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '20px' }}>
-        <h3 style={{ margin: '0 0 16px', color: '#1e4d8c', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <h3 style={{ margin: '0 0 16px', color: 'var(--brand-700)', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <Lock size={16} /> Cambia password
         </h3>
 
@@ -650,7 +650,7 @@ export default function ProfiloPersonale() {
             disabled={pwdLoading || !oldPassword || !newPassword || newPassword !== confirmPassword}
             style={{
               display: 'flex', alignItems: 'center', gap: '6px', alignSelf: 'flex-start',
-              background: (!oldPassword || !newPassword || newPassword !== confirmPassword) ? '#e5e7eb' : '#1e4d8c',
+              background: (!oldPassword || !newPassword || newPassword !== confirmPassword) ? '#e5e7eb' : 'var(--brand-700)',
               color: (!oldPassword || !newPassword || newPassword !== confirmPassword) ? '#9ca3af' : '#fff',
               border: 'none', borderRadius: '7px', padding: '9px 20px',
               cursor: pwdLoading || !oldPassword || !newPassword || newPassword !== confirmPassword ? 'not-allowed' : 'pointer',

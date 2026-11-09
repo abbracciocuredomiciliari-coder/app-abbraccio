@@ -7,7 +7,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   phone?: string;
-  role: 'admin' | 'coordinator' | 'caregiver' | 'direttore' | 'paziente_registrato';
+  role: 'admin' | 'coordinator' | 'caregiver' | 'direttore' | 'paziente_registrato' | 'commercialista';
   status: 'pending' | 'approved' | 'rejected';
   professione?: string;
   categoria?: string;
@@ -57,7 +57,7 @@ const userSchema = new Schema<IUser>(
     role: {
       type: String,
       required: true,
-      enum: ['admin', 'coordinator', 'caregiver', 'direttore', 'paziente_registrato'],
+      enum: ['admin', 'coordinator', 'caregiver', 'direttore', 'paziente_registrato', 'commercialista'],
       default: 'caregiver'
     },
     status: {

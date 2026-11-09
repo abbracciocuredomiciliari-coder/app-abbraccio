@@ -31,7 +31,7 @@ const PREST_CATS = [
     { value: 'prestazione_varia', label: 'Prestazione Varia', Icon: Activity, color: '#10b981' },
 ];
 const ASSIST_CATS = [
-    { value: 'assistenza_oraria', label: 'Assistenza Oraria', Icon: Clock, color: '#3b82f6' },
+    { value: 'assistenza_oraria', label: 'Assistenza Oraria', Icon: Clock, color: 'var(--brand-500)' },
     { value: 'variazione_orario', label: 'Variazione Orario', Icon: CalendarDays, color: '#8b5cf6' },
     { value: 'visita_programmata', label: 'Visita Programmata', Icon: Users, color: '#06b6d4' },
 ];
@@ -42,32 +42,32 @@ const MACRO_CATEGORIE_LABELS: Record<MacroCategoria, {
     color: string;
     bg: string;
 }> = {
-    infermieristico: { label: '💉 Infermieristico', color: '#2563eb', bg: '#eff6ff' },
+    infermieristico: { label: '💉 Infermieristico', color: 'var(--brand-600)', bg: 'var(--brand-50)' },
     riabilitativo: { label: '🏃 Riabilitativo', color: '#16a34a', bg: '#f0fdf4' },
     medico_specialistiche: { label: '🩺 Medico e Specialistiche', color: '#7c3aed', bg: '#f5f3ff' },
 };
 const MACRO_TEXT: Record<MacroCategoria, string> = {
-    infermieristico: 'tw-text-[#2563eb]',
+    infermieristico: 'tw-text-[var(--brand-600)]',
     riabilitativo: 'tw-text-[#16a34a]',
     medico_specialistiche: 'tw-text-[#7c3aed]',
 };
 const MACRO_BG: Record<MacroCategoria, string> = {
-    infermieristico: 'tw-bg-[#eff6ff]',
+    infermieristico: 'tw-bg-[var(--brand-50)]',
     riabilitativo: 'tw-bg-[#f0fdf4]',
     medico_specialistiche: 'tw-bg-[#f5f3ff]',
 };
 const MACRO_BORDER: Record<MacroCategoria, string> = {
-    infermieristico: 'tw-border-[#2563eb40]',
+    infermieristico: 'tw-border-[var(--brand-600)40]',
     riabilitativo: 'tw-border-[#16a34a40]',
     medico_specialistiche: 'tw-border-[#7c3aed40]',
 };
 const MACRO_SOLID: Record<MacroCategoria, string> = {
-    infermieristico: 'tw-bg-[#2563eb]',
+    infermieristico: 'tw-bg-[var(--brand-600)]',
     riabilitativo: 'tw-bg-[#16a34a]',
     medico_specialistiche: 'tw-bg-[#7c3aed]',
 };
 const ASSIST_CLASSES: Record<string, string> = {
-    assistenza_oraria: 'tw-border-[#3b82f6] tw-bg-[#3b82f620] tw-text-[#3b82f6]',
+    assistenza_oraria: 'tw-border-[var(--brand-500)] tw-bg-[var(--brand-500)20] tw-text-[var(--brand-500)]',
     variazione_orario: 'tw-border-[#8b5cf6] tw-bg-[#8b5cf620] tw-text-[#8b5cf6]',
     visita_programmata: 'tw-border-[#06b6d4] tw-bg-[#06b6d420] tw-text-[#06b6d4]',
 };

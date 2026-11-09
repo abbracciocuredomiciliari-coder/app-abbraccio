@@ -94,14 +94,14 @@ export default function ConsegnaEsterna() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#eff6ff,#ffffff 55%)', fontFamily: "'Segoe UI',system-ui,sans-serif", padding: '16px' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,var(--brand-50),#ffffff 55%)', fontFamily: "'Segoe UI',system-ui,sans-serif", padding: '16px' }}>
       <div style={{ maxWidth: '560px', margin: '0 auto' }}>
         {/* Header brandizzato */}
-        <div style={{ background: '#1e4d8c', borderRadius: '16px', padding: '18px 20px', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ background: 'var(--brand-700)', borderRadius: '16px', padding: '18px 20px', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '14px' }}>
           <img src="/logo.png" alt="Abbraccio" style={{ width: '52px', height: '52px', objectFit: 'contain', background: '#fff', borderRadius: '10px', padding: '4px' }} />
           <div>
             <div style={{ color: '#fff', fontWeight: 800, fontSize: '1.15rem', lineHeight: 1.2 }}>Consegna amministrativa</div>
-            <div style={{ color: '#bfdbfe', fontSize: '0.8rem' }}>Abbraccio Cure Domiciliari — invio da remoto</div>
+            <div style={{ color: 'var(--brand-200)', fontSize: '0.8rem' }}>Abbraccio Cure Domiciliari — invio da remoto</div>
           </div>
         </div>
 
@@ -113,13 +113,13 @@ export default function ConsegnaEsterna() {
               La tua consegna è stata registrata ed è ora visibile a tutta l'équipe come <strong>da gestire</strong>.
             </p>
             <button type="button" onClick={ricomincia}
-              style={{ background: '#1e4d8c', color: '#fff', border: 'none', borderRadius: '10px', padding: '12px 24px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}>
+              style={{ background: 'var(--brand-700)', color: '#fff', border: 'none', borderRadius: '10px', padding: '12px 24px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}>
               ✏️ Scrivi un'altra consegna
             </button>
           </div>
         ) : (
           <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,.06)', padding: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1e4d8c', fontWeight: 800, fontSize: '1rem', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--brand-700)', fontWeight: 800, fontSize: '1rem', marginBottom: '16px' }}>
               <ClipboardList size={20} /> Nuova consegna per l'équipe
             </div>
 
@@ -187,7 +187,7 @@ export default function ConsegnaEsterna() {
             )}
 
             <button type="button" onClick={invia} disabled={busy}
-              style={{ width: '100%', background: busy ? '#94a3b8' : '#1e4d8c', color: '#fff', border: 'none', borderRadius: '10px', padding: '14px', fontWeight: 800, fontSize: '1.05rem', cursor: busy ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              style={{ width: '100%', background: busy ? '#94a3b8' : 'var(--brand-700)', color: '#fff', border: 'none', borderRadius: '10px', padding: '14px', fontWeight: 800, fontSize: '1.05rem', cursor: busy ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               <Send size={18} /> {busy ? 'Invio in corso…' : 'Invia la consegna'}
             </button>
 
@@ -198,8 +198,8 @@ export default function ConsegnaEsterna() {
         )}
 
         {/* Suggerimento installazione app */}
-        <div style={{ marginTop: '16px', background: 'rgba(30,77,140,0.06)', border: '1px dashed #93c5fd', borderRadius: '12px', padding: '12px 16px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-          <Smartphone size={20} color="#1e4d8c" style={{ flexShrink: 0, marginTop: '2px' }} />
+        <div style={{ marginTop: '16px', background: 'rgba(28,113,100,0.06)', border: '1px dashed var(--brand-300)', borderRadius: '12px', padding: '12px 16px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+          <Smartphone size={20} color="var(--brand-700)" style={{ flexShrink: 0, marginTop: '2px' }} />
           <p style={{ margin: 0, fontSize: '0.8rem', color: '#475569', lineHeight: 1.5 }}>
             <strong>Vuoi l'icona sul telefono?</strong> Apri il menu del browser (⋮ su Android, tasto condividi su iPhone) e scegli <strong>"Aggiungi a schermata Home"</strong>: avrai l'app con questa pagina a portata di tocco.
           </p>

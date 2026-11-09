@@ -66,7 +66,7 @@ export default function SignedReportsPage() {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      <h2 style={{ margin: '0 0 16px', color: '#1e4d8c' }}>📄 Relazioni firmate</h2>
+      <h2 style={{ margin: '0 0 16px', color: 'var(--brand-700)' }}>📄 Relazioni firmate</h2>
 
       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: '220px', position: 'relative' }}>
@@ -145,7 +145,7 @@ export default function SignedReportsPage() {
         <div className="modal-overlay" onClick={() => setSelected(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px', width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ margin: 0, color: '#1e4d8c' }}>Relazione firmata</h3>
+              <h3 style={{ margin: 0, color: 'var(--brand-700)' }}>Relazione firmata</h3>
               <button onClick={() => setSelected(null)} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer' }}>
                 <X size={18} />
               </button>

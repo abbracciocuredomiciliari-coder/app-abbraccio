@@ -335,7 +335,7 @@ export default function CompensoIncarichi() {
                         return (
                           <div key={r.workPlan._id} style={{ background: '#fff', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                             <div style={{ flex: 1, minWidth: '180px' }}>
-                              <div style={{ fontWeight: '700', color: '#1e4d8c', fontSize: '0.92rem' }}>
+                              <div style={{ fontWeight: '700', color: 'var(--brand-700)', fontSize: '0.92rem' }}>
                                 👤 {r.workPlan.patient?.firstName || 'Paziente'} {r.workPlan.patient?.lastName || 'eliminato'}
                               </div>
                               <div style={{ fontSize: '0.8rem', color: '#555' }}>
@@ -382,7 +382,7 @@ export default function CompensoIncarichi() {
             {Object.values(perOperatore).sort((a, b) => b.totale - a.totale).map((op, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', padding: '10px 14px', background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <div>
-                  <div style={{ fontWeight: '700', color: '#1e4d8c' }}>👤 {op.nome}</div>
+                  <div style={{ fontWeight: '700', color: 'var(--brand-700)' }}>👤 {op.nome}</div>
                   <div style={{ fontSize: '0.8rem', color: '#888' }}>{op.ruolo} — {op.incarichi} incarico{op.incarichi !== 1 ? 'i' : ''}</div>
                 </div>
                 <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -475,7 +475,7 @@ export default function CompensoIncarichi() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
                     {/* Info incarico */}
                     <div style={{ flex: 1, minWidth: '200px' }}>
-                      <div style={{ fontWeight: '700', fontSize: '1rem', color: '#1e4d8c', marginBottom: '4px' }}>
+                      <div style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--brand-700)', marginBottom: '4px' }}>
                         👤 {r.workPlan.patient?.firstName || 'Paziente'} {r.workPlan.patient?.lastName || 'eliminato'}
                       </div>
                       <div style={{ fontSize: '0.88rem', color: '#374151', marginBottom: '3px' }}>

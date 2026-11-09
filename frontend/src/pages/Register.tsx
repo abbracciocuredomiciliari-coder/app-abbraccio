@@ -237,7 +237,7 @@ function Register() {
 
   if (success) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#eff6ff,#ffffff 55%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,var(--brand-50),#ffffff 55%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
         <div style={{
           background: '#fff',
           border: '2px solid #059669',
@@ -268,14 +268,14 @@ function Register() {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#eff6ff,#ffffff 55%)', padding: '0 0 40px' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,var(--brand-50),#ffffff 55%)', padding: '0 0 40px' }}>
       {/* Header pubblico (pagina aperta da link esterno, senza menu) */}
-      <header style={{ background: '#fff', borderBottom: '1px solid #dbeafe', padding: '14px 20px' }}>
+      <header style={{ background: '#fff', borderBottom: '1px solid var(--brand-100)', padding: '14px 20px' }}>
         <div style={{ maxWidth: '680px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <img src="/logo.png" alt="Abbraccio Cure Domiciliari" style={{ height: '44px', width: 'auto', display: 'block' }} />
           <div>
             <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '1rem', lineHeight: 1.15 }}>Abbraccio Cure Domiciliari</div>
-            <div style={{ fontSize: '0.75rem', color: '#1e4d8c', fontWeight: 600 }}>Candidatura nuovo operatore</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--brand-700)', fontWeight: 600 }}>Candidatura nuovo operatore</div>
           </div>
         </div>
       </header>
@@ -296,8 +296,8 @@ function Register() {
           return (
             <button key={s.id} type="button" onClick={() => { if (isPast) setStep(s.id); }} style={{
               display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: '8px',
-              background: isActive ? '#1e4d8c' : isPast ? '#dbeafe' : '#f3f4f6',
-              color: isActive ? 'white' : isPast ? '#1e4d8c' : '#9ca3af', fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap',
+              background: isActive ? 'var(--brand-700)' : isPast ? 'var(--brand-100)' : '#f3f4f6',
+              color: isActive ? 'white' : isPast ? 'var(--brand-700)' : '#9ca3af', fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap',
               border: 'none', cursor: isClickable ? 'pointer' : 'default', opacity: isClickable ? 1 : 0.6,
               transition: 'all 0.2s'
             }}>
@@ -318,7 +318,7 @@ function Register() {
         {/* STEP 1: Anagrafica */}
         {step === 'anagrafica' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', color: '#1e3a5f' }}>👤 Dati anagrafici</h3>
+            <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', color: 'var(--nav-900)' }}>👤 Dati anagrafici</h3>
             <input value={name} onChange={e => setName(e.target.value)} placeholder="Nome completo *" required />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email *" required />
@@ -348,11 +348,11 @@ function Register() {
         {/* STEP 2: Zona */}
         {step === 'zona' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', color: '#1e3a5f' }}>📍 Zona di lavoro</h3>
+            <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', color: 'var(--nav-900)' }}>📍 Zona di lavoro</h3>
             <label>Indirizzo di partenza *</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input value={domicilioPartenza} onChange={e => { setDomicilioPartenza(e.target.value); setDomicilioCoords(null); }} placeholder="Via Roma 10, Roma RM" style={{ flex: 1 }} />
-              <button type="button" onClick={geocodifica} disabled={geocodingLoading} style={{ background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '8px', padding: '0 14px', cursor: 'pointer' }}>
+              <button type="button" onClick={geocodifica} disabled={geocodingLoading} style={{ background: 'var(--brand-700)', color: 'white', border: 'none', borderRadius: '8px', padding: '0 14px', cursor: 'pointer' }}>
                 {geocodingLoading ? '...' : '📍 Trova'}
               </button>
             </div>
@@ -371,13 +371,13 @@ function Register() {
         {/* STEP 3: Tipo collaborazione */}
         {step === 'tipo-collab' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', color: '#1e3a5f' }}>💼 Tipo di collaborazione</h3>
+            <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', color: 'var(--nav-900)' }}>💼 Tipo di collaborazione</h3>
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <button type="button" onClick={() => setTipoCollaborazione('libero-professionista')} style={{ flex: 1, padding: '16px', borderRadius: '10px', border: `2px solid ${tipoCollaborazione === 'libero-professionista' ? '#1e4d8c' : '#e5e7eb'}`, background: tipoCollaborazione === 'libero-professionista' ? '#eff6ff' : 'white' }}>
+              <button type="button" onClick={() => setTipoCollaborazione('libero-professionista')} style={{ flex: 1, padding: '16px', borderRadius: '10px', border: `2px solid ${tipoCollaborazione === 'libero-professionista' ? 'var(--brand-700)' : '#e5e7eb'}`, background: tipoCollaborazione === 'libero-professionista' ? 'var(--brand-50)' : 'white' }}>
                 <strong>Libero Professionista</strong>
                 <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#6b7280' }}>Con Partita IVA, iscrizione albo e regime fiscale</p>
               </button>
-              <button type="button" onClick={() => setTipoCollaborazione('dipendente')} style={{ flex: 1, padding: '16px', borderRadius: '10px', border: `2px solid ${tipoCollaborazione === 'dipendente' ? '#1e4d8c' : '#e5e7eb'}`, background: tipoCollaborazione === 'dipendente' ? '#eff6ff' : 'white' }}>
+              <button type="button" onClick={() => setTipoCollaborazione('dipendente')} style={{ flex: 1, padding: '16px', borderRadius: '10px', border: `2px solid ${tipoCollaborazione === 'dipendente' ? 'var(--brand-700)' : '#e5e7eb'}`, background: tipoCollaborazione === 'dipendente' ? 'var(--brand-50)' : 'white' }}>
                 <strong>Senza Partita IVA</strong>
                 <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#6b7280' }}>Dipendente o altro rapporto</p>
               </button>
@@ -406,7 +406,7 @@ function Register() {
         {/* STEP 4: Documenti */}
         {step === 'documenti' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', color: '#1e3a5f' }}>📎 Documenti allegati</h3>
+            <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', color: 'var(--nav-900)' }}>📎 Documenti allegati</h3>
             <p style={{ fontSize: '0.9rem', color: '#6b7280', margin: '0 0 12px' }}>
               Allega i documenti richiesti. Questi documenti sono facoltativi ma consigliati per velocizzare l'approvazione.
             </p>
@@ -476,7 +476,7 @@ function Register() {
         {/* STEP 6: Riepilogo */}
         {step === 'riepilogo' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', color: '#1e3a5f' }}>✅ Riepilogo</h3>
+            <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', color: 'var(--nav-900)' }}>✅ Riepilogo</h3>
             <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', fontSize: '0.9rem' }}>
               <p><strong>Nome:</strong> {name}</p>
               <p><strong>Email:</strong> {email}</p>

@@ -66,7 +66,7 @@ interface StaffDocument {
 }
 
 const categories = [
-  { value: 'infermieristico', label: 'Personale Infermieristico', color: '#4f46e5' },
+  { value: 'infermieristico', label: 'Personale Infermieristico', color: 'var(--brand-600)' },
   { value: 'oss', label: 'Personale OSS', color: '#06b6d4' },
   { value: 'riabilitativo', label: 'Personale Riabilitativo', color: '#10b981' },
   { value: 'medico', label: 'Medico', color: '#f59e0b' },
@@ -565,7 +565,7 @@ function Staff() {
                  <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb">${esc(d.title)}</td>
                  <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280">${esc(d.fileName)}</td>
                  <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb">
-                   <a href="${baseUrl}/staff/documents/${d._id}?token=${encodeURIComponent(token)}" target="_blank" style="color:#1e4d8c;font-weight:600">Apri documento ↗</a>
+                   <a href="${baseUrl}/staff/documents/${d._id}?token=${encodeURIComponent(token)}" target="_blank" style="color:var(--brand-700);font-weight:600">Apri documento ↗</a>
                  </td>
                </tr>`).join('')}
            </table>`
@@ -579,14 +579,14 @@ function Staff() {
                  <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb">${esc(d.title)}</td>
                  <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280">${esc(d.documentType)}</td>
                  <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb">
-                   <a href="${baseUrl}/staff/documents/${d._id}?token=${encodeURIComponent(token)}" target="_blank" style="color:#1e4d8c">Apri ↗</a>
+                   <a href="${baseUrl}/staff/documents/${d._id}?token=${encodeURIComponent(token)}" target="_blank" style="color:var(--brand-700)">Apri ↗</a>
                  </td>
                </tr>`).join('')}
            </table>`
         : '';
 
       const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Profilo - ${esc(u.name)}</title>
-      <style>body{font-family:Arial,sans-serif;margin:24px;color:#1f2937}h1{font-size:1.4rem;color:#1e4d8c;border-bottom:2px solid #1e4d8c;padding-bottom:8px}h2{font-size:1rem;margin-top:20px;border-bottom:1px solid #d1d5db;padding-bottom:6px}.f{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e5e7eb}.f strong{color:#111827}@media print{body{margin:12px}}</style>
+      <style>body{font-family:Arial,sans-serif;margin:24px;color:#1f2937}h1{font-size:1.4rem;color:var(--brand-700);border-bottom:2px solid var(--brand-700);padding-bottom:8px}h2{font-size:1rem;margin-top:20px;border-bottom:1px solid #d1d5db;padding-bottom:6px}.f{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e5e7eb}.f strong{color:#111827}@media print{body{margin:12px}}</style>
       </head><body>
       <h1>Profilo Operatore</h1>
       <p>${esc(u.name)} • ${esc(roleLabel)}</p>
@@ -922,7 +922,7 @@ function Staff() {
                       {/* Badge modalità abilitata */}
                       {staff.modalitaAbilitata && staff.modalitaAbilitata !== 'entrambi' && (
                         <span className="tw-text-[0.72rem] tw-px-2 tw-py-0.5 tw-rounded-full tw-font-bold" style={{
-                          backgroundColor: staff.modalitaAbilitata === 'convenzione' ? '#eff6ff' : '#f0fdf4',
+                          backgroundColor: staff.modalitaAbilitata === 'convenzione' ? 'var(--brand-50)' : '#f0fdf4',
                           color: staff.modalitaAbilitata === 'convenzione' ? '#0369a1' : '#166534',
                           border: `1px solid ${staff.modalitaAbilitata === 'convenzione' ? '#bae6fd' : '#bbf7d0'}`,
                         }}>

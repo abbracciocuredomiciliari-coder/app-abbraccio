@@ -20,7 +20,7 @@ const input: React.CSSProperties = {
 };
 const card: React.CSSProperties = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '18px', marginBottom: '14px' };
 const btnPrimary: React.CSSProperties = {
-  width: '100%', padding: '13px', borderRadius: '10px', border: 'none', background: '#1e4d8c',
+  width: '100%', padding: '13px', borderRadius: '10px', border: 'none', background: 'var(--brand-700)',
   color: '#fff', fontWeight: 800, fontSize: '1rem', cursor: 'pointer',
 };
 
@@ -119,7 +119,7 @@ export default function AreaFamiglia() {
 
   const Contatti = (
     <p style={{ textAlign: 'center', color: '#64748b', fontSize: '0.85rem', marginTop: '18px' }}>
-      Serve aiuto? <a href={`tel:${TELEFONO}`} style={{ color: '#1e4d8c', fontWeight: 700 }}><Phone size={12} style={{ verticalAlign: '-2px' }} /> {TELEFONO_LABEL}</a>
+      Serve aiuto? <a href={`tel:${TELEFONO}`} style={{ color: 'var(--brand-700)', fontWeight: 700 }}><Phone size={12} style={{ verticalAlign: '-2px' }} /> {TELEFONO_LABEL}</a>
       {' · '}<a href={`https://wa.me/${WHATSAPP}`} style={{ color: '#16a34a', fontWeight: 700 }}><MessageCircle size={12} style={{ verticalAlign: '-2px' }} /> WhatsApp</a>
     </p>
   );
@@ -142,7 +142,7 @@ export default function AreaFamiglia() {
 
           {!!dati.richieste.length && (
             <>
-              <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e3a5f', margin: '18px 0 10px', display: 'flex', alignItems: 'center', gap: '8px' }}><ClipboardList size={17} /> Le tue richieste e prenotazioni</h2>
+              <h2 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--nav-900)', margin: '18px 0 10px', display: 'flex', alignItems: 'center', gap: '8px' }}><ClipboardList size={17} /> Le tue richieste e prenotazioni</h2>
               {dati.richieste.map(r => (
                 <div key={r.id} style={card}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -162,7 +162,7 @@ export default function AreaFamiglia() {
 
           {!!dati.preventivi.length && (
             <>
-              <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e3a5f', margin: '18px 0 10px', display: 'flex', alignItems: 'center', gap: '8px' }}><FileText size={17} /> I tuoi preventivi</h2>
+              <h2 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--nav-900)', margin: '18px 0 10px', display: 'flex', alignItems: 'center', gap: '8px' }}><FileText size={17} /> I tuoi preventivi</h2>
               {dati.preventivi.map(p => (
                 <div key={p.id} style={card}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -180,7 +180,7 @@ export default function AreaFamiglia() {
 
           {!!dati.registrazioni.length && (
             <>
-              <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e3a5f', margin: '18px 0 10px', display: 'flex', alignItems: 'center', gap: '8px' }}><CalendarClock size={17} /> Registrazioni</h2>
+              <h2 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--nav-900)', margin: '18px 0 10px', display: 'flex', alignItems: 'center', gap: '8px' }}><CalendarClock size={17} /> Registrazioni</h2>
               {dati.registrazioni.map(r => (
                 <div key={r.id} style={card}>
                   <strong>{r.nome || 'Registrazione'}</strong>
@@ -215,7 +215,7 @@ export default function AreaFamiglia() {
         <div style={card}>
           {step === 'email' ? (
             <>
-              <h2 style={{ margin: '0 0 12px', fontSize: '1rem', fontWeight: 800, color: '#1e3a5f' }}><KeyRound size={16} style={{ verticalAlign: '-2px' }} /> Accedi con la tua email</h2>
+              <h2 style={{ margin: '0 0 12px', fontSize: '1rem', fontWeight: 800, color: 'var(--nav-900)' }}><KeyRound size={16} style={{ verticalAlign: '-2px' }} /> Accedi con la tua email</h2>
               <p style={{ fontSize: '0.83rem', color: '#64748b', margin: '0 0 10px' }}>Usa la stessa email che hai lasciato nelle richieste o nei preventivi.</p>
               <input style={input} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="nome@email.it"
                 onKeyDown={e => e.key === 'Enter' && inviaCodice()} />
@@ -225,7 +225,7 @@ export default function AreaFamiglia() {
             </>
           ) : (
             <>
-              <h2 style={{ margin: '0 0 12px', fontSize: '1rem', fontWeight: 800, color: '#1e3a5f' }}>Inserisci il codice</h2>
+              <h2 style={{ margin: '0 0 12px', fontSize: '1rem', fontWeight: 800, color: 'var(--nav-900)' }}>Inserisci il codice</h2>
               <p style={{ fontSize: '0.83rem', color: '#64748b', margin: '0 0 10px' }}>Abbiamo inviato un codice a 6 cifre a <strong>{email}</strong> (controlla anche spam).</p>
               <input style={{ ...input, textAlign: 'center', fontSize: '1.6rem', letterSpacing: '10px', fontWeight: 800 }}
                 inputMode="numeric" maxLength={6} value={codice} onChange={e => setCodice(e.target.value.replace(/\D/g, ''))} placeholder="••••••"
@@ -234,7 +234,7 @@ export default function AreaFamiglia() {
                 {busy ? 'Verifica…' : 'Entra'}
               </button>
               <button onClick={() => { setStep('email'); setErrore(''); setCodice(''); }}
-                style={{ width: '100%', marginTop: '10px', padding: '10px', background: 'none', border: 'none', color: '#1e4d8c', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
+                style={{ width: '100%', marginTop: '10px', padding: '10px', background: 'none', border: 'none', color: 'var(--brand-700)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
                 ← Cambia email o rimanda il codice
               </button>
             </>

@@ -209,7 +209,7 @@ function Dashboard() {
       subtitle: 'totali in archivio',
       value: counts.patientsCount,
       icon: Users,
-      color: '#4f46e5',
+      color: 'var(--brand-600)',
       bgColor: 'rgba(79, 70, 229, 0.1)',
       link: '/patients',
     },
@@ -266,7 +266,7 @@ function Dashboard() {
       subtitle: `${assignmentCounts.in_attesa} in attesa · ${assignmentCounts.accettato} accettati`,
       value: assignmentCounts.in_attesa,
       icon: ClipboardList,
-      color: assignmentCounts.in_attesa > 0 ? '#dc2626' : '#2563eb',
+      color: assignmentCounts.in_attesa > 0 ? '#dc2626' : 'var(--brand-600)',
       bgColor: assignmentCounts.in_attesa > 0 ? 'rgba(220, 38, 38, 0.1)' : 'rgba(37, 99, 235, 0.1)',
       link: '/workplan',
     }] : []),
@@ -406,7 +406,7 @@ function Dashboard() {
           onClick={() => navigate('/archivio-email?tab=ricevute')}
           className="tw-flex tw-items-center tw-gap-3 tw-mb-5 tw-cursor-pointer tw-rounded-xl tw-border-2 tw-border-blue-400 tw-bg-blue-400/10 tw-px-4 tw-py-3 hover:tw-bg-blue-400/20 tw-transition-colors"
         >
-          <Inbox size={22} color="#2563eb" className="tw-flex-shrink-0" />
+          <Inbox size={22} color="var(--brand-600)" className="tw-flex-shrink-0" />
           <div className="tw-flex-1">
             <div className="tw-font-bold tw-text-blue-800 tw-text-sm">
               📥 {emailNonLette} {emailNonLette === 1 ? 'nuova email ricevuta' : 'nuove email ricevute'} sulla casella aziendale

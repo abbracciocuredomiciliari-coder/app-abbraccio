@@ -32,7 +32,7 @@ interface EmailLogItem {
 
 const AREA_LABEL: Record<string, string> = { privato: 'Gestione Privata', intermediazione: 'Intermediazioni', generale: 'Generale' };
 const AREA_STYLE: Record<string, { bg: string; color: string }> = {
-  privato: { bg: '#dbeafe', color: '#1d4ed8' },
+  privato: { bg: 'var(--brand-100)', color: '#1d4ed8' },
   intermediazione: { bg: '#ffe4e6', color: '#be123c' },
   generale: { bg: '#f1f5f9', color: '#475569' },
 };

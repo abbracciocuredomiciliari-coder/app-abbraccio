@@ -860,19 +860,19 @@ export default function BadantiIntermediazione() {
                   <span className="tw-text-xs tw-font-bold tw-text-slate-500 tw-uppercase">Indennità applicabili</span>
                   {(simLivello === 'CS' || simLivello === 'DS') && (
                     <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-bg-slate-50 tw-border tw-rounded tw-p-2.5">
-                      <input type="checkbox" checked={simPiuAutosuff} onChange={e => { setSimPiuAutosuff(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+                      <input type="checkbox" checked={simPiuAutosuff} onChange={e => { setSimPiuAutosuff(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[var(--brand-700)]" />
                       <span>Addetto a più persone non autosufficienti</span>
                     </label>
                   )}
                   {simLivello === 'BS' && (
                     <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-bg-slate-50 tw-border tw-rounded tw-p-2.5">
-                      <input type="checkbox" checked={simBabysitter} onChange={e => { setSimBabysitter(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+                      <input type="checkbox" checked={simBabysitter} onChange={e => { setSimBabysitter(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[var(--brand-700)]" />
                       <span>Babysitter fino al 6° anno di età del bambino</span>
                     </label>
                   )}
                   {(simLivello === 'B' || simLivello === 'BS' || simLivello === 'CS') && (
                     <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-bg-slate-50 tw-border tw-rounded tw-p-2.5">
-                      <input type="checkbox" checked={simCertUni} onChange={e => { setSimCertUni(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+                      <input type="checkbox" checked={simCertUni} onChange={e => { setSimCertUni(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[var(--brand-700)]" />
                       <span>Lavoratore certificato UNI 11766</span>
                     </label>
                   )}
@@ -898,7 +898,7 @@ export default function BadantiIntermediazione() {
                 <span className="tw-text-xs tw-text-slate-400">Suggerita in base al tipo di contratto, modificabile</span>
               </label>
               <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-pt-6">
-                <input type="checkbox" checked={simEscludiTfr} onChange={e => setSimEscludiTfr(e.target.checked)} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+                <input type="checkbox" checked={simEscludiTfr} onChange={e => setSimEscludiTfr(e.target.checked)} className="tw-w-4 tw-h-4 tw-accent-[var(--brand-700)]" />
                 <span className="tw-font-medium">Escludi TFR e tredicesima dal PDF</span>
               </label>
               <label className="tw-flex tw-flex-col tw-gap-1">
@@ -938,7 +938,7 @@ export default function BadantiIntermediazione() {
                     <span className="tw-text-xs tw-text-slate-400">Imponibile — la fattura aggiunge IVA 22%</span>
                   </label>
                   <label className="tw-flex tw-items-end tw-gap-2 tw-text-sm tw-cursor-pointer tw-pb-2">
-                    <input type="checkbox" checked={simContractInvia} onChange={e => setSimContractInvia(e.target.checked)} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+                    <input type="checkbox" checked={simContractInvia} onChange={e => setSimContractInvia(e.target.checked)} className="tw-w-4 tw-h-4 tw-accent-[var(--brand-700)]" />
                     <span className="tw-font-medium">Invia subito per firma</span>
                   </label>
                 </div>
@@ -1210,19 +1210,19 @@ export default function BadantiIntermediazione() {
                   <span className="tw-text-xs tw-font-bold tw-text-slate-500 tw-uppercase">Indennità</span>
                   {(simLivello === 'CS' || simLivello === 'DS') && (
                     <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-bg-slate-50 tw-border tw-rounded tw-p-2">
-                      <input type="checkbox" checked={simPiuAutosuff} onChange={e => { setSimPiuAutosuff(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+                      <input type="checkbox" checked={simPiuAutosuff} onChange={e => { setSimPiuAutosuff(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[var(--brand-700)]" />
                       <span>Più persone non autosufficienti</span>
                     </label>
                   )}
                   {simLivello === 'BS' && (
                     <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-bg-slate-50 tw-border tw-rounded tw-p-2">
-                      <input type="checkbox" checked={simBabysitter} onChange={e => { setSimBabysitter(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+                      <input type="checkbox" checked={simBabysitter} onChange={e => { setSimBabysitter(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[var(--brand-700)]" />
                       <span>Babysitter fino al 6° anno</span>
                     </label>
                   )}
                   {(simLivello === 'B' || simLivello === 'BS' || simLivello === 'CS') && (
                     <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-bg-slate-50 tw-border tw-rounded tw-p-2">
-                      <input type="checkbox" checked={simCertUni} onChange={e => { setSimCertUni(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+                      <input type="checkbox" checked={simCertUni} onChange={e => { setSimCertUni(e.target.checked); setSimRisultato(null); }} className="tw-w-4 tw-h-4 tw-accent-[var(--brand-700)]" />
                       <span>Certificato UNI 11766</span>
                     </label>
                   )}
@@ -1260,11 +1260,11 @@ export default function BadantiIntermediazione() {
               </label>
             </div>
             <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-mb-2">
-              <input type="checkbox" checked={prevEscludiTfr} onChange={e => setPrevEscludiTfr(e.target.checked)} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+              <input type="checkbox" checked={prevEscludiTfr} onChange={e => setPrevEscludiTfr(e.target.checked)} className="tw-w-4 tw-h-4 tw-accent-[var(--brand-700)]" />
               <span className="tw-font-medium">Escludi TFR e tredicesima dal PDF preventivo</span>
             </label>
             <label className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-cursor-pointer tw-mb-4">
-              <input type="checkbox" checked={prevInvia} onChange={e => setPrevInvia(e.target.checked)} className="tw-w-4 tw-h-4 tw-accent-[#1e4d8c]" />
+              <input type="checkbox" checked={prevInvia} onChange={e => setPrevInvia(e.target.checked)} className="tw-w-4 tw-h-4 tw-accent-[var(--brand-700)]" />
               <span className="tw-font-medium">Invia subito al paziente contratto + GDPR + preventivo per la firma</span>
             </label>
 

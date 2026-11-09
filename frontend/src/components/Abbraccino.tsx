@@ -76,8 +76,8 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
     } finally { setBusy(false); }
   }
 
-  const pillTop: React.CSSProperties = { background: '#fff', color: '#1e4d8c', border: '1.5px solid #dbeafe', borderRadius: 999, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 800, boxShadow: '0 3px 10px rgba(0,0,0,.10)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' };
-  const pillBtm: React.CSSProperties = { ...pillTop, background: 'linear-gradient(135deg,#1e3a5f,#1e4d8c)', color: '#fff', border: 'none', padding: '5px 14px' };
+  const pillTop: React.CSSProperties = { background: '#fff', color: 'var(--brand-700)', border: '1.5px solid var(--brand-100)', borderRadius: 999, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 800, boxShadow: '0 3px 10px rgba(0,0,0,.10)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' };
+  const pillBtm: React.CSSProperties = { ...pillTop, background: 'linear-gradient(135deg,var(--nav-900),var(--brand-700))', color: '#fff', border: 'none', padding: '5px 14px' };
 
   return (
     <>
@@ -103,19 +103,19 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
       {/* pulsante chiudi */}
       {open && (
         <button onClick={() => setOpen(false)} aria-label="Chiudi"
-          style={{ position: 'fixed', bottom: 18, right: 18, width: 62, height: 62, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#1e3a5f,#1e4d8c)', color: '#fff', cursor: 'pointer', boxShadow: '0 6px 22px rgba(30,77,140,.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          style={{ position: 'fixed', bottom: 18, right: 18, width: 62, height: 62, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,var(--nav-900),var(--brand-700))', color: '#fff', cursor: 'pointer', boxShadow: '0 6px 22px rgba(28,113,100,.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <X size={26} />
         </button>
       )}
 
       {open && (
-        <div style={{ position: 'fixed', bottom: 90, right: 14, width: 'min(360px, calc(100vw - 28px))', maxHeight: '70vh', background: '#fff', borderRadius: 18, boxShadow: '0 10px 40px rgba(0,0,0,.22)', zIndex: 9999, display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #dbeafe', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
-          <div style={{ background: 'linear-gradient(135deg,#1e3a5f,#1e4d8c)', color: '#fff', padding: '12px 16px', fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ position: 'fixed', bottom: 90, right: 14, width: 'min(360px, calc(100vw - 28px))', maxHeight: '70vh', background: '#fff', borderRadius: 18, boxShadow: '0 10px 40px rgba(0,0,0,.22)', zIndex: 9999, display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid var(--brand-100)', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
+          <div style={{ background: 'linear-gradient(135deg,var(--nav-900),var(--brand-700))', color: '#fff', padding: '12px 16px', fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 8 }}>
             <CuoricinoIcon size={26} /> Abbraccino — assistente
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8, minHeight: 200, maxHeight: '48vh' }}>
             {msgs.map((m, i) => (
-              <div key={i} style={{ alignSelf: m.who === 'io' ? 'flex-end' : 'flex-start', maxWidth: '85%', background: m.who === 'io' ? '#1e4d8c' : '#f1f5f9', color: m.who === 'io' ? '#fff' : '#1e293b', borderRadius: 14, padding: '9px 12px', fontSize: '0.85rem', lineHeight: 1.45, whiteSpace: 'pre-wrap' }}>
+              <div key={i} style={{ alignSelf: m.who === 'io' ? 'flex-end' : 'flex-start', maxWidth: '85%', background: m.who === 'io' ? 'var(--brand-700)' : '#f1f5f9', color: m.who === 'io' ? '#fff' : '#1e293b', borderRadius: 14, padding: '9px 12px', fontSize: '0.85rem', lineHeight: 1.45, whiteSpace: 'pre-wrap' }}>
                 {m.text}
               </div>
             ))}
@@ -132,7 +132,7 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
               </button>
             )}
             <button type="submit" disabled={busy || !input.trim()}
-              style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: '#1e4d8c', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: 'var(--brand-700)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Send size={16} />
             </button>
           </form>

@@ -605,10 +605,10 @@ const [preventivoIva, setPreventivoIva] = useState(0);
         const costo = wp.costoPrestazione || 0;
         return `<tr><td>${formatData(wp.date)}</td><td>${wp.task}</td><td>${wp.staff.firstName} ${wp.staff.lastName}</td><td style="text-align:right">€${compenso.toFixed(2)}</td><td style="text-align:right;font-weight:700">€${costo.toFixed(2)}</td></tr>`;
       }).join('');
-      return `<!DOCTYPE html><html><head><style>body{font-family:Arial;margin:24px;font-size:12px}h1{color:#1e4d8c;font-size:20px}table{width:100%;border-collapse:collapse;margin-top:16px}th{background:#1e4d8c;color:#fff;padding:8px;text-align:left}td{padding:7px 8px;border-bottom:1px solid #e2e8f0}.header{border-bottom:3px solid #1e4d8c;padding-bottom:14px;margin-bottom:20px}.riepilogo{margin-top:20px;background:#f0fdf4;padding:16px;border-radius:8px;display:flex;justify-content:space-around}</style></head><body><div class="header"><h1>🏥 Abbraccio Cure Domiciliari</h1><h2>Fatturazione - ${singolo.patient.firstName} ${singolo.patient.lastName}</h2><div style="color:#666">Periodo: ${periodo}</div></div><table><thead><tr><th>Data</th><th>Prestazione</th><th>Operatore</th><th style="text-align:right">Compenso Op.</th><th style="text-align:right">Fatturato</th></tr></thead><tbody>${righe}</tbody></table><div class="riepilogo"><div><div style="font-size:11px;color:#666">Compenso Operatori</div><div style="font-size:18px;font-weight:800;color:#7c3aed">€${singolo.totaleCompensoOperatori.toFixed(2)}</div></div><div><div style="font-size:11px;color:#666">Totale Fatturato</div><div style="font-size:18px;font-weight:800;color:#166534">€${singolo.totaleFatturato.toFixed(2)}</div></div><div><div style="font-size:11px;color:#666">Utile</div><div style="font-size:18px;font-weight:800;color:${singolo.totaleUtile >= 0 ? '#166534' : '#dc2626'}">€${singolo.totaleUtile.toFixed(2)}</div></div></div></body></html>`;
+      return `<!DOCTYPE html><html><head><style>body{font-family:Arial;margin:24px;font-size:12px}h1{color:var(--brand-700);font-size:20px}table{width:100%;border-collapse:collapse;margin-top:16px}th{background:var(--brand-700);color:#fff;padding:8px;text-align:left}td{padding:7px 8px;border-bottom:1px solid #e2e8f0}.header{border-bottom:3px solid var(--brand-700);padding-bottom:14px;margin-bottom:20px}.riepilogo{margin-top:20px;background:#f0fdf4;padding:16px;border-radius:8px;display:flex;justify-content:space-around}</style></head><body><div class="header"><h1>🏥 Abbraccio Cure Domiciliari</h1><h2>Fatturazione - ${singolo.patient.firstName} ${singolo.patient.lastName}</h2><div style="color:#666">Periodo: ${periodo}</div></div><table><thead><tr><th>Data</th><th>Prestazione</th><th>Operatore</th><th style="text-align:right">Compenso Op.</th><th style="text-align:right">Fatturato</th></tr></thead><tbody>${righe}</tbody></table><div class="riepilogo"><div><div style="font-size:11px;color:#666">Compenso Operatori</div><div style="font-size:18px;font-weight:800;color:#7c3aed">€${singolo.totaleCompensoOperatori.toFixed(2)}</div></div><div><div style="font-size:11px;color:#666">Totale Fatturato</div><div style="font-size:18px;font-weight:800;color:#166534">€${singolo.totaleFatturato.toFixed(2)}</div></div><div><div style="font-size:11px;color:#666">Utile</div><div style="font-size:18px;font-weight:800;color:${singolo.totaleUtile >= 0 ? '#166534' : '#dc2626'}">€${singolo.totaleUtile.toFixed(2)}</div></div></div></body></html>`;
     }
     const righe = riepiloghiPerPaziente.map((r, i) => `<tr><td>${i+1}</td><td><strong>${r.patient.firstName} ${r.patient.lastName}</strong></td><td style="text-align:center">${r.numeroPrestazioni}</td><td style="text-align:right">€${r.totaleCompensoOperatori.toFixed(2)}</td><td style="text-align:right;font-weight:600;color:#166534">€${r.totaleFatturato.toFixed(2)}</td><td style="text-align:right;font-weight:700;color:${r.totaleUtile >= 0 ? '#166534' : '#dc2626'}">€${r.totaleUtile.toFixed(2)}</td></tr>`).join('');
-    return `<!DOCTYPE html><html><head><style>body{font-family:Arial;margin:24px;font-size:12px}h1{color:#1e4d8c;font-size:22px}.header{border-bottom:3px solid #1e4d8c;padding-bottom:14px;margin-bottom:20px}.periodo{background:#f1f5f9;padding:8px 12px;border-radius:6px}table{width:100%;border-collapse:collapse;margin-top:16px}th{background:#1e4d8c;color:#fff;padding:8px;text-align:left}td{padding:7px 8px;border-bottom:1px solid #e2e8f0}.totali{margin-top:20px;background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);padding:20px;border-radius:10px;border:2px solid #16a34a;display:flex;justify-content:space-around}.totale-box{text-align:center}</style></head><body><div class="header"><h1>📊 Report Fatturazione Generale</h1><div class="periodo">📅 Periodo: ${periodo}</div></div><div class="totali"><div class="totale-box"><div style="font-size:11px;color:#166534;text-transform:uppercase">Totale Fatturato</div><div style="font-size:24px;font-weight:800;color:#166534">€${totaliGenerali.totaleFatturato.toFixed(2)}</div></div><div class="totale-box"><div style="font-size:11px;color:#7c3aed;text-transform:uppercase">Compensi Operatori</div><div style="font-size:24px;font-weight:800;color:#7c3aed">€${totaliGenerali.totaleCompenso.toFixed(2)}</div></div><div class="totale-box"><div style="font-size:11px;color:${totaliGenerali.totaleUtile >= 0 ? '#166534' : '#dc2626'};text-transform:uppercase">Utile Admin</div><div style="font-size:24px;font-weight:800;color:${totaliGenerali.totaleUtile >= 0 ? '#166534' : '#dc2626'}">€${totaliGenerali.totaleUtile.toFixed(2)}</div></div></div><h2 style="margin-top:30px">📋 Dettaglio per Paziente (${totaliGenerali.numeroPazienti})</h2><table><thead><tr><th style="width:40px">#</th><th>Paziente</th><th style="text-align:center;width:80px">Prestaz.</th><th style="text-align:right">Compenso Op.</th><th style="text-align:right">Fatturato</th><th style="text-align:right">Utile</th></tr></thead><tbody>${righe}</tbody></table></body></html>`;
+    return `<!DOCTYPE html><html><head><style>body{font-family:Arial;margin:24px;font-size:12px}h1{color:var(--brand-700);font-size:22px}.header{border-bottom:3px solid var(--brand-700);padding-bottom:14px;margin-bottom:20px}.periodo{background:#f1f5f9;padding:8px 12px;border-radius:6px}table{width:100%;border-collapse:collapse;margin-top:16px}th{background:var(--brand-700);color:#fff;padding:8px;text-align:left}td{padding:7px 8px;border-bottom:1px solid #e2e8f0}.totali{margin-top:20px;background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);padding:20px;border-radius:10px;border:2px solid #16a34a;display:flex;justify-content:space-around}.totale-box{text-align:center}</style></head><body><div class="header"><h1>📊 Report Fatturazione Generale</h1><div class="periodo">📅 Periodo: ${periodo}</div></div><div class="totali"><div class="totale-box"><div style="font-size:11px;color:#166534;text-transform:uppercase">Totale Fatturato</div><div style="font-size:24px;font-weight:800;color:#166534">€${totaliGenerali.totaleFatturato.toFixed(2)}</div></div><div class="totale-box"><div style="font-size:11px;color:#7c3aed;text-transform:uppercase">Compensi Operatori</div><div style="font-size:24px;font-weight:800;color:#7c3aed">€${totaliGenerali.totaleCompenso.toFixed(2)}</div></div><div class="totale-box"><div style="font-size:11px;color:${totaliGenerali.totaleUtile >= 0 ? '#166534' : '#dc2626'};text-transform:uppercase">Utile Admin</div><div style="font-size:24px;font-weight:800;color:${totaliGenerali.totaleUtile >= 0 ? '#166534' : '#dc2626'}">€${totaliGenerali.totaleUtile.toFixed(2)}</div></div></div><h2 style="margin-top:30px">📋 Dettaglio per Paziente (${totaliGenerali.numeroPazienti})</h2><table><thead><tr><th style="width:40px">#</th><th>Paziente</th><th style="text-align:center;width:80px">Prestaz.</th><th style="text-align:right">Compenso Op.</th><th style="text-align:right">Fatturato</th><th style="text-align:right">Utile</th></tr></thead><tbody>${righe}</tbody></table></body></html>`;
   };
 
   const visualizzaPDF = (singolo?: RiepilogoPaziente) => {
@@ -633,7 +633,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
   const stampaRiepilogoAsl = () => {
     const periodo = dataInizio && dataFine ? `${formatData(dataInizio)} - ${formatData(dataFine)}` : 'Tutto il periodo';
     const righe = pianiConvenzione.map(wp => `<tr><td>${formatData(wp.date)}</td><td>${wp.patient.firstName} ${wp.patient.lastName}</td><td>${wp.task}</td><td>${wp.staff.firstName} ${wp.staff.lastName}</td><td>${wp.patient.siat?.asl || ''}</td><td style="text-align:right;font-weight:700;color:#0369a1">€${(wp.tariffaAsl||0).toFixed(2)}</td><td style="text-align:right">€${(wp.compensoTotale||0).toFixed(2)}</td></tr>`).join('');
-    const html = `<!DOCTYPE html><html><head><style>body{font-family:Arial;margin:24px;font-size:12px}h1{color:#0369a1}table{width:100%;border-collapse:collapse;margin-top:16px}th{background:#0369a1;color:#fff;padding:8px;text-align:left}td{padding:7px 8px;border-bottom:1px solid #e2e8f0}.totali{margin-top:20px;background:#eff6ff;padding:16px;border-radius:8px;display:flex;gap:40px}</style></head><body><h1>🏥 Tariffa da Fatturare all'ASL — Convenzione SIAT</h1><div style="color:#666;margin-bottom:16px">Periodo: ${periodo}</div><div class="totali"><div><div style="font-size:11px;color:#0369a1">TOTALE DA FATTURARE ALL'ASL</div><div style="font-size:24px;font-weight:800;color:#0369a1">€${totaliAsl.totale.toFixed(2)}</div></div><div><div style="font-size:11px;color:#7c3aed">COMPENSI OPERATORI</div><div style="font-size:24px;font-weight:800;color:#7c3aed">€${totaliAsl.compenso.toFixed(2)}</div></div><div><div style="font-size:11px;color:#374151">PRESTAZIONI</div><div style="font-size:24px;font-weight:800">${totaliAsl.prestazioni}</div></div></div><table style="margin-top:24px"><thead><tr><th>Data</th><th>Paziente</th><th>Prestazione</th><th>Operatore</th><th>ASL</th><th style="text-align:right">Tariffa ASL</th><th style="text-align:right">Comp. Op.</th></tr></thead><tbody>${righe}</tbody></table></body></html>`;
+    const html = `<!DOCTYPE html><html><head><style>body{font-family:Arial;margin:24px;font-size:12px}h1{color:#0369a1}table{width:100%;border-collapse:collapse;margin-top:16px}th{background:#0369a1;color:#fff;padding:8px;text-align:left}td{padding:7px 8px;border-bottom:1px solid #e2e8f0}.totali{margin-top:20px;background:var(--brand-50);padding:16px;border-radius:8px;display:flex;gap:40px}</style></head><body><h1>🏥 Tariffa da Fatturare all'ASL — Convenzione SIAT</h1><div style="color:#666;margin-bottom:16px">Periodo: ${periodo}</div><div class="totali"><div><div style="font-size:11px;color:#0369a1">TOTALE DA FATTURARE ALL'ASL</div><div style="font-size:24px;font-weight:800;color:#0369a1">€${totaliAsl.totale.toFixed(2)}</div></div><div><div style="font-size:11px;color:#7c3aed">COMPENSI OPERATORI</div><div style="font-size:24px;font-weight:800;color:#7c3aed">€${totaliAsl.compenso.toFixed(2)}</div></div><div><div style="font-size:11px;color:#374151">PRESTAZIONI</div><div style="font-size:24px;font-weight:800">${totaliAsl.prestazioni}</div></div></div><table style="margin-top:24px"><thead><tr><th>Data</th><th>Paziente</th><th>Prestazione</th><th>Operatore</th><th>ASL</th><th style="text-align:right">Tariffa ASL</th><th style="text-align:right">Comp. Op.</th></tr></thead><tbody>${righe}</tbody></table></body></html>`;
     const win = window.open('', '_blank');
     if (!win) return;
     win.document.write(html);
@@ -645,7 +645,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
   return (
     <section className="fade-in section-wide">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px', color: isConvenzione ? '#0369a1' : '#1e4d8c' }}>
+        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px', color: isConvenzione ? '#0369a1' : 'var(--brand-700)' }}>
           {archivioOnly ? <Archive size={28} /> : (isConvenzione ? <Building2 size={28} /> : <Receipt size={28} />)}
           {archivioOnly ? 'Archivio Fatture' : (isConvenzione ? 'Tariffa da Fatturare all\u2019ASL' : (isConsulenza ? 'Fatturazione Intermediazioni' : 'Fatturazione Pazienti Privati'))}
         </h1>
@@ -735,9 +735,9 @@ const [preventivoIva, setPreventivoIva] = useState(0);
                 const espanso = aslEspansa === r.asl;
                 return (
                   <div key={r.asl} style={{ background: 'white', borderRadius: '12px', border: '1px solid #bae6fd', overflow: 'hidden' }}>
-                    <div onClick={() => setAslEspansa(espanso ? null : r.asl)} style={{ padding: '20px', background: '#eff6ff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+                    <div onClick={() => setAslEspansa(espanso ? null : r.asl)} style={{ padding: '20px', background: 'var(--brand-50)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0369a1' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--brand-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0369a1' }}>
                           <Building2 size={24} />
                         </div>
                         <div>
@@ -821,7 +821,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
           <div onClick={() => setShowDocumenti(!showDocumenti)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
             <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#374151' }}>
               <FileText size={20} />Documenti Fiscali — Preventivi e Fatture
-              <span style={{ background: '#dbeafe', color: '#1d4ed8', borderRadius: '20px', padding: '2px 10px', fontSize: '0.8rem' }}>{documentiAttivi.length}</span>
+              <span style={{ background: 'var(--brand-100)', color: '#1d4ed8', borderRadius: '20px', padding: '2px 10px', fontSize: '0.8rem' }}>{documentiAttivi.length}</span>
             </h3>
             {showDocumenti ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
           </div>
@@ -862,7 +862,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
                         <td style={{ padding: '8px' }}>
                           <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                             <button onClick={() => anteprimaDocumento(doc)} title="Anteprima PDF" style={{ background: '#f0f9ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0ea5e9' }}><Eye size={14} /></button>
-                            <button onClick={() => scaricaDocumentoPDF(doc)} title="Scarica PDF" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Download size={14} /></button>
+                            <button onClick={() => scaricaDocumentoPDF(doc)} title="Scarica PDF" style={{ background: 'var(--brand-50)', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: 'var(--brand-600)' }}><Download size={14} /></button>
                             {doc.firma?.firmato && (
                               <button onClick={() => scaricaDocumentoFirmato(doc)} title="Scarica PDF firmato" style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#166534' }}><Download size={14} /></button>
                             )}
@@ -928,7 +928,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
                     <td style={{ padding: '8px' }}>
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                         <button onClick={() => anteprimaDocumento(doc)} title="Anteprima PDF" style={{ background: '#f0f9ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0ea5e9' }}><Eye size={14} /></button>
-                        <button onClick={() => scaricaDocumentoPDF(doc)} title="Scarica PDF" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Download size={14} /></button>
+                        <button onClick={() => scaricaDocumentoPDF(doc)} title="Scarica PDF" style={{ background: 'var(--brand-50)', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: 'var(--brand-600)' }}><Download size={14} /></button>
                         {doc.riferimentoTipo === 'workplan' && doc.riferimentoId && (
                           <button onClick={() => cambiaAccettazionePiano(doc.riferimentoId!, true)} title="Riporta il piano collegato in accettazione" style={{ background: '#fef3c7', border: 'none', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', color: '#b45309', fontSize: '0.75rem', fontWeight: 700 }}>↩ Accettazione</button>
                         )}
@@ -985,7 +985,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
                         <td style={{ padding: '8px' }}>
                           <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                             <button onClick={() => anteprimaDocumento(fattura)} title="Anteprima fattura" style={{ background: '#f0f9ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0ea5e9' }}><Eye size={14} /></button>
-                            <button onClick={() => scaricaDocumentoPDF(fattura)} title="Scarica fattura" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Download size={14} /></button>
+                            <button onClick={() => scaricaDocumentoPDF(fattura)} title="Scarica fattura" style={{ background: 'var(--brand-50)', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: 'var(--brand-600)' }}><Download size={14} /></button>
                             <button onClick={() => apriInvioEmail(fattura)} title="Invia via email" style={{ background: '#f0fdf4', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#16a34a' }}><Mail size={14} /></button>
                             {fattura.stato === 'emesso' && !fattura.firma?.email && !fattura.firma?.token && (
                               <button onClick={() => apriModificaVoci(fattura)} title="Modifica voci" style={{ background: '#e0f2fe', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0284c7' }}><Pencil size={14} /></button>
@@ -1034,11 +1034,11 @@ const [preventivoIva, setPreventivoIva] = useState(0);
               <div key={r.patient._id} style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
                 <div onClick={() => setPazienteEspanso(espanso ? null : r.patient._id)} style={{ padding: '20px', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1e4d8c' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, var(--brand-100) 0%, var(--brand-200) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-700)' }}>
                       <User size={24} />
                     </div>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#1e4d8c' }}>{r.patient.firstName} {r.patient.lastName}</div>
+                      <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--brand-700)' }}>{r.patient.firstName} {r.patient.lastName}</div>
                       <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{r.numeroPrestazioni} prestazioni</div>
                     </div>
                   </div>
@@ -1133,7 +1133,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
       {emailModalDoc && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', zIndex: 1200 }} onClick={chiudiInvioEmail}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 16px', color: '#1e4d8c', fontSize: '1.1rem', fontWeight: 700 }}>
+            <h3 style={{ margin: '0 0 16px', color: 'var(--brand-700)', fontSize: '1.1rem', fontWeight: 700 }}>
               Invia {emailModalDoc.tipo === 'fattura' ? 'Fattura' : 'Preventivo'} via email
             </h3>
             {emailModalDoc.firma?.email && (
@@ -1177,7 +1177,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
       {numeroModalDoc && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', zIndex: 1200 }} onClick={chiudiModificaNumero}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 16px', color: '#1e4d8c', fontSize: '1.1rem', fontWeight: 700 }}>
+            <h3 style={{ margin: '0 0 16px', color: 'var(--brand-700)', fontSize: '1.1rem', fontWeight: 700 }}>
               Modifica numero
             </h3>
             <form onSubmit={salvaNumero}>
@@ -1206,7 +1206,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
       {preventivoModalWp && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', zIndex: 1200 }} onClick={chiudiPreventivoModal}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '460px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 16px', color: '#1e4d8c', fontSize: '1.1rem', fontWeight: 700 }}>
+            <h3 style={{ margin: '0 0 16px', color: 'var(--brand-700)', fontSize: '1.1rem', fontWeight: 700 }}>
               📄 Rigenera preventivo
             </h3>
             <p style={{ margin: '0 0 16px', fontSize: '0.875rem', color: '#6b7280' }}>
@@ -1220,15 +1220,15 @@ const [preventivoIva, setPreventivoIva] = useState(0);
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>Modalità di fatturazione</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', borderRadius: '8px', border: `1px solid ${preventivoTipo === 'fisso' ? '#1e4d8c' : '#e2e8f0'}`, cursor: 'pointer' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', borderRadius: '8px', border: `1px solid ${preventivoTipo === 'fisso' ? 'var(--brand-700)' : '#e2e8f0'}`, cursor: 'pointer' }}>
                     <input type="radio" name="preventivoTipo" value="fisso" checked={preventivoTipo === 'fisso'} onChange={() => setPreventivoTipo('fisso')} />
                     <span style={{ fontSize: '0.875rem' }}>Importo fisso: {formatEuro(preventivoModalWp.costoPrestazione || 0)}</span>
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', borderRadius: '8px', border: `1px solid ${preventivoTipo === 'orario' ? '#1e4d8c' : '#e2e8f0'}`, cursor: 'pointer' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', borderRadius: '8px', border: `1px solid ${preventivoTipo === 'orario' ? 'var(--brand-700)' : '#e2e8f0'}`, cursor: 'pointer' }}>
                     <input type="radio" name="preventivoTipo" value="orario" checked={preventivoTipo === 'orario'} onChange={() => setPreventivoTipo('orario')} />
                     <span style={{ fontSize: '0.875rem' }}>Compenso orario: {Math.round(oreTotaliPeriodo(preventivoModalWp) * 100) / 100}h nel periodo × {formatEuro(calcolaTariffaOraria(preventivoModalWp))}/h = {formatEuro(oreTotaliPeriodo(preventivoModalWp) * calcolaTariffaOraria(preventivoModalWp))}</span>
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', borderRadius: '8px', border: `1px solid ${preventivoTipo === 'giornaliero' ? '#1e4d8c' : '#e2e8f0'}`, cursor: 'pointer' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', borderRadius: '8px', border: `1px solid ${preventivoTipo === 'giornaliero' ? 'var(--brand-700)' : '#e2e8f0'}`, cursor: 'pointer' }}>
                     <input type="radio" name="preventivoTipo" value="giornaliero" checked={preventivoTipo === 'giornaliero'} onChange={() => setPreventivoTipo('giornaliero')} />
                     <span style={{ fontSize: '0.875rem' }}>Ore giornaliere</span>
                   </label>
@@ -1259,7 +1259,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
               {preventivoError && <div style={{ color: '#dc2626', fontSize: '0.875rem', marginBottom: '14px' }}>{preventivoError}</div>}
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 <button type="button" onClick={chiudiPreventivoModal} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', fontWeight: 600 }}>Annulla</button>
-                <button type="submit" disabled={preventivoLoading} style={{ padding: '10px 18px', borderRadius: '8px', border: 'none', background: '#1e4d8c', color: 'white', cursor: 'pointer', fontWeight: 700 }}>{preventivoLoading ? 'Generazione...' : 'Genera preventivo'}</button>
+                <button type="submit" disabled={preventivoLoading} style={{ padding: '10px 18px', borderRadius: '8px', border: 'none', background: 'var(--brand-700)', color: 'white', cursor: 'pointer', fontWeight: 700 }}>{preventivoLoading ? 'Generazione...' : 'Genera preventivo'}</button>
               </div>
             </form>
           </div>
@@ -1270,7 +1270,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
       {editModalDoc && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', zIndex: 1200 }} onClick={chiudiModificaVoci}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '640px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 16px', color: '#1e4d8c', fontSize: '1.1rem', fontWeight: 700 }}>
+            <h3 style={{ margin: '0 0 16px', color: 'var(--brand-700)', fontSize: '1.1rem', fontWeight: 700 }}>
               Modifica voci — {editModalDoc.numero}
             </h3>
             <form onSubmit={salvaVoci}>
@@ -1304,7 +1304,7 @@ const [preventivoIva, setPreventivoIva] = useState(0);
               </div>
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 <button type="button" onClick={chiudiModificaVoci} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', fontWeight: 600 }}>Annulla</button>
-                <button type="submit" disabled={editLoading} style={{ padding: '10px 18px', borderRadius: '8px', border: 'none', background: '#1e4d8c', color: 'white', cursor: 'pointer', fontWeight: 700 }}>{editLoading ? 'Salvataggio...' : 'Salva'}</button>
+                <button type="submit" disabled={editLoading} style={{ padding: '10px 18px', borderRadius: '8px', border: 'none', background: 'var(--brand-700)', color: 'white', cursor: 'pointer', fontWeight: 700 }}>{editLoading ? 'Salvataggio...' : 'Salva'}</button>
               </div>
             </form>
           </div>

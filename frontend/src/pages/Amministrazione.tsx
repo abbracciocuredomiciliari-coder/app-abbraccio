@@ -41,7 +41,7 @@ const AREA_LABEL: Record<string, string> = {
 };
 const STATO_PAG_LABEL: Record<string, { testo: string; bg: string; color: string }> = {
   da_incassare: { testo: 'Da incassare', bg: '#fef3c7', color: '#92400e' },
-  parziale: { testo: 'Acconto', bg: '#dbeafe', color: '#1e40af' },
+  parziale: { testo: 'Acconto', bg: 'var(--brand-100)', color: 'var(--brand-700)' },
   saldato: { testo: 'Saldato', bg: '#dcfce7', color: '#166534' },
   da_pagare: { testo: 'Da pagare', bg: '#fef3c7', color: '#92400e' },
   pagata: { testo: 'Pagata', bg: '#dcfce7', color: '#166534' },
@@ -62,10 +62,17 @@ export default function Amministrazione() {
     imponibile: '', iva: '', totale: '', descrizione: '', area: 'trasversale', scadenzaPagamento: '', praticaLabel: '',
   });
   const [allegato, setAllegato] = useState<{ fileName: string; contentType: string; dataBase64: string } | null>(null);
+  // Selettore pratica reale per la fattura fornitore (non più testo libero)
+  const [praticaTipo, setPraticaTipo] = useState('');
+  const [praticaQ, setPraticaQ] = useState('');
+  const [praticaRisultati, setPraticaRisultati] = useState<any[]>([]);
+  const [praticaSel, setPraticaSel] = useState<{ id: string; label: string } | null>(null);
   // ── Preparazione commercialista ──
   const [showComm, setShowComm] = useState(false);
   const [commDal, setCommDal] = useState(`${new Date().getFullYear()}-01-01`);
   const [commAl, setCommAl] = useState(new Date().toISOString().slice(0, 10));
+  const [commAree, setCommAree] = useState<string[]>([]);
+  const [commOrigini, setCommOrigini] = useState<string[]>([]);
   const [anteprima, setAnteprima] = useState<{ totaleDocumenti: number; perOrigine: Record<string, number>; anomalie: string[]; ultimaConsegna?: any } | null>(null);
   const [consegne, setConsegne] = useState<any[]>([]);
   const [diff, setDiff] = useState<{ consegnaId: string; nuovi: any[]; modificati: any[] } | null>(null);
@@ -174,12 +181,14 @@ export default function Amministrazione() {
   const apriAttivitaDaControllo = async (item: any) => {
     const scadenza = window.prompt('Scadenza lavorazione (YYYY-MM-DD):', new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10));
     try {
-      await api.post('/amministrazione/controlli/apri-attivita', {
+      const res = await api.post('/amministrazione/controlli/apri-attivita', {
         titolo: item.titolo, dettaglio: item.dettaglio,
         praticaTipo: item.praticaTipo, praticaId: item.praticaId,
         scadenza: scadenza || undefined,
       });
-      alert('Lavorazione creata: la trovi in "Oggi" con responsabile e scadenza.');
+      alert(res.data?.giaPresente
+        ? 'Esiste già una lavorazione aperta su questo oggetto: la trovi in "Oggi".'
+        : 'Lavorazione creata: la trovi in "Oggi" con responsabile e scadenza.');
       await carica();
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore creazione attività');
@@ -218,12 +227,15 @@ export default function Amministrazione() {
         totale: Number(nuova.totale),
         descrizione: nuova.descrizione.trim() || undefined,
         area: nuova.area, scadenzaPagamento: nuova.scadenzaPagamento || undefined,
-        praticaLabel: nuova.praticaLabel.trim() || undefined,
+        praticaTipo: praticaSel ? praticaTipo : undefined,
+        praticaId: praticaSel?.id,
+        praticaLabel: praticaSel?.label,
         allegato, confermaDuplicato,
       });
       setShowNuova(false);
       setNuova({ fornitore: '', numero: '', data: new Date().toISOString().slice(0, 10), imponibile: '', iva: '', totale: '', descrizione: '', area: 'trasversale', scadenzaPagamento: '', praticaLabel: '' });
       setAllegato(null);
+      setPraticaSel(null); setPraticaTipo(''); setPraticaQ(''); setPraticaRisultati([]);
       await carica();
     } catch (err: any) {
       if (err?.response?.status === 409 && window.confirm(`${err.response.data.message}\n\nRegistrare comunque?`)) {
@@ -238,7 +250,7 @@ export default function Amministrazione() {
 
   const caricaAnteprima = async () => {
     try {
-      const res = await api.get('/amministrazione/commercialista/anteprima', { params: { dal: commDal, al: commAl } });
+      const res = await api.get('/amministrazione/commercialista/anteprima', { params: { dal: commDal, al: commAl, aree: commAree.join(','), origini: commOrigini.join(',') } });
       setAnteprima(res.data);
       const c = await api.get('/amministrazione/commercialista/consegne');
       setConsegne(c.data || []);
@@ -250,7 +262,7 @@ export default function Amministrazione() {
   const registraPreparazione = async () => {
     if (!window.confirm(`Registrare la preparazione di ${anteprima?.totaleDocumenti || 0} documenti per il periodo ${commDal} → ${commAl}?\n\nQuesto NON invia nulla: crea il registro di cosa è stato preparato.`)) return;
     try {
-      await api.post('/amministrazione/commercialista/consegne', { dal: commDal, al: commAl });
+      await api.post('/amministrazione/commercialista/consegne', { dal: commDal, al: commAl, aree: commAree, origini: commOrigini });
       await caricaAnteprima();
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Errore registrazione preparazione');
@@ -290,6 +302,20 @@ export default function Amministrazione() {
     }
   };
 
+  const scaricaPacchetto = async (c: any) => {
+    try {
+      const res = await api.get(`/amministrazione/commercialista/consegne/${c._id}/pacchetto`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/zip' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = `pacchetto-commercialista-${c._id}.zip`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      await caricaAnteprima();
+    } catch {
+      alert('Errore download pacchetto');
+    }
+  };
+
   const scaduta = (r: Riga) =>
     r.scadenzaPagamento && new Date(r.scadenzaPagamento) < new Date() &&
     r.statoPagamento && !['saldato', 'pagata'].includes(r.statoPagamento);
@@ -302,14 +328,14 @@ export default function Amministrazione() {
     { label: 'Da incassare', valore: conteggi ? euro(conteggi.daIncassare) : '—', color: '#d97706' },
     { label: 'Da pagare (fornitori)', valore: conteggi ? euro(conteggi.daPagare) : '—', color: '#dc2626' },
     { label: 'Fatture scadute', valore: conteggi ? String(conteggi.fattureScadute) : '—', color: '#b91c1c' },
-    { label: 'Fatture ricevute', valore: conteggi ? String(conteggi.fattureRicevute) : '—', color: '#1e4d8c' },
+    { label: 'Fatture ricevute', valore: conteggi ? String(conteggi.fattureRicevute) : '—', color: 'var(--brand-700)' },
   ], [conteggi]);
 
   return (
     <section className="fade-in section-wide">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px', color: '#1e4d8c' }}>
+          <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--brand-700)' }}>
             <Calculator size={26} /> Amministrazione
           </h1>
           <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '6px 0 0' }}>
@@ -322,11 +348,34 @@ export default function Amministrazione() {
         </div>
       </div>
 
+      {/* Indice interno + accessi agli strumenti specializzati */}
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', margin: '10px 0 4px', fontSize: '0.8rem' }}>
+        {[
+          ['#sezione-archivio', '📚 Archivio'],
+          ['#sezione-controlli', '🔍 Controlli'],
+          ['#sezione-lavorazioni', '☑ Lavorazioni'],
+          ['#sezione-commercialista', '🧾 Commercialista'],
+        ].map(([href, label]) => (
+          <a key={href} href={href} style={{ background: 'var(--brand-100)', color: 'var(--brand-700)', borderRadius: '14px', padding: '4px 12px', fontWeight: 700, textDecoration: 'none' }}>{label}</a>
+        ))}
+        <span style={{ borderLeft: '1px solid #e2e8f0', height: '18px', margin: '0 6px' }} />
+        {[
+          ['/gestione-fatturazione', 'Nuova fattura/preventivo'],
+          ['/archivio-fatture', 'Archivio fatture'],
+          ['/archivio-preventivi', 'Archivio preventivi'],
+          ['/compenso-incarichi', 'Compensi'],
+          ['/gestione-ritenute', 'Ritenute'],
+          ['/tariffario', 'Tariffario'],
+        ].map(([to, label]) => (
+          <Link key={to} to={to} style={{ color: '#64748b', textDecoration: 'none', padding: '4px 8px', fontWeight: 600 }}>{label} →</Link>
+        ))}
+      </div>
+
       {/* Conteggi direzione */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px', margin: '16px 0' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', margin: '16px 0' }}>
         {conteggiCard.map(c => (
           <div key={c.label} style={{ background: 'white', borderRadius: '12px', padding: '14px 16px', border: '1px solid #e2e8f0', borderTop: `3px solid ${c.color}` }}>
-            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{c.label}</div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px', whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.3 }}>{c.label}</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: c.color, marginTop: '4px' }}>{c.valore}</div>
           </div>
         ))}
@@ -334,8 +383,8 @@ export default function Amministrazione() {
 
       {/* Nuova fattura ricevuta */}
       {showNuova && (
-        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #bfdbfe', borderLeft: '4px solid #1e4d8c', padding: '18px', marginBottom: '18px' }}>
-          <h3 style={{ margin: '0 0 12px', color: '#1e4d8c', fontSize: '1rem' }}>📥 Registra fattura ricevuta (fornitore / professionista)</h3>
+        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid var(--brand-200)', borderLeft: '4px solid var(--brand-700)', padding: '18px', marginBottom: '18px' }}>
+          <h3 style={{ margin: '0 0 12px', color: 'var(--brand-700)', fontSize: '1rem' }}>📥 Registra fattura ricevuta (fornitore / professionista)</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '10px' }}>
             <div><span style={lbl}>Fornitore *</span><input style={input} value={nuova.fornitore} onChange={e => setNuova({ ...nuova, fornitore: e.target.value })} placeholder="Ragione sociale" /></div>
             <div><span style={lbl}>Numero doc. *</span><input style={input} value={nuova.numero} onChange={e => setNuova({ ...nuova, numero: e.target.value })} /></div>
@@ -355,7 +404,53 @@ export default function Amministrazione() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
             <div><span style={lbl}>Descrizione</span><input style={input} value={nuova.descrizione} onChange={e => setNuova({ ...nuova, descrizione: e.target.value })} placeholder="Es. materiali sanitari ottobre" /></div>
-            <div><span style={lbl}>Pratica collegata (opz.)</span><input style={input} value={nuova.praticaLabel} onChange={e => setNuova({ ...nuova, praticaLabel: e.target.value })} placeholder="Es. PAI Rossi, fornitura ufficio" /></div>
+            <div>
+              <span style={lbl}>Pratica collegata (opz.)</span>
+              {praticaSel ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--brand-50)', border: '1px solid var(--brand-200)', borderRadius: '8px', padding: '7px 10px', fontSize: '0.84rem' }}>
+                  <strong style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{praticaSel.label}</strong>
+                  <button type="button" onClick={() => setPraticaSel(null)} style={{ border: 'none', background: 'none', color: '#b91c1c', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <select style={{ ...input, width: '130px', flexShrink: 0 }} value={praticaTipo} onChange={async e => {
+                      setPraticaTipo(e.target.value);
+                      if (e.target.value) {
+                        const res = await api.get('/attivita/pratiche', { params: { tipo: e.target.value, q: praticaQ } }).catch(() => ({ data: [] }));
+                        setPraticaRisultati(Array.isArray(res.data) ? res.data : []);
+                      } else setPraticaRisultati([]);
+                    }}>
+                      <option value="">Tipo…</option>
+                      <option value="paziente">Paziente</option>
+                      <option value="richiesta">Richiesta</option>
+                      <option value="intermediazione">Intermediazione</option>
+                      <option value="consegna">Consegna</option>
+                      <option value="documento">Documento</option>
+                    </select>
+                    <input style={{ ...input, flex: 1 }} value={praticaQ} placeholder="Cerca pratica…" onChange={async e => {
+                      setPraticaQ(e.target.value);
+                      if (praticaTipo) {
+                        const res = await api.get('/attivita/pratiche', { params: { tipo: praticaTipo, q: e.target.value } }).catch(() => ({ data: [] }));
+                        setPraticaRisultati(Array.isArray(res.data) ? res.data : []);
+                      }
+                    }} />
+                  </div>
+                  {praticaRisultati.length > 0 && (
+                    <div style={{ marginTop: '4px', border: '1px solid #e2e8f0', borderRadius: '8px', maxHeight: '140px', overflowY: 'auto', background: 'white' }}>
+                      {praticaRisultati.map((p: any) => (
+                        <div key={p.id} onClick={() => { setPraticaSel({ id: p.id, label: p.label }); setPraticaRisultati([]); }}
+                          style={{ padding: '7px 10px', fontSize: '0.82rem', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                          onMouseEnter={e => (e.currentTarget.style.background = 'var(--brand-50)')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'white')}>
+                          <strong>{p.label}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
             <div>
               <span style={lbl}>Allegato PDF (max 7 MB)</span>
               <input type="file" accept="application/pdf,image/*" onChange={e => e.target.files?.[0] && leggiFile(e.target.files[0])} style={{ fontSize: '0.82rem' }} />
@@ -370,7 +465,7 @@ export default function Amministrazione() {
       )}
 
       {/* Filtri */}
-      <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '12px 14px', marginBottom: '14px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+      <div id="sezione-archivio" style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '12px 14px', marginBottom: '14px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
         <select style={{ ...input, width: 'auto' }} value={filtri.area} onChange={e => setFiltri({ ...filtri, area: e.target.value })}>
           <option value="tutte">Tutte le aree</option>
           <option value="privato">Gestione privata</option>
@@ -458,7 +553,7 @@ export default function Amministrazione() {
                           <button onClick={() => impostaScadenza(r)} title="Scadenza incasso" style={{ ...btnPiccolo, background: '#fef3c7', color: '#92400e' }}>📅</button>
                         )}
                         {(r.origine === 'fattura' || r.origine === 'nota_credito') && !r.dataTrasmissione && (
-                          <button onClick={() => segnaTrasmesso(r)} title="Segna data trasmissione" style={{ ...btnPiccolo, background: '#e0e7ff', color: '#3730a3' }}><Send size={12} style={{ verticalAlign: '-2px' }} /></button>
+                          <button onClick={() => segnaTrasmesso(r)} title="Segna data trasmissione" style={{ ...btnPiccolo, background: 'var(--brand-100)', color: 'var(--brand-800)' }}><Send size={12} style={{ verticalAlign: '-2px' }} /></button>
                         )}
                         {['fattura', 'preventivo', 'nota_credito'].includes(r.origine) && (
                           <button onClick={() => apriAttivita(r)} title="Apri lavorazione back office su questo documento" style={{ ...btnPiccolo, background: '#f1f5f9', color: '#334155' }}>☑ attività</button>
@@ -467,7 +562,7 @@ export default function Amministrazione() {
                           <button onClick={() => registraPagamento(r)} title="Registra pagamento" style={{ ...btnPiccolo, background: '#dcfce7', color: '#166534' }}><Euro size={12} style={{ verticalAlign: '-2px' }} /> Paga</button>
                         )}
                         {r.hasAllegato && (
-                          <button onClick={() => apriAllegato(r)} title="Apri allegato" style={{ ...btnPiccolo, background: '#eff6ff', color: '#2563eb' }}><Paperclip size={12} /></button>
+                          <button onClick={() => apriAllegato(r)} title="Apri allegato" style={{ ...btnPiccolo, background: 'var(--brand-50)', color: 'var(--brand-600)' }}><Paperclip size={12} /></button>
                         )}
                       </div>
                     </td>
@@ -481,7 +576,7 @@ export default function Amministrazione() {
 
       {/* ── Controlli back office: verifiche trasversali → lavorazioni ── */}
       {controlli && (
-        <div style={{ background: 'white', borderRadius: '12px', padding: '16px 18px', marginTop: '18px', border: '1px solid #fecaca', borderLeft: '4px solid #dc2626' }}>
+        <div id="sezione-controlli" style={{ background: 'white', borderRadius: '12px', padding: '16px 18px', marginTop: '18px', border: '1px solid #fecaca', borderLeft: '4px solid #dc2626' }}>
           <div onClick={() => setControlliOpen(v => !v)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
             <h3 style={{ margin: 0, color: '#b91c1c', fontSize: '1rem' }}>
               🔍 Controlli da fare ({controlli.totale ?? Object.values(controlli).reduce((s: number, v: any) => s + (Array.isArray(v) ? v.length : 0), 0)})
@@ -497,6 +592,7 @@ export default function Amministrazione() {
                 ['inviiSenzaEsito', 'Preventivi inviati senza riscontro (>7gg)'],
                 ['consegneDaConsegnare', 'Preparazioni commercialista da consegnare'],
                 ['lavorazioniScadute', 'Lavorazioni back office scadute'],
+                ['buchiNumerazione', 'Buchi di numerazione'],
               ] as const).map(([k, label]) => {
                 const items = (controlli[k] as any[]) || [];
                 if (items.length === 0) return null;
@@ -509,7 +605,13 @@ export default function Amministrazione() {
                       <div key={it.id} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', padding: '5px 0', fontSize: '0.82rem' }}>
                         <strong>{it.titolo}</strong>
                         <span style={{ color: '#64748b' }}>{it.dettaglio}</span>
-                        <button onClick={() => apriAttivitaDaControllo(it)} style={{ ...btnPiccolo, background: '#f1f5f9', color: '#334155', marginLeft: 'auto' }}>☑ attività</button>
+                        {it.attivitaAperta ? (
+                          <span style={{ ...btnPiccolo, background: '#fef3c7', color: '#92400e', marginLeft: 'auto', cursor: 'default' }} title={`${it.attivitaAperta.titolo} · ${it.attivitaAperta.responsabile || 'da assegnare'}${it.attivitaAperta.scadenza ? ` · scad. ${data(it.attivitaAperta.scadenza)}` : ''}`}>
+                            ☑ già presa in carico
+                          </span>
+                        ) : it.praticaId ? (
+                          <button onClick={() => apriAttivitaDaControllo(it)} style={{ ...btnPiccolo, background: '#f1f5f9', color: '#334155', marginLeft: 'auto' }}>☑ attività</button>
+                        ) : null}
                       </div>
                     ))}
                     {items.length > 10 && <div style={{ fontSize: '0.76rem', color: '#94a3b8' }}>…e altri {items.length - 10}</div>}
@@ -528,7 +630,7 @@ export default function Amministrazione() {
 
       {/* ── Lavorazioni back office ── */}
       {lavorazioni.length > 0 && (
-        <div style={{ background: 'white', borderRadius: '12px', padding: '16px 18px', marginTop: '18px', border: '1px solid #bae6fd', borderLeft: '4px solid #0284c7' }}>
+        <div id="sezione-lavorazioni" style={{ background: 'white', borderRadius: '12px', padding: '16px 18px', marginTop: '18px', border: '1px solid #bae6fd', borderLeft: '4px solid #0284c7' }}>
           <h3 style={{ margin: '0 0 10px', color: '#0369a1', fontSize: '1rem' }}>
             ☑ Lavorazioni back office aperte ({lavorazioni.length})
           </h3>
@@ -550,7 +652,7 @@ export default function Amministrazione() {
       )}
 
       {/* ── Prepara documenti per il commercialista ── */}
-      <div style={{ background: 'white', borderRadius: '12px', padding: '18px', marginTop: '18px', border: '1px solid #e9d5ff', borderLeft: '4px solid #7c3aed' }}>
+      <div id="sezione-commercialista" style={{ background: 'white', borderRadius: '12px', padding: '18px', marginTop: '18px', border: '1px solid #e9d5ff', borderLeft: '4px solid #7c3aed' }}>
         <div onClick={() => { setShowComm(!showComm); if (!showComm && !anteprima) caricaAnteprima(); }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
           <h3 style={{ margin: 0, color: '#6d28d9', fontSize: '1rem' }}>
             🧾 Prepara documenti per il commercialista
@@ -562,6 +664,28 @@ export default function Amministrazione() {
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '14px' }}>
               <div><span style={lbl}>Dal</span><input style={{ ...input, width: '150px' }} type="date" value={commDal} onChange={e => { setCommDal(e.target.value); setAnteprima(null); }} /></div>
               <div><span style={lbl}>Al</span><input style={{ ...input, width: '150px' }} type="date" value={commAl} onChange={e => { setCommAl(e.target.value); setAnteprima(null); }} /></div>
+              <div>
+                <span style={lbl}>Aree (vuoto = tutte)</span>
+                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                  {(['privato', 'intermediazione', 'convenzione', 'trasversale'] as const).map(a => (
+                    <button key={a} type="button" onClick={() => { setCommAree(v => v.includes(a) ? v.filter(x => x !== a) : [...v, a]); setAnteprima(null); }}
+                      style={{ border: 'none', borderRadius: '12px', padding: '4px 10px', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer', background: commAree.includes(a) ? 'var(--brand-700)' : '#f1f5f9', color: commAree.includes(a) ? 'white' : '#475569' }}>
+                      {AREA_LABEL[a]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <span style={lbl}>Tipi documento (vuoto = tutti)</span>
+                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                  {(['fattura', 'preventivo', 'nota_credito', 'fattura_ricevuta', 'ritenuta', 'invio'] as const).map(o => (
+                    <button key={o} type="button" onClick={() => { setCommOrigini(v => v.includes(o) ? v.filter(x => x !== o) : [...v, o]); setAnteprima(null); }}
+                      style={{ border: 'none', borderRadius: '12px', padding: '4px 10px', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer', background: commOrigini.includes(o) ? 'var(--brand-700)' : '#f1f5f9', color: commOrigini.includes(o) ? 'white' : '#475569' }}>
+                      {(ORIGINE_LABEL[o] || o).replace(/^\S+\s/, '')}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <Button variant="secondary" onClick={caricaAnteprima}>Aggiorna riepilogo</Button>
               {anteprima && <Button variant="primary" onClick={registraPreparazione} icon={<FileDown size={15} />}>Registra preparazione</Button>}
             </div>
@@ -607,15 +731,16 @@ export default function Amministrazione() {
                     <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
                       <strong>{data(c.periodoDal)} → {data(c.periodoAl)}</strong>
                       <span style={{ color: '#64748b' }}>{c.tipologie?.length ? c.tipologie.length : 0} tipologie · preparata il {data(c.preparataIl)}{c.preparataDa ? ` da ${c.preparataDa}` : ''}</span>
-                      <span style={{ borderRadius: '10px', padding: '2px 10px', fontSize: '0.74rem', fontWeight: 700, background: c.stato === 'verificata' ? '#dcfce7' : c.stato === 'consegnata' ? '#dbeafe' : '#fef3c7', color: c.stato === 'verificata' ? '#166534' : c.stato === 'consegnata' ? '#1e40af' : '#92400e' }}>
-                        {c.stato}{c.consegnataIl ? ` il ${data(c.consegnataIl)}` : ''}{c.modalitaConsegna ? ` · ${c.modalitaConsegna}` : ''}
+                      <span style={{ borderRadius: '10px', padding: '2px 10px', fontSize: '0.74rem', fontWeight: 700, background: c.stato === 'verificata' ? '#dcfce7' : c.stato === 'consegnata' ? 'var(--brand-100)' : c.stato === 'scaricata' ? 'var(--brand-50)' : '#fef3c7', color: c.stato === 'verificata' ? '#166534' : ['consegnata', 'scaricata'].includes(c.stato) ? 'var(--brand-700)' : '#92400e' }}>
+                        {c.stato}{c.scaricataIl ? ` · scaricata il ${data(c.scaricataIl)}` : ''}{c.consegnataIl ? ` · consegnata il ${data(c.consegnataIl)}` : ''}{c.modalitaConsegna ? ` · ${c.modalitaConsegna}` : ''}
                       </span>
                       {c.anomalie?.length > 0 && <span style={{ fontSize: '0.74rem', color: '#b45309' }}>⚠ {c.anomalie.length} anomalie</span>}
-                      <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px' }}>
+                      <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        <button onClick={() => scaricaPacchetto(c)} title="ZIP con indice e originali disponibili — registrato come download, NON come consegna" style={{ ...btnPiccolo, background: 'var(--brand-700)', color: 'white' }}>⬇ pacchetto</button>
                         <button onClick={() => scaricaCsv(c)} style={{ ...btnPiccolo, background: '#f5f3ff', color: '#6d28d9' }}>CSV</button>
                         <button onClick={() => vediDifferenze(c)} style={{ ...btnPiccolo, background: '#f1f5f9', color: '#334155' }}>differenze</button>
-                        {c.stato === 'preparata' && (
-                          <button onClick={() => marcaConsegnata(c)} style={{ ...btnPiccolo, background: '#dbeafe', color: '#1e40af' }}>Marca consegnata</button>
+                        {['preparata', 'scaricata'].includes(c.stato) && (
+                          <button onClick={() => marcaConsegnata(c)} style={{ ...btnPiccolo, background: 'var(--brand-100)', color: 'var(--brand-700)' }}>Marca consegnata</button>
                         )}
                       </div>
                     </div>
@@ -644,11 +769,11 @@ export default function Amministrazione() {
 
       {/* Collegamenti alle gestioni di dettaglio esistenti */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '18px', fontSize: '0.85rem' }}>
-        <Link to="/gestione-fatturazione" style={{ color: '#1e4d8c', fontWeight: 600 }}>→ Gestione fatturazione</Link>
-        <Link to="/archivio-preventivi" style={{ color: '#1e4d8c', fontWeight: 600 }}>→ Archivio preventivi</Link>
-        <Link to="/gestione-ritenute" style={{ color: '#1e4d8c', fontWeight: 600 }}>→ Ritenute e compensi</Link>
-        <Link to="/esportazione-siat" style={{ color: '#1e4d8c', fontWeight: 600 }}>→ Rendicontazione SIAT</Link>
-        <Link to="/oggi" style={{ color: '#1e4d8c', fontWeight: 600 }}>→ Lavorazioni (Oggi)</Link>
+        <Link to="/gestione-fatturazione" style={{ color: 'var(--brand-700)', fontWeight: 600 }}>→ Gestione fatturazione</Link>
+        <Link to="/archivio-preventivi" style={{ color: 'var(--brand-700)', fontWeight: 600 }}>→ Archivio preventivi</Link>
+        <Link to="/gestione-ritenute" style={{ color: 'var(--brand-700)', fontWeight: 600 }}>→ Ritenute e compensi</Link>
+        <Link to="/esportazione-siat" style={{ color: 'var(--brand-700)', fontWeight: 600 }}>→ Rendicontazione SIAT</Link>
+        <Link to="/oggi" style={{ color: 'var(--brand-700)', fontWeight: 600 }}>→ Lavorazioni (Oggi)</Link>
       </div>
 
       <div style={{ marginTop: '14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '10px 14px', fontSize: '0.8rem', color: '#92400e', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>

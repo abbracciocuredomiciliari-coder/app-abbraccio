@@ -125,34 +125,34 @@ interface CatalogoPrestazione {
 
 const CATALOGO_PRESTAZIONI: CatalogoPrestazione[] = [
   // ── INFERMIERISTICHE ──
-  { value: 'valutazione_infermieristica',   label: 'Valutazione infermieristica',             categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'medicazione_lesione',            label: 'Medicazione lesione / ferita',             categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'medicazione_ulcera_pressione',   label: 'Medicazione ulcera da pressione',          categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'medicazione_ulcera_vascolare',   label: 'Medicazione ulcera vascolare',             categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'medicazione_stomia',             label: 'Gestione e medicazione stomia',            categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'cateterismo_vescicale',          label: 'Cateterismo vescicale / gestione CV',      categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'gestione_catetere_cv',           label: 'Gestione catetere venoso centrale',        categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'gestione_pic',                   label: 'Gestione PICC/Port',                       categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'infusione_ev',                   label: 'Infusione endovenosa / terapia parenterale',categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'iniezione_sc_im',                label: 'Iniezione sottocutanea / intramuscolare',  categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'gestione_npt',                   label: 'Nutrizione parenterale totale (NPT)',      categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'gestione_peg',                   label: 'Nutrizione enterale / gestione PEG/SNG',   categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'aspirazione_tracheale',          label: 'Aspirazione tracheale',                    categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'gestione_tracheostomia',         label: 'Gestione tracheostomia',                   categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'ossigenoterapia',                label: 'Ossigenoterapia / gestione O₂',             categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'gestione_ventilatore',           label: 'Gestione ventilatore meccanico',           categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'prelievo_ematico',               label: 'Prelievo ematico / venoso',               categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'ecg',                            label: 'Elettrocardiogramma (ECG)',                categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'monitoraggio_parametri',         label: 'Monitoraggio parametri vitali',           categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'glicemia_capillare',             label: 'Glicemia capillare / gestione insulina',  categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'clistere_enteroclisma',          label: 'Clistere / enteroclisma',                 categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'raccolta_campioni',              label: 'Raccolta campioni biologici',             categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'valutazione_braden',             label: 'Valutazione scala Braden',                categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'valutazione_barthel',            label: 'Valutazione scala Barthel',               categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'educazione_sanitaria',           label: 'Educazione sanitaria a paziente/caregiver',categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'gestione_pompa_infusionale',     label: 'Gestione pompa infusionale',              categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'gestione_drenaggio',             label: 'Gestione drenaggio / tubo di toraci',     categoria: 'infermieristica', color: '#2563eb' },
-  { value: 'terapia_inalatoria',             label: 'Terapia inalatoria / aerosol',            categoria: 'infermieristica', color: '#2563eb' },
+  { value: 'valutazione_infermieristica',   label: 'Valutazione infermieristica',             categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'medicazione_lesione',            label: 'Medicazione lesione / ferita',             categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'medicazione_ulcera_pressione',   label: 'Medicazione ulcera da pressione',          categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'medicazione_ulcera_vascolare',   label: 'Medicazione ulcera vascolare',             categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'medicazione_stomia',             label: 'Gestione e medicazione stomia',            categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'cateterismo_vescicale',          label: 'Cateterismo vescicale / gestione CV',      categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'gestione_catetere_cv',           label: 'Gestione catetere venoso centrale',        categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'gestione_pic',                   label: 'Gestione PICC/Port',                       categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'infusione_ev',                   label: 'Infusione endovenosa / terapia parenterale',categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'iniezione_sc_im',                label: 'Iniezione sottocutanea / intramuscolare',  categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'gestione_npt',                   label: 'Nutrizione parenterale totale (NPT)',      categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'gestione_peg',                   label: 'Nutrizione enterale / gestione PEG/SNG',   categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'aspirazione_tracheale',          label: 'Aspirazione tracheale',                    categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'gestione_tracheostomia',         label: 'Gestione tracheostomia',                   categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'ossigenoterapia',                label: 'Ossigenoterapia / gestione O₂',             categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'gestione_ventilatore',           label: 'Gestione ventilatore meccanico',           categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'prelievo_ematico',               label: 'Prelievo ematico / venoso',               categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'ecg',                            label: 'Elettrocardiogramma (ECG)',                categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'monitoraggio_parametri',         label: 'Monitoraggio parametri vitali',           categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'glicemia_capillare',             label: 'Glicemia capillare / gestione insulina',  categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'clistere_enteroclisma',          label: 'Clistere / enteroclisma',                 categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'raccolta_campioni',              label: 'Raccolta campioni biologici',             categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'valutazione_braden',             label: 'Valutazione scala Braden',                categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'valutazione_barthel',            label: 'Valutazione scala Barthel',               categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'educazione_sanitaria',           label: 'Educazione sanitaria a paziente/caregiver',categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'gestione_pompa_infusionale',     label: 'Gestione pompa infusionale',              categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'gestione_drenaggio',             label: 'Gestione drenaggio / tubo di toraci',     categoria: 'infermieristica', color: 'var(--brand-600)' },
+  { value: 'terapia_inalatoria',             label: 'Terapia inalatoria / aerosol',            categoria: 'infermieristica', color: 'var(--brand-600)' },
   // ── RIABILITATIVE ──
   { value: 'valutazione_fisioterapica',      label: 'Valutazione fisioterapica',               categoria: 'riabilitativa', color: '#16a34a' },
   { value: 'fisioterapia_motoria',           label: 'Fisioterapia motoria / mobilizzazione',   categoria: 'riabilitativa', color: '#16a34a' },
@@ -196,7 +196,7 @@ const CATALOGO_PRESTAZIONI: CatalogoPrestazione[] = [
 ];
 
 const CATEGORIA_LABELS: Record<CatPrestazione, { label: string; color: string; bg: string }> = {
-  infermieristica: { label: '💉 Infermieristica', color: '#2563eb', bg: '#eff6ff' },
+  infermieristica: { label: '💉 Infermieristica', color: 'var(--brand-600)', bg: 'var(--brand-50)' },
   riabilitativa:   { label: '🏃 Riabilitativa',   color: '#16a34a', bg: '#f0fdf4' },
   medica:          { label: '🩺 Medica',          color: '#dc2626', bg: '#fef2f2' },
   assistenziale:   { label: '🤍 Assistenziale',  color: '#d97706', bg: '#fffbeb' },
@@ -268,7 +268,7 @@ const FABBISOGNI_OPTIONS = {
 };
 
 const MACRO_CATEGORIE_LABELS: Record<string, { label: string; color: string; bg: string; icon: any }> = {
-  infermieristico: { label: '💉 Infermieristico', color: '#2563eb', bg: '#eff6ff', icon: null },
+  infermieristico: { label: '💉 Infermieristico', color: 'var(--brand-600)', bg: 'var(--brand-50)', icon: null },
   riabilitativo: { label: '🏃 Riabilitativo', color: '#16a34a', bg: '#f0fdf4', icon: null },
   medico_specialistiche: { label: '🩺 Medico e Specialistiche', color: '#7c3aed', bg: '#f5f3ff', icon: null },
   oss: { label: '🤲 OSS', color: '#d97706', bg: '#fffbeb', icon: null },
@@ -282,7 +282,7 @@ const prestazioneCategories = [
 ];
 
 const assistenzaCategories = [
-  { value: 'assistenza_oraria', label: 'Assistenza Oraria', icon: Clock, color: '#3b82f6' },
+  { value: 'assistenza_oraria', label: 'Assistenza Oraria', icon: Clock, color: 'var(--brand-500)' },
   { value: 'variazione_orario', label: 'Variazione Orario', icon: CalendarDays, color: '#8b5cf6' },
   { value: 'visita_programmata', label: 'Visita Programmata', icon: Users, color: '#06b6d4' },
 ];
@@ -293,11 +293,11 @@ const TIPI_SERVIZIO = [
     tipi: ['Emocromo completo','Glicemia','Coagulazione (PT/INR/aPTT)','Elettroliti','Funzionalità epatica','Funzionalità renale','Profilo lipidico','Ormoni tiroidei (TSH/fT4)','PCR / VES','Esame urine','Emogasanalisi','Altro'] },
   { value: 'esame_strumentale', label: 'Esame Strumentale', emoji: '🔬', color: '#7c3aed', bg: '#ede9fe', Icon: HeartPulse,
     tipi: ['ECG','Holter ECG','Holter pressorio','Glicemia capillare','EGA','Spirometria','Ecocardiogramma','Polisonnografia','Titolazione CPAP','Altro'] },
-  { value: 'prestazione', label: 'Prestazione Infermieristica', emoji: '🏥', color: '#0369a1', bg: '#eff6ff', Icon: Activity,
+  { value: 'prestazione', label: 'Prestazione Infermieristica', emoji: '🏥', color: '#0369a1', bg: 'var(--brand-50)', Icon: Activity,
     tipi: ['Medicazione','Somministrazione farmaci','Misurazione parametri vitali','Cateterismo','Gestione stomia','Prelievo arterioso','Altro'] },
   { value: 'riabilitazione', label: 'Riabilitazione', emoji: '🏋️', color: '#16a34a', bg: '#dcfce7', Icon: Activity,
     tipi: ['Fisioterapia','Logopedia','Ergoterapia','Neuro-riabilitazione','Riabilitazione respiratoria','Altro'] },
-  { value: 'medico', label: 'Visita Medica', emoji: '👨‍⚕️', color: '#2563eb', bg: '#dbeafe', Icon: HeartPulse,
+  { value: 'medico', label: 'Visita Medica', emoji: '👨‍⚕️', color: 'var(--brand-600)', bg: 'var(--brand-100)', Icon: HeartPulse,
     tipi: ['Visita generale','Visita specialista','Consulenza geriatrica','Valutazione clinica','Prescrizione terapia','Altro'] },
 ];
 
@@ -684,7 +684,7 @@ function WorkPlan() {
       : entries.map((e, i) => `
         <div style="border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:12px;background:#f9fafb;">
           <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-            <strong style="color:#1e4d8c;">Accesso #${i + 1}</strong>
+            <strong style="color:var(--brand-700);">Accesso #${i + 1}</strong>
             <span style="font-size:0.85rem;color:#6b7280;">${fd(e.dataRegistrazione)}</span>
           </div>
           <p style="margin:0 0 8px;font-size:0.9rem;"><strong>Operatore:</strong> ${e.staffName || 'N/D'}</p>
@@ -700,8 +700,8 @@ function WorkPlan() {
         </div>`).join('');
     return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Cartella Clinica - ${patient.firstName} ${patient.lastName}</title><style>
       body{font-family:Arial,sans-serif;color:#111;margin:0;padding:24px;line-height:1.6}
-      h1{font-size:18pt;color:#1e40af;border-bottom:2px solid #1e40af;padding-bottom:8px}
-      h2{font-size:14pt;color:#1e40af;margin-top:20px}
+      h1{font-size:18pt;color:var(--brand-700);border-bottom:2px solid var(--brand-700);padding-bottom:8px}
+      h2{font-size:14pt;color:var(--brand-700);margin-top:20px}
       .section{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-bottom:16px}
       .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
       .label{font-weight:600;color:#4b5563;font-size:0.9rem}
@@ -817,10 +817,10 @@ function WorkPlan() {
     return `<html><head><title>Registro Accessi</title>
     <style>
       body{font-family:Arial,sans-serif;font-size:12px;color:#222;margin:20px}
-      h1{font-size:18px;color:#1e4d8c;margin-bottom:4px}
+      h1{font-size:18px;color:var(--brand-700);margin-bottom:4px}
       h2{font-size:14px;color:#444;margin:0 0 16px}
       table{width:100%;border-collapse:collapse;margin-top:16px}
-      th{background:#1e4d8c;color:#fff;padding:8px;text-align:left;font-size:11px}
+      th{background:var(--brand-700);color:#fff;padding:8px;text-align:left;font-size:11px}
       td{padding:7px 8px;border-bottom:1px solid #e2e8f0;font-size:11px}
       tr:nth-child(even) td{background:#f8fafc}
       .riepilogo{margin-top:20px;background:#f1f5f9;padding:12px;border-radius:6px}
@@ -1032,11 +1032,11 @@ function WorkPlan() {
             </label>
 
             {/* Nuovo paziente inline (modalità accettazione) */}
-            <button type="button" onClick={() => setShowNuovoPaziente(prev => !prev)} style={{ alignSelf: 'flex-start', background: 'none', border: 'none', color: '#1e4d8c', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', padding: '2px 0' }}>
+            <button type="button" onClick={() => setShowNuovoPaziente(prev => !prev)} style={{ alignSelf: 'flex-start', background: 'none', border: 'none', color: 'var(--brand-700)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', padding: '2px 0' }}>
               <UserPlus size={15} /> {showNuovoPaziente ? 'Chiudi inserimento paziente' : 'Nuovo paziente (accettazione)'}
             </button>
             {showNuovoPaziente && (
-              <div style={{ border: '1px solid #bfdbfe', background: '#eff6ff', borderRadius: '10px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ border: '1px solid var(--brand-200)', background: 'var(--brand-50)', borderRadius: '10px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <input type="text" placeholder="Nome *" value={npForm.firstName} onChange={e => setNpForm(p => ({ ...p, firstName: e.target.value }))} />
                   <input type="text" placeholder="Cognome *" value={npForm.lastName} onChange={e => setNpForm(p => ({ ...p, lastName: e.target.value }))} />
@@ -1051,7 +1051,7 @@ function WorkPlan() {
                   <input type="email" placeholder="Email" value={npForm.email} onChange={e => setNpForm(p => ({ ...p, email: e.target.value }))} />
                   <input type="text" placeholder="Codice fiscale" value={npForm.codiceFiscale} onChange={e => setNpForm(p => ({ ...p, codiceFiscale: e.target.value.toUpperCase() }))} />
                 </div>
-                <button type="button" onClick={creaNuovoPaziente} disabled={npSaving} style={{ background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <button type="button" onClick={creaNuovoPaziente} disabled={npSaving} style={{ background: 'var(--brand-700)', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                   <UserPlus size={15} /> {npSaving ? 'Creazione...' : 'Crea e seleziona paziente'}
                 </button>
               </div>
@@ -1145,7 +1145,7 @@ function WorkPlan() {
 
             {/* ── Sezione Categorie e Fabbisogni ── */}
             <div style={{ borderTop: '1px solid var(--gray-200)', paddingTop: '14px', marginTop: '4px' }}>
-              <div style={{ fontWeight: '700', fontSize: '0.92rem', color: '#1e4d8c', marginBottom: '10px' }}>
+              <div style={{ fontWeight: '700', fontSize: '0.92rem', color: 'var(--brand-700)', marginBottom: '10px' }}>
                 🩺 Categorie assistenziali * (seleziona una o più)
               </div>
 
@@ -1270,7 +1270,7 @@ function WorkPlan() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {giorniForm.map((g, idx) => (
-                  <div key={g.giorno} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '6px', backgroundColor: g.attivo ? '#eff6ff' : '#f9fafb', border: `1px solid ${g.attivo ? '#bfdbfe' : '#e5e7eb'}` }}>
+                  <div key={g.giorno} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '6px', backgroundColor: g.attivo ? 'var(--brand-50)' : '#f9fafb', border: `1px solid ${g.attivo ? 'var(--brand-200)' : '#e5e7eb'}` }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', minWidth: '60px', margin: 0, fontWeight: g.attivo ? '600' : '400' }}>
                       <input
                         type="checkbox"
@@ -1297,7 +1297,7 @@ function WorkPlan() {
                             updated[idx] = { ...updated[idx], accessiAlGiorno: parseInt(e.target.value) || 1 };
                             setGiorniForm(updated);
                           }}
-                          style={{ width: '60px', padding: '4px 6px', borderRadius: '4px', border: '1px solid #bfdbfe', fontSize: '0.85rem' }}
+                          style={{ width: '60px', padding: '4px 6px', borderRadius: '4px', border: '1px solid var(--brand-200)', fontSize: '0.85rem' }}
                         />
                       </label>
                     )}
@@ -1315,7 +1315,7 @@ function WorkPlan() {
                             updated[idx] = { ...updated[idx], minutiPerAccesso: parseInt(e.target.value) || 60 };
                             setGiorniForm(updated);
                           }}
-                          style={{ width: '70px', padding: '4px 6px', borderRadius: '4px', border: '1px solid #bfdbfe', fontSize: '0.85rem' }}
+                          style={{ width: '70px', padding: '4px 6px', borderRadius: '4px', border: '1px solid var(--brand-200)', fontSize: '0.85rem' }}
                         />
                       </label>
                     )}
@@ -1384,7 +1384,7 @@ function WorkPlan() {
                   )}
                 </>
               ) : (
-                <div style={{ marginTop: '10px', background: '#eff6ff', border: '1px solid #bae6fd', borderRadius: '6px', padding: '8px 12px', fontSize: '0.82rem', color: '#1e40af' }}>
+                <div style={{ marginTop: '10px', background: 'var(--brand-50)', border: '1px solid #bae6fd', borderRadius: '6px', padding: '8px 12px', fontSize: '0.82rem', color: 'var(--brand-700)' }}>
                   🏥 Piano SIAT — il costo al paziente segue le tariffe regionali Lazio; non viene gestito qui.
                 </div>
               )}
@@ -1462,7 +1462,7 @@ function WorkPlan() {
                                   {macroInfo?.label || macroCat}
                                 </span>
                                 {fabbs.length > 0 && (
-                                  <span style={{ fontSize: '0.8rem', color: '#1e3a5f' }}>
+                                  <span style={{ fontSize: '0.8rem', color: 'var(--nav-900)' }}>
                                     {fabbs.map(f => {
                                       const opt = FABBISOGNI_OPTIONS[macroCat as keyof typeof FABBISOGNI_OPTIONS]?.find(o => o.value === f);
                                       return opt?.label || f;
@@ -1484,7 +1484,7 @@ function WorkPlan() {
                                 <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: catInfo?.bg || '#f3f4f6', color: catInfo?.color || '#374151', borderRadius: '10px', fontWeight: '700', border: `1px solid ${catInfo?.color || '#e5e7eb'}40` }}>
                                   {catInfo?.label || prest.categoria}
                                 </span>
-                                <span style={{ fontSize: '0.82rem', color: '#1e3a5f' }}>{catalogoItem?.label || prest.tipoPrestazione}</span>
+                                <span style={{ fontSize: '0.82rem', color: 'var(--nav-900)' }}>{catalogoItem?.label || prest.tipoPrestazione}</span>
                                 <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>→ 👤 {opName}</span>
                               </div>
                             );
@@ -1505,7 +1505,7 @@ function WorkPlan() {
                           {['Dom','Lun','Mar','Mer','Gio','Ven','Sab'].map((label, idx) => {
                             const g = item.giorniSettimana!.find(x => x.giorno === idx);
                             return g ? (
-                              <span key={idx} style={{ fontSize: '0.7rem', padding: '1px 6px', backgroundColor: '#eff6ff', color: '#1e40af', borderRadius: '10px', fontWeight: '600', border: '1px solid #bfdbfe' }}>
+                              <span key={idx} style={{ fontSize: '0.7rem', padding: '1px 6px', backgroundColor: 'var(--brand-50)', color: 'var(--brand-700)', borderRadius: '10px', fontWeight: '600', border: '1px solid var(--brand-200)' }}>
                                 {label}
                                 {item.type === 'prestazionale' && g.accessiAlGiorno > 1 ? ` ×${g.accessiAlGiorno}` : ''}
                                 {item.type === 'assistenziale' ? ` ${g.minutiPerAccesso}min` : ''}
@@ -1536,7 +1536,7 @@ function WorkPlan() {
                             <span>Cartella</span>
                           </button>
                           {/* Accesso remoto e copia link */}
-                          <button type="button" onClick={() => apriAccesso(item._id)} style={{ background: '#3b82f6', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Apri pagina registrazione accessi">
+                          <button type="button" onClick={() => apriAccesso(item._id)} style={{ background: 'var(--brand-500)', padding: '8px 12px', fontSize: '0.8rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }} title="Apri pagina registrazione accessi">
                             <Link2 size={16} />
                             <span>Registra</span>
                           </button>
@@ -1723,7 +1723,7 @@ function WorkPlan() {
                           )}
                         </>
                       ) : (
-                        <div style={{ background: '#eff6ff', border: '1px solid #bae6fd', borderRadius: '6px', padding: '8px 12px', fontSize: '0.82rem', color: '#1e40af' }}>
+                        <div style={{ background: 'var(--brand-50)', border: '1px solid #bae6fd', borderRadius: '6px', padding: '8px 12px', fontSize: '0.82rem', color: 'var(--brand-700)' }}>
                           🏥 Piano SIAT — il costo al paziente segue le tariffe regionali Lazio; non viene gestito qui.
                         </div>
                       )}
@@ -1853,7 +1853,7 @@ function WorkPlan() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           {obiettiviModal.map((ob: any) => {
                             const statoColors: Record<string, { bg: string; color: string; label: string }> = {
-                              attivo:        { bg: 'rgba(30,77,140,0.08)',  color: '#1e4d8c', label: '🎯 Attivo' },
+                              attivo:        { bg: 'rgba(28,113,100,0.08)',  color: 'var(--brand-700)', label: '🎯 Attivo' },
                               raggiunto:     { bg: 'rgba(5,150,105,0.08)',  color: '#065f46', label: '✅ Raggiunto' },
                               parziale:      { bg: 'rgba(245,158,11,0.08)', color: '#92400e', label: '⚠️ Parziale' },
                               non_raggiunto: { bg: 'rgba(220,38,38,0.08)',  color: '#7f1d1d', label: '❌ Non raggiunto' },
@@ -1899,13 +1899,13 @@ function WorkPlan() {
                           <input type="date" value={exportAData} onChange={e => setExportAData(e.target.value)} style={{ marginTop: '4px', padding: '7px 10px', border: '1px solid #ced4da', borderRadius: '4px', width: '100%' }} />
                         </label>
                         <button type="button" onClick={caricaExportModal} disabled={loadingExportModal}
-                          style={{ background: '#1e4d8c', padding: '9px 16px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                          style={{ background: 'var(--brand-700)', padding: '9px 16px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
                           {loadingExportModal ? '⏳' : '🔍 Carica'}
                         </button>
                         {exportDataModal && (
                           <>
                             <button type="button" onClick={visualizzaExportModal}
-                              style={{ background: '#3b82f6', padding: '9px 16px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                              style={{ background: 'var(--brand-500)', padding: '9px 16px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
                               👁️ Visualizza PDF
                             </button>
                             <button type="button" onClick={stampaExportModal}
@@ -1928,7 +1928,7 @@ function WorkPlan() {
 
                 {/* Footer modal */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
-                  <button type="button" onClick={() => apriAccesso(selectedWorkPlan._id)} style={{ background: '#3b82f6', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button type="button" onClick={() => apriAccesso(selectedWorkPlan._id)} style={{ background: 'var(--brand-500)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Link2 size={16} />
                     Apri pagina accesso
                   </button>

@@ -34,7 +34,7 @@ export default function FirmaCanvas({
     if (!ctx) return;
 
     // Configura canvas
-    ctx.strokeStyle = '#1e3a5f';
+    ctx.strokeStyle = 'var(--nav-900)';
     ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -54,7 +54,7 @@ export default function FirmaCanvas({
     ctx.setLineDash([]);
 
     // Ripristina stile per disegno
-    ctx.strokeStyle = '#1e3a5f';
+    ctx.strokeStyle = 'var(--nav-900)';
     ctx.lineWidth = 2.5;
   }, [altezza, mostraFirmaEsistente]);
 
@@ -95,7 +95,7 @@ export default function FirmaCanvas({
     if (!ctx) return;
 
     const punto = getPunto(e, canvas);
-    ctx.strokeStyle = '#1e3a5f';
+    ctx.strokeStyle = 'var(--nav-900)';
     ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -150,7 +150,7 @@ export default function FirmaCanvas({
   return (
     <div style={{ marginBottom: '24px' }}>
       <div style={{ marginBottom: '8px' }}>
-        <div style={{ fontWeight: '600', fontSize: '1rem', color: '#1e3a5f' }}>{label}</div>
+        <div style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--nav-900)' }}>{label}</div>
         {sublabel && <div style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '2px' }}>{sublabel}</div>}
       </div>
 
@@ -173,7 +173,7 @@ export default function FirmaCanvas({
       ) : (
         // Canvas per disegnare firma
         <div>
-          <div style={{ border: `2px ${haFirmato ? 'solid #2563eb' : 'dashed #d1d5db'}`, borderRadius: '12px', overflow: 'hidden', background: 'white', touchAction: 'none' }}>
+          <div style={{ border: `2px ${haFirmato ? 'solid var(--brand-600)' : 'dashed #d1d5db'}`, borderRadius: '12px', overflow: 'hidden', background: 'white', touchAction: 'none' }}>
             <canvas
               ref={canvasRef}
               width={600}

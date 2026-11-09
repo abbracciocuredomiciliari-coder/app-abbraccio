@@ -119,7 +119,7 @@ export default function AssegnazionePAI() {
   const [cercaOperatore, setCercaOperatore] = useState('');
 
   const isPrivilegiato = user && ['admin', 'coordinator', 'direttore'].includes(user.role);
-  const colore = isConvenzione ? '#0369a1' : isConsulenza ? '#ea580c' : '#1e4d8c';
+  const colore = isConvenzione ? '#0369a1' : isConsulenza ? '#ea580c' : 'var(--brand-700)';
   const titoloTipo = isConvenzione ? 'Assegnazione PAI — Convenzione SIAT' : isConsulenza ? 'Assegnazione Operatore — Intermediazioni' : 'Assegnazione Piano di Lavoro — Privato';
   const figureFiltro = isConsulenza ? FIGURE_FILTRO_INTERMEDIAZIONE : FIGURE_FILTRO;
 
@@ -286,7 +286,7 @@ export default function AssegnazionePAI() {
         </h1>
         <div style={{ marginTop: '6px' }}>
           {isConvenzione
-            ? <span style={{ background: '#eff6ff', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: '6px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 700 }}><Building2 size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />Convenzione SIAT</span>
+            ? <span style={{ background: 'var(--brand-50)', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: '6px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 700 }}><Building2 size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />Convenzione SIAT</span>
             : isConsulenza
               ? <span style={{ background: '#fff7ed', color: '#ea580c', border: '1px solid #fed7aa', borderRadius: '6px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 700 }}>🏠 Intermediazioni</span>
               : <span style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 700 }}>👤 Gestione Privata</span>
@@ -359,7 +359,7 @@ export default function AssegnazionePAI() {
                     type="button"
                     onClick={() => selezionaPaziente(p)}
                     style={{
-                      textAlign: 'left', background: pazienteSelezionato?._id === p._id ? '#eff6ff' : '#f8fafc',
+                      textAlign: 'left', background: pazienteSelezionato?._id === p._id ? 'var(--brand-50)' : '#f8fafc',
                       border: `1px solid ${pazienteSelezionato?._id === p._id ? '#bae6fd' : '#e2e8f0'}`,
                       borderRadius: '6px', padding: '8px 10px', cursor: 'pointer',
                     }}

@@ -229,7 +229,7 @@ export default function EsportazioneSIAT() {
 
       {/* Info Paziente */}
       {selectedPatient && (
-        <div style={{ background: 'linear-gradient(135deg, #1e4d8c 0%, #3b82f6 100%)', padding: '20px', borderRadius: '12px', color: 'white', marginBottom: '24px' }}>
+        <div style={{ background: 'linear-gradient(135deg, var(--brand-700) 0%, var(--brand-500) 100%)', padding: '20px', borderRadius: '12px', color: 'white', marginBottom: '24px' }}>
           <h3 style={{ marginBottom: '12px' }}>📋 Dati Paziente Selezionato</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
             <div>
@@ -306,7 +306,7 @@ export default function EsportazioneSIAT() {
           {/* Opzione 2: Download CDA2 */}
           <div style={{ background: 'white', border: '2px solid #e5e7eb', borderRadius: '12px', padding: '24px' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-              <FileCode size={24} color="#2563eb" />
+              <FileCode size={24} color="var(--brand-600)" />
               Esportazione CDA2 (XML)
             </h3>
             <p style={{ color: '#6b7280', marginBottom: '16px' }}>
@@ -316,7 +316,7 @@ export default function EsportazioneSIAT() {
             <button
               onClick={exportCDA2}
               disabled={loading}
-              style={{ background: '#2563eb', opacity: loading ? 0.7 : 1 }}
+              style={{ background: 'var(--brand-600)', opacity: loading ? 0.7 : 1 }}
             >
               {loading ? <><Loader2 size={16} className="spin" /> Generazione...</> : <><Download size={16} /> Scarica XML (CDA2)</>}
             </button>

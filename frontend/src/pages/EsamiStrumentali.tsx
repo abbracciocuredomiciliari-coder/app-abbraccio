@@ -108,7 +108,7 @@ interface EsameItem {
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   pianificato: { label: '📅 Pianificato', color: '#d97706', bg: '#fef3c7' },
   eseguito:    { label: '✅ Eseguito',    color: '#059669', bg: '#d1fae5' },
-  refertato:   { label: '📋 Refertato',   color: '#2563eb', bg: '#dbeafe' },
+  refertato:   { label: '📋 Refertato',   color: 'var(--brand-600)', bg: 'var(--brand-100)' },
   archiviato:  { label: '🗄️ Archiviato',  color: '#6b7280', bg: '#f3f4f6' },
 };
 
@@ -594,7 +594,7 @@ export default function EsamiStrumentali() {
       const diariaHtml = d.diaria.length === 0
         ? '<p style="color:#888;font-style:italic">Nessuna voce di diaria registrata.</p>'
         : d.diaria.map((v: any) => `
-          <div style="margin-bottom:12px;padding:10px 14px;background:#f8fafc;border-left:3px solid #1e4d8c;border-radius:4px">
+          <div style="margin-bottom:12px;padding:10px 14px;background:#f8fafc;border-left:3px solid var(--brand-700);border-radius:4px">
             <div style="font-size:11px;color:#555;margin-bottom:4px">
               <strong>${v.data} ${v.ora}</strong> — ${v.autore}${v.ruolo ? ` (${v.ruolo})` : ''}
               ${v.firmato ? `<span style="margin-left:8px;color:#059669;font-weight:700">✅ Firmato ${v.dataFirma}</span>` : ''}
@@ -605,7 +605,7 @@ export default function EsamiStrumentali() {
       const refertoHtml = !d.referto || !d.referto.testo
         ? '<p style="color:#888;font-style:italic">Nessun referto disponibile.</p>'
         : `
-          <div style="padding:12px 16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px">
+          <div style="padding:12px 16px;background:var(--brand-50);border:1px solid var(--brand-200);border-radius:6px">
             <div style="font-size:11px;color:#555;margin-bottom:8px">
               Redatto da: <strong>${d.referto.redattoDa}</strong> — ${d.referto.dataReferto}
               ${d.referto.firmato ? `<span style="margin-left:8px;color:#059669;font-weight:700">✅ Firmato ${d.referto.dataFirma}</span>` : ''}
@@ -630,10 +630,10 @@ export default function EsamiStrumentali() {
   <style>
     * { box-sizing: border-box; }
     body { font-family: Arial, sans-serif; font-size: 12px; color: #222; margin: 24px; }
-    h1 { font-size: 20px; color: #1e4d8c; margin: 0 0 4px; }
+    h1 { font-size: 20px; color: var(--brand-700); margin: 0 0 4px; }
     h2 { font-size: 14px; color: #374151; margin: 20px 0 8px; border-bottom: 2px solid #e5e7eb; padding-bottom: 4px; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-    .logo { font-size: 18px; font-weight: 700; color: #1e4d8c; }
+    .logo { font-size: 18px; font-weight: 700; color: var(--brand-700); }
     .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
     .info-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 14px; }
@@ -1005,7 +1005,7 @@ export default function EsamiStrumentali() {
                       <button
                         type="button"
                         onClick={() => apriDettaglio(esame)}
-                        style={{ background: '#1e4d8c', padding: '7px' }}
+                        style={{ background: 'var(--brand-700)', padding: '7px' }}
                         title="Apri dettaglio"
                       >
                         <Eye size={15} />
@@ -1013,7 +1013,7 @@ export default function EsamiStrumentali() {
                       <button
                         type="button"
                         onClick={() => visualizzaPDF(esame)}
-                        style={{ background: '#3b82f6', padding: '7px' }}
+                        style={{ background: 'var(--brand-500)', padding: '7px' }}
                         title="Visualizza PDF"
                         disabled={loadingPdf}
                       >
@@ -1087,7 +1087,7 @@ export default function EsamiStrumentali() {
                 <button
                   type="button"
                   onClick={() => visualizzaPDF(selectedEsame)}
-                  style={{ background: '#3b82f6', padding: '8px 14px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  style={{ background: 'var(--brand-500)', padding: '8px 14px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
                   disabled={loadingPdf}
                 >
                   <Printer size={15} />
@@ -1202,7 +1202,7 @@ export default function EsamiStrumentali() {
                 <button
                   type="button"
                   onClick={() => setShowDiaria(!showDiaria)}
-                  style={{ width: '100%', background: '#f0f9ff', border: 'none', padding: '12px 16px', textAlign: 'left', cursor: 'pointer', fontWeight: '600', fontSize: '0.92rem', color: '#1e4d8c', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  style={{ width: '100%', background: '#f0f9ff', border: 'none', padding: '12px 16px', textAlign: 'left', cursor: 'pointer', fontWeight: '600', fontSize: '0.92rem', color: 'var(--brand-700)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <BookOpen size={18} />
@@ -1268,7 +1268,7 @@ export default function EsamiStrumentali() {
                             type="button"
                             onClick={aggiungiDiaria}
                             disabled={savingDiaria || !nuovaDiaria.trim()}
-                            style={{ background: '#1e4d8c', color: 'white', padding: '8px 16px', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '6px', border: 'none', borderRadius: '6px', opacity: !nuovaDiaria.trim() ? 0.5 : 1 }}
+                            style={{ background: 'var(--brand-700)', color: 'white', padding: '8px 16px', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '6px', border: 'none', borderRadius: '6px', opacity: !nuovaDiaria.trim() ? 0.5 : 1 }}
                           >
                             <Plus size={15} />
                             {savingDiaria ? 'Salvataggio...' : 'Aggiungi voce'}
@@ -1293,7 +1293,7 @@ export default function EsamiStrumentali() {
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {[...selectedEsame.diaria].reverse().map(voce => (
-                          <div key={voce._id} style={{ padding: '12px 14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '6px', borderLeft: '3px solid #1e4d8c' }}>
+                          <div key={voce._id} style={{ padding: '12px 14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '6px', borderLeft: '3px solid var(--brand-700)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
                               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                                 <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>
@@ -1369,13 +1369,13 @@ export default function EsamiStrumentali() {
                 <button
                   type="button"
                   onClick={() => setShowReferto(!showReferto)}
-                  style={{ width: '100%', background: '#eff6ff', border: 'none', padding: '12px 16px', textAlign: 'left', cursor: 'pointer', fontWeight: '600', fontSize: '0.92rem', color: '#1e40af', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  style={{ width: '100%', background: 'var(--brand-50)', border: 'none', padding: '12px 16px', textAlign: 'left', cursor: 'pointer', fontWeight: '600', fontSize: '0.92rem', color: 'var(--brand-700)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FileText size={18} />
                     Referto medico
                     {selectedEsame.referto?.testoReferto && (
-                      <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '1px 8px', borderRadius: '10px', backgroundColor: '#dbeafe', color: '#1e40af' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '1px 8px', borderRadius: '10px', backgroundColor: 'var(--brand-100)', color: 'var(--brand-700)' }}>
                         Presente
                       </span>
                     )}
@@ -1421,7 +1421,7 @@ export default function EsamiStrumentali() {
                                 type="button"
                                 onClick={salvaReferto}
                                 disabled={savingReferto}
-                                style={{ background: '#1e40af', padding: '8px 16px', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                style={{ background: 'var(--brand-700)', padding: '8px 16px', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '6px' }}
                               >
                                 <CheckCircle size={15} />
                                 {savingReferto ? 'Salvataggio...' : 'Salva referto'}
@@ -1441,7 +1441,7 @@ export default function EsamiStrumentali() {
                               <button
                                 type="button"
                                 onClick={() => setEditingReferto(true)}
-                                style={{ background: '#1e40af', padding: '7px 14px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}
+                                style={{ background: 'var(--brand-700)', padding: '7px 14px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}
                               >
                                 <PenLine size={15} />
                                 {selectedEsame.referto?.testoReferto ? 'Modifica referto' : 'Scrivi referto'}
@@ -1464,7 +1464,7 @@ export default function EsamiStrumentali() {
                               onChange={e => { if (e.target.files?.[0]) caricaFileReferto(e.target.files[0]); }}
                               style={{ fontSize: '0.85rem' }}
                             />
-                            {uploadingRefertoFile && <p style={{ margin: '6px 0 0', fontSize: '0.82rem', color: '#1e40af' }}>⏳ Caricamento in corso...</p>}
+                            {uploadingRefertoFile && <p style={{ margin: '6px 0 0', fontSize: '0.82rem', color: 'var(--brand-700)' }}>⏳ Caricamento in corso...</p>}
                           </div>
                         )}
                       </>
@@ -1472,7 +1472,7 @@ export default function EsamiStrumentali() {
 
                     {/* Visualizzazione referto */}
                     {selectedEsame.referto?.testoReferto ? (
-                      <div style={{ padding: '14px 16px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px' }}>
+                      <div style={{ padding: '14px 16px', backgroundColor: 'var(--brand-50)', border: '1px solid var(--brand-200)', borderRadius: '8px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
                           <div style={{ fontSize: '0.82rem', color: '#555' }}>
                             Redatto da: <strong>{selectedEsame.referto.redattoDa}</strong>
@@ -1506,7 +1506,7 @@ export default function EsamiStrumentali() {
                             )}
                           </div>
                         </div>
-                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#1e3a5f', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--nav-900)', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
                           {selectedEsame.referto.testoReferto}
                         </p>
                         {mostraFirmaReferto && puoRefertare && (
@@ -1544,7 +1544,7 @@ export default function EsamiStrumentali() {
                         )}
                         {/* File referto allegato */}
                         {selectedEsame.referto.nomeFile && (
-                          <div style={{ marginTop: '12px', padding: '8px 12px', backgroundColor: '#dbeafe', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ marginTop: '12px', padding: '8px 12px', backgroundColor: 'var(--brand-100)', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <Paperclip size={14} />
                               {selectedEsame.referto.nomeFile}
@@ -1553,7 +1553,7 @@ export default function EsamiStrumentali() {
                               <button
                                 type="button"
                                 onClick={() => apriFile(selectedEsame.referto!)}
-                                style={{ background: '#1e40af', padding: '5px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                style={{ background: 'var(--brand-700)', padding: '5px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
                               >
                                 <Eye size={13} /> Visualizza
                               </button>
@@ -1638,7 +1638,7 @@ export default function EsamiStrumentali() {
                                 <button
                                   type="button"
                                   onClick={() => apriFile(allegato)}
-                                  style={{ background: '#1e4d8c', padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                  style={{ background: 'var(--brand-700)', padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
                                 >
                                   <Eye size={13} /> Apri
                                 </button>

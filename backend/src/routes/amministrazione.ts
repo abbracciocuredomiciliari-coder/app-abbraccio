@@ -9,6 +9,9 @@ import RitenutaAcconto from '../models/RitenutaAcconto';
 import FatturaRicevuta from '../models/FatturaRicevuta';
 import ConsegnaCommercialista from '../models/ConsegnaCommercialista';
 import Attivita from '../models/Attivita';
+import generaDocumentoPDF from '../utils/fatturazionePdf';
+import generaRitenutaPDF from '../utils/ritenutaPdf';
+import { buildZip, ZipEntry } from '../utils/zipStore';
 
 const router = Router();
 const RUOLI_AMM = ['admin', 'coordinator', 'direttore'];
@@ -269,6 +272,8 @@ router.post('/fatture-ricevute', authenticateToken, authorizeRole(...RUOLI_AMM),
       iva: Number.isFinite(Number(b.iva)) ? Number(b.iva) : undefined,
       totale, descrizione: String(b.descrizione || '').trim().slice(0, 500) || undefined,
       area: ['privato', 'intermediazione', 'convenzione', 'trasversale'].includes(b.area) ? b.area : 'trasversale',
+      praticaTipo: ['richiesta', 'paziente', 'intermediazione', 'consegna', 'documento', 'generale'].includes(b.praticaTipo) ? b.praticaTipo : undefined,
+      praticaId: b.praticaId && mongoose.isValidObjectId(String(b.praticaId)) ? new mongoose.Types.ObjectId(String(b.praticaId)) : undefined,
       praticaLabel: String(b.praticaLabel || '').trim().slice(0, 200) || undefined,
       scadenzaPagamento: scad && !isNaN(scad.getTime()) ? scad : undefined,
       pagamento: { stato: 'da_pagare', pagamenti: [] },
@@ -348,6 +353,8 @@ router.post('/documenti-emessi/:id/apri-attivita', authenticateToken, authorizeR
     const user: any = req.user;
     const doc = await DocumentoFatturazione.findById(req.params.id).populate('patient', 'firstName lastName');
     if (!doc) return res.status(404).json({ message: 'Documento non trovato' });
+    const esistente = await Attivita.findOne({ praticaId: doc._id, stato: { $nin: ['completata', 'annullata'] } }).lean();
+    if (esistente) return res.json({ attivita: esistente, giaPresente: true });
     const paziente: any = doc.patient;
     const attivita = await Attivita.create({
       titolo: String(req.body?.titolo || `Verifica ${doc.numero}`).slice(0, 200),
@@ -371,34 +378,52 @@ router.post('/documenti-emessi/:id/apri-attivita', authenticateToken, authorizeR
 // ─── Preparazione documenti per il commercialista ────────────────────────────
 // L'esportazione non è un invio: la consegna va marcata esplicitamente.
 
-function calcolaAnomalie(righe: any[]): string[] {
+// Buchi di numerazione sull'INTERA serie (non solo nel periodo filtrato):
+// la numerazione fiscale non ammette salti, quindi il controllo deve vedere
+// tutti i documenti della serie per anno e tipo. I documenti annullati
+// occupano comunque il progressivo ma vengono segnalati a parte.
+async function buchiNumerazione(): Promise<string[]> {
   const anomalie: string[] = [];
-
-  // 1. Buchi nella numerazione fatture per serie + anno
-  const perSerie = new Map<string, Set<number>>();
-  righe.filter(r => r.origine === 'fattura').forEach(r => {
-    const m = String(r.numero).match(/^(FATT(?:-CF)?)-(\d{4})-(\d+)$/);
+  const docs = await DocumentoFatturazione.find({ tipo: 'fattura' }).select('numero stato data').lean();
+  const perSerie = new Map<string, { attivi: Set<number>; annullati: Set<number> }>();
+  docs.forEach((d: any) => {
+    const m = String(d.numero || '').match(/^(FATT(?:-CF)?)-(\d{4})-(\d+)$/);
     if (!m) return;
     const chiave = `${m[1]}-${m[2]}`;
-    if (!perSerie.has(chiave)) perSerie.set(chiave, new Set());
-    perSerie.get(chiave)!.add(parseInt(m[3], 10));
+    if (!perSerie.has(chiave)) perSerie.set(chiave, { attivi: new Set(), annullati: new Set() });
+    const set = perSerie.get(chiave)!;
+    if (d.stato === 'annullato') set.annullati.add(parseInt(m[3], 10));
+    else set.attivi.add(parseInt(m[3], 10));
   });
-  perSerie.forEach((numeri, serie) => {
-    const max = Math.max(...numeri);
+  perSerie.forEach(({ attivi, annullati }, serie) => {
+    const occupati = new Set([...attivi, ...annullati]);
+    if (occupati.size === 0) return;
+    const max = Math.max(...occupati);
     for (let n = 1; n <= max; n++) {
-      if (!numeri.has(n)) anomalie.push(`Numerazione ${serie}: manca il progressivo ${String(n).padStart(5, '0')}`);
+      if (!occupati.has(n)) anomalie.push(`Numerazione ${serie}: manca il progressivo ${String(n).padStart(5, '0')}`);
     }
+    annullati.forEach(n => anomalie.push(`Numerazione ${serie}: progressivo ${String(n).padStart(5, '0')} usato da fattura annullata`));
   });
+  return anomalie;
+}
+
+async function calcolaAnomalie(righe: any[]): Promise<string[]> {
+  const anomalie: string[] = [];
+
+  // 1. Buchi nella numerazione fatture — sull'intera serie, anno per anno
+  anomalie.push(...(await buchiNumerazione()));
 
   // 2. Fatture senza codice fiscale intestatario
   righe.filter(r => r.origine === 'fattura' && r.cfMancante).forEach(r => {
     anomalie.push(`${r.numero}: intestatario senza codice fiscale (${r.soggetto})`);
   });
 
-  // 3. Possibili duplicati: stesso soggetto + totale + giorno
+  // 3. Possibili duplicati REALI: solo tra documenti della stessa origine.
+  // Una fattura e il preventivo da cui deriva (o viceversa) NON sono duplicati:
+  // sono lo stesso affare in stati diversi, spesso con stesso soggetto e totale.
   const visti = new Map<string, string>();
-  righe.filter(r => ['fattura', 'preventivo'].includes(r.origine)).forEach(r => {
-    const chiave = `${r.soggetto}|${r.totale}|${new Date(r.data).toISOString().slice(0, 10)}`;
+  righe.filter(r => ['fattura', 'preventivo', 'nota_credito'].includes(r.origine) && r.statoDoc !== 'annullato').forEach(r => {
+    const chiave = `${r.origine}|${r.soggetto}|${r.totale}|${new Date(r.data).toISOString().slice(0, 10)}`;
     if (visti.has(chiave)) anomalie.push(`Possibile duplicato: ${visti.get(chiave)} e ${r.numero} (${r.soggetto}, €${(r.totale || 0).toFixed(2)})`);
     else visti.set(chiave, r.numero);
   });
@@ -411,17 +436,22 @@ function calcolaAnomalie(righe: any[]): string[] {
   return anomalie.slice(0, 100);
 }
 
-// GET /api/amministrazione/commercialista/anteprima?dal&al — riepilogo + anomalie
+// GET /api/amministrazione/commercialista/anteprima?dal&al&aree&origini —
+// riepilogo + anomalie. aree/origini = liste CSV opzionali di selezione.
 router.get('/commercialista/anteprima', authenticateToken, authorizeRole(...RUOLI_AMM), async (req: Request, res: Response) => {
   try {
     const { dal, al } = req.query as Record<string, string>;
-    const righe = (await raccogliRighe()).filter(r => inPeriodo(r.data, dal, al));
+    const aree = String(req.query.aree || '').split(',').map(s => s.trim()).filter(Boolean);
+    const origini = String(req.query.origini || '').split(',').map(s => s.trim()).filter(Boolean);
+    let righe = (await raccogliRighe()).filter(r => inPeriodo(r.data, dal, al));
+    if (aree.length > 0) righe = righe.filter(r => aree.includes(r.area));
+    if (origini.length > 0) righe = righe.filter(r => origini.includes(r.origine));
     const perOrigine: Record<string, number> = {};
     righe.forEach(r => { perOrigine[r.origine] = (perOrigine[r.origine] || 0) + 1; });
     return res.json({
       totaleDocumenti: righe.length,
       perOrigine,
-      anomalie: calcolaAnomalie(righe),
+      anomalie: await calcolaAnomalie(righe),
       ultimaConsegna: await ConsegnaCommercialista.findOne().sort({ preparataIl: -1 }).select('preparataIl stato periodoDal periodoAl').lean(),
     });
   } catch (error: any) {
@@ -430,20 +460,26 @@ router.get('/commercialista/anteprima', authenticateToken, authorizeRole(...RUOL
 });
 
 // POST /api/amministrazione/commercialista/consegne — registra una preparazione
+// (non è un invio né un download: è lo snapshot di cosa è stato preparato)
 router.post('/commercialista/consegne', authenticateToken, authorizeRole(...RUOLI_AMM), auditLog('amministrazione', 'CREATE'), async (req: AuthRequest, res: Response) => {
   try {
     const b = req.body || {};
     const dal = b.dal ? String(b.dal) : undefined;
     const al = b.al ? String(b.al) : undefined;
-    const righe = (await raccogliRighe()).filter(r => inPeriodo(r.data, dal, al));
+    const aree = Array.isArray(b.aree) ? b.aree.filter((a: any) => ['privato', 'intermediazione', 'convenzione', 'trasversale'].includes(a)) : [];
+    const origini = Array.isArray(b.origini) ? b.origini.filter((o: any) => ['fattura', 'preventivo', 'nota_credito', 'fattura_ricevuta', 'invio', 'ritenuta'].includes(o)) : [];
+    let righe = (await raccogliRighe()).filter(r => inPeriodo(r.data, dal, al));
+    if (aree.length > 0) righe = righe.filter(r => aree.includes(r.area));
+    if (origini.length > 0) righe = righe.filter(r => origini.includes(r.origine));
     if (righe.length === 0) return res.status(400).json({ message: 'Nessun documento nel periodo selezionato' });
     const tipologie = [...new Set(righe.map(r => r.origine))];
     const consegna = await ConsegnaCommercialista.create({
       periodoDal: dal ? new Date(dal) : undefined,
       periodoAl: al ? new Date(al) : undefined,
       tipologie,
-      documenti: righe.map(r => ({ origine: r.origine, rifId: r.id, numero: r.numero, soggetto: r.soggetto, data: r.data, totale: r.totale, aggiornatoIl: r.aggiornatoIl })),
-      anomalie: calcolaAnomalie(righe),
+      aree: aree.length > 0 ? aree : undefined,
+      documenti: righe.map(r => ({ origine: r.origine, rifId: r.id, numero: r.numero, soggetto: r.soggetto, data: r.data, totale: r.totale, aggiornatoIl: r.aggiornatoIl, haOriginale: r.hasAllegato || ['fattura', 'preventivo', 'nota_credito'].includes(r.origine) })),
+      anomalie: await calcolaAnomalie(righe),
       preparataDa: (req as any).user?.name || undefined,
       note: String(b.note || '').trim().slice(0, 1000) || undefined,
     });
@@ -508,6 +544,86 @@ router.get('/commercialista/consegne/:id/differenze', authenticateToken, authori
   }
 });
 
+// ─── Pacchetto ZIP condiviso (amministrazione + accesso commercialista) ──────
+// Contiene: INDICE dei documenti, LEGGIMI con stato consegna e gli ORIGINALI
+// disponibili (PDF rigenerati dei documenti emessi, allegati fornitori,
+// PDF delle ritenute). I documenti senza originale sono marcati nell'indice.
+async function costruisciPacchetto(consegna: any): Promise<{ zip: Buffer; indice: string; inclusi: number; mancanti: number }> {
+  const entries: ZipEntry[] = [];
+  const righeIndice: string[] = [];
+  const escCsv = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const slug = (s: string) => s.replace(/[^\w.-]+/g, '_').slice(0, 80);
+  let inclusi = 0, mancanti = 0;
+
+  for (const d of consegna.documenti || []) {
+    let fileName = '';
+    try {
+      if (['fattura', 'preventivo', 'nota_credito'].includes(d.origine)) {
+        const doc = await DocumentoFatturazione.findById(d.rifId)
+          .populate('patient', 'firstName lastName codiceFiscale address email').lean();
+        if (doc) {
+          const buf = await generaDocumentoPDF(doc);
+          fileName = `documenti/${d.origine === 'fattura' ? 'fatture-emesse' : d.origine === 'nota_credito' ? 'note-credito' : 'preventivi'}/${slug(d.numero)}.pdf`;
+          entries.push({ name: fileName, data: buf });
+        }
+      } else if (d.origine === 'fattura_ricevuta') {
+        const doc = await FatturaRicevuta.findById(d.rifId).select('allegato numero').lean() as any;
+        if (doc?.allegato?.contenuto) {
+          const ext = (doc.allegato.fileName || 'doc.pdf').split('.').pop() || 'pdf';
+          fileName = `documenti/fatture-ricevute/${slug(d.numero)}_${slug(d.soggetto)}.${ext}`;
+          entries.push({ name: fileName, data: doc.allegato.contenuto });
+        }
+      } else if (d.origine === 'ritenuta') {
+        const doc = await RitenutaAcconto.findById(d.rifId).lean();
+        if (doc) {
+          const buf = await generaRitenutaPDF(doc as any);
+          fileName = `documenti/ritenute/${slug(d.numero)}_${slug(d.soggetto)}.pdf`;
+          entries.push({ name: fileName, data: buf });
+        }
+      }
+    } catch (e) {
+      console.error(`[Pacchetto commercialista] Errore documento ${d.rifId}:`, e);
+    }
+    if (fileName) inclusi++; else mancanti++;
+    righeIndice.push(
+      [d.origine, d.numero, d.soggetto, d.data ? new Date(d.data).toLocaleDateString('it-IT') : '', (d.totale ?? '').toString().replace('.', ','), fileName || 'ORIGINALE NON DISPONIBILE']
+        .map(escCsv).join(';'));
+  }
+
+  const indice = '"origine";"numero";"soggetto";"data";"totale";"file_nel_pacchetto"\r\n' + righeIndice.join('\r\n');
+  entries.unshift(
+    { name: '00-LEGGIMI.txt', data: Buffer.from(
+      `PACCHETTO DOCUMENTALE COMMERCIALISTA — Abbraccio Cure Domiciliari\r\n` +
+      `Periodo: ${consegna.periodoDal ? new Date(consegna.periodoDal).toLocaleDateString('it-IT') : '—'} → ${consegna.periodoAl ? new Date(consegna.periodoAl).toLocaleDateString('it-IT') : '—'}\r\n` +
+      `Preparato il: ${new Date(consegna.preparataIl).toLocaleString('it-IT')}${consegna.preparataDa ? ` da ${consegna.preparataDa}` : ''}\r\n` +
+      `Documenti in indice: ${(consegna.documenti || []).length} · originali inclusi: ${inclusi} · senza originale: ${mancanti}\r\n` +
+      `Anomalie rilevate in preparazione: ${(consegna.anomalie || []).length}\r\n` +
+      `L'indice completo è in 00-INDICE.csv. La consegna effettiva va confermata nel gestionale.\r\n`, 'utf8') },
+    { name: '00-INDICE.csv', data: Buffer.from('﻿' + indice, 'utf8') },
+  );
+  return { zip: buildZip(entries), indice, inclusi, mancanti };
+}
+
+// GET /api/amministrazione/commercialista/consegne/:id/pacchetto — scarica lo
+// ZIP. Il download viene registrato (scaricata ≠ consegnata).
+router.get('/commercialista/consegne/:id/pacchetto', authenticateToken, authorizeRole(...RUOLI_AMM), async (req: AuthRequest, res: Response) => {
+  try {
+    const consegna = await ConsegnaCommercialista.findById(req.params.id);
+    if (!consegna) return res.status(404).json({ message: 'Consegna non trovata' });
+    const { zip } = await costruisciPacchetto(consegna);
+    consegna.scaricataIl = new Date();
+    consegna.scaricataDa = (req as any).user?.name || undefined;
+    if (consegna.stato === 'preparata') consegna.stato = 'scaricata';
+    await consegna.save();
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="pacchetto-commercialista-${consegna._id}.zip"`);
+    return res.send(zip);
+  } catch (error: any) {
+    console.error('[Pacchetto commercialista] Errore:', error);
+    return res.status(500).json({ message: 'Errore generazione pacchetto', error: error.message });
+  }
+});
+
 // GET /api/amministrazione/commercialista/consegne/:id/csv — riepilogo CSV
 // (formato base concordabile col commercialista; i PDF restano scaricabili
 // dalle gestioni dedicate o dagli allegati)
@@ -557,13 +673,33 @@ router.get('/controlli', authenticateToken, authorizeRole(...RUOLI_AMM), async (
         .map(r => ({ id: r.id, titolo: `${r.numero} — ${r.soggetto}`, dettaglio: `Inviato il ${new Date(r.data).toLocaleDateString('it-IT')} senza riscontro`, praticaTipo: 'documento', praticaId: r.id })),
 
       // 5. Preparazioni commercialista registrate ma mai consegnate
-      consegneDaConsegnare: (await ConsegnaCommercialista.find({ stato: 'preparata' }).select('-documenti').sort({ preparataIl: -1 }).lean())
+      consegneDaConsegnare: (await ConsegnaCommercialista.find({ stato: { $in: ['preparata', 'scaricata'] } }).select('-documenti').sort({ preparataIl: -1 }).lean())
         .map((c: any) => ({ id: String(c._id), titolo: `Preparazione ${new Date(c.preparataIl).toLocaleDateString('it-IT')}`, dettaglio: `${(c.tipologie || []).length} tipologie · in attesa di consegna`, praticaTipo: 'documento', praticaId: String(c._id) })),
 
       // 6. Lavorazioni back office scadute
       lavorazioniScadute: (await Attivita.find({ area: 'organizzativa', stato: { $nin: ['completata', 'annullata'] }, scadenza: { $lt: adesso } }).sort({ scadenza: 1 }).limit(50).lean())
         .map((a: any) => ({ id: String(a._id), titolo: a.titolo, dettaglio: `Scaduta il ${new Date(a.scadenza).toLocaleDateString('it-IT')} · ${a.responsabileNome || 'senza responsabile'}`, praticaTipo: a.praticaTipo, praticaId: a.praticaId ? String(a.praticaId) : undefined })),
+
+      // 7. Buchi di numerazione — sull'intera serie (anno + tipo + stato)
+      buchiNumerazione: (await buchiNumerazione()).slice(0, 50)
+        .map(msg => ({ id: `buco-${msg}`, titolo: msg, dettaglio: 'La numerazione fiscale non ammette progressivi mancanti', praticaTipo: undefined, praticaId: undefined })),
     };
+
+    // Annotazione anti-doppio lavoro: per ogni segnalazione con pratica reale,
+    // indica se esiste già una lavorazione APERTA collegata (stesso oggetto).
+    const riferimenti = new Set<string>();
+    Object.values(controlli).forEach(arr => (arr as any[]).forEach(it => {
+      if (it.praticaId && mongoose.isValidObjectId(it.praticaId)) riferimenti.add(it.praticaId);
+    }));
+    const aperte = await Attivita.find({
+      praticaId: { $in: [...riferimenti].map(id => new mongoose.Types.ObjectId(id)) },
+      stato: { $nin: ['completata', 'annullata'] },
+    }).select('praticaId praticaTipo titolo responsabileNome scadenza stato').lean();
+    const mappaAperte = new Map(aperte.map((a: any) => [String(a.praticaId), a]));
+    Object.values(controlli).forEach(arr => (arr as any[]).forEach(it => {
+      const a = it.praticaId ? mappaAperte.get(it.praticaId) : undefined;
+      if (a) it.attivitaAperta = { id: String(a._id), titolo: a.titolo, responsabile: a.responsabileNome, scadenza: a.scadenza, stato: a.stato };
+    }));
 
     const totale = Object.values(controlli).reduce((s, arr) => s + arr.length, 0);
     return res.json({ totale, ...controlli });
@@ -580,6 +716,19 @@ router.post('/controlli/apri-attivita', authenticateToken, authorizeRole(...RUOL
     const b = req.body || {};
     const titolo = String(b.titolo || '').trim().slice(0, 200);
     if (!titolo) return res.status(400).json({ message: 'Titolo obbligatorio' });
+
+    // Anti-duplicazione: se sulla stessa pratica esiste già una lavorazione
+    // aperta, la segnalazione si collega a quella invece di crearne una copia.
+    if (b.praticaId && mongoose.isValidObjectId(String(b.praticaId))) {
+      const esistente = await Attivita.findOne({
+        praticaId: new mongoose.Types.ObjectId(String(b.praticaId)),
+        stato: { $nin: ['completata', 'annullata'] },
+      }).lean();
+      if (esistente) {
+        return res.json({ attivita: esistente, giaPresente: true });
+      }
+    }
+
     const attivita = await Attivita.create({
       titolo,
       azioneRichiesta: String(b.dettaglio || '').slice(0, 2000) || undefined,

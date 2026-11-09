@@ -161,7 +161,7 @@ export default function ArchivioFatture() {
   if (isConvenzione) {
     return (
       <section className="fade-in section-wide">
-        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px', color: '#1e4d8c' }}>
+        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--brand-700)' }}>
           <Archive size={28} />Archivio Fatture
         </h1>
         <p style={{ color: '#6b7280', marginTop: '24px' }}>L&apos;archivio fatture è disponibile solo nella modalità privata.</p>
@@ -171,7 +171,7 @@ export default function ArchivioFatture() {
 
   return (
     <section className="fade-in section-wide">
-      <h1 style={{ margin: 0, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px', color: '#1e4d8c' }}>
+      <h1 style={{ margin: 0, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--brand-700)' }}>
         <Archive size={28} />Archivio Fatture
       </h1>
 
@@ -187,7 +187,7 @@ export default function ArchivioFatture() {
             {showArchivio ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
           </div>
           {showArchivio && pazienteFiltro && (
-            <div style={{ marginTop: '12px', background: '#eff6ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '8px 12px', fontSize: '0.83rem', color: '#1e40af', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ marginTop: '12px', background: 'var(--brand-50)', border: '1px solid #bae6fd', borderRadius: '8px', padding: '8px 12px', fontSize: '0.83rem', color: 'var(--brand-700)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               🔎 Stai vedendo solo le fatture di questo paziente.
               <button type="button" onClick={() => setSearchParams({})} style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: '#dc2626', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', fontSize: '0.8rem' }}>Mostra tutte</button>
             </div>
@@ -225,11 +225,11 @@ export default function ArchivioFatture() {
                           <td style={{ padding: '8px' }}>
                             <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                               <button onClick={() => anteprimaDocumento(fattura)} title="Anteprima fattura" style={{ background: '#f0f9ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#0ea5e9' }}><Eye size={14} /></button>
-                              <button onClick={() => scaricaDocumentoPDF(fattura)} title="Scarica fattura" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Download size={14} /></button>
+                              <button onClick={() => scaricaDocumentoPDF(fattura)} title="Scarica fattura" style={{ background: 'var(--brand-50)', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: 'var(--brand-600)' }}><Download size={14} /></button>
                               {fattura.firma?.firmato && (
                                 <button onClick={() => scaricaDocumentoFirmato(fattura)} title="Scarica fattura firmata" style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#166534' }}><Download size={14} /></button>
                               )}
-                              <button onClick={() => rinviaDocumento(fattura)} title="Rinvia per email" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#2563eb' }}><Mail size={14} /></button>
+                              <button onClick={() => rinviaDocumento(fattura)} title="Rinvia per email" style={{ background: 'var(--brand-50)', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: 'var(--brand-600)' }}><Mail size={14} /></button>
                               {preventivo && (
                                 <>
                                   <button onClick={() => anteprimaDocumento(preventivo)} title="Anteprima preventivo" style={{ background: '#fefce8', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#ca8a04' }}><Eye size={14} /></button>

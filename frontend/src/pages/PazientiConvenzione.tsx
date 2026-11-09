@@ -173,7 +173,7 @@ export default function PazientiConvenzione() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e3a5f', margin: 0 }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--nav-900)', margin: 0 }}>
             🏥 Pazienti in Convenzione
           </h1>
           <p style={{ color: '#6b7280', fontSize: '0.9rem', marginTop: '4px' }}>
@@ -330,7 +330,7 @@ export default function PazientiConvenzione() {
                 <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: '200px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <span style={{ fontWeight: '700', color: '#1e3a5f', fontSize: '1rem' }}>
+                      <span style={{ fontWeight: '700', color: 'var(--nav-900)', fontSize: '1rem' }}>
                         {p.lastName} {p.firstName}
                       </span>
                       {isScaduta && (
@@ -358,7 +358,7 @@ export default function PazientiConvenzione() {
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <button
                       onClick={() => navigate(`/workplan?tipo=convenzione&patientId=${p._id}`)}
-                      style={{ background: '#1e3a5f', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600' }}
+                      style={{ background: 'var(--nav-900)', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600' }}
                     >
                       Piano di lavoro →
                     </button>
@@ -391,7 +391,7 @@ export default function PazientiConvenzione() {
                       ].filter(item => item.val).map(({ label, val }) => (
                         <div key={label}>
                           <div style={{ color: '#9ca3af', fontSize: '0.75rem', marginBottom: '2px' }}>{label}</div>
-                          <div style={{ color: '#1e3a5f', fontWeight: '500' }}>{val}</div>
+                          <div style={{ color: 'var(--nav-900)', fontWeight: '500' }}>{val}</div>
                         </div>
                       ))}
                     </div>

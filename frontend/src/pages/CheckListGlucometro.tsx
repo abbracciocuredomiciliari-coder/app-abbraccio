@@ -39,8 +39,8 @@ const LIVELLI: {
     key: 'livelloBasso',
     label: 'Livello Basso',
     descrizione: 'Soluzione di controllo a concentrazione bassa',
-    colore: '#2563eb',
-    coloreSfondo: '#eff6ff',
+    colore: 'var(--brand-600)',
+    coloreSfondo: 'var(--brand-50)',
     emoji: '🔵',
   },
   {
@@ -63,7 +63,7 @@ const LIVELLI: {
 
 const RISULTATI: { value: RisultatoControllo; label: string; colore: string }[] = [
   { value: '', label: '— Non eseguito —', colore: '#9ca3af' },
-  { value: 'basso', label: 'Basso', colore: '#2563eb' },
+  { value: 'basso', label: 'Basso', colore: 'var(--brand-600)' },
   { value: 'normale', label: 'Normale', colore: '#16a34a' },
   { value: 'alto', label: 'Alto', colore: '#dc2626' },
 ];
@@ -186,7 +186,7 @@ function CheckListGlucometro() {
         <td style="padding:9px 12px;border:1px solid #ddd;">${liv.emoji} ${liv.label}</td>
         <td style="padding:9px 12px;border:1px solid #ddd;">${liv.descrizione}</td>
         <td style="padding:9px 12px;border:1px solid #ddd;text-align:center;font-weight:700;color:${
-          livello.risultato === 'basso' ? '#2563eb' : livello.risultato === 'normale' ? '#16a34a' : livello.risultato === 'alto' ? '#dc2626' : '#9ca3af'
+          livello.risultato === 'basso' ? 'var(--brand-600)' : livello.risultato === 'normale' ? '#16a34a' : livello.risultato === 'alto' ? '#dc2626' : '#9ca3af'
         };">${risultatoLabel}</td>
         <td style="padding:9px 12px;border:1px solid #ddd;text-align:center;font-size:18px;">${livello.passato ? '✅' : '☐'}</td>
         <td style="padding:9px 12px;border:1px solid #ddd;color:#555;font-size:12px;">${livello.note || ''}</td>
@@ -200,14 +200,14 @@ function CheckListGlucometro() {
   <title>Controllo Qualità Glucometro — ${dataStr}</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 24px; color: #222; font-size: 13px; }
-    .intestazione { display: flex; align-items: center; gap: 20px; border-bottom: 3px solid #1e4d8c; padding-bottom: 14px; margin-bottom: 18px; }
+    .intestazione { display: flex; align-items: center; gap: 20px; border-bottom: 3px solid var(--brand-700); padding-bottom: 14px; margin-bottom: 18px; }
     .intestazione img { height: 70px; width: auto; }
-    .intestazione .testo h1 { margin: 0; font-size: 18px; color: #1e4d8c; }
+    .intestazione .testo h1 { margin: 0; font-size: 18px; color: var(--brand-700); }
     .intestazione .testo p { margin: 3px 0 0; font-size: 11px; color: #666; }
     .info-box { background: #f5f8fc; border: 1px solid #d0dff0; border-radius: 6px; padding: 10px 16px; margin-bottom: 16px; }
-    .info-box strong { color: #1e4d8c; }
+    .info-box strong { color: var(--brand-700); }
     table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 12px; }
-    th { background: #1e4d8c; color: #fff; padding: 8px 12px; text-align: left; }
+    th { background: var(--brand-700); color: #fff; padding: 8px 12px; text-align: left; }
     td { vertical-align: middle; }
     .esito-box { margin: 16px 0; padding: 12px 16px; border-radius: 6px; font-weight: 700; font-size: 14px; }
     .esito-ok { background: rgba(22,163,74,0.1); border: 2px solid #16a34a; color: #14532d; }
@@ -320,12 +320,12 @@ function CheckListGlucometro() {
   <title>Storico Controlli Glucometro</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 24px; color: #222; font-size: 12px; }
-    .intestazione { display: flex; align-items: center; gap: 20px; border-bottom: 3px solid #1e4d8c; padding-bottom: 14px; margin-bottom: 18px; }
+    .intestazione { display: flex; align-items: center; gap: 20px; border-bottom: 3px solid var(--brand-700); padding-bottom: 14px; margin-bottom: 18px; }
     .intestazione img { height: 60px; width: auto; }
-    .intestazione .testo h1 { margin: 0; font-size: 17px; color: #1e4d8c; }
+    .intestazione .testo h1 { margin: 0; font-size: 17px; color: var(--brand-700); }
     .intestazione .testo p { margin: 3px 0 0; font-size: 11px; color: #666; }
     table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    th { background: #1e4d8c; color: #fff; padding: 8px 10px; text-align: left; }
+    th { background: var(--brand-700); color: #fff; padding: 8px 10px; text-align: left; }
     td { vertical-align: middle; }
     tr:nth-child(even) td { background: #f8fafc; }
     .footer { margin-top: 16px; font-size: 10px; color: #aaa; border-top: 1px solid #eee; padding-top: 6px; }
@@ -385,7 +385,7 @@ function CheckListGlucometro() {
           <button
             type="button"
             onClick={apriForm}
-            style={{ background: '#1e4d8c', fontSize: '1rem', padding: '10px 22px' }}
+            style={{ background: 'var(--brand-700)', fontSize: '1rem', padding: '10px 22px' }}
           >
             ➕ Nuovo controllo glucometro
           </button>
@@ -405,11 +405,11 @@ function CheckListGlucometro() {
       {mostraForm && (
         <div
           className="dashboard-folder"
-          style={{ marginBottom: '32px', border: '2px solid #1e4d8c', borderRadius: '10px', padding: '24px' }}
+          style={{ marginBottom: '32px', border: '2px solid var(--brand-700)', borderRadius: '10px', padding: '24px' }}
         >
           {/* Intestazione form */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ margin: 0, color: '#1e4d8c' }}>
+            <h3 style={{ margin: 0, color: 'var(--brand-700)' }}>
               📝 Nuovo Controllo — {new Date(form.dataControllo).toLocaleDateString('it-IT')}
             </h3>
             <button
@@ -463,7 +463,7 @@ function CheckListGlucometro() {
 
           {/* ─── Tre livelli di controllo ─────────────────────────────────────── */}
           <div style={{ marginBottom: '24px' }}>
-            <h4 style={{ marginBottom: '16px', color: '#1e4d8c' }}>🧪 Test Soluzioni di Controllo</h4>
+            <h4 style={{ marginBottom: '16px', color: 'var(--brand-700)' }}>🧪 Test Soluzioni di Controllo</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {LIVELLI.map((liv) => {
                 const livello = form[liv.key];
@@ -501,7 +501,7 @@ function CheckListGlucometro() {
                             fontWeight: '600',
                             color:
                               livello.risultato === 'basso'
-                                ? '#2563eb'
+                                ? 'var(--brand-600)'
                                 : livello.risultato === 'normale'
                                 ? '#16a34a'
                                 : livello.risultato === 'alto'
@@ -733,14 +733,14 @@ function CheckListGlucometro() {
                         <button
                           type="button"
                           onClick={() => visualizzaChecklist(entry)}
-                          style={{ background: '#3b82f6', fontSize: '0.85rem', padding: '6px 14px' }}
+                          style={{ background: 'var(--brand-500)', fontSize: '0.85rem', padding: '6px 14px' }}
                         >
                           👁️ Visualizza PDF
                         </button>
                         <button
                           type="button"
                           onClick={() => stampaChecklist(entry)}
-                          style={{ background: '#1e4d8c', fontSize: '0.85rem', padding: '6px 14px' }}
+                          style={{ background: 'var(--brand-700)', fontSize: '0.85rem', padding: '6px 14px' }}
                         >
                           🖨️ Stampa PDF
                         </button>
@@ -767,7 +767,7 @@ function CheckListGlucometro() {
                           border: '1px solid #dee2e6',
                         }}
                       >
-                        <strong style={{ color: '#1e4d8c', fontSize: '0.9rem', display: 'block', marginBottom: '10px' }}>
+                        <strong style={{ color: 'var(--brand-700)', fontSize: '0.9rem', display: 'block', marginBottom: '10px' }}>
                           🧪 Dettaglio livelli di controllo
                         </strong>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -798,7 +798,7 @@ function CheckListGlucometro() {
                                     fontWeight: '700',
                                     background:
                                       l.risultato === 'basso'
-                                        ? '#eff6ff'
+                                        ? 'var(--brand-50)'
                                         : l.risultato === 'normale'
                                         ? '#f0fdf4'
                                         : l.risultato === 'alto'
@@ -806,7 +806,7 @@ function CheckListGlucometro() {
                                         : '#f3f4f6',
                                     color:
                                       l.risultato === 'basso'
-                                        ? '#2563eb'
+                                        ? 'var(--brand-600)'
                                         : l.risultato === 'normale'
                                         ? '#16a34a'
                                         : l.risultato === 'alto'
@@ -814,7 +814,7 @@ function CheckListGlucometro() {
                                         : '#9ca3af',
                                     border: `1px solid ${
                                       l.risultato === 'basso'
-                                        ? '#bfdbfe'
+                                        ? 'var(--brand-200)'
                                         : l.risultato === 'normale'
                                         ? '#bbf7d0'
                                         : l.risultato === 'alto'

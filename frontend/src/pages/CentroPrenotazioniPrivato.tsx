@@ -117,9 +117,9 @@ export default function CentroPrenotazioniPrivato() {
   const getStatoBadge = (stato: StatoRichiesta) => {
     const styles: Record<StatoRichiesta, { bg: string; color: string; label: string }> = {
       in_attesa: { bg: '#fef3c7', color: '#92400e', label: '⏳ In attesa' },
-      in_revisione: { bg: '#dbeafe', color: '#1e40af', label: '📝 In revisione' },
+      in_revisione: { bg: 'var(--brand-100)', color: 'var(--brand-700)', label: '📝 In revisione' },
       confermata: { bg: '#d1fae5', color: '#065f46', label: '✅ Confermata' },
-      modificata: { bg: '#e0e7ff', color: '#3730a3', label: '✏️ Modificata' },
+      modificata: { bg: 'var(--brand-100)', color: 'var(--brand-800)', label: '✏️ Modificata' },
       rifiutata: { bg: '#fee2e2', color: '#991b1b', label: '❌ Rifiutata' },
       completata: { bg: '#f3e8ff', color: '#6b21a8', label: '✔️ Completata' }
     };
@@ -182,12 +182,12 @@ export default function CentroPrenotazioniPrivato() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ margin: '0 0 4px', fontSize: '1.5rem', color: '#1e4d8c' }}>📅 Centro Prenotazioni</h1>
+          <h1 style={{ margin: '0 0 4px', fontSize: '1.5rem', color: 'var(--brand-700)' }}>📅 Centro Prenotazioni</h1>
           <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>Richiedi prelievi, esami, prestazioni e assistenza domiciliare</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          style={{ padding: '12px 20px', background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+          style={{ padding: '12px 20px', background: 'var(--brand-700)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
         >
           + Nuova Richiesta
         </button>
@@ -205,7 +205,7 @@ export default function CentroPrenotazioniPrivato() {
               border: 'none',
               cursor: 'pointer',
               fontWeight: 500,
-              background: activeTab === tab ? '#1e4d8c' : '#f1f5f9',
+              background: activeTab === tab ? 'var(--brand-700)' : '#f1f5f9',
               color: activeTab === tab ? 'white' : '#475569'
             }}
           >
@@ -232,7 +232,7 @@ export default function CentroPrenotazioniPrivato() {
             <div key={r._id} style={{ background: 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: r.stato === 'confermata' ? '4px solid #16a34a' : r.stato === 'rifiutata' ? '4px solid #dc2626' : '4px solid #f59e0b' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
-                  <div style={{ fontWeight: 600, color: '#1e4d8c', marginBottom: '4px' }}>
+                  <div style={{ fontWeight: 600, color: 'var(--brand-700)', marginBottom: '4px' }}>
                     {getTipoIcon(r.tipoServizio)}
                     {r.tipoSpecifico && <span style={{ color: '#666', fontWeight: 400 }}> — {r.tipoSpecifico}</span>}
                   </div>
@@ -291,7 +291,7 @@ export default function CentroPrenotazioniPrivato() {
                 )}
 
                 {r.noteAdmin && (
-                  <div style={{ marginTop: '8px', background: r.stato === 'rifiutata' ? '#fef2f2' : '#eff6ff', padding: '8px 12px', borderRadius: '6px', fontSize: '0.85rem', borderLeft: `3px solid ${r.stato === 'rifiutata' ? '#dc2626' : '#3b82f6'}` }}>
+                  <div style={{ marginTop: '8px', background: r.stato === 'rifiutata' ? '#fef2f2' : 'var(--brand-50)', padding: '8px 12px', borderRadius: '6px', fontSize: '0.85rem', borderLeft: `3px solid ${r.stato === 'rifiutata' ? '#dc2626' : 'var(--brand-500)'}` }}>
                     <strong>{r.stato === 'rifiutata' ? 'Motivo rifiuto:' : 'Note admin:'}</strong> {r.noteAdmin}
                   </div>
                 )}
@@ -306,7 +306,7 @@ export default function CentroPrenotazioniPrivato() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'white', borderRadius: '16px', padding: '24px', maxWidth: '600px', width: '100%', maxHeight: '90vh', overflow: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ margin: 0, color: '#1e4d8c' }}>📋 Nuova Richiesta</h2>
+              <h2 style={{ margin: 0, color: 'var(--brand-700)' }}>📋 Nuova Richiesta</h2>
               <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#666' }}>×</button>
             </div>
 
@@ -482,7 +482,7 @@ export default function CentroPrenotazioniPrivato() {
                 <button
                   type="submit"
                   disabled={saving}
-                  style={{ flex: 1, padding: '14px', background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}
+                  style={{ flex: 1, padding: '14px', background: 'var(--brand-700)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}
                 >
                   {saving ? '⏳ Invio...' : '📤 Invia Richiesta'}
                 </button>

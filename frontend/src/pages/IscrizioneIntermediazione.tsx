@@ -42,7 +42,7 @@ const input: React.CSSProperties = {
 };
 const label: React.CSSProperties = { display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#475569', marginBottom: '4px' };
 const card: React.CSSProperties = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '18px', marginBottom: '14px' };
-const cardTitle: React.CSSProperties = { margin: '0 0 12px', fontSize: '1rem', fontWeight: 800, color: '#1e3a5f' };
+const cardTitle: React.CSSProperties = { margin: '0 0 12px', fontSize: '1rem', fontWeight: 800, color: 'var(--nav-900)' };
 
 function Dettatura({ onTesto }: { onTesto: (t: string) => void }) {
   const [ascolto, setAscolto] = useState(false);
@@ -199,13 +199,13 @@ export default function IscrizioneIntermediazione() {
       <div style={{ minHeight: '100vh', background: '#f0f6ff', fontFamily: 'system-ui, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
         <div style={{ ...card, maxWidth: '480px', textAlign: 'center', padding: '36px 24px' }}>
           <CheckCircle size={56} color="#16a34a" style={{ margin: '0 auto 12px' }} />
-          <h1 style={{ color: '#1e3a5f', fontSize: '1.4rem', margin: '0 0 8px' }}>Iscrizione inviata!</h1>
+          <h1 style={{ color: 'var(--nav-900)', fontSize: '1.4rem', margin: '0 0 8px' }}>Iscrizione inviata!</h1>
           <p style={{ color: '#475569', lineHeight: 1.6, margin: '0 0 18px' }}>
             Grazie <strong>{nome}</strong>. La tua candidatura come <strong>{RUOLO_LABEL[ruolo] || ruolo}</strong> è in attesa di valutazione.
             Ti ricontatteremo al più presto{telefono ? ` al numero ${telefono}` : ''}.
           </p>
           <p style={{ color: '#64748b', fontSize: '0.85rem' }}>
-            Per informazioni: <a href={`tel:${TELEFONO}`} style={{ color: '#1e4d8c', fontWeight: 700 }}>{TELEFONO_LABEL}</a> · WhatsApp <a href={`https://wa.me/${WHATSAPP}`} style={{ color: '#16a34a', fontWeight: 700 }}>351 4175117</a>
+            Per informazioni: <a href={`tel:${TELEFONO}`} style={{ color: 'var(--brand-700)', fontWeight: 700 }}>{TELEFONO_LABEL}</a> · WhatsApp <a href={`https://wa.me/${WHATSAPP}`} style={{ color: '#16a34a', fontWeight: 700 }}>351 4175117</a>
           </p>
         </div>
       </div>
@@ -226,7 +226,7 @@ export default function IscrizioneIntermediazione() {
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', background: '#f6f9ff', border: '1px solid #dfe9fb', borderRadius: '10px', padding: '5px 10px' }}>
             <span style={{ fontSize: '0.62rem', color: '#64748b', lineHeight: 1.25, textAlign: 'right' }}>
-              in collaborazione con<br /><strong style={{ color: '#1e40af', fontSize: '0.68rem' }}>Salus Group</strong>
+              in collaborazione con<br /><strong style={{ color: 'var(--brand-700)', fontSize: '0.68rem' }}>Salus Group</strong>
             </span>
             <img src="/images/logo-salus.png" alt="Salus Group" style={{ height: '30px', width: 'auto', display: 'block' }} />
           </div>
@@ -335,7 +335,7 @@ export default function IscrizioneIntermediazione() {
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {([['ore', '⏰ Giorno ad ore'], ['convivenza', '🏠 Convivenza (abiti dalla famiglia)']] as const).map(([v, l]) => (
                 <button key={v} type="button" onClick={() => setTipoLavoro(v)}
-                  style={{ flex: 1, minWidth: '150px', padding: '12px', borderRadius: '10px', border: `2px solid ${tipoLavoro === v ? '#1e4d8c' : '#e2e8f0'}`, background: tipoLavoro === v ? '#eff6ff' : '#fff', color: tipoLavoro === v ? '#1e4d8c' : '#475569', fontWeight: 700, fontSize: '0.92rem', cursor: 'pointer' }}>
+                  style={{ flex: 1, minWidth: '150px', padding: '12px', borderRadius: '10px', border: `2px solid ${tipoLavoro === v ? 'var(--brand-700)' : '#e2e8f0'}`, background: tipoLavoro === v ? 'var(--brand-50)' : '#fff', color: tipoLavoro === v ? 'var(--brand-700)' : '#475569', fontWeight: 700, fontSize: '0.92rem', cursor: 'pointer' }}>
                   {l}
                 </button>
               ))}
@@ -347,7 +347,7 @@ export default function IscrizioneIntermediazione() {
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {[['diurno', '☀️ Diurno'], ['notturno', '🌙 Solo notturno'], ['h24', '🕐 Disponibile h24']].map(([v, l]) => (
                   <button key={v} type="button" onClick={() => setDisponibilita(disponibilita === v ? '' : v)}
-                    style={{ flex: 1, minWidth: '110px', padding: '10px', borderRadius: '10px', border: `2px solid ${disponibilita === v ? '#1e4d8c' : '#e2e8f0'}`, background: disponibilita === v ? '#eff6ff' : '#fff', color: disponibilita === v ? '#1e4d8c' : '#475569', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer' }}>
+                    style={{ flex: 1, minWidth: '110px', padding: '10px', borderRadius: '10px', border: `2px solid ${disponibilita === v ? 'var(--brand-700)' : '#e2e8f0'}`, background: disponibilita === v ? 'var(--brand-50)' : '#fff', color: disponibilita === v ? 'var(--brand-700)' : '#475569', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer' }}>
                     {l}
                   </button>
                 ))}
@@ -395,7 +395,7 @@ export default function IscrizioneIntermediazione() {
             onChange={e => setDocumento(e.target.files?.[0] || null)} />
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button type="button" onClick={() => fotoRef.current?.click()}
-              style={{ flex: 1, minWidth: '130px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: '10px', border: '2px dashed #93c5fd', background: '#eff6ff', color: '#1e4d8c', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}>
+              style={{ flex: 1, minWidth: '130px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: '10px', border: '2px dashed var(--brand-300)', background: 'var(--brand-50)', color: 'var(--brand-700)', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}>
               <Camera size={18} /> Scatta foto
             </button>
             <button type="button" onClick={() => fileRef.current?.click()}
@@ -411,7 +411,7 @@ export default function IscrizioneIntermediazione() {
         </div>
 
         <button type="button" onClick={invia} disabled={busy}
-          style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', background: busy ? '#94a3b8' : '#1e4d8c', color: '#fff', fontWeight: 800, fontSize: '1.1rem', cursor: busy ? 'default' : 'pointer' }}>
+          style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', background: busy ? '#94a3b8' : 'var(--brand-700)', color: '#fff', fontWeight: 800, fontSize: '1.1rem', cursor: busy ? 'default' : 'pointer' }}>
           {busy ? 'Invio in corso…' : '📨 Invia la mia iscrizione'}
         </button>
 

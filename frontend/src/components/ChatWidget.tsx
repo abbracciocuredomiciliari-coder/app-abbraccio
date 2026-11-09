@@ -168,9 +168,9 @@ export function ChatWidget({ scope, patientId, title, height = 360 }: ChatWidget
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', background: '#fff', height }}>
-      <div style={{ padding: '10px 14px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontWeight: 600, color: '#1e4d8c', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+      <div style={{ padding: '10px 14px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontWeight: 600, color: 'var(--brand-700)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
         <span>{title || (scope === 'patient' ? 'Chat paziente' : 'Chat generale')}</span>
-        <button type="button" onClick={esportaPdf} style={{ border: '1px solid #93c5fd', borderRadius: '6px', background: '#eff6ff', color: '#1d4ed8', cursor: 'pointer', padding: '5px 8px', fontSize: '.75rem', fontWeight: 700 }}>📄 Esporta PDF</button>
+        <button type="button" onClick={esportaPdf} style={{ border: '1px solid var(--brand-300)', borderRadius: '6px', background: 'var(--brand-50)', color: '#1d4ed8', cursor: 'pointer', padding: '5px 8px', fontSize: '.75rem', fontWeight: 700 }}>📄 Esporta PDF</button>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px', background: '#f1f5f9' }}>

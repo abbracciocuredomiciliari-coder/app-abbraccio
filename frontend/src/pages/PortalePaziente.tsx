@@ -14,15 +14,15 @@ const MESI = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','
 const GIORNI_SETT = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
 
 const TIPI_SERVIZIO = [
-  { value: 'visita_specialistica', label: '🩺 Visita Specialistica', color: '#2563eb', bg: '#dbeafe', Icon: HeartPulse,
+  { value: 'visita_specialistica', label: '🩺 Visita Specialistica', color: 'var(--brand-600)', bg: 'var(--brand-100)', Icon: HeartPulse,
     tipi: ['Cardiologo','Geriatra','Urologo','Endocrinologo','Otorinolaringoiatra','Fisiatra','Oncologo','Angiologo','Neurologo','Broncopneumologo','Nutrizionista','Psicologa','Altro specialista'] },
-  { value: 'medico', label: '👨‍⚕️ Visita Medica', color: '#1d4ed8', bg: '#dbeafe', Icon: HeartPulse,
+  { value: 'medico', label: '👨‍⚕️ Visita Medica', color: '#1d4ed8', bg: 'var(--brand-100)', Icon: HeartPulse,
     tipi: ['Visita generale','Visita specialistica','Consulenza geriatrica','Valutazione clinica','Prescrizione terapia','Altro'] },
   { value: 'esame_strumentale', label: '🔬 Esame Strumentale', color: '#7c3aed', bg: '#ede9fe', Icon: HeartPulse,
     tipi: ['ECG','Holter ECG','Holter pressorio','Ecografia','RX domiciliare','Spirometria','Saturimetria','EGA','Polisonnografia','Ecocardiogramma','Screening cardiaco','Glicemia capillare','Titolazione CPAP','Altro'] },
   { value: 'prelievo', label: '💉 Prelievo', color: '#dc2626', bg: '#fee2e2', Icon: Syringe,
     tipi: ['Emocromo completo','Glicemia','Coagulazione (PT/INR/aPTT)','Elettroliti','Funzionalità epatica','Funzionalità renale','Profilo lipidico','Ormoni tiroidei (TSH/fT4)','PCR / VES','Esame urine','Emogasanalisi','Altro'] },
-  { value: 'prestazione', label: '🏥 Prestazione Infermieristica', color: '#0369a1', bg: '#eff6ff', Icon: Activity,
+  { value: 'prestazione', label: '🏥 Prestazione Infermieristica', color: '#0369a1', bg: 'var(--brand-50)', Icon: Activity,
     tipi: ['Medicazione','Somministrazione farmaci','Misurazione parametri vitali','Cateterismo','Gestione stomia','Prelievo arterioso','Altro'] },
   { value: 'assistenza', label: '🤲 Assistenza Domiciliare', color: '#b45309', bg: '#fef3c7', Icon: HeartPulse,
     tipi: ['Assistenza anziani','Assistenza notturna','Cure palliative','Assistenza pazienti cronici','Igiene personale','Compagnia e vigilanza','Aiuto domestico','Altro'] },
@@ -44,7 +44,7 @@ const PRIORITA = [
 
 const STATO_COLORS: Record<string, { bg: string; color: string; label: string }> = {
   in_attesa:   { bg: '#fff7ed', color: '#c2410c', label: '⏳ In attesa' },
-  in_revisione:{ bg: '#eff6ff', color: '#1d4ed8', label: '🔍 In revisione' },
+  in_revisione:{ bg: 'var(--brand-50)', color: '#1d4ed8', label: '🔍 In revisione' },
   confermata:  { bg: '#f0fdf4', color: '#15803d', label: '✅ Confermata' },
   rifiutata:   { bg: '#fef2f2', color: '#dc2626', label: '❌ Rifiutata' },
 };
@@ -71,7 +71,7 @@ function CalendarioMese({ year, month, onPrev, onNext, selectedDate, onSelectDat
     <div style={{ background: 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', marginBottom: '16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
         <button onClick={onPrev} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: '6px' }}><ChevronLeft size={18} /></button>
-        <span style={{ fontWeight: '700', fontSize: '1rem', color: '#1e3a5f' }}>{MESI[month]} {year}</span>
+        <span style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--nav-900)' }}>{MESI[month]} {year}</span>
         <button onClick={onNext} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: '6px' }}><ChevronRight size={18} /></button>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '2px', textAlign: 'center' }}>
@@ -84,8 +84,8 @@ function CalendarioMese({ year, month, onPrev, onNext, selectedDate, onSelectDat
           return (
             <div key={iso} onClick={() => !isPast && onSelectDate(iso)}
               style={{ padding: '6px 2px', borderRadius: '8px', cursor: isPast ? 'default' : 'pointer', position: 'relative',
-                background: isSel ? '#1e3a5f' : isToday ? '#eff6ff' : 'transparent',
-                color: isSel ? 'white' : isPast ? '#d1d5db' : isToday ? '#1e40af' : '#374151',
+                background: isSel ? 'var(--nav-900)' : isToday ? 'var(--brand-50)' : 'transparent',
+                color: isSel ? 'white' : isPast ? '#d1d5db' : isToday ? 'var(--brand-700)' : '#374151',
                 fontWeight: isSel || isToday ? '700' : '400', fontSize: '0.85rem' }}>
               {d}
               {hasDot && <span style={{ position: 'absolute', bottom: '2px', left: '50%', transform: 'translateX(-50%)', width: '4px', height: '4px', borderRadius: '50%', background: isSel ? 'white' : '#0284c7' }} />}
@@ -168,7 +168,7 @@ export default function PortalePaziente() {
   return (
     <div style={{ padding: '20px', maxWidth: '700px', margin: '0 auto' }}>
       <div style={{ marginBottom: '20px' }}>
-        <h1 style={{ margin: '0 0 4px', fontSize: '1.4rem', color: '#1e3a5f' }}>🏥 Portale Prenotazioni</h1>
+        <h1 style={{ margin: '0 0 4px', fontSize: '1.4rem', color: 'var(--nav-900)' }}>🏥 Portale Prenotazioni</h1>
         <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>Benvenuto/a <strong>{user?.name}</strong> — prenota un servizio a domicilio</p>
       </div>
 
@@ -184,10 +184,10 @@ export default function PortalePaziente() {
       </button>
 
       <div style={{ display: 'flex', gap: '4px', background: '#f1f5f9', borderRadius: '12px', padding: '4px', marginBottom: '20px' }}>
-        <button onClick={() => setTab('nuova')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem', background: tab === 'nuova' ? 'white' : 'transparent', color: tab === 'nuova' ? '#1e3a5f' : '#6b7280', boxShadow: tab === 'nuova' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+        <button onClick={() => setTab('nuova')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem', background: tab === 'nuova' ? 'white' : 'transparent', color: tab === 'nuova' ? 'var(--nav-900)' : '#6b7280', boxShadow: tab === 'nuova' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
           <Plus size={16} /> Nuova Prenotazione
         </button>
-        <button onClick={() => setTab('mie')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem', background: tab === 'mie' ? 'white' : 'transparent', color: tab === 'mie' ? '#1e3a5f' : '#6b7280', boxShadow: tab === 'mie' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+        <button onClick={() => setTab('mie')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem', background: tab === 'mie' ? 'white' : 'transparent', color: tab === 'mie' ? 'var(--nav-900)' : '#6b7280', boxShadow: tab === 'mie' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
           <Calendar size={16} /> Le mie Prenotazioni
         </button>
       </div>
@@ -229,7 +229,7 @@ export default function PortalePaziente() {
             <CalendarioMese year={calYear} month={calMonth} onPrev={prevMonth} onNext={nextMonth}
               selectedDate={selectedDate} onSelectDate={setSelectedDate} daysWithDots={new Set()} />
             {selectedDate ? (
-              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '10px 14px', color: '#1d4ed8', fontWeight: '600', fontSize: '0.9rem' }}>
+              <div style={{ background: 'var(--brand-50)', border: '1px solid var(--brand-200)', borderRadius: '8px', padding: '10px 14px', color: '#1d4ed8', fontWeight: '600', fontSize: '0.9rem' }}>
                 📅 Data selezionata: {new Date(selectedDate + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </div>
             ) : (
@@ -284,7 +284,7 @@ export default function PortalePaziente() {
           </div>
 
           <button type="submit" disabled={sending}
-            style={{ width: '100%', padding: '14px', background: '#1e3a5f', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '1rem', cursor: sending ? 'not-allowed' : 'pointer', opacity: sending ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            style={{ width: '100%', padding: '14px', background: 'var(--nav-900)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '1rem', cursor: sending ? 'not-allowed' : 'pointer', opacity: sending ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             {sending ? <><RefreshCw size={18} style={{ animation: 'spin 1s linear infinite' }} /> Invio in corso...</> : <><Plus size={18} /> Invia Richiesta di Prenotazione</>}
           </button>
         </form>
@@ -322,7 +322,7 @@ export default function PortalePaziente() {
                           <span><Calendar size={12} style={{ display: 'inline', marginRight: '3px' }} />{new Date(r.dataPreferita).toLocaleDateString('it-IT')}{r.orarioPreferito ? ` · ${r.orarioPreferito}` : ''}</span>
                           {r.dataConfermata && <span style={{ color: '#15803d', fontWeight: '600' }}>✅ Confermata: {new Date(r.dataConfermata).toLocaleDateString('it-IT')}{r.orarioConfermato ? ` · ${r.orarioConfermato}` : ''}</span>}
                         </div>
-                        {r.noteAdmin && <div style={{ marginTop: '6px', background: r.stato === 'rifiutata' ? '#fef2f2' : '#eff6ff', borderRadius: '6px', padding: '6px 10px', fontSize: '0.82rem', color: r.stato === 'rifiutata' ? '#dc2626' : '#1d4ed8' }}>💬 {r.noteAdmin}</div>}
+                        {r.noteAdmin && <div style={{ marginTop: '6px', background: r.stato === 'rifiutata' ? '#fef2f2' : 'var(--brand-50)', borderRadius: '6px', padding: '6px 10px', fontSize: '0.82rem', color: r.stato === 'rifiutata' ? '#dc2626' : '#1d4ed8' }}>💬 {r.noteAdmin}</div>}
                       </div>
                       <span style={{ background: stato.bg, color: stato.color, borderRadius: '10px', padding: '4px 10px', fontSize: '0.78rem', fontWeight: '700', flexShrink: 0 }}>{stato.label}</span>
                     </div>

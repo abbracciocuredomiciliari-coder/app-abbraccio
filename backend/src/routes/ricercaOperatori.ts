@@ -16,6 +16,49 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+// ═══ GET /api/ricerca-operatori/senza-posizione — elenco da completare ══════
+// Gli operatori senza domicilio di partenza geocodificato: restano ricercabili
+// per nome/qualifica, ma serve un elenco per completare le posizioni.
+router.get('/senza-posizione', authenticateToken, authorizeRole('admin', 'coordinator', 'direttore'), async (_req: Request, res: Response) => {
+  try {
+    const staff = await Staff.find({
+      active: true,
+      $or: [
+        { domicilioCoords: { $exists: false } },
+        { 'domicilioCoords.lat': { $in: [null, 0] } },
+        { 'domicilioCoords.lng': { $in: [null, 0] } },
+      ],
+    }).select('firstName lastName category role domicilioPartenza cittaResidenza modalitaAbilitata').sort({ lastName: 1 }).limit(500).lean();
+    return res.json({
+      totale: staff.length,
+      operatori: staff.map((s: any) => ({
+        _id: s._id,
+        nome: `${s.firstName} ${s.lastName}`,
+        qualifica: s.category,
+        ruolo: s.role,
+        zonaDichiarata: s.domicilioPartenza || s.cittaResidenza || '',
+        modalitaAbilitata: s.modalitaAbilitata,
+      })),
+    });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore elenco posizioni mancanti', error: error.message });
+  }
+});
+
+// Fascia oraria dichiarata → copertura indicativa del giorno.
+// Restituisce solo la COERENZA con la disponibilità dichiarata: la disponibilità
+// reale su una data specifica non è tracciata, quindi va sempre confermata.
+function fasciaCoperta(disponibilita: string | null, oraInizio?: number, oraFine?: number): 'compatibile' | 'non_compatibile' | 'non_verificata' {
+  if (!disponibilita) return 'non_verificata';
+  if (oraInizio === undefined || oraFine === undefined) return 'non_verificata';
+  if (disponibilita === 'h24') return 'compatibile';
+  const diurno = oraInizio >= 7 * 60 && oraFine <= 20 * 60;            // 07:00–20:00
+  const notturno = oraInizio >= 20 * 60 || oraFine <= 7 * 60;          // 20:00–07:00
+  if (disponibilita === 'diurno') return diurno ? 'compatibile' : 'non_compatibile';
+  if (disponibilita === 'notturno') return notturno ? 'compatibile' : 'non_compatibile';
+  return 'non_verificata';
+}
+
 // ═══ GET /api/ricerca-operatori — motore di ricerca operatori UNIFICATO ══════
 // Accessibile da tutte le aree. Filtri: qualifica, area, zona testo o geo,
 // disponibilità, tipo lavoro, ricerca libera.
@@ -24,6 +67,11 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 router.get('/', authenticateToken, authorizeRole('admin', 'coordinator', 'direttore'), async (req: Request, res: Response) => {
   try {
     const { qualifica, area, zona, disponibilita, tipoLavoro, q } = req.query;
+    const dataRichiesta = String(req.query.data || '');
+    const hhmm = (v: any) => { const m = String(v || '').match(/^(\d{1,2}):(\d{2})$/); return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : undefined; };
+    const oraInizio = hhmm(req.query.oraInizio);
+    const oraFine = hhmm(req.query.oraFine);
+    const richiestaOrario = !!dataRichiesta && oraInizio !== undefined && oraFine !== undefined;
     const lat = parseFloat(String(req.query.lat || ''));
     const lng = parseFloat(String(req.query.lng || ''));
     const raggioKm = parseFloat(String(req.query.raggioKm || ''));
@@ -109,6 +157,9 @@ router.get('/', authenticateToken, authorizeRole('admin', 'coordinator', 'dirett
         tipoLavoro: o.tipoLavoro || null,
         residenzaPressoFamiglia: !!o.residenzaPressoFamiglia,
         professionista: !!o.professionista,
+        // Disponibilità sulla fascia richiesta: coerenza con quanto DICHIARATO.
+        // Mai presentata come confermata: va sempre verificata con l'operatore.
+        disponibilitaStato: richiestaOrario ? fasciaCoperta(o.disponibilita || null, oraInizio, oraFine) : (o.disponibilita ? 'non_verificata' : 'non_verificata'),
       };
     });
 
@@ -122,7 +173,7 @@ router.get('/', authenticateToken, authorizeRole('admin', 'coordinator', 'dirett
       risultati.sort((a, b) => (a.coordinateMancanti === b.coordinateMancanti ? a.nome.localeCompare(b.nome) : a.coordinateMancanti ? 1 : -1));
     }
 
-    return res.json({ risultati, senzaZonaEsclusi, geoAttivo });
+    return res.json({ risultati, senzaZonaEsclusi, geoAttivo, richiestaOrario });
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore nella ricerca operatori', error: error.message });
   }

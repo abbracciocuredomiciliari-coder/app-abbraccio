@@ -291,8 +291,8 @@ export default function PianificazionePrelievi() {
     const dataLabel = new Date(p.dataPrelievo + (p.dataPrelievo.includes('T') ? '' : 'T12:00:00'))
       .toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     const tipoLabel = p.tipoGestione === 'convenzione' ? 'Convenzione SIAT' : 'Gestione Privata';
-    const colore = p.tipoGestione === 'convenzione' ? '#1e40af' : '#166534';
-    const bgColore = p.tipoGestione === 'convenzione' ? '#dbeafe' : '#dcfce7';
+    const colore = p.tipoGestione === 'convenzione' ? 'var(--brand-700)' : '#166534';
+    const bgColore = p.tipoGestione === 'convenzione' ? 'var(--brand-100)' : '#dcfce7';
 
     const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">
       <title>Prelievo — ${p.patient.firstName} ${p.patient.lastName}</title>
@@ -326,7 +326,7 @@ export default function PianificazionePrelievi() {
         <tr><th>Tipi prelievo</th><td colspan="3">${p.tipoPrelievo ? (Array.isArray(p.tipoPrelievo) ? p.tipoPrelievo.join(', ') : p.tipoPrelievo) : 'N/D'}</td></tr>
         ${p.note ? `<tr><th>Note</th><td colspan="3">${p.note}</td></tr>` : ''}
         <tr><th>Stato</th><td colspan="3">
-          <span class="badge" style="background:${p.status === 'eseguito' ? '#dcfce7' : '#dbeafe'};color:${p.status === 'eseguito' ? '#166534' : '#1e40af'};">
+          <span class="badge" style="background:${p.status === 'eseguito' ? '#dcfce7' : 'var(--brand-100)'};color:${p.status === 'eseguito' ? '#166534' : 'var(--brand-700)'};">
             ${p.status === 'eseguito' ? '✓ Eseguito' : p.status === 'annullato' ? '✗ Annullato' : '● Pianificato'}
           </span>
           ${p.dataEsecuzione ? '<br/><span style="font-size:0.8rem;color:#64748b;">il ' + new Date(p.dataEsecuzione).toLocaleString('it-IT') + (p.eseguitoDa ? ' da ' + p.eseguitoDa : '') + '</span>' : ''}
@@ -419,7 +419,7 @@ export default function PianificazionePrelievi() {
                 </td>
                 <td style="padding:10px;border:1px solid #e2e8f0;">${p.tipoPrelievo}${p.note ? `<div style="font-size:0.75rem;color:#64748b;margin-top:2px;">${p.note}</div>` : ''}</td>
                 <td style="padding:10px;border:1px solid #e2e8f0;text-align:center;">
-                  <span style="font-size:0.75rem;font-weight:700;padding:2px 6px;border-radius:4px;background:${p.status === 'eseguito' ? '#dcfce7' : '#dbeafe'};color:${p.status === 'eseguito' ? '#166534' : '#1e40af'};">
+                  <span style="font-size:0.75rem;font-weight:700;padding:2px 6px;border-radius:4px;background:${p.status === 'eseguito' ? '#dcfce7' : 'var(--brand-100)'};color:${p.status === 'eseguito' ? '#166534' : 'var(--brand-700)'};">
                     ${p.status === 'eseguito' ? '✓ Eseguito' : 'Pianificato'}
                   </span>
                 </td>
@@ -465,7 +465,7 @@ export default function PianificazionePrelievi() {
         <div>
           <h1>📋 Foglio Prelievi Giornaliero — Firma e Controfirma</h1>
           <div style="font-size:0.9rem;color:#475569;margin-top:4px;">${dataLabel}</div>
-          <div style="font-size:0.8rem;margin-top:4px;display:inline-block;padding:2px 10px;border-radius:4px;background:${isConvenzione ? '#dbeafe' : '#dcfce7'};color:${isConvenzione ? '#1e40af' : '#166534'};font-weight:700;">${tipoLabel}</div>
+          <div style="font-size:0.8rem;margin-top:4px;display:inline-block;padding:2px 10px;border-radius:4px;background:${isConvenzione ? 'var(--brand-100)' : '#dcfce7'};color:${isConvenzione ? 'var(--brand-700)' : '#166534'};font-weight:700;">${tipoLabel}</div>
         </div>
         <div style="text-align:right;font-size:0.8rem;color:#64748b;">
           Totale prelievi: <strong>${prelieviGiornoSelezionato.length}</strong><br/>
@@ -497,9 +497,9 @@ export default function PianificazionePrelievi() {
   // ─── UI ────────────────────────────────────────────────────────────────────
   if (loading) return <section><p>Caricamento...</p></section>;
 
-  const coloreModalita = isConvenzione ? '#0369a1' : '#1e4d8c';
+  const coloreModalita = isConvenzione ? '#0369a1' : 'var(--brand-700)';
   const badgeModalita = isConvenzione
-    ? <span style={{ background: '#eff6ff', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: '6px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 700 }}><Building2 size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />Convenzione SIAT</span>
+    ? <span style={{ background: 'var(--brand-50)', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: '6px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 700 }}><Building2 size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />Convenzione SIAT</span>
     : <span style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 700 }}>👤 Privati</span>;
 
   return (
@@ -637,7 +637,7 @@ export default function PianificazionePrelievi() {
                         {p.patient.firstName} {p.patient.lastName}
                         <span style={{
                           padding: '2px 8px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700,
-                          background: p.status === 'eseguito' ? '#f0fdf4' : p.status === 'annullato' ? '#fef2f2' : '#eff6ff',
+                          background: p.status === 'eseguito' ? '#f0fdf4' : p.status === 'annullato' ? '#fef2f2' : 'var(--brand-50)',
                           color: p.status === 'eseguito' ? '#059669' : p.status === 'annullato' ? '#dc2626' : coloreModalita,
                         }}>
                           {p.status === 'eseguito' ? '✅ Eseguito' : p.status === 'annullato' ? '❌ Annullato' : '🔵 Pianificato'}
@@ -650,7 +650,7 @@ export default function PianificazionePrelievi() {
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
                       <button
                         onClick={(e) => { e.stopPropagation(); apriPdfPrelievo(p); }}
-                        style={{ background: '#eff6ff', border: '1px solid #bae6fd', borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 700 }}
+                        style={{ background: 'var(--brand-50)', border: '1px solid #bae6fd', borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', fontWeight: 700 }}
                         title="Visualizza/Stampa PDF"
                       ><Printer size={13} />PDF</button>
                       <button

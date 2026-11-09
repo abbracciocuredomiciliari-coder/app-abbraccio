@@ -120,14 +120,14 @@ export default function AbbraccinoInterno() {
 
       {!open && (
         <div style={{ position: 'fixed', right: 14, bottom: 6, zIndex: 9990, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-          <button onClick={() => setOpen(true)} style={{ background: '#fff', color: '#1e4d8c', border: '1.5px solid #dbeafe', borderRadius: 999, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 800, boxShadow: '0 3px 10px rgba(0,0,0,.10)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          <button onClick={() => setOpen(true)} style={{ background: '#fff', color: '#1c7164', border: '1.5px solid #d9ebe4', borderRadius: 999, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 800, boxShadow: '0 3px 10px rgba(0,0,0,.10)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
             Sono Abbraccino 💛
           </button>
           <button onClick={() => setOpen(true)} aria-label="Chiedi ad Abbraccino" className="ab-int-fab"
             style={{ width: 62, height: 62, borderRadius: '50%', border: 'none', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 5, boxSizing: 'border-box' }}>
             <CuoricinoIcon size={50} />
           </button>
-          <button onClick={() => setOpen(true)} style={{ background: 'linear-gradient(135deg,#1e3a5f,#1e4d8c)', color: '#fff', border: 'none', borderRadius: 999, padding: '5px 14px', fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          <button onClick={() => setOpen(true)} style={{ background: 'linear-gradient(135deg,var(--nav-900),var(--brand-700))', color: '#fff', border: 'none', borderRadius: 999, padding: '5px 14px', fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
             Chiedimi un aiutino
           </button>
         </div>
@@ -135,14 +135,14 @@ export default function AbbraccinoInterno() {
 
       {open && (
         <button onClick={() => setOpen(false)} aria-label="Chiudi" className="ab-close-fab"
-          style={{ position: 'fixed', bottom: 18, right: 18, width: 62, height: 62, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#1e3a5f,#1e4d8c)', color: '#fff', cursor: 'pointer', boxShadow: '0 6px 22px rgba(30,77,140,.4)', zIndex: 9990, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          style={{ position: 'fixed', bottom: 18, right: 18, width: 62, height: 62, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,var(--nav-900),var(--brand-700))', color: '#fff', cursor: 'pointer', boxShadow: '0 6px 22px rgba(28,113,100,.4)', zIndex: 9990, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <X size={26} />
         </button>
       )}
 
       {open && (
-        <div className="ab-chat-panel" style={{ position: 'fixed', bottom: 90, right: 14, width: 'min(370px, calc(100vw - 28px))', maxHeight: '72vh', background: '#fff', borderRadius: 18, boxShadow: '0 10px 40px rgba(0,0,0,.22)', zIndex: 9990, display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #dbeafe', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
-          <div style={{ background: 'linear-gradient(135deg,#1e3a5f,#1e4d8c)', color: '#fff', padding: '12px 16px', fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="ab-chat-panel" style={{ position: 'fixed', bottom: 90, right: 14, width: 'min(370px, calc(100vw - 28px))', maxHeight: '72vh', background: '#fff', borderRadius: 18, boxShadow: '0 10px 40px rgba(0,0,0,.22)', zIndex: 9990, display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid var(--brand-100)', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
+          <div style={{ background: 'linear-gradient(135deg,var(--nav-900),var(--brand-700))', color: '#fff', padding: '12px 16px', fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 8 }}>
             <CuoricinoIcon size={26} /> Abbraccino — guida del gestionale
             <button onClick={pulisci} title="Pulisci la conversazione"
               style={{ marginLeft: 'auto', background: 'rgba(255,255,255,.15)', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, padding: '5px 9px', fontSize: '0.72rem', fontWeight: 700 }}>
@@ -156,7 +156,7 @@ export default function AbbraccinoInterno() {
           <div className="ab-chat-msgs" style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8, minHeight: 220, maxHeight: '50vh' }}>
             {msgs.map((m, i) => (
               <div key={i} style={{ alignSelf: m.who === 'io' ? 'flex-end' : 'flex-start', maxWidth: '88%' }}>
-                <div style={{ background: m.who === 'io' ? '#1e4d8c' : '#f1f5f9', color: m.who === 'io' ? '#fff' : '#1e293b', borderRadius: 14, padding: '9px 12px', fontSize: '0.85rem', lineHeight: 1.45, whiteSpace: 'pre-wrap' }}>
+                <div style={{ background: m.who === 'io' ? 'var(--brand-700)' : '#f1f5f9', color: m.who === 'io' ? '#fff' : '#1e293b', borderRadius: 14, padding: '9px 12px', fontSize: '0.85rem', lineHeight: 1.45, whiteSpace: 'pre-wrap' }}>
                   {m.text}
                 </div>
                 {m.calcolo && (
@@ -183,7 +183,7 @@ export default function AbbraccinoInterno() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 6 }}>
                     {m.azioni.map((a, j) => (
                       <button key={j} onClick={() => { setOpen(false); navigate(a.url); }}
-                        style={{ textAlign: 'left', background: '#fff', border: '1.5px solid #1e4d8c', color: '#1e4d8c', borderRadius: 12, padding: '8px 12px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 6px rgba(30,77,140,.12)' }}>
+                        style={{ textAlign: 'left', background: '#fff', border: '1.5px solid var(--brand-700)', color: 'var(--brand-700)', borderRadius: 12, padding: '8px 12px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 6px rgba(28,113,100,.12)' }}>
                         {a.label} →
                       </button>
                     ))}
@@ -204,7 +204,7 @@ export default function AbbraccinoInterno() {
               </button>
             )}
             <button type="submit" disabled={busy || !input.trim()}
-              style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: '#1e4d8c', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: 'var(--brand-700)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Send size={16} />
             </button>
           </form>

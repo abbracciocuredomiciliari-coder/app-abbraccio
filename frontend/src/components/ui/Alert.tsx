@@ -38,8 +38,8 @@ export function Alert({
       icon: <AlertCircle size={20} />,
     },
     info: {
-      background: '#eff6ff',
-      border: '1px solid #bfdbfe',
+      background: 'var(--brand-50)',
+      border: '1px solid var(--brand-200)',
       color: '#0369a1',
       icon: <Info size={20} />,
     },

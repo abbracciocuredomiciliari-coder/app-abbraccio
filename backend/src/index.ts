@@ -62,6 +62,7 @@ import fatturazioneDocumentiRouter from './routes/fatturazioneDocumenti';
 import preventiviInviatiRouter from './routes/preventiviInviati';
 import amministrazioneRouter from './routes/amministrazione';
 import ricercaOperatoriRouter from './routes/ricercaOperatori';
+import commercialistaRouter from './routes/commercialista';
 import preventivoVeloceRouter from './routes/preventivoVeloce';
 import landingBadanteRouter from './routes/landingBadante';
 import landingPreventivoRouter from './routes/landingPreventivo';
@@ -188,6 +189,22 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'App Abbraccio API in esecuzione' });
 });
 
+// Gate centralizzato ruolo commercialista: accesso limitato alla sola
+// documentazione amministrativa resa disponibile. Qualunque altro endpoint
+// (cartelle cliniche, note operative, pratiche, attività) resta chiuso.
+app.use('/api', (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : (req.query.token as string | undefined);
+  if (!token) return next();
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET as string) as { role?: string };
+    if (payload?.role === 'commercialista' && !req.path.startsWith('/commercialista') && !req.path.startsWith('/auth/')) {
+      return res.status(403).json({ message: 'Accesso limitato alla documentazione amministrativa' });
+    }
+  } catch { /* token non valido: ci penserà authenticateToken */ }
+  next();
+});
+
 app.use('/api/auth', authRouter);
 app.use('/api/gdpr', gdprRouter);
 app.use('/api/export', exportSiatRouter);
@@ -239,6 +256,7 @@ app.use('/api/attivita', attivitaRouter);
 app.use('/api/preventivi-inviati', preventiviInviatiRouter);
 app.use('/api/amministrazione', amministrazioneRouter);
 app.use('/api/ricerca-operatori', ricercaOperatoriRouter);
+app.use('/api/commercialista', commercialistaRouter);
 app.use('/api/preventivo-veloce', preventivoVeloceRouter);
 app.use('/api/landing-badante', landingBadanteRouter);
 app.use('/api/landing-preventivo', landingPreventivoRouter);

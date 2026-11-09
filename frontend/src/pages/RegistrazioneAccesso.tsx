@@ -157,7 +157,7 @@ export default function RegistrazioneAccesso() {
     return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Foglio Firma</title>
     <style>
       body{font-family:Arial,sans-serif;font-size:13px;color:#111;margin:30px;max-width:700px}
-      h1{font-size:20px;color:#1e4d8c;margin-bottom:4px}
+      h1{font-size:20px;color:var(--brand-700);margin-bottom:4px}
       h2{font-size:14px;color:#444;margin:0 0 20px}
       .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-bottom:24px}
       .info-item label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:2px}
@@ -202,7 +202,7 @@ export default function RegistrazioneAccesso() {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f4ff' }}>
         <div style={{ textAlign: 'center' }}>
-          <Loader2 size={48} style={{ animation: 'spin 1s linear infinite', color: '#2563eb' }} />
+          <Loader2 size={48} style={{ animation: 'spin 1s linear infinite', color: 'var(--brand-600)' }} />
           <p style={{ marginTop: '16px', color: '#6b7280' }}>Caricamento...</p>
         </div>
       </div>
@@ -210,17 +210,17 @@ export default function RegistrazioneAccesso() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)', padding: '0', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, var(--nav-900) 100%)', padding: '0', display: 'flex', flexDirection: 'column' }}>
 
       {/* Header */}
       <div style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: '600px', margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Heart size={24} color="#60a5fa" />
+            <Heart size={24} color="var(--brand-300)" />
             <span style={{ color: 'white', fontWeight: '700', fontSize: '1.1rem' }}>Abbraccio</span>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ color: '#93c5fd', fontSize: '0.85rem' }}>{user?.name}</div>
+            <div style={{ color: 'var(--brand-300)', fontSize: '0.85rem' }}>{user?.name}</div>
             <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }}>
               {oraNow.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
             </div>
@@ -235,13 +235,13 @@ export default function RegistrazioneAccesso() {
         {workPlan && (
           <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '16px', padding: '16px', marginBottom: '20px', border: '1px solid rgba(255,255,255,0.15)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <User size={20} color="#60a5fa" />
+              <User size={20} color="var(--brand-300)" />
               <span style={{ color: 'white', fontWeight: '600', fontSize: '1.1rem' }}>
                 {workPlan.patient.firstName} {workPlan.patient.lastName}
               </span>
             </div>
             {workPlan.patient.address && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#93c5fd', fontSize: '0.9rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--brand-300)', fontSize: '0.9rem' }}>
                 <MapPin size={14} />
                 {workPlan.patient.address}
               </div>
@@ -261,7 +261,7 @@ export default function RegistrazioneAccesso() {
         {step === 'selezione' && (
           <div>
             <h2 style={{ color: 'white', textAlign: 'center', marginBottom: '8px', fontSize: '1.4rem' }}>Registra Accesso</h2>
-            <p style={{ color: '#93c5fd', textAlign: 'center', marginBottom: '32px', fontSize: '0.95rem' }}>
+            <p style={{ color: 'var(--brand-300)', textAlign: 'center', marginBottom: '32px', fontSize: '0.95rem' }}>
               {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
 
@@ -298,7 +298,7 @@ export default function RegistrazioneAccesso() {
 
             <button
               onClick={() => navigate(-1)}
-              style={{ width: '100%', background: 'rgba(255,255,255,0.05)', color: '#93c5fd', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '16px', padding: '16px', cursor: 'pointer', fontSize: '0.95rem' }}
+              style={{ width: '100%', background: 'rgba(255,255,255,0.05)', color: 'var(--brand-300)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '16px', padding: '16px', cursor: 'pointer', fontSize: '0.95rem' }}
             >
               ← Torna indietro
             </button>
@@ -309,7 +309,7 @@ export default function RegistrazioneAccesso() {
         {step === 'conferma-entrata' && (
           <div style={{ background: 'white', borderRadius: '20px', padding: '32px', textAlign: 'center' }}>
             <CheckCircle size={64} color="#16a34a" style={{ marginBottom: '16px' }} />
-            <h2 style={{ color: '#1e3a5f', marginBottom: '8px' }}>Entrata Registrata!</h2>
+            <h2 style={{ color: 'var(--nav-900)', marginBottom: '8px' }}>Entrata Registrata!</h2>
             <p style={{ color: '#6b7280', marginBottom: '8px' }}>
               {new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
             </p>
@@ -318,7 +318,7 @@ export default function RegistrazioneAccesso() {
             </p>
             <button
               onClick={() => { setStep('accesso-attivo'); setNote(''); }}
-              style={{ width: '100%', background: '#2563eb', color: 'white', border: 'none', borderRadius: '12px', padding: '16px', cursor: 'pointer', fontWeight: '600', fontSize: '1rem' }}
+              style={{ width: '100%', background: 'var(--brand-600)', color: 'white', border: 'none', borderRadius: '12px', padding: '16px', cursor: 'pointer', fontWeight: '600', fontSize: '1rem' }}
             >
               OK, capito →
             </button>
@@ -335,7 +335,7 @@ export default function RegistrazioneAccesso() {
                 <Clock size={18} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
                 {durataAccesso()}
               </div>
-              <div style={{ color: '#93c5fd', fontSize: '0.85rem', marginTop: '4px' }}>
+              <div style={{ color: 'var(--brand-300)', fontSize: '0.85rem', marginTop: '4px' }}>
                 Entrata: {new Date(accessoAperto.oraEntrata).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
@@ -358,7 +358,7 @@ export default function RegistrazioneAccesso() {
         {/* === STEP: FIRMA USCITA (operatore + paziente/caregiver) === */}
         {step === 'firma-paziente' && (
           <div style={{ background: 'white', borderRadius: '20px', padding: '24px' }}>
-            <h2 style={{ color: '#1e3a5f', marginBottom: '6px', fontSize: '1.3rem' }}>
+            <h2 style={{ color: 'var(--nav-900)', marginBottom: '6px', fontSize: '1.3rem' }}>
               <LogOut size={20} style={{ display: 'inline', marginRight: '8px' }} />
               Firme di Uscita
             </h2>
@@ -389,9 +389,9 @@ export default function RegistrazioneAccesso() {
                     onClick={() => setRuoloFirmatario(r)}
                     style={{
                       flex: 1, padding: '12px', borderRadius: '10px', cursor: 'pointer', fontWeight: '600', fontSize: '0.95rem',
-                      background: ruoloFirmatario === r ? '#1e3a5f' : '#f3f4f6',
+                      background: ruoloFirmatario === r ? 'var(--nav-900)' : '#f3f4f6',
                       color: ruoloFirmatario === r ? 'white' : '#374151',
-                      border: `2px solid ${ruoloFirmatario === r ? '#1e3a5f' : '#d1d5db'}`,
+                      border: `2px solid ${ruoloFirmatario === r ? 'var(--nav-900)' : '#d1d5db'}`,
                     }}
                   >
                     {r === 'paziente' ? '🧑‍🦳 Paziente' : '👨‍👩‍👧 Caregiver'}
@@ -444,7 +444,7 @@ export default function RegistrazioneAccesso() {
         {step === 'riepilogo' && (
           <div style={{ background: 'white', borderRadius: '20px', padding: '32px', textAlign: 'center' }}>
             <CheckCircle size={64} color="#16a34a" style={{ marginBottom: '16px' }} />
-            <h2 style={{ color: '#1e3a5f', marginBottom: '8px', fontSize: '1.4rem' }}>Visita Completata!</h2>
+            <h2 style={{ color: 'var(--nav-900)', marginBottom: '8px', fontSize: '1.4rem' }}>Visita Completata!</h2>
             <p style={{ color: '#374151', marginBottom: '8px' }}>
               Accesso a <strong>{workPlan?.patient.firstName} {workPlan?.patient.lastName}</strong> registrato correttamente.
             </p>
@@ -473,7 +473,7 @@ export default function RegistrazioneAccesso() {
             </div>
             <button
               onClick={() => navigate(-1)}
-              style={{ width: '100%', background: '#2563eb', color: 'white', border: 'none', borderRadius: '12px', padding: '16px', cursor: 'pointer', fontWeight: '600', fontSize: '1rem' }}
+              style={{ width: '100%', background: 'var(--brand-600)', color: 'white', border: 'none', borderRadius: '12px', padding: '16px', cursor: 'pointer', fontWeight: '600', fontSize: '1rem' }}
             >
               ← Torna al piano di lavoro
             </button>

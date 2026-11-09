@@ -55,6 +55,8 @@ function Login() {
       const ruoliPrivilegiati = ['admin', 'coordinator', 'direttore'];
       if (ruoliPrivilegiati.includes(loggedUser.role)) {
         navigate('/dashboard');
+      } else if (loggedUser.role === 'commercialista') {
+        navigate('/area-commercialista');
       } else {
         navigate('/portale-operatore');
       }

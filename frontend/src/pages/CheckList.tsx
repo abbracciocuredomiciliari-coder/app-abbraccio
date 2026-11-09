@@ -169,16 +169,16 @@ function CheckList() {
   <title>Report Completo Checklist Defibrillatore</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 24px; color: #222; font-size: 12px; }
-    .intestazione { display: flex; align-items: center; gap: 20px; border-bottom: 3px solid #1e4d8c; padding-bottom: 14px; margin-bottom: 18px; }
+    .intestazione { display: flex; align-items: center; gap: 20px; border-bottom: 3px solid var(--brand-700); padding-bottom: 14px; margin-bottom: 18px; }
     .intestazione img { height: 70px; width: auto; }
-    .intestazione .testo h1 { margin: 0; font-size: 18px; color: #1e4d8c; }
+    .intestazione .testo h1 { margin: 0; font-size: 18px; color: var(--brand-700); }
     .intestazione .testo p { margin: 3px 0 0; font-size: 11px; color: #666; }
     .riepilogo { display: flex; gap: 20px; margin-bottom: 18px; flex-wrap: wrap; }
     .stat { background: #f5f8fc; border: 1px solid #d0dff0; border-radius: 6px; padding: 10px 18px; text-align: center; }
-    .stat .num { font-size: 22px; font-weight: bold; color: #1e4d8c; }
+    .stat .num { font-size: 22px; font-weight: bold; color: var(--brand-700); }
     .stat .lab { font-size: 11px; color: #666; }
     table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    th { background: #1e4d8c; color: #fff; padding: 8px 10px; text-align: left; }
+    th { background: var(--brand-700); color: #fff; padding: 8px 10px; text-align: left; }
     td { vertical-align: top; }
     tr:nth-child(even) td { background: #f5f8fc; }
     .footer { margin-top: 20px; font-size: 10px; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
@@ -243,14 +243,14 @@ function CheckList() {
   <title>Checklist Defibrillatore — ${oggi}</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 24px; color: #222; }
-    .intestazione { display: flex; align-items: center; gap: 20px; border-bottom: 3px solid #1e4d8c; padding-bottom: 14px; margin-bottom: 18px; }
+    .intestazione { display: flex; align-items: center; gap: 20px; border-bottom: 3px solid var(--brand-700); padding-bottom: 14px; margin-bottom: 18px; }
     .intestazione img { height: 70px; width: auto; }
-    .intestazione .testo h1 { margin: 0; font-size: 20px; color: #1e4d8c; }
+    .intestazione .testo h1 { margin: 0; font-size: 20px; color: var(--brand-700); }
     .intestazione .testo p { margin: 3px 0 0; font-size: 12px; color: #666; }
     .info-box { background: #f5f8fc; border: 1px solid #d0dff0; border-radius: 6px; padding: 12px 16px; margin-bottom: 18px; font-size: 13px; }
-    .info-box strong { color: #1e4d8c; }
+    .info-box strong { color: var(--brand-700); }
     table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 18px; }
-    th { background: #1e4d8c; color: #fff; padding: 8px 10px; text-align: left; }
+    th { background: var(--brand-700); color: #fff; padding: 8px 10px; text-align: left; }
     td { vertical-align: middle; }
     .commenti { background: #fffbe6; border: 1px solid #ffe58f; border-radius: 6px; padding: 10px 14px; font-size: 13px; margin-bottom: 14px; }
     .firma { margin-top: 30px; font-size: 13px; border-top: 1px solid #ddd; padding-top: 12px; }
@@ -327,7 +327,7 @@ function CheckList() {
         <button
           type="button"
           onClick={apriForm}
-          style={{ background: '#1e4d8c', marginBottom: '28px', fontSize: '1rem', padding: '10px 22px' }}
+          style={{ background: 'var(--brand-700)', marginBottom: '28px', fontSize: '1rem', padding: '10px 22px' }}
         >
           ➕ Nuova checklist giornaliera
         </button>
@@ -337,10 +337,10 @@ function CheckList() {
       {mostraForm && (
         <div
           className="dashboard-folder"
-          style={{ marginBottom: '32px', border: '2px solid #1e4d8c', borderRadius: '10px', padding: '24px' }}
+          style={{ marginBottom: '32px', border: '2px solid var(--brand-700)', borderRadius: '10px', padding: '24px' }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ margin: 0, color: '#1e4d8c' }}>📝 Nuova Checklist — {new Date(form.data).toLocaleDateString('it-IT')}</h3>
+            <h3 style={{ margin: 0, color: 'var(--brand-700)' }}>📝 Nuova Checklist — {new Date(form.data).toLocaleDateString('it-IT')}</h3>
             <button
               type="button"
               onClick={() => setMostraForm(false)}
@@ -385,7 +385,7 @@ function CheckList() {
 
           {/* Voci di controllo */}
           <div style={{ marginBottom: '20px' }}>
-            <h4 style={{ marginBottom: '14px', color: '#1e4d8c' }}>Voci di controllo</h4>
+            <h4 style={{ marginBottom: '14px', color: 'var(--brand-700)' }}>Voci di controllo</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {vociChecklist.map((voce) => {
                 const checked = form[voce.key];
@@ -541,14 +541,14 @@ function CheckList() {
                         <button
                           type="button"
                           onClick={() => visualizzaChecklist(entry)}
-                          style={{ background: '#3b82f6', fontSize: '0.85rem', padding: '6px 14px' }}
+                          style={{ background: 'var(--brand-500)', fontSize: '0.85rem', padding: '6px 14px' }}
                         >
                           👁️ Visualizza PDF
                         </button>
                         <button
                           type="button"
                           onClick={() => stampaChecklist(entry)}
-                          style={{ background: '#1e4d8c', fontSize: '0.85rem', padding: '6px 14px' }}
+                          style={{ background: 'var(--brand-700)', fontSize: '0.85rem', padding: '6px 14px' }}
                         >
                           🖨️ Stampa PDF
                         </button>

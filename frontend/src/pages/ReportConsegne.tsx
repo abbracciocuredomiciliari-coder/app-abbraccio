@@ -221,13 +221,13 @@ export default function ReportConsegne() {
   <style>
     * { box-sizing: border-box; }
     body { font-family: Arial, sans-serif; font-size: 12px; color: #222; margin: 24px; }
-    h1 { font-size: 20px; color: #1e4d8c; margin: 0 0 4px; }
+    h1 { font-size: 20px; color: var(--brand-700); margin: 0 0 4px; }
     h2 { font-size: 14px; color: #374151; margin: 20px 0 8px; border-bottom: 2px solid #e5e7eb; padding-bottom: 4px; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-    .logo { font-size: 18px; font-weight: 700; color: #1e4d8c; }
+    .logo { font-size: 18px; font-weight: 700; color: var(--brand-700); }
     .periodo { background: #f1f5f9; padding: 8px 12px; border-radius: 6px; display: inline-block; margin: 10px 0; }
     table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-    th { background: #1e4d8c; color: #fff; padding: 8px; text-align: left; font-size: 11px; }
+    th { background: var(--brand-700); color: #fff; padding: 8px; text-align: left; font-size: 11px; }
     td { padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; vertical-align: top; }
     tr:nth-child(even) { background: #f8fafc; }
     .totali { margin: 20px 0; }
@@ -315,7 +315,7 @@ export default function ReportConsegne() {
   return (
     <section className="fade-in">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px', color: '#1e4d8c' }}>
+        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--brand-700)' }}>
           <Package size={28} />
           Richieste e Consegne Materiali
         </h1>
@@ -355,7 +355,7 @@ export default function ReportConsegne() {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px',
-            background: activeTab === 'consegne' ? '#1e4d8c' : 'transparent',
+            background: activeTab === 'consegne' ? 'var(--brand-700)' : 'transparent',
             color: activeTab === 'consegne' ? 'white' : '#374151',
             transition: 'all 0.2s ease'
           }}
@@ -384,7 +384,7 @@ export default function ReportConsegne() {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px',
-            background: activeTab === 'richieste' ? '#1e4d8c' : 'transparent',
+            background: activeTab === 'richieste' ? 'var(--brand-700)' : 'transparent',
             color: activeTab === 'richieste' ? 'white' : '#374151',
             transition: 'all 0.2s ease'
           }}
@@ -460,7 +460,7 @@ export default function ReportConsegne() {
               style={{ 
                 width: '100%', 
                 padding: '10px 20px', 
-                background: '#1e4d8c', 
+                background: 'var(--brand-700)', 
                 color: 'white', 
                 border: 'none', 
                 borderRadius: '8px',
@@ -599,16 +599,16 @@ export default function ReportConsegne() {
                     width: '48px', 
                     height: '48px', 
                     borderRadius: '12px', 
-                    background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                    background: 'linear-gradient(135deg, var(--brand-100) 0%, var(--brand-200) 100%)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#1e4d8c'
+                    color: 'var(--brand-700)'
                   }}>
                     <Package size={24} />
                   </div>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#1e4d8c', marginBottom: '4px' }}>
+                    <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--brand-700)', marginBottom: '4px' }}>
                       {isAdmin ? consegna.operatoreNome : 'Consegna effettuata'}
                     </div>
                     <div style={{ fontSize: '0.875rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -663,7 +663,7 @@ export default function ReportConsegne() {
                               {item.categoria === 'farmaco' ? '💊 Farmaco' : '🏥 Presidio'}
                             </span>
                           </td>
-                          <td style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#1e4d8c' }}>
+                          <td style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: 'var(--brand-700)' }}>
                             {item.quantitaAutorizzata} {item.unitaMisura}
                           </td>
                         </tr>
@@ -759,21 +759,21 @@ export default function ReportConsegne() {
                     height: '48px', 
                     borderRadius: '12px', 
                     background: richiesta.stato === 'consegnata' ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)' : 
-                                richiesta.stato === 'gestita' ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' :
+                                richiesta.stato === 'gestita' ? 'linear-gradient(135deg, var(--brand-100) 0%, var(--brand-200) 100%)' :
                                 richiesta.stato === 'rifiutata' ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)' :
                                 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: richiesta.stato === 'consegnata' ? '#059669' : 
-                          richiesta.stato === 'gestita' ? '#1e4d8c' :
+                          richiesta.stato === 'gestita' ? 'var(--brand-700)' :
                           richiesta.stato === 'rifiutata' ? '#dc2626' :
                           '#b45309'
                   }}>
                     <ClipboardList size={24} />
                   </div>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#1e4d8c', marginBottom: '4px' }}>
+                    <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--brand-700)', marginBottom: '4px' }}>
                       {isAdmin ? richiesta.operatoreNome : 'Richiesta materiali'}
                     </div>
                     <div style={{ fontSize: '0.875rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -786,11 +786,11 @@ export default function ReportConsegne() {
                         fontSize: '0.75rem',
                         fontWeight: 600,
                         background: richiesta.stato === 'consegnata' ? '#d1fae5' :
-                                    richiesta.stato === 'gestita' ? '#dbeafe' :
+                                    richiesta.stato === 'gestita' ? 'var(--brand-100)' :
                                     richiesta.stato === 'rifiutata' ? '#fee2e2' :
                                     '#fef3c7',
                         color: richiesta.stato === 'consegnata' ? '#059669' :
-                               richiesta.stato === 'gestita' ? '#1e4d8c' :
+                               richiesta.stato === 'gestita' ? 'var(--brand-700)' :
                                richiesta.stato === 'rifiutata' ? '#dc2626' :
                                '#b45309'
                       }}>
@@ -861,11 +861,11 @@ export default function ReportConsegne() {
                     <div style={{ 
                       marginTop: '16px', 
                       padding: '12px 16px', 
-                      background: '#eff6ff', 
+                      background: 'var(--brand-50)', 
                       borderRadius: '8px',
-                      border: '1px solid #bfdbfe',
+                      border: '1px solid var(--brand-200)',
                       fontSize: '0.875rem',
-                      color: '#1e40af'
+                      color: 'var(--brand-700)'
                     }}>
                       <strong>📝 Note Operatore:</strong> {richiesta.noteOperatore}
                     </div>
@@ -1068,7 +1068,7 @@ export default function ReportConsegne() {
                           onClick={() => segnaComeConsegnato(richiesta._id)}
                           style={{
                             padding: '8px 16px',
-                            background: '#3b82f6',
+                            background: 'var(--brand-500)',
                             color: 'white',
                             border: 'none',
                             borderRadius: '6px',
@@ -1120,17 +1120,17 @@ export default function ReportConsegne() {
         }}>
           <div>
             <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>Totale consegne</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e4d8c' }}>{consegneFiltrate.length}</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--brand-700)' }}>{consegneFiltrate.length}</div>
           </div>
           <div>
             <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>Operatori coinvolti</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e4d8c' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--brand-700)' }}>
               {new Set(consegneFiltrate.map(c => c.operatoreId)).size}
             </div>
           </div>
           <div>
             <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>Totale articoli</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e4d8c' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--brand-700)' }}>
               {consegneFiltrate.reduce((sum, c) => sum + c.items.length, 0)}
             </div>
           </div>

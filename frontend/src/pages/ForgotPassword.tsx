@@ -31,7 +31,7 @@ export default function ForgotPassword() {
       <div className="tw-text-center tw-mb-8">
         <div className="tw-w-16 tw-h-16 tw-mx-auto tw-mb-4 tw-rounded-2xl tw-flex tw-items-center tw-justify-center"
           style={{
-            background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+            background: 'linear-gradient(135deg, var(--brand-600) 0%, #7c3aed 100%)',
             boxShadow: '0 12px 24px rgba(79,70,229,0.3)',
           }}>
           <Heart size={32} color="white" />

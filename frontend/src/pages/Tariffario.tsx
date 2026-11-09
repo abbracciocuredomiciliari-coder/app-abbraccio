@@ -142,7 +142,7 @@ export default function Tariffario() {
   return (
     <section className="fade-in section-wide">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px', color: '#1e4d8c' }}>
+        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--brand-700)' }}>
           <Tag size={26} /> Tariffario Prestazioni
         </h1>
         {puoGestire && (
@@ -215,7 +215,7 @@ export default function Tariffario() {
                               type="number" step="0.01" autoFocus
                               value={editPrezzo}
                               onChange={e => setEditPrezzo(Number(e.target.value))}
-                              style={{ width: '90px', padding: '6px', borderRadius: '6px', border: '1px solid #2563eb', textAlign: 'right' }}
+                              style={{ width: '90px', padding: '6px', borderRadius: '6px', border: '1px solid var(--brand-600)', textAlign: 'right' }}
                             />
                             <button onClick={() => salvaPrezzo(v._id)} style={{ background: '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer', color: '#16a34a' }}><Check size={14} /></button>
                             <button onClick={() => setEditId(null)} style={{ background: '#fee2e2', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer', color: '#dc2626' }}><X size={14} /></button>
@@ -253,7 +253,7 @@ export default function Tariffario() {
                       {puoGestire && (
                         <td style={{ padding: '10px 14px' }}>
                           <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                            <button onClick={() => { setEditId(v._id); setEditPrezzo(v.prezzo); }} title="Modifica prezzo" style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer', color: '#2563eb' }}><Pencil size={13} /></button>
+                            <button onClick={() => { setEditId(v._id); setEditPrezzo(v.prezzo); }} title="Modifica prezzo" style={{ background: 'var(--brand-50)', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer', color: 'var(--brand-600)' }}><Pencil size={13} /></button>
                             <button onClick={() => toggleAttivo(v)} title={v.attivo ? 'Disattiva' : 'Riattiva'} style={{ background: v.attivo ? '#fef3c7' : '#dcfce7', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer', color: v.attivo ? '#92400e' : '#16a34a' }}>
                               {v.attivo ? <X size={13} /> : <Check size={13} />}
                             </button>
@@ -282,7 +282,7 @@ export default function Tariffario() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'white', borderRadius: '16px', padding: '24px', maxWidth: '480px', width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h2 style={{ margin: 0, color: '#1e4d8c' }}>Nuova voce tariffario</h2>
+              <h2 style={{ margin: 0, color: 'var(--brand-700)' }}>Nuova voce tariffario</h2>
               <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
             </div>
             <div style={{ marginBottom: '14px' }}>

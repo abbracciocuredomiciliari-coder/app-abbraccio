@@ -81,6 +81,7 @@ const CentroPrenotazioniConvenzione = lazy(() => import('./pages/CentroPrenotazi
 const GestioneRichieste = lazy(() => import('./pages/GestioneRichieste'));
 const Oggi = lazy(() => import('./pages/Oggi'));
 const Amministrazione = lazy(() => import('./pages/Amministrazione'));
+const AreaCommercialista = lazy(() => import('./pages/AreaCommercialista'));
 const TrovaOperatori = lazy(() => import('./pages/TrovaOperatori'));
 const PortalePaziente = lazy(() => import('./pages/PortalePaziente'));
 const RichiestaServizio = lazy(() => import('./pages/RichiestaServizio'));
@@ -129,6 +130,7 @@ import {
   Video,
   Calculator,
   Search,
+  FileDown,
 } from 'lucide-react';
 
 // Ruoli con accesso completo (admin/coordinamento/direzione)
@@ -395,6 +397,17 @@ function AppShell() {
             </>
           )}
 
+          {/* ===== MENU COMMERCIALISTA — accesso limitato ai soli documenti ===== */}
+          {user && user.role === 'commercialista' && (
+            <>
+              <span className="nav-section-label">Documentazione</span>
+              <Link to="/area-commercialista" className={isActive('/area-commercialista') ? 'active' : ''}>
+                <FileDown size={18} />
+                Documenti amministrativi
+              </Link>
+            </>
+          )}
+
           {/* ===== MENU PRIVILEGIATI (admin, coordinator, direttore) — aree Privato/Convenzione ===== */}
           {user && isPrivilegiato(user.role) && !isConsulenza && !isOrganizzativa && (
             <>
@@ -497,8 +510,12 @@ function AppShell() {
 
               </details>
               {/* — Amministrazione — */}
-              <details className="nav-section" open={secOpen('/compenso-incarichi','/gestione-fatturazione','/gestione-ritenute','/archivio-fatture','/archivio-preventivi','/preventivo-veloce','/tariffario','/archivio-email')}>
+              <details className="nav-section" open={secOpen('/amministrazione','/compenso-incarichi','/gestione-fatturazione','/gestione-ritenute','/archivio-fatture','/archivio-preventivi','/preventivo-veloce','/tariffario','/archivio-email')}>
               <summary className="nav-section-label">Amministrazione</summary>
+              <Link to="/amministrazione" className={isActive('/amministrazione') ? 'active' : ''}>
+                <Calculator size={18} />
+                Amministrazione unica
+              </Link>
               <Link to="/compenso-incarichi" className={isActive('/compenso-incarichi') ? 'active' : ''}>
                 <Euro size={18} />
                 Compenso incarichi
@@ -587,7 +604,7 @@ function AppShell() {
               <summary className="nav-section-label">Amministrazione</summary>
               <Link to="/amministrazione" className={isActive('/amministrazione') ? 'active' : ''}>
                 <Calculator size={18} />
-                Documenti e scadenze
+                Amministrazione unica
               </Link>
 
               </details>
@@ -677,8 +694,12 @@ function AppShell() {
               </Link>
 
               </details>
-              <details className="nav-section" open={secOpen('/gestione-fatturazione','/archivio-fatture','/archivio-preventivi','/archivi-intermediazione','/archivio-email')}>
+              <details className="nav-section" open={secOpen('/amministrazione','/gestione-fatturazione','/archivio-fatture','/archivio-preventivi','/archivi-intermediazione','/archivio-email')}>
               <summary className="nav-section-label">Amministrazione</summary>
+              <Link to="/amministrazione" className={isActive('/amministrazione') ? 'active' : ''}>
+                <Calculator size={18} />
+                Amministrazione unica
+              </Link>
               <Link to="/gestione-fatturazione" className={isActive('/gestione-fatturazione') ? 'active' : ''}>
                 <Receipt size={18} />
                 Fatturazione
@@ -765,6 +786,7 @@ function AppShell() {
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/oggi" element={<ProtectedRoute><Oggi /></ProtectedRoute>} />
           <Route path="/amministrazione" element={<ProtectedRoute><Amministrazione /></ProtectedRoute>} />
+          <Route path="/area-commercialista" element={<ProtectedRoute><AreaCommercialista /></ProtectedRoute>} />
           <Route path="/trova-operatori" element={<ProtectedRoute><TrovaOperatori /></ProtectedRoute>} />
           <Route path="/ricerca" element={<ProtectedRoute><RicercaGlobale /></ProtectedRoute>} />
           <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />

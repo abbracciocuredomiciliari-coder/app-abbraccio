@@ -109,7 +109,7 @@ export default function CittaAutocomplete({ value, onChange, placeholder = 'Es. 
                 display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px',
                 background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.9rem',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = '#eff6ff')}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--brand-50)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
               📍 {s}

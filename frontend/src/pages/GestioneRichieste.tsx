@@ -11,7 +11,7 @@ function apriPDFScheda(s: any) {
   const freqPag: Record<string, string> = { giornaliera: 'Giornaliera', settimanale: 'Settimanale', ogni_10_giorni: 'Ogni 10 giorni', mensile: 'Mensile' };
   const dataFirma = s.dataFirma ? new Date(s.dataFirma).toLocaleDateString('it-IT') : new Date(s.createdAt).toLocaleDateString('it-IT');
   const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Scheda Servizi</title>
-  <style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:13px;color:#111;margin:30px;max-width:750px}h1{font-size:20px;color:#1e4d8c;margin-bottom:4px;text-align:center}h2{font-size:11px;color:#6b7280;text-align:center;margin:0 0 24px;text-transform:uppercase;letter-spacing:1px}.section{margin-bottom:20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}.section-title{background:#1e4d8c;color:white;padding:8px 14px;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.5px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px}.field label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:3px}.field span{font-size:13px;color:#111;font-weight:600}.firma-box{padding:14px;border-top:1px solid #e2e8f0}.firma-box img{max-width:220px;max-height:80px;border:1px solid #d1d5db;display:block;margin-top:8px}.footer{margin-top:24px;font-size:10px;color:#9ca3af;border-top:1px solid #e2e8f0;padding-top:12px;text-align:center}@media print{.no-print{display:none}}</style></head><body>
+  <style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:13px;color:#111;margin:30px;max-width:750px}h1{font-size:20px;color:var(--brand-700);margin-bottom:4px;text-align:center}h2{font-size:11px;color:#6b7280;text-align:center;margin:0 0 24px;text-transform:uppercase;letter-spacing:1px}.section{margin-bottom:20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}.section-title{background:var(--brand-700);color:white;padding:8px 14px;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.5px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px}.field label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:3px}.field span{font-size:13px;color:#111;font-weight:600}.firma-box{padding:14px;border-top:1px solid #e2e8f0}.firma-box img{max-width:220px;max-height:80px;border:1px solid #d1d5db;display:block;margin-top:8px}.footer{margin-top:24px;font-size:10px;color:#9ca3af;border-top:1px solid #e2e8f0;padding-top:12px;text-align:center}@media print{.no-print{display:none}}</style></head><body>
   <h1>Scheda Servizi Assistenza Domiciliare</h1><h2>Abbraccio Cure Domiciliari</h2>
   <div class="section"><div class="section-title">1. Dati del Paziente</div><div class="grid"><div class="field"><label>Nome e Cognome</label><span>${s.nomeCognomePaziente}</span></div><div class="field"><label>Data di nascita</label><span>${s.dataNascita || '—'}</span></div></div></div>
   <div class="section"><div class="section-title">2. Dettagli della Prestazione</div><div class="grid"><div class="field"><label>Tipo di prestazione</label><span>${s.tipoPrestazione}</span></div><div class="field"><label>Frequenza</label><span>${freq[s.frequenzaPrestazione] || s.frequenzaPrestazione}${s.giorniContinuata ? ` — per ${s.giorniContinuata} giorni` : ''}</span></div><div class="field"><label>Operatore incaricato</label><span>${s.operatoreIncaricato || '—'}</span></div></div></div>
@@ -19,7 +19,7 @@ function apriPDFScheda(s: any) {
   <div class="section"><div class="section-title">Firma del ${s.ruoloFirmatario === 'caregiver' ? 'Caregiver' : 'Paziente'}</div><div class="firma-box"><div class="field"><label>Nome firmatario</label><span>${s.nomeFirmatario} (${s.ruoloFirmatario})</span></div><div class="field" style="margin-top:10px"><label>Data firma</label><span>${dataFirma}</span></div>${s.firmaBase64 ? `<img src="${s.firmaBase64}" alt="Firma" />` : '<p style="color:#9ca3af;font-style:italic">Firma non disponibile</p>'}</div></div>
   ${s.noteAdmin ? `<div class="section"><div class="section-title">Note Amministrazione</div><div style="padding:12px 14px;color:#374151">${s.noteAdmin}</div></div>` : ''}
   <div class="footer">Documento generato — App Abbraccio Cure Domiciliari — ${new Date().toLocaleString('it-IT')}</div>
-  <div class="no-print" style="margin-top:24px;text-align:center"><button onclick="window.print()" style="background:#1e4d8c;color:white;border:none;border-radius:8px;padding:12px 28px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Stampa / Salva PDF</button></div>
+  <div class="no-print" style="margin-top:24px;text-align:center"><button onclick="window.print()" style="background:var(--brand-700);color:white;border:none;border-radius:8px;padding:12px 28px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Stampa / Salva PDF</button></div>
   </body></html>`;
   const blob = new Blob([html], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
@@ -328,10 +328,10 @@ export default function GestioneRichieste() {
   const getStatoBadge = (stato: StatoRichiesta) => {
     const styles: Record<StatoRichiesta, { bg: string; color: string; label: string }> = {
       in_attesa: { bg: '#fef3c7', color: '#92400e', label: '⏳ In attesa' },
-      in_revisione: { bg: '#dbeafe', color: '#1e40af', label: '📝 In revisione' },
+      in_revisione: { bg: 'var(--brand-100)', color: 'var(--brand-700)', label: '📝 In revisione' },
       in_valutazione: { bg: '#ffedd5', color: '#9a3412', label: '🤔 In valutazione' },
       confermata: { bg: '#d1fae5', color: '#065f46', label: '✅ Confermata' },
-      modificata: { bg: '#e0e7ff', color: '#3730a3', label: '✏️ Modificata' },
+      modificata: { bg: 'var(--brand-100)', color: 'var(--brand-800)', label: '✏️ Modificata' },
       rifiutata: { bg: '#fee2e2', color: '#991b1b', label: '❌ Rifiutata' },
       completata: { bg: '#f3e8ff', color: '#6b21a8', label: '✔️ Completata' }
     };
@@ -376,7 +376,7 @@ export default function GestioneRichieste() {
   const getPrioritaBadge = (p?: string) => {
     const styles: Record<string, { bg: string; color: string }> = {
       bassa: { bg: '#dcfce7', color: '#166534' },
-      normale: { bg: '#dbeafe', color: '#1e40af' },
+      normale: { bg: 'var(--brand-100)', color: 'var(--brand-700)' },
       alta: { bg: '#ffedd5', color: '#9a3412' },
       urgente: { bg: '#fee2e2', color: '#991b1b' },
       molto_urgente: { bg: '#7f1d1d', color: '#ffffff' }
@@ -411,14 +411,14 @@ export default function GestioneRichieste() {
     <section style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '16px' }}>
-        <h1 style={{ margin: '0 0 8px', fontSize: '1.5rem', color: '#1e4d8c' }}>📋 Gestione Richieste</h1>
+        <h1 style={{ margin: '0 0 8px', fontSize: '1.5rem', color: 'var(--brand-700)' }}>📋 Gestione Richieste</h1>
         <p style={{ margin: 0, color: '#666' }}>Revisiona, conferma e assegna richieste da caregiver e pazienti</p>
       </div>
 
       {/* Tab principale */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', background: '#f1f5f9', borderRadius: '10px', padding: '5px' }}>
         <button type="button" onClick={() => setTabPrincipale('prenotazioni')}
-          style={{ flex: 1, padding: '9px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '0.88rem', background: tabPrincipale === 'prenotazioni' ? 'white' : 'transparent', color: tabPrincipale === 'prenotazioni' ? '#1e4d8c' : '#6b7280', boxShadow: tabPrincipale === 'prenotazioni' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
+          style={{ flex: 1, padding: '9px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '0.88rem', background: tabPrincipale === 'prenotazioni' ? 'white' : 'transparent', color: tabPrincipale === 'prenotazioni' ? 'var(--brand-700)' : '#6b7280', boxShadow: tabPrincipale === 'prenotazioni' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
           📋 Prenotazioni servizi ({richieste.length})
         </button>
         <button type="button" onClick={() => setTabPrincipale('pazienti')}
@@ -448,7 +448,7 @@ export default function GestioneRichieste() {
                           {rp.stato === 'in_attesa' ? '⏳ In attesa' : rp.stato === 'approvata' ? '✅ Approvata' : '❌ Rifiutata'}
                         </span>
                         {rp.stato === 'approvata' && rp.pazienteCreatId && (
-                          <a href={`/patients`} style={{ fontSize: '0.78rem', color: '#2563eb', textDecoration: 'none' }}>→ Vai ai pazienti</a>
+                          <a href={`/patients`} style={{ fontSize: '0.78rem', color: 'var(--brand-600)', textDecoration: 'none' }}>→ Vai ai pazienti</a>
                         )}
                       </div>
                       <div style={{ fontSize: '0.85rem', color: '#555', display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '4px' }}>
@@ -499,7 +499,7 @@ export default function GestioneRichieste() {
           {schedaSelezionata && schedaAzione && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
               <div style={{ background: 'white', borderRadius: '16px', padding: '28px', maxWidth: '580px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
-                <h3 style={{ margin: '0 0 20px', color: '#1e3a5f', fontSize: '1.2rem' }}>
+                <h3 style={{ margin: '0 0 20px', color: 'var(--nav-900)', fontSize: '1.2rem' }}>
                   {schedaAzione === 'accetta' ? '✅ Accetta scheda' : '📁 Archivia nella documentazione paziente'}
                 </h3>
 
@@ -606,7 +606,7 @@ export default function GestioneRichieste() {
                 const statoStyle: Record<string, { bg: string; color: string; label: string }> = {
                   inviata:    { bg: '#fff7ed', color: '#c2410c', label: '⏳ Inviata' },
                   accettata:  { bg: '#f0fdf4', color: '#15803d', label: '✅ Accettata' },
-                  archiviata: { bg: '#eff6ff', color: '#1d4ed8', label: '📁 Archiviata' },
+                  archiviata: { bg: 'var(--brand-50)', color: '#1d4ed8', label: '📁 Archiviata' },
                   rifiutata:  { bg: '#fef2f2', color: '#dc2626', label: '❌ Rifiutata' },
                 };
                 const cfg = statoStyle[s.stato] || { bg: '#f3f4f6', color: '#374151', label: s.stato };
@@ -652,7 +652,7 @@ export default function GestioneRichieste() {
                           </button>
                         )}
                         {s.stato === 'archiviata' && s.documentoArchiviatoId && (
-                          <span style={{ fontSize: '0.78rem', color: '#0369a1', background: '#eff6ff', padding: '4px 10px', borderRadius: '8px', fontWeight: 600 }}>
+                          <span style={{ fontSize: '0.78rem', color: '#0369a1', background: 'var(--brand-50)', padding: '4px 10px', borderRadius: '8px', fontWeight: 600 }}>
                             ✓ Nella cartella del paziente
                           </span>
                         )}
@@ -677,7 +677,7 @@ export default function GestioneRichieste() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px' }}>
         {[
           { key: 'in_attesa', label: 'In attesa', count: countByStato('in_attesa'), color: '#f59e0b' },
-          { key: 'in_revisione', label: 'In revisione', count: countByStato('in_revisione'), color: '#3b82f6' },
+          { key: 'in_revisione', label: 'In revisione', count: countByStato('in_revisione'), color: 'var(--brand-500)' },
           { key: 'in_valutazione', label: 'In valutazione', count: countByStato('in_valutazione'), color: '#ea580c' },
           { key: 'confermata', label: 'Confermate', count: countByStato('confermata'), color: '#16a34a' },
           { key: 'rifiutata', label: 'Rifiutate', count: countByStato('rifiutata'), color: '#dc2626' },
@@ -713,7 +713,7 @@ export default function GestioneRichieste() {
               border: 'none',
               cursor: 'pointer',
               fontWeight: 500,
-              background: activeTab === tab ? '#1e4d8c' : '#f1f5f9',
+              background: activeTab === tab ? 'var(--brand-700)' : '#f1f5f9',
               color: activeTab === tab ? 'white' : '#475569'
             }}
           >
@@ -755,7 +755,7 @@ export default function GestioneRichieste() {
               <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
                 <button
                   onClick={() => apriGestione(r)}
-                  style={{ flex: '1 1 45%', padding: '10px 12px', background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ flex: '1 1 45%', padding: '10px 12px', background: 'var(--brand-700)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
                 >
                   Gestisci
                 </button>
@@ -857,7 +857,7 @@ export default function GestioneRichieste() {
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       <button
                         onClick={() => apriGestione(r)}
-                        style={{ padding: '6px 12px', background: '#1e4d8c', color: 'white', border: 'none', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
+                        style={{ padding: '6px 12px', background: 'var(--brand-700)', color: 'white', border: 'none', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
                       >
                         Gestisci
                       </button>
@@ -926,7 +926,7 @@ export default function GestioneRichieste() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'white', borderRadius: '16px', padding: '24px', maxWidth: '600px', width: '100%', maxHeight: '90vh', overflow: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ margin: 0, color: '#1e4d8c' }}>📝 Gestisci Richiesta</h2>
+              <h2 style={{ margin: 0, color: 'var(--brand-700)' }}>📝 Gestisci Richiesta</h2>
               <Button variant="ghost" size="sm" onClick={() => setGestioneModal(false)}>
                 ×
               </Button>

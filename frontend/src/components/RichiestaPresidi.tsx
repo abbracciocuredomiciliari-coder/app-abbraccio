@@ -144,7 +144,7 @@ export default function RichiestaPresidi() {
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          style={{ background: '#1e4d8c', marginBottom: '16px' }}
+          style={{ background: 'var(--brand-700)', marginBottom: '16px' }}
         >
           📦 Nuova richiesta presidi/farmaci
         </button>
@@ -154,7 +154,7 @@ export default function RichiestaPresidi() {
       {showForm && (
         <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '20px', marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h4 style={{ margin: 0, color: '#1e4d8c' }}>📦 Nuova richiesta presidi/farmaci</h4>
+            <h4 style={{ margin: 0, color: 'var(--brand-700)' }}>📦 Nuova richiesta presidi/farmaci</h4>
             <button type="button" onClick={() => { setShowForm(false); setCarrello([]); setNoteOperatore(''); }}
               style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#666' }}>×</button>
           </div>
@@ -163,7 +163,7 @@ export default function RichiestaPresidi() {
           <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
             {(['tutti', 'presidio', 'farmaco'] as const).map(cat => (
               <button key={cat} type="button" onClick={() => setFiltroCategoria(cat)}
-                style={{ background: filtroCategoria === cat ? '#1e4d8c' : '#e2e8f0', color: filtroCategoria === cat ? '#fff' : '#374151', border: 'none', borderRadius: '20px', padding: '5px 14px', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem' }}>
+                style={{ background: filtroCategoria === cat ? 'var(--brand-700)' : '#e2e8f0', color: filtroCategoria === cat ? '#fff' : '#374151', border: 'none', borderRadius: '20px', padding: '5px 14px', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem' }}>
                 {cat === 'tutti' ? '🔍 Tutti' : cat === 'presidio' ? '🏥 Presidi' : '💊 Farmaci'}
               </button>
             ))}
@@ -187,7 +187,7 @@ export default function RichiestaPresidi() {
                   {catalogoFiltrato.map(item => {
                     const inCarrello = carrello.some(c => c.item._id === item._id);
                     return (
-                      <tr key={item._id} style={{ borderBottom: '1px solid #f1f5f9', background: inCarrello ? 'rgba(30,77,140,0.04)' : 'transparent' }}>
+                      <tr key={item._id} style={{ borderBottom: '1px solid #f1f5f9', background: inCarrello ? 'rgba(28,113,100,0.04)' : 'transparent' }}>
                         <td style={{ padding: '8px 10px' }}>
                           <strong>{item.nome}</strong>
                           {item.dosaggio && <span style={{ marginLeft: '6px', fontSize: '0.8rem', color: '#888' }}>{item.dosaggio}</span>}
@@ -205,7 +205,7 @@ export default function RichiestaPresidi() {
                             <span style={{ color: '#059669', fontWeight: '600', fontSize: '0.82rem' }}>✅ Aggiunto</span>
                           ) : (
                             <button type="button" onClick={() => aggiungiAlCarrello(item)}
-                              style={{ background: '#1e4d8c', padding: '4px 12px', fontSize: '0.82rem' }}>
+                              style={{ background: 'var(--brand-700)', padding: '4px 12px', fontSize: '0.82rem' }}>
                               + Aggiungi
                             </button>
                           )}
@@ -280,7 +280,7 @@ export default function RichiestaPresidi() {
                   {/* Header richiesta */}
                   <div style={{ background: '#f8fafc', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                     <div>
-                      <span style={{ fontWeight: '700', fontSize: '0.95rem', color: '#1e4d8c' }}>
+                      <span style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--brand-700)' }}>
                         📅 {new Date(r.dataRichiesta).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}
                       </span>
                       {r.noteOperatore && (

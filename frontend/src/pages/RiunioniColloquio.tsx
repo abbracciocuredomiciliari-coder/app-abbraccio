@@ -44,7 +44,7 @@ const rispostaUI: Record<string, { icona: string; testo: string; colore: string 
   attesa: { icona: '⏳', testo: 'in attesa di risposta', colore: '#b45309' },
 };
 const statoUI: Record<string, { testo: string; bg: string }> = {
-  programmato: { testo: '📅 programmato', bg: '#dbeafe' },
+  programmato: { testo: '📅 programmato', bg: 'var(--brand-100)' },
   svolto: { testo: '✅ svolto', bg: '#dcfce7' },
   annullato: { testo: '🚫 annullato', bg: '#fee2e2' },
 };
@@ -236,7 +236,7 @@ export default function RiunioniColloquio() {
         {isManager && current.stato === 'programmato' && (
           <div className="tw-mt-3 tw-flex tw-gap-2 tw-flex-wrap">
             {inAttesa > 0 && <button onClick={reinviaInviti} style={btn('#f59e0b')}>📧 Reinvia inviti ({inAttesa})</button>}
-            <button onClick={inviaPromemoria} style={btn('#2563eb')}>🔔 Invia promemoria ora</button>
+            <button onClick={inviaPromemoria} style={btn('var(--brand-600)')}>🔔 Invia promemoria ora</button>
             <button onClick={() => cambiaStato('svolto')} style={btn('#16a34a')}>✅ Segna svolto</button>
             <button onClick={() => cambiaStato('annullato')} style={btn('#64748b')}>🚫 Annulla colloquio</button>
           </div>
@@ -284,7 +284,7 @@ export default function RiunioniColloquio() {
           <textarea readOnly value={current.trascrizione || ''} placeholder="Dopo la registrazione apparirà qui la trascrizione." rows={6} className="tw-w-full tw-box-border tw-p-2.5" />
           <h3>Verbale</h3>
           <textarea disabled={!isManager} value={current.verbale || ''} onChange={e => setCurrent({ ...current, verbale: e.target.value })} rows={12} placeholder="Scrivi, incolla o genera il verbale dalla trascrizione." className="tw-w-full tw-box-border tw-p-2.5" />
-          {isManager && <button onClick={salvaVerbale} style={{ ...btn('#2563eb'), marginTop: 8 }}>💾 Salva verbale</button>}
+          {isManager && <button onClick={salvaVerbale} style={{ ...btn('var(--brand-600)'), marginTop: 8 }}>💾 Salva verbale</button>}
         </section>
       </main>
     );

@@ -82,7 +82,7 @@ export default function RichiestaAssistenza() {
 
   if (inviata) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, var(--nav-900) 0%, var(--brand-600) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
         <div style={{ background: 'white', borderRadius: '20px', padding: '48px 36px', maxWidth: '520px', width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
           <div style={{ width: '80px', height: '80px', background: '#dcfce7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
             <CheckCircle size={44} color="#16a34a" />
@@ -96,7 +96,7 @@ export default function RichiestaAssistenza() {
             Il nostro staff la valuterà e vi contatterà entro <strong>24-48 ore</strong> per organizzare la prima visita e attivare il piano di assistenza.
           </p>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a href="https://www.abbracciocuredomiciliari.it" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#1e3a5f', color: 'white', padding: '12px 24px', borderRadius: '10px', textDecoration: 'none', fontWeight: '700' }}>
+            <a href="https://www.abbracciocuredomiciliari.it" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'var(--nav-900)', color: 'white', padding: '12px 24px', borderRadius: '10px', textDecoration: 'none', fontWeight: '700' }}>
               <ArrowLeft size={18} /> Torna al sito
             </a>
           </div>
@@ -135,13 +135,13 @@ export default function RichiestaAssistenza() {
     alignItems: 'center',
     gap: '8px',
     fontWeight: '700',
-    color: '#1e3a5f',
+    color: 'var(--nav-900)',
     fontSize: '1.05rem',
     marginBottom: '16px',
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)', padding: '24px 16px' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, var(--nav-900) 0%, var(--brand-600) 100%)', padding: '24px 16px' }}>
       <div style={{ maxWidth: '680px', margin: '0 auto' }}>
 
         <div style={{ marginBottom: '14px' }}><TornaAlSito color="#fff" /></div>
@@ -173,12 +173,12 @@ export default function RichiestaAssistenza() {
                   justifyContent: 'center',
                   fontWeight: '700',
                   fontSize: '0.9rem',
-                  background: step >= s ? '#1e3a5f' : '#e5e7eb',
+                  background: step >= s ? 'var(--nav-900)' : '#e5e7eb',
                   color: step >= s ? 'white' : '#9ca3af',
                 }}>
                   {s}
                 </div>
-                {s < 3 && <div style={{ width: '40px', height: '3px', background: step > s ? '#1e3a5f' : '#e5e7eb', borderRadius: '2px' }} />}
+                {s < 3 && <div style={{ width: '40px', height: '3px', background: step > s ? 'var(--nav-900)' : '#e5e7eb', borderRadius: '2px' }} />}
               </div>
             ))}
           </div>
@@ -322,8 +322,8 @@ export default function RichiestaAssistenza() {
                           style={{
                             padding: '8px 14px',
                             borderRadius: '20px',
-                            border: `2px solid ${caregiverRelazione === opt.value ? '#1e3a5f' : '#e5e7eb'}`,
-                            background: caregiverRelazione === opt.value ? '#1e3a5f' : 'white',
+                            border: `2px solid ${caregiverRelazione === opt.value ? 'var(--nav-900)' : '#e5e7eb'}`,
+                            background: caregiverRelazione === opt.value ? 'var(--nav-900)' : 'white',
                             color: caregiverRelazione === opt.value ? 'white' : '#374151',
                             fontWeight: caregiverRelazione === opt.value ? '700' : '500',
                             fontSize: '0.85rem',
@@ -358,7 +358,7 @@ export default function RichiestaAssistenza() {
                   )}
 
                   {isPazienteStesso && (
-                    <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px', color: '#1e40af', fontSize: '0.9rem' }}>
+                    <div style={{ background: 'var(--brand-50)', border: '1px solid var(--brand-200)', borderRadius: '8px', padding: '12px', color: 'var(--brand-700)', fontSize: '0.9rem' }}>
                       ✅ Il paziente richiede direttamente l'assistenza. Useremo i suoi contatti.
                     </div>
                   )}
@@ -379,7 +379,7 @@ export default function RichiestaAssistenza() {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
                       <div>
                         <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '2px' }}>Paziente</div>
-                        <div style={{ fontWeight: '600', color: '#1e3a5f' }}>{firstName} {lastName}</div>
+                        <div style={{ fontWeight: '600', color: 'var(--nav-900)' }}>{firstName} {lastName}</div>
                       </div>
                       <div>
                         <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '2px' }}>Data nascita</div>
@@ -450,7 +450,7 @@ export default function RichiestaAssistenza() {
                   padding: '12px 28px',
                   borderRadius: '10px',
                   border: 'none',
-                  background: sending ? '#9ca3af' : '#1e3a5f',
+                  background: sending ? '#9ca3af' : 'var(--nav-900)',
                   color: 'white',
                   fontWeight: '700',
                   cursor: sending ? 'not-allowed' : 'pointer',

@@ -23,8 +23,8 @@ export default function ProtocolliProcedure() {
             onClick={() => setActiveTab(tab.key)}
             className="tw-rounded-t-lg tw-py-2.5 tw-px-4.5 tw-text-[0.95rem] tw-font-semibold tw-cursor-pointer tw-border-none tw--mb-0.5"
             style={{
-              backgroundColor: activeTab === tab.key ? '#1e4d8c' : 'transparent',
-              color: activeTab === tab.key ? '#fff' : '#1e4d8c',
+              backgroundColor: activeTab === tab.key ? 'var(--brand-700)' : 'transparent',
+              color: activeTab === tab.key ? '#fff' : 'var(--brand-700)',
             }}
           >
             {tab.label}

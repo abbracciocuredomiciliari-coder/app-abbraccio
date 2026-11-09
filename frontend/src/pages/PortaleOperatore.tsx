@@ -135,7 +135,7 @@ interface Obiettivo {
 // ─── Costanti ─────────────────────────────────────────────────────────────────
 
 const statoObiettivoBadge: Record<string, { bg: string; color: string; label: string }> = {
-  attivo:        { bg: 'rgba(30,77,140,0.1)',  color: '#1e4d8c', label: '🎯 Attivo' },
+  attivo:        { bg: 'rgba(28,113,100,0.1)',  color: 'var(--brand-700)', label: '🎯 Attivo' },
   raggiunto:     { bg: 'rgba(5,150,105,0.1)',  color: '#065f46', label: '✅ Raggiunto' },
   parziale:      { bg: 'rgba(245,158,11,0.1)', color: '#92400e', label: '⚠️ Parziale' },
   non_raggiunto: { bg: 'rgba(220,38,38,0.1)',  color: '#7f1d1d', label: '❌ Non raggiunto' },
@@ -582,7 +582,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
     const firma = consenso.firmaDigitale ? `<img src="${consenso.firmaDigitale}" style="max-width:260px;max-height:100px;border-bottom:1px solid #334155;" />` : 'Firma digitale archiviata';
     const win = window.open('', '_blank');
     if (!win) return;
-    win.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>${titolo}</title><style>body{font-family:Arial,sans-serif;color:#1f2937;line-height:1.55;padding:32px;max-width:820px;margin:auto}h1{font-size:18px;color:#1e4d8c;text-align:center}h2{font-size:14px;color:#1e4d8c;margin-top:24px}.box{border:1px solid #bfdbfe;background:#eff6ff;border-radius:8px;padding:14px;margin:16px 0}.firma{margin-top:22px}@media print{body{padding:16px}}</style></head><body><h1>${titolo}</h1><p style="text-align:center">Abbraccio Cure Domiciliari</p><div class="box"><strong>Paziente:</strong> ${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName}<br><strong>Firmatario:</strong> ${consenso.nomeFirmatario} ${consenso.cognomeFirmatario} (${consenso.firmatoDa})<br><strong>Data firma:</strong> ${dataFirma}<br><strong>Operatore:</strong> ${consenso.operatoreEmail || 'N/D'}</div><h2>Attestazione</h2><p>${tipo === 'gdpr' ? 'Il firmatario autorizza il trattamento dei dati personali e sanitari necessari all’erogazione dei servizi, ai sensi del Regolamento UE 2016/679.' : 'Il firmatario conferma di aver ricevuto informazioni sulla prestazione sanitaria, sui rischi prevedibili e sulle limitazioni del trattamento.'}</p><div class="firma"><strong>Firma digitale del firmatario</strong><br>${firma}</div><p style="font-size:11px;color:#64748b;border-top:1px solid #cbd5e1;padding-top:12px;margin-top:28px;">Documento archiviato il ${dataFirma} — Abbraccio Cure Domiciliari</p><script>window.onload=function(){window.print()}</script></body></html>`);
+    win.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>${titolo}</title><style>body{font-family:Arial,sans-serif;color:#1f2937;line-height:1.55;padding:32px;max-width:820px;margin:auto}h1{font-size:18px;color:var(--brand-700);text-align:center}h2{font-size:14px;color:var(--brand-700);margin-top:24px}.box{border:1px solid var(--brand-200);background:var(--brand-50);border-radius:8px;padding:14px;margin:16px 0}.firma{margin-top:22px}@media print{body{padding:16px}}</style></head><body><h1>${titolo}</h1><p style="text-align:center">Abbraccio Cure Domiciliari</p><div class="box"><strong>Paziente:</strong> ${pazienteSelezionato.firstName} ${pazienteSelezionato.lastName}<br><strong>Firmatario:</strong> ${consenso.nomeFirmatario} ${consenso.cognomeFirmatario} (${consenso.firmatoDa})<br><strong>Data firma:</strong> ${dataFirma}<br><strong>Operatore:</strong> ${consenso.operatoreEmail || 'N/D'}</div><h2>Attestazione</h2><p>${tipo === 'gdpr' ? 'Il firmatario autorizza il trattamento dei dati personali e sanitari necessari all’erogazione dei servizi, ai sensi del Regolamento UE 2016/679.' : 'Il firmatario conferma di aver ricevuto informazioni sulla prestazione sanitaria, sui rischi prevedibili e sulle limitazioni del trattamento.'}</p><div class="firma"><strong>Firma digitale del firmatario</strong><br>${firma}</div><p style="font-size:11px;color:#64748b;border-top:1px solid #cbd5e1;padding-top:12px;margin-top:28px;">Documento archiviato il ${dataFirma} — Abbraccio Cure Domiciliari</p><script>window.onload=function(){window.print()}</script></body></html>`);
     win.document.close();
     win.focus();
   };
@@ -826,10 +826,10 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
     return `<html><head><title>Registro Accessi</title>
     <style>
       body{font-family:Arial,sans-serif;font-size:12px;color:#222;margin:20px}
-      h1{font-size:18px;color:#1e4d8c;margin-bottom:4px}
+      h1{font-size:18px;color:var(--brand-700);margin-bottom:4px}
       h2{font-size:14px;color:#444;margin:0 0 16px}
       table{width:100%;border-collapse:collapse;margin-top:16px}
-      th{background:#1e4d8c;color:#fff;padding:8px;text-align:left;font-size:11px}
+      th{background:var(--brand-700);color:#fff;padding:8px;text-align:left;font-size:11px}
       .riepilogo{margin-top:20px;background:#f1f5f9;padding:12px;border-radius:6px}
       .riepilogo p{margin:4px 0}
       @media print{body{margin:0} img{max-width:160px!important}}
@@ -1185,7 +1185,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                           <div className="tw-font-bold tw-text-sky-700 tw-text-[0.9rem] tw-flex tw-items-center tw-gap-2 tw-flex-wrap">
                             {prel.orario && <span className="tw-bg-blue-50 tw-px-1.5 tw-py-px tw-rounded tw-text-[0.78rem]">⏰ {prel.orario}</span>}
                             {prel.patient?.firstName || 'N/D'} {prel.patient?.lastName || ''}
-                            <span className="tw-px-1.5 tw-py-px tw-rounded-full tw-text-[0.7rem] tw-font-bold" style={{ background: prel.status === 'eseguito' ? '#f0fdf4' : '#eff6ff', color: prel.status === 'eseguito' ? '#059669' : '#0369a1' }}>
+                            <span className="tw-px-1.5 tw-py-px tw-rounded-full tw-text-[0.7rem] tw-font-bold" style={{ background: prel.status === 'eseguito' ? '#f0fdf4' : 'var(--brand-50)', color: prel.status === 'eseguito' ? '#059669' : '#0369a1' }}>
                               {prel.status === 'eseguito' ? '✅ Eseguito' : '🔵 Da eseguire'}
                             </span>
                           </div>
@@ -1729,8 +1729,8 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
             )}
 
             {/* ── REGISTRAZIONE ACCESSO (apre pagina dedicata ottimizzata tablet) ── */}
-            <div className="tw-rounded-lg tw-p-4 tw-mb-4" style={{ background: accessoAperto ? 'rgba(5,150,105,0.06)' : 'rgba(30,77,140,0.04)', border: `1px solid ${accessoAperto ? 'rgba(5,150,105,0.3)' : 'rgba(30,77,140,0.2)'}` }}>
-              <h4 className="tw-m-0 tw-mb-2.5" style={{ color: accessoAperto ? '#065f46' : '#1e4d8c' }}>
+            <div className="tw-rounded-lg tw-p-4 tw-mb-4" style={{ background: accessoAperto ? 'rgba(5,150,105,0.06)' : 'rgba(28,113,100,0.04)', border: `1px solid ${accessoAperto ? 'rgba(5,150,105,0.3)' : 'rgba(28,113,100,0.2)'}` }}>
+              <h4 className="tw-m-0 tw-mb-2.5" style={{ color: accessoAperto ? '#065f46' : 'var(--brand-700)' }}>
                 {accessoAperto ? '🟢 Accesso in corso' : '🔵 Registra accesso'}
               </h4>
               {accessoAperto && (
@@ -1742,7 +1742,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                 type="button"
                 onClick={() => pianoSelezionato && navigate(`/registrazione-accesso/${pianoSelezionato._id}`)}
                 className="tw-w-full tw-p-4 tw-rounded-xl tw-border-0 tw-cursor-pointer tw-text-white tw-font-bold tw-text-[1.05rem] tw-flex tw-items-center tw-justify-center tw-gap-2.5"
-                style={{ backgroundColor: accessoAperto ? '#16a34a' : '#1e4d8c' }}
+                style={{ backgroundColor: accessoAperto ? '#16a34a' : 'var(--brand-700)' }}
               >
                 {accessoAperto ? '⏹️ Registra Uscita con Firma' : '▶️ Registra Entrata'}
                 <span className="tw-text-[0.75rem] tw-opacity-90">(ottimizzato tablet)</span>
@@ -2180,7 +2180,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
         const checkRow = (campo: 'fattoriPaziente'|'fattoriStaff'|'fattoriComunicazione'|'fattoriAmbiente', val: string) => (
           <label key={val} className="tw-flex tw-items-start tw-gap-2.5 tw-cursor-pointer tw-text-[0.86rem] tw-leading-snug tw-py-1">
             <input type="checkbox" checked={(eventoForm[campo] as string[]).includes(val)} onChange={() => toggleFattore(campo, val)}
-              className="tw-w-4 tw-h-4 tw-flex-shrink-0 tw-mt-0.5 tw-cursor-pointer" style={{ accentColor: '#1e4d8c' }} />
+              className="tw-w-4 tw-h-4 tw-flex-shrink-0 tw-mt-0.5 tw-cursor-pointer" style={{ accentColor: 'var(--brand-700)' }} />
             <span>{val}</span>
           </label>
         );
@@ -2230,7 +2230,7 @@ export default function PortaleOperatore({ mode = 'dashboard' }: PortaleOperator
                           { val: 'altro', label: '✏️ Altro' },
                         ].map(r => (
                           <label key={r.val} className={`tw-flex tw-items-center tw-gap-2 tw-cursor-pointer tw-text-[0.88rem] tw-px-3.5 tw-py-2 tw-rounded-lg tw-border-2 ${eventoForm.ruoloOperatore === r.val ? 'tw-border-brand tw-bg-blue-50 tw-font-bold' : 'tw-border-slate-200 tw-bg-white'}`}>
-                            <input type="radio" name="ruoloOp" value={r.val} checked={eventoForm.ruoloOperatore === r.val} onChange={() => setEventoForm(p => ({ ...p, ruoloOperatore: r.val }))} style={{ accentColor: '#1e4d8c' }} />
+                            <input type="radio" name="ruoloOp" value={r.val} checked={eventoForm.ruoloOperatore === r.val} onChange={() => setEventoForm(p => ({ ...p, ruoloOperatore: r.val }))} style={{ accentColor: 'var(--brand-700)' }} />
                             {r.label}
                           </label>
                         ))}

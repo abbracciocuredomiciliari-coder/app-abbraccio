@@ -17,7 +17,7 @@ export function Badge({
     success: { background: '#f0fdf4', color: '#059669' },
     warning: { background: '#fffbeb', color: '#d97706' },
     danger: { background: '#fef2f2', color: '#dc2626' },
-    info: { background: '#eff6ff', color: '#3b82f6' },
+    info: { background: 'var(--brand-50)', color: 'var(--brand-500)' },
   };
 
   const sizeStyles = {

@@ -48,7 +48,7 @@ const STATO_LABEL: Record<Stato, string> = {
 };
 const STATO_STYLE: Record<Stato, { bg: string; color: string; border: string }> = {
   da_gestire: { bg: '#fee2e2', color: '#b91c1c', border: '#fca5a5' },
-  presa_in_carico: { bg: '#dbeafe', color: '#1d4ed8', border: '#93c5fd' },
+  presa_in_carico: { bg: 'var(--brand-100)', color: '#1d4ed8', border: 'var(--brand-300)' },
   in_attesa_riscontro: { bg: '#fef3c7', color: '#b45309', border: '#fcd34d' },
   gestita: { bg: '#dcfce7', color: '#15803d', border: '#86efac' },
 };

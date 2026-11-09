@@ -22,7 +22,7 @@ const PREST_CATS = [
   { value: 'prestazione_varia', label: 'Prestazione Varia', Icon: Activity, color: '#10b981' },
 ];
 const ASSIST_CATS = [
-  { value: 'assistenza_oraria', label: 'Assistenza Oraria', Icon: Clock, color: '#3b82f6' },
+  { value: 'assistenza_oraria', label: 'Assistenza Oraria', Icon: Clock, color: 'var(--brand-500)' },
   { value: 'variazione_orario', label: 'Variazione Orario', Icon: CalendarDays, color: '#8b5cf6' },
   { value: 'visita_programmata', label: 'Visita Programmata', Icon: Users, color: '#06b6d4' },
 ];
@@ -49,7 +49,7 @@ function CalendarioMese({ year, month, onPrev, onNext, selectedDate, onSelectDat
     <div style={{ background: 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', marginBottom: '16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
         <button onClick={onPrev} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: '6px' }}><ChevronLeft size={18} /></button>
-        <span style={{ fontWeight: '700', fontSize: '1rem', color: '#1e3a5f' }}>{MESI[month]} {year}</span>
+        <span style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--nav-900)' }}>{MESI[month]} {year}</span>
         <button onClick={onNext} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: '6px' }}><ChevronRight size={18} /></button>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '2px', textAlign: 'center' }}>
@@ -61,7 +61,7 @@ function CalendarioMese({ year, month, onPrev, onNext, selectedDate, onSelectDat
           const isToday = iso === todayStr;
           const hasDot = daysWithDots.has(iso);
           return (
-            <div key={iso} onClick={() => onSelectDate(iso)} style={{ padding: '6px 2px', borderRadius: '8px', cursor: 'pointer', position: 'relative', background: isSel ? '#1e3a5f' : isToday ? '#eff6ff' : 'transparent', color: isSel ? 'white' : isToday ? '#1e40af' : '#374151', fontWeight: isSel || isToday ? '700' : '400', fontSize: '0.85rem' }}>
+            <div key={iso} onClick={() => onSelectDate(iso)} style={{ padding: '6px 2px', borderRadius: '8px', cursor: 'pointer', position: 'relative', background: isSel ? 'var(--nav-900)' : isToday ? 'var(--brand-50)' : 'transparent', color: isSel ? 'white' : isToday ? 'var(--brand-700)' : '#374151', fontWeight: isSel || isToday ? '700' : '400', fontSize: '0.85rem' }}>
               {d}
               {hasDot && <span style={{ position: 'absolute', bottom: '2px', left: '50%', transform: 'translateX(-50%)', width: '4px', height: '4px', borderRadius: '50%', background: isSel ? 'white' : '#0284c7' }} />}
             </div>
@@ -278,7 +278,7 @@ export default function CentroPrenotazioniConvenzione() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
         <Building2 size={28} color="#0284c7" />
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#1e3a5f' }}>Centro Prenotazioni — Convenzione SIAT</h1>
+          <h1 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--nav-900)' }}>Centro Prenotazioni — Convenzione SIAT</h1>
           <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>Gestione prelievi, esami e piani per pazienti in convenzione</p>
         </div>
       </div>
@@ -423,7 +423,7 @@ export default function CentroPrenotazioniConvenzione() {
                     <div style={{ fontSize: '0.82rem', color: '#6b7280' }}>{p.patient ? `${p.patient.firstName} ${p.patient.lastName}` : '—'}{p.dataInizio ? ` · dal ${new Date(p.dataInizio).toLocaleDateString('it-IT')}` : ''}</div>
                     {p.staff && <div style={{ fontSize: '0.78rem', color: '#0369a1' }}>👤 {p.staff.firstName} {p.staff.lastName}</div>}
                   </div>
-                  <span style={{ padding: '2px 8px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700', flexShrink: 0, background: p.status === 'attivo' ? '#dcfce7' : p.status === 'completato' ? '#dbeafe' : '#f3f4f6', color: p.status === 'attivo' ? '#15803d' : p.status === 'completato' ? '#1d4ed8' : '#374151' }}>{p.status}</span>
+                  <span style={{ padding: '2px 8px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700', flexShrink: 0, background: p.status === 'attivo' ? '#dcfce7' : p.status === 'completato' ? 'var(--brand-100)' : '#f3f4f6', color: p.status === 'attivo' ? '#15803d' : p.status === 'completato' ? '#1d4ed8' : '#374151' }}>{p.status}</span>
                   <button onClick={() => navigate(`/workplan`)} title="Dettaglio" style={{ background: '#f3f4f6', border: 'none', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: '#374151', flexShrink: 0 }}><Eye size={15} />Dettaglio</button>
                   <button onClick={() => copiaLink(p._id)} title="Copia link accesso" style={{ background: copiedId === p._id ? '#dcfce7' : '#f3f4f6', border: 'none', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: copiedId === p._id ? '#15803d' : '#374151', flexShrink: 0 }}><Copy size={15} />{copiedId === p._id ? 'Copiato!' : 'Link'}</button>
                   {canEdit && <button onClick={() => handleEliminaPiano(p._id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '4px', flexShrink: 0 }}><Trash2 size={16} /></button>}
@@ -438,7 +438,7 @@ export default function CentroPrenotazioniConvenzione() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
           <div style={{ background: 'white', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '520px', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#1e3a5f', display: 'flex', alignItems: 'center', gap: '8px' }}><Syringe size={20} color="#dc2626" />Nuovo Prelievo</h2>
+              <h2 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--nav-900)', display: 'flex', alignItems: 'center', gap: '8px' }}><Syringe size={20} color="#dc2626" />Nuovo Prelievo</h2>
               <button onClick={() => setShowFormPrelievo(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}><X size={22} /></button>
             </div>
             <form onSubmit={handleCreaPrelievo} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -464,7 +464,7 @@ export default function CentroPrenotazioniConvenzione() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
           <div style={{ background: 'white', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '520px', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#1e3a5f', display: 'flex', alignItems: 'center', gap: '8px' }}><HeartPulse size={20} color="#7c3aed" />Nuovo Esame Strumentale</h2>
+              <h2 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--nav-900)', display: 'flex', alignItems: 'center', gap: '8px' }}><HeartPulse size={20} color="#7c3aed" />Nuovo Esame Strumentale</h2>
               <button onClick={() => setShowFormEsame(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}><X size={22} /></button>
             </div>
             <form onSubmit={handleCreaEsame} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -490,11 +490,11 @@ export default function CentroPrenotazioniConvenzione() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
           <div style={{ background: 'white', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '580px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#1e3a5f', display: 'flex', alignItems: 'center', gap: '8px' }}><ClipboardList size={20} color="#0369a1" />Nuovo Piano Lavorativo</h2>
+              <h2 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--nav-900)', display: 'flex', alignItems: 'center', gap: '8px' }}><ClipboardList size={20} color="#0369a1" />Nuovo Piano Lavorativo</h2>
               <button onClick={() => setShowFormPiano(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}><X size={22} /></button>
             </div>
             <form onSubmit={handleCreaPiano} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div><label style={lStyle}>Tipo *</label><div style={{ display: 'flex', gap: '8px' }}><button type="button" onClick={() => setWpType('prestazionale')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: `2px solid ${wpType === 'prestazionale' ? '#0369a1' : '#d1d5db'}`, background: wpType === 'prestazionale' ? '#eff6ff' : 'white', color: wpType === 'prestazionale' ? '#0369a1' : '#374151', fontWeight: '600', cursor: 'pointer' }}>🏥 Prestazionale</button><button type="button" onClick={() => setWpType('assistenziale')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: `2px solid ${wpType === 'assistenziale' ? '#0369a1' : '#d1d5db'}`, background: wpType === 'assistenziale' ? '#eff6ff' : 'white', color: wpType === 'assistenziale' ? '#0369a1' : '#374151', fontWeight: '600', cursor: 'pointer' }}>🤝 Assistenziale</button></div></div>
+              <div><label style={lStyle}>Tipo *</label><div style={{ display: 'flex', gap: '8px' }}><button type="button" onClick={() => setWpType('prestazionale')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: `2px solid ${wpType === 'prestazionale' ? '#0369a1' : '#d1d5db'}`, background: wpType === 'prestazionale' ? 'var(--brand-50)' : 'white', color: wpType === 'prestazionale' ? '#0369a1' : '#374151', fontWeight: '600', cursor: 'pointer' }}>🏥 Prestazionale</button><button type="button" onClick={() => setWpType('assistenziale')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: `2px solid ${wpType === 'assistenziale' ? '#0369a1' : '#d1d5db'}`, background: wpType === 'assistenziale' ? 'var(--brand-50)' : 'white', color: wpType === 'assistenziale' ? '#0369a1' : '#374151', fontWeight: '600', cursor: 'pointer' }}>🤝 Assistenziale</button></div></div>
               <div><label style={lStyle}>Descrizione attività *</label><textarea value={wpTask} onChange={e => setWpTask(e.target.value)} required rows={2} placeholder="Es. Medicazione avanzata + misurazione parametri" style={{ ...iStyle, resize: 'vertical' }} /></div>
               <div><label style={lStyle}>Paziente convenzione *</label><select value={wpPaziente} onChange={e => setWpPaziente(e.target.value)} required style={iStyle}><option value="">— Seleziona paziente —</option>{pazienti.map(p => <option key={p._id} value={p._id}>{p.firstName} {p.lastName}</option>)}</select></div>
               <div><label style={lStyle}>Operatore</label><select value={wpStaff} onChange={e => setWpStaff(e.target.value)} style={iStyle}><option value="">— Non assegnato —</option>{staff.map(s => <option key={s._id} value={s._id}>{s.firstName} {s.lastName} ({s.role})</option>)}</select></div>

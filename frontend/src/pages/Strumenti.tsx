@@ -646,8 +646,8 @@ function Strumenti() {
             type="button"
             onClick={() => setActiveTab(tab.key)}
             style={{
-              background: activeTab === tab.key ? '#1e4d8c' : 'transparent',
-              color: activeTab === tab.key ? '#fff' : '#1e4d8c',
+              background: activeTab === tab.key ? 'var(--brand-700)' : 'transparent',
+              color: activeTab === tab.key ? '#fff' : 'var(--brand-700)',
               border: 'none',
               borderRadius: '8px 8px 0 0',
               padding: '10px 18px',
@@ -1118,7 +1118,7 @@ function Strumenti() {
                 <input type="text" value={movementNote} onChange={(e) => setMovementNote(e.target.value)} placeholder={movementType === 'carico' ? 'Es. Fornitura, acquisto...' : 'Es. Consegnato a reparto, scaduto...'} style={{ width: '100%', padding: '10px' }} />
               </div>
               <div style={{ marginBottom: '16px', padding: '12px', background: '#e8f4fd', border: '1px solid #bee3f8', borderRadius: '6px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#1e4d8c' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: 'var(--brand-700)' }}>
                   📅 Aggiorna data di scadenza (opzionale)
                 </label>
                 <p style={{ margin: '0 0 8px', fontSize: '12px', color: '#555' }}>
@@ -1195,7 +1195,7 @@ function Strumenti() {
       ══════════════════════════════════════════════════════════════════════ */}
       {activeTab === 'richieste' && isGestoreRichieste && (
         <div style={{ marginTop: '8px' }}>
-          <h3 style={{ color: '#1e4d8c', marginBottom: '16px', borderBottom: '2px solid #e2e8f0', paddingBottom: '8px' }}>
+          <h3 style={{ color: 'var(--brand-700)', marginBottom: '16px', borderBottom: '2px solid #e2e8f0', paddingBottom: '8px' }}>
             📦 Gestione Richieste Presidi/Farmaci dagli Operatori
           </h3>
           <GestioneRichiestePresidi />
