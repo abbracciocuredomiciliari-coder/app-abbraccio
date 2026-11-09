@@ -752,6 +752,7 @@ function AppShell() {
               <LogOut size={16} />
               Logout
             </button>
+            <span className="user-area-caption">Abbraccio · Gestione</span>
           </div>
         )}
       </aside>

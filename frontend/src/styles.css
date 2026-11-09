@@ -68,17 +68,17 @@
   --purple: #6d5a94;
   --purple-bg: rgba(109, 90, 148, 0.08);
 
-  /* Neutrals */
-  --gray-50: #f8fafc;
-  --gray-100: #f1f5f9;
-  --gray-200: #e2e8f0;
-  --gray-300: #cbd5e1;
-  --gray-400: #94a3b8;
-  --gray-500: #64748b;
-  --gray-600: #475569;
-  --gray-700: #334155;
-  --gray-800: #1e293b;
-  --gray-900: #0f172a;
+  /* Neutrals — scala salvia */
+  --gray-50: #f4f7f3;
+  --gray-100: #edf1eb;
+  --gray-200: #e0e9e3;
+  --gray-300: #d2dfd4;
+  --gray-400: #9aa79d;
+  --gray-500: #73847a;
+  --gray-600: #5a6c60;
+  --gray-700: #42584a;
+  --gray-800: #233a31;
+  --gray-900: #1a2d24;
 
   /* Sidebar — verde scuro di navigazione */
   --sidebar-bg: var(--nav-900);
@@ -302,11 +302,20 @@ details.nav-section:not([open]) > summary.nav-section-label {
   padding-top: 12px;
 }
 
-/* User area */
+/* User area — footer stile sidefoot */
 .user-area {
   padding: 16px;
-  border-top: 1px solid rgba(255,255,255,0.1);
-  background: rgba(0,0,0,0.2);
+  border-top: 1px solid rgba(255,255,255,0.11);
+}
+
+.user-area-caption {
+  display: block;
+  margin: 12px 2px 0;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #8eafa1;
+  text-transform: uppercase;
 }
 
 .user-area p {
