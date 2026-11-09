@@ -76,8 +76,8 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
     } finally { setBusy(false); }
   }
 
-  const pillTop: React.CSSProperties = { background: '#fff', color: 'var(--brand-700)', border: '1.5px solid var(--brand-100)', borderRadius: 999, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 800, boxShadow: '0 3px 10px rgba(0,0,0,.10)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' };
-  const pillBtm: React.CSSProperties = { ...pillTop, background: 'linear-gradient(135deg,var(--nav-900),var(--brand-700))', color: '#fff', border: 'none', padding: '5px 14px' };
+  const pillTop: React.CSSProperties = { background: '#fff', color: 'var(--brand-800)', border: '1.5px solid var(--brand-300)', borderRadius: 999, padding: '6px 14px', fontSize: '0.8rem', fontWeight: 800, boxShadow: '0 3px 10px rgba(0,0,0,.10)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' };
+  const pillBtm: React.CSSProperties = { ...pillTop, background: 'var(--brand-700)', color: '#fff', border: 'none', padding: '7px 16px', boxShadow: '0 4px 14px rgba(16,47,59,.35)' };
 
   return (
     <>
@@ -92,7 +92,7 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
           .ab-pill-top { display: none !important; }
           .ab-fab { width: 46px !important; height: 46px !important; }
           .ab-fab svg { width: 34px !important; height: 34px !important; }
-          .ab-pill-btm { font-size: 0.66rem !important; padding: 4px 10px !important; }
+          .ab-pill-btm { font-size: 0.78rem !important; padding: 6px 14px !important; }
         }
       `}</style>
 
@@ -127,7 +127,7 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
                 {m.text}
               </div>
             ))}
-            {busy && <div style={{ alignSelf: 'flex-start', color: '#94a3b8', fontSize: '0.8rem' }}>Abbraccino sta pensando…</div>}
+            {busy && <div style={{ alignSelf: 'flex-start', color: '#64748b', fontSize: '0.85rem' }}>Abbraccino sta pensando…</div>}
             <div ref={bottomRef} />
           </div>
           <form onSubmit={invia} style={{ display: 'flex', gap: 8, padding: 10, borderTop: '1px solid #e2e8f0' }}>

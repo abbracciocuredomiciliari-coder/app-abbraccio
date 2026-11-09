@@ -184,8 +184,33 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
   const catCorrente = categorie.find(c => c.key === categoriaAttiva);
 
   return (
-    <div style={{ fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: '16px', alignItems: 'start' }}>
+    <div className="calc-prev" style={{ fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
+      <style>{`
+        /* Smartphone/tablet: i moduli si impilano uno sotto l'altro e
+           testo, campi e controlli diventano abbastanza grandi da lavorare */
+        @media (max-width: 720px) {
+          .calc-prev-grid { grid-template-columns: 1fr !important; }
+          .calc-prev .cv-nome { font-size: 0.97rem !important; }
+          .calc-prev .cv-prezzo { font-size: 0.84rem !important; }
+          .calc-prev .cv-add { font-size: 0.9rem !important; padding: 10px 14px !important; }
+          .calc-prev .cv-qbtn { width: 40px !important; height: 40px !important; }
+          .calc-prev .cv-qinput { width: 56px !important; padding: 9px 2px !important; font-size: 1rem !important; }
+          .calc-prev .cv-oraria { font-size: 0.88rem !important; padding: 8px 10px !important; }
+          .calc-prev .cv-oraria input { width: 58px !important; font-size: 0.95rem !important; padding: 7px 2px !important; }
+          .calc-prev .cv-sel { font-size: 0.9rem !important; }
+          .calc-prev .cv-legenda-label { font-size: 0.86rem !important; }
+          .calc-prev .cv-cat-desc { font-size: 0.82rem !important; }
+          .calc-prev select,
+          .calc-prev input[type="number"],
+          .calc-prev input[type="text"] { font-size: 1rem !important; }
+          .calc-prev .cv-table { font-size: 0.92rem !important; }
+          .calc-prev .cv-table td { padding-top: 9px !important; padding-bottom: 9px !important; }
+          .calc-prev .cv-empty { font-size: 0.95rem !important; }
+          .calc-prev .cv-tot { font-size: 1.7rem !important; }
+          .calc-prev .cv-sconto { font-size: 0.9rem !important; padding: 10px 12px !important; }
+        }
+      `}</style>
+      <div className="calc-prev-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: '16px', alignItems: 'start' }}>
         {/* Calcolatore */}
         <div style={{ background: 'linear-gradient(165deg,var(--brand-50) 0%,#ffffff 55%)', borderRadius: '16px', border: '1px solid var(--brand-300)', boxShadow: '0 8px 24px rgba(28,113,100,.10)', overflow: 'hidden' }}>
           <div style={{ background: 'linear-gradient(90deg,var(--brand-800),var(--brand-700))', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -206,8 +231,9 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
                   <select value={categoriaAttiva} onChange={e => setCategoriaAttiva(e.target.value)} style={selectCat}>
                     {categorie.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
                   </select>
-                  {catCorrente && <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{catCorrente.descrizione}</span>}
+                  {catCorrente && <span className="cv-cat-desc" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{catCorrente.descrizione}</span>}
                   <button type="button" onClick={() => setShowLegenda(o => !o)}
+                    className="cv-legenda-label"
                     style={{ marginTop: '6px', border: 'none', background: 'none', padding: 0, cursor: 'pointer', color: 'var(--brand-700)', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                     <Info size={14} /> {showLegenda ? 'Nascondi la legenda delle categorie' : 'Quale categoria scegliere? Legenda'}
                   </button>
@@ -240,24 +266,24 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
                         return (
                           <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderBottom: '1px solid #f1f5f9', background: q > 0 ? 'var(--brand-50)' : v.promo ? '#fff7f7' : '#fff', flexWrap: 'wrap' }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>{v.nome}</div>
-                              <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                              <div className="cv-nome" style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>{v.nome}</div>
+                              <div className="cv-prezzo" style={{ fontSize: '0.72rem', color: '#64748b' }}>
                                 <Prezzo v={v} suffisso={v.unitaMisura ? ` / ${v.unitaMisura}` : ''} />{v.note ? ` · ${v.note}` : ''}
                               </div>
                             </div>
                             {q === 0 ? (
-                              <button type="button" onClick={() => setQta(v.id, 1)} style={{ border: '1px solid var(--brand-700)', background: '#fff', color: 'var(--brand-700)', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                              <button type="button" onClick={() => setQta(v.id, 1)} className="cv-add" style={{ border: '1px solid var(--brand-700)', background: '#fff', color: 'var(--brand-700)', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                                 <Plus size={14} /> Aggiungi servizio
                               </button>
                             ) : (
                               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                                <button type="button" onClick={() => setQta(v.id, q - 1)} style={{ border: '1px solid #cbd5e1', background: '#fff', borderRadius: '6px', width: '28px', height: '28px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={13} /></button>
-                                <input type="number" min={1} max={999} value={q} onChange={e => setQta(v.id, Number(e.target.value) || 1)} style={{ width: '46px', textAlign: 'center', padding: '5px 2px', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 700 }} />
-                                <button type="button" onClick={() => setQta(v.id, q + 1)} style={{ border: '1px solid #cbd5e1', background: '#fff', borderRadius: '6px', width: '28px', height: '28px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={13} /></button>
+                                <button type="button" onClick={() => setQta(v.id, q - 1)} className="cv-qbtn" style={{ border: '1px solid #cbd5e1', background: '#fff', borderRadius: '6px', width: '28px', height: '28px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={13} /></button>
+                                <input type="number" min={1} max={999} value={q} onChange={e => setQta(v.id, Number(e.target.value) || 1)} className="cv-qinput" style={{ width: '46px', textAlign: 'center', padding: '5px 2px', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 700 }} />
+                                <button type="button" onClick={() => setQta(v.id, q + 1)} className="cv-qbtn" style={{ border: '1px solid #cbd5e1', background: '#fff', borderRadius: '6px', width: '28px', height: '28px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={13} /></button>
                               </div>
                             )}
                             {isOraria(v) && q > 0 && (
-                              <div style={{ flexBasis: '100%', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#475569', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '6px 9px' }}>
+                              <div className="cv-oraria" style={{ flexBasis: '100%', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#475569', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '6px 9px', flexWrap: 'wrap' }}>
                                 <span><strong>{q}</strong> ore/giorno</span>
                                 <span>per</span>
                                 <input type="number" min={1} max={365} value={gg} onChange={e => setGiorniVoce(v.id, Number(e.target.value) || 1)} style={{ width: '48px', textAlign: 'center', padding: '3px 2px', border: '1px solid var(--brand-300)', borderRadius: '6px', fontWeight: 800, fontSize: '0.78rem', color: 'var(--brand-700)' }} />
@@ -288,7 +314,7 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
                       const variato = custom != null && custom > 0 && Math.abs(custom - v.prezzo) > 0.004;
                       const gg = isOraria(v) ? (giorniVoci[v.id] || 1) : 1;
                       return (
-                        <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#334155', padding: '3px 0', flexWrap: 'wrap' }}>
+                        <div key={v.id} className="cv-sel" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#334155', padding: '3px 0', flexWrap: 'wrap' }}>
                           <span style={{ flex: 1, minWidth: '120px' }}>{v.nome}{' '}
                             {gg > 1 ? <strong>× {selezione[v.id]} ore/gg · {gg} giorni</strong> : <strong>× {selezione[v.id]}</strong>}
                             {v.promo && <span style={{ color: '#b91c1c', fontWeight: 800, fontSize: '0.7rem' }}> PROMO</span>}{variato && <span style={{ color: '#b45309', fontWeight: 800, fontSize: '0.68rem' }}> · prezzo variato</span>}</span>
@@ -331,7 +357,7 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
           {previewError && <p style={{ color: '#dc2626', fontSize: '0.88rem' }}>{previewError}</p>}
           {prev && !previewError && (
             <>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <table className="cv-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <tbody>
                   {prev.righe.map((r, i) => (
                     <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
@@ -354,7 +380,7 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
               </table>
 
               {prev.scontoApplicato && (
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', background: applicaSconto ? '#f0fdf4' : '#f8fafc', border: `1px solid ${applicaSconto ? '#86efac' : '#e2e8f0'}`, borderRadius: '8px', padding: '8px 10px', cursor: 'pointer' }}>
+                <label className="cv-sconto" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', background: applicaSconto ? '#f0fdf4' : '#f8fafc', border: `1px solid ${applicaSconto ? '#86efac' : '#e2e8f0'}`, borderRadius: '8px', padding: '8px 10px', cursor: 'pointer' }}>
                   <input type="checkbox" checked={applicaSconto} onChange={e => setApplicaSconto(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#16a34a' }} />
                   <span style={{ fontSize: '0.8rem', color: applicaSconto ? '#166534' : '#64748b', fontWeight: 700 }}>
                     🎉 Applica sconto più servizi {prev.scontoPerc}% (−{euro(prev.sconto)})
@@ -365,7 +391,7 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
               <div style={{ background: 'linear-gradient(135deg,var(--brand-800),var(--brand-700))', borderRadius: '12px', padding: '14px 16px', marginTop: '12px', color: '#fff' }}>
                 <div style={{ fontSize: '0.78rem', fontWeight: 600, opacity: 0.9 }}>TOTALE PREVENTIVO</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, lineHeight: 1.2 }}>{euro(totaleFinale)}</div>
+                  <div className="cv-tot" style={{ fontSize: '1.5rem', fontWeight: 800, lineHeight: 1.2 }}>{euro(totaleFinale)}</div>
                   {scontoAttivo && <div style={{ fontSize: '0.9rem', textDecoration: 'line-through', opacity: 0.7 }}>{euro(prev.subtotale)}</div>}
                   {scontoAttivo && <span style={{ background: '#16a34a', color: '#fff', fontSize: '0.72rem', fontWeight: 800, padding: '2px 8px', borderRadius: '999px' }}>-{prev.scontoPerc}%</span>}
                 </div>
@@ -389,7 +415,7 @@ export default function CalcolatorePreventivoListino({ onConferma, onChiudi, lab
           {!prev && !previewLoading && !previewError && (
             <div style={{ textAlign: 'center', padding: '26px 10px', color: '#94a3b8' }}>
               <Calculator size={34} color="var(--brand-300)" style={{ margin: '0 auto 10px' }} />
-              <p style={{ fontSize: '0.88rem', margin: 0, lineHeight: 1.55 }}>
+              <p className="cv-empty" style={{ fontSize: '0.88rem', margin: 0, lineHeight: 1.55 }}>
                 Nessun preventivo ancora.<br />
                 Aggiungi le prestazioni e premi <strong style={{ color: 'var(--brand-700)' }}>«Genera preventivo»</strong>.
               </p>

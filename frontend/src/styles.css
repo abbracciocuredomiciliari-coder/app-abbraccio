@@ -1086,6 +1086,25 @@ div[style*="border:1px solid #e5e7eb"] {
   .tw-grid-cols-2, .tw-grid-cols-3, .tw-grid-cols-4 { grid-template-columns: 1fr !important; }
 }
 
+/* Moduli di calcolo (Simula costo intermediazione, calcolatore preventivo):
+   su smartphone campi e scritte abbastanza grandi da lavorare, moduli in pila */
+@media (max-width: 768px) {
+  .sim-ccnl input:not([type="checkbox"]), .sim-ccnl select, .sim-ccnl textarea {
+    font-size: 1rem !important; padding: 12px 10px !important; min-height: 46px;
+  }
+  .sim-ccnl input[type="checkbox"] { width: 20px !important; height: 20px !important; }
+  .sim-ccnl .tw-text-sm { font-size: 0.93rem !important; }
+  .sim-ccnl .tw-text-xs { font-size: 0.8rem !important; }
+  .sim-ccnl .tw-text-lg { font-size: 1.15rem !important; }
+  .sim-ccnl button { min-height: 44px; }
+  .sim-ccnl .sim-grid { grid-template-columns: 1fr !important; }
+}
+/* Tablet stretto: le griglie del simulatore vanno a 2 colonne, non 3/4 schiacciate */
+@media (min-width: 769px) and (max-width: 1150px) {
+  .sim-ccnl .sim-grid-3 { grid-template-columns: 1fr 1fr !important; }
+  .sim-ccnl .sim-grid-4 { grid-template-columns: 1fr 1fr !important; }
+}
+
 @media (max-width: 480px) {
   .dashboard-grid { grid-template-columns: 1fr; }
 }

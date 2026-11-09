@@ -815,12 +815,12 @@ export default function BadantiIntermediazione() {
         </div>
 
         {showSim && (
-          <div className="tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
+          <div className="sim-ccnl tw-bg-white tw-rounded-2xl tw-border tw-border-slate-100 tw-shadow-sm tw-p-5 md:tw-p-6">
             <h2 className="tw-text-lg tw-font-semibold tw-mb-1 tw-text-slate-700 tw-flex tw-items-center tw-gap-2">
               <Euro size={20} /> Simula costo badante — CCNL 2026
             </h2>
             <p className="tw-text-xs tw-text-slate-500 tw-mb-4">Stima completa: retribuzione lorda, contributi INPS, Cassa.Colf, TFR e tredicesima.</p>
-            <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-3 tw-gap-4 tw-mb-4">
+            <div className="sim-grid sim-grid-3 tw-grid tw-grid-cols-1 md:tw-grid-cols-3 tw-gap-4 tw-mb-4">
               <label className="tw-flex tw-flex-col tw-gap-1">
                 <span className="tw-text-sm tw-font-medium">Tipo di contratto</span>
                 <select
@@ -909,7 +909,7 @@ export default function BadantiIntermediazione() {
             {isGestione && (
               <div className="tw-mb-4 tw-p-3 tw-rounded-xl tw-bg-slate-50 tw-border tw-border-slate-100">
                 <h3 className="tw-text-xs tw-font-bold tw-text-slate-500 tw-uppercase tw-mb-2">Contratto d'incarico per firma paziente</h3>
-                <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-4 tw-gap-3">
+                <div className="sim-grid sim-grid-4 tw-grid tw-grid-cols-1 md:tw-grid-cols-4 tw-gap-3">
                   <label className="tw-flex tw-flex-col tw-gap-1">
                     <span className="tw-text-sm tw-font-medium">Paziente</span>
                     <select
@@ -1157,10 +1157,10 @@ export default function BadantiIntermediazione() {
 
       {selectedQuote && richiestaAperta && (
         <div className="tw-fixed tw-inset-0 tw-bg-black/40 tw-flex tw-items-center tw-justify-center tw-z-50 tw-p-2 sm:tw-p-4">
-          <div className="tw-bg-white tw-rounded-2xl tw-p-4 sm:tw-p-6 tw-w-full tw-max-w-3xl tw-max-h-[92vh] tw-overflow-y-auto tw-shadow-xl">
+          <div className="sim-ccnl tw-bg-white tw-rounded-2xl tw-p-4 sm:tw-p-6 tw-w-full tw-max-w-3xl tw-max-h-[92vh] tw-overflow-y-auto tw-shadow-xl">
             <h2 className="tw-text-lg tw-font-bold tw-mb-1 tw-flex tw-items-center tw-gap-2 tw-text-slate-800"><Euro size={20} /> Simula costo e contratto d'incarico</h2>
             <p className="tw-text-xs tw-text-slate-500 tw-mb-4">Il PDF con la simulazione del costo sarà allegato al contratto d'incarico inviato al paziente insieme all'informativa GDPR per la firma.</p>
-            <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-3 tw-gap-3 tw-mb-4">
+            <div className="sim-grid sim-grid-3 tw-grid tw-grid-cols-1 md:tw-grid-cols-3 tw-gap-3 tw-mb-4">
               <label className="tw-flex tw-flex-col tw-gap-1">
                 <span className="tw-text-sm tw-font-medium">Tipo di contratto</span>
                 <select

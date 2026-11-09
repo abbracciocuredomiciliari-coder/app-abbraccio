@@ -122,20 +122,20 @@ export default function AbbraccinoInterno() {
           .ab-pill-top { display: none !important; }
           .ab-int-fab { width: 46px !important; height: 46px !important; }
           .ab-int-fab svg { width: 34px !important; height: 34px !important; }
-          .ab-pill-btm { font-size: 0.66rem !important; padding: 4px 10px !important; }
+          .ab-pill-btm { font-size: 0.78rem !important; padding: 6px 14px !important; }
         }
       `}</style>
 
       {!open && (
         <div className="ab-launcher" style={{ position: 'fixed', right: 14, bottom: 6, zIndex: 9990, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-          <button onClick={() => setOpen(true)} className="ab-pill-top" style={{ background: '#fff', color: '#174c3c', border: '1.5px solid #dcebdc', borderRadius: 999, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 800, boxShadow: '0 3px 10px rgba(0,0,0,.10)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          <button onClick={() => setOpen(true)} className="ab-pill-top" style={{ background: '#fff', color: 'var(--brand-800)', border: '1.5px solid var(--brand-300)', borderRadius: 999, padding: '6px 14px', fontSize: '0.8rem', fontWeight: 800, boxShadow: '0 3px 10px rgba(0,0,0,.10)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
             Sono Abbraccino 💛
           </button>
           <button onClick={() => setOpen(true)} aria-label="Chiedi ad Abbraccino" className="ab-int-fab"
             style={{ width: 62, height: 62, borderRadius: '50%', border: 'none', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 5, boxSizing: 'border-box' }}>
             <CuoricinoIcon size={50} />
           </button>
-          <button onClick={() => setOpen(true)} className="ab-pill-btm" style={{ background: 'linear-gradient(135deg,var(--nav-900),var(--brand-700))', color: '#fff', border: 'none', borderRadius: 999, padding: '5px 14px', fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          <button onClick={() => setOpen(true)} className="ab-pill-btm" style={{ background: 'var(--brand-700)', color: '#fff', border: 'none', borderRadius: 999, padding: '7px 16px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(16,47,59,.35)' }}>
             Abbraccino Aiutino
           </button>
         </div>
@@ -199,7 +199,7 @@ export default function AbbraccinoInterno() {
                 )}
               </div>
             ))}
-            {busy && <div style={{ alignSelf: 'flex-start', color: '#94a3b8', fontSize: '0.8rem' }}>Abbraccino sta cercando…</div>}
+            {busy && <div style={{ alignSelf: 'flex-start', color: '#64748b', fontSize: '0.85rem' }}>Abbraccino sta cercando…</div>}
             <div ref={bottomRef} />
           </div>
           <form onSubmit={invia} className="ab-chat-input" style={{ display: 'flex', gap: 8, padding: 10, borderTop: '1px solid #e2e8f0' }}>
