@@ -838,7 +838,7 @@ export default function BadantiIntermediazione() {
               </label>
               <label className="tw-flex tw-flex-col tw-gap-1">
                 <span className="tw-text-sm tw-font-medium">Durata del contratto</span>
-                <div className="tw-flex tw-gap-2">
+                <div className="sim-contract-actions tw-flex tw-gap-2 tw-flex-wrap">
                   <button type="button" onClick={() => { setSimDeterminato(false); setSimRisultato(null); }} className={`tw-flex-1 tw-border tw-rounded tw-p-2 tw-text-sm tw-font-semibold ${!simDeterminato ? 'tw-bg-brand-50 tw-border-brand-300 tw-text-brand-800' : 'tw-bg-white tw-text-slate-500'}`}>Indeterminato</button>
                   <button type="button" onClick={() => { setSimDeterminato(true); setSimRisultato(null); }} className={`tw-flex-1 tw-border tw-rounded tw-p-2 tw-text-sm tw-font-semibold ${simDeterminato ? 'tw-bg-brand-50 tw-border-brand-300 tw-text-brand-800' : 'tw-bg-white tw-text-slate-500'}`}>Determinato</button>
                 </div>
@@ -942,7 +942,7 @@ export default function BadantiIntermediazione() {
                     <span className="tw-font-medium">Invia subito per firma</span>
                   </label>
                 </div>
-                <div className="tw-flex tw-items-center tw-gap-3 tw-mt-3 tw-flex-wrap">
+                <div className="sim-contract-actions tw-flex tw-items-center tw-gap-3 tw-mt-3 tw-flex-wrap">
                   <Button size="sm" onClick={generaContrattoDaSim} disabled={simContractLoading || !simPatient || (simContractInvia && !simContractEmail)}>
                     {simContractLoading ? 'Generazione...' : simContractInvia ? 'Genera contratto + invia firma' : 'Genera contratto'}
                   </Button>
@@ -1190,7 +1190,7 @@ export default function BadantiIntermediazione() {
               )}
               <label className="tw-flex tw-flex-col tw-gap-1">
                 <span className="tw-text-sm tw-font-medium">Durata</span>
-                <div className="tw-flex tw-gap-2">
+                <div className="sim-contract-actions tw-flex tw-gap-2 tw-flex-wrap">
                   <button type="button" onClick={() => { setSimDeterminato(false); setSimRisultato(null); }} className={`tw-flex-1 tw-border tw-rounded tw-p-2 tw-text-sm tw-font-semibold ${!simDeterminato ? 'tw-bg-brand-50 tw-border-brand-300 tw-text-brand-800' : 'tw-bg-white tw-text-slate-500'}`}>Indeterminato</button>
                   <button type="button" onClick={() => { setSimDeterminato(true); setSimRisultato(null); }} className={`tw-flex-1 tw-border tw-rounded tw-p-2 tw-text-sm tw-font-semibold ${simDeterminato ? 'tw-bg-brand-50 tw-border-brand-300 tw-text-brand-800' : 'tw-bg-white tw-text-slate-500'}`}>Determinato</button>
                 </div>

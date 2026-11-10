@@ -109,6 +109,7 @@ export default function LandingBadante() {
   const [showLegenda, setShowLegenda] = useState(false);
 
   const [sim, setSim] = useState<Simulazione | null>(null);
+  const [simStale, setSimStale] = useState(false);
   const [previewError, setPreviewError] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
 
@@ -126,6 +127,8 @@ export default function LandingBadante() {
 
   const utmRef = useRef<Record<string, string>>({});
   const formRef = useRef<HTMLDivElement | null>(null);
+  const resultRef = useRef<HTMLDivElement | null>(null);
+  const genRev = useRef(0);
 
   const contratto = CONTRATTI.find(c => c.value === contrattoTipo) || CONTRATTI[0];
   const livelliDisponibili = contratto.livelli;
@@ -182,17 +185,22 @@ export default function LandingBadante() {
   });
 
   // ─── Calcolo preventivo — solo su richiesta con "Genera preventivo" ─────────
-  // Qualunque modifica ai parametri azzera il risultato: il preventivo mostrato
-  // corrisponde sempre esattamente ai parametri attuali.
-  const invalida = () => setSim(null);
+  // Qualunque modifica ai parametri marca il risultato come obsoleto:
+  // i dati restano visibili ma l'invio resta bloccato finché non viene rigenerato.
+  const invalida = () => { if (sim) setSimStale(true); };
 
   async function genera() {
+    const rev = ++genRev.current;
     try {
       setPreviewLoading(true);
       setPreviewError('');
       const res = await axios.post(`${API_BASE}/landing-badante/preview`, simBody());
+      if (rev !== genRev.current) return; // risposta di una richiesta più vecchia: ignora
       setSim(res.data);
+      setSimStale(false);
       tracciaPixel('ViewContent', { content_name: 'Preventivo badante generato' });
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      setTimeout(() => resultRef.current?.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' }), 80);
     } catch (err: any) {
       setSim(null);
       setPreviewError(err?.response?.data?.message || 'Controlla i dati inseriti');
@@ -219,8 +227,8 @@ export default function LandingBadante() {
       setSendError('Inserisci l\'indirizzo (via e numero civico).');
       return;
     }
-    if (!sim) {
-      setSendError('Genera prima il preventivo con il pulsante "Genera preventivo".');
+    if (!sim || simStale) {
+      setSendError(sim ? 'Hai modificato i parametri: rigenera il preventivo prima di inviare la richiesta.' : 'Genera prima il preventivo con il pulsante "Genera preventivo".');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -320,7 +328,7 @@ export default function LandingBadante() {
         </div>
       </header>
 
-      <main style={{ maxWidth: '1080px', margin: '0 auto', padding: '28px 16px 48px' }}>
+      <main style={{ maxWidth: '840px', margin: '0 auto', padding: '28px 16px 48px' }}>
         {/* Hero */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <span style={{ background: '#ffedd5', color: '#9a3412', padding: '6px 14px', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 700 }}>
@@ -341,7 +349,7 @@ export default function LandingBadante() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(320px,100%),1fr))', gap: '20px', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: '20px', alignItems: 'start' }}>
           {/* Calcolatore */}
           <div style={{ background: 'linear-gradient(165deg,#fff7ed 0%,#ffffff 55%)', borderRadius: '16px', border: '1px solid #fdba74', boxShadow: '0 8px 24px rgba(194,65,12,.10)', overflow: 'hidden' }}>
             <div style={{ background: 'linear-gradient(90deg,#c2410c,#ea580c)', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -454,8 +462,8 @@ export default function LandingBadante() {
             </div>
           </div>
 
-          {/* Preventivo */}
-          <div className="bad-sticky bad-card-pad" style={{ background: '#fff', borderRadius: '16px', border: '1px solid #ffedd5', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: '24px', position: 'sticky', top: '80px' }}>
+          {/* Preventivo — nel flusso, sotto il modulo (niente pannello laterale sticky) */}
+          <div ref={resultRef} className="bad-sticky bad-card-pad" style={{ background: '#fff', borderRadius: '16px', border: '1px solid #ffedd5', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: '24px', scrollMarginTop: '90px' }}>
             <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', color: '#1e293b', margin: '0 0 14px' }}>
               <FileText size={20} color="#c2410c" /> Il tuo preventivo
             </h2>
@@ -463,6 +471,12 @@ export default function LandingBadante() {
             {previewError && <p style={{ color: '#dc2626', fontSize: '0.88rem' }}>{previewError}</p>}
             {sim && !previewError && (
               <>
+                {simStale && (
+                  <div role="alert" style={{ background: '#fbf5e9', color: '#765215', border: '1px solid #e3d3ae', borderRadius: '10px', padding: '12px 14px', marginBottom: '12px', fontSize: '0.88rem', fontWeight: 600, lineHeight: 1.5 }}>
+                    ⚠️ Hai modificato i parametri: questo preventivo non è più aggiornato. Premi <strong>«Rigenera preventivo»</strong> per utilizzarlo.
+                  </div>
+                )}
+                <div style={simStale ? { opacity: 0.55, pointerEvents: 'none' } : undefined}>
                 <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '10px' }}>
                   {sim.contrattoLabel} · {sim.livelloLabel} · {sim.oreSettimanali}h/sett ({sim.oreMensili}h/mese)
                 </div>
@@ -504,9 +518,10 @@ export default function LandingBadante() {
                 <p style={{ fontSize: '0.75rem', color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '9px 11px', marginTop: '12px', lineHeight: 1.5 }}>
                   ⚠️ <strong>Tariffe indicative.</strong> L'importo può subire variazioni in base alle condizioni domiciliari e assistenziali specifiche: la tariffa definitiva viene confermata dopo il colloquio conoscitivo, senza impegno.
                 </p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(170px,100%),1fr))', gap: '8px', marginTop: '12px' }}>
                   <a href={testoWhatsApp()} target="_blank" rel="noopener" style={btnWa}><MessageCircle size={17} /> Invia su WhatsApp</a>
                   <a href={`tel:${TELEFONO}`} style={btnTel}><Phone size={17} /> Telefona</a>
+                </div>
                 </div>
               </>
             )}
@@ -550,14 +565,14 @@ export default function LandingBadante() {
               </div>
               <div>
                 <span style={label}>Chi compila il modulo? *</span>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {(['paziente', 'caregiver'] as const).map((r) => (
                     <button
                       key={r}
                       type="button"
                       onClick={() => setRuolo(r)}
                       style={{
-                        flex: 1, padding: '10px 8px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer',
+                        flex: '1 1 150px', minWidth: 0, padding: '10px 8px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer',
                         border: `2px solid ${ruolo === r ? '#ea580c' : '#e2e8f0'}`,
                         background: ruolo === r ? '#fff7ed' : '#fff',
                         color: ruolo === r ? '#c2410c' : '#475569',

@@ -326,6 +326,20 @@ export default function SchedaServizio() {
               Prima di inviare la scheda, il paziente o il caregiver deve firmare per accettare i termini della prestazione.
             </p>
 
+            {/* Riepilogo read-only — ciò che viene accettato con la firma */}
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px 16px', marginBottom: '20px' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--brand-700)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+                Riepilogo della proposta da firmare
+              </div>
+              <dl style={{ margin: 0, fontSize: '0.88rem', lineHeight: 1.7 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}><dt style={{ color: '#6b7280' }}>Paziente</dt><dd style={{ margin: 0, fontWeight: 700, color: '#1f2937', textAlign: 'right' }}>{nomeCognomePaziente || '—'}</dd></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}><dt style={{ color: '#6b7280' }}>Prestazione</dt><dd style={{ margin: 0, fontWeight: 700, color: '#1f2937', textAlign: 'right' }}>{tipoPrestazione === 'altro' ? tipoPrestazioneAltro : tipoPrestazione} · {({singola: 'Singola', multipla: 'Multipla', continuata: 'Continuata'} as Record<string, string>)[frequenzaPrestazione]}</dd></div>
+                {operatoreIncaricato && <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}><dt style={{ color: '#6b7280' }}>Operatore</dt><dd style={{ margin: 0, fontWeight: 700, color: '#1f2937', textAlign: 'right' }}>{operatoreIncaricato}</dd></div>}
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', borderTop: '1px solid #e2e8f0', paddingTop: '6px', marginTop: '6px' }}><dt style={{ color: '#6b7280' }}>Costo prestazione</dt><dd style={{ margin: 0, fontWeight: 800, color: 'var(--brand-800)', textAlign: 'right' }}>€ {Number(costoPrestazione || 0).toFixed(2)}{ivaPercentuale ? ` + IVA ${ivaPercentuale}%` : ' (IVA non applicata)'}</dd></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}><dt style={{ color: '#6b7280' }}>Pagamento</dt><dd style={{ margin: 0, fontWeight: 700, color: '#1f2937', textAlign: 'right' }}>{({contanti: 'Contanti', carta_credito: 'Carta di credito', bonifico: 'Bonifico', altro: 'Altro'} as Record<string, string>)[metodoPagamento] || metodoPagamento} · {({giornaliera: 'Giornaliera', settimanale: 'Settimanale', ogni_10_giorni: 'Ogni 10 giorni', mensile: 'Mensile'} as Record<string, string>)[frequenzaPagamento] || frequenzaPagamento}</dd></div>
+              </dl>
+            </div>
+
             <div style={{ marginBottom: '16px' }}>
               <label style={labelStyle}>Chi firma?</label>
               <div style={{ display: 'flex', gap: '10px' }}>

@@ -967,6 +967,19 @@ export default function Amministrazione() {
         </div>
       </header>
 
+      <div className="ab-tabs-mobile">
+        <label htmlFor="ab-sezione-sel" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--gray-500)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Sezione</label>
+        <select id="ab-sezione-sel" className="ab-tabs-select" value={sezione}
+          onChange={e => setSezione(e.target.value as Sezione)}
+          aria-label="Sezioni amministrative">
+          {SEZIONI.map(s => (
+            <option key={s.id} value={s.id}>
+              {s.label}{s.id === 'lavorazioni' && conteggioControlli + lavorazioni.length > 0 ? ` (${conteggioControlli + lavorazioni.length})` : ''}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <nav className="ab-tabs" aria-label="Sezioni amministrative">
         {SEZIONI.map(s => (
           <button key={s.id} type="button" className="ab-tab" aria-current={s.id === sezione ? 'page' : undefined} onClick={() => setSezione(s.id)}>

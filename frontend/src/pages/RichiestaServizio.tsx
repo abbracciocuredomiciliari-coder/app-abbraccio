@@ -27,7 +27,7 @@ const TIPI_SERVIZIO = [
     tipi: ['Assistenza anziani','Assistenza notturna','Cure palliative','Assistenza pazienti cronici','Igiene personale','Compagnia e vigilanza','Aiuto domestico','Altro'] },
   { value: 'riabilitazione', label: 'Riabilitazione', emoji: '🏋️', color: '#16a34a', bg: '#dcfce7', Icon: Activity,
     tipi: ['Fisioterapia','Logopedia','Ergoterapia','Neuro-riabilitazione','Riabilitazione respiratoria','Altro'] },
-  { value: 'ambulanza', label: 'Servizio Ambulanza', emoji: '�', color: '#b91c1c', bg: '#fee2e2', Icon: Activity,
+  { value: 'ambulanza', label: 'Servizio Ambulanza', emoji: '🚑', color: '#b91c1c', bg: '#fee2e2', Icon: Activity,
     tipi: ['Trasporto programmato','Trasporto lettiga o sedia a rotelle','Accompagnamento a visite/terapie','Rientro post-ricovero','Altro'] },
   { value: 'intermediazione', label: 'Badante, Colf e Assistenti Familiari', emoji: '🏠', color: '#15574d', bg: '#d8e8df', Icon: UserPlus,
     tipi: ['Badante','Colf','Assistente familiare','Caregiver convivente','Altro'] },
@@ -222,7 +222,7 @@ export default function RichiestaServizio() {
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <div style={{ fontSize: '2.2rem', marginBottom: '6px' }}>🏥</div>
-          <h1 style={{ margin: '0 0 6px', color: 'white', fontSize: '1.6rem', fontWeight: '800' }}>Abbracciare — Cure Domiciliari</h1>
+          <h1 style={{ margin: '0 0 6px', color: 'white', fontSize: '1.6rem', fontWeight: '800' }}>Abbraccio — Cure Domiciliari</h1>
           <p style={{ margin: 0, color: 'rgba(255,255,255,0.75)', fontSize: '0.95rem' }}>Portale pazienti e caregiver</p>
         </div>
 

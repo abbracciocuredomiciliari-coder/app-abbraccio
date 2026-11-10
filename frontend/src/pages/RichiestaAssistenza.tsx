@@ -469,7 +469,7 @@ export default function RichiestaAssistenza() {
         {/* Footer info */}
         <div style={{ textAlign: 'center', marginTop: '24px', color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem' }}>
           <p>Per urgenze sanitarie chiamare il <strong>118</strong> o il numero di emergenza locale</p>
-          <p style={{ marginTop: '8px' }}>© {new Date().getFullYear()} Abbracciare — Cure Domiciliari</p>
+          <p style={{ marginTop: '8px' }}>© {new Date().getFullYear()} Abbraccio — Cure Domiciliari</p>
         </div>
       </div>
     </div>

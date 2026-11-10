@@ -1121,9 +1121,26 @@ div[style*="border:1px solid #e5e7eb"] {
   .tw-grid-cols-2, .tw-grid-cols-3, .tw-grid-cols-4 { grid-template-columns: 1fr !important; }
 }
 
-/* Moduli di calcolo (Simula costo intermediazione, calcolatore preventivo):
-   su smartphone campi e scritte abbastanza grandi da lavorare, moduli in pila */
+/* Moduli di calcolo (Simula costo intermediazione, calcolatore preventivo).
+   Regole BASE sempre attive: senza min-width:0 e minmax(0,1fr) una select con
+   opzione lunga impone min-content e la colonna arriva a 604px con soli 344px
+   utili (difetto verificato 10/11). */
+.sim-ccnl { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.sim-ccnl .sim-grid { min-width: 0; }
+.sim-ccnl .sim-grid > * { min-width: 0; max-width: 100%; }
+.sim-ccnl :is(select, textarea, input:not([type="checkbox"]):not([type="radio"])) {
+  min-width: 0; width: 100%; max-width: 100%; box-sizing: border-box;
+}
+
 @media (max-width: 768px) {
+  .sim-ccnl .sim-grid { display: grid; grid-template-columns: minmax(0, 1fr) !important; }
+  .sim-ccnl .sim-grid > * { grid-column: auto; }
+  .sim-ccnl .sim-grid :is(label, p, span) { overflow-wrap: anywhere; min-width: 0; }
+  .sim-ccnl .sim-grid label > select { max-width: 100%; text-overflow: ellipsis; }
+  .sim-ccnl .sim-contract-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .sim-ccnl .sim-contract-actions > * {
+    min-width: 0; flex: 1 1 100%; min-height: 44px; white-space: normal;
+  }
   .sim-ccnl input:not([type="checkbox"]), .sim-ccnl select, .sim-ccnl textarea {
     font-size: 1rem !important; padding: 12px 10px !important; min-height: 46px;
   }
@@ -1132,12 +1149,11 @@ div[style*="border:1px solid #e5e7eb"] {
   .sim-ccnl .tw-text-xs { font-size: 0.8rem !important; }
   .sim-ccnl .tw-text-lg { font-size: 1.15rem !important; }
   .sim-ccnl button { min-height: 44px; }
-  .sim-ccnl .sim-grid { grid-template-columns: 1fr !important; }
 }
 /* Tablet stretto: le griglie del simulatore vanno a 2 colonne, non 3/4 schiacciate */
 @media (min-width: 769px) and (max-width: 1150px) {
-  .sim-ccnl .sim-grid-3 { grid-template-columns: 1fr 1fr !important; }
-  .sim-ccnl .sim-grid-4 { grid-template-columns: 1fr 1fr !important; }
+  .sim-ccnl .sim-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .sim-ccnl .sim-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
 }
 
 @media (max-width: 480px) {
@@ -1670,6 +1686,25 @@ button.ab-kpi:hover { box-shadow: var(--shadow-md); border-color: var(--gray-300
   color: var(--brand-700);
   border-bottom-color: var(--brand-700);
   font-weight: 700;
+}
+
+/* Selettore sezione per mobile (sostituisce la tab row troppo larga) */
+.ab-tabs-mobile { display: none; }
+.ab-tabs-select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--nav-900);
+  min-height: 48px;
+}
+@media (max-width: 720px) {
+  .ab-tabs { display: none; }
+  .ab-tabs-mobile { display: block; margin-bottom: 18px; }
 }
 
 /* Barra filtri */

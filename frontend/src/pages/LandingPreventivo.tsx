@@ -82,6 +82,7 @@ export default function LandingPreventivo() {
   const [showLegenda, setShowLegenda] = useState(false);
 
   const [prev, setPrev] = useState<Preventivo | null>(null);
+  const [prevStale, setPrevStale] = useState(false);
   const [previewError, setPreviewError] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
 
@@ -99,6 +100,9 @@ export default function LandingPreventivo() {
 
   const utmRef = useRef<Record<string, string>>({});
   const formRef = useRef<HTMLDivElement | null>(null);
+  const resultRef = useRef<HTMLDivElement | null>(null);
+  const genRev = useRef(0);
+  const [mostraTutte, setMostraTutte] = useState(false);
 
   // ─── Listino dal gestionale (stessi prezzi dell'area riservata) ─────────────
   useEffect(() => {
@@ -154,8 +158,9 @@ export default function LandingPreventivo() {
   const vociBody = () => Object.entries(selezione).filter(([, q]) => q > 0).map(([id, quantita]) => ({ id, quantita, giorni: giorniVoci[id] || 1 }));
   const numSelezionate = vociBody().length;
 
-  // Qualunque modifica alla selezione azzera il preventivo: va rigenerato
-  const invalida = () => setPrev(null);
+  // Qualunque modifica alla selezione marca il preventivo come obsoleto:
+  // i dati restano visibili ma l'invio resta bloccato finché non viene rigenerato
+  const invalida = () => { if (prev) setPrevStale(true); };
   const setQta = (id: string, q: number) => {
     setSelezione(s => {
       const n = { ...s };
@@ -184,12 +189,18 @@ export default function LandingPreventivo() {
 
   async function genera() {
     if (numSelezionate === 0) { setPreviewError('Seleziona almeno una prestazione dal listino.'); return; }
+    const rev = ++genRev.current;
     try {
       setPreviewLoading(true);
       setPreviewError('');
       const res = await axios.post(`${API_BASE}/landing-preventivo/preview`, { voci: vociBody() });
+      if (rev !== genRev.current) return; // risposta di una richiesta più vecchia: ignora
       setPrev(res.data);
+      setPrevStale(false);
       tracciaPixel('ViewContent', { content_name: 'Preventivo prestazioni generato' });
+      // Porta focus e vista al risultato (rispettando reduced motion)
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      setTimeout(() => resultRef.current?.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' }), 80);
     } catch (err: any) {
       setPrev(null);
       setPreviewError(err?.response?.data?.message || 'Controlla le prestazioni selezionate');
@@ -204,8 +215,8 @@ export default function LandingPreventivo() {
     if (!ruolo) { setSendError('Indica se stai compilando per te (paziente) o come caregiver/familiare.'); return; }
     if (!cittaValida || !citta.trim()) { setSendError('Seleziona la città dai suggerimenti che appaiono scrivendo.'); return; }
     if (!indirizzo.trim()) { setSendError('Inserisci l\'indirizzo (via e numero civico).'); return; }
-    if (!prev) {
-      setSendError('Genera prima il preventivo con il pulsante "Genera preventivo".');
+    if (!prev || prevStale) {
+      setSendError(prev ? 'Hai modificato le prestazioni: rigenera il preventivo prima di inviare la richiesta.' : 'Genera prima il preventivo con il pulsante "Genera preventivo".');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -272,7 +283,7 @@ export default function LandingPreventivo() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,var(--brand-50),#ffffff 55%)', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
-      <style>{`@media (max-width: 640px) { .landing-hide-mobile { display: none; } .prev-sticky { position: static !important; } .prev-grid { grid-template-columns: 1fr !important; } .prev-btn-2col { grid-template-columns: 1fr !important; } .prev-card-pad { padding: 14px 14px 16px !important; } .prev-hero { padding: 12px 14px !important; } .prev-list { max-height: 300px !important; overflow-y: auto !important; } .prev-table { font-size: 0.78rem !important; } .prev-table td { padding: 4px 3px !important; word-break: break-word; } }`}</style>
+      <style>{`@media (max-width: 640px) { .landing-hide-mobile { display: none; } .prev-sticky { position: static !important; } .prev-grid { grid-template-columns: 1fr !important; } .prev-btn-2col { grid-template-columns: 1fr !important; } .prev-card-pad { padding: 14px 14px 16px !important; } .prev-hero { padding: 12px 14px !important; } .prev-list { max-height: none !important; overflow-y: visible !important; } .prev-table { font-size: 0.78rem !important; } .prev-table td { padding: 4px 3px !important; word-break: break-word; } }`}</style>
       {/* Header — solo brand Abbraccio */}
       <header style={{ background: '#fff', borderBottom: '1px solid var(--brand-100)', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: '1080px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -289,7 +300,7 @@ export default function LandingPreventivo() {
         </div>
       </header>
 
-      <main style={{ maxWidth: '1080px', margin: '0 auto', padding: '28px 16px 48px' }}>
+      <main style={{ maxWidth: '840px', margin: '0 auto', padding: '28px 16px 48px' }}>
         {/* Hero */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <span style={{ background: 'var(--brand-100)', color: 'var(--brand-800)', padding: '6px 14px', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 700 }}>
@@ -306,7 +317,7 @@ export default function LandingPreventivo() {
           </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(320px,100%),1fr))', gap: '20px', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: '20px', alignItems: 'start' }}>
           {/* Calcolatore */}
           <div style={{ background: 'linear-gradient(165deg,var(--brand-50) 0%,#ffffff 55%)', borderRadius: '16px', border: '1px solid var(--brand-300)', boxShadow: '0 8px 24px rgba(28,113,100,.10)', overflow: 'hidden' }}>
             <div style={{ background: 'linear-gradient(90deg,var(--brand-800),var(--brand-700))', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -365,8 +376,8 @@ export default function LandingPreventivo() {
                       <div style={{ padding: '8px 12px', background: '#f8fafc', fontSize: '0.75rem', fontWeight: 700, color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
                         <span>Prestazione</span><span>Prezzo · Quantità <InfoNote text="I prezzi sono quelli del listino ufficiale Abbraccio. Le prestazioni contrassegnate PROMO hanno un prezzo promozionale: il listino è mostrato barrato. La quantità indica accessi, ore o esami." /></span>
                       </div>
-                      <div style={{ maxHeight: '340px', overflowY: 'auto' }}>
-                        {catCorrente.voci.map(v => {
+                      <div>
+                        {(mostraTutte ? catCorrente.voci : catCorrente.voci.slice(0, 8)).map(v => {
                           const q = selezione[v.id] || 0;
                           const gg = giorniVoci[v.id] || 1;
                           return (
@@ -400,6 +411,12 @@ export default function LandingPreventivo() {
                             </div>
                           );
                         })}
+                        {catCorrente.voci.length > 8 && (
+                          <button type="button" onClick={() => setMostraTutte(o => !o)}
+                            style={{ width: '100%', border: 'none', borderTop: '1px solid #f1f5f9', background: '#fff', padding: '10px', cursor: 'pointer', color: 'var(--brand-700)', fontSize: '0.85rem', fontWeight: 700, fontFamily: 'inherit' }}>
+                            {mostraTutte ? 'Mostra meno prestazioni' : `Mostra altre ${catCorrente.voci.length - 8} prestazioni`}
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -443,8 +460,8 @@ export default function LandingPreventivo() {
             </div>
           </div>
 
-          {/* Preventivo */}
-          <div className="prev-sticky prev-card-pad" style={{ background: '#fff', borderRadius: '16px', border: '1px solid var(--brand-100)', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: '24px', position: 'sticky', top: '80px' }}>
+          {/* Preventivo — nel flusso, sotto il modulo (niente pannello laterale sticky) */}
+          <div ref={resultRef} className="prev-sticky prev-card-pad" style={{ background: '#fff', borderRadius: '16px', border: '1px solid var(--brand-100)', boxShadow: '0 4px 20px rgba(0,0,0,.05)', padding: '24px', scrollMarginTop: '90px' }}>
             <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', color: '#1e293b', margin: '0 0 14px' }}>
               <FileText size={20} color="var(--brand-700)" /> Il tuo preventivo
             </h2>
@@ -452,6 +469,12 @@ export default function LandingPreventivo() {
             {previewError && <p style={{ color: '#dc2626', fontSize: '0.88rem' }}>{previewError}</p>}
             {prev && !previewError && (
               <>
+                {prevStale && (
+                  <div role="alert" style={{ background: '#fbf5e9', color: '#765215', border: '1px solid #e3d3ae', borderRadius: '10px', padding: '12px 14px', marginBottom: '12px', fontSize: '0.88rem', fontWeight: 600, lineHeight: 1.5 }}>
+                    ⚠️ Hai modificato le prestazioni: questo preventivo non è più aggiornato. Premi <strong>«Rigenera preventivo»</strong> per utilizzarlo.
+                  </div>
+                )}
+                <div style={prevStale ? { opacity: 0.55, pointerEvents: 'none' } : undefined}>
                 <table className="prev-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                   <tbody>
                     {prev.righe.map((r, i) => (
@@ -497,7 +520,7 @@ export default function LandingPreventivo() {
                 <p style={{ fontSize: '0.75rem', color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '9px 11px', marginTop: '12px', lineHeight: 1.5 }}>
                   ⚠️ <strong>Tariffe indicative.</strong> L'importo può subire variazioni in base alle condizioni domiciliari e assistenziali specifiche (distanza, orari, materiali, urgenza): la tariffa definitiva viene confermata dopo il contatto, senza impegno.
                 </p>
-                <div className="prev-btn-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '12px' }}>
+                <div className="prev-btn-2col" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(170px,100%),1fr))', gap: '8px', marginTop: '12px' }}>
                   <a href={testoWhatsApp()} target="_blank" rel="noopener" style={btnWa}><MessageCircle size={17} /> Invia su WhatsApp</a>
                   <a href={`tel:${TELEFONO}`} style={btnTel}><Phone size={17} /> Telefona</a>
                 </div>
@@ -505,6 +528,7 @@ export default function LandingPreventivo() {
                   style={{ marginTop: '8px', width: '100%', padding: '10px', border: '1px solid var(--brand-700)', borderRadius: '10px', background: '#fff', color: 'var(--brand-700)', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'inherit' }}>
                   <Send size={15} /> Oppure compila il modulo
                 </button>
+                </div>
               </>
             )}
             {!prev && !previewLoading && !previewError && (
@@ -547,14 +571,14 @@ export default function LandingPreventivo() {
               </div>
               <div>
                 <span style={label}>Chi compila il modulo? *</span>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {(['paziente', 'caregiver'] as const).map((r) => (
                     <button
                       key={r}
                       type="button"
                       onClick={() => setRuolo(r)}
                       style={{
-                        flex: 1, padding: '10px 8px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer',
+                        flex: '1 1 150px', minWidth: 0, padding: '10px 8px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer',
                         border: `2px solid ${ruolo === r ? 'var(--brand-700)' : '#e2e8f0'}`,
                         background: ruolo === r ? 'var(--brand-50)' : '#fff',
                         color: ruolo === r ? 'var(--brand-700)' : '#475569',
@@ -584,7 +608,7 @@ export default function LandingPreventivo() {
               style={{ marginTop: '18px', width: '100%', padding: '14px', border: 'none', borderRadius: '10px', background: sending ? 'var(--brand-300)' : 'linear-gradient(135deg,var(--brand-800),var(--brand-700))', color: '#fff', fontWeight: 800, fontSize: '1rem', cursor: sending ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               <Send size={18} /> {sending ? 'Invio in corso...' : 'Invia richiesta con il tuo preventivo'}
             </button>
-            <div className="prev-btn-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px' }}>
+            <div className="prev-btn-2col" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(170px,100%),1fr))', gap: '8px', marginTop: '10px' }}>
               <a href={testoWhatsApp()} target="_blank" rel="noopener" style={btnWa}><MessageCircle size={17} /> Invia su WhatsApp</a>
               <a href={`tel:${TELEFONO}`} style={btnTel}><Phone size={17} /> Telefona {TELEFONO_LABEL}</a>
             </div>
