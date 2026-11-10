@@ -535,6 +535,10 @@ function AppShell() {
                 <FileText size={18} />
                 Preventivo veloce
               </Link>
+              <Link to="/tariffario" className={isActive('/tariffario') ? 'active' : ''}>
+                <Calculator size={18} />
+                Tariffario
+              </Link>
               </details>
 
               {/* — Impostazioni (solo admin) — */}
