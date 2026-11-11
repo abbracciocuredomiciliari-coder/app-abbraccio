@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import axios from 'axios';
-import { Send, X, Mic } from 'lucide-react';
+import { Send, X, Mic, Volume2, VolumeX } from 'lucide-react';
 
 const API = 'https://api.abbracciocuredomiciliari.it/api';
 
@@ -27,6 +27,7 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const recRef = useRef<any>(null);
   const contestoRef = useRef<any>(contesto);
@@ -35,6 +36,18 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
   const SR = typeof window !== 'undefined' && ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, open]);
+
+  function stopSpeech() { if ('speechSynthesis' in window) speechSynthesis.cancel(); }
+  function speak(text: string) {
+    if (!voiceOn || !('speechSynthesis' in window) || !text) return;
+    stopSpeech();
+    const u = new SpeechSynthesisUtterance(text.slice(0, 600));
+    u.lang = 'it-IT';
+    const it = speechSynthesis.getVoices().filter(v => v.lang.startsWith('it'));
+    if (it.length) u.voice = it[0];
+    u.rate = .97;
+    speechSynthesis.speak(u);
+  }
 
   function toggleMic() {
     if (!SR) return;
@@ -46,7 +59,7 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
       r.maxAlternatives = 1;
       r.onresult = (e: any) => {
         const t = e.results[0][0].transcript;
-        setInput(s => (s ? s + ' ' + t : t));
+        inviaText(t);
       };
       r.onend = () => setListening(false);
       r.onerror = () => setListening(false);
@@ -58,8 +71,13 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
 
   async function invia(e?: React.FormEvent) {
     e?.preventDefault();
-    const text = input.trim();
+    inviaText(input);
+  }
+
+  async function inviaText(raw: string) {
+    const text = raw.trim();
     if (!text || busy) return;
+    stopSpeech();
     setInput('');
     setMsgs(m => [...m, { who: 'io', text }]);
     setBusy(true);
@@ -67,6 +85,7 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
       const res = await axios.post(`${API}/abbraccino/chat`, { messaggio: text, tipo, contesto: contestoRef.current || {} });
       const risposta = String(res.data?.risposta || '');
       setMsgs(m => [...m, { who: 'bot', text: risposta }]);
+      speak(risposta);
       if (res.data?.suggerimento && onSuggerimento) {
         onSuggerimento(res.data.suggerimento);
         setMsgs(m => [...m, { who: 'bot', text: '✅ Ho compilato il calcolatore per te: controlla e, se va bene, premi "Calcola" / guarda il totale!' }]);
@@ -109,7 +128,7 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
 
       {/* pulsante chiudi */}
       {open && (
-        <button onClick={() => setOpen(false)} aria-label="Chiudi"
+        <button onClick={() => { setOpen(false); stopSpeech(); recRef.current?.abort(); }} aria-label="Chiudi"
           style={{ position: 'fixed', bottom: 18, right: 18, width: 62, height: 62, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,var(--nav-900),var(--brand-700))', color: '#fff', cursor: 'pointer', boxShadow: '0 6px 22px rgba(28,113,100,.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <X size={26} />
         </button>
@@ -119,6 +138,13 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
         <div style={{ position: 'fixed', bottom: 90, right: 14, width: 'min(360px, calc(100vw - 28px))', maxHeight: '70vh', background: '#fff', borderRadius: 18, boxShadow: '0 10px 40px rgba(0,0,0,.22)', zIndex: 9999, display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid var(--brand-100)', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
           <div style={{ background: 'linear-gradient(135deg,var(--nav-900),var(--brand-700))', color: '#fff', padding: '12px 16px', fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 8 }}>
             <CuoricinoIcon size={26} /> Abbraccino — assistente
+            {'speechSynthesis' in window && (
+              <button type="button" onClick={() => { const v = !voiceOn; setVoiceOn(v); if (v) speak('Voce attiva.'); else stopSpeech(); }}
+                aria-pressed={voiceOn} aria-label={voiceOn ? 'Disattiva risposte vocali' : 'Attiva risposte vocali'} title="Risposte vocali"
+                style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: voiceOn ? '#fbbf24' : 'rgba(255,255,255,.75)', cursor: 'pointer', padding: '4px 6px', display: 'flex', alignItems: 'center' }}>
+                {voiceOn ? <Volume2 size={17} /> : <VolumeX size={17} />}
+              </button>
+            )}
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8, minHeight: 200, maxHeight: '48vh' }}>
             {msgs.map((m, i) => (
