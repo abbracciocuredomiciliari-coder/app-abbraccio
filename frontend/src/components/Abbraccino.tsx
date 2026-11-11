@@ -8,6 +8,18 @@ function CuoricinoIcon({ size = 30 }: { size?: number }) {
   return <img src="/abbraccino.jpg" alt="Abbraccino" width={size} height={size} style={{ borderRadius: '50%', objectFit: 'cover', display: 'block' }} />;
 }
 
+/* mascotte animata: occhi che seguono il puntatore, sorriso, braccia ad abbraccio */
+export function FaceIcon({ size = 30 }: { size?: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const AF = (window as any).AbbraccinoFace;
+    if (!AF || !ref.current) return;
+    const face = AF.mount(ref.current, { img: '/abbraccino.jpg' });
+    return () => face.destroy();
+  }, []);
+  return <span ref={ref} aria-hidden="true" style={{ width: size, height: size, display: 'block', flexShrink: 0 }} />;
+}
+
 interface Props {
   tipo: 'badante' | 'preventivo';
   contesto?: any;
@@ -27,7 +39,9 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
-  const [voiceOn, setVoiceOn] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(() => {
+    try { return localStorage.getItem('ab-voice') !== '0'; } catch { return true; }
+  });
   const bottomRef = useRef<HTMLDivElement>(null);
   const recRef = useRef<any>(null);
   const contestoRef = useRef<any>(contesto);
@@ -37,15 +51,17 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, open]);
 
-  function stopSpeech() { if ('speechSynthesis' in window) speechSynthesis.cancel(); }
+  function stopSpeech() { if ('speechSynthesis' in window) speechSynthesis.cancel(); (window as any).AbbraccinoFace?.setTalking(false); }
   function speak(text: string) {
     if (!voiceOn || !('speechSynthesis' in window) || !text) return;
     stopSpeech();
-    const u = new SpeechSynthesisUtterance(text.slice(0, 600));
+    const u = new SpeechSynthesisUtterance(text.replace(/[💛✅⚠️]/g, '').slice(0, 600));
     u.lang = 'it-IT';
     const it = speechSynthesis.getVoices().filter(v => v.lang.startsWith('it'));
     if (it.length) u.voice = it[0];
     u.rate = .97;
+    u.onstart = () => (window as any).AbbraccinoFace?.setTalking(true);
+    u.onend = u.onerror = () => (window as any).AbbraccinoFace?.setTalking(false);
     speechSynthesis.speak(u);
   }
 
@@ -118,17 +134,17 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
       {/* colonna: etichetta sopra / icona / etichetta sotto — centrata */}
       {!open && (
         <div className="ab-launcher" style={{ position: 'fixed', right: 14, bottom: 6, zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-          <button onClick={() => setOpen(true)} aria-label="Chiedi ad Abbraccino" className="ab-fab"
+          <button onClick={() => { setOpen(true); (window as any).AbbraccinoFace?.setSmile(true); }} aria-label="Chiedi ad Abbraccino" className="ab-fab"
             style={{ width: 62, height: 62, borderRadius: '50%', border: 'none', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 5, boxSizing: 'border-box' }}>
-            <span className="ab-heart"><CuoricinoIcon size={50} /></span>
+            <span className="ab-heart"><FaceIcon size={50} /></span>
           </button>
-          <button onClick={() => setOpen(true)} className="ab-pill-btm" style={pillBtm}>Abbraccino Aiutino</button>
+          <button onClick={() => setOpen(true)} className="ab-pill-btm" style={pillBtm}>Vuoi aiutino?</button>
         </div>
       )}
 
       {/* pulsante chiudi */}
       {open && (
-        <button onClick={() => { setOpen(false); stopSpeech(); recRef.current?.abort(); }} aria-label="Chiudi"
+        <button onClick={() => { setOpen(false); stopSpeech(); recRef.current?.abort(); (window as any).AbbraccinoFace?.setSmile(false); }} aria-label="Chiudi"
           style={{ position: 'fixed', bottom: 18, right: 18, width: 62, height: 62, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,var(--nav-900),var(--brand-700))', color: '#fff', cursor: 'pointer', boxShadow: '0 6px 22px rgba(28,113,100,.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <X size={26} />
         </button>
@@ -137,10 +153,10 @@ export default function Abbraccino({ tipo, contesto, onSuggerimento }: Props) {
       {open && (
         <div style={{ position: 'fixed', bottom: 90, right: 14, width: 'min(360px, calc(100vw - 28px))', maxHeight: '70vh', background: '#fff', borderRadius: 18, boxShadow: '0 10px 40px rgba(0,0,0,.22)', zIndex: 9999, display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid var(--brand-100)', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
           <div style={{ background: 'linear-gradient(135deg,var(--nav-900),var(--brand-700))', color: '#fff', padding: '12px 16px', fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <CuoricinoIcon size={26} /> Abbraccino — assistente
+            <FaceIcon size={30} /> Abbraccino — assistente
             {'speechSynthesis' in window && (
-              <button type="button" onClick={() => { const v = !voiceOn; setVoiceOn(v); if (v) speak('Voce attiva.'); else stopSpeech(); }}
-                aria-pressed={voiceOn} aria-label={voiceOn ? 'Disattiva risposte vocali' : 'Attiva risposte vocali'} title="Risposte vocali"
+              <button type="button" onClick={() => { const v = !voiceOn; setVoiceOn(v); try { localStorage.setItem('ab-voice', v ? '1' : '0'); } catch {} if (v) speak('Voce attiva.'); else stopSpeech(); }}
+                aria-pressed={voiceOn} aria-label={voiceOn ? 'Sospendi risposte vocali' : 'Attiva risposte vocali'} title="Risposte vocali"
                 style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: voiceOn ? '#fbbf24' : 'rgba(255,255,255,.75)', cursor: 'pointer', padding: '4px 6px', display: 'flex', alignItems: 'center' }}>
                 {voiceOn ? <Volume2 size={17} /> : <VolumeX size={17} />}
               </button>
