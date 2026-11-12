@@ -35,6 +35,7 @@ export default function AbbraccinoInterno() {
   const navigate = useNavigate();
   const { modalita } = useModalita();
   const [open, setOpen] = useState(false);
+  const [hidden, setHidden] = useState(() => { try { return !!sessionStorage.getItem('ab-nascosto'); } catch { return false; } });
   const [msgs, setMsgs] = useState<Msg[]>([SALUTO]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -146,13 +147,15 @@ export default function AbbraccinoInterno() {
         }
       `}</style>
 
-      {!open && (
+      {!open && !hidden && (
         <div className="ab-launcher" style={{ position: 'fixed', right: 14, bottom: 6, zIndex: 9990, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+          <button onClick={() => setOpen(true)} className="ab-pill-top" style={{ background: '#fff', color: '#1e4d8c', border: '1.5px solid #dbeafe', borderRadius: 999, padding: '5px 12px', fontSize: 12, fontWeight: 800, boxShadow: '0 3px 10px rgba(0,0,0,.12)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>Sono Abbraccino 💛</button>
+          <button onClick={(e) => { e.stopPropagation(); setHidden(true); try { sessionStorage.setItem('ab-nascosto', '1'); } catch {} }} aria-label="Nascondi Abbraccino" style={{ position: 'absolute', top: -8, right: -6, width: 22, height: 22, borderRadius: '50%', border: 'none', background: '#1e3a5f', color: '#fff', fontSize: 12, lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,.3)' }}>✕</button>
           <button onClick={() => { setOpen(true); (window as any).AbbraccinoFace?.setSmile(true); }} aria-label="Chiedi ad Abbraccino" className="ab-int-fab"
             style={{ width: 62, height: 62, borderRadius: '50%', border: 'none', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 5, boxSizing: 'border-box' }}>
             <FaceIcon size={50} />
           </button>
-          <button onClick={() => setOpen(true)} className="ab-pill-btm" style={{ background: '#1c7164', color: '#fff', border: 'none', borderRadius: 999, padding: '7px 16px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(16,47,59,.35)' }}>
+          <button onClick={() => setOpen(true)} className="ab-pill-btm" style={{ background: 'linear-gradient(135deg,#1e3a5f,#1e4d8c)', color: '#fff', border: 'none', borderRadius: 999, padding: '5px 12px', fontSize: 12, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(0,0,0,.12)' }}>
             Vuoi aiutino?
           </button>
         </div>
