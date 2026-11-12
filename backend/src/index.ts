@@ -70,6 +70,7 @@ import abbraccinoRouter from './routes/abbraccino';
 import badantiIntermediazioneRouter from './routes/badantiIntermediazione';
 import ritenuteAccontoRouter from './routes/ritenuteAcconto';
 import shopRouter, { seedShopAdmin } from './routes/shop';
+import sitiPubbliciRouter from './routes/sitiPubblici';
 import ricercaRouter from './routes/ricerca';
 
 if (!process.env.JWT_SECRET) {
@@ -112,6 +113,9 @@ const allowedOrigins: string[] = [
   'https://famigli.abbracciocuredomiciliari.it',
   'http://famiglia.abbracciocuredomiciliari.it',
   'http://famigli.abbracciocuredomiciliari.it',
+  // Shop Abbraccio — nuovo sottodominio (sito statico → API)
+  'https://shop.abbracciocuredomiciliari.it',
+  'http://shop.abbracciocuredomiciliari.it',
   'http://localhost:8080',
   'http://127.0.0.1:8080',
   'http://localhost:5500',
@@ -267,6 +271,11 @@ app.use('/api/ritenute-acconto', ritenuteAccontoRouter);
 app.use('/api/ricerca', ricercaRouter);
 // Shop Abbraccio: pubblico (prodotti/ordini/recensioni) + admin shop con JWT separato
 app.use('/api/shop', shopRouter);
+// Adattatore siti pubblici (nuovo pacchetto principale/famiglie/shop):
+//   GET  /api/public        → contenuti + catalogo shop reale
+//   POST /api/orders        → ordine shop → ShopOrder + email admin
+//   POST /api/applications  → candidatura lavora-con-noi → CandidatoIntermediazione
+app.use('/api', sitiPubbliciRouter);
 // Alias senza prefisso /api per compatibilità con URL diretti degli allegati
 app.use('/allegati', allegatiRouter);
 

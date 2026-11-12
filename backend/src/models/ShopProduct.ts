@@ -18,6 +18,7 @@ export interface IShopProduct extends Document {
   tempoSpedizione?: string; // es. "2-3 giorni lavorativi"
   ritiroMagazzino: boolean;
   badge?: string; // es. "Novità", "Bestseller"
+  sezione?: string; // categoria catalogo pubblico: "Mobilità", "Riposo e comfort", "Elettromedicali", "Cura quotidiana"
 }
 
 const shopProductSchema = new Schema<IShopProduct>(
@@ -41,6 +42,7 @@ const shopProductSchema = new Schema<IShopProduct>(
     tempoSpedizione: { type: String, default: '', trim: true },
     ritiroMagazzino: { type: Boolean, default: false },
     badge: { type: String, default: '', trim: true },
+    sezione: { type: String, default: '', trim: true },
   },
   { timestamps: true }
 );
