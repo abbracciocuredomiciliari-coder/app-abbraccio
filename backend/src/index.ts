@@ -71,6 +71,7 @@ import badantiIntermediazioneRouter from './routes/badantiIntermediazione';
 import ritenuteAccontoRouter from './routes/ritenuteAcconto';
 import shopRouter, { seedShopAdmin } from './routes/shop';
 import sitiPubbliciRouter from './routes/sitiPubblici';
+import sitiAdminRouter, { SITE_MEDIA_DIR } from './routes/sitiAdmin';
 import ricercaRouter from './routes/ricerca';
 
 if (!process.env.JWT_SECRET) {
@@ -275,11 +276,15 @@ app.use('/api/shop', shopRouter);
 //   GET  /api/public        → contenuti + catalogo shop reale
 //   POST /api/orders        → ordine shop → ShopOrder + email admin
 //   POST /api/applications  → candidatura lavora-con-noi → CandidatoIntermediazione
+app.use('/api/siti-admin', sitiAdminRouter);
 app.use('/api', sitiPubbliciRouter);
 // Alias senza prefisso /api per compatibilità con URL diretti degli allegati
 app.use('/allegati', allegatiRouter);
 
 // Immagini prodotti shop — pubbliche (visibili dal sito senza login)
+app.use('/site-media', express.static(SITE_MEDIA_DIR, {
+  setHeaders: (res) => { res.set('Cache-Control', 'public, max-age=86400'); res.set('Cross-Origin-Resource-Policy', 'cross-origin'); },
+}));
 app.use('/shop-images', express.static(path.join(process.cwd(), 'uploads', 'shop'), {
   setHeaders: (res) => { res.set('Cache-Control', 'public, max-age=86400'); },
 }));

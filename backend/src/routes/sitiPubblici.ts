@@ -10,6 +10,7 @@ import path from 'path';
 import ShopProduct from '../models/ShopProduct';
 import ShopOrder from '../models/ShopOrder';
 import CandidatoIntermediazione from '../models/CandidatoIntermediazione';
+import SiteContent from '../models/SiteContent';
 import { rateLimitByIP } from '../middleware/rateLimit';
 import { inviaEmail } from '../utils/email';
 
@@ -19,15 +20,15 @@ const s = (v: any) => String(v ?? '').trim();
 const uploadsDir = path.join(__dirname, '../../uploads/candidati-intermediazione');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
-// Contenuti base dei tre siti (title/subtitle/hero usati da cms-bridge).
-// I valori coincidono con seed.json del pacchetto; in futuro gestibili da admin.
-const SITES_CONTENT = [
-  { id: 'main',   name: 'Sito principale',     title: 'La cura, dove sei tu.',        subtitle: 'Competenza, ascolto e una presenza su cui contare.', photo: 'assets/hero.jpg',     video: 'assets/media/sequenza-completa.mp4' },
-  { id: 'family', name: 'Abbraccio Famiglie',  title: 'L’aiuto che fa casa.',         subtitle: 'Una presenza in più. Una preoccupazione in meno.',   photo: 'assets/famiglia.jpg', video: 'assets/sequenza-completa.mp4' },
-  { id: 'shop',   name: 'Shop e noleggio',     title: 'Piccoli aiuti. Grande autonomia.', subtitle: 'Ausili e dispositivi per la quotidianità.',    photo: 'assets/shop-hero.jpg', video: '' },
-];
+// Contenuti hero gestiti dal gestionale (Siti web e Shop). Campi vuoti = il sito
+// mantiene il contenuto originale della pagina.
+const SITE_IDS = ['main', 'family', 'shop'] as const;
 
-const apiBaseOf = (req: Request) => `${req.protocol}://${req.get('host')}`;
+const apiBaseOf = (req: Request) => {
+  const host = req.get('host') || 'api.abbracciocuredomiciliari.it';
+  // dietro Nginx req.protocol è http: i siti sono in https → URL sempre https in produzione
+  return /^(localhost|127.0.0.1)(:|$)/.test(host) ? `http://${host}` : `https://${host}`;
+};
 
 // ─── GET /public — contenuti + catalogo shop reale ───────────────────────────
 router.get('/public', async (req: Request, res: Response) => {
@@ -54,7 +55,14 @@ router.get('/public', async (req: Request, res: Response) => {
         image: img.startsWith('/') ? base + img : img,
       };
     });
-    return res.json({ content: SITES_CONTENT, products });
+    const docs = await SiteContent.find({});
+    const abs = (u: string) => (u && u.startsWith('/') ? base + u : u || '');
+    const content = SITE_IDS.map(id => {
+      const d = docs.find(x => x.site === id);
+      return { id, title: d?.title || '', subtitle: d?.subtitle || '', photo: abs(d?.photo || ''), video: abs(d?.video || '') };
+    });
+    res.set('Cache-Control', 'public, max-age=60');
+    return res.json({ content, products });
   } catch (err) {
     return res.status(500).json({ error: 'Contenuti non disponibili', details: String(err) });
   }

@@ -62,6 +62,7 @@ const ConsegnaEsterna = lazy(() => import('./pages/ConsegnaEsterna'));
 const IscrizioneIntermediazione = lazy(() => import('./pages/IscrizioneIntermediazione'));
 const AreaFamiglia = lazy(() => import('./pages/AreaFamiglia'));
 const ArchivioEmail = lazy(() => import('./pages/ArchivioEmail'));
+const SitiWeb = lazy(() => import('./pages/SitiWeb'));
 const BadantiIntermediazione = lazy(() => import('./pages/BadantiIntermediazione'));
 const ArchiviIntermediazione = lazy(() => import('./pages/ArchiviIntermediazione'));
 const RiunioniColloquio = lazy(() => import('./pages/RiunioniColloquio'));
@@ -128,6 +129,7 @@ import {
   Calculator,
   Search,
   FileDown,
+  Globe,
 } from 'lucide-react';
 
 // Ruoli con accesso completo (admin/coordinamento/direzione)
@@ -544,11 +546,15 @@ function AppShell() {
               {/* — Impostazioni (solo admin) — */}
               {user.role === 'admin' && (
                 <>
-                  <details className="nav-section" open={secOpen('/gestione-utenti','/gestione-consensi-gdpr','/esportazione-siat')}>
+                  <details className="nav-section" open={secOpen('/siti-web','/gestione-utenti','/gestione-consensi-gdpr','/esportazione-siat')}>
                   <summary className="nav-section-label">Impostazioni</summary>
                   <Link to="/gestione-utenti" className={isActive('/gestione-utenti') ? 'active' : ''}>
                     <ShieldCheck size={18} />
                     Gestione Utenti
+                  </Link>
+                  <Link to="/siti-web" className={isActive('/siti-web') ? 'active' : ''}>
+                    <Globe size={18} />
+                    Siti web e Shop
                   </Link>
                   <Link to="/gestione-consensi-gdpr" className={isActive('/gestione-consensi-gdpr') ? 'active' : ''}>
                     <Shield size={18} />
@@ -712,11 +718,15 @@ function AppShell() {
               {/* — Impostazioni (solo admin) — */}
               {user.role === 'admin' && (
                 <>
-                  <details className="nav-section" open={secOpen('/gestione-utenti')}>
+                  <details className="nav-section" open={secOpen('/siti-web','/gestione-utenti')}>
                   <summary className="nav-section-label">Impostazioni</summary>
                   <Link to="/gestione-utenti" className={isActive('/gestione-utenti') ? 'active' : ''}>
                     <ShieldCheck size={18} />
                     Gestione Utenti
+                  </Link>
+                  <Link to="/siti-web" className={isActive('/siti-web') ? 'active' : ''}>
+                    <Globe size={18} />
+                    Siti web e Shop
                   </Link>
                   </details>
                 </>
@@ -819,6 +829,7 @@ function AppShell() {
           {/* Route condivise (tutti gli utenti autenticati) */}
           <Route path="/consegne" element={<ProtectedRoute><ConsegneAmministrative /></ProtectedRoute>} />
           <Route path="/archivio-email" element={<ProtectedRoute><ArchivioEmail /></ProtectedRoute>} />
+          <Route path="/siti-web" element={<ProtectedRoute><SitiWeb /></ProtectedRoute>} />
           <Route path="/protocolli-procedure" element={<ProtectedRoute><ProtocolliProcedure /></ProtectedRoute>} />
           {/* Redirect vecchie URL protocolli/procedure → pagina unificata */}
           <Route path="/protocolli" element={<Navigate to="/protocolli-procedure" replace />} />
