@@ -7,6 +7,7 @@ import Patient from '../models/Patient';
 import Staff from '../models/Staff';
 import { CATEGORIE_LISTINO } from './landingPreventivo';
 import { caricaParametri, simulaCostoBadante, quotaCafDefault } from '../utils/costoBadante';
+import { decrypt } from '../utils/encryption';
 
 const router = express.Router();
 
@@ -228,7 +229,7 @@ Il gestionale ha aree separate: GESTIONE PRIVATA (pazienti privati/convenzione S
 REGOLE:
 - Rispondi in italiano, max 70 parole, tono pratico da collega.
 - Se l'utente chiede DOVE si fa qualcosa, indica il nome della sezione (i bottoni-link li aggiunge il sistema, non scrivere URL).
-- Se cerca una persona e compare in "PERSONE TROVATE", conferma chi hai trovato e che i bottoni sotto aprono il suo profilo completo (anagrafica, preventivi, contratti, email, consegne, operatori assegnati).
+- Se cerca una persona e compare in "PERSONE TROVATE": conferma chi hai trovato, USA i dettagli mostrati (telefono, indirizzo, nascita, bisogni, stato) per rispondere direttamente quando li chiede, e ricorda che i bottoni sotto aprono il profilo completo (anagrafica, preventivi, contratti, email, consegne, operatori assegnati).
 - Non inventare dati su pazienti/operatori non presenti in PERSONE TROVATE.
 - Se la domanda è fuori ambito gestionale, riporta gentilmente al lavoro.
 CALCOLI — se l'utente chiede QUANTO COSTA una prestazione/servizio o un totale (es. "quanto costano 3 flebo + una visita"), aggiungi nel JSON "calcolo":{"voci":[{"nome":"NOME ESATTO dal listino","quantita":N}]} — usa SOLO nomi presenti nel LISTINO sotto, quantità plausibili (1-50). Il totale lo calcola il sistema con i prezzi reali.
@@ -273,21 +274,32 @@ router.post('/interno', authenticateToken, rateLimitByIP(40, 10 * 60 * 1000), as
       const filtroPaz = area === 'consulenza' ? { tipoGestione: 'consulenza' } : area === 'privato' ? { tipoGestione: { $ne: 'consulenza' } } : {};
       const [pz, st] = await Promise.all([
         Patient.find({ ...filtroPaz, $or: [{ firstName: rxAll }, { lastName: rxAll }] }).limit(5)
-          .select('firstName lastName tipoGestione email').lean(),
+          .select('firstName lastName tipoGestione email contactPhone address birthDate assistanceNeeds caregiverRiferimento caregiverTelefono categoriaPrivata terminato inAccettazione').lean(),
         Staff.find({ $or: [{ firstName: rxAll }, { lastName: rxAll }] }).limit(5)
-          .select('firstName lastName role category cittaResidenza').lean(),
+          .select('firstName lastName role category cittaResidenza phone email').lean(),
       ]);
       const righe: string[] = [];
       pz.slice(0, 2).forEach((p: any) => {
         const n = `${p.firstName} ${p.lastName}`;
-        righe.push(`Paziente ${n} (${p.tipoGestione === 'consulenza' ? 'intermediazione' : p.tipoGestione === 'convenzione' ? 'convenzione SIAT' : 'privato'})`);
+        const area = p.tipoGestione === 'consulenza' ? 'intermediazione' : p.tipoGestione === 'convenzione' ? 'convenzione SIAT' : 'privato';
+        const dettagli = [
+          p.contactPhone ? `tel ${decrypt(p.contactPhone)}` : '',
+          p.address ? `abita a ${decrypt(p.address)}` : '',
+          p.birthDate ? `nato/a ${new Date(p.birthDate).toLocaleDateString('it-IT')}` : '',
+          p.email ? `email ${p.email}` : '',
+          p.assistanceNeeds ? `bisogni: ${String(p.assistanceNeeds).slice(0, 120)}` : '',
+          p.caregiverRiferimento ? `caregiver ${p.caregiverRiferimento}${p.caregiverTelefono ? ` tel ${decrypt(p.caregiverTelefono)}` : ''}` : '',
+          p.inAccettazione ? 'IN ACCETTAZIONE (da confermare)' : '',
+          p.terminato ? 'TERMINATO (non più in carico)' : '',
+        ].filter(Boolean).join(', ');
+        righe.push(`Paziente ${n} (${area})${dettagli ? ` — ${dettagli}` : ''}`);
         // Link SEMPRE filtrati sul paziente specifico: mai archivi generici
         azioni.unshift({ label: `👤 ${n} — storico completo`, url: `/ricerca?paziente=${p._id}` });
         azioni.push({ label: `📄 Preventivi/fatture di ${p.lastName}`, url: `/archivio-preventivi?paziente=${p._id}` });
         if (p.email) azioni.push({ label: `📧 Email a ${p.lastName}`, url: `/archivio-email?q=${encodeURIComponent(p.email)}` });
       });
       st.forEach((s: any) => {
-        righe.push(`Operatore ${s.firstName} ${s.lastName} (${s.role || s.category || 'ruolo n/d'}, ${s.cittaResidenza || 'zona n/d'})`);
+        righe.push(`Operatore ${s.firstName} ${s.lastName} (${s.role || s.category || 'ruolo n/d'}, ${s.cittaResidenza || 'zona n/d'}${s.phone ? `, tel ${decrypt(s.phone)}` : ''}${s.email ? `, ${s.email}` : ''})`);
         azioni.push({ label: `🧑‍⚕️ ${s.firstName} ${s.lastName} — personale`, url: '/staff' });
       });
       if (righe.length) personeTxt = `\nPERSONE TROVATE: ${righe.join(' | ')}`;
