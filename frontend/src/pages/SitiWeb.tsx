@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import api from '../api/api';
-import { Globe, Image as ImageIcon, Video, ShoppingBag, Plus, Trash2, Save, RotateCcw, Upload, ExternalLink, X, Pencil } from 'lucide-react';
+import { Globe, Image as ImageIcon, Video, ShoppingBag, Plus, Trash2, Save, RotateCcw, Upload, ExternalLink, X, Pencil, Star, MessageSquareQuote } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -11,7 +11,8 @@ import { Button } from '../components/ui/Button';
 // ═════════════════════════════════════════════════════════════════════════════
 
 type SiteId = 'main' | 'family' | 'shop';
-interface SiteDoc { site: SiteId; title: string; subtitle: string; photo: string; video: string; updatedByName?: string; updatedAt?: string; storico?: { at: string; by?: string; campo: string; valore: string }[] }
+interface SiteDoc { site: SiteId; title: string; subtitle: string; photo: string; video: string; contenuti?: { chiave: string; tipo: 'testo' | 'foto' | 'video'; valore: string; label?: string }[]; updatedByName?: string; updatedAt?: string; storico?: { at: string; by?: string; campo: string; valore: string }[] }
+interface Recensione { _id: string; site: SiteId; nome: string; ruolo?: string; rating: number; testo: string; approvato: boolean; ordine: number }
 interface Prodotto {
   _id: string; nome: string; descrizione: string; categoria: 'vendita' | 'noleggio'; sezione?: string;
   prezzo?: number; prezzoScontato?: number; inOfferta?: boolean;
@@ -34,7 +35,7 @@ const label = 'tw-block tw-text-xs tw-font-bold tw-text-slate-600 tw-mb-1';
 const vuoto: Omit<Prodotto, '_id'> = { nome: '', descrizione: '', categoria: 'vendita', sezione: SEZIONI[0], prezzo: 0, prezzoScontato: 0, inOfferta: false, prezzoNoleggio: { giorno: 0, settimana: 0, mese: 0 }, cauzione: 0, disponibile: true, attivo: true, ordine: 0, immagini: [], badge: '' };
 
 export default function SitiWeb() {
-  const [tab, setTab] = useState<'siti' | 'shop'>('siti');
+  const [tab, setTab] = useState<'siti' | 'recensioni' | 'shop'>('siti');
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
   const flash = (ok: boolean, t: string) => { setMsg({ ok, t }); setTimeout(() => setMsg(null), 5000); };
 
@@ -47,11 +48,12 @@ export default function SitiWeb() {
         </p>
       </div>
       <div className="tw-flex tw-gap-2 tw-mb-4">
-        <Button variant={tab === 'siti' ? 'primary' : 'secondary'} icon={<ImageIcon size={16} />} onClick={() => setTab('siti')}>Foto e video dei siti</Button>
+        <Button variant={tab === 'siti' ? 'primary' : 'secondary'} icon={<ImageIcon size={16} />} onClick={() => setTab('siti')}>Contenuti dei siti</Button>
+        <Button variant={tab === 'recensioni' ? 'primary' : 'secondary'} icon={<Star size={16} />} onClick={() => setTab('recensioni')}>Recensioni</Button>
         <Button variant={tab === 'shop' ? 'primary' : 'secondary'} icon={<ShoppingBag size={16} />} onClick={() => setTab('shop')}>Prodotti shop</Button>
       </div>
       {msg && <div className={`tw-mb-4 tw-rounded-md tw-px-4 tw-py-2 tw-text-sm tw-font-semibold ${msg.ok ? 'tw-bg-emerald-50 tw-text-emerald-800 tw-border tw-border-emerald-200' : 'tw-bg-red-50 tw-text-red-700 tw-border tw-border-red-200'}`}>{msg.t}</div>}
-      {tab === 'siti' ? <Contenuti flash={flash} /> : <Prodotti flash={flash} />}
+      {tab === 'siti' ? <Contenuti flash={flash} /> : tab === 'recensioni' ? <Recensioni flash={flash} /> : <Prodotti flash={flash} />}
     </div>
   );
 }
@@ -125,9 +127,178 @@ function Contenuti({ flash }: { flash: (ok: boolean, t: string) => void }) {
               </div>
             </div>
             {d.updatedByName && <p className="tw-text-xs tw-text-slate-400 tw-mt-3 tw-mb-0">Ultima modifica: {d.updatedByName}{d.updatedAt ? ' · ' + new Date(d.updatedAt).toLocaleString('it-IT') : ''}</p>}
+            <BlocchiEditor site={s.id} items={d.contenuti || []} flash={flash} onSaved={load} />
           </section>
         );
       })}
+    </div>
+  );
+}
+
+// Editor dei blocchi liberi: ogni blocco (chiave + tipo + valore) corrisponde a un
+// punto marcato nella pagina del sito (data-cms / data-cms-img / data-cms-video).
+function BlocchiEditor({ site, items, flash, onSaved }: { site: SiteId; items: NonNullable<SiteDoc['contenuti']>; flash: (ok: boolean, t: string) => void; onSaved: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [texts, setTexts] = useState<Record<string, string>>({});
+  const [add, setAdd] = useState({ chiave: '', tipo: 'testo' as 'testo' | 'foto' | 'video', label: '', valore: '' });
+  const [busy, setBusy] = useState('');
+  useEffect(() => { const m: Record<string, string> = {}; items.forEach(i => { if (i.tipo === 'testo') m[i.chiave] = i.valore; }); setTexts(m); }, [items]);
+
+  async function saveTesto(chiave: string, lbl?: string) {
+    setBusy(chiave);
+    try { await api.put(`/siti-admin/contenuti/${site}/elemento`, { chiave, tipo: 'testo', valore: texts[chiave] ?? '', label: lbl }); flash(true, 'Blocco salvato.'); onSaved(); }
+    catch (e) { flash(false, errMsg(e)); } finally { setBusy(''); }
+  }
+  async function del(chiave: string) {
+    if (!confirm(`Rimuovere il blocco "${chiave}"?`)) return;
+    try { await api.delete(`/siti-admin/contenuti/${site}/elemento/${encodeURIComponent(chiave)}`); flash(true, 'Blocco rimosso.'); onSaved(); }
+    catch (e) { flash(false, errMsg(e)); }
+  }
+  async function uploadMedia(f: File, chiave: string, lbl?: string) {
+    if (f.size > 24 * 1024 * 1024) return flash(false, 'File troppo grande: massimo 24 MB.');
+    setBusy(chiave);
+    try {
+      const fd = new FormData(); fd.append('file', f); fd.append('chiave', chiave); if (lbl) fd.append('label', lbl);
+      await api.post(`/siti-admin/contenuti/${site}/elemento-media`, fd, { timeout: 300000 });
+      flash(true, 'File caricato.'); onSaved();
+    } catch (e) { flash(false, errMsg(e)); } finally { setBusy(''); }
+  }
+  async function addBlock() {
+    const chiave = add.chiave.trim();
+    if (!chiave) return flash(false, 'Scrivi la chiave del blocco (es. contatti.titolo).');
+    if (!/^[a-z0-9._-]+$/i.test(chiave)) return flash(false, 'Chiave non valida: solo lettere, numeri, punto, trattino.');
+    try {
+      await api.put(`/siti-admin/contenuti/${site}/elemento`, { chiave, tipo: add.tipo, valore: add.tipo === 'testo' ? add.valore : '', label: add.label });
+      flash(true, add.tipo === 'testo' ? 'Blocco aggiunto.' : 'Blocco creato: ora carica il file.');
+      setAdd({ chiave: '', tipo: 'testo', label: '', valore: '' }); onSaved();
+    } catch (e) { flash(false, errMsg(e)); }
+  }
+
+  return (
+    <div className="tw-mt-4 tw-border-t tw-border-slate-100 tw-pt-3">
+      <button onClick={() => setOpen(!open)} className="tw-text-xs tw-font-bold tw-uppercase tw-tracking-wide tw-text-indigo-600 hover:tw-text-indigo-800">
+        {open ? '▾ Chiudi blocchi di pagina' : `▸ Blocchi di pagina (tutti i testi, foto, video) · ${items.length}`}
+      </button>
+      {open && <>
+        <p className="tw-text-xs tw-text-slate-500 tw-mt-2 tw-mb-3 tw-mb-0">
+          Ogni blocco modifica un punto della pagina marcato con la sua chiave (es. <code className="tw-bg-slate-100 tw-px-1 tw-rounded">contatti.titolo</code>).
+          Tipo <b>testo</b> → scritte della pagina · <b>foto</b> → immagini · <b>video</b> → filmati. Valore vuoto = contenuto originale del sito.
+        </p>
+        <div className="tw-flex tw-flex-col tw-gap-2 tw-mt-3">
+          {items.map(it => (
+            <div key={it.chiave} className="tw-flex tw-flex-wrap tw-items-center tw-gap-2 tw-rounded-lg tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-3 tw-py-2">
+              <span className={`tw-rounded tw-px-1.5 tw-py-0.5 tw-text-[10px] tw-font-bold tw-uppercase ${it.tipo === 'testo' ? 'tw-bg-sky-100 tw-text-sky-700' : it.tipo === 'foto' ? 'tw-bg-emerald-100 tw-text-emerald-700' : 'tw-bg-amber-100 tw-text-amber-700'}`}>{it.tipo}</span>
+              <span className="tw-min-w-32"><code className="tw-text-[11px] tw-text-slate-700">{it.chiave}</code>{it.label && <span className="tw-block tw-text-[10px] tw-text-slate-400">{it.label}</span>}</span>
+              {it.tipo === 'testo' ? (
+                <>
+                  <input value={texts[it.chiave] ?? ''} onChange={e => setTexts(t => ({ ...t, [it.chiave]: e.target.value }))} placeholder="Vuoto = testo originale" className={input + ' !tw-w-auto tw-flex-1 tw-min-w-40 !tw-py-1.5 tw-text-xs'} />
+                  <Button size="sm" variant="secondary" icon={<Save size={13} />} loading={busy === it.chiave} onClick={() => saveTesto(it.chiave, it.label)}>Salva</Button>
+                </>
+              ) : (
+                <>
+                  {it.valore
+                    ? (it.tipo === 'foto'
+                      ? <img src={media(it.valore)} alt="" className="tw-h-9 tw-w-14 tw-rounded tw-object-cover" />
+                      : <video src={media(it.valore)} muted playsInline className="tw-h-9 tw-w-14 tw-rounded tw-object-cover" />)
+                    : <span className="tw-text-[10px] tw-text-slate-400">nessun file</span>}
+                  <FileBtn accept={it.tipo === 'foto' ? 'image/jpeg,image/png,image/webp' : 'video/mp4,video/webm,video/quicktime'} busy={busy === it.chiave} onFile={f => uploadMedia(f, it.chiave, it.label)} icon={<Upload size={13} />}>Carica</FileBtn>
+                </>
+              )}
+              <button onClick={() => del(it.chiave)} className="tw-ml-auto tw-p-1 tw-text-slate-300 hover:tw-text-red-500" title="Rimuovi blocco"><Trash2 size={14} /></button>
+            </div>
+          ))}
+          {!items.length && <p className="tw-text-xs tw-text-slate-400 tw-m-0">Nessun blocco definito. Aggiungine uno qui sotto: scrivi la chiave del punto pagina che vuoi modificare.</p>}
+        </div>
+        <div className="tw-mt-3 tw-flex tw-flex-wrap tw-items-end tw-gap-2 tw-rounded-lg tw-border tw-border-dashed tw-border-slate-300 tw-p-3">
+          <div><label className={label}>Chiave punto pagina</label><input value={add.chiave} onChange={e => setAdd(a => ({ ...a, chiave: e.target.value }))} placeholder="es. servizi.titolo" className={input + ' !tw-w-36 !tw-py-1.5 tw-text-xs'} /></div>
+          <div><label className={label}>Tipo</label><select value={add.tipo} onChange={e => setAdd(a => ({ ...a, tipo: e.target.value as 'testo' | 'foto' | 'video' }))} className={input + ' !tw-w-auto !tw-py-1.5 tw-text-xs'}><option value="testo">Testo</option><option value="foto">Foto</option><option value="video">Video</option></select></div>
+          <div><label className={label}>Etichetta (dove si trova)</label><input value={add.label} onChange={e => setAdd(a => ({ ...a, label: e.target.value }))} placeholder="es. Titolo sezione contatti" className={input + ' !tw-w-44 !tw-py-1.5 tw-text-xs'} /></div>
+          {add.tipo === 'testo' && <div className="tw-flex-1 tw-min-w-40"><label className={label}>Testo</label><input value={add.valore} onChange={e => setAdd(a => ({ ...a, valore: e.target.value }))} className={input + ' !tw-py-1.5 tw-text-xs'} /></div>}
+          <Button size="sm" variant="secondary" icon={<Plus size={13} />} onClick={addBlock}>Aggiungi blocco</Button>
+        </div>
+      </>}
+    </div>
+  );
+}
+
+// ─── RECENSIONI DEI SITI ─────────────────────────────────────────────────────
+function Recensioni({ flash }: { flash: (ok: boolean, t: string) => void }) {
+  const [items, setItems] = useState<Recensione[]>([]);
+  const [site, setSite] = useState<SiteId>('main');
+  const [form, setForm] = useState({ nome: '', ruolo: '', rating: 5, testo: '' });
+  const [edit, setEdit] = useState<Recensione | null>(null);
+  const [busy, setBusy] = useState(false);
+  const load = () => api.get('/siti-admin/recensioni').then(r => setItems((r.data as Recensione[]).filter(x => x.site === site))).catch(e => flash(false, errMsg(e)));
+  useEffect(() => { load(); }, [site]);
+
+  async function salva() {
+    if (!form.nome.trim()) return flash(false, 'Inserisci il nome di chi scrive.');
+    if (!form.testo.trim()) return flash(false, 'Inserisci il testo della recensione.');
+    setBusy(true);
+    try {
+      if (edit) await api.put(`/siti-admin/recensioni/${edit._id}`, { ...form });
+      else await api.post('/siti-admin/recensioni', { ...form, site, ordine: items.length + 1 });
+      flash(true, edit ? 'Recensione aggiornata.' : 'Recensione pubblicata sul sito.');
+      setForm({ nome: '', ruolo: '', rating: 5, testo: '' }); setEdit(null); load();
+    } catch (e) { flash(false, errMsg(e)); } finally { setBusy(false); }
+  }
+  async function toggle(r: Recensione) {
+    try { await api.put(`/siti-admin/recensioni/${r._id}`, { approvato: !r.approvato }); flash(true, r.approvato ? 'Recensione nascosta dal sito.' : 'Recensione pubblicata.'); load(); }
+    catch (e) { flash(false, errMsg(e)); }
+  }
+  async function elimina(r: Recensione) {
+    if (!confirm(`Eliminare la recensione di "${r.nome}"?`)) return;
+    try { await api.delete(`/siti-admin/recensioni/${r._id}`); flash(true, 'Recensione eliminata.'); load(); }
+    catch (e) { flash(false, errMsg(e)); }
+  }
+  const stars = (n: number) => '★'.repeat(Math.max(1, Math.min(5, n))) + '☆'.repeat(5 - Math.max(1, Math.min(5, n)));
+
+  return (
+    <div className="tw-grid tw-gap-4 lg:tw-grid-cols-2 tw-items-start">
+      <section className="tw-bg-white tw-border tw-border-slate-200 tw-rounded-xl tw-p-4">
+        <div className="tw-flex tw-flex-wrap tw-gap-2 tw-mb-4">
+          {SITI.map(s => <button key={s.id} onClick={() => { setSite(s.id); setEdit(null); setForm({ nome: '', ruolo: '', rating: 5, testo: '' }); }} className={`tw-rounded-full tw-px-4 tw-py-1.5 tw-text-xs tw-font-bold tw-transition ${site === s.id ? 'tw-bg-indigo-600 tw-text-white' : 'tw-bg-slate-100 tw-text-slate-500 hover:tw-bg-slate-200'}`}>{s.nome}</button>)}
+        </div>
+        <h2 className="tw-m-0 tw-mb-3 tw-text-lg tw-font-extrabold tw-text-slate-800">{edit ? 'Modifica recensione' : 'Nuova recensione'} — {SITI.find(s => s.id === site)?.nome}</h2>
+        <div className="tw-grid tw-gap-3">
+          <div className="tw-grid sm:tw-grid-cols-2 tw-gap-2">
+            <div><label className={label}>Nome *</label><input className={input} maxLength={80} value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} placeholder="Es. Maria R." /></div>
+            <div><label className={label}>Dettaglio (zona, ruolo)</label><input className={input} maxLength={80} value={form.ruolo} onChange={e => setForm(f => ({ ...f, ruolo: e.target.value }))} placeholder="Es. Famiglia, Roma" /></div>
+          </div>
+          <div className="tw-flex tw-items-center tw-gap-3">
+            <span className={label + ' !tw-mb-0'}>Stelle</span>
+            <div className="tw-flex tw-gap-1">{[1, 2, 3, 4, 5].map(n => <button key={n} type="button" onClick={() => setForm(f => ({ ...f, rating: n }))} className={`tw-text-2xl ${n <= form.rating ? 'tw-text-amber-400' : 'tw-text-slate-200'}`}>★</button>)}</div>
+          </div>
+          <div><label className={label}>Testo della recensione *</label><textarea className={input} rows={4} maxLength={800} value={form.testo} onChange={e => setForm(f => ({ ...f, testo: e.target.value }))} placeholder="Scrivi o incolla la recensione…" /></div>
+          <div className="tw-flex tw-gap-2">
+            <Button icon={<Save size={15} />} loading={busy} onClick={salva}>{edit ? 'Salva modifiche' : 'Pubblica recensione'}</Button>
+            {edit && <Button variant="ghost" icon={<RotateCcw size={15} />} onClick={() => { setEdit(null); setForm({ nome: '', ruolo: '', rating: 5, testo: '' }); }}>Annulla</Button>}
+          </div>
+          <p className="tw-text-xs tw-text-slate-500 tw-m-0">Appare subito nella sezione «Cosa dicono di noi» di {SITI.find(s => s.id === site)?.url}. Puoi nasconderla in qualsiasi momento senza cancellarla.</p>
+        </div>
+      </section>
+      <section className="tw-bg-white tw-border tw-border-slate-200 tw-rounded-xl tw-p-4">
+        <h2 className="tw-m-0 tw-mb-3 tw-text-lg tw-font-extrabold tw-text-slate-800">Recensioni su {SITI.find(s => s.id === site)?.nome} ({items.length})</h2>
+        <div className="tw-flex tw-flex-col tw-gap-2 tw-max-h-[540px] tw-overflow-y-auto">
+          {items.map(r => (
+            <div key={r._id} className={`tw-rounded-lg tw-border tw-p-3 ${r.approvato ? 'tw-border-slate-200 tw-bg-white' : 'tw-border-amber-300 tw-bg-amber-50'}`}>
+              <div className="tw-flex tw-items-start tw-justify-between tw-gap-2">
+                <div className="tw-min-w-0">
+                  <p className="tw-m-0 tw-text-sm tw-font-bold tw-text-slate-800">{r.nome}{r.ruolo && <span className="tw-font-normal tw-text-slate-400"> · {r.ruolo}</span>}</p>
+                  <p className="tw-m-0 tw-text-amber-400 tw-text-sm">{stars(r.rating)}</p>
+                </div>
+                <div className="tw-flex tw-flex-none tw-items-center tw-gap-1">
+                  <button onClick={() => toggle(r)} className={`tw-rounded-full tw-px-2.5 tw-py-1 tw-text-[10px] tw-font-bold tw-uppercase ${r.approvato ? 'tw-bg-emerald-100 tw-text-emerald-700' : 'tw-bg-slate-200 tw-text-slate-500'}`}>{r.approvato ? 'Visibile' : 'Nascosta'}</button>
+                  <button aria-label="Modifica" onClick={() => { setEdit(r); setForm({ nome: r.nome, ruolo: r.ruolo || '', rating: r.rating, testo: r.testo }); }} className="tw-p-1.5 tw-text-slate-300 hover:tw-text-indigo-600"><Pencil size={15} /></button>
+                  <button aria-label="Elimina" onClick={() => elimina(r)} className="tw-p-1.5 tw-text-slate-300 hover:tw-text-red-500"><Trash2 size={15} /></button>
+                </div>
+              </div>
+              <p className="tw-mt-1.5 tw-mb-0 tw-text-xs tw-text-slate-500 tw-line-clamp-3">{r.testo}</p>
+            </div>
+          ))}
+          {!items.length && <p className="tw-rounded-lg tw-bg-slate-50 tw-py-8 tw-text-center tw-text-xs tw-text-slate-400 tw-m-0"><MessageSquareQuote size={18} className="tw-mx-auto tw-mb-1 tw-opacity-50" />Nessuna recensione per questo sito.<br />Aggiungila dal modulo a sinistra: apparirà nella sezione «Cosa dicono di noi».</p>}
+        </div>
+      </section>
     </div>
   );
 }

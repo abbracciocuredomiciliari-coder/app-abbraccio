@@ -11,6 +11,7 @@ import multer from 'multer';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { authorizeRole } from '../middleware/roles';
 import SiteContent, { SiteId } from '../models/SiteContent';
+import SiteReview from '../models/SiteReview';
 import ShopProduct from '../models/ShopProduct';
 import ShopReview from '../models/ShopReview';
 
@@ -53,7 +54,107 @@ async function getOrCreate(site: SiteId) {
 // ─── CONTENUTI SITI ──────────────────────────────────────────────────────────
 router.get('/contenuti', async (_req, res: Response) => {
   const docs = await Promise.all(SITES.map(getOrCreate));
-  return res.json(docs.map(d => ({ site: d.site, title: d.title, subtitle: d.subtitle, photo: d.photo, video: d.video, updatedByName: d.updatedByName, updatedAt: (d as any).updatedAt, storico: (d.storico || []).slice(-15).reverse() })));
+  return res.json(docs.map(d => ({ site: d.site, title: d.title, subtitle: d.subtitle, photo: d.photo, video: d.video, contenuti: d.contenuti || [], updatedByName: d.updatedByName, updatedAt: (d as any).updatedAt, storico: (d.storico || []).slice(-15).reverse() })));
+});
+
+// Blocchi liberi: ogni elemento sul sito con data-cms="chiave" / data-cms-img /
+// data-cms-video viene riempito dal valore qui salvato. Valore vuoto = originale.
+const CHIAVE_RX = /^[a-z0-9][a-z0-9._-]{0,60}$/i;
+
+router.put('/contenuti/:site/elemento', async (req: AuthRequest, res: Response) => {
+  const site = req.params.site as SiteId;
+  if (!SITES.includes(site)) return res.status(400).json({ message: 'Sito non valido' });
+  const chiave = String(req.body?.chiave || '').trim();
+  const tipo = ['testo', 'foto', 'video'].includes(req.body?.tipo) ? req.body.tipo : 'testo';
+  const valore = String(req.body?.valore ?? '').trim();
+  const label = String(req.body?.label || '').trim().slice(0, 80);
+  if (!CHIAVE_RX.test(chiave)) return res.status(400).json({ message: 'Chiave non valida' });
+  const doc = await getOrCreate(site);
+  const el = doc.contenuti.find(c => c.chiave === chiave);
+  const precedente = el?.valore || '';
+  if (el) { el.tipo = tipo; el.valore = valore; el.label = label || el.label; }
+  else doc.contenuti.push({ chiave, tipo, valore, label });
+  doc.updatedByName = who(req);
+  doc.storico.push({ at: new Date(), by: who(req), campo: `blocco:${chiave}`, valore: tipo === 'testo' ? valore.slice(0, 120) : (valore || '(originale)'), precedente: precedente.slice(0, 200) });
+  await doc.save();
+  return res.json(doc);
+});
+
+// Upload media per un blocco (data-cms-img / data-cms-video)
+router.post('/contenuti/:site/elemento-media', withUpload(uploadMedia.single('file')), async (req: AuthRequest, res: Response) => {
+  const site = req.params.site as SiteId;
+  const file = (req as any).file as Express.Multer.File | undefined;
+  const chiave = String(req.body?.chiave || '').trim();
+  if (!SITES.includes(site) || !CHIAVE_RX.test(chiave)) { if (file) fs.unlink(file.path, () => {}); return res.status(400).json({ message: 'Sito o chiave non validi' }); }
+  if (!file) return res.status(400).json({ message: 'File mancante' });
+  const tipo = file.mimetype.startsWith('video/') ? 'video' : 'foto';
+  const doc = await getOrCreate(site);
+  const el = doc.contenuti.find(c => c.chiave === chiave);
+  const precedente = el?.valore || '';
+  const url = `/site-media/${file.filename}`;
+  if (el) { el.tipo = tipo; el.valore = url; }
+  else doc.contenuti.push({ chiave, tipo, valore: url, label: String(req.body?.label || '').trim().slice(0, 80) });
+  doc.updatedByName = who(req);
+  doc.storico.push({ at: new Date(), by: who(req), campo: `blocco:${chiave}`, valore: file.originalname, precedente });
+  await doc.save();
+  if (precedente && precedente !== url) removeFile(SITE_MEDIA_DIR, precedente);
+  return res.json(doc);
+});
+
+// Ripristina il contenuto originale di un blocco (rimuove il valore gestito)
+router.delete('/contenuti/:site/elemento/:chiave', async (req: AuthRequest, res: Response) => {
+  const site = req.params.site as SiteId;
+  const chiave = req.params.chiave;
+  if (!SITES.includes(site) || !CHIAVE_RX.test(chiave)) return res.status(400).json({ message: 'Parametri non validi' });
+  const doc = await getOrCreate(site);
+  const el = doc.contenuti.find(c => c.chiave === chiave);
+  if (el) {
+    if (el.tipo !== 'testo') removeFile(SITE_MEDIA_DIR, el.valore);
+    doc.contenuti = doc.contenuti.filter(c => c.chiave !== chiave) as any;
+    doc.updatedByName = who(req);
+    doc.storico.push({ at: new Date(), by: who(req), campo: `blocco:${chiave}`, valore: '(originale ripristinato)', precedente: el.valore.slice(0, 200) });
+    await doc.save();
+  }
+  return res.json(doc);
+});
+
+// ─── RECENSIONI DEI SITI ─────────────────────────────────────────────────────
+router.get('/recensioni', async (_req, res: Response) => {
+  const list = await SiteReview.find({}).sort({ site: 1, ordine: 1, createdAt: -1 });
+  return res.json(list);
+});
+
+router.post('/recensioni', async (req: AuthRequest, res: Response) => {
+  const { site, nome, ruolo, rating, testo, approvato, ordine } = req.body || {};
+  if (!SITES.includes(site)) return res.status(400).json({ message: 'Sito non valido' });
+  if (!nome || !String(nome).trim() || !testo || !String(testo).trim()) return res.status(400).json({ message: 'Nome e testo della recensione sono obbligatori' });
+  const r = await SiteReview.create({
+    site, nome: String(nome).trim().slice(0, 80), ruolo: String(ruolo || '').trim().slice(0, 80),
+    rating: Math.min(5, Math.max(1, Math.round(Number(rating) || 5))),
+    testo: String(testo).trim().slice(0, 2000),
+    approvato: approvato !== false, ordine: Number(ordine) || 0,
+  });
+  return res.status(201).json(r);
+});
+
+router.put('/recensioni/:id', async (req: AuthRequest, res: Response) => {
+  const r = await SiteReview.findById(req.params.id);
+  if (!r) return res.status(404).json({ message: 'Recensione non trovata' });
+  const b = req.body || {};
+  if (b.nome !== undefined) r.nome = String(b.nome).trim().slice(0, 80) || r.nome;
+  if (b.ruolo !== undefined) r.ruolo = String(b.ruolo).trim().slice(0, 80);
+  if (b.rating !== undefined) r.rating = Math.min(5, Math.max(1, Math.round(Number(b.rating) || 5)));
+  if (b.testo !== undefined) r.testo = String(b.testo).trim().slice(0, 2000) || r.testo;
+  if (b.approvato !== undefined) r.approvato = !!b.approvato;
+  if (b.ordine !== undefined) r.ordine = Number(b.ordine) || 0;
+  await r.save();
+  return res.json(r);
+});
+
+router.delete('/recensioni/:id', async (req: AuthRequest, res: Response) => {
+  const r = await SiteReview.findByIdAndDelete(req.params.id);
+  if (!r) return res.status(404).json({ message: 'Recensione non trovata' });
+  return res.json({ ok: true });
 });
 
 router.put('/contenuti/:site', async (req: AuthRequest, res: Response) => {

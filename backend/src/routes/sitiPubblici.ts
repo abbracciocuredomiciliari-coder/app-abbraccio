@@ -11,6 +11,7 @@ import ShopProduct from '../models/ShopProduct';
 import ShopOrder from '../models/ShopOrder';
 import CandidatoIntermediazione from '../models/CandidatoIntermediazione';
 import SiteContent from '../models/SiteContent';
+import SiteReview from '../models/SiteReview';
 import { rateLimitByIP } from '../middleware/rateLimit';
 import { inviaEmail } from '../utils/email';
 
@@ -59,10 +60,17 @@ router.get('/public', async (req: Request, res: Response) => {
     const abs = (u: string) => (u && u.startsWith('/') ? base + u : u || '');
     const content = SITE_IDS.map(id => {
       const d = docs.find(x => x.site === id);
-      return { id, title: d?.title || '', subtitle: d?.subtitle || '', photo: abs(d?.photo || ''), video: abs(d?.video || '') };
+      const items: Record<string, { t: string; v: string }> = {};
+      (d?.contenuti || []).forEach(c => {
+        if (!c.chiave || !String(c.valore || '').trim()) return;
+        items[c.chiave] = { t: c.tipo, v: c.tipo === 'testo' ? String(c.valore).slice(0, 2000) : abs(c.valore) };
+      });
+      return { id, title: d?.title || '', subtitle: d?.subtitle || '', photo: abs(d?.photo || ''), video: abs(d?.video || ''), items };
     });
+    const revDocs = await SiteReview.find({ approvato: true }).sort({ ordine: 1, createdAt: -1 }).lean();
+    const reviews = revDocs.map(r => ({ site: r.site, nome: r.nome, ruolo: r.ruolo || '', rating: r.rating, testo: r.testo }));
     res.set('Cache-Control', 'public, max-age=60');
-    return res.json({ content, products });
+    return res.json({ content, products, reviews });
   } catch (err) {
     return res.status(500).json({ error: 'Contenuti non disponibili', details: String(err) });
   }
