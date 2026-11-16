@@ -224,8 +224,20 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
       if (usr) { responsabileId = usr._id as mongoose.Types.ObjectId; responsabileNome = (usr as any).name || responsabileNome; }
     }
 
+    // Tipo scelto in creazione: attesa → già in stato in_attesa con interlocutore
+    const tipo = ['attivita', 'ricontatto', 'scadenza', 'attesa'].includes(b.tipo) ? b.tipo : 'attivita';
+    const interlocutoreAttesa = String(b.interlocutoreAttesa || '').trim().slice(0, 120) || undefined;
+    const dataControlloAttesa = b.dataControlloAttesa ? new Date(b.dataControlloAttesa) : undefined;
+    if (tipo === 'attesa' && (!interlocutoreAttesa || !dataControlloAttesa || isNaN(dataControlloAttesa.getTime()))) {
+      return res.status(400).json({ message: 'In attesa richiede interlocutore e data di controllo' });
+    }
+    if (tipo === 'ricontatto' && (!dataControlloAttesa || isNaN(dataControlloAttesa.getTime()))) {
+      return res.status(400).json({ message: 'Il ricontatto richiede la data in cui richiamare' });
+    }
+
     const attivita = await Attivita.create({
       titolo,
+      tipo,
       azioneRichiesta: String(b.azioneRichiesta || '').trim().slice(0, 2000) || undefined,
       praticaTipo: ['richiesta', 'paziente', 'intermediazione', 'consegna', 'documento', 'checklist', 'magazzino', 'generale'].includes(b.praticaTipo) ? b.praticaTipo : undefined,
       praticaId: b.praticaId && mongoose.isValidObjectId(String(b.praticaId)) ? new mongoose.Types.ObjectId(String(b.praticaId)) : undefined,
@@ -233,7 +245,9 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
       area: ['privato', 'convenzione', 'consulenza', 'organizzativa'].includes(b.area) ? b.area : undefined,
       priorita: ['bassa', 'normale', 'alta', 'urgente'].includes(b.priorita) ? b.priorita : 'normale',
       scadenza: b.scadenza ? new Date(b.scadenza) : undefined,
-      stato: responsabileId ? 'in_lavorazione' : 'da_prendere',
+      stato: tipo === 'attesa' ? 'in_attesa' : (responsabileId ? 'in_lavorazione' : 'da_prendere'),
+      interlocutoreAttesa,
+      dataControlloAttesa,
       responsabileId,
       responsabileNome,
       autoreId: new mongoose.Types.ObjectId(me.userId),

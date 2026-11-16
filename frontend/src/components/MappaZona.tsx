@@ -46,6 +46,10 @@ export default function MappaZona({
   const cerchioRef = useRef<L.Circle | null>(null);
   const markerCentroRef = useRef<L.Marker | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  // Su touch la mappa Leaflet catturerebbe ogni swipe impedendo lo scroll della pagina:
+  // overlay "tocca per attivare" — lo scroll passa alla pagina, la mappa si attiva al tocco.
+  const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  const [mappaAttiva, setMappaAttiva] = useState(false);
 
   const defaultCenter: [number, number] = center
     ? [center.lat, center.lng]
@@ -149,9 +153,26 @@ export default function MappaZona({
   }, [markers, markerPaziente]);
 
   return (
-    <div
-      ref={mapRef}
-      style={{ width: '100%', height: altezza, borderRadius: '10px', border: '1px solid #e2e8f0', zIndex: 0 }}
-    />
+    <div style={{ position: 'relative' }}>
+      <div
+        ref={mapRef}
+        style={{ width: '100%', height: altezza, borderRadius: '10px', border: '1px solid #e2e8f0', zIndex: 0 }}
+      />
+      {isTouch && !mappaAttiva && (
+        <div
+          onClick={() => setMappaAttiva(true)}
+          style={{
+            position: 'absolute', inset: 0, zIndex: 1001, cursor: 'pointer', borderRadius: '10px',
+            touchAction: 'pan-y',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: '12px',
+            background: 'linear-gradient(transparent 62%, rgba(15,23,42,0.28))',
+          }}
+        >
+          <span style={{ background: 'rgba(15,23,42,0.82)', color: '#fff', fontSize: '0.75rem', fontWeight: 600, padding: '5px 14px', borderRadius: '999px', pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+            👆 Tocca per muovere la mappa · scorri fuori per la pagina
+          </span>
+        </div>
+      )}
+    </div>
   );
 }

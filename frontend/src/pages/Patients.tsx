@@ -43,6 +43,7 @@ import { Modal } from '../components/ui/Modal';
 import { Loading } from '../components/ui/Loading';
 import { Dropdown } from '../components/ui/Dropdown';
 import MappaZona from '../components/MappaZona';
+import NuovaAttivitaForm from '../components/NuovaAttivitaForm';
 import CalcolatorePreventivoListino, { RisultatoCalcolatore } from '../components/CalcolatorePreventivoListino';
 
 // Assicura che API_BASE_URL termini sempre con /api
@@ -212,6 +213,7 @@ function Patients() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [documents, setDocuments] = useState<PatientDocument[]>([]);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+  const [attivitaPatient, setAttivitaPatient] = useState<Patient | null>(null);
   const [chatPatient, setChatPatient] = useState<Patient | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [uploading, setUploading] = useState(false);
@@ -1507,6 +1509,16 @@ function Patients() {
                   )}
                 </div>
                 <div className="tw-flex tw-flex-wrap tw-gap-2 tw-items-center">
+                  {!patient.terminato && (
+                    <button
+                      onClick={() => setAttivitaPatient(patient)}
+                      className="tw-border tw-border-teal-700 tw-text-teal-700 tw-bg-white tw-whitespace-nowrap"
+                      title="Crea un'attività, un ricontatto o una scadenza collegata a questo paziente"
+                    >
+                      <ClipboardList size={16} />
+                      Attività
+                    </button>
+                  )}
                   {patient.terminato && (user?.role === 'admin' || user?.role === 'coordinator') && (
                     <button
                       onClick={() => riattivaPaziente(patient)}
@@ -1927,6 +1939,27 @@ function Patients() {
       )}
 
       {/* Documents Modal */}
+      {/* Modal: nuova attività collegata al paziente */}
+      {attivitaPatient && (
+        <Modal
+          isOpen={!!attivitaPatient}
+          onClose={() => setAttivitaPatient(null)}
+          title={`Attività su ${attivitaPatient.firstName} ${attivitaPatient.lastName}`}
+          size="lg"
+        >
+          <NuovaAttivitaForm
+            area={isConsulenza ? 'intermediazione' : 'gestione'}
+            defaultPratica={{
+              id: attivitaPatient._id,
+              tipo: 'paziente',
+              label: `${attivitaPatient.firstName} ${attivitaPatient.lastName}`,
+            }}
+            onSaved={() => setAttivitaPatient(null)}
+            onCancel={() => setAttivitaPatient(null)}
+          />
+        </Modal>
+      )}
+
       {showDocumentsModal && selectedPatient && (
         <div className="tw-fixed tw-inset-0 tw-z-50 tw-bg-black/60 tw-flex tw-items-start tw-justify-center tw-p-4 tw-overflow-y-auto" onClick={closeDocumentsModal}>
           <div className="tw-bg-white tw-rounded-2xl tw-shadow-2xl tw-w-full tw-max-w-[800px] tw-my-10 tw-p-6" onClick={(e) => e.stopPropagation()}>

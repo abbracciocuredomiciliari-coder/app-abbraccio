@@ -36,6 +36,7 @@ export interface IEventoAttivita {
 
 export interface IAttivita extends Document {
   titolo: string;
+  tipo?: 'attivita' | 'ricontatto' | 'scadenza' | 'attesa'; // categoria scelta in creazione (badge in pagina Oggi)
   azioneRichiesta?: string;            // cosa deve fare il responsabile
   // Collegamento opzionale a una pratica
   praticaTipo?: 'richiesta' | 'paziente' | 'intermediazione' | 'consegna' | 'documento' | 'checklist' | 'magazzino' | 'generale';
@@ -80,6 +81,7 @@ export interface IAttivita extends Document {
 const AttivitaSchema = new Schema<IAttivita>(
   {
     titolo: { type: String, required: true, trim: true, maxlength: 200 },
+    tipo: { type: String, enum: ['attivita', 'ricontatto', 'scadenza', 'attesa'], default: 'attivita' },
     azioneRichiesta: { type: String, trim: true, maxlength: 2000 },
     praticaTipo: { type: String, enum: ['richiesta', 'paziente', 'intermediazione', 'consegna', 'documento', 'checklist', 'magazzino', 'generale'] },
     praticaId: { type: Schema.Types.ObjectId },

@@ -617,7 +617,7 @@ export default function LandingBadante() {
           Abbraccio Cure Domiciliari · Via di S. Maria Ausiliatrice 4/B, Roma · 06 01905242 · In partnership con <strong>Salus Group</strong> — Divisione Datoriale Casimpresa
         </p>
       </main>
-      <style>{`@media (max-width: 640px) { .landing-hide-mobile { display: none !important; } .bad-sticky { position: static !important; } .bad-card-pad { padding: 14px 14px 16px !important; } .bad-table { font-size: 0.78rem !important; } .bad-table td { padding: 4px 3px !important; word-break: break-word; } }`}</style>
+      <style>{`@media (max-width: 640px) { .landing-hide-mobile { display: none !important; } .bad-sticky { position: static !important; } .bad-card-pad { padding: 14px 14px 16px !important; } .bad-table { font-size: 0.78rem !important; } .bad-table td { padding: 4px 3px !important; word-break: break-word; } main { padding-left: 10px !important; padding-right: 10px !important; } input, select, textarea { max-width: 100%; box-sizing: border-box; } }`}</style>
       <Abbraccino tipo="badante" contesto={{ contrattoTipo, livello, oreSettimanali }} onSuggerimento={(s: any) => {
         if (s?.contrattoTipo) setContrattoTipo(s.contrattoTipo);
         if (s?.livello) setLivello(s.livello);

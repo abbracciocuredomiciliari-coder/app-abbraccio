@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 import { useModalita } from '../context/ModalitaContext';
+import NuovaAttivitaForm, { TIPO_LABEL } from '../components/NuovaAttivitaForm';
 import { Plus, UserCheck, Hourglass, CheckCircle, XCircle, ArrowLeftRight, RotateCcw, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -13,11 +14,11 @@ import { Plus, UserCheck, Hourglass, CheckCircle, XCircle, ArrowLeftRight, Rotat
 
 type Stato = 'da_prendere' | 'in_lavorazione' | 'in_attesa' | 'completata' | 'annullata';
 type Vista = 'oggi' | 'mie' | 'da_prendere' | 'scadute' | 'ricontatti' | 'in_attesa' | 'senza_responsabile' | 'trasferimenti' | 'completate' | 'tutte' | 'consegne';
-type PraticaTipo = 'richiesta' | 'paziente' | 'intermediazione' | 'consegna' | 'documento' | 'checklist' | 'magazzino' | 'generale';
 
 interface Attivita {
   _id: string;
   titolo: string;
+  tipo?: 'attivita' | 'ricontatto' | 'scadenza' | 'attesa';
   azioneRichiesta?: string;
   praticaTipo?: string;
   praticaId?: string;
@@ -42,6 +43,11 @@ interface Attivita {
 
 interface Utente { _id?: string; id?: string; name: string; role: string; }
 
+const PRATICA_TIPO_LABEL: Record<string, string> = {
+  richiesta: 'Richiesta', paziente: 'Paziente', intermediazione: 'Intermediazione',
+  consegna: 'Consegna', documento: 'Documento', checklist: 'Checklist', magazzino: 'Magazzino', generale: 'Generale',
+};
+
 interface ConsegnaAperta {
   _id: string;
   titolo: string;
@@ -59,7 +65,6 @@ interface ConsegnaAperta {
   createdAt: string;
 }
 
-interface PraticaOpt { id: string; tipo: string; label: string }
 
 // Dove porta il collegamento pratica nella pagina giusta dell'area
 const PRATICA_ROUTE: Record<string, string> = {
@@ -127,15 +132,6 @@ export default function Oggi() {
 
   // Form nuova attività
   const [showForm, setShowForm] = useState(false);
-  const [fTitolo, setFTitolo] = useState('');
-  const [fAzione, setFAzione] = useState('');
-  const [fPraticaTipo, setFPraticaTipo] = useState<PraticaTipo | ''>('');
-  const [fPraticaQ, setFPraticaQ] = useState('');
-  const [fPraticaSel, setFPraticaSel] = useState<PraticaOpt | null>(null);
-  const [pratiche, setPratiche] = useState<PraticaOpt[]>([]);
-  const [fResponsabile, setFResponsabile] = useState('');
-  const [fScadenza, setFScadenza] = useState('');
-  const [fPriorita, setFPriorita] = useState('normale');
 
   // Storico espanso + nota
   const [notaTesto, setNotaTesto] = useState('');
@@ -162,15 +158,6 @@ export default function Oggi() {
 
   useEffect(() => { setLoading(true); carica(); }, [vista, area]);
 
-  // Ricerca pratiche reali (debounce)
-  useEffect(() => {
-    if (!fPraticaTipo || fPraticaSel) { setPratiche([]); return; }
-    const t = setTimeout(() => {
-      api.get('/attivita/pratiche', { params: { tipo: fPraticaTipo, q: fPraticaQ } })
-        .then(r => setPratiche(r.data || [])).catch(() => setPratiche([]));
-    }, 300);
-    return () => clearTimeout(t);
-  }, [fPraticaTipo, fPraticaQ, fPraticaSel]);
   useEffect(() => {
     api.get('/auth/all-users').then(r => {
       const list = (r.data || []).map((x: any) => ({ _id: x._id || x.id, name: x.name, role: x.role }));
@@ -186,20 +173,29 @@ export default function Oggi() {
     finally { setBusy(false); }
   };
 
-  const crea = () => azione(async () => {
-    await api.post('/attivita', {
-      titolo: fTitolo, azioneRichiesta: fAzione,
-      praticaTipo: fPraticaSel ? fPraticaSel.tipo : 'generale',
-      praticaId: fPraticaSel?.id,
-      praticaLabel: fPraticaSel?.label,
-      area, priorita: fPriorita,
-      scadenza: fScadenza || undefined, responsabileId: fResponsabile || undefined,
-    });
-    setFTitolo(''); setFAzione(''); setFPraticaTipo(''); setFPraticaQ(''); setFPraticaSel(null);
-    setFResponsabile(''); setFScadenza(''); setShowForm(false);
-  });
-
   const accettaConsegna = (id: string) => azione(() => api.post(`/consegne-amministrative/${id}/accetta-trasferimento`));
+  const prendiConsegna = (id: string) => azione(() => api.patch(`/consegne-amministrative/${id}/stato`, { stato: 'presa_in_carico' }));
+  const attesaConsegna = (id: string) => {
+    const interlocutore = prompt('Con chi siete in attesa? (es. famiglia Rossi, ASL, fornitore)');
+    if (!interlocutore) return;
+    const data = prompt('Data di controllo (YYYY-MM-DD):', new Date(Date.now() + 86400000).toISOString().slice(0, 10));
+    if (!data) return;
+    return azione(() => api.patch(`/consegne-amministrative/${id}/stato`, { stato: 'in_attesa_riscontro', interlocutore, dataControllo: data }));
+  };
+  const gestitaConsegna = (id: string) => {
+    const esito = prompt('Esito del lavoro (obbligatorio):');
+    if (!esito) return;
+    return azione(() => api.patch(`/consegne-amministrative/${id}/stato`, { stato: 'gestita', esito }));
+  };
+  const eliminaConsegna = (id: string) => {
+    if (!confirm('Eliminare definitivamente questa consegna?')) return;
+    return azione(() => api.delete(`/consegne-amministrative/${id}`));
+  };
+  const notaConsegna = (id: string) => {
+    const nota = prompt('Nota da aggiungere alla consegna:');
+    if (!nota?.trim()) return;
+    return azione(() => api.post(`/consegne-amministrative/${id}/nota`, { nota: nota.trim() }));
+  };
 
   const prendi = (id: string) => azione(() => api.post(`/attivita/${id}/prendi`));
   const attesa = (id: string) => {
@@ -264,67 +260,11 @@ export default function Oggi() {
         ))}
       </div>
 
-      {/* Form nuova attività */}
+      {/* Form nuova attività / consegna — tipo guidato */}
       {showForm && (
         <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-          <div style={{ fontWeight: 700, color: 'var(--brand-700)', marginBottom: 10 }}>Nuova attività</div>
-          <div style={{ display: 'grid', gap: 10 }}>
-            <input style={inputSt} placeholder="Titolo * (es. Ricontattare famiglia Rossi)" value={fTitolo} onChange={e => setFTitolo(e.target.value)} />
-            <input style={inputSt} placeholder="Azione richiesta (cosa deve fare il responsabile)" value={fAzione} onChange={e => setFAzione(e.target.value)} />
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, 200px) 1fr', gap: 10 }}>
-              <select style={inputSt} value={fPraticaTipo} onChange={e => { setFPraticaTipo(e.target.value as PraticaTipo | ''); setFPraticaSel(null); setFPraticaQ(''); }}>
-                <option value="">Nessuna pratica collegata</option>
-                <option value="richiesta">Richiesta / prenotazione</option>
-                <option value="paziente">Paziente</option>
-                <option value="intermediazione">Pratica intermediazione</option>
-                <option value="consegna">Consegna aperta</option>
-                <option value="documento">Documento fatturazione</option>
-              </select>
-              <div style={{ position: 'relative' }}>
-                {fPraticaSel ? (
-                  <div style={{ ...inputSt, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--brand-50)', borderColor: 'var(--brand-300)' }}>
-                    <span style={{ color: '#1d4ed8', fontWeight: 600 }}>📂 {fPraticaSel.label}</span>
-                    <button type="button" onClick={() => setFPraticaSel(null)} style={{ border: 'none', background: 'none', color: '#b91c1c', cursor: 'pointer', fontWeight: 700 }}>✕</button>
-                  </div>
-                ) : (
-                  <>
-                    <input style={inputSt} disabled={!fPraticaTipo} placeholder={fPraticaTipo ? 'Cerca la pratica reale…' : 'Scegli prima il tipo'} value={fPraticaQ} onChange={e => setFPraticaQ(e.target.value)} />
-                    {fPraticaTipo && pratiche.length > 0 && (
-                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20, background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, marginTop: 4, maxHeight: 220, overflowY: 'auto', boxShadow: '0 8px 20px rgba(0,0,0,0.12)' }}>
-                        {pratiche.map(p => (
-                          <button key={p.id} type="button" onClick={() => setFPraticaSel(p)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.82rem', borderBottom: '1px solid #f1f5f9' }}
-                            onMouseEnter={e => (e.currentTarget.style.background = '#f1f5f9')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
-                            {p.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {fPraticaTipo && pratiche.length === 0 && fPraticaQ && (
-                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20, background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, marginTop: 4, padding: '8px 12px', fontSize: '0.78rem', color: '#64748b' }}>
-                        Nessuna pratica trovata
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
-              <select style={inputSt} value={fResponsabile} onChange={e => setFResponsabile(e.target.value)}>
-                <option value="">Responsabile (vuoto = da prendere)</option>
-                {utenti.map(x => <option key={x._id} value={x._id}>{x.name}</option>)}
-              </select>
-              <input style={inputSt} type="date" value={fScadenza} onChange={e => setFScadenza(e.target.value)} />
-              <select style={inputSt} value={fPriorita} onChange={e => setFPriorita(e.target.value)}>
-                <option value="bassa">Priorità bassa</option>
-                <option value="normale">Priorità normale</option>
-                <option value="alta">Priorità alta</option>
-                <option value="urgente">Priorità urgente</option>
-              </select>
-            </div>
-            <button style={{ ...btnSt('#15803d'), justifyContent: 'center' }} onClick={crea} disabled={!fTitolo.trim() || busy}>
-              Crea attività
-            </button>
-          </div>
+          <div style={{ fontWeight: 700, color: 'var(--brand-700)', marginBottom: 10 }}>Nuovo elemento</div>
+          <NuovaAttivitaForm area={area} onSaved={() => { setShowForm(false); carica(); }} onCancel={() => setShowForm(false)} />
         </div>
       )}
 
@@ -378,15 +318,16 @@ export default function Oggi() {
                     </div>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                       {trasfMio && <button style={btnSt('#0891b2')} onClick={() => accettaConsegna(c._id)} disabled={busy}>✓ Accetta</button>}
-                      <Link to="/consegne" style={{ ...btnSt('#e2e8f0', '#334155'), textDecoration: 'none' }}>Gestisci →</Link>
+                      {c.stato === 'da_gestire' && <button style={btnSt('#1d4ed8')} onClick={() => prendiConsegna(c._id)} disabled={busy}><UserCheck size={13} /> Prendi</button>}
+                      {c.stato !== 'in_attesa_riscontro' && <button style={btnSt('#b45309')} onClick={() => attesaConsegna(c._id)} disabled={busy}><Hourglass size={13} /> Attesa</button>}
+                      <button style={btnSt('#15803d')} onClick={() => gestitaConsegna(c._id)} disabled={busy}><CheckCircle size={13} /> Gestita</button>
+                      <button style={btnSt('#e2e8f0', '#475569')} onClick={() => notaConsegna(c._id)} disabled={busy}><MessageSquare size={13} /> Nota</button>
+                      {isGestione && <button style={btnSt('#e2e8f0', '#b91c1c')} onClick={() => eliminaConsegna(c._id)} disabled={busy}><XCircle size={13} /> Elimina</button>}
                     </div>
                   </div>
                 </div>
               );
             })}
-            <div style={{ fontSize: '0.76rem', color: '#94a3b8', textAlign: 'center' }}>
-              Le consegne si lavorano nella pagina Consegne — qui contano nel riepilogo senza duplicare il lavoro.
-            </div>
           </div>
         )
       ) : (
@@ -409,6 +350,9 @@ export default function Oggi() {
                     <div style={{ flex: 1, minWidth: 200 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#0f172a' }}>{a.titolo}</span>
+                        {a.tipo && a.tipo !== 'attivita' && (
+                          <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: '#ede9fe', color: '#6d28d9' }}>{TIPO_LABEL[a.tipo] || a.tipo}</span>
+                        )}
                         <span style={{ ...{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 10 }, background: STATO_STYLE[a.stato].bg, color: STATO_STYLE[a.stato].color }}>
                           {STATO_LABEL[a.stato]}
                         </span>

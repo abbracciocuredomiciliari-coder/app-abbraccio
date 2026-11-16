@@ -294,7 +294,7 @@ function AppShell() {
             </div>
           )}
         </div>
-        <nav onClick={() => setMenuOpen(false)}>
+        <nav onClick={(e) => { if ((e.target as HTMLElement).closest('a')) setMenuOpen(false); }}>
           {/* ===== MENU PUBBLICO (non autenticati) ===== */}
           {!user && (
             <>
@@ -360,7 +360,7 @@ function AppShell() {
                 Chat coordinatore
                 <ChatBadge />
               </Link>
-              <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
+              <Link to="/oggi" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <ClipboardList size={18} />
                 Consegne
                 <ConsegneBadge />
@@ -426,7 +426,7 @@ function AppShell() {
                 <LayoutDashboard size={18} />
                 Dashboard
               </Link>
-              <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
+              <Link to="/oggi" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <ClipboardList size={18} />
                 Consegne
                 <ConsegneBadge />
@@ -581,7 +581,7 @@ function AppShell() {
                 <CalendarCheck size={18} />
                 Oggi
               </Link>
-              <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
+              <Link to="/oggi" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <ClipboardList size={18} />
                 Consegne
                 <ConsegneBadge />
@@ -647,7 +647,7 @@ function AppShell() {
                 <CalendarCheck size={18} />
                 Oggi
               </Link>
-              <Link to="/consegne" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
+              <Link to="/oggi" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <ClipboardList size={18} />
                 Consegne
                 <ConsegneBadge />
