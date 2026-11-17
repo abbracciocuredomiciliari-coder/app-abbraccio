@@ -577,8 +577,9 @@ function WorkPlan() {
 
   // Crea un nuovo paziente dal mini-form inline (modalità accettazione)
   const creaNuovoPaziente = async () => {
-    if (!npForm.firstName.trim() || !npForm.lastName.trim() || !npForm.birthDate || !npForm.address.trim() || !npForm.assistanceNeeds.trim()) {
-      setError('Compila nome, cognome, data di nascita, indirizzo e bisogni assistenziali del nuovo paziente.');
+    if (!npForm.firstName.trim() || !npForm.lastName.trim() || !npForm.birthDate || !npForm.address.trim() || !npForm.assistanceNeeds.trim()
+      || !npForm.contactPhone.trim() || !npForm.email.trim() || !npForm.codiceFiscale.trim()) {
+      setError('Compila tutti i campi obbligatori: nome, cognome, data di nascita, indirizzo, bisogni, telefono, email e codice fiscale.');
       return;
     }
     setNpSaving(true);
@@ -1043,13 +1044,13 @@ function WorkPlan() {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <input type="date" title="Data di nascita *" value={npForm.birthDate} onChange={e => setNpForm(p => ({ ...p, birthDate: e.target.value }))} />
-                  <input type="tel" placeholder="Telefono" value={npForm.contactPhone} onChange={e => setNpForm(p => ({ ...p, contactPhone: e.target.value }))} />
+                  <input type="tel" placeholder="Telefono *" value={npForm.contactPhone} onChange={e => setNpForm(p => ({ ...p, contactPhone: e.target.value }))} />
                 </div>
                 <input type="text" placeholder="Indirizzo *" value={npForm.address} onChange={e => setNpForm(p => ({ ...p, address: e.target.value }))} />
                 <input type="text" placeholder="Bisogni assistenziali *" value={npForm.assistanceNeeds} onChange={e => setNpForm(p => ({ ...p, assistanceNeeds: e.target.value }))} />
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <input type="email" placeholder="Email" value={npForm.email} onChange={e => setNpForm(p => ({ ...p, email: e.target.value }))} />
-                  <input type="text" placeholder="Codice fiscale" value={npForm.codiceFiscale} onChange={e => setNpForm(p => ({ ...p, codiceFiscale: e.target.value.toUpperCase() }))} />
+                  <input type="email" placeholder="Email *" value={npForm.email} onChange={e => setNpForm(p => ({ ...p, email: e.target.value }))} />
+                  <input type="text" placeholder="Codice fiscale *" value={npForm.codiceFiscale} onChange={e => setNpForm(p => ({ ...p, codiceFiscale: e.target.value.toUpperCase() }))} />
                 </div>
                 <button type="button" onClick={creaNuovoPaziente} disabled={npSaving} style={{ background: 'var(--brand-700)', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                   <UserPlus size={15} /> {npSaving ? 'Creazione...' : 'Crea e seleziona paziente'}

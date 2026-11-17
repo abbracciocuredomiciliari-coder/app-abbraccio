@@ -343,6 +343,13 @@ function Patients() {
       return;
     }
 
+    if (!editingPatient) {
+      if (!formData.contactPhone?.trim() || !formData.email?.trim() || !formData.codiceFiscale?.trim()) {
+        setError('Per creare un nuovo paziente servono obbligatoriamente: telefono, email e codice fiscale.');
+        return;
+      }
+    }
+
     try {
       if (editingPatient) {
         const vecchiaGestione = editingPatient.tipoGestione || 'privato';
@@ -1250,30 +1257,33 @@ function Patients() {
             )}
           </div>
           <label>
-            Telefono di contatto
+            Telefono di contatto {editingPatient ? '' : '*'}
             <input
               name="contactPhone"
               value={formData.contactPhone}
               onChange={handleInputChange}
+              required={!editingPatient}
               placeholder="+39 333 1234567"
             />
           </label>
           <label>
-            Email
+            Email {editingPatient ? '' : '*'}
             <input
               name="email"
               type="email"
               value={formData.email}
               onChange={handleInputChange}
+              required={!editingPatient}
               placeholder="paziente@email.com"
             />
           </label>
           <label>
-            Codice Fiscale
+            Codice Fiscale {editingPatient ? '' : '*'}
             <input
               name="codiceFiscale"
               value={formData.codiceFiscale}
               onChange={handleInputChange}
+              required={!editingPatient}
               placeholder="RSSMRA70A01H501Z"
             />
           </label>

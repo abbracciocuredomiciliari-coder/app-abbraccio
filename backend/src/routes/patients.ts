@@ -90,6 +90,9 @@ router.post('/', authorizeRole('admin', 'coordinator'), auditLog('patients', 'CR
   if (!firstName?.trim() || !lastName?.trim() || !birthDate || !address?.trim() || !assistanceNeeds?.trim()) {
     return res.status(400).json({ message: 'I campi firstName, lastName, birthDate, address e assistanceNeeds sono obbligatori' });
   }
+  if (!req.body.contactPhone?.trim() || !req.body.email?.trim() || !codiceFiscale?.trim()) {
+    return res.status(400).json({ message: 'I campi contactPhone, email e codiceFiscale sono obbligatori' });
+  }
 
   try {
     const patient = await Patient.create({
