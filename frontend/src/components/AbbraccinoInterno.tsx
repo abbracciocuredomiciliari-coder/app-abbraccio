@@ -79,7 +79,7 @@ function startWander(host: HTMLElement, isChatOpen: () => boolean, chatEl: HTMLE
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   let paused = false;
   try { paused = localStorage.getItem('ab-wander-paused') === '1'; } catch { /* noop */ }
-  let hover = false, focused = false, typing = false, scrollUntil = 0, last = performance.now(), wait = 4800, progress = 0;
+  let hover = false, focused = false, typing = false, scrollUntil = 0, last = performance.now(), wait = 1600, progress = 0;
   let trip: any = null, index = 0, wasDocked = false;
   let position: any = null, rafId = 0, stopped = false;
   let rect0 = host.getBoundingClientRect();

@@ -1,11 +1,3 @@
-/* ═══ ABABRACCINO FACE — il cuoricino originale, animato ═══
-   Mantiene l'immagine abbraccino.jpg (cuore in casa) e ci aggiunge:
-   - occhi aperti che seguono il puntatore e sbattono (chiudendosi
-     riappaiono le curve chiuse del logo originale)
-   - braccia bianche (stesso stile del logo) che si alzano ad abbraccio
-   - bocca aperta che si muove quando parla, sorrisone quando la chat si apre
-   Uso: AbbraccinoFace.mount(el, { img: 'abbraccino.jpg' })
-*/
 (function () {
   'use strict';
   var reduce = false;
@@ -51,12 +43,12 @@
       '</g>' +
       /* occhi aperti sopra le curve chiuse del logo */
       '<g class="abf-eyes"><g class="abf-look">' +
-      '<ellipse cx="48.5" cy="54" rx="6.6" ry="6.9" fill="#fff"/>' +
-      '<ellipse cx="71.5" cy="53" rx="6.6" ry="6.9" fill="#fff"/>' +
-      '<circle cx="48.5" cy="55.3" r="3.1" fill="#6b3d0e"/>' +
-      '<circle cx="71.5" cy="54.3" r="3.1" fill="#6b3d0e"/>' +
-      '<circle cx="49.6" cy="53.9" r="1.05" fill="#fff"/>' +
-      '<circle cx="72.6" cy="52.9" r="1.05" fill="#fff"/>' +
+      '<ellipse cx="45" cy="52" rx="6.4" ry="6.8" fill="#fff"/>' +
+      '<ellipse cx="75" cy="52" rx="6.4" ry="6.8" fill="#fff"/>' +
+      '<circle cx="45" cy="53.4" r="3.1" fill="#6b3d0e"/>' +
+      '<circle cx="75" cy="53.4" r="3.1" fill="#6b3d0e"/>' +
+      '<circle cx="46.1" cy="52" r="1.05" fill="#fff"/>' +
+      '<circle cx="76.1" cy="52" r="1.05" fill="#fff"/>' +
       '</g></g>' +
       /* sorrisone aperto (chat aperta) e bocca parlante */
       '<path class="abf-smile-big" d="M47 66 Q60 86 73 66 Q60 73 47 66 Z" fill="#8a4a12"/>' +
