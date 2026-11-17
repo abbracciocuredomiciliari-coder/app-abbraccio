@@ -4,6 +4,7 @@ import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { auditLog } from '../middleware/audit';
 import ConsegnaAmministrativa from '../models/ConsegnaAmministrativa';
 import Staff from '../models/Staff';
+import Patient from '../models/Patient';
 
 const router = Router();
 
@@ -104,6 +105,14 @@ router.post('/', authenticateToken, auditLog('consegne_amministrative', 'CREATE'
       if (st) { professionistiIds.push(st._id as mongoose.Types.ObjectId); professionistiNomi.push(`${st.firstName} ${st.lastName}`.trim()); }
     }
 
+    // Paziente Gestione collegato (id reale → etichetta da anagrafica)
+    let paziente: mongoose.Types.ObjectId | undefined;
+    let pazienteLabel: string | undefined;
+    if (mongoose.isValidObjectId(String(req.body?.pazienteId))) {
+      const pz = await Patient.findById(String(req.body.pazienteId)).select('firstName lastName').lean();
+      if (pz) { paziente = pz._id as mongoose.Types.ObjectId; pazienteLabel = `${pz.firstName} ${pz.lastName}`.trim(); }
+    }
+
     const userId = user.userId || user.id;
     const consegna = await ConsegnaAmministrativa.create({
       titolo,
@@ -111,6 +120,8 @@ router.post('/', authenticateToken, auditLog('consegne_amministrative', 'CREATE'
       tipo,
       priorita,
       riferimento,
+      paziente,
+      pazienteLabel,
       settore,
       professionistiIds: professionistiIds.length ? professionistiIds : undefined,
       professionistiNomi: professionistiNomi.length ? professionistiNomi : undefined,

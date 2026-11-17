@@ -45,16 +45,20 @@ export default function NuovaAttivitaForm({
   area,
   defaultPratica,
   defaultSettore,
+  defaultProfessionista,
+  defaultTipo,
   onSaved,
   onCancel,
 }: {
   area?: string;
-  defaultPratica?: PraticaOpt;    // paziente già scelto (scheda paziente)
-  defaultSettore?: string;         // settore già scelto (dall'hub Consegne)
+  defaultPratica?: PraticaOpt;         // paziente già scelto (scheda paziente / hub)
+  defaultSettore?: string;              // settore già scelto (dall'hub Consegne)
+  defaultProfessionista?: ProfessionistaOpt; // professionista già scelto (schermata professionista)
+  defaultTipo?: TipoElemento;           // tipo preimpostato (es. 'consegna' dal pulsante Consegne)
   onSaved?: () => void;
   onCancel?: () => void;
 }) {
-  const [tipo, setTipo] = useState<TipoElemento>('attivita');
+  const [tipo, setTipo] = useState<TipoElemento>(defaultTipo || 'attivita');
   const [titolo, setTitolo] = useState('');
   const [azione, setAzione] = useState('');
   const [interlocutore, setInterlocutore] = useState('');
@@ -62,7 +66,7 @@ export default function NuovaAttivitaForm({
   const [scadenza, setScadenza] = useState('');
   const [priorita, setPriorita] = useState('normale');
   const [settore, setSettore] = useState(defaultSettore || (tipo === 'consegna' ? 'backoffice' : ''));
-  const [professionisti, setProfessionisti] = useState<ProfessionistaOpt[]>([]);
+  const [professionisti, setProfessionisti] = useState<ProfessionistaOpt[]>(defaultProfessionista ? [defaultProfessionista] : []);
   const [profQ, setProfQ] = useState('');
   const [profTrovati, setProfTrovati] = useState<ProfessionistaOpt[]>([]);
   const [busy, setBusy] = useState(false);
@@ -113,6 +117,7 @@ export default function NuovaAttivitaForm({
           tipo: 'generale',
           priorita: priorita === 'urgente' ? 'urgente' : 'normale',
           riferimento: pratica?.label,
+          pazienteId: pratica?.tipo === 'paziente' ? pratica.id : undefined,
           scadenza: scadenza || undefined,
           settore: settoreFinale,
           professionistiIds: profIds.length ? profIds : undefined,

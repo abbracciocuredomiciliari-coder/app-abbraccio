@@ -14,7 +14,7 @@ import { Modal } from '../components/ui/Modal';
 // "Apri gestione completa" rimanda alla fonte originale (stesso ID/storico).
 // ═══════════════════════════════════════════════════════════════════════════
 
-const VIEW_KEYS = ['screen', 'sectorId', 'status', 'professionalId', 'itemKey', 'tool', 'query', 'area'] as const;
+const VIEW_KEYS = ['screen', 'sectorId', 'status', 'professionalId', 'patientId', 'patientName', 'itemKey', 'tool', 'query', 'area'] as const;
 
 function viewFromParams(p: URLSearchParams): HubView {
   const v: Record<string, string> = {};
@@ -32,6 +32,8 @@ export default function ConsegneHub() {
   const [snapshot, setSnapshot] = useState<HubSnapshot>({ items: [], professionals: [], loading: true, complete: false });
   const [showCrea, setShowCrea] = useState(false);
   const [creaSettore, setCreaSettore] = useState<string | undefined>(undefined);
+  const [creaPaziente, setCreaPaziente] = useState<{ id: string; tipo: string; label: string } | undefined>(undefined);
+  const [creaProf, setCreaProf] = useState<{ id: string; label: string; role?: string; sectorId?: string } | undefined>(undefined);
   const [riclassifica, setRiclassifica] = useState<{ source: string; id: string } | null>(null);
   const reqId = useRef(0);
 
@@ -43,6 +45,7 @@ export default function ConsegneHub() {
         params: {
           screen: v.screen, sectorId: v.sectorId || undefined, status: v.status,
           professionalId: v.professionalId || undefined, tool: v.tool || undefined,
+          patientId: v.patientId || undefined, patientName: v.patientName || undefined,
           area: v.area !== 'all' ? v.area : undefined, q: v.query || undefined,
           page: pg, itemKey: v.itemKey || undefined,
         },
@@ -72,6 +75,14 @@ export default function ConsegneHub() {
     switch (a.action) {
       case 'create':
         setCreaSettore(a.view.sectorId || undefined);
+        // Preselezione dal contesto: paziente (schermata paziente) o
+        // professionista (schermata professionista) già collegati al form.
+        setCreaPaziente(a.view.patientId
+          ? { id: a.view.patientId, tipo: 'paziente', label: a.view.patientName || snapshot.patients?.find(p => p.id === a.view.patientId)?.label || 'Paziente' }
+          : undefined);
+        setCreaProf(a.view.professionalId
+          ? (() => { const p = snapshot.professionals?.find(x => x.id === a.view.professionalId); return p ? { id: p.id, label: p.label, role: p.role, sectorId: p.sectorIds[0] } : undefined; })()
+          : undefined);
         setShowCrea(true);
         break;
       case 'source': {
@@ -109,6 +120,8 @@ export default function ConsegneHub() {
         <Modal isOpen onClose={() => setShowCrea(false)} title="Nuova consegna / attività" size="lg">
           <NuovaAttivitaForm
             defaultSettore={creaSettore}
+            defaultPratica={creaPaziente}
+            defaultProfessionista={creaProf}
             onSaved={() => { setShowCrea(false); carica(view, page); }}
             onCancel={() => setShowCrea(false)}
           />

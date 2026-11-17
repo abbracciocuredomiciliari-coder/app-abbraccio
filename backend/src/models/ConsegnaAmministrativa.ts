@@ -41,6 +41,8 @@ export interface IConsegnaAmministrativa extends Document {
   settore?: SettoreConsegna;
   professionistiIds?: Types.ObjectId[];
   professionistiNomi?: string[];
+  paziente?: Types.ObjectId;      // paziente Gestione collegato (anagrafica reale)
+  pazienteLabel?: string;
   presaInCaricoDaId?: Types.ObjectId;
   presaInCaricoDaNome?: string;
   presaInCaricoIl?: Date;
@@ -94,6 +96,8 @@ const ConsegnaAmministrativaSchema = new Schema<IConsegnaAmministrativa>({
   settore: { type: String, enum: ['infermieristiche-strumentali', 'oss', 'badanti', 'medici', 'riabilitazione', 'altri', 'backoffice', 'da-classificare'] },
   professionistiIds: [{ type: Schema.Types.ObjectId, ref: 'Staff' }],
   professionistiNomi: [{ type: String, trim: true }],
+  paziente: { type: Schema.Types.ObjectId, ref: 'Patient' },
+  pazienteLabel: { type: String, trim: true, maxlength: 160 },
   presaInCaricoDaId: { type: Schema.Types.ObjectId, ref: 'User' },
   presaInCaricoDaNome: { type: String },
   presaInCaricoIl: { type: Date },

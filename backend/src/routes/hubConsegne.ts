@@ -4,6 +4,7 @@ import { authenticateToken, AuthRequest } from '../middleware/auth';
 import Attivita, { SETTORI_CONSEGNA, SettoreConsegna } from '../models/Attivita';
 import ConsegnaAmministrativa from '../models/ConsegnaAmministrativa';
 import Staff from '../models/Staff';
+import Patient from '../models/Patient';
 
 const router = Router();
 const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
@@ -55,6 +56,8 @@ interface HubItem {
   followUpRequired?: boolean;
   professionalIds?: string[];
   professionalLabels?: string[];
+  patientId?: string;
+  patientLabel?: string;
   referenceLabel?: string;
   dueAt?: string;
   nextContactAt?: string;
@@ -94,6 +97,8 @@ function toHubAttivita(a: any, mappaStaff: Map<string, SettoreConsegna>): HubIte
     followUpRequired: a.tipo === 'ricontatto',
     professionalIds: (a.professionistiIds || []).map(String),
     professionalLabels: a.professionistiNomi || [],
+    patientId: a.praticaTipo === 'paziente' && a.praticaId ? String(a.praticaId) : undefined,
+    patientLabel: a.praticaTipo === 'paziente' ? a.praticaLabel || undefined : undefined,
     referenceLabel: a.praticaLabel || undefined,
     dueAt: a.scadenza ? a.scadenza.toISOString() : undefined,
     nextContactAt: a.tipo === 'ricontatto' && a.dataControlloAttesa ? a.dataControlloAttesa.toISOString() : undefined,
@@ -123,7 +128,9 @@ function toHubConsegna(c: any): HubItem {
     followUpRequired: c.stato === 'in_attesa_riscontro',
     professionalIds: (c.professionistiIds || []).map(String),
     professionalLabels: c.professionistiNomi || [],
-    referenceLabel: c.riferimento || undefined,
+    patientId: c.paziente ? String(c.paziente) : undefined,
+    patientLabel: c.pazienteLabel || undefined,
+    referenceLabel: c.riferimento || c.pazienteLabel || undefined,
     dueAt: c.scadenza ? c.scadenza.toISOString() : (c.dataGiornata ? c.dataGiornata.toISOString() : undefined),
     nextContactAt: c.stato === 'in_attesa_riscontro' && c.dataControlloAttesa ? c.dataControlloAttesa.toISOString() : undefined,
     waitCheckAt: c.stato === 'in_attesa_riscontro' && c.dataControlloAttesa ? c.dataControlloAttesa.toISOString() : undefined,
@@ -198,13 +205,18 @@ async function caricaTutto(): Promise<HubItem[]> {
   ];
 }
 
-const scopeFilter = (i: HubItem, { sectorId, professionalId, area, query }: { sectorId?: string | null; professionalId?: string | null; area?: string; query?: string }) => {
+const scopeFilter = (i: HubItem, { sectorId, professionalId, patientId, patientName, area, query }: { sectorId?: string | null; professionalId?: string | null; patientId?: string | null; patientName?: string; area?: string; query?: string }) => {
   if (sectorId && i.sectorId !== sectorId) return false;
   if (professionalId && !(i.professionalIds || []).includes(professionalId)) return false;
+  // Paziente: match per id reale; per le consegne legacy (solo testo riferimento)
+  // si verifica il cognome dentro il riferimento.
+  const cognome = (patientName || '').split(/\s+/).pop() || '';
+  if (patientId && i.patientId !== patientId
+    && !(cognome.length >= 3 && (i.referenceLabel || '').toLowerCase().includes(cognome))) return false;
   if (area && area !== 'all' && i.area !== area) return false;
   const q = (query || '').trim().toLowerCase();
   if (q) {
-    const hay = [i.title, i.referenceLabel, ...(i.professionalLabels || [])].filter(Boolean).join(' ').toLowerCase();
+    const hay = [i.title, i.referenceLabel, i.patientLabel, ...(i.professionalLabels || [])].filter(Boolean).join(' ').toLowerCase();
     if (!hay.includes(q)) return false;
   }
   return true;
@@ -219,6 +231,8 @@ router.get('/snapshot', authenticateToken, async (req: AuthRequest, res: Respons
   try {
     const sectorId = SECTOR_IDS.includes(String(req.query.sectorId)) ? String(req.query.sectorId) : null;
     const professionalId = mongoose.isValidObjectId(String(req.query.professionalId)) ? String(req.query.professionalId) : null;
+    const patientId = mongoose.isValidObjectId(String(req.query.patientId)) ? String(req.query.patientId) : null;
+    const patientName = String(req.query.patientName || '').trim().toLowerCase().slice(0, 120) || undefined;
     const status = STATUS_IDS.includes(String(req.query.status)) ? String(req.query.status) : 'tutte';
     const tool = TOOL_IDS.includes(String(req.query.tool)) ? String(req.query.tool) : null;
     const area = AREE.some(a => a.id === req.query.area) ? String(req.query.area) : 'all';
@@ -232,13 +246,13 @@ router.get('/snapshot', authenticateToken, async (req: AuthRequest, res: Respons
     const tutti = (await caricaTutto()).sort((a, b) => b.sortAt - a.sortAt);
 
     // Conteggi settori (scope: area+query, senza settore/professionista)
-    const scopeSettori = { sectorId: null, professionalId: null, area, query };
+    const scopeSettori = { sectorId: null, professionalId: null, patientId: null, area, query };
     const sectors: Record<string, number> = {};
     for (const s of SECTOR_IDS) sectors[s] = tutti.filter(i => scopeFilter(i, scopeSettori) && i.sectorId === s).length;
 
     // Conteggi stati (scope completo senza status/tool)
-    const scopeStati = { sectorId, professionalId, area, query };
-    const scopeKey = JSON.stringify({ sectorId, professionalId, area, query });
+    const scopeStati = { sectorId, professionalId, patientId, patientName, area, query };
+    const scopeKey = JSON.stringify({ sectorId, professionalId, patientId, area, query });
     const statuses: Record<string, number> = {};
     for (const st of STATUS_IDS) statuses[st] = tutti.filter(i => scopeFilter(i, scopeStati) && matchesStatus(i, st)).length;
 
@@ -275,6 +289,31 @@ router.get('/snapshot', authenticateToken, async (req: AuthRequest, res: Respons
         .sort((a, b) => (b.itemCount - a.itemCount) || a.label.localeCompare(b.label, 'it'));
     }
 
+    // Pazienti (schermata dedicata): tutti i pazienti con conteggio consegne.
+    // Il match copre anche le consegne legacy collegate per nome (riferimento).
+    let patients: any[] | undefined;
+    if (screen === 'patients' || screen === 'patient') {
+      const pz = await Patient.find({}).select('firstName lastName tipoGestione').lean();
+      const cognomeMatch = (i: HubItem, cognome: string, pid: string) =>
+        i.patientId === pid || (cognome.length >= 3 && (i.referenceLabel || '').toLowerCase().includes(cognome));
+      patients = pz
+        .map(p => {
+          const pid = String(p._id);
+          const cognome = String(p.lastName || '').toLowerCase();
+          return {
+            id: pid,
+            label: `${p.firstName} ${p.lastName}`.trim(),
+            role: p.tipoGestione === 'consulenza' ? 'Intermediazioni' : p.tipoGestione === 'convenzione' ? 'Convenzione SIAT' : 'Privato',
+            tipoGestione: p.tipoGestione,
+            itemCount: tutti.filter(i => scopeFilter(i, { sectorId, professionalId, area, query: '' }) && cognomeMatch(i, cognome, pid)).length,
+          };
+        })
+        .filter(p => (area !== 'consulenza' || p.tipoGestione === 'consulenza')
+          && (area !== 'privato' || p.tipoGestione !== 'consulenza')
+          && (!query || p.label.toLowerCase().includes(query.toLowerCase())))
+        .sort((a, b) => (b.itemCount - a.itemCount) || a.label.localeCompare(b.label, 'it'));
+    }
+
     // Dettaglio richiesto (itemKey = "source:id")
     let detail: any;
     if (itemKey) {
@@ -303,6 +342,7 @@ router.get('/snapshot', authenticateToken, async (req: AuthRequest, res: Respons
       hasPrevious: page > 1,
       hasNext: start + pageSize < totalResults,
       professionals,
+      patients,
       authorizedAreas: AREE,
       summary: { sectors, statuses: { [scopeKey]: statuses }, tools },
       detail,

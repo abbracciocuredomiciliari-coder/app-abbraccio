@@ -16,6 +16,7 @@ import {
   TestTube2,
   Stethoscope,
   ClipboardList,
+  Inbox,
   AlertCircle,
   Loader2,
   Shield,
@@ -1519,6 +1520,14 @@ function Patients() {
                       Attività
                     </button>
                   )}
+                  <button
+                    onClick={() => navigate(`/consegne?screen=patient&patientId=${patient._id}&patientName=${encodeURIComponent(`${patient.firstName} ${patient.lastName}`)}`)}
+                    className="tw-border tw-border-indigo-700 tw-text-indigo-700 tw-bg-white tw-whitespace-nowrap"
+                    title="Apri le consegne di questo paziente nell'hub Consegne"
+                  >
+                    <Inbox size={16} />
+                    Consegne
+                  </button>
                   {patient.terminato && (user?.role === 'admin' || user?.role === 'coordinator') && (
                     <button
                       onClick={() => riattivaPaziente(patient)}

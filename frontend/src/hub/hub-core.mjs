@@ -93,7 +93,7 @@ export function matchesTool(item,tool,{today,now=Date.now()}={}){
   }
 }
 export function normalizeView(view={}){
-  const allowed=['home','extra','sector','list','professionals','professional','detail','tools','tool-list'];
+  const allowed=['home','extra','sector','list','professionals','professional','patients','patient','detail','tools','tool-list'];
   const screen=allowed.includes(view.screen)?view.screen:'home';
-  return {screen,sectorId:SECTORS.some(s=>s.id===view.sectorId)?view.sectorId:null,status:STATUS_TILES.some(s=>s.id===view.status)?view.status:'tutte',professionalId:view.professionalId||null,itemKey:view.itemKey||null,tool:TOOLS.some(t=>t.id===view.tool)?view.tool:null,query:view.query||'',area:view.area||'all'};
+  return {screen,sectorId:SECTORS.some(s=>s.id===view.sectorId)?view.sectorId:null,status:STATUS_TILES.some(s=>s.id===view.status)?view.status:'tutte',professionalId:view.professionalId||null,patientId:view.patientId||null,patientName:view.patientName||'',itemKey:view.itemKey||null,tool:TOOLS.some(t=>t.id===view.tool)?view.tool:null,query:view.query||'',area:view.area||'all'};
 }
