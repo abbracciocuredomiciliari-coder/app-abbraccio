@@ -68,7 +68,7 @@ async function raccogliRighe(filtroOrigine?: string): Promise<any[]> {
     }
 
     if (!origine || origine === 'invio') {
-      const invii = await PreventivoInviato.find().sort({ createdAt: -1 }).limit(400).lean();
+      const invii = await PreventivoInviato.find().sort({ _id: -1 }).limit(400).lean();
       invii.forEach((i: any) => {
         if (origine && origine !== 'invio') return;
         righe.push({

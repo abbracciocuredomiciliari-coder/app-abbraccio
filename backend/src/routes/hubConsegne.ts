@@ -184,8 +184,8 @@ const SECTOR_IDS = SETTORI_CONSEGNA as string[];
 // Carica tutte le lavorazioni (limite di sicurezza) e le mappa in HubItem.
 async function caricaTutto(): Promise<HubItem[]> {
   const [attivita, consegne] = await Promise.all([
-    Attivita.find({}).sort({ createdAt: -1 }).limit(LIMITE).lean(),
-    ConsegnaAmministrativa.find({}).sort({ createdAt: -1 }).limit(LIMITE).lean(),
+    Attivita.find({}).sort({ _id: -1 }).limit(LIMITE).lean(),
+    ConsegnaAmministrativa.find({}).sort({ _id: -1 }).limit(LIMITE).lean(),
   ]);
   // Risolvi i settori dai professionisti collegati (anagrafica Staff)
   const ids = new Set<string>();

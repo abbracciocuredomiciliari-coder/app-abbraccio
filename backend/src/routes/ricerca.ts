@@ -44,7 +44,7 @@ async function dossierPaziente(p: any) {
 
   // I contratti servono prima: gli invii WhatsApp/email del contratto sono
   // collegati tramite contrattoId (PreventivoInviato non ha il campo patient).
-  const contratti = await ContrattoPaziente.find({ patient: pid }).sort({ createdAt: -1 }).limit(30)
+  const contratti = await ContrattoPaziente.find({ patient: pid }).sort({ _id: -1 }).limit(30)
     .select('profilo stato dataFirma createdAt').lean();
   const contrattoIds = contratti.map((c: any) => c._id);
 
@@ -60,16 +60,16 @@ async function dossierPaziente(p: any) {
   ];
 
   const [documenti, invii, richieste, badanti, piani, email, consegne, gdpr] = await Promise.all([
-    DocumentoFatturazione.find({ patient: pid }).sort({ createdAt: -1 }).limit(60)
+    DocumentoFatturazione.find({ patient: pid }).sort({ _id: -1 }).limit(60)
       .select('numero tipo totale totaleMensileStimato stato data createdAt').lean(),
     inviiOr.length
-      ? PreventivoInviato.find({ $or: inviiOr }).sort({ createdAt: -1 }).limit(40)
+      ? PreventivoInviato.find({ $or: inviiOr }).sort({ _id: -1 }).limit(40)
           .select('tipo canale nomeCliente telefono totale createdAt inviatoDa').lean()
       : Promise.resolve([]),
     RichiestaPrenotazione.find({
       $or: [{ pazienteId: pid }, ...(nomeRegex ? [{ pazienteNome: nomeRegex }] : [])],
-    }).sort({ createdAt: -1 }).limit(40).select('tipoServizio stato pazienteNome createdAt').lean(),
-    BadanteIntermediazione.find({ patient: pid }).sort({ createdAt: -1 }).limit(20)
+    }).sort({ _id: -1 }).limit(40).select('tipoServizio stato pazienteNome createdAt').lean(),
+    BadanteIntermediazione.find({ patient: pid }).sort({ _id: -1 }).limit(20)
       .select('stato contrattoTipo livello oreSettimanali costoMensile createdAt').lean(),
     WorkPlan.find({ patient: pid }).sort({ date: -1 }).limit(30)
       .populate('staff', 'firstName lastName role')
@@ -79,9 +79,9 @@ async function dossierPaziente(p: any) {
         ...(mailRegex ? [{ to: { $regex: `^${mailRegex}$`, $options: 'i' } }] : []),
         ...(nomeRegex ? [{ riferimento: nomeRegex }] : []),
       ],
-    }).sort({ createdAt: -1 }).limit(40).select('to subject tipo area esito createdAt allegati').lean(),
+    }).sort({ _id: -1 }).limit(40).select('to subject tipo area esito createdAt allegati').lean(),
     nomeRegex
-      ? ConsegnaAmministrativa.find({ $or: [{ riferimento: nomeRegex }, { titolo: nomeRegex }, { testo: nomeRegex }] }).sort({ createdAt: -1 }).limit(30)
+      ? ConsegnaAmministrativa.find({ $or: [{ riferimento: nomeRegex }, { titolo: nomeRegex }, { testo: nomeRegex }] }).sort({ _id: -1 }).limit(30)
           .select('titolo tipo stato priorita autoreNome createdAt').lean()
       : Promise.resolve([]),
     ConsensoGDPR.find({ patientId: String(pid) }).sort({ dataFirma: -1 }).limit(20)
@@ -151,25 +151,27 @@ router.get('/', async (req: any, res: any) => {
         .limit(15).select('firstName lastName role category email telefono cittaResidenza indirizzoResidenza').lean(),
       CandidatoIntermediazione.find({ $or: [{ nome: rx }, { cognome: rx }, { email: rx }, { cittaResidenza: rx }] })
         .limit(10).select('nome cognome ruolo stato email telefono cittaResidenza createdAt').lean(),
-      DocumentoFatturazione.find({ $or: [{ numero: rx }] }).sort({ createdAt: -1 }).limit(15)
+      DocumentoFatturazione.find({ $or: [{ numero: rx }] }).sort({ _id: -1 }).limit(15)
         .populate('patient', 'firstName lastName tipoGestione')
         .select('numero tipo totale stato patient data createdAt').lean(),
-      ContrattoPaziente.find({}).sort({ createdAt: -1 }).limit(200)
+      // Sort su _id (indice nativo, ordine ~ cronologico): createdAt su collezione
+      // intera superava il limite memoria di 32MB e azzerava TUTTA la ricerca.
+      ContrattoPaziente.find({}).sort({ _id: -1 }).limit(200)
         .populate('patient', 'firstName lastName')
         .select('profilo stato patient dataFirma createdAt').lean()
         .then((all: any[]) => all.filter((c) => c.patient && rx.test(nome(c.patient))).slice(0, 10)),
       RichiestaPrenotazione.find({ $or: [{ pazienteNome: rx }, { richiedenteNome: rx }] })
-        .sort({ createdAt: -1 }).limit(15).select('tipoServizio stato pazienteNome richiedenteNome createdAt').lean(),
+        .sort({ _id: -1 }).limit(15).select('tipoServizio stato pazienteNome richiedenteNome createdAt').lean(),
       EmailLog.find({ $or: [{ to: rx }, { subject: rx }, { riferimento: rx }] })
-        .sort({ createdAt: -1 }).limit(15).select('to subject tipo esito area createdAt').lean(),
+        .sort({ _id: -1 }).limit(15).select('to subject tipo esito area createdAt').lean(),
       ConsegnaAmministrativa.find({ $or: [{ titolo: rx }, { testo: rx }, { riferimento: rx }] })
-        .sort({ createdAt: -1 }).limit(15).select('titolo tipo stato priorita autoreNome createdAt').lean(),
+        .sort({ _id: -1 }).limit(15).select('titolo tipo stato priorita autoreNome createdAt').lean(),
     ]);
 
     // Documenti collegati ai pazienti trovati (anche senza numero nel testo)
     const ids = pazienti.map((p: any) => p._id);
     const docDeiPazienti = ids.length
-      ? await DocumentoFatturazione.find({ patient: { $in: ids } }).sort({ createdAt: -1 }).limit(20)
+      ? await DocumentoFatturazione.find({ patient: { $in: ids } }).sort({ _id: -1 }).limit(20)
           .select('numero tipo totale stato patient data createdAt').lean()
       : [];
 

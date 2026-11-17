@@ -187,7 +187,7 @@ router.get('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), async (req:
     const stato = req.query.stato as string | undefined;
     const query: any = {};
     if (stato && stato !== 'tutti') query.stato = stato;
-    const lista = await CandidatoIntermediazione.find(query).sort({ createdAt: -1 }).lean();
+    const lista = await CandidatoIntermediazione.find(query).sort({ _id: -1 }).lean();
     return res.json(lista);
   } catch (error) {
     return res.status(500).json({ message: 'Errore caricamento candidati', error });

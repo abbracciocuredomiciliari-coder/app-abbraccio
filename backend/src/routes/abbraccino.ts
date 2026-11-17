@@ -332,24 +332,35 @@ router.post('/interno', authenticateToken, rateLimitByIP(40, 10 * 60 * 1000), as
     let risposta = '';
     let parsed: any = {};
     if (GROQ_API_KEY) {
-      try {
-        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` },
-          body: JSON.stringify({
-            model: LLM_MODEL,
-            temperature: 0.3,
-            response_format: { type: 'json_object' },
-            messages: [
-              { role: 'system', content: `${PROMPT_INTERNO}\nSEZIONI DEL GESTIONALE:\n${catalogo}${personeTxt}${contestoExtra}` },
-              { role: 'user', content: messaggio },
-            ],
-          }),
-        });
-        const data = await groqRes.json();
-        try { parsed = JSON.parse(data?.choices?.[0]?.message?.content || '{}'); } catch { /* ignora */ }
-        risposta = String(parsed.risposta || '').trim();
-      } catch { risposta = ''; }
+      // Groq free tier: 8000 token/minuto — il prompt con listino arriva a ~5k,
+      // quindi ogni seconda richiesta andava in 429 e l'assistente sembrava
+      // "non trovare nulla". max_tokens ridotto + un retry dopo ~2.5s.
+      for (let tentativo = 0; tentativo < 2; tentativo++) {
+        try {
+          const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` },
+            body: JSON.stringify({
+              model: LLM_MODEL,
+              temperature: 0.3,
+              max_tokens: 500,
+              response_format: { type: 'json_object' },
+              messages: [
+                { role: 'system', content: `${PROMPT_INTERNO}\nSEZIONI DEL GESTIONALE:\n${catalogo}${personeTxt}${contestoExtra}` },
+                { role: 'user', content: messaggio },
+              ],
+            }),
+          });
+          if (groqRes.status === 429 && tentativo === 0) {
+            await new Promise((r) => setTimeout(r, 2600));
+            continue;
+          }
+          const data = await groqRes.json();
+          try { parsed = JSON.parse(data?.choices?.[0]?.message?.content || '{}'); } catch { /* ignora */ }
+          risposta = String(parsed.risposta || '').trim();
+          break;
+        } catch { risposta = ''; }
+      }
       if (!risposta) risposta = fallbackInterno(sezioniHit, personeTxt);
     } else {
       risposta = fallbackInterno(sezioniHit, personeTxt);
