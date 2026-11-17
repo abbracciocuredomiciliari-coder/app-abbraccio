@@ -1,8 +1,9 @@
 import { Router, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
-import Attivita from '../models/Attivita';
+import Attivita, { SETTORI_CONSEGNA } from '../models/Attivita';
 import User from '../models/User';
+import Staff from '../models/Staff';
 import ConsegnaAmministrativa from '../models/ConsegnaAmministrativa';
 import RichiestaPrenotazione from '../models/RichiestaPrenotazione';
 import Patient from '../models/Patient';
@@ -235,6 +236,20 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: 'Il ricontatto richiede la data in cui richiamare' });
     }
 
+    // Settore hub Consegne + professionisti collegati (anagrafica Staff)
+    const settore = SETTORI_CONSEGNA.includes(b.settore) ? b.settore : undefined;
+    const professionistiIds: mongoose.Types.ObjectId[] = [];
+    const professionistiNomi: string[] = [];
+    const ids = Array.isArray(b.professionistiIds) ? b.professionistiIds.slice(0, 10) : [];
+    for (const id of ids) {
+      if (!mongoose.isValidObjectId(String(id))) continue;
+      const st = await Staff.findById(String(id)).select('firstName lastName').lean();
+      if (st) {
+        professionistiIds.push(st._id as mongoose.Types.ObjectId);
+        professionistiNomi.push(`${st.firstName} ${st.lastName}`.trim());
+      }
+    }
+
     const attivita = await Attivita.create({
       titolo,
       tipo,
@@ -250,6 +265,9 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
       dataControlloAttesa,
       responsabileId,
       responsabileNome,
+      settore,
+      professionistiIds: professionistiIds.length ? professionistiIds : undefined,
+      professionistiNomi: professionistiNomi.length ? professionistiNomi : undefined,
       autoreId: new mongoose.Types.ObjectId(me.userId),
       autoreNome: me.name || me.email,
       storico: [evento(responsabileId ? 'assegnata' : 'creata', me)],
@@ -308,7 +326,7 @@ router.post('/:id/assegna', authenticateToken, async (req: AuthRequest, res: Res
 router.patch('/:id/stato', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const me = u(req);
-    const { stato, esito, motivo, interlocutore, dataControllo } = req.body || {};
+    const { stato, esito, motivo, interlocutore, dataControllo, nonInteressato } = req.body || {};
     const attivita = await Attivita.findById(req.params.id);
     if (!attivita) return res.status(404).json({ message: 'Attività non trovata' });
 
@@ -346,11 +364,13 @@ router.patch('/:id/stato', authenticateToken, async (req: AuthRequest, res: Resp
         }
         attivita.stato = 'annullata';
         attivita.motivoAnnullamento = String(motivo).trim().slice(0, 500);
-        attivita.storico.push(evento('annullata', me, String(motivo).slice(0, 200)) as any);
+        attivita.nonInteressato = nonInteressato === true;
+        attivita.storico.push(evento('annullata', me, `${String(motivo).slice(0, 200)}${nonInteressato ? ' [non interessato]' : ''}`) as any);
         break;
       case 'riaperta':
         attivita.stato = attivita.responsabileId ? 'in_lavorazione' : 'da_prendere';
         attivita.esito = undefined;
+        attivita.nonInteressato = undefined;
         attivita.completataIl = undefined;
         attivita.completataDa = undefined;
         attivita.storico.push(evento('riaperta', me, motivo ? String(motivo).slice(0, 200) : undefined) as any);

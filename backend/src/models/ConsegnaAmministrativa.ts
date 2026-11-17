@@ -14,6 +14,8 @@ import { Schema, model, Types, Document } from 'mongoose';
 export type StatoConsegna = 'da_gestire' | 'presa_in_carico' | 'in_attesa_riscontro' | 'gestita';
 export type TipoConsegna = 'giornata' | 'pratica' | 'generale';
 export type PrioritaConsegna = 'normale' | 'urgente';
+// Settori dell'hub Consegne (stesso enum di Attivita)
+export type SettoreConsegna = 'infermieristiche-strumentali' | 'oss' | 'badanti' | 'medici' | 'riabilitazione' | 'altri' | 'backoffice' | 'da-classificare';
 
 export interface IMovimentoConsegna {
   azione: string;         // 'creata' | 'presa_in_carico' | 'in_attesa_riscontro' | 'gestita' | 'riaperta' | 'nota'
@@ -34,12 +36,18 @@ export interface IConsegnaAmministrativa extends Document {
   autoreId?: Types.ObjectId;   // assente per consegne inviate dal link pubblico
   autoreNome: string;
   origine?: 'interna' | 'esterna';
+  // Hub Consegne: settore operativo + professionisti collegati (anagrafica Staff,
+  // non responsabili interni). Senza settore esplicito la vista usa 'backoffice'.
+  settore?: SettoreConsegna;
+  professionistiIds?: Types.ObjectId[];
+  professionistiNomi?: string[];
   presaInCaricoDaId?: Types.ObjectId;
   presaInCaricoDaNome?: string;
   presaInCaricoIl?: Date;
   gestitaDaNome?: string;
   gestitaIl?: Date;
   esito?: string;                 // obbligatorio per chiudere come 'gestita'
+  nonInteressato?: boolean;       // rifiuto commerciale esplicito della famiglia/cliente
   scadenza?: Date;                // prossima azione datata
   interlocutoreAttesa?: string;   // in_attesa_riscontro: con chi siamo in attesa
   dataControlloAttesa?: Date;     // in_attesa_riscontro: quando ricontrollare
@@ -83,12 +91,16 @@ const ConsegnaAmministrativaSchema = new Schema<IConsegnaAmministrativa>({
   autoreId: { type: Schema.Types.ObjectId, ref: 'User' },
   autoreNome: { type: String, required: true },
   origine: { type: String, enum: ['interna', 'esterna'], default: 'interna' },
+  settore: { type: String, enum: ['infermieristiche-strumentali', 'oss', 'badanti', 'medici', 'riabilitazione', 'altri', 'backoffice', 'da-classificare'] },
+  professionistiIds: [{ type: Schema.Types.ObjectId, ref: 'Staff' }],
+  professionistiNomi: [{ type: String, trim: true }],
   presaInCaricoDaId: { type: Schema.Types.ObjectId, ref: 'User' },
   presaInCaricoDaNome: { type: String },
   presaInCaricoIl: { type: Date },
   gestitaDaNome: { type: String },
   gestitaIl: { type: Date },
   esito: { type: String, trim: true, maxlength: 2000 },
+  nonInteressato: { type: Boolean },
   scadenza: { type: Date },
   interlocutoreAttesa: { type: String, trim: true, maxlength: 120 },
   dataControlloAttesa: { type: Date },

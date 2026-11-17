@@ -1948,7 +1948,7 @@ function Patients() {
           size="lg"
         >
           <NuovaAttivitaForm
-            area={isConsulenza ? 'intermediazione' : 'gestione'}
+            area={isConsulenza ? 'consulenza' : isConvenzione ? 'convenzione' : 'privato'}
             defaultPratica={{
               id: attivitaPatient._id,
               tipo: 'paziente',

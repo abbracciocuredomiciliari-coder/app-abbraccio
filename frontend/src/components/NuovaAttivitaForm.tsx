@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import api from '../api/api';
-import { useAuth } from '../context/AuthContext';
 import { DictationMicButton } from './DictationMicButton';
 import { Plus } from 'lucide-react';
 
@@ -14,11 +13,22 @@ import { Plus } from 'lucide-react';
 export type TipoElemento = 'attivita' | 'ricontatto' | 'scadenza' | 'consegna' | 'attesa';
 type PraticaTipo = 'richiesta' | 'paziente' | 'intermediazione' | 'consegna' | 'documento';
 interface PraticaOpt { id: string; tipo: string; label: string }
-interface Utente { _id?: string; id?: string; name: string }
+interface ProfessionistaOpt { id: string; label: string; role?: string; sectorId?: string }
 
 export const TIPO_LABEL: Record<string, string> = {
   attivita: '📋 Attività', ricontatto: '📞 Ricontatto', scadenza: '⏰ Scadenza', attesa: '⏳ Attesa risposta',
 };
+
+// Settori dell'hub Consegne (stessa enum del backend)
+const SETTORI: { v: string; label: string }[] = [
+  { v: 'infermieristiche-strumentali', label: 'Consegne Infermieristiche e Strumentali' },
+  { v: 'oss', label: 'Consegne Assistenza OSS' },
+  { v: 'badanti', label: 'Consegne Assistenza Badanti' },
+  { v: 'medici', label: 'Consegne Medici e Specialisti' },
+  { v: 'riabilitazione', label: 'Consegne Riabilitazione' },
+  { v: 'altri', label: 'Altri professionisti' },
+  { v: 'backoffice', label: 'Consegne Amministrative (back office)' },
+];
 
 const TIPI: { v: TipoElemento; label: string; hint: string }[] = [
   { v: 'attivita', label: '📋 Attività da svolgere', hint: 'Un lavoro da fare, con o senza data.' },
@@ -34,15 +44,16 @@ const lblSt: React.CSSProperties = { display: 'block', fontSize: '0.72rem', font
 export default function NuovaAttivitaForm({
   area,
   defaultPratica,
+  defaultSettore,
   onSaved,
   onCancel,
 }: {
   area?: string;
   defaultPratica?: PraticaOpt;    // paziente già scelto (scheda paziente)
+  defaultSettore?: string;         // settore già scelto (dall'hub Consegne)
   onSaved?: () => void;
   onCancel?: () => void;
 }) {
-  const { user } = useAuth();
   const [tipo, setTipo] = useState<TipoElemento>('attivita');
   const [titolo, setTitolo] = useState('');
   const [azione, setAzione] = useState('');
@@ -50,8 +61,10 @@ export default function NuovaAttivitaForm({
   const [dataControllo, setDataControllo] = useState('');
   const [scadenza, setScadenza] = useState('');
   const [priorita, setPriorita] = useState('normale');
-  const [responsabile, setResponsabile] = useState(''); // '' = da prendere in carico | 'me' | userId
-  const [utenti, setUtenti] = useState<Utente[]>([]);
+  const [settore, setSettore] = useState(defaultSettore || (tipo === 'consegna' ? 'backoffice' : ''));
+  const [professionisti, setProfessionisti] = useState<ProfessionistaOpt[]>([]);
+  const [profQ, setProfQ] = useState('');
+  const [profTrovati, setProfTrovati] = useState<ProfessionistaOpt[]>([]);
   const [busy, setBusy] = useState(false);
   const [errore, setErrore] = useState('');
 
@@ -61,12 +74,14 @@ export default function NuovaAttivitaForm({
   const [praticaSel, setPraticaSel] = useState<PraticaOpt | null>(defaultPratica || null);
   const [pratiche, setPratiche] = useState<PraticaOpt[]>([]);
 
+  // Ricerca professionisti (Staff attivo)
   useEffect(() => {
-    api.get('/auth/all-users').then(r => {
-      const list = (r.data || []).map((x: any) => ({ _id: x._id || x.id, name: x.name }));
-      setUtenti(list.filter((x: Utente) => x._id));
-    }).catch(() => {});
-  }, []);
+    const t = setTimeout(() => {
+      api.get('/hub-consegne/professionisti', { params: { q: profQ } })
+        .then(r => setProfTrovati(r.data || [])).catch(() => setProfTrovati([]));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [profQ]);
 
   useEffect(() => {
     if (!praticaTipo || praticaSel) { setPratiche([]); return; }
@@ -89,7 +104,8 @@ export default function NuovaAttivitaForm({
     if (!valido || busy) return;
     setBusy(true); setErrore('');
     try {
-      const responsabileId = responsabile === 'me' ? (user as any)?.id || (user as any)?._id : (responsabile || undefined);
+      const profIds = professionisti.map(p => p.id);
+      const settoreFinale = settore || (professionisti.length ? professionisti[0].sectorId : undefined) || (tipo === 'consegna' ? 'backoffice' : undefined);
       if (tipo === 'consegna') {
         await api.post('/consegne-amministrative', {
           titolo: titolo.trim(),
@@ -98,6 +114,8 @@ export default function NuovaAttivitaForm({
           priorita: priorita === 'urgente' ? 'urgente' : 'normale',
           riferimento: pratica?.label,
           scadenza: scadenza || undefined,
+          settore: settoreFinale,
+          professionistiIds: profIds.length ? profIds : undefined,
         });
       } else {
         await api.post('/attivita', {
@@ -109,13 +127,15 @@ export default function NuovaAttivitaForm({
           praticaLabel: pratica?.label,
           area,
           priorita,
+          settore: settoreFinale,
+          professionistiIds: profIds.length ? profIds : undefined,
           scadenza: tipo === 'scadenza' ? (dataControllo || scadenza) : (scadenza || undefined),
           interlocutoreAttesa: bisognaData ? interlocutore.trim() || undefined : undefined,
           dataControlloAttesa: bisognaData ? dataControllo : undefined,
-          responsabileId,
         });
       }
       setTitolo(''); setAzione(''); setInterlocutore(''); setDataControllo(''); setScadenza('');
+      setProfessionisti([]); setProfQ('');
       setPraticaTipo(''); setPraticaQ(''); if (!defaultPratica) setPraticaSel(null);
       onSaved?.();
     } catch (e: any) {
@@ -233,37 +253,60 @@ export default function NuovaAttivitaForm({
         </div>
       )}
 
-      {/* Responsabilità + priorità */}
-      {tipo !== 'consegna' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
-          <div>
-            <span style={lblSt}>Responsabilità</span>
-            <select style={inputSt} value={responsabile} onChange={e => setResponsabile(e.target.value)}>
-              <option value="">Da prendere in carico (senza responsabile)</option>
-              <option value="me">Assegnata a me</option>
-              {utenti.map(x => <option key={x._id} value={x._id}>{x.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <span style={lblSt}>Priorità</span>
-            <select style={inputSt} value={priorita} onChange={e => setPriorita(e.target.value)}>
-              <option value="bassa">Bassa</option>
-              <option value="normale">Normale</option>
-              <option value="alta">Alta</option>
-              <option value="urgente">Urgente</option>
-            </select>
-          </div>
+      {/* Settore + professionista collegato + priorità (nessun responsabile interno) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+        <div>
+          <span style={lblSt}>Settore</span>
+          <select style={inputSt} value={settore} onChange={e => setSettore(e.target.value)}>
+            <option value="">Da definire</option>
+            {SETTORI.map(s => <option key={s.v} value={s.v}>{s.label}</option>)}
+          </select>
         </div>
-      )}
-      {tipo === 'consegna' && (
         <div>
           <span style={lblSt}>Priorità</span>
           <select style={inputSt} value={priorita} onChange={e => setPriorita(e.target.value)}>
+            <option value="bassa">Bassa</option>
             <option value="normale">Normale</option>
+            <option value="alta">Alta</option>
             <option value="urgente">Urgente</option>
           </select>
         </div>
-      )}
+      </div>
+
+      <div style={{ position: 'relative' }}>
+        <span style={lblSt}>Professionista collegato (facoltativo)</span>
+        {professionisti.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+            {professionisti.map(p => (
+              <span key={p.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', borderRadius: 999, padding: '4px 10px', fontSize: '0.8rem', fontWeight: 600 }}>
+                👤 {p.label}
+                <button type="button" onClick={() => setProfessionisti(v => v.filter(x => x.id !== p.id))} style={{ border: 'none', background: 'none', color: '#b91c1c', cursor: 'pointer', fontWeight: 800, padding: 0 }}>✕</button>
+              </span>
+            ))}
+          </div>
+        )}
+        <input
+          style={inputSt}
+          placeholder="Cerca infermiere, OSS, badante… (facoltativo)"
+          value={profQ}
+          onChange={e => setProfQ(e.target.value)}
+        />
+        {profTrovati.length > 0 && profQ.trim() && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20, background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, marginTop: 4, maxHeight: 200, overflowY: 'auto', boxShadow: '0 8px 20px rgba(0,0,0,0.12)' }}>
+            {profTrovati.filter(p => !professionisti.some(x => x.id === p.id)).map(p => (
+              <button key={p.id} type="button"
+                onClick={() => { setProfessionisti(v => [...v, p].slice(0, 5)); setProfQ(''); }}
+                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.82rem', borderBottom: '1px solid #f1f5f9' }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#f1f5f9')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                <strong>{p.label}</strong> <span style={{ color: '#64748b' }}>· {p.role}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 3 }}>
+          È il professionista a cui si riferisce la consegna (infermiere, OSS, badante…), non un responsabile interno. Può restare vuoto.
+        </div>
+      </div>
 
       {errore && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '8px 12px', borderRadius: 8, fontWeight: 600, fontSize: '0.82rem' }}>{errore}</div>}
 

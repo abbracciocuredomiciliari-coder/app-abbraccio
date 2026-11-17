@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { auditLog } from '../middleware/audit';
 import ConsegnaAmministrativa from '../models/ConsegnaAmministrativa';
+import Staff from '../models/Staff';
 
 const router = Router();
 
@@ -93,6 +94,16 @@ router.post('/', authenticateToken, auditLog('consegne_amministrative', 'CREATE'
       return res.status(400).json({ message: 'Titolo e testo della consegna sono obbligatori' });
     }
 
+    // Settore hub Consegne + professionisti collegati (anagrafica Staff)
+    const settore = ['infermieristiche-strumentali', 'oss', 'badanti', 'medici', 'riabilitazione', 'altri', 'backoffice', 'da-classificare'].includes(req.body?.settore) ? req.body.settore : undefined;
+    const professionistiIds: mongoose.Types.ObjectId[] = [];
+    const professionistiNomi: string[] = [];
+    for (const id of (Array.isArray(req.body?.professionistiIds) ? req.body.professionistiIds.slice(0, 10) : [])) {
+      if (!mongoose.isValidObjectId(String(id))) continue;
+      const st = await Staff.findById(String(id)).select('firstName lastName').lean();
+      if (st) { professionistiIds.push(st._id as mongoose.Types.ObjectId); professionistiNomi.push(`${st.firstName} ${st.lastName}`.trim()); }
+    }
+
     const userId = user.userId || user.id;
     const consegna = await ConsegnaAmministrativa.create({
       titolo,
@@ -100,6 +111,9 @@ router.post('/', authenticateToken, auditLog('consegne_amministrative', 'CREATE'
       tipo,
       priorita,
       riferimento,
+      settore,
+      professionistiIds: professionistiIds.length ? professionistiIds : undefined,
+      professionistiNomi: professionistiNomi.length ? professionistiNomi : undefined,
       dataGiornata: dataGiornata && !isNaN(dataGiornata.getTime()) ? dataGiornata : undefined,
       scadenza: scadenza && !isNaN(scadenza.getTime()) ? scadenza : undefined,
       autoreId: new mongoose.Types.ObjectId(userId),
@@ -138,6 +152,9 @@ router.patch('/:id/stato', authenticateToken, auditLog('consegne_amministrative'
       consegna.esito = esito;
       consegna.gestitaDaNome = userNome;
       consegna.gestitaIl = new Date();
+      consegna.nonInteressato = req.body?.nonInteressato === true;
+    } else if (consegna.stato !== 'gestita') {
+      consegna.nonInteressato = undefined;
     }
     if (nuovoStato === 'in_attesa_riscontro') {
       const interlocutore = String(req.body?.interlocutore || '').trim().slice(0, 120);

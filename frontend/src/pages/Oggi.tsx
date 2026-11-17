@@ -71,7 +71,7 @@ const PRATICA_ROUTE: Record<string, string> = {
   richiesta: '/gestione-richieste',
   paziente: '/patients',
   intermediazione: '/archivi-intermediazione',
-  consegna: '/consegne',
+  consegna: '/bacheca',
   documento: '/amministrazione',
   checklist: '/checklist-hub',
   magazzino: '/strumenti',

@@ -1,0 +1,9 @@
+export type HubView={screen?:string;sectorId?:string|null;status?:string;professionalId?:string|null;itemKey?:string|null;tool?:string|null;query?:string;area?:string};
+export type HubItem={source:string;id:string;canonicalId?:string;sourceRefs?:{source:string;id:string}[];sectorId:string;area:string;title:string;workflow:'new'|'active'|'waiting'|'closed'|'cancelled';outcome?:string;commercial?:boolean;priority:'normal'|'urgent';followUpRequired?:boolean;professionalIds?:string[];professionalLabels?:string[];referenceLabel?:string;dueAt?:string;nextContactAt?:string;waitCheckAt?:string;nextAction?:string;description?:string;assignmentRef?:string};
+export type Professional={id:string;label:string;role:string;sectorIds:string[];itemCount?:number};
+export type HubSnapshot={items:HubItem[];professionals:Professional[];complete?:boolean;authorizedAreas?:{id:string;label:string}[];loading?:boolean;error?:string;totalResults?:number;hasPrevious?:boolean;hasNext?:boolean;detail?:HubItem;today?:string;now?:number;userId?:string;summary?:{sectors?:Record<string,number>;statuses?:Record<string,Record<string,number>>;tools?:Record<string,number>}};
+export type HubAction={action:string;view:HubView;itemKey?:string|null};
+export type HubOptions={snapshot:HubSnapshot;view?:HubView;onViewChange?:(view:HubView)=>void;onAction?:(action:HubAction)=>void};
+export type HubController={update:(options:Partial<HubOptions>)=>void;destroy:()=>void};
+export function mountHub(root:HTMLElement,options:HubOptions):HubController;
+export function icon(name:string):string;

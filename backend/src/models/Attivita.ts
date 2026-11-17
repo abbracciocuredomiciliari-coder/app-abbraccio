@@ -18,6 +18,9 @@ import { Schema, model, Types, Document } from 'mongoose';
 
 export type StatoAttivita = 'da_prendere' | 'in_lavorazione' | 'in_attesa' | 'completata' | 'annullata';
 export type PrioritaAttivita = 'bassa' | 'normale' | 'alta' | 'urgente';
+// Settori dell'hub Consegne: qualifica/prestazione reale, non l'area amministrativa.
+export type SettoreConsegna = 'infermieristiche-strumentali' | 'oss' | 'badanti' | 'medici' | 'riabilitazione' | 'altri' | 'backoffice' | 'da-classificare';
+export const SETTORI_CONSEGNA: SettoreConsegna[] = ['infermieristiche-strumentali', 'oss', 'badanti', 'medici', 'riabilitazione', 'altri', 'backoffice', 'da-classificare'];
 
 export interface IAggiornamentoAttivita {
   data: Date;
@@ -50,6 +53,11 @@ export interface IAttivita extends Document {
   responsabileId?: Types.ObjectId;
   responsabileNome?: string;
   collaboratoriNomi?: string[];
+  // Hub Consegne: settore operativo + professionisti collegati (anagrafica Staff,
+  // non responsabili interni — il caso può restare senza professionista).
+  settore?: SettoreConsegna;
+  professionistiIds?: Types.ObjectId[];
+  professionistiNomi?: string[];
   autoreId?: Types.ObjectId;
   autoreNome: string;
   // Attesa
@@ -60,6 +68,7 @@ export interface IAttivita extends Document {
   completataIl?: Date;
   completataDa?: string;
   motivoAnnullamento?: string;
+  nonInteressato?: boolean;            // rifiuto commerciale esplicito della famiglia/cliente
   // Lettura (separata dallo stato)
   lettaDa?: { userId: Types.ObjectId; nome: string; il: Date }[];
   // Passaggio turno: trasferimento pendente — responsabilità al cedente
@@ -98,6 +107,9 @@ const AttivitaSchema = new Schema<IAttivita>(
     responsabileId: { type: Schema.Types.ObjectId, ref: 'User' },
     responsabileNome: { type: String, trim: true },
     collaboratoriNomi: [{ type: String, trim: true }],
+    settore: { type: String, enum: SETTORI_CONSEGNA },
+    professionistiIds: [{ type: Schema.Types.ObjectId, ref: 'Staff' }],
+    professionistiNomi: [{ type: String, trim: true }],
     autoreId: { type: Schema.Types.ObjectId, ref: 'User' },
     autoreNome: { type: String, required: true },
     interlocutoreAttesa: { type: String, trim: true },
@@ -106,6 +118,7 @@ const AttivitaSchema = new Schema<IAttivita>(
     completataIl: { type: Date },
     completataDa: { type: String },
     motivoAnnullamento: { type: String, trim: true },
+    nonInteressato: { type: Boolean },
     lettaDa: [{
       userId: { type: Schema.Types.ObjectId, ref: 'User' },
       nome: { type: String },

@@ -929,7 +929,7 @@ export default function Amministrazione() {
                   ['/archivio-fatture', <Archive size={18} />, 'Archivio fatture', 'fatture emesse con storico e documenti'],
                   ['/archivio-preventivi', <ClipboardList size={18} />, 'Archivio preventivi', 'preventivi e versioni'],
                   ['/archivi-intermediazione', <Archive size={18} />, 'Archivi intermediazione', 'documenti dell\'area intermediazioni'],
-                  ['/consegne', <Inbox size={18} />, 'Consegne amministrative', 'bacheca consegne ufficio ↔ esterno'],
+                  ['/bacheca', <Inbox size={18} />, 'Consegne amministrative', 'bacheca consegne ufficio ↔ esterno'],
                   ['/gestione-fatturazione', <Receipt size={18} />, 'Gestione fatturazione', 'emissione fatture e preventivi'],
                   ['/compenso-incarichi', <Euro size={18} />, 'Compensi incarichi', 'compensi e rendiconti operatori'],
                 ].map(([to, icon, label, desc]) => (

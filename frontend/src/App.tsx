@@ -58,6 +58,7 @@ const ArchivioFatture = lazy(() => import('./pages/ArchivioFatture'));
 const ArchivioPreventivi = lazy(() => import('./pages/ArchivioPreventivi'));
 const PreventivoVeloce = lazy(() => import('./pages/PreventivoVeloce'));
 const ConsegneAmministrative = lazy(() => import('./pages/ConsegneAmministrative'));
+const ConsegneHub = lazy(() => import('./pages/ConsegneHub'));
 const ConsegnaEsterna = lazy(() => import('./pages/ConsegnaEsterna'));
 const IscrizioneIntermediazione = lazy(() => import('./pages/IscrizioneIntermediazione'));
 const AreaFamiglia = lazy(() => import('./pages/AreaFamiglia'));
@@ -360,10 +361,14 @@ function AppShell() {
                 Chat coordinatore
                 <ChatBadge />
               </Link>
-              <Link to="/oggi" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
+              <Link to="/consegne" className={isActive('/consegne') || isActive('/oggi') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <ClipboardList size={18} />
-                Consegne
+                Consegne e attività
                 <ConsegneBadge />
+              </Link>
+              <Link to="/gestione" className={isActive('/gestione') ? 'active' : ''}>
+                <LayoutDashboard size={18} />
+                Gestione completa
               </Link>
               <Link to="/piani-lavorativi" className={isActive('/piani-lavorativi') ? 'active' : ''}>
                 <Calendar size={18} />
@@ -418,18 +423,14 @@ function AppShell() {
               {/* — Panoramica — */}
               <details className="nav-section" open={secOpen('/oggi','/dashboard','/chat','/verbali-equipe','/consegne','/archivio-email')}>
               <summary className="nav-section-label">Panoramica</summary>
-              <Link to="/oggi" className={isActive('/oggi') ? 'active' : ''}>
-                <CalendarCheck size={18} />
-                Oggi
+              <Link to="/consegne" className={isActive('/consegne') || isActive('/oggi') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
+                <ClipboardList size={18} />
+                Consegne e attività
+                <ConsegneBadge />
               </Link>
               <Link to="/dashboard" className={isActive('/dashboard') ? 'active' : ''}>
                 <LayoutDashboard size={18} />
                 Dashboard
-              </Link>
-              <Link to="/oggi" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
-                <ClipboardList size={18} />
-                Consegne
-                <ConsegneBadge />
               </Link>
               <Link to="/chat" className={isActive('/chat') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <MessageCircle size={18} />
@@ -577,14 +578,14 @@ function AppShell() {
             <>
               <details className="nav-section" open={secOpen('/oggi','/consegne')}>
               <summary className="nav-section-label">Panoramica</summary>
-              <Link to="/oggi" className={isActive('/oggi') ? 'active' : ''}>
-                <CalendarCheck size={18} />
-                Oggi
-              </Link>
-              <Link to="/oggi" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
+              <Link to="/consegne" className={isActive('/consegne') || isActive('/oggi') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <ClipboardList size={18} />
-                Consegne
+                Consegne e attività
                 <ConsegneBadge />
+              </Link>
+              <Link to="/gestione" className={isActive('/gestione') ? 'active' : ''}>
+                <LayoutDashboard size={18} />
+                Gestione completa
               </Link>
 
               </details>
@@ -643,14 +644,14 @@ function AppShell() {
               </Link>
               <details className="nav-section" open={secOpen('/oggi','/consegne','/archivio-email')}>
               <summary className="nav-section-label">Panoramica</summary>
-              <Link to="/oggi" className={isActive('/oggi') ? 'active' : ''}>
-                <CalendarCheck size={18} />
-                Oggi
-              </Link>
-              <Link to="/oggi" className={isActive('/consegne') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
+              <Link to="/consegne" className={isActive('/consegne') || isActive('/oggi') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <ClipboardList size={18} />
-                Consegne
+                Consegne e attività
                 <ConsegneBadge />
+              </Link>
+              <Link to="/gestione" className={isActive('/gestione') ? 'active' : ''}>
+                <LayoutDashboard size={18} />
+                Gestione completa
               </Link>
               <Link to="/archivio-email" className={isActive('/archivio-email') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center' }}>
                 <Mail size={18} />
@@ -799,7 +800,8 @@ function AppShell() {
 
           {/* Route privilegiati */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/oggi" element={<ProtectedRoute><Oggi /></ProtectedRoute>} />
+          <Route path="/oggi" element={<Navigate to="/consegne" replace />} />
+          <Route path="/gestione" element={<ProtectedRoute><Oggi /></ProtectedRoute>} />
           <Route path="/amministrazione" element={<ProtectedRoute><Amministrazione /></ProtectedRoute>} />
           <Route path="/area-commercialista" element={<ProtectedRoute><AreaCommercialista /></ProtectedRoute>} />
           <Route path="/trova-operatori" element={<ProtectedRoute><TrovaOperatori /></ProtectedRoute>} />
@@ -827,7 +829,8 @@ function AppShell() {
           <Route path="/scheda-servizio" element={<SchedaServizio />} />
 
           {/* Route condivise (tutti gli utenti autenticati) */}
-          <Route path="/consegne" element={<ProtectedRoute><ConsegneAmministrative /></ProtectedRoute>} />
+          <Route path="/consegne" element={<ProtectedRoute><ConsegneHub /></ProtectedRoute>} />
+          <Route path="/bacheca" element={<ProtectedRoute><ConsegneAmministrative /></ProtectedRoute>} />
           <Route path="/archivio-email" element={<ProtectedRoute><ArchivioEmail /></ProtectedRoute>} />
           <Route path="/siti-web" element={<ProtectedRoute><SitiWeb /></ProtectedRoute>} />
           <Route path="/protocolli-procedure" element={<ProtectedRoute><ProtocolliProcedure /></ProtectedRoute>} />
