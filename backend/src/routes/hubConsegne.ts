@@ -131,6 +131,19 @@ function ultimoMovimento(storico: any[] | undefined) {
   };
 }
 
+// Storico + aggiornamenti normalizzati per il dettaglio hub (ultimi 15)
+function storicoItems(doc: any) {
+  const ev = (doc.storico || []).map((m: any) => ({
+    at: (m.il || m.data) ? new Date(m.il || m.data).toISOString() : undefined,
+    by: m.daNome || m.autoreNome, action: m.azione, note: m.nota,
+  }));
+  const up = (doc.aggiornamenti || []).map((u: any) => ({
+    at: u.data ? new Date(u.data).toISOString() : undefined,
+    by: u.autoreNome, action: 'nota', note: u.testo,
+  }));
+  return [...ev, ...up].sort((a, b) => String(b.at || '').localeCompare(String(a.at || ''))).slice(0, 15);
+}
+
 function toHubConsegna(c: any): HubItem {
   const workflowMap: Record<string, HubItem['workflow']> = {
     da_gestire: 'new', presa_in_carico: 'active', in_attesa_riscontro: 'waiting', gestita: 'closed',
@@ -366,11 +379,11 @@ router.get('/snapshot', authenticateToken, async (req: AuthRequest, res: Respons
             const st = ids.length ? await Staff.find({ _id: { $in: ids } }).select('category').lean() : [];
             const mappa = new Map(st.map(s => [String(s._id), CATEGORIA_SETTORE[s.category] || 'altri'] as [string, SettoreConsegna]));
             const { sortAt, ...d } = toHubAttivita(a, mappa);
-            detail = d;
+            detail = { ...d, storico: storicoItems(a) };
           }
         } else if (src === 'consegna') {
           const c = await ConsegnaAmministrativa.findById(id).lean();
-          if (c) { const { sortAt, ...d } = toHubConsegna(c); detail = d; }
+          if (c) { const { sortAt, ...d } = toHubConsegna(c); detail = { ...d, storico: storicoItems(c) }; }
         }
       }
     }
