@@ -336,6 +336,23 @@ router.get('/snapshot', authenticateToken, async (req: AuthRequest, res: Respons
         .sort((a, b) => (b.itemCount - a.itemCount) || a.label.localeCompare(b.label, 'it'));
     }
 
+    // Registro lavori (schermata dedicata): da fare/in corso oggi + chiusi oggi.
+    // Stessa vista unificata: ogni riga resta collegata a fonte, paziente, storico.
+    let registro: any;
+    if (screen === 'registro') {
+      const fineOggi = new Date(); fineOggi.setHours(23, 59, 59, 999);
+      const inizioOggi = new Date(); inizioOggi.setHours(0, 0, 0, 0);
+      const scade = (i: HubItem) => [i.dueAt, i.nextContactAt, i.waitCheckAt].some(d => d && new Date(d) <= fineOggi);
+      const chiusaOggi = (i: HubItem) => i.lastUpdateAt && new Date(i.lastUpdateAt) >= inizioOggi && ['closed', 'cancelled'].includes(i.workflow);
+      const aperti = (i: HubItem) => scopeFilter(i, scopeStati) && !['closed', 'cancelled'].includes(i.workflow);
+      const strip = ({ sortAt, ...rest }: HubItem) => rest;
+      registro = {
+        daFare: tutti.filter(i => aperti(i) && scade(i)).map(strip),
+        inCorso: tutti.filter(i => aperti(i) && !scade(i) && (i.workflow === 'active' || i.workflow === 'waiting')).map(strip),
+        fattiOggi: tutti.filter(i => scopeFilter(i, scopeStati) && chiusaOggi(i)).map(strip),
+      };
+    }
+
     // Dettaglio richiesto (itemKey = "source:id")
     let detail: any;
     if (itemKey) {
@@ -365,6 +382,7 @@ router.get('/snapshot', authenticateToken, async (req: AuthRequest, res: Respons
       hasNext: start + pageSize < totalResults,
       professionals,
       patients,
+      registro,
       authorizedAreas: AREE,
       summary: { sectors, statuses: { [scopeKey]: statuses }, tools },
       detail,

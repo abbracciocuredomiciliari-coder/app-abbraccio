@@ -54,11 +54,22 @@ export default function ConsegneHub() {
   const [edMotivo, setEdMotivo] = useState('');
   const [edErr, setEdErr] = useState('');
   const [edBusy, setEdBusy] = useState(false);
+  const [checkItem, setCheckItem] = useState<{ item: any; kind: string } | null>(null);
+  const [checkEsito, setCheckEsito] = useState('');
+  const [checkData, setCheckData] = useState('');
+  const [checkErr, setCheckErr] = useState('');
+  const [checkBusy, setCheckBusy] = useState(false);
   const reqId = useRef(0);
 
-  const trovaItem = (itemKey?: string | null) => (snapshot.complete
-    ? (snapshot.items || []).find((i: any) => `${i.source}:${i.id}` === itemKey)
-    : snapshot.detail) as any;
+  const trovaItem = (itemKey?: string | null) => {
+    const inRegistro = snapshot.registro
+      ? [...snapshot.registro.daFare, ...snapshot.registro.inCorso, ...snapshot.registro.fattiOggi]
+      : [];
+    const d = snapshot.detail as any;
+    return (inRegistro.find((i: any) => `${i.source}:${i.id}` === itemKey)
+      || (snapshot.items || []).find((i: any) => `${i.source}:${i.id}` === itemKey)
+      || (d && `${d.source}:${d.id}` === itemKey ? d : undefined)) as any;
+  };
 
   const carica = useCallback(async (v: HubView, pg: number) => {
     const id = ++reqId.current;
@@ -167,6 +178,13 @@ export default function ConsegneHub() {
       case 'nota': {
         const d = trovaItem(a.itemKey);
         if (d) { setNotaTesto(''); setNotaItem({ source: d.source, id: d.id, titolo: d.title }); }
+        break;
+      }
+      case 'check': {
+        // spunta rapida dal Registro lavori: eseguito / rimandato / completato
+        const d = trovaItem(a.itemKey);
+        const kind = a.check || 'eseguito';
+        if (d) { setCheckItem({ item: d, kind }); setCheckEsito(kind === 'completato' ? '' : 'Eseguito'); setCheckData(''); setCheckErr(''); }
         break;
       }
     }
@@ -352,6 +370,58 @@ export default function ConsegneHub() {
               style={{ padding: '12px', borderRadius: 10, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: notaTesto.trim() ? 1 : 0.5 }}
             >
               {notaBusy ? 'Salvataggio…' : 'Salva nota'}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Spunta rapida dal Registro lavori — eseguito / rimandato / completato */}
+      {checkItem && (
+        <Modal isOpen onClose={() => setCheckItem(null)}
+          title={checkItem.kind === 'rimandato' ? '📅 Rimanda il lavoro' : checkItem.kind === 'completato' ? '✔ Completa la lavorazione' : '✅ Segna come eseguito'}
+          size="sm">
+          <div style={{ display: 'grid', gap: 10 }}>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#475569' }}><strong>{checkItem.item.title}</strong></p>
+            {checkItem.kind === 'rimandato' ? (
+              <div>
+                <span style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', marginBottom: 3 }}>Nuova data *</span>
+                <input type="date" autoFocus value={checkData} onChange={e => setCheckData(e.target.value)}
+                  style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 4 }}>La consegna resta aperta: il promemoria torna nella nuova data, la riscrittura resta nello storico.</div>
+              </div>
+            ) : (
+              <div>
+                <span style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', marginBottom: 3 }}>
+                  Esito {checkItem.kind === 'completato' ? '*' : '(cosa è stato fatto)'}
+                </span>
+                <textarea autoFocus value={checkEsito} onChange={e => setCheckEsito(e.target.value)} rows={2}
+                  placeholder={checkItem.kind === 'completato' ? 'Descrivi come è stata completata…' : ''}
+                  style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+              </div>
+            )}
+            {checkErr && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '8px 12px', borderRadius: 8, fontWeight: 600, fontSize: '0.82rem' }}>{checkErr}</div>}
+            <button
+              disabled={checkBusy || (checkItem.kind === 'rimandato' ? !checkData : !checkEsito.trim())}
+              onClick={async () => {
+                const d = checkItem.item;
+                setCheckBusy(true); setCheckErr('');
+                try {
+                  if (checkItem.kind === 'rimandato') {
+                    await api.patch('/hub-consegne/elemento', { source: d.source, id: d.id, scadenza: checkData });
+                    const notaUrl = d.source === 'consegna' ? `/consegne-amministrative/${d.id}/nota` : `/attivita/${d.id}/aggiornamento`;
+                    const body = d.source === 'consegna' ? { nota: `Rimandata al ${new Date(checkData).toLocaleDateString('it-IT')}` } : { testo: `Rimandata al ${new Date(checkData).toLocaleDateString('it-IT')}` };
+                    await api.post(notaUrl, body);
+                  } else {
+                    const url = d.source === 'consegna' ? `/consegne-amministrative/${d.id}/stato` : `/attivita/${d.id}/stato`;
+                    await api.patch(url, { stato: d.source === 'consegna' ? 'gestita' : 'completata', esito: checkEsito.trim() });
+                  }
+                  setCheckItem(null); carica(view, page);
+                } catch (e: any) { setCheckErr(e?.response?.data?.message || 'Errore salvataggio'); }
+                finally { setCheckBusy(false); }
+              }}
+              style={{ padding: '12px', borderRadius: 10, border: 'none', background: checkItem.kind === 'rimandato' ? '#d97706' : '#15803d', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: (checkItem.kind === 'rimandato' ? !!checkData : !!checkEsito.trim()) ? 1 : 0.5 }}
+            >
+              {checkBusy ? 'Salvataggio…' : checkItem.kind === 'rimandato' ? '📅 Conferma rinvio' : checkItem.kind === 'completato' ? '✔ Completa' : '✅ Eseguito'}
             </button>
           </div>
         </Modal>
