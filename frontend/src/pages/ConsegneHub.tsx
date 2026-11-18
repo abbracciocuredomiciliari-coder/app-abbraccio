@@ -147,6 +147,10 @@ export default function ConsegneHub() {
       case 'legacy':
         navigate('/gestione');
         break;
+      case 'back-exit':
+        // Stack hub vuoto: torna alla pagina precedente (anagrafica, ecc.)
+        if (window.history.length > 1) navigate(-1); else navigate('/consegne');
+        break;
       case 'previous': vaiPagina(-1); break;
       case 'next': vaiPagina(1); break;
       case 'retry': carica(view, page); break;
