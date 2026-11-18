@@ -173,11 +173,19 @@ router.post('/applications', rateLimitByIP(10, 60 * 60 * 1000), async (req: Requ
     const b = req.body || {};
     const role = ROLE_MAP[s(b.role).toLowerCase()];
     if (!role) return res.status(400).json({ error: 'Seleziona il ruolo.' });
-    if (!s(b.name)) return res.status(400).json({ error: 'Nome e cognome obbligatori.' });
+    if (!s(b.name) || s(b.name).split(/\s+/).length < 2) return res.status(400).json({ error: 'Nome e cognome completi obbligatori.' });
     if (!s(b.phone)) return res.status(400).json({ error: 'Telefono obbligatorio.' });
     if (!s(b.email) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s(b.email))) {
       return res.status(400).json({ error: 'Email non valida.' });
     }
+    // Tutte le voci del modulo sono vincolate: qualifica, zona, esperienza,
+    // disponibilità, presentazione e CV sono richiesti per la candidatura.
+    if (!s(b.qualification)) return res.status(400).json({ error: 'Specializzazione/qualifica obbligatoria.' });
+    if (!s(b.area)) return res.status(400).json({ error: 'Città e zone di disponibilità obbligatorie.' });
+    if (!s(b.experience)) return res.status(400).json({ error: 'Seleziona l\'esperienza.' });
+    if (!s(b.availability)) return res.status(400).json({ error: 'Seleziona la disponibilità.' });
+    if (!s(b.message) || s(b.message).length < 10) return res.status(400).json({ error: 'Raccontaci qualcosa di te (almeno 10 caratteri).' });
+    if (!b.cv || !b.cv.data) return res.status(400).json({ error: 'Il curriculum PDF è obbligatorio.' });
     if (!b.consent) return res.status(400).json({ error: 'Serve il consenso al trattamento dei dati.' });
 
     const parts = s(b.name).split(/\s+/);
@@ -208,18 +216,27 @@ router.post('/applications', rateLimitByIP(10, 60 * 60 * 1000), async (req: Requ
       documentoMime = 'application/pdf';
     }
 
+    // Mappa le voci del modulo sui campi strutturati del candidato
+    const disponibilitaMap: Record<string, string> = {
+      'diurna': 'diurno', 'notturna': 'notturno', 'convivente': 'h24',
+    };
+    const disponibilita = disponibilitaMap[s(b.availability).toLowerCase()];
+    const tipoLavoro = s(b.availability).toLowerCase() === 'convivente' ? 'convivenza' : 'ore';
+
     const note = [
-      b.qualification && `Qualifica: ${s(b.qualification)}`,
-      b.experience && `Esperienza: ${s(b.experience)}`,
-      b.area && `Zone: ${s(b.area)}`,
-      b.availability && `Disponibilità: ${s(b.availability)}`,
-      b.message && `Messaggio: ${s(b.message)}`,
+      `Qualifica: ${s(b.qualification)}`,
+      `Esperienza: ${s(b.experience)}`,
+      `Disponibilità: ${s(b.availability)}`,
+      `Presentazione: ${s(b.message)}`,
       'Fonte: sito web lavora-con-noi',
-    ].filter(Boolean).join('\n');
+    ].join('\n');
 
     const candidato = await CandidatoIntermediazione.create({
       nome, cognome, ruolo: role,
       telefono: s(b.phone), email: s(b.email).toLowerCase(),
+      cittaInteresse: s(b.area),
+      tipoLavoro, disponibilita,
+      esperienze: `${s(b.experience)} — ${s(b.message)}`.slice(0, 2000),
       note, documentoPath, documentoNome, documentoMime,
     } as any);
 
