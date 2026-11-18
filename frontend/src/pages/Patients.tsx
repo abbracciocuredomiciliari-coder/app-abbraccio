@@ -790,7 +790,15 @@ function Patients() {
   };
 
   const selezionaIndirizzo = (item: any) => {
-    setFormData(prev => ({ ...prev, address: item.display_name }));
+    // Il civico digitato non deve sparire: se OSM non lo conosce lo reintegriamo
+    const typed = formData.address;
+    const civico = (typed.match(/\d+[a-zA-Z]?(?:\s*\/\s*[a-zA-Z0-9]+)?/g) || []).pop();
+    let addr = String(item.display_name || '');
+    if (civico && !item.address?.house_number && !addr.includes(civico)) {
+      const [via, ...resto] = addr.split(',');
+      addr = resto.length ? `${via.trim()} ${civico},${resto.join(',')}` : `${via.trim()} ${civico}`;
+    }
+    setFormData(prev => ({ ...prev, address: addr }));
     setIndirizzoCoords({ lat: parseFloat(item.lat), lng: parseFloat(item.lon) });
     setSuggerimentiIndirizzo([]);
   };

@@ -403,4 +403,42 @@ router.patch('/settore', authenticateToken, async (req: AuthRequest, res: Respon
   }
 });
 
+// ═══ PATCH /api/hub-consegne/paziente — collega paziente (anche a consegne vecchie) ════
+router.patch('/paziente', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const me = req.user as any;
+    if (!RUOLI_GESTIONE.includes(me.role)) return res.status(403).json({ message: 'Permessi insufficienti' });
+    const { source, id, pazienteId } = req.body || {};
+    if (!mongoose.isValidObjectId(String(id)) || !mongoose.isValidObjectId(String(pazienteId))) {
+      return res.status(400).json({ message: 'ID non valido' });
+    }
+    const paziente = await Patient.findById(pazienteId).select('firstName lastName');
+    if (!paziente) return res.status(404).json({ message: 'Paziente non trovato' });
+    const label = `${paziente.lastName} ${paziente.firstName}`.trim();
+    const userId = new mongoose.Types.ObjectId(me.userId || me.id);
+    const nome = me.name || me.email || 'Utente';
+    if (source === 'attivita') {
+      const a = await Attivita.findById(id);
+      if (!a) return res.status(404).json({ message: 'Attività non trovata' });
+      a.praticaTipo = 'paziente';
+      a.praticaId = paziente._id as any;
+      a.praticaLabel = label;
+      a.storico.push({ azione: 'paziente_collegato', data: new Date(), autoreId: userId, autoreNome: nome, nota: `Paziente collegato: ${label}` } as any);
+      await a.save();
+    } else if (source === 'consegna') {
+      const c = await ConsegnaAmministrativa.findById(id);
+      if (!c) return res.status(404).json({ message: 'Consegna non trovata' });
+      c.paziente = paziente._id as any;
+      c.pazienteLabel = label;
+      c.storico.push({ azione: 'paziente_collegato', da: userId, daNome: nome, il: new Date(), nota: `Paziente collegato: ${label}` });
+      await c.save();
+    } else {
+      return res.status(400).json({ message: 'Fonte non valida' });
+    }
+    return res.json({ ok: true, pazienteLabel: label });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore collegamento paziente', error: error.message });
+  }
+});
+
 export default router;

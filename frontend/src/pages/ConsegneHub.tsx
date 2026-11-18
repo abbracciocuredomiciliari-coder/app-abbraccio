@@ -35,6 +35,10 @@ export default function ConsegneHub() {
   const [creaPaziente, setCreaPaziente] = useState<{ id: string; tipo: string; label: string } | undefined>(undefined);
   const [creaProf, setCreaProf] = useState<{ id: string; label: string; role?: string; sectorId?: string } | undefined>(undefined);
   const [riclassifica, setRiclassifica] = useState<{ source: string; id: string } | null>(null);
+  const [collegaPaz, setCollegaPaz] = useState<{ source: string; id: string } | null>(null);
+  const [pazQ, setPazQ] = useState('');
+  const [pazOpts, setPazOpts] = useState<{ id: string; label: string }[]>([]);
+  const [pazBusy, setPazBusy] = useState(false);
   const reqId = useRef(0);
 
   const carica = useCallback(async (v: HubView, pg: number) => {
@@ -58,6 +62,20 @@ export default function ConsegneHub() {
 
   const viewKey = JSON.stringify(view) + '|' + page;
   useEffect(() => { carica(view, page); }, [viewKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Ricerca paziente per il collegamento (debounced, riusa /attivita/pratiche)
+  useEffect(() => {
+    if (!collegaPaz) return;
+    const t = setTimeout(async () => {
+      setPazBusy(true);
+      try {
+        const { data } = await api.get('/attivita/pratiche', { params: { tipo: 'paziente', q: pazQ } });
+        setPazOpts(Array.isArray(data) ? data.map((r: any) => ({ id: r.id, label: String(r.label).replace(/^Paziente — /, '') })) : []);
+      } catch { setPazOpts([]); }
+      finally { setPazBusy(false); }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [collegaPaz, pazQ]);
 
   const onViewChange = useCallback((v: HubView) => {
     const p = new URLSearchParams();
@@ -108,6 +126,14 @@ export default function ConsegneHub() {
         if (d) setRiclassifica({ source: d.source, id: d.id });
         break;
       }
+      case 'link-patient': {
+        // collega un paziente reale a una consegna (anche vecchie riportate)
+        const d = (snapshot.complete
+          ? (snapshot.items || []).find((i: any) => `${i.source}:${i.id}` === a.itemKey)
+          : snapshot.detail) as any;
+        if (d) { setPazQ(''); setPazOpts([]); setCollegaPaz({ source: d.source, id: d.id }); }
+        break;
+      }
     }
   }, [snapshot.detail, navigate, carica, view, page]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -156,6 +182,42 @@ export default function ConsegneHub() {
                 style={{ padding: '12px 14px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#f8fafc', textAlign: 'left', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', minHeight: 46 }}
               >
                 {label}
+              </button>
+            ))}
+          </div>
+        </Modal>
+      )}
+
+      {/* Cerca paziente — collega un paziente reale alla consegna, anche vecchia */}
+      {collegaPaz && (
+        <Modal isOpen onClose={() => setCollegaPaz(null)} title="🔍 Cerca paziente" size="sm">
+          <div style={{ display: 'grid', gap: 10 }}>
+            <input
+              autoFocus
+              value={pazQ}
+              onChange={e => setPazQ(e.target.value)}
+              placeholder="Scrivi nome o cognome del paziente…"
+              style={{ padding: '12px 14px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: '0.95rem' }}
+            />
+            {pazBusy && <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>Ricerca in corso…</p>}
+            {!pazBusy && pazOpts.length === 0 && (
+              <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
+                {pazQ ? 'Nessun paziente trovato.' : 'Digita per cercare nell\'anagrafica pazienti.'}
+              </p>
+            )}
+            {pazOpts.map(p => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={async () => {
+                  try {
+                    await api.patch('/hub-consegne/paziente', { ...collegaPaz, pazienteId: p.id });
+                    setCollegaPaz(null); carica(view, page);
+                  } catch { /* errore gestito dal modal aperto */ }
+                }}
+                style={{ padding: '12px 14px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#f8fafc', textAlign: 'left', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', minHeight: 46 }}
+              >
+                👤 {p.label}
               </button>
             ))}
           </div>
