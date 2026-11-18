@@ -1,8 +1,9 @@
-.consegne-hub {--hub-blue:#0879bc;--hub-selected:#e7eff8;--hub-tile:#f3f3f3;--hub-border:#e4e6e8;--hub-text:#151719;--hub-muted:#61676a;color:var(--hub-text);background:#fdfdfd;font:400 16px/1.5 Arial,Helvetica,sans-serif;min-height:100%;box-sizing:border-box}
-.consegne-hub *,.consegne-hub *::before,.consegne-hub *::after {box-sizing:border-box}
+.consegne-hub {--hub-blue:#0879bc;--hub-selected:#e7eff8;--hub-tile:#f3f3f3;--hub-border:#e4e6e8;--hub-text:#151719;--hub-muted:#61676a;color:var(--hub-text);background:#fdfdfd;font:400 16px/1.5 Arial,Helvetica,sans-serif;min-height:100%;box-sizing:border-box;max-width:100%;overflow-x:clip}
+.consegne-hub *,.consegne-hub *::before,.consegne-hub *::after {box-sizing:border-box;min-width:0}
+.consegne-hub :not(svg):not(symbol):not(path):not(circle):not(rect):not(line):not(polyline):not(polygon) {max-width:100%}
 .consegne-hub :is(button,input,select) {font:inherit}
 .consegne-hub :focus-visible {outline:3px solid var(--hub-blue);outline-offset:4px}
-.hub-frame {max-width:1040px;margin:0 auto;border:1px solid var(--hub-border);border-radius:32px;padding:28px;background:#fdfdfd;min-width:0}
+.hub-frame {max-width:1040px;width:100%;margin:0 auto;border:1px solid var(--hub-border);border-radius:32px;padding:28px;background:#fdfdfd;min-width:0;overflow-x:clip}
 .hub-top {display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}
 .hub-brand {background:#f0f0f0;border-radius:24px;padding:6px 17px;font-size:18px;white-space:nowrap;color:#454849}
 .hub-title {display:flex;align-items:center;gap:14px;margin:0;font-size:clamp(26px,3.7vw,42px);line-height:1.2;letter-spacing:-.6px;color:#111;font-weight:700;overflow-wrap:anywhere}
