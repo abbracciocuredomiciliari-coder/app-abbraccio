@@ -48,6 +48,7 @@ export interface IAttivita extends Document {
   area?: 'privato' | 'convenzione' | 'consulenza' | 'organizzativa';
   priorita: PrioritaAttivita;
   scadenza?: Date;
+  orarioPromemoria?: string;             // "HH:MM" — alert il giorno della scadenza/controllo
   stato: StatoAttivita;
   // Responsabilità
   responsabileId?: Types.ObjectId;
@@ -98,6 +99,7 @@ const AttivitaSchema = new Schema<IAttivita>(
     area: { type: String, enum: ['privato', 'convenzione', 'consulenza', 'organizzativa'], index: true },
     priorita: { type: String, enum: ['bassa', 'normale', 'alta', 'urgente'], default: 'normale' },
     scadenza: { type: Date, index: true },
+    orarioPromemoria: { type: String, trim: true, maxlength: 5 },
     stato: {
       type: String,
       enum: ['da_prendere', 'in_lavorazione', 'in_attesa', 'completata', 'annullata'],

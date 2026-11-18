@@ -51,6 +51,7 @@ export interface IConsegnaAmministrativa extends Document {
   esito?: string;                 // obbligatorio per chiudere come 'gestita'
   nonInteressato?: boolean;       // rifiuto commerciale esplicito della famiglia/cliente
   scadenza?: Date;                // prossima azione datata
+  orarioPromemoria?: string;      // "HH:MM" — alert il giorno della scadenza/controllo
   interlocutoreAttesa?: string;   // in_attesa_riscontro: con chi siamo in attesa
   dataControlloAttesa?: Date;     // in_attesa_riscontro: quando ricontrollare
   // Lettura separata dallo stato: leggere NON equivale a lavoro concluso
@@ -106,6 +107,7 @@ const ConsegnaAmministrativaSchema = new Schema<IConsegnaAmministrativa>({
   esito: { type: String, trim: true, maxlength: 2000 },
   nonInteressato: { type: Boolean },
   scadenza: { type: Date },
+  orarioPromemoria: { type: String, trim: true, maxlength: 5 },
   interlocutoreAttesa: { type: String, trim: true, maxlength: 120 },
   dataControlloAttesa: { type: Date },
   lettaDa: [{

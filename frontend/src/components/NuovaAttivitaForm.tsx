@@ -48,6 +48,7 @@ export default function NuovaAttivitaForm({
   defaultProfessionista,
   defaultTipo,
   onSaved,
+  onCreated,
   onCancel,
 }: {
   area?: string;
@@ -56,6 +57,7 @@ export default function NuovaAttivitaForm({
   defaultProfessionista?: ProfessionistaOpt; // professionista già scelto (schermata professionista)
   defaultTipo?: TipoElemento;           // tipo preimpostato (es. 'consegna' dal pulsante Consegne)
   onSaved?: () => void;
+  onCreated?: () => void;               // chiamato a ogni salvataggio in "aggiungi altra" (il form resta aperto)
   onCancel?: () => void;
 }) {
   const [tipo, setTipo] = useState<TipoElemento>(defaultTipo || 'attivita');
@@ -63,7 +65,9 @@ export default function NuovaAttivitaForm({
   const [azione, setAzione] = useState('');
   const [interlocutore, setInterlocutore] = useState('');
   const [dataControllo, setDataControllo] = useState('');
+  const [orarioPromemoria, setOrarioPromemoria] = useState('');
   const [scadenza, setScadenza] = useState('');
+  const [salvate, setSalvate] = useState(0);
   const [priorita, setPriorita] = useState('normale');
   const [settore, setSettore] = useState(defaultSettore || (tipo === 'consegna' ? 'backoffice' : ''));
   const [professionisti, setProfessionisti] = useState<ProfessionistaOpt[]>(defaultProfessionista ? [defaultProfessionista] : []);
@@ -104,7 +108,7 @@ export default function NuovaAttivitaForm({
     && (!bisognaData || (!!interlocutore.trim() || tipo === 'ricontatto') && !!dataControllo)
     && (tipo !== 'ricontatto' || !!dataControllo);
 
-  const crea = async () => {
+  const crea = async (continua = false) => {
     if (!valido || busy) return;
     setBusy(true); setErrore('');
     try {
@@ -119,6 +123,7 @@ export default function NuovaAttivitaForm({
           riferimento: pratica?.label,
           pazienteId: pratica?.tipo === 'paziente' ? pratica.id : undefined,
           scadenza: scadenza || undefined,
+          orarioPromemoria: orarioPromemoria || undefined,
           settore: settoreFinale,
           professionistiIds: profIds.length ? profIds : undefined,
         });
@@ -135,14 +140,22 @@ export default function NuovaAttivitaForm({
           settore: settoreFinale,
           professionistiIds: profIds.length ? profIds : undefined,
           scadenza: tipo === 'scadenza' ? (dataControllo || scadenza) : (scadenza || undefined),
+          orarioPromemoria: orarioPromemoria || undefined,
           interlocutoreAttesa: bisognaData ? interlocutore.trim() || undefined : undefined,
           dataControlloAttesa: bisognaData ? dataControllo : undefined,
         });
       }
-      setTitolo(''); setAzione(''); setInterlocutore(''); setDataControllo(''); setScadenza('');
-      setProfessionisti([]); setProfQ('');
-      setPraticaTipo(''); setPraticaQ(''); if (!defaultPratica) setPraticaSel(null);
-      onSaved?.();
+      // Svuota sempre i contenuti; contesto (settore/paziente/professionisti) resta
+      // solo in "aggiungi altra" — cambiando settore si riparte da capo a mano.
+      setTitolo(''); setAzione(''); setInterlocutore(''); setDataControllo(''); setScadenza(''); setOrarioPromemoria('');
+      if (continua) {
+        setSalvate(n => n + 1);
+        onCreated?.();
+      } else {
+        setProfessionisti([]); setProfQ('');
+        setPraticaTipo(''); setPraticaQ(''); if (!defaultPratica) setPraticaSel(null);
+        onSaved?.();
+      }
     } catch (e: any) {
       setErrore(e?.response?.data?.message || 'Errore, riprova.');
     } finally { setBusy(false); }
@@ -205,6 +218,15 @@ export default function NuovaAttivitaForm({
         <div>
           <span style={lblSt}>Scadenza (facoltativa)</span>
           <input style={inputSt} type="date" value={scadenza} onChange={e => setScadenza(e.target.value)} />
+        </div>
+      )}
+      {(scadenza || dataControllo) && (
+        <div style={{ maxWidth: 220 }}>
+          <span style={lblSt}>🔔 Orario promemoria (facoltativo)</span>
+          <input style={inputSt} type="time" value={orarioPromemoria} onChange={e => setOrarioPromemoria(e.target.value)} />
+          <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 3 }}>
+            Avviso nella giornata scelta + alert a quell'ora (riunioni, persone da chiamare, appuntamenti).
+          </div>
         </div>
       )}
 
@@ -314,17 +336,31 @@ export default function NuovaAttivitaForm({
       </div>
 
       {errore && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '8px 12px', borderRadius: 8, fontWeight: 600, fontSize: '0.82rem' }}>{errore}</div>}
+      {salvate > 0 && (
+        <div style={{ background: '#dcfce7', color: '#15803d', padding: '8px 12px', borderRadius: 8, fontWeight: 600, fontSize: '0.82rem' }}>
+          ✔ {salvate} {tipo === 'consegna' ? 'consegne salvate' : 'attività salvate'} — stesso {settore ? 'settore' : 'contesto'}{pratica ? ` e ${pratica.label}` : ''}{professionisti.length ? ` · ${professionisti.map(p => p.label).join(', ')}` : ''}. Scrivi la prossima.
+        </div>
+      )}
 
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <button
-          style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none', background: '#15803d', color: '#fff', fontWeight: 700, fontSize: '0.9rem', cursor: valido && !busy ? 'pointer' : 'not-allowed', opacity: valido && !busy ? 1 : 0.55, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-          onClick={crea}
+          style={{ flex: 1, minWidth: 160, padding: '10px', borderRadius: 8, border: 'none', background: '#15803d', color: '#fff', fontWeight: 700, fontSize: '0.9rem', cursor: valido && !busy ? 'pointer' : 'not-allowed', opacity: valido && !busy ? 1 : 0.55, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+          onClick={() => crea(false)}
           disabled={!valido || busy}
         >
           <Plus size={15} /> {busy ? 'Creazione…' : tipo === 'consegna' ? 'Pubblica consegna' : 'Crea attività'}
         </button>
+        <button
+          type="button"
+          title="Salva e riparti: il testo si svuota ma settore, paziente e professionista restano"
+          style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #15803d', background: '#f0fdf4', color: '#15803d', fontWeight: 700, fontSize: '0.88rem', cursor: valido && !busy ? 'pointer' : 'not-allowed', opacity: valido && !busy ? 1 : 0.55 }}
+          onClick={() => crea(true)}
+          disabled={!valido || busy}
+        >
+          ➕ Salva e aggiungi altra
+        </button>
         {onCancel && (
-          <button type="button" onClick={onCancel} style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', background: '#fff', color: '#475569', fontWeight: 600, cursor: 'pointer' }}>Annulla</button>
+          <button type="button" onClick={onCancel} style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', background: '#fff', color: '#475569', fontWeight: 600, cursor: 'pointer' }}>Chiudi</button>
         )}
       </div>
     </div>

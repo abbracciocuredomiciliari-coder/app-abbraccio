@@ -260,6 +260,7 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
       area: ['privato', 'convenzione', 'consulenza', 'organizzativa'].includes(b.area) ? b.area : undefined,
       priorita: ['bassa', 'normale', 'alta', 'urgente'].includes(b.priorita) ? b.priorita : 'normale',
       scadenza: b.scadenza ? new Date(b.scadenza) : undefined,
+      orarioPromemoria: /^\d{1,2}:\d{2}$/.test(String(b.orarioPromemoria || '')) ? String(b.orarioPromemoria) : undefined,
       stato: tipo === 'attesa' ? 'in_attesa' : (responsabileId ? 'in_lavorazione' : 'da_prendere'),
       interlocutoreAttesa,
       dataControlloAttesa,

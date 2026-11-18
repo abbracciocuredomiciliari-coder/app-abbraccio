@@ -11,6 +11,7 @@ import { ChatBadge } from './components/ChatBadge';
 import { ConsegneBadge } from './components/ConsegneBadge';
 import { EmailRicevuteBadge } from './components/EmailRicevuteBadge';
 import AbbraccinoInterno from './components/AbbraccinoInterno';
+import PromemoriaConsegne from './components/PromemoriaConsegne';
 
 // Eager load per pagine leggere (login, dashboard)
 import Login from './pages/Login';
@@ -891,6 +892,7 @@ function AppShell() {
       </main>
       <ToastContainer toasts={toasts} onRemove={removeToast} position="top-right" />
       {user && !isLanding && <AbbraccinoInterno />}
+      {user && !isLanding && <PromemoriaConsegne />}
     </div>
   );
 }

@@ -60,6 +60,10 @@ interface HubItem {
   patientLabel?: string;
   referenceLabel?: string;
   dueAt?: string;
+  orario?: string;
+  lastUpdateAt?: string;
+  lastUpdateBy?: string;
+  lastUpdateAction?: string;
   nextContactAt?: string;
   waitCheckAt?: string;
   nextAction?: string;
@@ -101,13 +105,27 @@ function toHubAttivita(a: any, mappaStaff: Map<string, SettoreConsegna>): HubIte
     patientLabel: a.praticaTipo === 'paziente' ? a.praticaLabel || undefined : undefined,
     referenceLabel: a.praticaLabel || undefined,
     dueAt: a.scadenza ? a.scadenza.toISOString() : undefined,
+    orario: a.orarioPromemoria || undefined,
     nextContactAt: a.tipo === 'ricontatto' && a.dataControlloAttesa ? a.dataControlloAttesa.toISOString() : undefined,
     waitCheckAt: a.stato === 'in_attesa' && a.dataControlloAttesa ? a.dataControlloAttesa.toISOString() : undefined,
     nextAction: a.azioneRichiesta || undefined,
     description: [a.azioneRichiesta, a.interlocutoreAttesa ? `In attesa di: ${a.interlocutoreAttesa}` : '', a.esito ? `Esito: ${a.esito}` : '', a.motivoAnnullamento ? `Motivo: ${a.motivoAnnullamento}` : ''].filter(Boolean).join('\n'),
+    ...ultimoMovimento(a.storico),
     assignmentRef: a.praticaTipo ? ROUTE_PRATICA[a.praticaTipo] : undefined,
     sourceRoute: '/gestione',
     sortAt: new Date(a.createdAt).getTime(),
+  };
+}
+
+// Ultimo movimento dello storico → "aggiornata il … alle … da …" visibile in hub
+function ultimoMovimento(storico: any[] | undefined) {
+  const m = (storico || []).slice(-1)[0];
+  if (!m) return {};
+  const quando = m.il || m.data;
+  return {
+    lastUpdateAt: quando ? new Date(quando).toISOString() : undefined,
+    lastUpdateBy: m.daNome || m.autoreNome || undefined,
+    lastUpdateAction: m.azione || undefined,
   };
 }
 
@@ -132,10 +150,12 @@ function toHubConsegna(c: any): HubItem {
     patientLabel: c.pazienteLabel || undefined,
     referenceLabel: c.riferimento || c.pazienteLabel || undefined,
     dueAt: c.scadenza ? c.scadenza.toISOString() : (c.dataGiornata ? c.dataGiornata.toISOString() : undefined),
+    orario: c.orarioPromemoria || undefined,
     nextContactAt: c.stato === 'in_attesa_riscontro' && c.dataControlloAttesa ? c.dataControlloAttesa.toISOString() : undefined,
     waitCheckAt: c.stato === 'in_attesa_riscontro' && c.dataControlloAttesa ? c.dataControlloAttesa.toISOString() : undefined,
     nextAction: undefined,
     description: [c.testo, c.interlocutoreAttesa ? `In attesa di: ${c.interlocutoreAttesa}` : '', c.esito ? `Esito: ${c.esito}` : ''].filter(Boolean).join('\n'),
+    ...ultimoMovimento(c.storico),
     sourceRoute: '/bacheca',
     sortAt: new Date(c.createdAt).getTime(),
   };
@@ -355,6 +375,41 @@ router.get('/snapshot', authenticateToken, async (req: AuthRequest, res: Respons
   }
 });
 
+// ═══ GET /api/hub-consegne/promemoria — alert del giorno (scadenze, ricontatti, orari) ════
+// Restituisce le lavorazioni aperte con scadenza/controllo entro oggi (scadute incluse)
+// e le consegne della giornata odierna. Il frontend mostra banner + alert a orario.
+router.get('/promemoria', authenticateToken, async (_req: AuthRequest, res: Response) => {
+  try {
+    const oggi = new Date(); oggi.setHours(23, 59, 59, 999);
+    const inizioOggi = new Date(); inizioOggi.setHours(0, 0, 0, 0);
+    const [att, con] = await Promise.all([
+      Attivita.find({
+        stato: { $nin: ['completata', 'annullata'] },
+        $or: [{ scadenza: { $lte: oggi } }, { dataControlloAttesa: { $lte: oggi } }],
+      }).select('titolo tipo scadenza dataControlloAttesa orarioPromemoria praticaLabel priorita').limit(200).lean(),
+      ConsegnaAmministrativa.find({
+        stato: { $ne: 'gestita' },
+        $or: [{ scadenza: { $lte: oggi } }, { dataControlloAttesa: { $lte: oggi } }, { dataGiornata: { $gte: inizioOggi, $lte: oggi } }],
+      }).select('titolo scadenza dataControlloAttesa dataGiornata orarioPromemoria pazienteLabel riferimento priorita').limit(200).lean(),
+    ]);
+    const items = [
+      ...att.map((a: any) => ({
+        id: String(a._id), source: 'attivita', titolo: a.titolo, tipo: a.tipo || 'attivita',
+        quando: a.scadenza || a.dataControlloAttesa, orario: a.orarioPromemoria,
+        paziente: a.praticaLabel, urgente: a.priorita === 'urgente',
+      })),
+      ...con.map((c: any) => ({
+        id: String(c._id), source: 'consegna', titolo: c.titolo, tipo: 'consegna',
+        quando: c.scadenza || c.dataControlloAttesa || c.dataGiornata, orario: c.orarioPromemoria,
+        paziente: c.pazienteLabel || c.riferimento, urgente: c.priorita === 'urgente',
+      })),
+    ].sort((a, b) => String(a.orario || '99:99').localeCompare(String(b.orario || '99:99')));
+    return res.json({ items });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore promemoria', error: error.message });
+  }
+});
+
 // ═══ GET /api/hub-consegne/professionisti — ricerca per filtro nel form ═════
 router.get('/professionisti', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
@@ -400,6 +455,77 @@ router.patch('/settore', authenticateToken, async (req: AuthRequest, res: Respon
     return res.json({ ok: true });
   } catch (error: any) {
     return res.status(500).json({ message: 'Errore classificazione', error: error.message });
+  }
+});
+
+// ═══ PATCH /api/hub-consegne/elemento — modifica contenuti, priorità, scadenza ════
+// Aggiorna titolo/testo/priorità/scadenza/orario sia su Attivita che su
+// ConsegnaAmministrativa (fonte dichiarata). Stato e note restano sulle
+// route originali; ogni modifica finisce nello storico della lavorazione.
+router.patch('/elemento', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const me = req.user as any;
+    const userId = me.userId || me.id;
+    const nome = me.name || me.email || 'Utente';
+    const { source, id, titolo, testo, priorita, scadenza, orarioPromemoria } = req.body || {};
+    if (!mongoose.isValidObjectId(String(id))) return res.status(400).json({ message: 'ID non valido' });
+    const orarioOk = (v: any) => /^\d{1,2}:\d{2}$/.test(String(v || '')) ? String(v) : undefined;
+    const cambi: string[] = [];
+
+    if (source === 'consegna') {
+      const c = await ConsegnaAmministrativa.findById(id);
+      if (!c) return res.status(404).json({ message: 'Consegna non trovata' });
+      if (titolo !== undefined) {
+        const t = String(titolo).trim().slice(0, 200);
+        if (!t) return res.status(400).json({ message: 'Titolo vuoto' });
+        if (t !== c.titolo) { c.titolo = t; cambi.push('titolo'); }
+      }
+      if (testo !== undefined && String(testo).trim() !== String(c.testo || '').trim()) {
+        c.testo = String(testo).trim().slice(0, 4000); cambi.push('testo');
+      }
+      if (priorita !== undefined) {
+        if (!['normale', 'urgente'].includes(priorita)) return res.status(400).json({ message: 'Priorità non valida' });
+        if (priorita !== c.priorita) { c.priorita = priorita as any; cambi.push(`priorità ${priorita}`); }
+      }
+      if ('scadenza' in req.body) {
+        const d = scadenza ? new Date(scadenza) : undefined;
+        c.scadenza = d && !isNaN(d.getTime()) ? d : undefined; cambi.push('scadenza');
+      }
+      if ('orarioPromemoria' in req.body) { c.orarioPromemoria = orarioOk(orarioPromemoria); cambi.push('orario promemoria'); }
+      if (cambi.length) {
+        c.storico.push({ azione: 'modificata', da: new mongoose.Types.ObjectId(userId), daNome: nome, il: new Date(), nota: `Modifiche: ${cambi.join(', ')}` });
+        await c.save();
+      }
+    } else if (source === 'attivita') {
+      const a = await Attivita.findById(id);
+      if (!a) return res.status(404).json({ message: 'Attività non trovata' });
+      if (titolo !== undefined) {
+        const t = String(titolo).trim().slice(0, 200);
+        if (!t) return res.status(400).json({ message: 'Titolo vuoto' });
+        if (t !== a.titolo) { a.titolo = t; cambi.push('titolo'); }
+      }
+      if (testo !== undefined && String(testo).trim() !== String(a.azioneRichiesta || '').trim()) {
+        a.azioneRichiesta = String(testo).trim().slice(0, 2000); cambi.push('dettagli');
+      }
+      if (priorita !== undefined) {
+        if (!['bassa', 'normale', 'alta', 'urgente'].includes(priorita)) return res.status(400).json({ message: 'Priorità non valida' });
+        if (priorita !== a.priorita) { a.priorita = priorita as any; cambi.push(`priorità ${priorita}`); }
+      }
+      if ('scadenza' in req.body) {
+        const d = scadenza ? new Date(scadenza) : undefined;
+        a.scadenza = d && !isNaN(d.getTime()) ? d : undefined; cambi.push('scadenza');
+      }
+      if ('orarioPromemoria' in req.body) { a.orarioPromemoria = orarioOk(orarioPromemoria); cambi.push('orario promemoria'); }
+      if (cambi.length) {
+        a.storico.push({ azione: 'modificata', data: new Date(), autoreId: new mongoose.Types.ObjectId(userId), autoreNome: nome, nota: `Modifiche: ${cambi.join(', ')}` } as any);
+        await a.save();
+      }
+    } else {
+      return res.status(400).json({ message: 'Fonte non valida' });
+    }
+    return res.json({ ok: true, modifiche: cambi });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Errore modifica', error: error.message });
   }
 });
 

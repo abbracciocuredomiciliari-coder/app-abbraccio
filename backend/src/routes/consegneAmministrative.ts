@@ -127,6 +127,7 @@ router.post('/', authenticateToken, auditLog('consegne_amministrative', 'CREATE'
       professionistiNomi: professionistiNomi.length ? professionistiNomi : undefined,
       dataGiornata: dataGiornata && !isNaN(dataGiornata.getTime()) ? dataGiornata : undefined,
       scadenza: scadenza && !isNaN(scadenza.getTime()) ? scadenza : undefined,
+      orarioPromemoria: /^\d{1,2}:\d{2}$/.test(String(req.body?.orarioPromemoria || '')) ? String(req.body.orarioPromemoria) : undefined,
       autoreId: new mongoose.Types.ObjectId(userId),
       autoreNome: user.name || 'Utente',
       storico: [{ azione: 'creata', da: new mongoose.Types.ObjectId(userId), daNome: user.name || 'Utente', il: new Date() }],

@@ -39,7 +39,26 @@ export default function ConsegneHub() {
   const [pazQ, setPazQ] = useState('');
   const [pazOpts, setPazOpts] = useState<{ id: string; label: string }[]>([]);
   const [pazBusy, setPazBusy] = useState(false);
+  const [notaItem, setNotaItem] = useState<{ source: string; id: string; titolo: string } | null>(null);
+  const [notaTesto, setNotaTesto] = useState('');
+  const [notaBusy, setNotaBusy] = useState(false);
+  const [edItem, setEdItem] = useState<any | null>(null);
+  const [edTitolo, setEdTitolo] = useState('');
+  const [edPriorita, setEdPriorita] = useState('normale');
+  const [edScadenza, setEdScadenza] = useState('');
+  const [edOrario, setEdOrario] = useState('');
+  const [edStato, setEdStato] = useState('');
+  const [edEsito, setEdEsito] = useState('');
+  const [edInterlocutore, setEdInterlocutore] = useState('');
+  const [edDataCtrl, setEdDataCtrl] = useState('');
+  const [edMotivo, setEdMotivo] = useState('');
+  const [edErr, setEdErr] = useState('');
+  const [edBusy, setEdBusy] = useState(false);
   const reqId = useRef(0);
+
+  const trovaItem = (itemKey?: string | null) => (snapshot.complete
+    ? (snapshot.items || []).find((i: any) => `${i.source}:${i.id}` === itemKey)
+    : snapshot.detail) as any;
 
   const carica = useCallback(async (v: HubView, pg: number) => {
     const id = ++reqId.current;
@@ -128,10 +147,26 @@ export default function ConsegneHub() {
       }
       case 'link-patient': {
         // collega un paziente reale a una consegna (anche vecchie riportate)
-        const d = (snapshot.complete
-          ? (snapshot.items || []).find((i: any) => `${i.source}:${i.id}` === a.itemKey)
-          : snapshot.detail) as any;
+        const d = trovaItem(a.itemKey);
         if (d) { setPazQ(''); setPazOpts([]); setCollegaPaz({ source: d.source, id: d.id }); }
+        break;
+      }
+      case 'edit': {
+        // modifica completa: priorità, scadenza, orario, stato (anche riapri)
+        const d = trovaItem(a.itemKey);
+        if (d) {
+          setEdItem(d);
+          setEdTitolo(d.title || '');
+          setEdPriorita(d.priority === 'urgent' ? 'urgente' : 'normale');
+          setEdScadenza(d.dueAt ? String(d.dueAt).slice(0, 10) : '');
+          setEdOrario(d.orario || '');
+          setEdStato(''); setEdEsito(''); setEdInterlocutore(''); setEdDataCtrl(''); setEdMotivo(''); setEdErr('');
+        }
+        break;
+      }
+      case 'nota': {
+        const d = trovaItem(a.itemKey);
+        if (d) { setNotaTesto(''); setNotaItem({ source: d.source, id: d.id, titolo: d.title }); }
         break;
       }
     }
@@ -149,6 +184,7 @@ export default function ConsegneHub() {
             defaultPratica={creaPaziente}
             defaultProfessionista={creaProf}
             onSaved={() => { setShowCrea(false); carica(view, page); }}
+            onCreated={() => carica(view, page)}
             onCancel={() => setShowCrea(false)}
           />
         </Modal>
@@ -184,6 +220,139 @@ export default function ConsegneHub() {
                 {label}
               </button>
             ))}
+          </div>
+        </Modal>
+      )}
+
+      {/* Modifica e stato — priorità, scadenza, orario, riapertura; tutto tracciato con data/ora */}
+      {edItem && (
+        <Modal isOpen onClose={() => setEdItem(null)} title={`✏️ ${edItem.title}`} size="md">
+          <div style={{ display: 'grid', gap: 10 }}>
+            <div>
+              <span style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', marginBottom: 3 }}>Titolo</span>
+              <input value={edTitolo} onChange={e => setEdTitolo(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', marginBottom: 3 }}>Priorità</span>
+                <select value={edPriorita} onChange={e => setEdPriorita(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+                  <option value="normale">Normale</option>
+                  <option value="urgente">🔴 Urgente</option>
+                  {edItem.source === 'attivita' && <option value="alta">Alta</option>}
+                  {edItem.source === 'attivita' && <option value="bassa">Bassa</option>}
+                </select>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', marginBottom: 3 }}>Scadenza</span>
+                <input type="date" value={edScadenza} onChange={e => setEdScadenza(e.target.value)} style={{ width: '100%', padding: '9px', borderRadius: 8, border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', marginBottom: 3 }}>🔔 Orario promemoria</span>
+                <input type="time" value={edOrario} onChange={e => setEdOrario(e.target.value)} style={{ width: '100%', padding: '9px', borderRadius: 8, border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
+              </div>
+            </div>
+            <div>
+              <span style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', marginBottom: 3 }}>Cambia stato</span>
+              <select value={edStato} onChange={e => setEdStato(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+                <option value="">Lascia lo stato attuale</option>
+                {edItem.source === 'consegna' ? (
+                  <>
+                    <option value="da_gestire">🔓 Riapri (da gestire)</option>
+                    <option value="presa_in_carico">👤 Presa in carico</option>
+                    <option value="in_attesa_riscontro">⏳ In attesa di riscontro</option>
+                    <option value="gestita">✅ Gestita</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="riaperta">🔓 Riapri</option>
+                    <option value="in_lavorazione">👤 In lavorazione</option>
+                    <option value="in_attesa">⏳ In attesa</option>
+                    <option value="completata">✅ Completata</option>
+                    <option value="annullata">🚫 Annullata</option>
+                  </>
+                )}
+              </select>
+            </div>
+            {['gestita', 'completata'].includes(edStato) && (
+              <div>
+                <span style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', marginBottom: 3 }}>Esito * (cosa è stato fatto)</span>
+                <textarea value={edEsito} onChange={e => setEdEsito(e.target.value)} rows={2} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+              </div>
+            )}
+            {['in_attesa_riscontro', 'in_attesa'].includes(edStato) && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <span style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', marginBottom: 3 }}>In attesa di *</span>
+                  <input value={edInterlocutore} onChange={e => setEdInterlocutore(e.target.value)} placeholder="Es. famiglia, ASL" style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <span style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', marginBottom: 3 }}>Data controllo *</span>
+                  <input type="date" value={edDataCtrl} onChange={e => setEdDataCtrl(e.target.value)} style={{ width: '100%', padding: '9px', borderRadius: 8, border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+            )}
+            {edStato === 'annullata' && (
+              <div>
+                <span style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', marginBottom: 3 }}>Motivo annullamento *</span>
+                <input value={edMotivo} onChange={e => setEdMotivo(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
+              </div>
+            )}
+            {edErr && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '8px 12px', borderRadius: 8, fontWeight: 600, fontSize: '0.82rem' }}>{edErr}</div>}
+            <button
+              disabled={edBusy}
+              onClick={async () => {
+                setEdBusy(true); setEdErr('');
+                try {
+                  if (edStato) {
+                    if (edItem.source === 'consegna') {
+                      await api.patch(`/consegne-amministrative/${edItem.id}/stato`, { stato: edStato, esito: edEsito || undefined, interlocutore: edInterlocutore || undefined, dataControllo: edDataCtrl || undefined });
+                    } else {
+                      await api.patch(`/attivita/${edItem.id}/stato`, { stato: edStato, esito: edEsito || undefined, motivo: edMotivo || undefined, interlocutore: edInterlocutore || undefined, dataControllo: edDataCtrl || undefined });
+                    }
+                  }
+                  await api.patch('/hub-consegne/elemento', {
+                    source: edItem.source, id: edItem.id, titolo: edTitolo, priorita: edPriorita,
+                    scadenza: edScadenza || null, orarioPromemoria: edOrario || null,
+                  });
+                  setEdItem(null); carica(view, page);
+                } catch (e: any) { setEdErr(e?.response?.data?.message || 'Errore salvataggio'); }
+                finally { setEdBusy(false); }
+              }}
+              style={{ padding: '12px', borderRadius: 10, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+            >
+              {edBusy ? 'Salvataggio…' : '💾 Salva modifiche'}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Aggiungi nota — resta nello storico con data/ora e autore */}
+      {notaItem && (
+        <Modal isOpen onClose={() => setNotaItem(null)} title={`📝 Nota su: ${notaItem.titolo}`} size="sm">
+          <div style={{ display: 'grid', gap: 10 }}>
+            <textarea
+              autoFocus
+              value={notaTesto}
+              onChange={e => setNotaTesto(e.target.value)}
+              rows={4}
+              placeholder="Scrivi l'aggiornamento: sarà registrato con data, ora e il tuo nome…"
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1', boxSizing: 'border-box', fontFamily: 'inherit' }}
+            />
+            <button
+              disabled={notaBusy || !notaTesto.trim()}
+              onClick={async () => {
+                setNotaBusy(true);
+                try {
+                  const url = notaItem.source === 'consegna' ? `/consegne-amministrative/${notaItem.id}/nota` : `/attivita/${notaItem.id}/aggiornamento`;
+                  await api.post(url, notaItem.source === 'consegna' ? { nota: notaTesto.trim() } : { testo: notaTesto.trim() });
+                  setNotaItem(null); carica(view, page);
+                } catch { /* riprova */ }
+                finally { setNotaBusy(false); }
+              }}
+              style={{ padding: '12px', borderRadius: 10, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: notaTesto.trim() ? 1 : 0.5 }}
+            >
+              {notaBusy ? 'Salvataggio…' : 'Salva nota'}
+            </button>
           </div>
         </Modal>
       )}

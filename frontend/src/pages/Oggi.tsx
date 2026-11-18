@@ -264,7 +264,7 @@ export default function Oggi() {
       {showForm && (
         <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16, marginBottom: 16 }}>
           <div style={{ fontWeight: 700, color: 'var(--brand-700)', marginBottom: 10 }}>Nuovo elemento</div>
-          <NuovaAttivitaForm area={area} onSaved={() => { setShowForm(false); carica(); }} onCancel={() => setShowForm(false)} />
+          <NuovaAttivitaForm area={area} onSaved={() => { setShowForm(false); carica(); }} onCreated={() => carica()} onCancel={() => setShowForm(false)} />
         </div>
       )}
 
