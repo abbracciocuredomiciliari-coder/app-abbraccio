@@ -5,6 +5,8 @@ import Attivita, { SETTORI_CONSEGNA, SettoreConsegna } from '../models/Attivita'
 import ConsegnaAmministrativa from '../models/ConsegnaAmministrativa';
 import Staff from '../models/Staff';
 import Patient from '../models/Patient';
+import VerbaleEquipe from '../models/VerbaleEquipe';
+import RichiestaPrenotazione from '../models/RichiestaPrenotazione';
 
 const router = Router();
 const RUOLI_GESTIONE = ['admin', 'coordinator', 'direttore'];
@@ -382,7 +384,7 @@ router.get('/promemoria', authenticateToken, async (_req: AuthRequest, res: Resp
   try {
     const oggi = new Date(); oggi.setHours(23, 59, 59, 999);
     const inizioOggi = new Date(); inizioOggi.setHours(0, 0, 0, 0);
-    const [att, con] = await Promise.all([
+    const [att, con, riu, app] = await Promise.all([
       Attivita.find({
         stato: { $nin: ['completata', 'annullata'] },
         $or: [{ scadenza: { $lte: oggi } }, { dataControlloAttesa: { $lte: oggi } }],
@@ -391,17 +393,43 @@ router.get('/promemoria', authenticateToken, async (_req: AuthRequest, res: Resp
         stato: { $ne: 'gestita' },
         $or: [{ scadenza: { $lte: oggi } }, { dataControlloAttesa: { $lte: oggi } }, { dataGiornata: { $gte: inizioOggi, $lte: oggi } }],
       }).select('titolo scadenza dataControlloAttesa dataGiornata orarioPromemoria pazienteLabel riferimento priorita').limit(200).lean(),
+      // Riunioni di equipe fissate per oggi
+      VerbaleEquipe.find({
+        stato: { $ne: 'firmato' },
+        dataRiunione: { $gte: inizioOggi, $lte: oggi },
+      }).select('titolo dataRiunione').limit(50).lean(),
+      // Appuntamenti/visite confermati per oggi
+      RichiestaPrenotazione.find({
+        stato: { $in: ['confermata', 'modificata'] },
+        dataConfermata: { $gte: inizioOggi, $lte: oggi },
+      }).select('pazienteNome tipoServizio orarioConfermato dataConfermata').limit(100).lean(),
     ]);
     const items = [
       ...att.map((a: any) => ({
         id: String(a._id), source: 'attivita', titolo: a.titolo, tipo: a.tipo || 'attivita',
         quando: a.scadenza || a.dataControlloAttesa, orario: a.orarioPromemoria,
         paziente: a.praticaLabel, urgente: a.priorita === 'urgente',
+        link: `/consegne?screen=detail&itemKey=attivita:${a._id}`,
       })),
       ...con.map((c: any) => ({
         id: String(c._id), source: 'consegna', titolo: c.titolo, tipo: 'consegna',
         quando: c.scadenza || c.dataControlloAttesa || c.dataGiornata, orario: c.orarioPromemoria,
         paziente: c.pazienteLabel || c.riferimento, urgente: c.priorita === 'urgente',
+        link: `/consegne?screen=detail&itemKey=consegna:${c._id}`,
+      })),
+      ...riu.map((r: any) => {
+        const d = new Date(r.dataRiunione);
+        const hh = d.getHours(), mm = d.getMinutes();
+        return {
+          id: String(r._id), source: 'riunione', titolo: `Riunione: ${r.titolo}`, tipo: 'riunione',
+          quando: r.dataRiunione, orario: (hh || mm) ? `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}` : undefined,
+          urgente: true, link: '/verbali-equipe',
+        };
+      }),
+      ...app.map((p: any) => ({
+        id: String(p._id), source: 'appuntamento', titolo: `Appuntamento: ${p.pazienteNome} — ${p.tipoServizio}`, tipo: 'appuntamento',
+        quando: p.dataConfermata, orario: p.orarioConfermato || undefined,
+        paziente: p.pazienteNome, link: '/gestione-richieste',
       })),
     ].sort((a, b) => String(a.orario || '99:99').localeCompare(String(b.orario || '99:99')));
     return res.json({ items });

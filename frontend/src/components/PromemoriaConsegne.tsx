@@ -12,7 +12,7 @@ import api from '../api/api';
 
 interface PromItem {
   id: string; source: string; titolo: string; tipo: string;
-  quando?: string; orario?: string; paziente?: string; urgente?: boolean;
+  quando?: string; orario?: string; paziente?: string; urgente?: boolean; link?: string;
 }
 
 const NASCOSTO_PER_MS = 30 * 60 * 1000; // il banner riappare dopo 30 min
@@ -66,6 +66,10 @@ export default function PromemoriaConsegne() {
   }, [carica]);
 
   const chiudiAlert = (p: PromItem) => setAlertOrario(v => v.filter(x => `${x.source}:${x.id}` !== `${p.source}:${p.id}`));
+  const apriAlert = (p: PromItem) => {
+    chiudiAlert(p);
+    navigate(p.link || '/consegne');
+  };
   const visibile = items.length > 0 && Date.now() > nascostoFino;
 
   return (
@@ -82,11 +86,14 @@ export default function PromemoriaConsegne() {
                     <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#78350f' }}>{p.orario} — {p.titolo}</div>
                     {p.paziente && <div style={{ fontSize: '0.8rem', color: '#92400e' }}>{p.paziente}</div>}
                   </div>
-                  <button onClick={() => chiudiAlert(p)} style={{ border: 'none', background: '#f59e0b', color: '#fff', borderRadius: 8, padding: '8px 12px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>Ok</button>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button onClick={() => apriAlert(p)} style={{ border: 'none', background: '#1d4ed8', color: '#fff', borderRadius: 8, padding: '8px 12px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>Apri</button>
+                    <button onClick={() => chiudiAlert(p)} style={{ border: 'none', background: '#f59e0b', color: '#fff', borderRadius: 8, padding: '8px 12px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>Ok</button>
+                  </div>
                 </div>
               ))}
             </div>
-            <button onClick={() => navigate('/consegne')} style={{ marginTop: 12, width: '100%', padding: '10px', borderRadius: 10, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>
+            <button onClick={() => { setAlertOrario([]); navigate('/consegne'); }} style={{ marginTop: 12, width: '100%', padding: '10px', borderRadius: 10, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>
               Apri Consegne e attività
             </button>
           </div>
