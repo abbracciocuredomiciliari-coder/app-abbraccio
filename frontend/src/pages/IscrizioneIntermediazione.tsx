@@ -80,6 +80,9 @@ export default function IscrizioneIntermediazione() {
   const [inviato, setInviato] = useState(false);
   const [busy, setBusy] = useState(false);
   const [errore, setErrore] = useState('');
+  // ?fonte=abbraccio → modulo aperto dal sito principale: solo brand Abbraccio,
+  // niente partnership Salus (resta sul percorso dal sito famiglie).
+  const soloAbbraccio = new URLSearchParams(window.location.search).get('fonte') === 'abbraccio';
 
   const [nome, setNome] = useState('');
   const [cognome, setCognome] = useState('');
@@ -224,12 +227,14 @@ export default function IscrizioneIntermediazione() {
             <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '1.05rem', lineHeight: 1.1 }}>Abbraccio Cure Domiciliari</div>
             <div style={{ fontSize: '0.75rem', color: '#15574d', fontWeight: 600 }}>Badanti · Colf · Operatori Sanitari</div>
           </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', background: '#f6f9ff', border: '1px solid #dfe9fb', borderRadius: '10px', padding: '5px 10px' }}>
-            <span style={{ fontSize: '0.62rem', color: '#64748b', lineHeight: 1.25, textAlign: 'right' }}>
-              in collaborazione con<br /><strong style={{ color: 'var(--brand-700)', fontSize: '0.68rem' }}>Salus Group</strong>
-            </span>
-            <img src="/images/logo-salus.png" alt="Salus Group" style={{ height: '30px', width: 'auto', display: 'block' }} />
-          </div>
+          {!soloAbbraccio && (
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', background: '#f6f9ff', border: '1px solid #dfe9fb', borderRadius: '10px', padding: '5px 10px' }}>
+              <span style={{ fontSize: '0.62rem', color: '#64748b', lineHeight: 1.25, textAlign: 'right' }}>
+                in collaborazione con<br /><strong style={{ color: 'var(--brand-700)', fontSize: '0.68rem' }}>Salus Group</strong>
+              </span>
+              <img src="/images/logo-salus.png" alt="Salus Group" style={{ height: '30px', width: 'auto', display: 'block' }} />
+            </div>
+          )}
         </div>
       </header>
 
@@ -419,7 +424,7 @@ export default function IscrizioneIntermediazione() {
           Abbraccio Cure Domiciliari · Via di S. Maria Ausiliatrice 4/B, Roma ·
           <a href={`tel:${TELEFONO}`} style={{ color: '#64748b' }}> <Phone size={11} style={{ verticalAlign: '-1px' }} /> {TELEFONO_LABEL}</a> ·
           <a href={`https://wa.me/${WHATSAPP}`} style={{ color: '#16a34a' }}> <MessageCircle size={11} style={{ verticalAlign: '-1px' }} /> WhatsApp</a>
-          <br />In partnership con <strong>Salus Group</strong> — Divisione Datoriale Casimpresa
+          {!soloAbbraccio && <><br />In partnership con <strong>Salus Group</strong> — Divisione Datoriale Casimpresa</>}
         </p>
       </main>
     </div>
