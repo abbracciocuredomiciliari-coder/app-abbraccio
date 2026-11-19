@@ -34,6 +34,7 @@ interface Candidato {
   documentoNome?: string;
   stato: 'in_attesa' | 'accettato' | 'rifiutato';
   richiesteDati?: { at: string; campi: string[]; canale: 'email' | 'whatsapp' }[];
+  datiCompletatiAt?: string;
   createdAt: string;
 }
 
@@ -116,14 +117,16 @@ export default function CandidatureIntermediazione({ onToast }: { onToast: (msg:
     if (!selCampi.length) return;
     setBusy(c._id);
     try {
+      // Prima registro la richiesta → il server genera il link sicuro dove il
+      // candidato inserisce i dati direttamente nel gestionale.
+      const res = await api.post(`/candidati-intermediazione/${c._id}/richiedi-dati`, { campi: selCampi, canale });
       if (canale === 'whatsapp') {
         const num = waNumber(c.telefono);
         if (!num) { onToast('Il candidato non ha lasciato un telefono', 'err'); setBusy(''); return; }
         const ruolo = (RUOLO_LABEL[c.ruolo] || c.ruolo).replace(/^\S+\s+/, '');
-        const msg = `Ciao ${c.nome}, sono Abbraccio Cure Domiciliari. Per completare la tua iscrizione come ${ruolo} ci mancano ancora: ${selCampi.join(', ')}. Rispondi a questo messaggio con i dati (per il documento va bene anche una foto). Grazie!`;
+        const msg = `Ciao ${c.nome}, sono Abbraccio Cure Domiciliari. Per completare la tua iscrizione come ${ruolo} ci mancano ancora: ${selCampi.join(', ')}. Inseriscili nel modulo sicuro a questo link — arrivano direttamente nella tua scheda: ${res.data?.link}. Grazie!`;
         window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
       }
-      const res = await api.post(`/candidati-intermediazione/${c._id}/richiedi-dati`, { campi: selCampi, canale });
       onToast(`✅ ${res.data?.message || 'Richiesta inviata'}`, 'ok');
       setRichiediId(null);
       await carica();
@@ -208,6 +211,11 @@ export default function CandidatureIntermediazione({ onToast }: { onToast: (msg:
                   {c.stato === 'in_attesa' && manc.length > 0 && (
                     <span title={manc.join(', ')} style={{ fontSize: '0.75rem', fontWeight: 700, background: '#fef3c7', color: '#b45309', borderRadius: '999px', padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'help' }}>
                       <AlertTriangle size={11} /> {manc.length} dati mancanti
+                    </span>
+                  )}
+                  {c.datiCompletatiAt && (
+                    <span title={`Il candidato ha compilato i dati mancanti il ${fmtOra(c.datiCompletatiAt)}`} style={{ fontSize: '0.75rem', fontWeight: 700, background: '#dcfce7', color: '#15803d', borderRadius: '999px', padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                      <CheckCircle size={11} /> Dati integrati il {fmtData(c.datiCompletatiAt)}
                     </span>
                   )}
                   <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: '#a8a29e' }}>{fmtOra(c.createdAt)}</span>

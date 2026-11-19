@@ -62,6 +62,7 @@ const ConsegneAmministrative = lazy(() => import('./pages/ConsegneAmministrative
 const ConsegneHub = lazy(() => import('./pages/ConsegneHub'));
 const ConsegnaEsterna = lazy(() => import('./pages/ConsegnaEsterna'));
 const IscrizioneIntermediazione = lazy(() => import('./pages/IscrizioneIntermediazione'));
+const CompletaCandidatura = lazy(() => import('./pages/CompletaCandidatura'));
 const AreaFamiglia = lazy(() => import('./pages/AreaFamiglia'));
 const ArchivioEmail = lazy(() => import('./pages/ArchivioEmail'));
 const SitiWeb = lazy(() => import('./pages/SitiWeb'));
@@ -165,7 +166,8 @@ function AppShell() {
   const secOpen = (...paths: string[]) => paths.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
   const isFirma = location.pathname.startsWith('/firma-');
   // Landing pubbliche e link esterni del sito: pagina dedicata senza menu/login
-  const isLanding = ['/badante', '/preventivo', '/register', '/richiesta-servizio', '/richiesta-assistenza', '/scrivi-consegna', '/iscriviti-intermediazione', '/area-famiglia', '/colloquio'].includes(location.pathname);
+  const isLanding = ['/badante', '/preventivo', '/register', '/richiesta-servizio', '/richiesta-assistenza', '/scrivi-consegna', '/iscriviti-intermediazione', '/area-famiglia', '/colloquio'].includes(location.pathname)
+    || location.pathname.startsWith('/completa-candidatura');
   const operatore = user && !isPrivilegiato(user.role);
 
   // Chiudi il menu mobile a ogni cambio pagina
@@ -785,6 +787,7 @@ function AppShell() {
           <Route path="/richiesta-assistenza" element={<RichiestaAssistenza />} />
           <Route path="/scrivi-consegna" element={<ConsegnaEsterna />} />
           <Route path="/iscriviti-intermediazione" element={<IscrizioneIntermediazione />} />
+          <Route path="/completa-candidatura/:token" element={<CompletaCandidatura />} />
           <Route path="/colloquio" element={<ColloquioPubblico />} />
           <Route path="/area-famiglia" element={<AreaFamiglia />} />
           <Route path="/badante" element={<LandingBadante />} />

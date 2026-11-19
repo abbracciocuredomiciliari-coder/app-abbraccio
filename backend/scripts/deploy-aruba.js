@@ -78,6 +78,25 @@ async function uploadDir(sftp, localDir, remoteDir) {
   }
 }
 
+// Directory grandi (public/, frontend/dist): un solo tar.gz invece di
+// migliaia di fastPut — la connessione SFTP cadeva durante i lunghi upload.
+const { execSync } = require('child_process');
+let tarCounter = 0;
+async function uploadDirAsTar(sftp, localDir, remoteDir) {
+  const tmp = path.join(require('os').tmpdir(), `deploy-${Date.now()}-${tarCounter++}.tgz`);
+  const posix = (p) => p.replace(/\\/g, '/');
+  // --force-local: altrimenti GNU tar su Windows legge "C:" come host remoto
+  execSync(`tar --force-local -czf "${posix(tmp)}" -C "${posix(localDir)}" .`);
+  const remoteTar = `/tmp/deploy-${Date.now()}-${tarCounter}.tgz`;
+  try {
+    await fastPut(sftp, tmp, remoteTar);
+    const r = await exec(`mkdir -p "${remoteDir}" && tar -xzf "${remoteTar}" -C "${remoteDir}" && rm -f "${remoteTar}"`);
+    if (r.code !== 0) throw new Error(`Estrazione remota fallita in ${remoteDir}: ${r.stderr}`);
+  } finally {
+    try { fs.unlinkSync(tmp); } catch {}
+  }
+}
+
 async function findRemoteDir(sftp) {
   const candidates = [];
   const domains = [process.env.ARUBA_DOMAIN || 'app.abbracciocuredomiciliari.it', 'app-abbraccio', 'abbraccio'];
@@ -120,11 +139,11 @@ async function main() {
   console.log('Caricamento dist/...');
   await uploadDir(sftp, path.join(localBase, 'dist'), `${deployDir}/dist`);
   console.log('Caricamento public/...');
-  await uploadDir(sftp, path.join(localBase, 'public'), `${deployDir}/public`);
+  await uploadDirAsTar(sftp, path.join(localBase, 'public'), `${deployDir}/public`);
   console.log('Caricamento frontend/dist per Nginx...');
   const frontendDist = `${remoteDir}/frontend/dist`;
   await mkdir(sftp, frontendDist);
-  await uploadDir(sftp, path.resolve(localBase, '..', 'frontend', 'dist'), frontendDist);
+  await uploadDirAsTar(sftp, path.resolve(localBase, '..', 'frontend', 'dist'), frontendDist);
 
   console.log('Caricamento package.json e package-lock.json...');
   await fastPut(sftp, path.join(localBase, 'package.json'), `${deployDir}/package.json`);

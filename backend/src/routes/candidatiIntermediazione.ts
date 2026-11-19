@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import multer from 'multer';
 import CandidatoIntermediazione from '../models/CandidatoIntermediazione';
 import Staff from '../models/Staff';
@@ -181,6 +182,102 @@ router.post('/pubblica', rateLimitByIP(10, 60 * 60 * 1000), upload.single('docum
   }
 });
 
+// ─── GET /completa/:token — pagina pubblica "completa candidatura" ──────────
+// Restituisce solo nome/ruolo/campi richiesti: nessun dato sensibile esposto.
+router.get('/completa/:token', rateLimitByIP(30, 60 * 60 * 1000), async (req: Request, res: Response) => {
+  try {
+    const c = await CandidatoIntermediazione.findOne({ tokenCompletamento: s(req.params.token) }).select('nome ruolo richiesteDati tokenCompletamento');
+    if (!c) return res.status(404).json({ message: 'Link non valido o scaduto.' });
+    const ultima = (c.richiesteDati || []).slice(-1)[0];
+    return res.json({ nome: c.nome, ruolo: RUOLO_LABEL[c.ruolo] || c.ruolo, campi: ultima?.campi || [] });
+  } catch {
+    return res.status(500).json({ message: 'Errore caricamento' });
+  }
+});
+
+// ─── POST /completa/:token — il candidato inserisce i dati mancanti ─────────
+// I dati entrano DIRETTI nel record del gestionale (niente email da ricopiare).
+router.post('/completa/:token', rateLimitByIP(10, 60 * 60 * 1000), upload.single('documento'), async (req: Request, res: Response) => {
+  try {
+    const c = await CandidatoIntermediazione.findOne({ tokenCompletamento: s(req.params.token) });
+    if (!c) return res.status(404).json({ message: 'Link non valido o scaduto.' });
+    const body = req.body || {};
+    const aggiornati: string[] = [];
+    const set = (campo: 'telefono' | 'email' | 'codiceFiscale' | 'dataNascita' | 'cittaInteresse' | 'regioneInteresse' | 'disponibilita' | 'permessoSoggiorno', label: string, val: any) => {
+      if (val !== undefined && String(val).trim() !== '') { (c as any)[campo] = val; aggiornati.push(label); }
+    };
+
+    if (body.telefono !== undefined) {
+      const t = s(body.telefono);
+      if (!/^[\d+\s().-]{6,20}$/.test(t)) return res.status(400).json({ message: 'Numero di telefono non valido.' });
+      set('telefono', 'Telefono', t);
+    }
+    if (body.email !== undefined) {
+      const e = s(body.email).toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return res.status(400).json({ message: 'Email non valida.' });
+      set('email', 'Email', e);
+    }
+    if (body.dataNascita !== undefined) {
+      const d = new Date(body.dataNascita);
+      if (isNaN(d.getTime()) || d > new Date()) return res.status(400).json({ message: 'Data di nascita non valida.' });
+      set('dataNascita', 'Data di nascita', d);
+    }
+    set('codiceFiscale', 'Codice fiscale', s(body.codiceFiscale).toUpperCase() || undefined);
+    set('cittaInteresse', 'Città di lavoro', s(body.cittaInteresse) || undefined);
+    set('regioneInteresse', 'Regione di lavoro', s(body.regioneInteresse) || undefined);
+    if (body.disponibilita !== undefined) {
+      const d = s(body.disponibilita);
+      if (!['diurno', 'notturno', 'h24'].includes(d)) return res.status(400).json({ message: 'Disponibilità non valida.' });
+      set('disponibilita', 'Disponibilità oraria', d);
+    }
+    if (body.permessoSoggiorno !== undefined) {
+      const p = s(body.permessoSoggiorno);
+      if (!['valido', 'in_scadenza', 'assente', 'documenti_validi'].includes(p)) return res.status(400).json({ message: 'Permesso di soggiorno non valido.' });
+      set('permessoSoggiorno', 'Permesso di soggiorno', p);
+    }
+
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (file) {
+      if (!(file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf')) {
+        return res.status(400).json({ message: 'Il documento deve essere una foto o un PDF.' });
+      }
+      const ext = path.extname(file.originalname || '') || (file.mimetype === 'application/pdf' ? '.pdf' : '.jpg');
+      const dir = path.join(uploadsDir, `${Date.now()}_${c.nome.replace(/[^a-z0-9]/gi, '_')}_${c.cognome.replace(/[^a-z0-9]/gi, '_')}`);
+      fs.mkdirSync(dir, { recursive: true });
+      const fname = `documento${ext}`;
+      fs.writeFileSync(path.join(dir, fname), file.buffer);
+      c.documentoPath = path.join('candidati-intermediazione', path.basename(dir), fname).replace(/\\/g, '/');
+      c.documentoNome = file.originalname || fname;
+      c.documentoMime = file.mimetype;
+      aggiornati.push('Documento allegato');
+    }
+
+    if (!aggiornati.length) return res.status(400).json({ message: 'Compila almeno un dato.' });
+
+    c.datiCompletatiAt = new Date();
+    await c.save();
+
+    // Avviso in gestionale: i dati sono arrivati, nessuna copia manuale
+    const adminEmail = process.env.ADMIN_EMAIL || 'abbracciocuredomiciliari@gmail.com';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://app.abbracciocuredomiciliari.it';
+    inviaEmail({
+      to: adminEmail,
+      subject: `✅ ${c.nome} ${c.cognome} ha completato i dati dell'iscrizione`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;">
+        <h2 style="color:#1e4d8c;margin-top:0;">Dati integrati dal candidato</h2>
+        <p><strong>${c.nome} ${c.cognome}</strong> (${RUOLO_LABEL[c.ruolo] || c.ruolo}) ha compilato il modulo di completamento. Dati aggiornati nella scheda: <strong>${aggiornati.join(', ')}</strong>.</p>
+        <a href="${frontendUrl}/gestione-utenti" style="display:inline-block;background:#1e4d8c;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">Apri Gestione Utenti →</a>
+      </div>`,
+      log: { tipo: 'dati_completati', area: 'intermediazione', riferimento: `${c.nome} ${c.cognome}` },
+    }).catch(() => {});
+
+    return res.json({ message: 'Dati ricevuti: la tua iscrizione è stata aggiornata. Grazie!', aggiornati });
+  } catch (error: any) {
+    console.error('[Candidati intermediazione] Errore completamento dati:', error);
+    return res.status(500).json({ message: 'Errore salvataggio dati', error: error.message });
+  }
+});
+
 // ─── GET / — lista candidati (gestione) ─────────────────────────────────────
 router.get('/', authenticateToken, authorizeRole(...RUOLI_GESTIONE), async (req: Request, res: Response) => {
   try {
@@ -231,6 +328,12 @@ router.post('/:id/richiedi-dati', authenticateToken, authorizeRole(...RUOLI_GEST
     if (!campi.length) return res.status(400).json({ message: 'Indica almeno un dato da richiedere' });
     const canale = req.body?.canale === 'email' ? 'email' : 'whatsapp';
 
+    // Link sicuro: il candidato compila i dati mancanti nel modulo pubblico e
+    // finiscono DIRETTI nel gestionale — niente risposte email da ricopiare.
+    c.tokenCompletamento = crypto.randomBytes(24).toString('hex');
+    const frontendUrl = process.env.FRONTEND_URL || 'https://app.abbracciocuredomiciliari.it';
+    const link = `${frontendUrl}/completa-candidatura/${c.tokenCompletamento}`;
+
     if (canale === 'email') {
       if (!c.email) return res.status(400).json({ message: 'Il candidato non ha lasciato un indirizzo email' });
       const ruoloLabel = RUOLO_LABEL[c.ruolo] || c.ruolo;
@@ -244,7 +347,9 @@ router.post('/:id/richiedi-dati', authenticateToken, authorizeRole(...RUOLI_GEST
           <ul style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 14px 14px 34px;line-height:1.8;">
             ${campi.map((f: string) => `<li>${f}</li>`).join('')}
           </ul>
-          <p>Puoi rispondere <strong>direttamente a questa email</strong> con i dati mancanti — per il documento basta allegare una foto o un PDF.</p>
+          <p>Inseriscili nel modulo sicuro — arrivano direttamente nella tua scheda:</p>
+          <p style="text-align:center;margin:26px 0;"><a href="${link}" style="display:inline-block;background:#1e4d8c;color:#fff;padding:14px 30px;border-radius:8px;text-decoration:none;font-weight:bold;">Completa l'iscrizione →</a></p>
+          <p style="color:#64748b;font-size:13px;">Se il pulsante non si apre, copia questo indirizzo nel browser:<br>${link}</p>
           <p style="color:#64748b;font-size:13px;">Grazie,<br><strong>Abbraccio Cure Domiciliari</strong><br>Tel. 06 01905242</p>
         </div>`,
         log: { tipo: 'richiesta_dati', area: 'intermediazione', riferimento: `${c.nome} ${c.cognome}` },
@@ -253,7 +358,7 @@ router.post('/:id/richiedi-dati', authenticateToken, authorizeRole(...RUOLI_GEST
 
     c.richiesteDati = [...(c.richiesteDati || []), { at: new Date(), campi, canale } as any];
     await c.save();
-    return res.json({ message: canale === 'email' ? `Email di richiesta inviata a ${c.email}` : 'Richiesta registrata' });
+    return res.json({ message: canale === 'email' ? `Email di richiesta inviata a ${c.email}` : 'Richiesta registrata', link });
   } catch (error: any) {
     console.error('[Candidati intermediazione] Errore richiesta dati:', error);
     return res.status(500).json({ message: 'Errore invio richiesta dati', error: error.message });

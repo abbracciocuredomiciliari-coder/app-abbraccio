@@ -42,6 +42,8 @@ export interface ICandidatoIntermediazione extends Document {
   staffId?: Types.ObjectId;           // Staff creato all'accettazione
   noteAdmin?: string;
   richiesteDati?: { at: Date; campi: string[]; canale: 'email' | 'whatsapp' }[];
+  tokenCompletamento?: string;        // link sicuro /completa-candidatura/:token
+  datiCompletatiAt?: Date;            // ultima compilazione dei dati mancanti
   createdAt: Date;
   updatedAt: Date;
 }
@@ -77,6 +79,8 @@ const schema = new Schema<ICandidatoIntermediazione>(
     staffId: { type: Schema.Types.ObjectId, ref: 'Staff' },
     noteAdmin: { type: String, trim: true },
     richiesteDati: [{ at: { type: Date, default: Date.now }, campi: [{ type: String }], canale: { type: String, enum: ['email', 'whatsapp'] } }],
+    tokenCompletamento: { type: String, index: true, sparse: true },
+    datiCompletatiAt: { type: Date },
   },
   { timestamps: true }
 );
